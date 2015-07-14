@@ -9,13 +9,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.0.0
+// @version     4.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.0.0';
+var version = '4.0.1';
 /**
  * 配置类
  */
@@ -31,11 +31,11 @@ var Config = {
     donationAfterVipEnabled: false,
     // 是否自动争夺，可自动领取争夺奖励，并可自动进行批量攻击（可选），true：开启；false：关闭
     autoLootEnabled: false,
-    // 是否在自动领取争夺奖励后，进行自动批量攻击（需指定攻击目标），true：开启；false：关闭
+    // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
     autoAttackEnabled: false,
-    // 在距本回合结束前指定时间内才进行自动批量攻击，取值范围：660-62（分钟），设置为0表示不启用
+    // 在距本回合结束前指定时间内才自动进行批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
     attackAfterTime: 0,
-    // 批量攻击的目标列表，格式：{攻击ID:次数}，例：{1:10,2:20}
+    // 批量攻击的目标列表，格式：{攻击ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 是否自动抽取神秘盒子，true：开启；false：关闭
     autoDrawSmbox2Enabled: false,
@@ -562,9 +562,9 @@ var ConfigDialog = {
             '<a class="pd_cfg_tips" href="#" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</a></label></legend>' +
             '        <fieldset>' +
             '          <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
-            '<a class="pd_cfg_tips" href="#" title="在自动领取争夺奖励后，进行自动批量攻击（需指定攻击目标）">[?]</a></label></legend>' +
+            '<a class="pd_cfg_tips" href="#" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</a></label></legend>' +
             '        <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内攻击 ' +
-            '<a class="pd_cfg_tips" href="#" title="在距本回合结束前指定时间内才进行自动批量攻击，取值范围：{0}-{1}，留空表示不启用（注意不要设置得太接近最小值，以免错过攻击）">[?]</a></label>'
+            '<a class="pd_cfg_tips" href="#" title="在距本回合结束前指定时间内才自动进行批量攻击，取值范围：{0}-{1}，留空表示不启用（注意不要设置得太接近最小值，以免错过攻击）">[?]</a></label>'
                 .replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime) +
             '          <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
             '            <tbody>' +
@@ -586,7 +586,7 @@ var ConfigDialog = {
             '      </fieldset>' +
             '      <fieldset>' +
             '        <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
-            '<a class="pd_cfg_tips" href="#" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子），只在首页生效">[?]</a></label></legend>' +
+            '<a class="pd_cfg_tips" href="#" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子），只在论坛首页生效">[?]</a></label></legend>' +
             '        <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
             '<a class="pd_cfg_tips" href="#" title="在首页的网页标题上显示定时模式提示的方案">[?]</a></label>' +
@@ -3759,34 +3759,25 @@ var Loot = {
         var $submit = $('input[name="submit1"][value$="领取，点击这里抢别人的"]');
         if ($submit.length > 0) {
             var timeLog = Loot.getNextLootAwardTime();
-            if (timeLog.type === 2) {
+            if (timeLog.type >= 1) {
                 var diff = Tools.getTimeDiffInfo(timeLog.time);
                 if (diff.hours === 0 && diff.minutes === 0) return;
                 var matches = /还有(\d+)小时领取，点击这里抢别人的/.exec($submit.val());
-                if (matches) {
-                    if (diff.hours !== parseInt(matches[1])) return;
-                    $submit.css('width', '270px').val('还有{0}小时{1}分领取，点击这里抢别人的'.replace('{0}', diff.hours).replace('{1}', diff.minutes));
+                if (timeLog.type === 2 && matches) {
+                    if (matches) {
+                        if (diff.hours !== parseInt(matches[1])) return;
+                        $submit.css('width', '270px').val('还有{0}小时{1}分领取，点击这里抢别人的'.replace('{0}', diff.hours).replace('{1}', diff.minutes));
+                    }
+                    else {
+                        if (diff.hours !== 0) return;
+                    }
                 }
-                else {
-                    if (diff.hours !== 0) return;
-                }
-                var end = new Date(timeLog.time);
-                $submit.prev().prev().before('<span class="pd_highlight">可领取时间：{0} {1}</span>'
-                        .replace('{0}', Tools.getDateString(end))
-                        .replace('{1}', Tools.getTimeString(end, ':', false))
-                );
-            }
-            else {
-                var matches = /还有(\d+)(分钟|小时)领取，点击这里抢别人的/.exec($submit.val());
-                if (!matches) return;
-                var num = parseInt(matches[1]);
-                var type = matches[2] === '小时' ? 1 : 2;
-                var end1 = Tools.getDate('+' + num + (type === 1 ? 'h' : 'm'));
-                var end2 = Tools.getDate('+' + (num + 1) + (type === 1 ? 'h' : 'm'));
+                var end1 = new Date(timeLog.time);
+                var end2 = new Date(timeLog.time + 60 * 60 * 1000);
                 $submit.prev().prev().before('<span class="pd_highlight">可领取时间：{0} {1}{2}</span>'
                         .replace('{0}', Tools.getDateString(end1))
                         .replace('{1}', Tools.getTimeString(end1, ':', false))
-                        .replace('{2}', type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
+                        .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
                 );
             }
         }
@@ -3819,14 +3810,7 @@ var Loot = {
         if (!Config.attackAfterTime) return true;
         var timeLog = Loot.getNextLootAwardTime();
         if (timeLog.type > 0) {
-            var attackAfterTime = Config.attackAfterTime;
-            if (timeLog.type === 1) {
-                var diff = attackAfterTime - Config.minAttackAfterTime - 30;
-                if (diff < 0) diff = 0;
-                else if (diff > 30) diff = 30;
-                attackAfterTime -= diff;
-            }
-            var end = timeLog.time - attackAfterTime * 60 * 1000;
+            var end = timeLog.time - Config.attackAfterTime * 60 * 1000;
             if (end > (new Date()).getTime()) return false;
         }
         return true;
@@ -5677,8 +5661,8 @@ var KFOL = {
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
             if (Config.hideNoneVipEnabled) KFOL.hideNoneVipTips();
-            if (Config.autoLootEnabled) KFOL.showLootAwardInterval();
-            if (Config.autoDrawSmbox2Enabled) KFOL.showDrawSmboxInterval();
+            KFOL.showLootAwardInterval();
+            KFOL.showDrawSmboxInterval();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.homePageThreadFastGotoLinkEnabled) KFOL.addHomePageThreadFastGotoLink();
         }
