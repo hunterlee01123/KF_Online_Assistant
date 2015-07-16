@@ -15,7 +15,6 @@
 // @license     MIT
 // ==/UserScript==
 /**
- * @todo 增加在批量攻击后使用道具的功能
  * @todo 增加自定义怪物名称的功能
  */
 // 版本号
@@ -434,44 +433,6 @@ var Tools = {
     },
 
     /**
-     * 关闭对话框
-     * @param {string} boxId 对话框ID
-     * @returns {boolean} 返回false
-     */
-    close: function (boxId) {
-        $('#' + boxId).fadeOut('fast', function () {
-            $(this).parent('form').remove();
-        });
-        $(window).off('resize.' + boxId);
-        return false;
-    },
-
-    /**
-     * 调整对话框的位置和大小
-     * @param {string} boxId 对话框ID
-     */
-    resize: function (boxId) {
-        var $box = $('#' + boxId);
-        if ($box.length === 0) return;
-        $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80);
-        $box.css('top', $(window).height() / 2 - $box.height() / 2)
-            .css('left', $(window).width() / 2 - $box.width() / 2)
-            .fadeIn('fast');
-    },
-
-    /**
-     * 按Esc键关闭对话框
-     * @param {string} boxId 对话框ID
-     */
-    escKeydown: function (boxId) {
-        $('#' + boxId).keydown(function (event) {
-            if (event.keyCode === 27) {
-                return Tools.close(boxId);
-            }
-        });
-    },
-
-    /**
      * 获取指定对象的关键字列表
      * @param {Object} obj 指定对象
      * @param {number} [sortBy] 是否排序，0：不排序；1：升序；-1：降序
@@ -527,6 +488,69 @@ var Tools = {
 };
 
 /**
+ * 对话框类
+ */
+var Dialog = {
+    /**
+     * 创建对话框
+     * @param {string} id 对话框ID
+     * @param {string} title 对话框标题
+     * @param {string} content 对话框内容
+     * @param {string} [style] 对话框样式
+     * @returns {jQuery} 对话框的jQuery对象
+     */
+    create: function (id, title, content, style) {
+        var html =
+            '<form>' +
+            '<div class="pd_cfg_box" id="{0}" style="{1}">'.replace('{0}', id).replace('{1}', style ? style : '') +
+            '  <h1>{0}<span>&times;</span></h1>'.replace('{0}', title) +
+            content +
+            '</div>' +
+            '</form>';
+        var $dialog = $(html).appendTo('body');
+        $dialog.on('click', '.pd_cfg_tips', function () {
+            return false;
+        }).keydown(function (event) {
+            if (event.keyCode === 27) {
+                return Dialog.close(id);
+            }
+        }).find('h1 > span').click(function () {
+            return Dialog.close(id);
+        }).end();
+        $(window).on('resize.' + id, function () {
+            Dialog.close(id);
+        });
+        return $dialog;
+    },
+
+    /**
+     * 显示或调整对话框
+     * @param {string} id 对话框ID
+     */
+    show: function (id) {
+        var $box = $('#' + id);
+        if ($box.length === 0) return;
+        $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80);
+        $box.css('top', $(window).height() / 2 - $box.height() / 2)
+            .css('left', $(window).width() / 2 - $box.width() / 2)
+            .fadeIn('fast');
+    },
+
+    /**
+     * 关闭对话框
+     * @param {string} id 对话框ID
+     * @returns {boolean} 返回false
+     */
+    close: function (id) {
+        $('#' + id).fadeOut('fast', function () {
+            $(this).parent('form').remove();
+        });
+        $(window).off('resize.' + id);
+        return false;
+    }
+};
+
+/**
  * 设置对话框类
  */
 var ConfigDialog = {
@@ -550,162 +574,155 @@ var ConfigDialog = {
         if ($('#pd_config').length > 0) return;
         ConfigDialog.read();
         var html =
-            '<form>' +
-            '<div id="pd_config" class="pd_cfg_box">' +
-            '  <h1>KF Online助手设置<span>&times;</span></h1>' +
-            '  <div class="pd_cfg_main">' +
-            '    <div class="pd_cfg_nav"><a href="#">查看日志</a><a href="#">导入/导出设置</a></div>' +
-            '    <div class="pd_cfg_panel">' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox" />自动KFB捐款</label></legend>' +
-            '        <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
+            '<div class="pd_cfg_main">' +
+            '  <div class="pd_cfg_nav"><a href="#">查看日志</a><a href="#">导入/导出设置</a></div>' +
+            '  <div class="pd_cfg_panel">' +
+            '    <fieldset>' +
+            '      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox" />自动KFB捐款</label></legend>' +
+            '      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
             '<a class="pd_cfg_tips" href="#" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%">[?]</a></label>' +
-            '        <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
+            '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
             '之后捐款 <a class="pd_cfg_tips" href="#" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</a></label><br />' +
-            '        <label><input id="pd_cfg_donation_after_vip_enabled" type="checkbox" />在获得VIP后才进行捐款 ' +
+            '      <label><input id="pd_cfg_donation_after_vip_enabled" type="checkbox" />在获得VIP后才进行捐款 ' +
             '<a class="pd_cfg_tips" href="#" title="在获得VIP资格后才进行捐款，如开启此选项，将只能在首页进行捐款">[?]</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
             '<a class="pd_cfg_tips" href="#" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</a></label></legend>' +
-            '        <fieldset>' +
-            '          <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
+            '      <fieldset>' +
+            '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
             '<a class="pd_cfg_tips" href="#" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</a></label></legend>' +
-            '        <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内攻击 ' +
+            '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内攻击 ' +
             '<a class="pd_cfg_tips" href="#" title="在距本回合结束前指定时间内才自动进行批量攻击，取值范围：{0}-{1}，留空表示不启用（注意不要设置得太接近最小值，以免错过攻击）">[?]</a></label>'
                 .replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime) +
-            '          <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
-            '            <tbody>' +
-            '              <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
+            '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
+            '          <tbody>' +
+            '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
             '</label></td><td style="width:62px">Lv.2：笨蛋</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="2" />次</label></td></tr>' +
-            '              <tr><td>Lv.3：大果冻史莱姆</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="3" />次</label></td>' +
+            '            <tr><td>Lv.3：大果冻史莱姆</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="3" />次</label></td>' +
             '<td>Lv.4：肉山</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="4" />次</label></td></tr>' +
-            '              <tr><td>Lv.5：大魔王</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="5" />次</label></td></tr>' +
-            '            </tbody>' +
-            '          </table>' +
-            '        </fieldset>' +
-            '        <label><input id="pd_cfg_auto_use_item_enabled" type="checkbox" data-disabled="#pd_cfg_auto_use_item_names" />自动使用刚掉落的道具 ' +
+            '            <tr><td>Lv.5：大魔王</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="5" />次</label></td></tr>' +
+            '          </tbody>' +
+            '        </table>' +
+            '      </fieldset>' +
+            '      <label><input id="pd_cfg_auto_use_item_enabled" type="checkbox" data-disabled="#pd_cfg_auto_use_item_names" />自动使用刚掉落的道具 ' +
             '<a class="pd_cfg_tips" href="#" title="自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，按Shift或Ctrl键可多选">[?]</a></label><br />' +
-            '        <label><select id="pd_cfg_auto_use_item_names" multiple="multiple" size="4">' +
+            '      <label><select id="pd_cfg_auto_use_item_names" multiple="multiple" size="4">' +
             '<option value="被遗弃的告白信">Lv.1：被遗弃的告白信</option><option value="学校天台的钥匙">Lv.1：学校天台的钥匙</option>' +
             '<option value="TMA最新作压缩包">Lv.1：TMA最新作压缩包</option><option value="LOLI的钱包">Lv.2：LOLI的钱包</option>' +
             '<option value="棒棒糖">Lv.2：棒棒糖</option><option value="蕾米莉亚同人漫画">Lv.3：蕾米莉亚同人漫画</option>' +
             '<option value="十六夜同人漫画">Lv.3：十六夜同人漫画</option><option value="档案室钥匙">Lv.4：档案室钥匙</option>' +
             '<option value="傲娇LOLI娇蛮音CD">Lv.4：傲娇LOLI娇蛮音CD</option><option value="整形优惠卷">Lv.5：整形优惠卷</option>' +
             '<option value="消逝之药">Lv.5：消逝之药</option></select></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
             '<a class="pd_cfg_tips" href="#" title="注意：抽取神秘盒子将延长争夺奖励的领取时间">[?]</a></label></legend>' +
-            '        <label>偏好的神秘盒子数字<input placeholder="例: 52,1,28,400" id="pd_cfg_favor_smbox_numbers" style="width:180px" type="text" />' +
+            '      <label>偏好的神秘盒子数字<input placeholder="例: 52,1,28,400" id="pd_cfg_favor_smbox_numbers" style="width:180px" type="text" />' +
             '<a class="pd_cfg_tips" href="#" title="例：52,1,28,400（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空">' +
             '[?]</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
             '<a class="pd_cfg_tips" href="#" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子），只在论坛首页生效">[?]</a></label></legend>' +
-            '        <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
+            '      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
             '<a class="pd_cfg_tips" href="#" title="在首页的网页标题上显示定时模式提示的方案">[?]</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend>首页相关</legend>' +
-            '        <label>@提醒<select id="pd_cfg_at_tips_handle_type" style="width:130px"><option value="no_highlight_1">取消已读提醒高亮，并在无提醒时补上消息框</option>' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend>首页相关</legend>' +
+            '      <label>@提醒<select id="pd_cfg_at_tips_handle_type" style="width:130px"><option value="no_highlight_1">取消已读提醒高亮，并在无提醒时补上消息框</option>' +
             '<option value="no_highlight_2">取消已读提醒高亮</option><option value="hide_box_1">不显示已读提醒的消息框</option><option value="hide_box_2">永不显示消息框</option>' +
             '<option value="default">保持默认</option><option value="at_change_to_cao">将@改为艹(其他和方式1相同)</option></select>' +
             '<a class="pd_cfg_tips" href="#" title="对首页上的有人@你的消息框进行处理的方案">[?]</a></label>' +
-            '        <label style="margin-left:10px"><input id="pd_cfg_hide_none_vip_enabled" type="checkbox" />无VIP时取消高亮 ' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_hide_none_vip_enabled" type="checkbox" />无VIP时取消高亮 ' +
             '<a class="pd_cfg_tips" href="#" title="在无VIP时去除首页的VIP标识高亮">[?]</a></label><br />' +
-            '        <label><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
+            '      <label><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
             '<a class="pd_cfg_tips" href="#" title="在神秘等级升级后进行提醒，只在首页生效">[?]</a></label>' +
-            '        <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
             '<a class="pd_cfg_tips" href="#" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend>帖子列表页面相关</legend>' +
-            '        <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend>帖子列表页面相关</legend>' +
+            '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
             '显示帖子页数快捷链接 <a class="pd_cfg_tips" href="#" title="在帖子列表页面中显示帖子页数快捷链接">[?]</a></label>' +
-            '        <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
+            '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
             '<a class="pd_cfg_tips" href="#" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</a></label><br />' +
-            '        <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>' +
+            '      <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>' +
             '<option value="20">20</option><option value="30">30</option></select>' +
             '<a class="pd_cfg_tips" href="#" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</a></label>' +
-            '        <label style="margin-left:10px"><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
             '<a class="pd_cfg_tips" href="#" title="在帖子列表中高亮今日新发表帖子的发表时间">[?]</a></label>' +
-            '      </fieldset>' +
-            '    </div>' +
-            '    <div class="pd_cfg_panel">' +
-            '      <fieldset>' +
-            '        <legend>帖子页面相关</legend>' +
-            '        <label><input id="pd_cfg_adjust_thread_content_width_enabled" type="checkbox" />调整帖子内容宽度 ' +
+            '    </fieldset>' +
+            '  </div>' +
+            '  <div class="pd_cfg_panel">' +
+            '    <fieldset>' +
+            '      <legend>帖子页面相关</legend>' +
+            '      <label><input id="pd_cfg_adjust_thread_content_width_enabled" type="checkbox" />调整帖子内容宽度 ' +
             '<a class="pd_cfg_tips" href="#" title="调整帖子内容宽度，使其保持一致">[?]</a></label>' +
-            '        <label style="margin-left:10px">帖子内容字体大小<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width:20px" type="text" />px ' +
+            '      <label style="margin-left:10px">帖子内容字体大小<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width:20px" type="text" />px ' +
             '<a class="pd_cfg_tips" href="#" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</a></label><br />' +
-            '        <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width:50px" type="text" />' +
+            '      <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width:50px" type="text" />' +
             '<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">' +
             '<a class="pd_cfg_tips" href="#" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空">[?]</a></label><br />' +
-            '        <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" />自定义各等级神秘颜色 ' +
+            '      <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" />自定义各等级神秘颜色 ' +
             '<a class="pd_cfg_tips" href="#" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</a></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_sm_color_config" href="#">详细设置&raquo;</a><br />' +
-            '        <label><input id="pd_cfg_modify_kf_other_domain_enabled" type="checkbox" />将绯月其它域名的链接修改为当前域名 ' +
+            '      <label><input id="pd_cfg_modify_kf_other_domain_enabled" type="checkbox" />将绯月其它域名的链接修改为当前域名 ' +
             '<a class="pd_cfg_tips" href="#" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</a></label><br />' +
-            '        <label><input id="pd_cfg_multi_quote_enabled" type="checkbox" />开启多重引用功能 ' +
+            '      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox" />开启多重引用功能 ' +
             '<a class="pd_cfg_tips" href="#" title="在帖子页面开启多重回复和多重引用功能">[?]</a></label>' +
-            '        <label style="margin-left:10px"><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
             '<a class="pd_cfg_tips" href="#" title="在帖子页面开启批量购买帖子的功能">[?]</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend>其它设置</legend>' +
-            '        <label>默认提示消息的持续时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width:32px" type="text" />秒 ' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend>其它设置</legend>' +
+            '      <label>默认提示消息的持续时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width:32px" type="text" />秒 ' +
             '<a class="pd_cfg_tips" href="#" title="设置为-1表示永久显示，默认值：15">[?]</a></label><br />' +
-            '        <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +
+            '      <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +
             '<a class="pd_cfg_tips" href="#" title="默认值：10">[?]</a></label>' +
-            '        <label style="margin-left:10px"><input id="pd_cfg_show_log_link_in_page_enabled" type="checkbox" />在页面上方显示日志链接 ' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_show_log_link_in_page_enabled" type="checkbox" />在页面上方显示日志链接 ' +
             '<a class="pd_cfg_tips" href="#" title="在论坛页面上方显示助手日志的链接">[?]</a></label><br />' +
-            '        <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox" />为侧边栏添加快捷导航 ' +
+            '      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox" />为侧边栏添加快捷导航 ' +
             '<a class="pd_cfg_tips" href="#" title="为侧边栏添加快捷导航的链接">[?]</a></label>' +
-            '        <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
             '<a class="pd_cfg_tips" href="#" title="将侧边栏修改为和手机相同的平铺样式">[?]</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend><label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
             '<a class="pd_cfg_tips" href="#" title="开启关注用户的功能，所关注的用户将被加注记号，可在下方或用户信息页面中添加或删除用户">[?]</a></label></legend>' +
-            '        <div class="pd_cfg_user_list" id="pd_cfg_follow_user_list"></div>' +
-            '        <label title="添加多个用户请用英文逗号分隔"><input style="width:200px" id="pd_cfg_add_follow_user" type="text" />' +
+            '      <div class="pd_cfg_user_list" id="pd_cfg_follow_user_list"></div>' +
+            '      <label title="添加多个用户请用英文逗号分隔"><input style="width:200px" id="pd_cfg_add_follow_user" type="text" />' +
             '<a href="#">添加</a><a href="#" style="margin-left:7px">清除所有</a></label><br />' +
-            '        <label><input id="pd_cfg_highlight_follow_user_thread_in_hp_enabled" type="checkbox" />高亮所关注用户的首页帖子链接 ' +
+            '      <label><input id="pd_cfg_highlight_follow_user_thread_in_hp_enabled" type="checkbox" />高亮所关注用户的首页帖子链接 ' +
             '<a class="pd_cfg_tips" href="#" title="高亮所关注用户的首页帖子链接">[?]</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_block_user_enabled" type="checkbox" />屏蔽用户 ' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend><label><input id="pd_cfg_block_user_enabled" type="checkbox" />屏蔽用户 ' +
             '<a class="pd_cfg_tips" href="#" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，可在下方或用户信息页面中添加或删除用户">[?]</a></label></legend>' +
-            '        <div class="pd_cfg_user_list" id="pd_cfg_block_user_list"></div>' +
-            '        <label title="添加多个用户请用英文逗号分隔"><input style="width:200px" id="pd_cfg_add_block_user" type="text" />' +
+            '      <div class="pd_cfg_user_list" id="pd_cfg_block_user_list"></div>' +
+            '      <label title="添加多个用户请用英文逗号分隔"><input style="width:200px" id="pd_cfg_add_block_user" type="text" />' +
             '<a href="#">添加</a><a href="#" style="margin-left:7px">清除所有</a></label>' +
-            '      </fieldset>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_auto_save_current_deposit_enabled" type="checkbox" />自动活期存款 ' +
+            '    </fieldset>' +
+            '    <fieldset>' +
+            '      <legend><label><input id="pd_cfg_auto_save_current_deposit_enabled" type="checkbox" />自动活期存款 ' +
             '<a class="pd_cfg_tips" href="#" title="在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发">[?]</a></label></legend>' +
-            '        <label>在当前收入已满<input id="pd_cfg_save_current_deposit_after_kfb" maxlength="10" style="width:45px" type="text" />KFB之后 ' +
+            '      <label>在当前收入已满<input id="pd_cfg_save_current_deposit_after_kfb" maxlength="10" style="width:45px" type="text" />KFB之后 ' +
             '<a class="pd_cfg_tips" href="#" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</a></label><br />' +
-            '        <label>将<input id="pd_cfg_save_current_deposit_kfb" maxlength="10" style="width:45px" type="text" />KFB存入活期存款 ' +
+            '      <label>将<input id="pd_cfg_save_current_deposit_kfb" maxlength="10" style="width:45px" type="text" />KFB存入活期存款 ' +
             '<a class="pd_cfg_tips" href="#" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</a></label>' +
-            '      </fieldset>' +
-            '    </div>' +
-            '  </div>' +
-            '  <div class="pd_cfg_btns">' +
-            '    <span class="pd_cfg_about"><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a> ' +
-            '<span style="color:#666">(V{0})</span></span>'.replace('{0}', version) +
-            '    <button>确定</button><button>取消</button><button>默认值</button>' +
+            '    </fieldset>' +
             '  </div>' +
             '</div>' +
-            '</form>';
-        var $dialog = $(html).appendTo('body');
+            '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a> ' +
+            '<span style="color:#666">(V{0})</span></span>'.replace('{0}', version) +
+            '  <button>确定</button><button>取消</button><button>默认值</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_config', 'KF Online助手设置', html);
 
-        $dialog.on('click', '.pd_cfg_tips', function () {
-            return false;
-        }).find('h1 > span, .pd_cfg_btns > button:eq(1)').click(function () {
-            return Tools.close('pd_config');
+        $dialog.find('.pd_cfg_btns > button:eq(1)').click(function () {
+            return Dialog.close('pd_config');
         }).end().find('.pd_cfg_btns > button:eq(2)').click(function (event) {
             event.preventDefault();
             if (window.confirm('是否重置所有设置？')) {
@@ -721,7 +738,7 @@ var ConfigDialog = {
             ConfigDialog.showImportOrExportSettingDialog();
         });
 
-        $('#pd_cfg_auto_use_item_names').keydown(function (event) {
+        $dialog.find('#pd_cfg_auto_use_item_names').keydown(function (event) {
             if (event.ctrlKey && (event.keyCode === 65 || event.keyCode === 97)) {
                 event.preventDefault();
                 $(this).children().each(function () {
@@ -730,23 +747,23 @@ var ConfigDialog = {
             }
         });
 
-        $('#pd_cfg_custom_my_sm_color_select').change(function () {
+        $dialog.find('#pd_cfg_custom_my_sm_color_select').change(function () {
             $('#pd_cfg_custom_my_sm_color').val($(this).val().toString().toUpperCase());
         });
 
-        $('#pd_cfg_custom_my_sm_color').keyup(function () {
+        $dialog.find('#pd_cfg_custom_my_sm_color').keyup(function () {
             var customMySmColor = $.trim($(this).val());
             if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
                 $('#pd_cfg_custom_my_sm_color_select').val(customMySmColor.toUpperCase());
             }
         });
 
-        $('#pd_cfg_custom_sm_color_config').click(function (event) {
+        $dialog.find('#pd_cfg_custom_sm_color_config').click(function (event) {
             event.preventDefault();
             ConfigDialog.showCustomSmColorConfigDialog();
         });
 
-        $('#pd_cfg_add_follow_user, #pd_cfg_add_block_user').keydown(function (event) {
+        $dialog.find('#pd_cfg_add_follow_user, #pd_cfg_add_block_user').keydown(function (event) {
             if (event.keyCode === 13) {
                 event.preventDefault();
                 $(this).next('a').click();
@@ -780,7 +797,7 @@ var ConfigDialog = {
             options = ConfigDialog.getNormalizationConfig(options);
             $.extend(Config, options);
             ConfigDialog.write();
-            Tools.close('pd_config');
+            Dialog.close('pd_config');
             if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
                 if (window.confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
                     location.reload();
@@ -801,11 +818,7 @@ var ConfigDialog = {
             $(this).triggerHandler('click');
         });
 
-        Tools.resize('pd_config');
-        Tools.escKeydown('pd_config');
-        $(window).on('resize.pd_config', function () {
-            Tools.resize('pd_config');
-        });
+        Dialog.show('pd_config');
     },
 
     /**
@@ -814,27 +827,18 @@ var ConfigDialog = {
     showImportOrExportSettingDialog: function () {
         if ($('#pd_im_or_ex_setting').length > 0) return;
         var html =
-            '<form>' +
-            '<div class="pd_cfg_box" id="pd_im_or_ex_setting">' +
-            '  <h1>导入或导出设置<span>&times;</span></h1>' +
-            '  <div class="pd_cfg_main">' +
-            '    <div>' +
-            '      <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br />' +
-            '      <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
-            '    </div>' +
-            '    <textarea id="pd_cfg_setting" style="width:420px;height:200px;word-break:break-all"></textarea>' +
+            '<div class="pd_cfg_main">' +
+            '  <div>' +
+            '    <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br />' +
+            '    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
             '  </div>' +
-            '  <div class="pd_cfg_btns">' +
-            '    <button>保存</button><button>取消</button>' +
-            '  </div>' +
+            '  <textarea id="pd_cfg_setting" style="width:420px;height:200px;word-break:break-all"></textarea>' +
             '</div>' +
-            '</form>';
-        var $dialog = $(html).appendTo('body');
-        $dialog.find('h1 > span').click(function () {
-            return Tools.close('pd_im_or_ex_setting');
-        }).end().find('.pd_cfg_tips').click(function () {
-            return false;
-        }).end().find('.pd_cfg_btns > button:first').click(function (event) {
+            '<div class="pd_cfg_btns">' +
+            '  <button>保存</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_im_or_ex_setting', '导入或导出设置', html);
+        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
             var options = $.trim($('#pd_cfg_setting').val());
             if (!options) return;
@@ -855,13 +859,9 @@ var ConfigDialog = {
             alert('设置已导入');
             location.reload();
         }).next('button').click(function () {
-            return Tools.close('pd_im_or_ex_setting');
+            return Dialog.close('pd_im_or_ex_setting');
         });
-        Tools.resize('pd_im_or_ex_setting');
-        Tools.escKeydown('pd_im_or_ex_setting');
-        $(window).on('resize.pd_im_or_ex_setting', function () {
-            Tools.resize('pd_im_or_ex_setting');
-        });
+        Dialog.show('pd_im_or_ex_setting');
         $('#pd_cfg_setting').val(JSON.stringify(Tools.getDifferentValueOfObject(ConfigDialog.defConfig, Config))).select();
     },
 
@@ -924,34 +924,25 @@ var ConfigDialog = {
     showCustomSmColorConfigDialog: function () {
         if ($('#pd_custom_sm_color_config').length > 0) return;
         var html =
-            '<form>' +
-            '<div class="pd_cfg_box" id="pd_custom_sm_color_config">' +
-            '  <h1>自定义各等级神秘颜色<span>&times;</span></h1>' +
-            '  <div class="pd_cfg_main">' +
-            '    <div style="border-bottom:1px solid #9191FF;margin-bottom:7px;padding-bottom:5px"><strong>示例' +
+            '<div class="pd_cfg_main">' +
+            '  <div style="border-bottom:1px solid #9191FF;margin-bottom:7px;padding-bottom:5px"><strong>示例' +
             '（<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">常用配色表</a> / <a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a>）：' +
             '</strong><br /><b>等级范围：</b>4-4 <b>颜色：</b><span style="color:#0000FF">#0000FF</span><br /><b>等级范围：</b>10-49 <b>颜色：</b>' +
             '<span style="color:#00FF00">#00FF00</span><br /><b>等级范围：</b>900-MAX <b>颜色：</b><span style="color:#FF0000">#FF0000</span></div>' +
-            '    <ul id="pd_cfg_custom_sm_color_list"></ul>' +
-            '    <div style="margin-top:5px" id="pd_cfg_custom_sm_color_add_btns"><a href="#">增加1个</a><a href="#" style="margin-left:7px">增加5个</a>' +
+            '  <ul id="pd_cfg_custom_sm_color_list"></ul>' +
+            '  <div style="margin-top:5px" id="pd_cfg_custom_sm_color_add_btns"><a href="#">增加1个</a><a href="#" style="margin-left:7px">增加5个</a>' +
             '<a href="#" style="margin-left:7px">清除所有</a></div>' +
-            '  </div>' +
-            '  <div class="pd_cfg_btns">' +
-            '    <span class="pd_cfg_about"><a href="#">导入/导出配色方案</a></span>' +
-            '    <button>确定</button><button>取消</button>' +
-            '  </div>' +
             '</div>' +
-            '</form>';
-        var $dialog = $(html).appendTo('body');
-        $dialog.find('h1 > span').click(function () {
-            return Tools.close('pd_custom_sm_color_config');
-        }).end().find('.pd_cfg_tips').click(function () {
-            return false;
-        }).end().find('.pd_cfg_btns > button:last').click(function () {
-            return Tools.close('pd_custom_sm_color_config');
+            '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a href="#">导入/导出配色方案</a></span>' +
+            '  <button>确定</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_custom_sm_color_config', '自定义各等级神秘颜色', html);
+        $dialog.find('.pd_cfg_btns > button:last').click(function () {
+            return Dialog.close('pd_custom_sm_color_config');
         });
 
-        $('#pd_cfg_custom_sm_color_list').on('keyup', '.pd_cfg_sm_color', function () {
+        $dialog.find('#pd_cfg_custom_sm_color_list').on('keyup', '.pd_cfg_sm_color', function () {
             var $this = $(this);
             var color = $.trim($this.val());
             if (/^#[0-9a-fA-F]{6}$/.test(color)) {
@@ -976,23 +967,23 @@ var ConfigDialog = {
                 .replace(/\{2\}/g, typeof data.color === 'undefined' ? '' : data.color);
         };
 
-        $('#pd_cfg_custom_sm_color_add_btns').find('a:lt(2)').click(function (event) {
+        $dialog.find('#pd_cfg_custom_sm_color_add_btns').find('a:lt(2)').click(function (event) {
             event.preventDefault();
             var num = 1;
             if ($(this).is('#pd_cfg_custom_sm_color_add_btns > a:eq(1)')) num = 5;
             for (var i = 1; i <= num; i++) {
                 $('#pd_cfg_custom_sm_color_list').append(getSmColorListLine());
             }
-            Tools.resize('pd_custom_sm_color_config');
+            Dialog.show('pd_custom_sm_color_config');
         }).end().find('a:last').click(function (event) {
             event.preventDefault();
             if (window.confirm('是否清除所有设置？')) {
                 $('#pd_cfg_custom_sm_color_list').empty();
-                Tools.resize('pd_custom_sm_color_config');
+                Dialog.show('pd_custom_sm_color_config');
             }
         });
 
-        $('.pd_cfg_about a').click(function (event) {
+        $dialog.find('.pd_cfg_about a').click(function (event) {
             event.preventDefault();
             ConfigDialog.showImportOrExportSmColorConfigDialog();
         });
@@ -1054,15 +1045,11 @@ var ConfigDialog = {
                 });
                 Config.customSmColorConfigList = list;
                 ConfigDialog.write();
-                Tools.close('pd_custom_sm_color_config');
+                Dialog.close('pd_custom_sm_color_config');
             }
         });
 
-        Tools.resize('pd_custom_sm_color_config');
-        Tools.escKeydown('pd_custom_sm_color_config');
-        $(window).on('resize.pd_custom_sm_color_config', function () {
-            Tools.resize('pd_custom_sm_color_config');
-        });
+        Dialog.show('pd_custom_sm_color_config');
     },
 
     /**
@@ -1071,28 +1058,19 @@ var ConfigDialog = {
     showImportOrExportSmColorConfigDialog: function () {
         if ($('#pd_im_or_ex_sm_color_config').length > 0) return;
         var html =
-            '<form>' +
-            '<div class="pd_cfg_box" id="pd_im_or_ex_sm_color_config">' +
-            '  <h1>导入或导出配色方案<span>&times;</span></h1>' +
-            '  <div class="pd_cfg_main">' +
-            '    <div>' +
-            '      <strong>导入配色方案：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br />' +
-            '      <strong>导出配色方案：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
-            '    </div>' +
-            '    <textarea id="pd_cfg_sm_color_config" style="width:420px;height:200px;word-break:break-all"></textarea>' +
+            '<div class="pd_cfg_main">' +
+            '  <div>' +
+            '    <strong>导入配色方案：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br />' +
+            '    <strong>导出配色方案：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
             '  </div>' +
-            '  <div class="pd_cfg_btns">' +
-            '    <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a></span>' +
-            '    <button>保存</button><button>取消</button>' +
-            '  </div>' +
+            '  <textarea id="pd_cfg_sm_color_config" style="width:420px;height:200px;word-break:break-all"></textarea>' +
             '</div>' +
-            '</form>';
-        var $dialog = $(html).appendTo('body');
-        $dialog.find('h1 > span').click(function () {
-            return Tools.close('pd_im_or_ex_sm_color_config');
-        }).end().find('.pd_cfg_tips').click(function () {
-            return false;
-        }).end().find('.pd_cfg_btns > button:first').click(function (event) {
+            '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a></span>' +
+            '  <button>保存</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_im_or_ex_sm_color_config', '导入或导出配色方案', html);
+        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
             var options = $.trim($('#pd_cfg_sm_color_config').val());
             if (!options) return;
@@ -1112,14 +1090,10 @@ var ConfigDialog = {
             alert('配色方案已导入');
             location.reload();
         }).next('button').click(function () {
-            return Tools.close('pd_im_or_ex_sm_color_config');
+            return Dialog.close('pd_im_or_ex_sm_color_config');
         });
-        Tools.resize('pd_im_or_ex_sm_color_config');
-        Tools.escKeydown('pd_im_or_ex_sm_color_config');
-        $(window).on('resize.pd_im_or_ex_sm_color_config', function () {
-            Tools.resize('pd_im_or_ex_sm_color_config');
-        });
-        $('#pd_cfg_sm_color_config').val(JSON.stringify(Config.customSmColorConfigList)).select();
+        Dialog.show('pd_im_or_ex_sm_color_config');
+        $dialog.find('#pd_cfg_sm_color_config').val(JSON.stringify(Config.customSmColorConfigList)).select();
     },
 
     /**
@@ -1762,47 +1736,42 @@ var Log = {
      */
     show: function () {
         if ($('#pd_log').length > 0) return;
-        Tools.close('pd_config');
+        Dialog.close('pd_config');
         ConfigDialog.read();
         var html =
-            '<form>' +
-            '<div id="pd_log" class="pd_cfg_box">' +
-            '  <h1>KF Online助手日志<span>&times;</span></h1>' +
-            '  <div class="pd_cfg_main">' +
-            '    <div class="pd_log_nav">' +
-            '      <a class="pd_disabled_link" href="#">&lt;&lt;</a>' +
-            '      <a style="padding:0 7px" class="pd_disabled_link" href="#">&lt;</a>' +
-            '      <h2>暂无日志</h2>' +
-            '      <a style="padding:0 7px" class="pd_disabled_link" href="#">&gt;</a>' +
-            '      <a class="pd_disabled_link" href="#">&gt;&gt;</a>' +
+            '<div class="pd_cfg_main">' +
+            '  <div class="pd_log_nav">' +
+            '    <a class="pd_disabled_link" href="#">&lt;&lt;</a>' +
+            '    <a style="padding:0 7px" class="pd_disabled_link" href="#">&lt;</a>' +
+            '    <h2>暂无日志</h2>' +
+            '    <a style="padding:0 7px" class="pd_disabled_link" href="#">&gt;</a>' +
+            '    <a class="pd_disabled_link" href="#">&gt;&gt;</a>' +
+            '  </div>' +
+            '  <fieldset>' +
+            '    <legend>日志内容</legend>' +
+            '    <div>' +
+            '      <strong>排序方式：</strong>' +
+            '      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type" value="time" checked="checked" />按时间</label>' +
+            '      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type" value="type" />按类别</label>' +
             '    </div>' +
-            '    <fieldset>' +
-            '      <legend>日志内容</legend>' +
-            '      <div>' +
-            '        <strong>排序方式：</strong>' +
-            '        <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type" value="time" checked="checked" />按时间</label>' +
-            '        <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type" value="type" />按类别</label>' +
-            '      </div>' +
-            '      <div class="pd_stat" id="pd_log_content">暂无日志</div>' +
-            '    </fieldset>' +
-            '    <fieldset>' +
-            '      <legend>统计结果</legend>' +
-            '      <div>' +
-            '        <strong>统计范围：</strong>' +
-            '        <label title="显示当天的统计结果"><input type="radio" name="pd_log_stat_type" value="cur" checked="checked" />当天</label>' +
-            '        <label title="显示距该日N天内的统计结果"><input type="radio" name="pd_log_stat_type" value="custom" /></label>' +
+            '    <div class="pd_stat" id="pd_log_content">暂无日志</div>' +
+            '  </fieldset>' +
+            '  <fieldset>' +
+            '    <legend>统计结果</legend>' +
+            '    <div>' +
+            '      <strong>统计范围：</strong>' +
+            '      <label title="显示当天的统计结果"><input type="radio" name="pd_log_stat_type" value="cur" checked="checked" />当天</label>' +
+            '      <label title="显示距该日N天内的统计结果"><input type="radio" name="pd_log_stat_type" value="custom" /></label>' +
             '<label title="显示距该日N天内的统计结果"><input id="pd_log_stat_days" type="text" style="width:22px" maxlength="3" />天内</label>' +
-            '        <label title="显示全部统计结果"><input type="radio" name="pd_log_stat_type" value="all" />全部</label>' +
-            '      </div>' +
-            '      <div class="pd_stat" id="pd_log_stat">暂无日志</div>' +
-            '    </fieldset>' +
-            '  </div>' +
-            '  <div class="pd_cfg_btns">' +
-            '    <button>关闭</button><button>清除日志</button>' +
-            '  </div>' +
+            '      <label title="显示全部统计结果"><input type="radio" name="pd_log_stat_type" value="all" />全部</label>' +
+            '    </div>' +
+            '    <div class="pd_stat" id="pd_log_stat">暂无日志</div>' +
+            '  </fieldset>' +
             '</div>' +
-            '</form>';
-        var $dialog = $(html).appendTo('body');
+            '<div class="pd_cfg_btns">' +
+            '  <button>关闭</button><button>清除日志</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_log', 'KF Online助手日志', html);
 
         Log.read();
         var dateList = [];
@@ -1869,10 +1838,9 @@ var Log = {
             .end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click()
             .end().find('#pd_log_stat_days').val(Config.logStatDays);
 
-        Tools.resize('pd_log');
-        Tools.escKeydown('pd_log');
-        $dialog.find('h1 > span, .pd_cfg_btns > button:first').focus().click(function () {
-            return Tools.close('pd_log');
+        Dialog.show('pd_log');
+        $dialog.find('.pd_cfg_btns > button:first').focus().click(function () {
+            return Dialog.close('pd_log');
         }).next('button').click(function (event) {
             event.preventDefault();
             if (window.confirm('是否清除所有日志？')) {
@@ -1880,9 +1848,6 @@ var Log = {
                 alert('日志已清除');
                 location.reload();
             }
-        });
-        $(window).on('resize.pd_log', function () {
-            Tools.resize('pd_log');
         });
     },
 
@@ -3115,6 +3080,42 @@ var Item = {
     },
 
     /**
+     * 通过道具名称获取道具种类ID
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具种类ID
+     */
+    getItemTypeIdByItemName: function (itemName) {
+        switch (itemName) {
+            case '零时迷子的碎片':
+                return 1;
+            case '被遗弃的告白信':
+                return 2;
+            case '学校天台的钥匙':
+                return 3;
+            case 'TMA最新作压缩包':
+                return 4;
+            case 'LOLI的钱包':
+                return 5;
+            case '棒棒糖':
+                return 6;
+            case '蕾米莉亚同人漫画':
+                return 11;
+            case '十六夜同人漫画':
+                return 7;
+            case '档案室钥匙':
+                return 8;
+            case '傲娇LOLI娇蛮音CD':
+                return 12;
+            case '整形优惠卷':
+                return 9;
+            case '消逝之药':
+                return 10;
+            default:
+                return 0;
+        }
+    },
+
+    /**
      * 在批量攻击后使用刚掉落的指定种类ID列表的道具
      * @param {Object} itemNameList 刚掉落的道具名称列表
      */
@@ -3124,7 +3125,7 @@ var Item = {
             totalCount++;
         }
         if (!totalCount) return;
-        var $getItemListMsg = KFOL.showWaitMsg('正在获取道具列表，请稍后...', true);
+        var $getItemListMsg = KFOL.showWaitMsg('正在获取刚掉落道具的信息，请稍后...', true);
         var itemList = [];
         var count = 0;
         $(document).queue('GetItemList', []);
@@ -3136,11 +3137,7 @@ var Item = {
                     count++;
                     var matches = html.match(/<tr><td>.+?<\/td><td>\d+级道具<\/td><td>.+?<\/td><td><a href="kf_fw_ig_my\.php\?pro=\d+">查看详细<\/a><\/td><\/tr>/gi);
                     if (matches) {
-                        console.log('num: ' + num);
                         var totalNum = matches.length - num;
-                        console.log('matches: ' + matches);
-                        console.log('matches.length: ' + matches.length);
-                        console.log('totalNum: ' + totalNum);
                         if (totalNum < 0) totalNum = 0;
                         for (var i = matches.length - 1; i >= totalNum; i--) {
                             var itemIdMatches = /kf_fw_ig_my\.php\?pro=(\d+)/i.exec(matches[i]);
@@ -3155,7 +3152,6 @@ var Item = {
                     }
                     if (count === totalCount) {
                         KFOL.removePopTips($getItemListMsg);
-                        console.log(itemList);
                         if (itemList.length > 0) {
                             KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
                                     .replace('{0}', itemList.length)
@@ -3240,42 +3236,6 @@ var Item = {
             $(document).dequeue('UseItemList');
         };
         $(document).dequeue('GetItemList');
-    },
-
-    /**
-     * 通过道具名称获取道具种类ID
-     * @param {string} itemName 道具名称
-     * @returns {number} 道具种类ID
-     */
-    getItemTypeIdByItemName: function (itemName) {
-        switch (itemName) {
-            case '零时迷子的碎片':
-                return 1;
-            case '被遗弃的告白信':
-                return 2;
-            case '学校天台的钥匙':
-                return 3;
-            case 'TMA最新作压缩包':
-                return 4;
-            case 'LOLI的钱包':
-                return 5;
-            case '棒棒糖':
-                return 6;
-            case '蕾米莉亚同人漫画':
-                return 11;
-            case '十六夜同人漫画':
-                return 7;
-            case '档案室钥匙':
-                return 8;
-            case '傲娇LOLI娇蛮音CD':
-                return 12;
-            case '整形优惠卷':
-                return 9;
-            case '消逝之药':
-                return 10;
-            default:
-                return 0;
-        }
     }
 };
 
@@ -3993,9 +3953,9 @@ var Loot = {
                                 if (Config.autoUseItemEnabled && Config.autoUseItemNames.length > 0 && typeof gain['item'] !== 'undefined') {
                                     var itemNameList = {};
                                     for (var itemName in gain['item']) {
-                                        if ($.inArray(itemName, Config.autoUseItemNames) === -1) continue;
-                                        if (typeof itemNameList[itemName] === 'undefined') itemNameList[itemName] = 1;
-                                        else itemNameList[itemName]++;
+                                        if ($.inArray(itemName, Config.autoUseItemNames) > -1) {
+                                            itemNameList[itemName] = gain['item'][itemName];
+                                        }
                                     }
                                     if (!$.isEmptyObject(itemNameList))
                                         Item.useItemsAfterBatchAttack(itemNameList);
@@ -4205,25 +4165,14 @@ var Loot = {
     showAttackLogDialog: function (type, log) {
         if ($('#pd_attack_log').length > 0) return;
         var html =
-            '<form>' +
-            '<div class="pd_cfg_box" id="pd_attack_log" style="z-index:1002">' +
-            '  <h1>{0}日志<span>&times;</span></h1>'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击') +
-            '  <div class="pd_cfg_main">' +
-            '    <textarea style="width:{0}px;height:{1}px;margin:5px 0" readonly="readonly"></textarea>'
+            '<div class="pd_cfg_main">' +
+            '  <textarea style="width:{0}px;height:{1}px;margin:5px 0" readonly="readonly"></textarea>'
                 .replace('{0}', type === 2 ? 700 : 850)
                 .replace('{1}', type === 2 ? 270 : 350) +
-            '  </div>' +
-            '</div>' +
-            '</form>';
-        var $dialog = $(html).appendTo('body');
-        Tools.resize('pd_attack_log');
-        Tools.escKeydown('pd_attack_log');
-        $dialog.find('h1 > span').click(function () {
-            return Tools.close('pd_attack_log');
-        }).end().find('textarea').val(log).focus();
-        $(window).on('resize.pd_attack_log', function () {
-            Tools.resize('pd_attack_log');
-        });
+            '</div>';
+        var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html, 'z-index:1002');
+        Dialog.show('pd_attack_log');
+        $dialog.find('textarea').val(log).focus();
     }
 };
 
@@ -5132,23 +5081,12 @@ var KFOL = {
             }
             if ($('#pd_copy_buyer_list').length > 0) return;
             var html =
-                '<form>' +
-                '<div class="pd_cfg_box" id="pd_copy_buyer_list">' +
-                '  <h1>购买人名单<span>&times;</span></h1>' +
-                '  <div class="pd_cfg_main">' +
-                '    <textarea style="width:200px;height:300px;margin:5px 0" readonly="readonly"></textarea>' +
-                '  </div>' +
-                '</div>' +
-                '</form>';
-            var $dialog = $(html).appendTo('body');
-            Tools.resize('pd_copy_buyer_list');
-            Tools.escKeydown('pd_copy_buyer_list');
-            $dialog.find('h1 > span').click(function () {
-                return Tools.close('pd_copy_buyer_list');
-            }).end().find('textarea').val(buyerList.join('\n')).select().focus();
-            $(window).on('resize.pd_copy_buyer_list', function () {
-                Tools.resize('pd_copy_buyer_list');
-            });
+                '<div class="pd_cfg_main">' +
+                '  <textarea style="width:200px;height:300px;margin:5px 0" readonly="readonly"></textarea>' +
+                '</div>';
+            var $dialog = Dialog.create('pd_copy_buyer_list', '购买人名单', html);
+            Dialog.show('pd_copy_buyer_list');
+            $dialog.find('textarea').val(buyerList.join('\n')).select().focus();
         });
     },
 
@@ -5158,29 +5096,18 @@ var KFOL = {
      */
     showStatReplyersDialog: function (replyerList) {
         var html =
-            '<form>' +
-            '<div class="pd_cfg_box" id="pd_replyer_list">' +
-            '  <h1>回帖者名单<span>&times;</span></h1>' +
-            '  <div class="pd_cfg_main">' +
-            '    <div id="pd_replyer_list_filter" style="margin-top:5px">' +
-            '      <label><input type="checkbox" checked="checked" />显示楼层号</label>' +
-            '      <label><input type="checkbox" />去除重复</label>' +
-            '      <label><input type="checkbox" />去除楼主</label>' +
-            '    </div>' +
-            '    <div style="color:#FF0000" id="pd_replyer_list_stat"></div>' +
-            '    <textarea style="width:250px;height:300px;margin:5px 0" readonly="readonly"></textarea>' +
+            '<div class="pd_cfg_main">' +
+            '  <div id="pd_replyer_list_filter" style="margin-top:5px">' +
+            '    <label><input type="checkbox" checked="checked" />显示楼层号</label>' +
+            '    <label><input type="checkbox" />去除重复</label>' +
+            '    <label><input type="checkbox" />去除楼主</label>' +
             '  </div>' +
-            '</div>' +
-            '</form>';
-        var $dialog = $(html).appendTo('body');
-        Tools.resize('pd_replyer_list');
-        Tools.escKeydown('pd_replyer_list');
-        $dialog.find('h1 > span').click(function () {
-            return Tools.close('pd_replyer_list');
-        }).end().find('textarea').data('replyer_list', JSON.stringify(replyerList));
-        $(window).on('resize.pd_replyer_list', function () {
-            Tools.resize('pd_replyer_list');
-        });
+            '  <div style="color:#FF0000" id="pd_replyer_list_stat"></div>' +
+            '  <textarea style="width:250px;height:300px;margin:5px 0" readonly="readonly"></textarea>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_replyer_list', '回帖者名单', html);
+        Dialog.show('pd_replyer_list');
+        $dialog.find('textarea').data('replyer_list', JSON.stringify(replyerList));
         var filterList = function () {
             var $filterNodes = $('#pd_replyer_list_filter input');
             var isShowFloor = $filterNodes.eq(0).prop('checked'),
@@ -5217,7 +5144,7 @@ var KFOL = {
             $dialog.find('textarea').val(content);
             $('#pd_replyer_list_stat').html('共有<b>{0}</b>条项目'.replace('{0}', num));
         }
-        $('#pd_replyer_list_filter').find('input').click(filterList);
+        $dialog.find('#pd_replyer_list_filter input').click(filterList);
         filterList();
     },
 
