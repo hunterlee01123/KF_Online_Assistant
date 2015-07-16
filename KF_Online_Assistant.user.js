@@ -14,6 +14,10 @@
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
+/**
+ * @todo 增加在批量攻击后使用道具的功能
+ * @todo 增加自定义怪物名称的功能
+ */
 // 版本号
 var version = '4.1.0';
 /**
@@ -37,6 +41,10 @@ var Config = {
     attackAfterTime: 0,
     // 批量攻击的目标列表，格式：{攻击ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
+    // 是否自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，true：开启；false：关闭
+    autoUseItemEnabled: false,
+    // 自动使用批量攻击后刚掉落的道具的名称，例：['被遗弃的告白信','学校天台的钥匙','LOLI的钱包']
+    autoUseItemNames: [],
     // 是否自动抽取神秘盒子，true：开启；false：关闭
     autoDrawSmbox2Enabled: false,
     // 偏好的神秘盒子数字，例：[52,1,28,400]（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空
@@ -576,6 +584,15 @@ var ConfigDialog = {
             '            </tbody>' +
             '          </table>' +
             '        </fieldset>' +
+            '        <label><input id="pd_cfg_auto_use_item_enabled" type="checkbox" data-disabled="#pd_cfg_auto_use_item_names" />自动使用刚掉落的道具 ' +
+            '<a class="pd_cfg_tips" href="#" title="自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，按Shift或Ctrl键可多选">[?]</a></label><br />' +
+            '        <label><select id="pd_cfg_auto_use_item_names" multiple="multiple" size="4">' +
+            '<option value="被遗弃的告白信">Lv.1：被遗弃的告白信</option><option value="学校天台的钥匙">Lv.1：学校天台的钥匙</option>' +
+            '<option value="TMA最新作压缩包">Lv.1：TMA最新作压缩包</option><option value="LOLI的钱包">Lv.2：LOLI的钱包</option>' +
+            '<option value="棒棒糖">Lv.2：棒棒糖</option><option value="蕾米莉亚同人漫画">Lv.3：蕾米莉亚同人漫画</option>' +
+            '<option value="十六夜同人漫画">Lv.3：十六夜同人漫画</option><option value="档案室钥匙">Lv.4：档案室钥匙</option>' +
+            '<option value="傲娇LOLI娇蛮音CD">Lv.4：傲娇LOLI娇蛮音CD</option><option value="整形优惠卷">Lv.5：整形优惠卷</option>' +
+            '<option value="消逝之药">Lv.5：消逝之药</option></select></label>' +
             '      </fieldset>' +
             '      <fieldset>' +
             '        <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
@@ -1119,6 +1136,8 @@ var ConfigDialog = {
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
+        $('#pd_cfg_auto_use_item_enabled').prop('checked', Config.autoUseItemEnabled);
+        $('#pd_cfg_auto_use_item_names').val(Config.autoUseItemNames);
         $('#pd_cfg_auto_draw_smbox_enabled').prop('checked', Config.autoDrawSmbox2Enabled);
         $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
         $('#pd_cfg_auto_refresh_enabled').prop('checked', Config.autoRefreshEnabled);
@@ -1179,6 +1198,8 @@ var ConfigDialog = {
             if (!id) return;
             options.batchAttackList[id] = attackNum;
         });
+        options.autoUseItemEnabled = $('#pd_cfg_auto_use_item_enabled').prop('checked');
+        options.autoUseItemNames = $('#pd_cfg_auto_use_item_names').val();
         options.autoDrawSmbox2Enabled = $('#pd_cfg_auto_draw_smbox_enabled').prop('checked');
         options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
         options.autoRefreshEnabled = $('#pd_cfg_auto_refresh_enabled').prop('checked');
@@ -1431,6 +1452,22 @@ var ConfigDialog = {
                 if (totalAttackNum > Config.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
             }
             else settings.batchAttackList = defConfig.batchAttackList;
+        }
+        settings.autoUseItemEnabled = typeof options.autoUseItemEnabled === 'boolean' ?
+            options.autoUseItemEnabled : defConfig.autoUseItemEnabled;
+        if (typeof options.autoUseItemNames !== 'undefined') {
+            var autoUseItemNames = options.autoUseItemNames;
+            var allowTypes = ['被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
+                '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
+            if ($.isArray(autoUseItemNames)) {
+                settings.autoUseItemNames = [];
+                for (var i in autoUseItemNames) {
+                    if ($.inArray(autoUseItemNames[i], allowTypes) > -1) {
+                        settings.autoUseItemNames.push(autoUseItemNames[i]);
+                    }
+                }
+            }
+            else settings.autoUseItemNames = defConfig.autoUseItemNames;
         }
         settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
             options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
@@ -2157,7 +2194,9 @@ var Item = {
                         }
                         else {
                             var $itemUsed = settings.$itemLine.find('td:nth-child(3)');
-                            $itemUsed.text(parseInt($itemUsed.text()) - successNum);
+                            var itemUsedNum = parseInt($itemUsed.text()) - successNum;
+                            if (!itemUsedNum || itemUsedNum < 0) itemUsedNum = 0;
+                            $itemUsed.text(itemUsedNum);
                         }
                         var $totalEnergyNum = $('.kf_fw_ig1 td:contains("道具恢复能量")').find('span');
                         if ($totalEnergyNum.length === 1) {
@@ -2219,7 +2258,7 @@ var Item = {
                 itemName = $itemLine.find('td:nth-child(2)').text(),
                 itemUsedNum = parseInt($itemLine.find('td:nth-child(3)').text()),
                 itemListUrl = $itemLine.find('td:last-child').find('a').attr('href');
-            if (!itemUsedNum) {
+            if (!itemUsedNum || itemUsedNum <= 0) {
                 alert('本级没有已使用的道具');
                 return;
             }
@@ -2401,7 +2440,9 @@ var Item = {
                         }
                         else {
                             var $itemUsed = settings.$itemLine.find('td:nth-child(3)');
-                            $itemUsed.text(parseInt($itemUsed.text()) - successNum);
+                            var itemUsedNum = parseInt($itemUsed.text()) - successNum - failNum;
+                            if (!itemUsedNum || itemUsedNum < 0) itemUsedNum = 0;
+                            $itemUsed.text(itemUsedNum);
                         }
                         var $totalEnergyNum = $('.kf_fw_ig1 td:contains("道具恢复能量")').find('span');
                         if ($totalEnergyNum.length === 1) {
@@ -2509,7 +2550,7 @@ var Item = {
      * @returns {Object|number} 积分对象，-1表示使用失败
      */
     getCreditsViaResponse: function (response, itemTypeId) {
-        if (/错误的物品编号/.test(response) || /无法再使用/.test(response) || /该道具已经被使用/.test(response)) {
+        if (/(错误的物品编号|无法再使用|该道具已经被使用)/.test(response)) {
             return -1;
         }
         if (itemTypeId >= 7 && itemTypeId <= 12) {
@@ -2647,8 +2688,10 @@ var Item = {
                                 });
                         }
                         else {
-                            var $itemUsed = settings.$itemLine.find('td:nth-child(3)');
-                            $itemUsed.text(parseInt($itemUsed.text()) - successNum);
+                            var $itemUsable = settings.$itemLine.find('td:nth-child(3)');
+                            var itemUsableNum = parseInt($itemUsable.text()) - successNum;
+                            if (!itemUsableNum || itemUsableNum < 0) itemUsableNum = 0;
+                            $itemUsable.text(itemUsableNum);
                         }
                         if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
                         $('.pd_result:last').append('<li class="pd_stat"><b>统计结果：</b>{0}</li>'.replace('{0}', resultStat));
@@ -2686,9 +2729,9 @@ var Item = {
             var $itemLine = $this.closest('tr'),
                 itemLevel = parseInt($itemLine.find('td:first-child').text()),
                 itemName = $itemLine.find('td:nth-child(2)').text(),
-                itemUseableNum = parseInt($itemLine.find('td:nth-child(3)').text()),
+                itemUsableNum = parseInt($itemLine.find('td:nth-child(3)').text()),
                 itemListUrl = $itemLine.find('td:last-child').find('a').attr('href');
-            if (!itemUseableNum) {
+            if (!itemUsableNum || itemUsableNum <= 0) {
                 alert('本级没有可用的道具');
                 return;
             }
@@ -2696,7 +2739,7 @@ var Item = {
                 window.prompt('你要使用多少个【Lv.{0}：{1}】道具？'
                         .replace('{0}', itemLevel)
                         .replace('{1}', itemName)
-                    , itemUseableNum)
+                    , itemUsableNum)
             );
             if (num > 0) {
                 KFOL.removePopTips($('.pd_pop_tips'));
@@ -3069,6 +3112,170 @@ var Item = {
             });
             $(document).dequeue('BatchBuyItems');
         });
+    },
+
+    /**
+     * 在批量攻击后使用刚掉落的指定种类ID列表的道具
+     * @param {Object} itemNameList 刚掉落的道具名称列表
+     */
+    useItemsAfterBatchAttack: function (itemNameList) {
+        var totalCount = 0;
+        for (var k in itemNameList) {
+            totalCount++;
+        }
+        if (!totalCount) return;
+        var $getItemListMsg = KFOL.showWaitMsg('正在获取道具列表，请稍后...', true);
+        var itemList = [];
+        var count = 0;
+        $(document).queue('GetItemList', []);
+        $.each(itemNameList, function (itemName, num) {
+            var itemTypeId = Item.getItemTypeIdByItemName(itemName);
+            if (!itemTypeId) return;
+            $(document).queue('GetItemList', function () {
+                $.get('kf_fw_ig_my.php?lv=' + itemTypeId, function (html) {
+                    count++;
+                    var matches = html.match(/<tr><td>.+?<\/td><td>\d+级道具<\/td><td>.+?<\/td><td><a href="kf_fw_ig_my\.php\?pro=\d+">查看详细<\/a><\/td><\/tr>/gi);
+                    if (matches) {
+                        console.log('num: ' + num);
+                        var totalNum = matches.length - num;
+                        console.log('matches: ' + matches);
+                        console.log('matches.length: ' + matches.length);
+                        console.log('totalNum: ' + totalNum);
+                        if (totalNum < 0) totalNum = 0;
+                        for (var i = matches.length - 1; i >= totalNum; i--) {
+                            var itemIdMatches = /kf_fw_ig_my\.php\?pro=(\d+)/i.exec(matches[i]);
+                            var itemLevelMatches = /<td>(\d+)级道具<\/td>/i.exec(matches[i]);
+                            var itemNameMatches = /<tr><td>(.+?)<\/td>/i.exec(matches[i]);
+                            itemList.push({
+                                itemId: parseInt(itemIdMatches[1]),
+                                itemLevel: parseInt(itemLevelMatches[1]),
+                                itemName: itemNameMatches[1]
+                            });
+                        }
+                    }
+                    if (count === totalCount) {
+                        KFOL.removePopTips($getItemListMsg);
+                        console.log(itemList);
+                        if (itemList.length > 0) {
+                            KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                                    .replace('{0}', itemList.length)
+                                , true);
+                            useItemList(itemList);
+                        }
+                    }
+                    window.setTimeout(function () {
+                        $(document).dequeue('GetItemList');
+                    }, Config.defAjaxInterval);
+                }, 'html');
+            });
+        });
+        /**
+         * 使用指定列表的道具
+         * @param {Array} itemList 道具列表
+         */
+        var useItemList = function (itemList) {
+            $(document).queue('UseItemList', []);
+            $.each(itemList, function (index, item) {
+                $(document).queue('UseItemList', function () {
+                    $.get('kf_fw_ig_doit.php?id=' + item.itemId, function (html) {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
+                        if (msgMatches) {
+                            var stat = {'有效道具': 0, '无效道具': 0};
+                            var credits = Item.getCreditsViaResponse(msgMatches[1]);
+                            if (credits !== -1) {
+                                if ($.isEmptyObject(credits)) stat['无效道具']++;
+                                else stat['有效道具']++;
+                                $.each(credits, function (key, credit) {
+                                    if (typeof stat[key] === 'undefined')
+                                        stat[key] = credit;
+                                    else
+                                        stat[key] += credit;
+                                });
+                            }
+                            if (stat['有效道具'] === 0) delete stat['有效道具'];
+                            if (stat['无效道具'] === 0) delete stat['无效道具'];
+                            Log.push('使用道具',
+                                '共有`1`个道具【`Lv.{0}：{1}`】使用成功'
+                                    .replace('{0}', item.itemLevel)
+                                    .replace('{1}', item.itemName),
+                                {
+                                    gain: $.extend({}, stat, {'已使用道具': 1}),
+                                    pay: {'道具': -1}
+                                }
+                            );
+                            var logStat = '', msgStat = '';
+                            for (var creditsType in stat) {
+                                logStat += '，{0}+{1}'
+                                    .replace('{0}', creditsType)
+                                    .replace('{1}', stat[creditsType]);
+                                msgStat += '<i>{0}<em>+{1}</em></i>'
+                                    .replace('{0}', creditsType)
+                                    .replace('{1}', stat[creditsType]);
+                            }
+                            console.log('道具【Lv.{0}：{1}】被使用{2}【{3}】'
+                                    .replace('{0}', item.itemLevel)
+                                    .replace('{1}', item.itemName)
+                                    .replace('{2}', logStat)
+                                    .replace('{3}', msgMatches[1])
+                            );
+                            KFOL.showMsg('道具【<b><em>Lv.{0}</em>{1}</b>】被使用{2}<br /><span style="font-style:italic">{3}</span>'
+                                    .replace('{0}', item.itemLevel)
+                                    .replace('{1}', item.itemName)
+                                    .replace('{2}', msgStat)
+                                    .replace('{3}', msgMatches[1])
+                            );
+                        }
+                        if (index === itemList.length - 1) {
+                            KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
+                            $('.pd_layer').remove();
+                        }
+                        window.setTimeout(function () {
+                            $(document).dequeue('UseItemList');
+                        }, Config.defAjaxInterval);
+                    }, 'html');
+                });
+            });
+            $(document).dequeue('UseItemList');
+        };
+        $(document).dequeue('GetItemList');
+    },
+
+    /**
+     * 通过道具名称获取道具种类ID
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具种类ID
+     */
+    getItemTypeIdByItemName: function (itemName) {
+        switch (itemName) {
+            case '零时迷子的碎片':
+                return 1;
+            case '被遗弃的告白信':
+                return 2;
+            case '学校天台的钥匙':
+                return 3;
+            case 'TMA最新作压缩包':
+                return 4;
+            case 'LOLI的钱包':
+                return 5;
+            case '棒棒糖':
+                return 6;
+            case '蕾米莉亚同人漫画':
+                return 11;
+            case '十六夜同人漫画':
+                return 7;
+            case '档案室钥匙':
+                return 8;
+            case '傲娇LOLI娇蛮音CD':
+                return 12;
+            case '整形优惠卷':
+                return 9;
+            case '消逝之药':
+                return 10;
+            default:
+                return 0;
+        }
     }
 };
 
@@ -3769,8 +3976,10 @@ var Loot = {
                                         .replace('{1}', msgStat)
                                         .replace('{2}', settings.type === 2 ? '<a href="#">查看日志</a>' : '')
                                     , -1);
-                                Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
-                                Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                                if (settings.type === 2 || count >= Config.maxAttackNum) {
+                                    Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
+                                    Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                                }
                                 if (settings.type === 2) {
                                     $('.pd_layer').remove();
                                     $msg.find('a:last').click(function (event) {
@@ -3780,6 +3989,16 @@ var Loot = {
                                 }
                                 else {
                                     $('.pd_result:last').append('<li class="pd_stat"><b>统计结果：</b><br />{0}</li>'.replace('{0}', resultStat ? resultStat : '无'));
+                                }
+                                if (Config.autoUseItemEnabled && Config.autoUseItemNames.length > 0 && typeof gain['item'] !== 'undefined') {
+                                    var itemNameList = {};
+                                    for (var itemName in gain['item']) {
+                                        if ($.inArray(itemName, Config.autoUseItemNames) === -1) continue;
+                                        if (typeof itemNameList[itemName] === 'undefined') itemNameList[itemName] = 1;
+                                        else itemNameList[itemName]++;
+                                    }
+                                    if (!$.isEmptyObject(itemNameList))
+                                        Item.useItemsAfterBatchAttack(itemNameList);
                                 }
                             }
                             window.setTimeout(function () {
