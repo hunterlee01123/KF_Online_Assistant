@@ -14,9 +14,6 @@
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
-/**
- * @todo 增加自定义怪物名称的功能
- */
 // 版本号
 var version = '4.1.0';
 /**
@@ -38,7 +35,11 @@ var Config = {
     autoAttackEnabled: false,
     // 在距本回合结束前指定时间内才自动进行批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
     attackAfterTime: 0,
-    // 批量攻击的目标列表，格式：{攻击ID:次数}，例：{1:10,2:10}
+    // 是否自定义怪物名称，true：开启；false：关闭
+    customMonsterNameEnabled: false,
+    // 自定义怪物名称列表，格式：{怪物ID：'自定义名称'}，例：{1:'萝莉',5:'信仰风'}
+    customMonsterNameList: {},
+    // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 是否自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，true：开启；false：关闭
     autoUseItemEnabled: false,
@@ -518,7 +519,7 @@ var Dialog = {
             return Dialog.close(id);
         }).end();
         $(window).on('resize.' + id, function () {
-            Dialog.close(id);
+            Dialog.show(id);
         });
         return $dialog;
     },
@@ -576,7 +577,7 @@ var ConfigDialog = {
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_cfg_nav"><a href="#">查看日志</a><a href="#">导入/导出设置</a></div>' +
-            '  <div class="pd_cfg_panel">' +
+            '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox" />自动KFB捐款</label></legend>' +
             '      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
@@ -589,6 +590,9 @@ var ConfigDialog = {
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
             '<a class="pd_cfg_tips" href="#" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</a></label></legend>' +
+            '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" />自定义怪物名称 ' +
+            '<a class="pd_cfg_tips" href="#" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</a></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_monster_name_dialog" href="#">详细设置&raquo;</a>' +
             '      <fieldset>' +
             '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
             '<a class="pd_cfg_tips" href="#" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</a></label></legend>' +
@@ -667,7 +671,7 @@ var ConfigDialog = {
             '<a class="pd_cfg_tips" href="#" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空">[?]</a></label><br />' +
             '      <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" />自定义各等级神秘颜色 ' +
             '<a class="pd_cfg_tips" href="#" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</a></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_sm_color_config" href="#">详细设置&raquo;</a><br />' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_sm_color_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_modify_kf_other_domain_enabled" type="checkbox" />将绯月其它域名的链接修改为当前域名 ' +
             '<a class="pd_cfg_tips" href="#" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</a></label><br />' +
             '      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox" />开启多重引用功能 ' +
@@ -738,6 +742,11 @@ var ConfigDialog = {
             ConfigDialog.showImportOrExportSettingDialog();
         });
 
+        $dialog.find('#pd_cfg_custom_monster_name_dialog').click(function (event) {
+            event.preventDefault();
+            ConfigDialog.showCustomMonsterNameDialog();
+        });
+
         $dialog.find('#pd_cfg_auto_use_item_names').keydown(function (event) {
             if (event.ctrlKey && (event.keyCode === 65 || event.keyCode === 97)) {
                 event.preventDefault();
@@ -758,9 +767,9 @@ var ConfigDialog = {
             }
         });
 
-        $dialog.find('#pd_cfg_custom_sm_color_config').click(function (event) {
+        $dialog.find('#pd_cfg_custom_sm_color_dialog').click(function (event) {
             event.preventDefault();
-            ConfigDialog.showCustomSmColorConfigDialog();
+            ConfigDialog.showCustomSmColorDialog();
         });
 
         $dialog.find('#pd_cfg_add_follow_user, #pd_cfg_add_block_user').keydown(function (event) {
@@ -921,14 +930,14 @@ var ConfigDialog = {
     /**
      * 显示自定义各等级神秘颜色设置对话框
      */
-    showCustomSmColorConfigDialog: function () {
-        if ($('#pd_custom_sm_color_config').length > 0) return;
+    showCustomSmColorDialog: function () {
+        if ($('#pd_custom_sm_color').length > 0) return;
         var html =
             '<div class="pd_cfg_main">' +
             '  <div style="border-bottom:1px solid #9191FF;margin-bottom:7px;padding-bottom:5px"><strong>示例' +
             '（<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">常用配色表</a> / <a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a>）：' +
-            '</strong><br /><b>等级范围：</b>4-4 <b>颜色：</b><span style="color:#0000FF">#0000FF</span><br /><b>等级范围：</b>10-49 <b>颜色：</b>' +
-            '<span style="color:#00FF00">#00FF00</span><br /><b>等级范围：</b>900-MAX <b>颜色：</b><span style="color:#FF0000">#FF0000</span></div>' +
+            '</strong><br /><b>等级范围：</b>4-4 <b>颜色：</b><span style="color:#0000FF">#0000FF</span><br /><b>等级范围：</b>10-99 <b>颜色：</b>' +
+            '<span style="color:#5AD465">#5AD465</span><br /><b>等级范围：</b>5000-MAX <b>颜色：</b><span style="color:#FF0000">#FF0000</span></div>' +
             '  <ul id="pd_cfg_custom_sm_color_list"></ul>' +
             '  <div style="margin-top:5px" id="pd_cfg_custom_sm_color_add_btns"><a href="#">增加1个</a><a href="#" style="margin-left:7px">增加5个</a>' +
             '<a href="#" style="margin-left:7px">清除所有</a></div>' +
@@ -937,9 +946,9 @@ var ConfigDialog = {
             '  <span class="pd_cfg_about"><a href="#">导入/导出配色方案</a></span>' +
             '  <button>确定</button><button>取消</button>' +
             '</div>';
-        var $dialog = Dialog.create('pd_custom_sm_color_config', '自定义各等级神秘颜色', html);
+        var $dialog = Dialog.create('pd_custom_sm_color', '自定义各等级神秘颜色', html);
         $dialog.find('.pd_cfg_btns > button:last').click(function () {
-            return Dialog.close('pd_custom_sm_color_config');
+            return Dialog.close('pd_custom_sm_color');
         });
 
         $dialog.find('#pd_cfg_custom_sm_color_list').on('keyup', '.pd_cfg_sm_color', function () {
@@ -974,12 +983,12 @@ var ConfigDialog = {
             for (var i = 1; i <= num; i++) {
                 $('#pd_cfg_custom_sm_color_list').append(getSmColorListLine());
             }
-            Dialog.show('pd_custom_sm_color_config');
+            Dialog.show('pd_custom_sm_color');
         }).end().find('a:last').click(function (event) {
             event.preventDefault();
             if (window.confirm('是否清除所有设置？')) {
                 $('#pd_cfg_custom_sm_color_list').empty();
-                Dialog.show('pd_custom_sm_color_config');
+                Dialog.show('pd_custom_sm_color');
             }
         });
 
@@ -1045,11 +1054,11 @@ var ConfigDialog = {
                 });
                 Config.customSmColorConfigList = list;
                 ConfigDialog.write();
-                Dialog.close('pd_custom_sm_color_config');
+                Dialog.close('pd_custom_sm_color');
             }
         });
 
-        Dialog.show('pd_custom_sm_color_config');
+        Dialog.show('pd_custom_sm_color');
     },
 
     /**
@@ -1097,6 +1106,52 @@ var ConfigDialog = {
     },
 
     /**
+     * 显示自定义怪物名称对话框
+     */
+    showCustomMonsterNameDialog: function () {
+        if ($('#pd_custom_monster_name').length > 0) return;
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <table id="pd_cfg_custom_monster_name_list">' +
+            '    <tbody>' +
+            '      <tr><th style="width:120px">怪物</th><th>自定义名称</th></tr>' +
+            '      <tr><td>Lv.1：小史莱姆</td><td><input type="text" maxlength="18" data-id="1" /></td></tr>' +
+            '      <tr><td>Lv.2：笨蛋</td><td><input type="text" maxlength="18" data-id="2" /></td></tr>' +
+            '      <tr><td>Lv.3：大果冻史莱姆</td><td><input type="text" maxlength="18" data-id="3" /></td></tr>' +
+            '      <tr><td>Lv.4：肉山</td><td><input type="text" maxlength="18" data-id="4" /></td></tr>' +
+            '      <tr><td>Lv.5：大魔王</td><td><input type="text" maxlength="18" data-id="5" /></td></tr>' +
+            '    </tbody>' +
+            '  </table>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <button>确定</button><button>取消</button><button>重置</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_custom_monster_name', '自定义怪物名称', html);
+        $dialog.submit(function (event) {
+            event.preventDefault();
+            Config.customMonsterNameList = {};
+            $('#pd_cfg_custom_monster_name_list input').each(function () {
+                var $this = $(this);
+                var name = $.trim($this.val());
+                if (name !== '') {
+                    Config.customMonsterNameList[parseInt($this.data('id'))] = name;
+                }
+            });
+            ConfigDialog.write();
+            Dialog.close('pd_custom_monster_name');
+        }).find('.pd_cfg_btns > button:eq(1)').click(function () {
+            return Dialog.close('pd_custom_monster_name');
+        }).next('button').click(function (event) {
+            event.preventDefault();
+            $('#pd_cfg_custom_monster_name_list input').val('');
+        });
+        $.each(Config.customMonsterNameList, function (id, name) {
+            $('#pd_cfg_custom_monster_name_list input[data-id="{0}"]'.replace('{0}', id)).val(name);
+        });
+        Dialog.show('pd_custom_monster_name');
+    },
+
+    /**
      * 设置对话框中的字段值
      */
     setValue: function () {
@@ -1105,6 +1160,7 @@ var ConfigDialog = {
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
         $('#pd_cfg_donation_after_vip_enabled').prop('checked', Config.donationAfterVipEnabled);
         $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
+        $('#pd_cfg_custom_monster_name_enabled').prop('checked', Config.customMonsterNameEnabled);
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $.each(Config.batchAttackList, function (id, num) {
@@ -1159,6 +1215,7 @@ var ConfigDialog = {
         options.donationAfterVipEnabled = $('#pd_cfg_donation_after_vip_enabled').prop('checked');
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
         options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
+        options.customMonsterNameEnabled = $('#pd_cfg_custom_monster_name_enabled').prop('checked');
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.batchAttackList = {};
@@ -1404,6 +1461,21 @@ var ConfigDialog = {
             options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
         settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
             options.autoLootEnabled : defConfig.autoLootEnabled;
+        settings.customMonsterNameEnabled = typeof options.customMonsterNameEnabled === 'boolean' ?
+            options.customMonsterNameEnabled : defConfig.customMonsterNameEnabled;
+        if (typeof options.customMonsterNameList !== 'undefined') {
+            if ($.type(options.customMonsterNameList) === 'object') {
+                settings.customMonsterNameList = {};
+                for (var id in options.customMonsterNameList) {
+                    id = parseInt(id);
+                    var name = $.trim(options.customMonsterNameList[id]);
+                    if (id >= 1 && id <= 5 && name !== '' && name.length <= 18) {
+                        settings.customMonsterNameList[id] = name;
+                    }
+                }
+            }
+            else settings.customMonsterNameList = defConfig.customMonsterNameList;
+        }
         settings.autoAttackEnabled = typeof options.autoAttackEnabled === 'boolean' ?
             options.autoAttackEnabled : defConfig.autoAttackEnabled;
         if (typeof options.attackAfterTime !== 'undefined') {
@@ -3860,10 +3932,11 @@ var Loot = {
         };
         $.extend(settings, options);
         if (settings.type === 1)
-            $('.kf_fw_ig1').parent().append('<ul class="pd_result"><li><strong>攻击结果：</strong></li></ul>');
+            $('.kf_fw_ig1').parent().append('<div class="pd_result"><strong>攻击结果：</strong><ul></ul></div>');
         var count = 0, successNum = 0;
         var gain = {'夺取KFB': 0, '经验值': 0};
         var attackLog = '', isStop = false;
+        var oriHtml = '', customHtml = '';
         $(document).queue('BatchAttack', []);
         $.each(settings.attackList, function (id, num) {
             $.each(new Array(num), function () {
@@ -3893,15 +3966,24 @@ var Loot = {
                                 $(document).queue('BatchAttack', []);
                             }
                             attackLog += '第{0}次：{1}{2}\n'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : '');
-                            if (settings.type === 2) {
-                                console.log('【批量攻击】第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
-                            }
-                            else {
-                                $('.pd_result:last').append('<li><b>第{0}次：</b>{1}{2}</li>'
-                                        .replace('{0}', count)
-                                        .replace('{1}', msg)
-                                        .replace('{2}', isStop ? '<span class="pd_notice">（攻击已中止）</span>' : '')
-                                );
+                            console.log('【批量攻击】第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
+                            if (settings.type === 1) {
+                                var html = '<li><b>第{0}次：</b>{1}{2}</li>'
+                                    .replace('{0}', count)
+                                    .replace('{1}', msg)
+                                    .replace('{2}', isStop ? '<span class="pd_notice">（攻击已中止）</span>' : '');
+                                oriHtml += html;
+                                if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
+                                    $.each(Config.customMonsterNameList, function (id, name) {
+                                        var oriName = Loot.getMonsterNameById(parseInt(id));
+                                        html = html.replace(
+                                            '对[{0}]'.replace('{0}', oriName),
+                                            '对<span title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
+                                        );
+                                    });
+                                    customHtml += html;
+                                }
+                                $('.pd_result:last > ul').append(html);
                             }
                             var $remainingNum = $('#pd_remaining_num');
                             $remainingNum.text(parseInt($remainingNum.text()) - 1);
@@ -3948,7 +4030,23 @@ var Loot = {
                                     });
                                 }
                                 else {
-                                    $('.pd_result:last').append('<li class="pd_stat"><b>统计结果：</b><br />{0}</li>'.replace('{0}', resultStat ? resultStat : '无'));
+                                    var $result = $('.pd_result:last');
+                                    $result.append('<div class="pd_stat"><b>统计结果：</b><br />{0}</div>'.replace('{0}', resultStat ? resultStat : '无'));
+                                    if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
+                                        $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
+                                        '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" />' +
+                                        ' 自定义</label><br />')
+                                            .prependTo($result)
+                                            .find('input[name="pd_custom_attack_log"]')
+                                            .click(function () {
+                                                if ($(this).val() === 'custom') {
+                                                    $result.find('ul').html(customHtml);
+                                                }
+                                                else {
+                                                    $result.find('ul').html(oriHtml);
+                                                }
+                                            });
+                                    }
                                 }
                                 if (Config.autoUseItemEnabled && Config.autoUseItemNames.length > 0 && typeof gain['item'] !== 'undefined') {
                                     var itemNameList = {};
@@ -4171,8 +4269,138 @@ var Loot = {
                 .replace('{1}', type === 2 ? 270 : 350) +
             '</div>';
         var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html, 'z-index:1002');
+        var $log = $dialog.find('textarea');
+        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
+            $('<div style="margin-top:5px"><label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
+            '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label></div>')
+                .prependTo($dialog.find('.pd_cfg_main'))
+                .find('input[name="pd_custom_attack_log"]')
+                .click(function () {
+                    if ($(this).val() === 'custom') {
+                        var customLog = log;
+                        $.each(Config.customMonsterNameList, function (id, name) {
+                            var oriName = Loot.getMonsterNameById(parseInt(id));
+                            if (type === 2) {
+                                customLog = customLog.replace(
+                                    new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
+                                    '[{0}]对'.replace('{0}', name)
+                                );
+                            }
+                            else {
+                                customLog = customLog.replace(
+                                    new RegExp('对\\[{0}\\]'.replace('{0}', oriName), 'g'),
+                                    '对[{0}]'.replace('{0}', name)
+                                );
+                            }
+                        });
+                        $log.val(customLog);
+                    }
+                    else {
+                        $log.val(log);
+                    }
+                })
+                .end()
+                .find('input[value="custom"]')
+                .triggerHandler('click');
+        }
+        else {
+            $log.val(log);
+        }
         Dialog.show('pd_attack_log');
-        $dialog.find('textarea').val(log).focus();
+        $log.focus();
+    },
+
+    /**
+     * 通过怪物ID获取怪物原始名称
+     * @param {number} id 怪物ID
+     * @returns {string} 怪物原始名称
+     */
+    getMonsterNameById: function (id) {
+        switch (id) {
+            case 1:
+                return '小史莱姆';
+            case 2:
+                return '笨蛋';
+            case 3:
+                return '大果冻史莱姆';
+            case 4:
+                return '肉山';
+            case 5:
+                return '大魔王';
+            default:
+                return '';
+        }
+    },
+
+    /**
+     * 自定义怪物名称
+     */
+    customMonsterName: function () {
+        if ($.isEmptyObject(Config.customMonsterNameList)) return;
+        if (location.pathname === '/kf_fw_ig_index.php') {
+            var $log = $('.kf_fw_ig1 > tbody > tr:nth-last-child(2) > td');
+            var oriLog = $log.html();
+            if (!$.trim(oriLog)) return;
+            $log.wrapInner('<div></div>');
+            $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
+            '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label><br />')
+                .prependTo($log)
+                .find('input[name="pd_custom_attack_log"]')
+                .click(function () {
+                    if ($(this).val() === 'custom') {
+                        var customLog = oriLog;
+                        $.each(Config.customMonsterNameList, function (id, name) {
+                            var oriName = Loot.getMonsterNameById(parseInt(id));
+                            customLog = customLog.replace(
+                                new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
+                                '<span title="{0}">[{1}]</span>对'.replace('{0}', oriName).replace('{1}', name)
+                            );
+                        });
+                        $log.find('div:last-child').html(customLog);
+                    }
+                    else {
+                        $log.find('div:last-child').html(oriLog);
+                    }
+                })
+                .end()
+                .find('input[value="custom"]')
+                .triggerHandler('click');
+        }
+        else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
+            $('.kf_fw_ig1 > tbody > tr:gt(2):nth-child(3n+1) > td:first-child').each(function () {
+                var $this = $(this);
+                var html = $this.html();
+                $.each(Config.customMonsterNameList, function (id, name) {
+                    var oriName = Loot.getMonsterNameById(parseInt(id));
+                    html = html.replace(oriName, '<span title="{0}">{1}</span>'.replace('{0}', oriName).replace('{1}', name));
+                });
+                $this.html(html);
+            });
+            $('a.kfigpk_hit').each(function () {
+                var $this = $(this);
+                var html = $this.html();
+                $.each(Config.customMonsterNameList, function (id, name) {
+                    html = html.replace(Loot.getMonsterNameById(parseInt(id)), name);
+                });
+                $this.html(html);
+            });
+            $(function () {
+                $('a.kfigpk_hit').off('click').click(function () {
+                    var $this = $(this);
+                    $.post('kf_fw_ig_pkhit.php',
+                        {uid: $this.attr('hitid'), safeid: $this.attr('safeid')},
+                        function (msg) {
+                            $.each(Config.customMonsterNameList, function (id, name) {
+                                msg = msg.replace(
+                                    '对[{0}]'.replace('{0}', Loot.getMonsterNameById(parseInt(id))),
+                                    '对[{0}]'.replace('{0}', name)
+                                );
+                            });
+                            $this.html(msg);
+                        }, 'html');
+                });
+            });
+        }
     }
 };
 
@@ -4265,7 +4493,7 @@ var KFOL = {
             '.pd_cfg_box h1 {text-align: center; font-size: 14px; background-color: #9191FF; color: #FFF; line-height: 2em; margin: 0; padding-left: 20px; }' +
             '.pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }' +
             '#pd_log { width: 600px; }' +
-            '#pd_custom_sm_color_config { width: 360px; }' +
+            '#pd_custom_sm_color { width: 360px; }' +
             '.pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }' +
             '.pd_cfg_nav a { margin-left: 7px; }' +
             '.pd_cfg_main { background-color: #FCFCFC; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 180px; overflow: auto; }' +
@@ -4290,6 +4518,7 @@ var KFOL = {
             '.pd_cfg_user_list > span > a { text-decoration: none; padding-left: 4px; color: #3C763D; }' +
             '#pd_cfg_block_user_list > span { background-color: #F2DEDE; border: 1px solid #EBCCD1; color: #A94442; }' +
             '#pd_cfg_block_user_list > span > a { color: #A94442; }' +
+            '#pd_cfg_custom_monster_name_list td input[type="text"] { width: 140px; }' +
 
                 /* 日志对话框 */
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
@@ -4574,8 +4803,8 @@ var KFOL = {
     addSmboxLinkClickEvent: function () {
         $('.box1').on('click', 'a[href^="kf_smbox.php?box="]', function () {
             if (KFOL.getNextDrawSmboxTime().type) return;
-            var nextTime = Tools.getDate('+' + Config.defDrawSmboxInterval + 'm');
-            Tools.setCookie(Config.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
+            var nextTime = Tools.getDate('+' + Config.defDrawSmboxInterval + 'm').getTime() + 10 * 1000;
+            Tools.setCookie(Config.drawSmboxCookieName, '2|' + nextTime, new Date(nextTime));
             var timeLog = Loot.getNextLootAwardTime();
             if (timeLog.type > 0) {
                 var time = timeLog.time + Config.afterDrawSmboxLootDelayInterval * 60 * 1000;
@@ -6015,9 +6244,11 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_fw_ig_index.php') {
             Loot.showGetLootAwardTime();
+            if (Config.customMonsterNameEnabled) Loot.customMonsterName();
         }
         else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
             Loot.addBatchAttackButton();
+            if (Config.customMonsterNameEnabled) Loot.customMonsterName();
         }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();
