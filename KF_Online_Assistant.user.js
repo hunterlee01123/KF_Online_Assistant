@@ -9,13 +9,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.1.0
+// @version     4.1.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.1.0';
+var version = '4.1.1';
 /**
  * 配置类
  */
@@ -3978,7 +3978,7 @@ var Loot = {
                                         var oriName = Loot.getMonsterNameById(parseInt(id));
                                         html = html.replace(
                                             '对[{0}]'.replace('{0}', oriName),
-                                            '对<span title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
+                                            '对<span class="pd_custom_tips" title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
                                         );
                                     });
                                     customHtml += html;
@@ -4353,7 +4353,7 @@ var Loot = {
                             var oriName = Loot.getMonsterNameById(parseInt(id));
                             customLog = customLog.replace(
                                 new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
-                                '<span title="{0}">[{1}]</span>对'.replace('{0}', oriName).replace('{1}', name)
+                                '<span class="pd_custom_tips" title="{0}">[{1}]</span>对'.replace('{0}', oriName).replace('{1}', name)
                             );
                         });
                         $log.find('div:last-child').html(customLog);
@@ -4372,7 +4372,7 @@ var Loot = {
                 var html = $this.html();
                 $.each(Config.customMonsterNameList, function (id, name) {
                     var oriName = Loot.getMonsterNameById(parseInt(id));
-                    html = html.replace(oriName, '<span title="{0}">{1}</span>'.replace('{0}', oriName).replace('{1}', name));
+                    html = html.replace(oriName, '<span class="pd_custom_tips" title="{0}">{1}</span>'.replace('{0}', oriName).replace('{1}', name));
                 });
                 $this.html(html);
             });
@@ -4483,6 +4483,7 @@ var KFOL = {
             '.pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }' +
             '.b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 10px; }' +
             '.b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 10px; }' +
+            '.pd_custom_tips { cursor: help; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
