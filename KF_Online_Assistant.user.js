@@ -9,13 +9,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.1.1
+// @version     4.1.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.1.1';
+var version = '4.1.2';
 /**
  * 配置类
  */
@@ -1968,11 +1968,11 @@ var Log = {
                 for (var k in key.gain) {
                     if (k === 'item') {
                         for (var itemName in key.gain['item']) {
-                            stat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', itemName).replace('{1}', key.gain['item'][itemName].toLocaleString());
+                            stat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', key.gain['item'][itemName].toLocaleString());
                         }
                     }
                     else {
-                        stat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', k).replace('{1}', key.gain[k].toLocaleString());
+                        stat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', k).replace('{1}', key.gain[k].toLocaleString());
                     }
                 }
             }
@@ -1981,11 +1981,11 @@ var Log = {
                 for (var k in key.pay) {
                     if (k === 'item') {
                         for (var itemName in key.pay['item']) {
-                            stat += '<i>{0}<ins>{1}</ins></i>'.replace('{0}', itemName).replace('{1}', key.pay['item'][itemName].toLocaleString());
+                            stat += '<i>{0}<ins>{1}</ins></i> '.replace('{0}', itemName).replace('{1}', key.pay['item'][itemName].toLocaleString());
                         }
                     }
                     else {
-                        stat += '<i>{0}<ins>{1}</ins></i>'.replace('{0}', k).replace('{1}', key.pay[k].toLocaleString());
+                        stat += '<i>{0}<ins>{1}</ins></i> '.replace('{0}', k).replace('{1}', key.pay[k].toLocaleString());
                     }
                 }
             }
@@ -2055,17 +2055,17 @@ var Log = {
         sortStatItemList(income);
         $.each(sortStatItemList(income), function (index, key) {
             profit[key] = income[key];
-            content += '<i>{0}<em>+{1}</em></i>'.replace('{0}', key).replace('{1}', income[key].toLocaleString());
+            content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', income[key].toLocaleString());
         });
         content += '<br /><strong>付出：</strong>';
         $.each(sortStatItemList(expense), function (index, key) {
             if (typeof profit[key] === 'undefined') profit[key] = expense[key];
             else profit[key] += expense[key];
-            content += '<i>{0}<ins>{1}</ins></i>'.replace('{0}', key).replace('{1}', expense[key].toLocaleString());
+            content += '<i>{0}<ins>{1}</ins></i> '.replace('{0}', key).replace('{1}', expense[key].toLocaleString());
         });
         content += '<br /><strong>结余：</strong>';
         $.each(sortStatItemList(profit), function (index, key) {
-            content += '<i>{0}{1}</i>'.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(profit[key]));
+            content += '<i>{0}{1}</i> '.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(profit[key]));
         });
         if (Config.autoDrawSmbox2Enabled) {
             var smBoxIncome = 0, minSmBox = 0, maxSmBox = 0;
@@ -2075,8 +2075,8 @@ var Log = {
                 if (minSmBox > kfb) minSmBox = kfb;
                 if (maxSmBox < kfb) maxSmBox = kfb;
             });
-            content += ('<br /><strong>神秘盒子收获(KFB)：</strong><i>抽取次数<em>+{0}</em></i><i>合计<em>+{1}</em></i><i>平均值<em>+{2}</em></i>' +
-            '<i>最小值<em>+{3}</em></i><i>最大值<em>+{4}</em></i>')
+            content += ('<br /><strong>神秘盒子收获(KFB)：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
+            '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
                 .replace('{0}', smBox.length.toLocaleString())
                 .replace('{1}', smBoxIncome.toLocaleString())
                 .replace('{2}', smBox.length > 0 ? (smBoxIncome / smBox.length).toFixed(2).toLocaleString() : 0)
@@ -2695,7 +2695,7 @@ var Item = {
                                 }
                             );
                         }
-                        var logStat = '', msgStat = '';
+                        var logStat = '', msgStat = '', resultStat = '';
                         for (var creditsType in stat) {
                             logStat += '，{0}+{1}'
                                 .replace('{0}', creditsType)
@@ -2703,8 +2703,10 @@ var Item = {
                             msgStat += '<i>{0}<em>+{1}</em></i>'
                                 .replace('{0}', creditsType)
                                 .replace('{1}', stat[creditsType]);
+                            resultStat += '<i>{0}<em>+{1}</em></i> '
+                                .replace('{0}', creditsType)
+                                .replace('{1}', stat[creditsType]);
                         }
-                        var resultStat = msgStat;
                         console.log('共有{0}个道具使用成功，共有{1}个道具使用失败{2}'
                                 .replace('{0}', successNum)
                                 .replace('{1}', failNum)
@@ -3029,8 +3031,8 @@ var Item = {
                                 .replace('{5}', maxPrice.toLocaleString())
                         );
                         $result.append(
-                            ('<li class="pd_stat"><b>统计结果{0}：</b><br /><i>统计成功数量：<em>{1}</em></i><i>总计价格：<em>{2}</em></i>' +
-                            '<i>平均价格：<em>{3}</em></i><i>最低价格：<em>{4}</em></i><i>最高价格：<em>{5}</em></i></li>')
+                            ('<li class="pd_stat"><b>统计结果{0}：</b><br /><i>统计成功数量：<em>{1}</em></i> <i>总计价格：<em>{2}</em></i> ' +
+                            '<i>平均价格：<em>{3}</em></i> <i>最低价格：<em>{4}</em></i> <i>最高价格：<em>{5}</em></i></li>')
                                 .replace('{0}', failNum > 0 ? '<span class="pd_notice">（共有{0}个道具未能统计成功）</span>'.replace('{0}', failNum) : '')
                                 .replace('{1}', successNum)
                                 .replace('{2}', totalPrice.toLocaleString())
@@ -3634,7 +3636,7 @@ var Bank = {
                             }
                             statMsg = '<span class="pd_notice">({0})</span>'.replace('{0}', statMsg);
                         }
-                        $('.pd_result').last().append('<li>{0}{1}</li>'.replace('{0}', key[0]).replace('{1}', statMsg));
+                        $('.pd_result').last().append('<li>{0} {1}</li>'.replace('{0}', key[0]).replace('{1}', statMsg));
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         if (index === users.length - 1) {
@@ -3652,7 +3654,7 @@ var Bank = {
                                     .replace('{1}', failNum)
                                     .replace('{2}', successMoney)
                             );
-                            $('.pd_result').last().append('<li><b>共有<em>{0}</em>名用户转账成功{1}：</b>KFB<ins>-{2}</ins></li>'
+                            $('.pd_result').last().append('<li><b>共有<em>{0}</em>名用户转账成功{1}：</b>KFB <ins>-{2}</ins></li>'
                                     .replace('{0}', successNum)
                                     .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>名用户转账失败'.replace('{0}', failNum) : '')
                                     .replace('{2}', successMoney)
@@ -3942,9 +3944,11 @@ var Loot = {
             $.each(new Array(num), function () {
                 $(document).queue('BatchAttack', function () {
                     count++;
-                    $.post('kf_fw_ig_pkhit.php',
-                        {uid: id, safeid: settings.safeId},
-                        function (msg) {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'kf_fw_ig_pkhit.php',
+                        data: {uid: id, safeid: settings.safeId},
+                        success: function (msg) {
                             if (/发起争夺/.test(msg)) {
                                 successNum++;
                                 $.each(Loot.getGainViaMsg(msg), function (key, data) {
@@ -3985,6 +3989,19 @@ var Loot = {
                                 }
                                 $('.pd_result:last > ul').append(html);
                             }
+
+                        },
+                        error: function () {
+                            attackLog += '第{0}次：{1}\n'.replace('{0}', count).replace('{1}', '网络超时');
+                            console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '网络超时'));
+                            if (settings.type === 1) {
+                                var html = '<li><b>第{0}次：</b>{1}</li>'
+                                    .replace('{0}', count)
+                                    .replace('{1}', '<span class="pd_notice">网络超时</span>');
+                                $('.pd_result:last > ul').append(html);
+                            }
+                        },
+                        complete: function () {
                             var $remainingNum = $('#pd_remaining_num');
                             $remainingNum.text(parseInt($remainingNum.text()) - 1);
                             if (isStop || count === settings.totalAttackNum) {
@@ -4001,14 +4018,15 @@ var Loot = {
                                         for (var itemName in gain['item']) {
                                             msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
                                             logStat += '，{0}+{1}'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
+                                            resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
                                         }
                                     }
                                     else {
                                         msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', key).replace('{1}', gain[key]);
                                         logStat += '，{0}+{1}'.replace('{0}', key).replace('{1}', gain[key]);
+                                        resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', gain[key]);
                                     }
                                 }
-                                resultStat = msgStat.replace('</i><br />', '</i>');
                                 console.log('共有{0}次攻击成功{1}'
                                         .replace('{0}', successNum)
                                         .replace('{1}', logStat)
@@ -4062,7 +4080,9 @@ var Loot = {
                             window.setTimeout(function () {
                                 $(document).dequeue('BatchAttack');
                             }, Config.perAttackInterval);
-                        }, 'html');
+                        },
+                        dataType: 'html'
+                    });
                 });
             });
         });
