@@ -9,13 +9,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.1.2
+// @version     4.2.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.1.2';
+var version = '4.2.0';
 /**
  * 配置类
  */
@@ -102,6 +102,10 @@ var Config = {
     addSideBarFastNavEnabled: false,
     // 是否将侧边栏修改为和手机相同的平铺样式，true：开启；false：关闭
     modifySideBarEnabled: false,
+    // 是否为页面添加自定义的CSS内容，true：开启；false：关闭
+    customCssEnabled: false,
+    // 自定义CSS的内容
+    customCssContent: '',
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
     // 关注用户列表，例：['张三','李四','王五']
@@ -690,7 +694,10 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox" />为侧边栏添加快捷导航 ' +
             '<a class="pd_cfg_tips" href="#" title="为侧边栏添加快捷导航的链接">[?]</a></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
-            '<a class="pd_cfg_tips" href="#" title="将侧边栏修改为和手机相同的平铺样式">[?]</a></label>' +
+            '<a class="pd_cfg_tips" href="#" title="将侧边栏修改为和手机相同的平铺样式">[?]</a></label><br />' +
+            '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" />启用自定义CSS ' +
+            '<a class="pd_cfg_tips" href="#" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</a></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
@@ -720,7 +727,7 @@ var ConfigDialog = {
             '</div>' +
             '<div class="pd_cfg_btns">' +
             '  <span class="pd_cfg_about"><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a> ' +
-            '<span style="color:#666">(V{0})</span></span>'.replace('{0}', version) +
+            '<i style="color:#666;font-style:normal">(V{0})</i></span>'.replace('{0}', version) +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_config', 'KF Online助手设置', html);
@@ -770,6 +777,11 @@ var ConfigDialog = {
         $dialog.find('#pd_cfg_custom_sm_color_dialog').click(function (event) {
             event.preventDefault();
             ConfigDialog.showCustomSmColorDialog();
+        });
+
+        $dialog.find('#pd_cfg_custom_css_dialog').click(function (event) {
+            event.preventDefault();
+            ConfigDialog.showCustomCssDialog();
         });
 
         $dialog.find('#pd_cfg_add_follow_user, #pd_cfg_add_block_user').keydown(function (event) {
@@ -1152,6 +1164,32 @@ var ConfigDialog = {
     },
 
     /**
+     * 显示自定义CSS对话框
+     */
+    showCustomCssDialog: function () {
+        if ($('#pd_custom_css').length > 0) return;
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <strong>自定义CSS内容：</strong><br />' +
+            '  <textarea style="width:600px;height:400px"></textarea>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <button>确定</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_custom_css', '自定义CSS', html);
+        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
+            event.preventDefault();
+            Config.customCssContent = $.trim($dialog.find('textarea').val());
+            ConfigDialog.write();
+            Dialog.close('pd_custom_css');
+        }).next('button').click(function () {
+            return Dialog.close('pd_custom_css');
+        });
+        Dialog.show('pd_custom_css');
+        $dialog.find('textarea').val(Config.customCssContent).focus();
+    },
+
+    /**
      * 设置对话框中的字段值
      */
     setValue: function () {
@@ -1193,6 +1231,7 @@ var ConfigDialog = {
         $('#pd_cfg_show_log_link_in_page_enabled').prop('checked', Config.showLogLinkInPageEnabled);
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
+        $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         ConfigDialog.showFollowOrBlockUserList(1);
         $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
@@ -1255,6 +1294,7 @@ var ConfigDialog = {
         options.showLogLinkInPageEnabled = $('#pd_cfg_show_log_link_in_page_enabled').prop('checked');
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
+        options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.highlightFollowUserThreadInHPEnabled = $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked');
         options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
@@ -1637,8 +1677,15 @@ var ConfigDialog = {
             options.addSideBarFastNavEnabled : defConfig.addSideBarFastNavEnabled;
         settings.modifySideBarEnabled = typeof options.modifySideBarEnabled === 'boolean' ?
             options.modifySideBarEnabled : defConfig.modifySideBarEnabled;
+        settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ?
+            options.customCssEnabled : defConfig.customCssEnabled;
         settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
             options.followUserEnabled : defConfig.followUserEnabled;
+        if (typeof options.customCssContent !== 'undefined') {
+            var customCssContent = $.trim(options.customCssContent);
+            if (customCssContent !== '') settings.customCssContent = customCssContent;
+            else settings.customCssContent = defConfig.customCssContent;
+        }
         if (typeof options.followUserList !== 'undefined') {
             if ($.isArray(options.followUserList)) {
                 settings.followUserList = [];
@@ -1841,6 +1888,7 @@ var Log = {
             '  </fieldset>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a id="pd_log_im_or_ex_log_dialog" href="#">导入/导出日志</a></span>' +
             '  <button>关闭</button><button>清除日志</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_log', 'KF Online助手日志', html);
@@ -1910,6 +1958,11 @@ var Log = {
             .end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click()
             .end().find('#pd_log_stat_days').val(Config.logStatDays);
 
+        $('#pd_log_im_or_ex_log_dialog').click(function (event) {
+            event.preventDefault();
+            Log.showImportOrExportLogDialog();
+        });
+
         Dialog.show('pd_log');
         $dialog.find('.pd_cfg_btns > button:first').focus().click(function () {
             return Dialog.close('pd_log');
@@ -1929,8 +1982,19 @@ var Log = {
      */
     showLogContent: function (date) {
         if ($.type(Log.log[date]) !== 'array') return;
+        $('#pd_log_content').html(Log.getLogContent(date, Config.logSortType))
+            .parent().find('legend:first-child').text('日志内容 (共{0}项)'.replace('{0}', Log.log[date].length));
+    },
+
+    /**
+     * 获取指定日期的日志内容
+     * @param {string} date 日志对象关键字
+     * @param {string} logSortType 日志内容的排序方式
+     * @returns {string} 指定日期的日志内容
+     */
+    getLogContent: function (date, logSortType) {
         var logList = Log.log[date];
-        if (Config.logSortType === 'type') {
+        if (logSortType === 'type') {
             var sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '将道具转换为能量', '将卡片转换为VIP时间',
                 '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '批量转账', '购买帖子', '自动存款'];
             logList.sort(function (a, b) {
@@ -1942,12 +2006,11 @@ var Log = {
                 return a.time > b.time;
             });
         }
-        var content = '';
-        var curType = '';
+        var content = '', curType = '';
         $.each(logList, function (index, key) {
             if (typeof key.time === 'undefined' || typeof key.type === 'undefined' || typeof key.action === 'undefined') return;
             var d = new Date(key.time);
-            if (Config.logSortType === 'type') {
+            if (logSortType === 'type') {
                 if (curType !== key.type) {
                     content += '<h3>【{0}】</h3>'.replace('{0}', key.type);
                     curType = key.type;
@@ -1991,7 +2054,7 @@ var Log = {
             }
             content += stat + '</p>';
         });
-        $('#pd_log_content').html(content).prev('legend').text('日志内容 (共{0}项)'.replace('{0}', Log.log[date].length));
+        return content;
     },
 
     /**
@@ -2000,8 +2063,18 @@ var Log = {
      */
     showLogStat: function (date) {
         if ($.type(Log.log[date]) !== 'array') return;
+        $('#pd_log_stat').html(Log.getLogStat(date, Config.logStatType));
+    },
+
+    /**
+     * 获取指定日期的日志统计结果
+     * @param {string} date 日志对象关键字
+     * @param {string} logStatType 日志统计范围类型
+     * @returns {string} 指定日期的日志统计结果
+     */
+    getLogStat: function (date, logStatType) {
         var log = {};
-        if (Config.logStatType === 'custom') {
+        if (logStatType === 'custom') {
             var dateList = Tools.getObjectKeyList(Log.log, 1);
             var minDate = new Date(date);
             minDate.setDate(minDate.getDate() - Config.logStatDays + 1);
@@ -2012,7 +2085,7 @@ var Log = {
                 }
             }
         }
-        else if (Config.logStatType === 'all') {
+        else if (logStatType === 'all') {
             log = Log.log;
         }
         else {
@@ -2083,7 +2156,107 @@ var Log = {
                 .replace('{3}', minSmBox.toLocaleString())
                 .replace('{4}', maxSmBox.toLocaleString());
         }
-        $('#pd_log_stat').html(content);
+        return content;
+    },
+
+    /**
+     * 显示导入或导出日志对话框
+     */
+    showImportOrExportLogDialog: function () {
+        if ($('#pd_im_or_ex_log').length > 0) return;
+        Log.read();
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <div>' +
+            '    <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击保存按钮即可<br />' +
+            '    <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
+            '  </div>' +
+            '  <textarea id="pd_log_setting" style="width:600px;height:200px;word-break:break-all"></textarea>' +
+            '  <div style="margin-top:10px">' +
+            '    <strong>导出日志文本</strong><br />' +
+            '    <div>' +
+            '      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type_2" value="time" checked="checked" />按时间</label>' +
+            '      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type_2" value="type" />按类别</label>' +
+            '      <label title="在日志文本里显示每日以及全部数据的统计结果"><input type="checkbox" id="pd_log_show_stat" checked="checked" />显示统计</label>' +
+            '    </div>' +
+            '  </div>' +
+            '  <textarea id="pd_log_text" style="width:600px;height:270px" readonly="readonly"></textarea>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <button>保存</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
+        $dialog.find('input[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
+            Log.showLogText();
+        }).end().find('.pd_cfg_btns > button:first').click(function (event) {
+            event.preventDefault();
+            var log = $.trim($('#pd_log_setting').val());
+            if (!log) return;
+            try {
+                log = JSON.parse(log);
+            }
+            catch (ex) {
+                alert('日志有错误');
+                return;
+            }
+            if (!log || $.type(log) !== 'object') {
+                alert('日志有错误');
+                return;
+            }
+            Log.log = log;
+            Log.write();
+            alert('日志已导入');
+            location.reload();
+        }).next('button').click(function () {
+            return Dialog.close('pd_im_or_ex_log');
+        });
+        Dialog.show('pd_im_or_ex_log');
+        $('#pd_log_setting').val(JSON.stringify(Log.log)).select();
+        Log.showLogText();
+    },
+
+    /**
+     * 显示日志文本
+     */
+    showLogText: function () {
+        var logSortType = $('input[name="pd_log_sort_type_2"]:checked').val();
+        var isShowStat = $('#pd_log_show_stat').prop('checked');
+        var content = '', lastDate = '';
+        for (var date in Log.log) {
+            if ($.type(Log.log[date]) !== 'array') return;
+            lastDate = date;
+            content +=
+                '【{0}】(共{1}项)\n{2}'
+                    .replace('{0}', date)
+                    .replace('{1}', Log.log[date].length)
+                    .replace('{2}', logSortType === 'type' ? '' : '\n') +
+                Log.getLogContent(date, logSortType)
+                    .replace(/<br \/>/g, '\n')
+                    .replace(/<h3>/g, '\n')
+                    .replace(/<\/h3>/g, '\n')
+                    .replace(/<\/p>$/g, '\n')
+                    .replace(/<\/p>/g, logSortType === 'type' ? '\n' : '\n\n')
+                    .replace(/(<.+?>|<\/.+?>)/g, '')
+                    .replace(/`/g, '');
+            if (isShowStat) {
+                content +=
+                    '----------------------------------------------\n' +
+                    '合计：\n' +
+                    Log.getLogStat(date, 'cur')
+                        .replace(/<br \/>/g, '\n')
+                        .replace(/(<.+?>|<\/.+?>)/g, '') +
+                    '\n';
+            }
+            content += '==============================================\n';
+        }
+        if (content && isShowStat) {
+            content +=
+                '\n总计：\n' +
+                Log.getLogStat(lastDate, 'all')
+                    .replace(/<br \/>/g, '\n')
+                    .replace(/(<.+?>|<\/.+?>)/g, '');
+        }
+        $('#pd_log_text').val(content);
     }
 };
 
@@ -3935,154 +4108,171 @@ var Loot = {
         $.extend(settings, options);
         if (settings.type === 1)
             $('.kf_fw_ig1').parent().append('<div class="pd_result"><strong>攻击结果：</strong><ul></ul></div>');
-        var count = 0, successNum = 0;
+        var count = 0, successNum = 0, failNum = 0;
         var gain = {'夺取KFB': 0, '经验值': 0};
         var attackLog = '', isStop = false;
         var oriHtml = '', customHtml = '';
+        /**
+         * 攻击指定ID的怪物
+         * @param {number} id 攻击ID
+         */
+        var attack = function (id) {
+            count++;
+            $.ajax({
+                type: 'POST',
+                url: 'kf_fw_ig_pkhit.php',
+                data: {uid: id, safeid: settings.safeId},
+                success: function (msg) {
+                    if (/发起争夺/.test(msg)) {
+                        successNum++;
+                        $.each(Loot.getGainViaMsg(msg), function (key, data) {
+                            if (key === 'item') {
+                                if (typeof gain[key] === 'undefined') gain['item'] = {};
+                                for (var k in data) {
+                                    if (typeof gain['item'][k] === 'undefined') gain['item'][k] = data[k];
+                                    else gain['item'][k] += data[k];
+                                }
+                            }
+                            else {
+                                if (typeof gain[key] === 'undefined') gain[key] = data;
+                                else gain[key] += data;
+                            }
+                        });
+                    }
+                    else if (/每次攻击间隔\d+秒/.test(msg)) {
+                        failNum++;
+                        $(document).queue('BatchAttack', function () {
+                            attack(id);
+                        });
+                    }
+                    else {
+                        isStop = true;
+                        $(document).queue('BatchAttack', []);
+                    }
+                    attackLog += '第{0}次：{1}{2}\n'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : '');
+                    console.log('【批量攻击】第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
+                    if (settings.type === 1) {
+                        var html = '<li><b>第{0}次：</b>{1}{2}</li>'
+                            .replace('{0}', count)
+                            .replace('{1}', msg)
+                            .replace('{2}', isStop ? '<span class="pd_notice">（攻击已中止）</span>' : '');
+                        oriHtml += html;
+                        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
+                            $.each(Config.customMonsterNameList, function (id, name) {
+                                var oriName = Loot.getMonsterNameById(parseInt(id));
+                                html = html.replace(
+                                    '对[{0}]'.replace('{0}', oriName),
+                                    '对<span class="pd_custom_tips" title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
+                                );
+                            });
+                            customHtml += html;
+                        }
+                        $('.pd_result:last > ul').append(html);
+                    }
+
+                },
+                error: function () {
+                    failNum++;
+                    attackLog += '第{0}次：{1}\n'.replace('{0}', count).replace('{1}', '网络超时');
+                    console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '网络超时'));
+                    if (settings.type === 1) {
+                        var html = '<li><b>第{0}次：</b>{1}</li>'
+                            .replace('{0}', count)
+                            .replace('{1}', '<span class="pd_notice">网络超时</span>');
+                        $('.pd_result:last > ul').append(html);
+                    }
+                    $(document).queue('BatchAttack', function () {
+                        attack(id);
+                    });
+                },
+                complete: function () {
+                    var $remainingNum = $('#pd_remaining_num');
+                    $remainingNum.text(settings.totalAttackNum + failNum - count);
+                    if (isStop || count === settings.totalAttackNum + failNum) {
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
+                        if (gain['夺取KFB'] === 0) delete gain['夺取KFB'];
+                        if (gain['经验值'] === 0) delete gain['经验值'];
+                        if (successNum > 0) {
+                            Log.push('批量攻击', '共有`{0}`次攻击成功'.replace('{0}', successNum), {gain: gain});
+                        }
+                        var msgStat = '', logStat = '', resultStat = '';
+                        for (var key in gain) {
+                            if (key === 'item') {
+                                msgStat += '<br />';
+                                for (var itemName in gain['item']) {
+                                    msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
+                                    logStat += '，{0}+{1}'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
+                                    resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
+                                }
+                            }
+                            else {
+                                msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', key).replace('{1}', gain[key]);
+                                logStat += '，{0}+{1}'.replace('{0}', key).replace('{1}', gain[key]);
+                                resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', gain[key]);
+                            }
+                        }
+                        console.log('共有{0}次攻击成功{1}'
+                                .replace('{0}', successNum)
+                                .replace('{1}', logStat)
+                        );
+                        var $msg = KFOL.showMsg('<strong>共有<em>{0}</em>次攻击成功</strong>{1}{2}'
+                                .replace('{0}', successNum)
+                                .replace('{1}', msgStat)
+                                .replace('{2}', settings.type === 2 ? '<a href="#">查看日志</a>' : '')
+                            , -1);
+                        if (settings.type === 2 || count >= Config.maxAttackNum) {
+                            Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
+                            Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                        }
+                        if (settings.type === 2) {
+                            $('.pd_layer').remove();
+                            $msg.find('a:last').click(function (event) {
+                                event.preventDefault();
+                                Loot.showAttackLogDialog(1, attackLog);
+                            });
+                        }
+                        else {
+                            var $result = $('.pd_result:last');
+                            $result.append('<div class="pd_stat"><b>统计结果：</b><br />{0}</div>'.replace('{0}', resultStat ? resultStat : '无'));
+                            if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
+                                $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
+                                '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" />' +
+                                ' 自定义</label><br />')
+                                    .prependTo($result)
+                                    .find('input[name="pd_custom_attack_log"]')
+                                    .click(function () {
+                                        if ($(this).val() === 'custom') {
+                                            $result.find('ul').html(customHtml);
+                                        }
+                                        else {
+                                            $result.find('ul').html(oriHtml);
+                                        }
+                                    });
+                            }
+                        }
+                        if (Config.autoUseItemEnabled && Config.autoUseItemNames.length > 0 && typeof gain['item'] !== 'undefined') {
+                            var itemNameList = {};
+                            for (var itemName in gain['item']) {
+                                if ($.inArray(itemName, Config.autoUseItemNames) > -1) {
+                                    itemNameList[itemName] = gain['item'][itemName];
+                                }
+                            }
+                            if (!$.isEmptyObject(itemNameList))
+                                Item.useItemsAfterBatchAttack(itemNameList);
+                        }
+                    }
+                    window.setTimeout(function () {
+                        $(document).dequeue('BatchAttack');
+                    }, Config.perAttackInterval);
+                },
+                dataType: 'html'
+            });
+        };
         $(document).queue('BatchAttack', []);
         $.each(settings.attackList, function (id, num) {
             $.each(new Array(num), function () {
                 $(document).queue('BatchAttack', function () {
-                    count++;
-                    $.ajax({
-                        type: 'POST',
-                        url: 'kf_fw_ig_pkhit.php',
-                        data: {uid: id, safeid: settings.safeId},
-                        success: function (msg) {
-                            if (/发起争夺/.test(msg)) {
-                                successNum++;
-                                $.each(Loot.getGainViaMsg(msg), function (key, data) {
-                                    if (key === 'item') {
-                                        if (typeof gain[key] === 'undefined') gain['item'] = {};
-                                        for (var k in data) {
-                                            if (typeof gain['item'][k] === 'undefined') gain['item'][k] = data[k];
-                                            else gain['item'][k] += data[k];
-                                        }
-                                    }
-                                    else {
-                                        if (typeof gain[key] === 'undefined') gain[key] = data;
-                                        else gain[key] += data;
-                                    }
-                                });
-                            }
-                            else if (!/每次攻击间隔\d+秒/.test(msg)) {
-                                isStop = true;
-                                $(document).queue('BatchAttack', []);
-                            }
-                            attackLog += '第{0}次：{1}{2}\n'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : '');
-                            console.log('【批量攻击】第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
-                            if (settings.type === 1) {
-                                var html = '<li><b>第{0}次：</b>{1}{2}</li>'
-                                    .replace('{0}', count)
-                                    .replace('{1}', msg)
-                                    .replace('{2}', isStop ? '<span class="pd_notice">（攻击已中止）</span>' : '');
-                                oriHtml += html;
-                                if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
-                                    $.each(Config.customMonsterNameList, function (id, name) {
-                                        var oriName = Loot.getMonsterNameById(parseInt(id));
-                                        html = html.replace(
-                                            '对[{0}]'.replace('{0}', oriName),
-                                            '对<span class="pd_custom_tips" title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
-                                        );
-                                    });
-                                    customHtml += html;
-                                }
-                                $('.pd_result:last > ul').append(html);
-                            }
-
-                        },
-                        error: function () {
-                            attackLog += '第{0}次：{1}\n'.replace('{0}', count).replace('{1}', '网络超时');
-                            console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '网络超时'));
-                            if (settings.type === 1) {
-                                var html = '<li><b>第{0}次：</b>{1}</li>'
-                                    .replace('{0}', count)
-                                    .replace('{1}', '<span class="pd_notice">网络超时</span>');
-                                $('.pd_result:last > ul').append(html);
-                            }
-                        },
-                        complete: function () {
-                            var $remainingNum = $('#pd_remaining_num');
-                            $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                            if (isStop || count === settings.totalAttackNum) {
-                                KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                                if (gain['夺取KFB'] === 0) delete gain['夺取KFB'];
-                                if (gain['经验值'] === 0) delete gain['经验值'];
-                                if (successNum > 0) {
-                                    Log.push('批量攻击', '共有`{0}`次攻击成功'.replace('{0}', successNum), {gain: gain});
-                                }
-                                var msgStat = '', logStat = '', resultStat = '';
-                                for (var key in gain) {
-                                    if (key === 'item') {
-                                        msgStat += '<br />';
-                                        for (var itemName in gain['item']) {
-                                            msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
-                                            logStat += '，{0}+{1}'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
-                                            resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
-                                        }
-                                    }
-                                    else {
-                                        msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', key).replace('{1}', gain[key]);
-                                        logStat += '，{0}+{1}'.replace('{0}', key).replace('{1}', gain[key]);
-                                        resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', gain[key]);
-                                    }
-                                }
-                                console.log('共有{0}次攻击成功{1}'
-                                        .replace('{0}', successNum)
-                                        .replace('{1}', logStat)
-                                );
-                                var $msg = KFOL.showMsg('<strong>共有<em>{0}</em>次攻击成功</strong>{1}{2}'
-                                        .replace('{0}', successNum)
-                                        .replace('{1}', msgStat)
-                                        .replace('{2}', settings.type === 2 ? '<a href="#">查看日志</a>' : '')
-                                    , -1);
-                                if (settings.type === 2 || count >= Config.maxAttackNum) {
-                                    Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
-                                    Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
-                                }
-                                if (settings.type === 2) {
-                                    $('.pd_layer').remove();
-                                    $msg.find('a:last').click(function (event) {
-                                        event.preventDefault();
-                                        Loot.showAttackLogDialog(1, attackLog);
-                                    });
-                                }
-                                else {
-                                    var $result = $('.pd_result:last');
-                                    $result.append('<div class="pd_stat"><b>统计结果：</b><br />{0}</div>'.replace('{0}', resultStat ? resultStat : '无'));
-                                    if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
-                                        $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-                                        '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" />' +
-                                        ' 自定义</label><br />')
-                                            .prependTo($result)
-                                            .find('input[name="pd_custom_attack_log"]')
-                                            .click(function () {
-                                                if ($(this).val() === 'custom') {
-                                                    $result.find('ul').html(customHtml);
-                                                }
-                                                else {
-                                                    $result.find('ul').html(oriHtml);
-                                                }
-                                            });
-                                    }
-                                }
-                                if (Config.autoUseItemEnabled && Config.autoUseItemNames.length > 0 && typeof gain['item'] !== 'undefined') {
-                                    var itemNameList = {};
-                                    for (var itemName in gain['item']) {
-                                        if ($.inArray(itemName, Config.autoUseItemNames) > -1) {
-                                            itemNameList[itemName] = gain['item'][itemName];
-                                        }
-                                    }
-                                    if (!$.isEmptyObject(itemNameList))
-                                        Item.useItemsAfterBatchAttack(itemNameList);
-                                }
-                            }
-                            window.setTimeout(function () {
-                                $(document).dequeue('BatchAttack');
-                            }, Config.perAttackInterval);
-                        },
-                        dataType: 'html'
-                    });
+                    attack(id);
                 });
             });
         });
@@ -4262,7 +4452,8 @@ var Loot = {
         if (valueArr.length !== 2) return;
         var type = parseInt(valueArr[0]);
         if (isNaN(type)) return;
-        var safeId = valueArr[1];
+        var safeId = KFOL.getSafeId();
+        if (!safeId) safeId = valueArr[1];
         if (!safeId) return;
         if (type === 2 && Config.attackAfterTime > 0) {
             if (Loot.isAutoAttackNow()) Loot.autoAttack(safeId);
@@ -4552,6 +4743,11 @@ var KFOL = {
             '#pd_log .pd_stat i { display: inline-block; }' +
             '</style>'
         );
+        if (Config.customCssEnabled) {
+            $('head').append(
+                '<style type="text/css">' + Config.customCssContent + '</style>'
+            );
+        }
     },
 
     /**
@@ -4676,6 +4872,10 @@ var KFOL = {
         var date = Tools.getDateByTime(Config.donationAfterTime);
         if (now < date) return;
         console.log('KFB捐款Start');
+        /**
+         * 使用指定的KFB捐款
+         * @param {number} kfb 指定的KFB
+         */
         var donationSubmit = function (kfb) {
             $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
                 var date = Tools.getDateByTime('02:00:00');
@@ -5415,7 +5615,7 @@ var KFOL = {
                 if (endFloor === 0) endFloor = maxPage * Config.perPageFloorNum - 1;
                 var endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
                 if (endPage > maxPage) endPage = maxPage;
-                if (endPage > 100) {
+                if (endPage > 150) {
                     alert('需访问的页数过多');
                     return;
                 }
