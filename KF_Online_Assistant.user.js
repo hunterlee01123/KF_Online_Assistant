@@ -31,14 +31,16 @@ var Config = {
     donationAfterVipEnabled: false,
     // 是否自动争夺，可自动领取争夺奖励，并可自动进行批量攻击（可选），true：开启；false：关闭
     autoLootEnabled: false,
-    // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
-    autoAttackEnabled: false,
-    // 在距本回合结束前指定时间内才自动进行批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
-    attackAfterTime: 0,
+    // 在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：['07:00-08:15','17:00-18:15']，留空表示不启用
+    noAutoLootWhen: [],
     // 是否自定义怪物名称，true：开启；false：关闭
     customMonsterNameEnabled: false,
     // 自定义怪物名称列表，格式：{怪物ID：'自定义名称'}，例：{1:'萝莉',5:'信仰风'}
     customMonsterNameList: {},
+    // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
+    autoAttackEnabled: false,
+    // 在距本回合结束前指定时间内才自动进行批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
+    attackAfterTime: 0,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 是否自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，true：开启；false：关闭
@@ -594,6 +596,9 @@ var ConfigDialog = {
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
             '<a class="pd_cfg_tips" href="#" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</a></label></legend>' +
+            '      <label>在<input placeholder="例：07:00-08:15,17:00-18:15" id="pd_cfg_no_auto_loot_when" maxlength="23" style="width:150px" type="text" />内不自动领取争夺奖励' +
+            '<a class="pd_cfg_tips" href="#" title="在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：07:00-08:15,17:00-18:15，留空表示不启用">[?]</a>' +
+            '</label><br />' +
             '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" />自定义怪物名称 ' +
             '<a class="pd_cfg_tips" href="#" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</a></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_monster_name_dialog" href="#">详细设置&raquo;</a>' +
@@ -632,7 +637,7 @@ var ConfigDialog = {
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
-            '<a class="pd_cfg_tips" href="#" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子），只在论坛首页生效">[?]</a></label></legend>' +
+            '<a class="pd_cfg_tips" href="#" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子，需开启相关功能），只在论坛首页生效">[?]</a></label></legend>' +
             '      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
             '<a class="pd_cfg_tips" href="#" title="在首页的网页标题上显示定时模式提示的方案">[?]</a></label>' +
@@ -861,6 +866,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_im_or_ex_setting', '导入或导出设置', html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
+            if (!window.confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_setting').val());
             if (!options) return;
             try {
@@ -1198,6 +1204,7 @@ var ConfigDialog = {
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
         $('#pd_cfg_donation_after_vip_enabled').prop('checked', Config.donationAfterVipEnabled);
         $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
+        $('#pd_cfg_no_auto_loot_when').val(Config.noAutoLootWhen.join(','));
         $('#pd_cfg_custom_monster_name_enabled').prop('checked', Config.customMonsterNameEnabled);
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
@@ -1254,6 +1261,7 @@ var ConfigDialog = {
         options.donationAfterVipEnabled = $('#pd_cfg_donation_after_vip_enabled').prop('checked');
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
         options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
+        options.noAutoLootWhen = $.trim($('#pd_cfg_no_auto_loot_when').val()).split(',');
         options.customMonsterNameEnabled = $('#pd_cfg_custom_monster_name_enabled').prop('checked');
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
@@ -1347,6 +1355,17 @@ var ConfigDialog = {
             $txtDonationAfterTime.select();
             $txtDonationAfterTime.focus();
             return false;
+        }
+
+        var $txtNoAutoLootWhen = $('#pd_cfg_no_auto_loot_when');
+        var noAutoLootWhen = $.trim($txtNoAutoLootWhen.val());
+        if (noAutoLootWhen) {
+            if (!/^((2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9],?){1,2}$/.test(noAutoLootWhen)) {
+                alert('在指定时间段内不自动领取争夺奖励格式不正确');
+                $txtNoAutoLootWhen.select();
+                $txtNoAutoLootWhen.focus();
+                return false;
+            }
         }
 
         var $txtAttackAfterTime = $('#pd_cfg_attack_after_time');
@@ -1501,6 +1520,16 @@ var ConfigDialog = {
             options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
         settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
             options.autoLootEnabled : defConfig.autoLootEnabled;
+        if (typeof options.noAutoLootWhen !== 'undefined') {
+            if ($.isArray(options.noAutoLootWhen)) {
+                settings.noAutoLootWhen = [];
+                for (var i in options.noAutoLootWhen) {
+                    var time = $.trim(options.noAutoLootWhen[i]);
+                    if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9]$/.test(time)) settings.noAutoLootWhen.push(time);
+                }
+            }
+            else settings.noAutoLootWhen = defConfig.noAutoLootWhen;
+        }
         settings.customMonsterNameEnabled = typeof options.customMonsterNameEnabled === 'boolean' ?
             options.customMonsterNameEnabled : defConfig.customMonsterNameEnabled;
         if (typeof options.customMonsterNameList !== 'undefined') {
@@ -2173,7 +2202,7 @@ var Log = {
             '  </div>' +
             '  <textarea id="pd_log_setting" style="width:600px;height:200px;word-break:break-all"></textarea>' +
             '  <div style="margin-top:10px">' +
-            '    <strong>导出日志文本</strong><br />' +
+            '    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可<br />' +
             '    <div>' +
             '      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type_2" value="time" checked="checked" />按时间</label>' +
             '      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type_2" value="type" />按类别</label>' +
@@ -2190,6 +2219,7 @@ var Log = {
             Log.showLogText();
         }).end().find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
+            if (!window.confirm('是否导入文本框中的日志？')) return;
             var log = $.trim($('#pd_log_setting').val());
             if (!log) return;
             try {
@@ -2212,7 +2242,7 @@ var Log = {
         });
         Dialog.show('pd_im_or_ex_log');
         $('#pd_log_setting').val(JSON.stringify(Log.log)).select();
-        Log.showLogText();
+        $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).click();
     },
 
     /**
@@ -2223,19 +2253,17 @@ var Log = {
         var isShowStat = $('#pd_log_show_stat').prop('checked');
         var content = '', lastDate = '';
         for (var date in Log.log) {
-            if ($.type(Log.log[date]) !== 'array') return;
-            lastDate = date;
+            if ($.type(Log.log[date]) !== 'array') continue;
+            if (lastDate > date) lastDate = date;
             content +=
                 '【{0}】(共{1}项)\n{2}'
                     .replace('{0}', date)
                     .replace('{1}', Log.log[date].length)
                     .replace('{2}', logSortType === 'type' ? '' : '\n') +
                 Log.getLogContent(date, logSortType)
-                    .replace(/<br \/>/g, '\n')
                     .replace(/<h3>/g, '\n')
                     .replace(/<\/h3>/g, '\n')
-                    .replace(/<\/p>$/g, '\n')
-                    .replace(/<\/p>/g, logSortType === 'type' ? '\n' : '\n\n')
+                    .replace(/<\/p>/g, '\n')
                     .replace(/(<.+?>|<\/.+?>)/g, '')
                     .replace(/`/g, '');
             if (isShowStat) {
@@ -3965,6 +3993,20 @@ var Loot = {
      * @param {boolean} [isAutoDonation=false] 是否自动捐款
      */
     getLootAward: function (isAutoDonation) {
+        if (Config.noAutoLootWhen.length > 0) {
+            var now = new Date();
+            for (var i in Config.noAutoLootWhen) {
+                var whenArr = Config.noAutoLootWhen[i].split('-');
+                if (whenArr.length !== 2) continue;
+                var start = Tools.getDateByTime(whenArr[0]);
+                var end = Tools.getDateByTime(whenArr[1]);
+                if (end < start) {
+                    if (now > end) end.setDate(end.getDate() + 1);
+                    else start.setDate(start.getDate() - 1);
+                }
+                if (now >= start && now <= end) return;
+            }
+        }
         console.log('领取争夺奖励Start');
         var autoAttack = function (safeId) {
             if (Config.autoAttackEnabled && !$.isEmptyObject(Config.batchAttackList) && safeId) {
@@ -5059,6 +5101,24 @@ var KFOL = {
                 if (getLootAwardInterval < 0) getLootAwardInterval = 0;
             }
             else getLootAwardInterval = 0;
+            if (Config.noAutoLootWhen.length > 0) {
+                var next = Tools.getDate('+' + getLootAwardInterval + 's');
+                var now = new Date();
+                for (var i in Config.noAutoLootWhen) {
+                    var whenArr = Config.noAutoLootWhen[i].split('-');
+                    if (whenArr.length !== 2) continue;
+                    var start = Tools.getDateByTime(whenArr[0]);
+                    var end = Tools.getDateByTime(whenArr[1]);
+                    if (end < start) {
+                        if (now > end) end.setDate(end.getDate() + 1);
+                        else start.setDate(start.getDate() - 1);
+                    }
+                    if (next >= start && next <= end) {
+                        getLootAwardInterval = Math.floor((end - now) / 1000);
+                        break;
+                    }
+                }
+            }
             if (Config.autoAttackEnabled && Config.attackAfterTime > 0 && !$.isEmptyObject(Config.batchAttackList)
                 && Tools.getCookie(Config.autoAttackReadyCookieName) && !Tools.getCookie(Config.autoAttackingCookieName)) {
                 if (lootTimeLog.type > 0) {
