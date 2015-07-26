@@ -11,6 +11,11 @@ https://greasyfork.org/zh-CN/scripts/8615
 __如安装之后发现脚本没有起效，请尝试先删除脚本后再重新安装__
 
 ## 更新日志
+* __V4.2.0 (2015-07-26)__ ([详见](http://bbs.2dgal.com/read.php?tid=500069&spid=12307044))
+  * 增加了在指定时间段内不自动领取争夺奖励的功能
+  * 增加了导入/导出日志的功能
+  * 增加了自定义CSS的功能
+  * 增加了定期存款到期提醒的功能
 * __V4.1.2 (2015-07-23)__ ([详见](http://bbs.2dgal.com/read.php?tid=493907&spid=12284111))
   * 增加了自动使用批量攻击后刚掉落道具的功能
   * 增加了自定义怪物名称的功能
@@ -130,7 +135,7 @@ __如安装之后发现脚本没有起效，请尝试先删除脚本后再重新
 * ID备注
 
 ## 讨论帖
-http://bbs.2dgal.com/read.php?tid=493907
+http://bbs.2dgal.com/read.php?tid=500069
 
 ## License
 [MIT](http://opensource.org/licenses/MIT)

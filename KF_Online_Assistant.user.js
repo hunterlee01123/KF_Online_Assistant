@@ -9,7 +9,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.2.0-dev
+// @version     4.2.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -108,6 +108,8 @@ var Config = {
     customCssEnabled: false,
     // 自定义CSS的内容
     customCssContent: '',
+    // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
+    fixedDepositDueAlertEnabled: false,
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
     // 关注用户列表，例：['张三','李四','王五']
@@ -154,6 +156,10 @@ var Config = {
     minBuyThreadWarningSell: 6,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
+    // 神秘升级提醒临时日志名称
+    smLevelUpTmpLogName: 'SmLevelUp',
+    // 定期存款到期时间临时日志名称
+    fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 标记已KFB捐款的Cookie名称
     donationCookieName: 'pd_donation',
     // 标记已领取争夺奖励的Cookie名称
@@ -165,7 +171,9 @@ var Config = {
     // 标记已抽取神秘盒子的Cookie名称
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称
-    hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips'
+    hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
+    // 标记已进行定期存款到期提醒的Cookie名称
+    fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert'
 };
 
 /**
@@ -596,7 +604,7 @@ var ConfigDialog = {
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
             '<a class="pd_cfg_tips" href="#" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</a></label></legend>' +
-            '      <label>在<input placeholder="例：07:00-08:15,17:00-18:15" id="pd_cfg_no_auto_loot_when" maxlength="23" style="width:150px" type="text" />内不自动领取争夺奖励' +
+            '      <label>在<input placeholder="例：07:00-08:15,17:00-18:15" id="pd_cfg_no_auto_loot_when" maxlength="23" style="width:150px" type="text" />内不自动领取争夺奖励 ' +
             '<a class="pd_cfg_tips" href="#" title="在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：07:00-08:15,17:00-18:15，留空表示不启用">[?]</a>' +
             '</label><br />' +
             '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" />自定义怪物名称 ' +
@@ -703,6 +711,8 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" />启用自定义CSS ' +
             '<a class="pd_cfg_tips" href="#" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</a></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox" />定期存款到期提醒 ' +
+            '<a class="pd_cfg_tips" href="#" title="在定时存款到期时进行提醒，只在首页生效">[?]</a></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
@@ -1239,6 +1249,7 @@ var ConfigDialog = {
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
+        $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         ConfigDialog.showFollowOrBlockUserList(1);
         $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
@@ -1303,6 +1314,7 @@ var ConfigDialog = {
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
+        options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.highlightFollowUserThreadInHPEnabled = $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked');
         options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
@@ -1708,6 +1720,8 @@ var ConfigDialog = {
             options.modifySideBarEnabled : defConfig.modifySideBarEnabled;
         settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ?
             options.customCssEnabled : defConfig.customCssEnabled;
+        settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
+            options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
         settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
             options.followUserEnabled : defConfig.followUserEnabled;
         if (typeof options.customCssContent !== 'undefined') {
@@ -2311,6 +2325,10 @@ var TmpLog = {
             return;
         }
         if (!log || $.type(log) !== 'object') return;
+        var allowKey = [Config.smLevelUpTmpLogName, Config.fixedDepositDueTmpLogName];
+        for (var k in log) {
+            if ($.inArray(k, allowKey) === -1) delete log[k];
+        }
         TmpLog.log = log;
     },
 
@@ -3969,18 +3987,67 @@ var Bank = {
                 $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
                 Bank.batchTransfer(users, msg, isDeposited, currentDeposit);
             });
+
         var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("可获利息：")');
-        var accountHtml = $account.html();
-        var matches = /可获利息：(\d+)\(/i.exec(accountHtml);
+        var interestHtml = $account.html();
+        var matches = /可获利息：(\d+)\(/i.exec(interestHtml);
+        var interest = 0;
         if (matches) {
-            var interest = parseInt(matches[1]);
+            interest = parseInt(matches[1]);
             if (interest > 0) {
-                $account.html(accountHtml.replace(/可获利息：\d+\(/i,
+                $account.html(interestHtml.replace(/可获利息：\d+\(/i,
                         '可获利息：<b class="pd_highlight">{0}</b>('.replace('{0}', interest)
                     )
                 );
             }
         }
+
+        var fixedDepositHtml = $account.html();
+        matches = /定期存款：(\d+)KFB/i.exec(fixedDepositHtml);
+        if (matches) {
+            var fixedDeposit = parseInt(matches[1]);
+            if (fixedDeposit > 0 && interest === 0) {
+                var time = parseInt(TmpLog.getValue(Config.fixedDepositDueTmpLogName));
+                if (!isNaN(time) && time > (new Date()).getTime()) {
+                    $account.html(
+                        fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
+                            '期间不存取定期，才可以获得利息）<span style="color:#666">（到期时间：{0} {1}）</span>'
+                                .replace('{0}', Tools.getDateString(new Date(time)))
+                                .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
+                        )
+                    );
+                }
+            }
+        }
+
+        $('form[name="form1"], form[name="form2"]').submit(function () {
+            var $this = $(this);
+            var money = 0;
+            if ($this.is('[name="form2"]')) money = parseInt($.trim($this.find('input[name="drawmoney"]').val()));
+            else money = parseInt($.trim($this.find('input[name="savemoney"]').val()));
+            if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
+                TmpLog.setValue(Config.fixedDepositDueTmpLogName, Tools.getDate('+3M').getTime());
+            }
+        });
+    },
+
+    /**
+     * 定期存款到期提醒
+     */
+    fixedDepositDueAlert: function () {
+        console.log('定期存款到期提醒Start');
+        $.get('hack.php?H_name=bank', function (html) {
+            Tools.setCookie(Config.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(1));
+            var matches = /可获利息：(\d+)\(/.exec(html);
+            if (!matches) return;
+            var interest = parseInt(matches[1]);
+            if (interest > 0) {
+                Tools.setCookie(Config.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(7));
+                if (window.confirm('您的定期存款已到期，共产生利息{0}KFB，是否前往银行取款？'.replace('{0}', interest))) {
+                    location.href = 'hack.php?H_name=bank';
+                }
+            }
+        }, 'html');
     }
 };
 
@@ -4073,9 +4140,6 @@ var Loot = {
                                     event.preventDefault();
                                     Loot.showAttackLogDialog(2, attackLog);
                                 });
-                                if (KFOL.isInHomePage) {
-                                    $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
-                                }
                                 autoAttack(safeId);
                             }
                         }, 'html');
@@ -4262,7 +4326,7 @@ var Loot = {
                                 .replace('{1}', msgStat)
                                 .replace('{2}', settings.type === 2 ? '<a href="#">查看日志</a>' : '')
                             , -1);
-                        if (settings.type === 2 || count >= Config.maxAttackNum) {
+                        if (settings.type === 2 || count >= Config.maxAttackNum || isStop) {
                             Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
                             Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
                         }
@@ -4272,6 +4336,9 @@ var Loot = {
                                 event.preventDefault();
                                 Loot.showAttackLogDialog(1, attackLog);
                             });
+                            if (KFOL.isInHomePage) {
+                                $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
+                            }
                         }
                         else {
                             var $result = $('.pd_result:last');
@@ -5668,25 +5735,43 @@ var KFOL = {
             .find('a').click(function (event) {
                 event.preventDefault();
                 if ($('#pd_replyer_list').length > 0) return;
-                var endFloor = parseInt(window.prompt('统计到第几楼？（0表示统计所有楼层）', 0));
-                if (isNaN(endFloor) || endFloor < 0) return;
+                var value = $.trim(window.prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
+                if (value === '') return;
+                if (!/^\d+(-\d+)?$/.test(value)) {
+                    alert('统计楼层格式不正确');
+                    return;
+                }
+                var startFloor = 0, endFloor = 0;
+                var valueArr = value.split('-');
+                if (valueArr.length === 2) {
+                    startFloor = parseInt(valueArr[0]);
+                    endFloor = parseInt(valueArr[1]);
+                }
+                else endFloor = parseInt(valueArr[0]);
+                if (endFloor < startFloor) {
+                    alert('统计楼层格式不正确');
+                    return;
+                }
                 var matches = /(\d+)页/.exec($('.pages:eq(0) > li:last-child > a').text());
                 var maxPage = matches ? parseInt(matches[1]) : 1;
+                if (startFloor === 0) startFloor = 1;
                 if (endFloor === 0) endFloor = maxPage * Config.perPageFloorNum - 1;
+                var startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
                 var endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
                 if (endPage > maxPage) endPage = maxPage;
-                if (endPage > 150) {
-                    alert('需访问的页数过多');
+                if (endPage - startPage > 150) {
+                    alert('需访问的总页数不可超过150');
                     return;
                 }
                 var tid = Tools.getUrlParam('tid');
                 if (!tid) return;
                 KFOL.showWaitMsg('<strong>正在统计回帖名单中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i>'
-                        .replace('{0}', endPage)
+                        .replace('{0}', endPage - startPage + 1)
                     , true);
                 $(document).queue('StatReplyers', []);
                 var replyerList = [];
                 $.each(new Array(endPage), function (index) {
+                    if (index + 1 < startPage) return;
                     $(document).queue('StatReplyers', function () {
                         var url = 'read.php?tid={0}&page={1}'.replace('{0}', tid).replace('{1}', index + 1);
                         $.get(url, function (html) {
@@ -5696,6 +5781,7 @@ var KFOL = {
                                 var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
                                 if (!floorMatches) continue;
                                 var floor = parseInt(floorMatches[1]);
+                                if (floor < startFloor) continue;
                                 if (floor > endFloor) {
                                     isStop = true;
                                     break;
@@ -6321,13 +6407,12 @@ var KFOL = {
      * 在神秘等级升级后进行提醒
      */
     smLevelUpAlert: function () {
-        var logKey = 'SmLevelUp';
         var matches = /神秘(\d+)级/.exec($('a.indbox1[href="kf_growup.php"]').text());
         if (!matches) return;
         var smLevel = parseInt(matches[1]);
-        var data = TmpLog.getValue(logKey);
+        var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
         var writeData = function () {
-            TmpLog.setValue(logKey, {time: (new Date()).getTime(), smLevel: smLevel});
+            TmpLog.setValue(Config.smLevelUpTmpLogName, {time: (new Date()).getTime(), smLevel: smLevel});
         };
         if (!data || $.type(data.time) !== 'number' || $.type(data.smLevel) !== 'number') {
             writeData();
@@ -6413,16 +6498,14 @@ var KFOL = {
         var diff = Tools.getTimeDiffInfo(timeLog.time);
         if (diff.hours === 0 && diff.minutes === 0) return;
         if (timeLog.type === 2) {
-            $msg.text('争夺奖励(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
-                .removeClass('indbox5')
-                .addClass('indbox6');
+            $msg.text('争夺奖励(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
         }
         else {
             diff.hours += 1;
-            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '多小时'))
-                .removeClass('indbox5')
-                .addClass('indbox6');
+            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '多小时'));
         }
+        if (!Tools.getCookie(Config.autoAttackReadyCookieName))
+            $msg.removeClass('indbox5').addClass('indbox6');
     },
 
     /**
@@ -6462,6 +6545,8 @@ var KFOL = {
             KFOL.showDrawSmboxInterval();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.homePageThreadFastGotoLinkEnabled) KFOL.addHomePageThreadFastGotoLink();
+            if (Config.fixedDepositDueAlertEnabled && !Tools.getCookie(Config.fixedDepositDueAlertCookieName))
+                Bank.fixedDepositDueAlert();
         }
         else if (location.pathname === '/read.php') {
             KFOL.fastGotoFloor();
