@@ -5,17 +5,19 @@
 // @author      喵拉布丁
 // @homepage    https://greasyfork.org/scripts/8615
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
+// @updateURL   https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.meta.js
+// @downloadURL https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.user.js
 // @include     http://2dgal.com/*
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.2.0
+// @version     4.3.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.2.0';
+var version = '4.3.0';
 /**
  * 配置类
  */
@@ -39,7 +41,9 @@ var Config = {
     customMonsterNameList: {},
     // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
     autoAttackEnabled: false,
-    // 在距本回合结束前指定时间内才自动进行批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
+    // 是否当生命值不超过低保线时自动进行一次攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
+    attackWhenZeroLifeEnabled: false,
+    // 在距本回合结束前指定时间内才自动完成（剩余）批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
     attackAfterTime: 0,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
@@ -64,6 +68,8 @@ var Config = {
     smLevelUpAlertEnabled: false,
     // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
     homePageThreadFastGotoLinkEnabled: true,
+    // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
+    fixedDepositDueAlertEnabled: false,
     // 是否在帖子列表页面中显示帖子页数快捷链接，true：开启；false：关闭
     showFastGotoThreadPageEnabled: false,
     // 在帖子页数快捷链接中显示页数链接的最大数量
@@ -88,6 +94,10 @@ var Config = {
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
     batchBuyThreadEnabled: true,
+    // 是否开启显示用户的自定义备注的功能，true：开启；false：关闭
+    userMemoEnabled: false,
+    // 用户自定义备注列表，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
+    userMemoList: {},
     // 默认提示消息的持续时间（秒）
     defShowMsgDuration: 15,
     // 日志保存天数
@@ -108,8 +118,6 @@ var Config = {
     customCssEnabled: false,
     // 自定义CSS的内容
     customCssContent: '',
-    // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
-    fixedDepositDueAlertEnabled: false,
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
     // 关注用户列表，例：['张三','李四','王五']
@@ -138,6 +146,10 @@ var Config = {
     maxAttackNum: 20,
     // 每次攻击的时间间隔（毫秒）
     perAttackInterval: 2000,
+    // 在领取争夺奖励后首次检查是否进行攻击的间隔时间（分钟）
+    firstAttackCheckAttackInterval: 185,
+    // 检查是否进行攻击的默认间隔时间（分钟）
+    defAttackCheckAttackInterval: 25,
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 在抽取神秘盒子后所推迟的争夺领取间隔（分钟）
@@ -168,6 +180,10 @@ var Config = {
     autoAttackReadyCookieName: 'pd_auto_attack_ready',
     // 标记正在进行自动攻击的Cookie名称
     autoAttackingCookieName: 'pd_auto_attacking',
+    // 标记检查是否进行攻击的Cookie名称
+    attackCheckCookieName: 'pd_attack_check',
+    // 标记已完成的试探攻击次数的Cookie名称
+    attackCountCookieName: 'pd_attack_count',
     // 标记已抽取神秘盒子的Cookie名称
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称
@@ -613,8 +629,10 @@ var ConfigDialog = {
             '      <fieldset>' +
             '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
             '<a class="pd_cfg_tips" href="#" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</a></label></legend>' +
-            '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内攻击 ' +
-            '<a class="pd_cfg_tips" href="#" title="在距本回合结束前指定时间内才自动进行批量攻击，取值范围：{0}-{1}，留空表示不启用（注意不要设置得太接近最小值，以免错过攻击）">[?]</a></label>'
+            '      <label><input id="pd_cfg_attack_when_zero_life_enabled" type="checkbox" />当生命值不超过低保线时自动进行一次攻击 ' +
+            '<a class="pd_cfg_tips" href="#" title="当生命值不超过低保线时自动进行一次攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</a></label><br />' +
+            '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
+            '<a class="pd_cfg_tips" href="#" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</a></label>'
                 .replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime) +
             '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
             '          <tbody>' +
@@ -661,7 +679,9 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
             '<a class="pd_cfg_tips" href="#" title="在神秘等级升级后进行提醒，只在首页生效">[?]</a></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
-            '<a class="pd_cfg_tips" href="#" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</a></label>' +
+            '<a class="pd_cfg_tips" href="#" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</a></label><br />' +
+            '      <label><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox" />定期存款到期提醒 ' +
+            '<a class="pd_cfg_tips" href="#" title="在定时存款到期时进行提醒，只在首页生效">[?]</a></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>帖子列表页面相关</legend>' +
@@ -694,7 +714,10 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox" />开启多重引用功能 ' +
             '<a class="pd_cfg_tips" href="#" title="在帖子页面开启多重回复和多重引用功能">[?]</a></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
-            '<a class="pd_cfg_tips" href="#" title="在帖子页面开启批量购买帖子的功能">[?]</a></label>' +
+            '<a class="pd_cfg_tips" href="#" title="在帖子页面开启批量购买帖子的功能">[?]</a></label><br />' +
+            '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" />显示用户备注 ' +
+            '<a class="pd_cfg_tips" href="#" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</a></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a><br />' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -711,8 +734,6 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" />启用自定义CSS ' +
             '<a class="pd_cfg_tips" href="#" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</a></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox" />定期存款到期提醒 ' +
-            '<a class="pd_cfg_tips" href="#" title="在定时存款到期时进行提醒，只在首页生效">[?]</a></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
@@ -792,6 +813,11 @@ var ConfigDialog = {
         $dialog.find('#pd_cfg_custom_sm_color_dialog').click(function (event) {
             event.preventDefault();
             ConfigDialog.showCustomSmColorDialog();
+        });
+
+        $dialog.find('#pd_cfg_user_memo_dialog').click(function (event) {
+            event.preventDefault();
+            ConfigDialog.showUserMemoDialog();
         });
 
         $dialog.find('#pd_cfg_custom_css_dialog').click(function (event) {
@@ -1206,6 +1232,54 @@ var ConfigDialog = {
     },
 
     /**
+     * 显示用户备注对话框
+     */
+    showUserMemoDialog: function () {
+        if ($('#pd_user_memo').length > 0) return;
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  按照“用户名:备注”的格式（注意是英文冒号），每行一个<br />' +
+            '  <textarea style="width:320px;height:400px"></textarea>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <button>确定</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_user_memo', '用户备注', html);
+        var $userMemoList = $dialog.find('textarea');
+        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
+            event.preventDefault();
+            var content = $.trim($userMemoList.val());
+            Config.userMemoList = {};
+            var lines = content.split('\n');
+            for (var i in lines) {
+                var line = $.trim(lines[i]);
+                if (!line) continue;
+                if (!/.+?:.+/.test(line)) {
+                    alert('用户备注格式不正确');
+                    $userMemoList.focus();
+                    return;
+                }
+                var valueArr = line.split(':');
+                if (valueArr.length < 2) continue;
+                var user = $.trim(valueArr[0]);
+                var memo = $.trim(valueArr[1]);
+                if (!user || !memo) continue;
+                Config.userMemoList[user] = memo;
+            }
+            ConfigDialog.write();
+            Dialog.close('pd_user_memo');
+        }).next('button').click(function () {
+            return Dialog.close('pd_user_memo');
+        });
+        Dialog.show('pd_user_memo');
+        var content = '';
+        for (var user in Config.userMemoList) {
+            content += '{0}:{1}\n'.replace('{0}', user).replace('{1}', Config.userMemoList[user]);
+        }
+        $userMemoList.val(content).focus();
+    },
+
+    /**
      * 设置对话框中的字段值
      */
     setValue: function () {
@@ -1213,48 +1287,60 @@ var ConfigDialog = {
         $('#pd_cfg_donation_kfb').val(Config.donationKfb);
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
         $('#pd_cfg_donation_after_vip_enabled').prop('checked', Config.donationAfterVipEnabled);
+
         $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
         $('#pd_cfg_no_auto_loot_when').val(Config.noAutoLootWhen.join(','));
         $('#pd_cfg_custom_monster_name_enabled').prop('checked', Config.customMonsterNameEnabled);
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
+        $('#pd_cfg_attack_when_zero_life_enabled').prop('checked', Config.attackWhenZeroLifeEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
         $('#pd_cfg_auto_use_item_enabled').prop('checked', Config.autoUseItemEnabled);
         $('#pd_cfg_auto_use_item_names').val(Config.autoUseItemNames);
+
         $('#pd_cfg_auto_draw_smbox_enabled').prop('checked', Config.autoDrawSmbox2Enabled);
         $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
+
         $('#pd_cfg_auto_refresh_enabled').prop('checked', Config.autoRefreshEnabled);
         $('#pd_cfg_show_refresh_mode_tips_type').val(Config.showRefreshModeTipsType.toLowerCase());
+
         $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
         $('#pd_cfg_hide_none_vip_enabled').prop('checked', Config.hideNoneVipEnabled);
         $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
         $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked', Config.homePageThreadFastGotoLinkEnabled);
+        $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
+
         $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked', Config.showFastGotoThreadPageEnabled);
         $('#pd_cfg_max_fast_goto_thread_page_num').val(Config.maxFastGotoThreadPageNum);
         $('#pd_cfg_per_page_floor_num').val(Config.perPageFloorNum);
         $('#pd_cfg_highlight_new_post_enabled').prop('checked', Config.highlightNewPostEnabled);
+
         $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked', Config.adjustThreadContentWidthEnabled);
         $('#pd_cfg_thread_content_font_size').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
         $('#pd_cfg_custom_my_sm_color').val(Config.customMySmColor);
+        if (Config.customMySmColor) $('#pd_cfg_custom_my_sm_color_select').val(Config.customMySmColor);
         $('#pd_cfg_custom_sm_color_enabled').prop('checked', Config.customSmColorEnabled);
         $('#pd_cfg_modify_kf_other_domain_enabled').prop('checked', Config.modifyKFOtherDomainEnabled);
         $('#pd_cfg_multi_quote_enabled').prop('checked', Config.multiQuoteEnabled);
         $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
-        if (Config.customMySmColor) $('#pd_cfg_custom_my_sm_color_select').val(Config.customMySmColor);
+        $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
+
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_log_save_days').val(Config.logSaveDays);
         $('#pd_cfg_show_log_link_in_page_enabled').prop('checked', Config.showLogLinkInPageEnabled);
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
-        $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
+
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         ConfigDialog.showFollowOrBlockUserList(1);
         $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
+
         $('#pd_cfg_block_user_enabled').prop('checked', Config.blockUserEnabled);
         ConfigDialog.showFollowOrBlockUserList(2);
+
         $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked', Config.autoSaveCurrentDepositEnabled);
         if (Config.saveCurrentDepositAfterKfb > 0) $('#pd_cfg_save_current_deposit_after_kfb').val(Config.saveCurrentDepositAfterKfb);
         if (Config.saveCurrentDepositKfb > 0) $('#pd_cfg_save_current_deposit_kfb').val(Config.saveCurrentDepositKfb);
@@ -1271,10 +1357,12 @@ var ConfigDialog = {
         options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
         options.donationAfterVipEnabled = $('#pd_cfg_donation_after_vip_enabled').prop('checked');
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
+
         options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
         options.noAutoLootWhen = $.trim($('#pd_cfg_no_auto_loot_when').val()).split(',');
         options.customMonsterNameEnabled = $('#pd_cfg_custom_monster_name_enabled').prop('checked');
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
+        options.attackWhenZeroLifeEnabled = $('#pd_cfg_attack_when_zero_life_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
@@ -1289,18 +1377,23 @@ var ConfigDialog = {
         });
         options.autoUseItemEnabled = $('#pd_cfg_auto_use_item_enabled').prop('checked');
         options.autoUseItemNames = $('#pd_cfg_auto_use_item_names').val();
+
         options.autoDrawSmbox2Enabled = $('#pd_cfg_auto_draw_smbox_enabled').prop('checked');
         options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
+
         options.autoRefreshEnabled = $('#pd_cfg_auto_refresh_enabled').prop('checked');
         options.showRefreshModeTipsType = $('#pd_cfg_show_refresh_mode_tips_type').val();
+
         options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
         options.hideNoneVipEnabled = $('#pd_cfg_hide_none_vip_enabled').prop('checked');
         options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
         options.homePageThreadFastGotoLinkEnabled = $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked');
+        options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
         options.showFastGotoThreadPageEnabled = $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked');
         options.maxFastGotoThreadPageNum = parseInt($.trim($('#pd_cfg_max_fast_goto_thread_page_num').val()));
         options.perPageFloorNum = $('#pd_cfg_per_page_floor_num').val();
         options.highlightNewPostEnabled = $('#pd_cfg_highlight_new_post_enabled').prop('checked');
+
         options.adjustThreadContentWidthEnabled = $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked');
         options.threadContentFontSize = parseInt($.trim($('#pd_cfg_thread_content_font_size').val()));
         options.customMySmColor = $.trim($('#pd_cfg_custom_my_sm_color').val()).toUpperCase();
@@ -1308,16 +1401,20 @@ var ConfigDialog = {
         options.modifyKFOtherDomainEnabled = $('#pd_cfg_modify_kf_other_domain_enabled').prop('checked');
         options.multiQuoteEnabled = $('#pd_cfg_multi_quote_enabled').prop('checked');
         options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
+        options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
+
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
         options.showLogLinkInPageEnabled = $('#pd_cfg_show_log_link_in_page_enabled').prop('checked');
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
-        options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
+
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.highlightFollowUserThreadInHPEnabled = $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked');
+
         options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
+
         options.autoSaveCurrentDepositEnabled = $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked');
         options.saveCurrentDepositAfterKfb = parseInt($.trim($('#pd_cfg_save_current_deposit_after_kfb').val()));
         options.saveCurrentDepositKfb = parseInt($.trim($('#pd_cfg_save_current_deposit_kfb').val()));
@@ -1385,7 +1482,15 @@ var ConfigDialog = {
         if (attackAfterTime) {
             attackAfterTime = parseInt(attackAfterTime);
             if (isNaN(attackAfterTime) || attackAfterTime > Config.defLootInterval || attackAfterTime < Config.minAttackAfterTime) {
-                alert('在指定时间之内攻击的取值范围为：{0}-{1}'.replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime));
+                alert('在指定时间之内才完成攻击的取值范围为：{0}-{1}'.replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime));
+                $txtAttackAfterTime.select();
+                $txtAttackAfterTime.focus();
+                return false;
+            }
+        }
+        else {
+            if ($('#pd_cfg_attack_when_zero_life_enabled').prop('checked')) {
+                alert('开启“当生命值不超过低保线时进行攻击”必须同时设置“在指定时间之内才完成攻击”');
                 $txtAttackAfterTime.select();
                 $txtAttackAfterTime.focus();
                 return false;
@@ -1530,6 +1635,7 @@ var ConfigDialog = {
         }
         settings.donationAfterVipEnabled = typeof options.donationAfterVipEnabled === 'boolean' ?
             options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
+
         settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
             options.autoLootEnabled : defConfig.autoLootEnabled;
         if (typeof options.noAutoLootWhen !== 'undefined') {
@@ -1559,12 +1665,15 @@ var ConfigDialog = {
         }
         settings.autoAttackEnabled = typeof options.autoAttackEnabled === 'boolean' ?
             options.autoAttackEnabled : defConfig.autoAttackEnabled;
+        settings.attackWhenZeroLifeEnabled = typeof options.attackWhenZeroLifeEnabled === 'boolean' ?
+            options.attackWhenZeroLifeEnabled : defConfig.attackWhenZeroLifeEnabled;
         if (typeof options.attackAfterTime !== 'undefined') {
             var attackAfterTime = parseInt(options.attackAfterTime);
             if ($.isNumeric(attackAfterTime) && attackAfterTime >= Config.minAttackAfterTime && attackAfterTime <= Config.defLootInterval)
                 settings.attackAfterTime = attackAfterTime;
             else settings.attackAfterTime = defConfig.attackAfterTime;
         }
+        if (settings.attackWhenZeroLifeEnabled && !settings.attackAfterTime) settings.attackWhenZeroLifeEnabled = false;
         if (typeof options.batchAttackList !== 'undefined') {
             if ($.type(options.batchAttackList) === 'object') {
                 settings.batchAttackList = {};
@@ -1596,6 +1705,7 @@ var ConfigDialog = {
             }
             else settings.autoUseItemNames = defConfig.autoUseItemNames;
         }
+
         settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
             options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
         if (settings.autoDrawSmbox2Enabled && settings.autoLootEnabled) settings.autoDrawSmbox2Enabled = false;
@@ -1609,6 +1719,7 @@ var ConfigDialog = {
             }
             else settings.favorSmboxNumbers = defConfig.favorSmboxNumbers;
         }
+
         settings.autoRefreshEnabled = typeof options.autoRefreshEnabled === 'boolean' ?
             options.autoRefreshEnabled : defConfig.autoRefreshEnabled;
         if (typeof options.showRefreshModeTipsType !== 'undefined') {
@@ -1618,6 +1729,7 @@ var ConfigDialog = {
                 settings.showRefreshModeTipsType = showRefreshModeTipsType;
             else settings.showRefreshModeTipsType = defConfig.showRefreshModeTipsType;
         }
+
         if (typeof options.atTipsHandleType !== 'undefined') {
             var atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
             var allowTypes = ['no_highlight_1', 'no_highlight_2', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
@@ -1631,6 +1743,9 @@ var ConfigDialog = {
             options.smLevelUpAlertEnabled : defConfig.smLevelUpAlertEnabled;
         settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ?
             options.homePageThreadFastGotoLinkEnabled : defConfig.homePageThreadFastGotoLinkEnabled;
+        settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
+            options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
+
         settings.showFastGotoThreadPageEnabled = typeof options.showFastGotoThreadPageEnabled === 'boolean' ?
             options.showFastGotoThreadPageEnabled : defConfig.showFastGotoThreadPageEnabled;
         if (typeof options.maxFastGotoThreadPageNum !== 'undefined') {
@@ -1647,6 +1762,7 @@ var ConfigDialog = {
         }
         settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ?
             options.highlightNewPostEnabled : defConfig.highlightNewPostEnabled;
+
         settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ?
             options.adjustThreadContentWidthEnabled : defConfig.adjustThreadContentWidthEnabled;
         if (typeof options.threadContentFontSize !== 'undefined') {
@@ -1682,6 +1798,19 @@ var ConfigDialog = {
             options.multiQuoteEnabled : defConfig.multiQuoteEnabled;
         settings.batchBuyThreadEnabled = typeof options.batchBuyThreadEnabled === 'boolean' ?
             options.batchBuyThreadEnabled : defConfig.batchBuyThreadEnabled;
+        settings.userMemoEnabled = typeof options.userMemoEnabled === 'boolean' ?
+            options.userMemoEnabled : defConfig.userMemoEnabled;
+        if (typeof options.userMemoList !== 'undefined') {
+            if ($.type(options.userMemoList) === 'object') {
+                settings.userMemoList = {};
+                for (var user in options.userMemoList) {
+                    var memo = $.trim(options.userMemoList[user]);
+                    if (memo) settings.userMemoList[user] = memo;
+                }
+            }
+            else settings.userMemoList = defConfig.userMemoList;
+        }
+
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);
             if ($.isNumeric(defShowMsgDuration) && defShowMsgDuration >= -1)
@@ -1720,8 +1849,6 @@ var ConfigDialog = {
             options.modifySideBarEnabled : defConfig.modifySideBarEnabled;
         settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ?
             options.customCssEnabled : defConfig.customCssEnabled;
-        settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
-            options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
         settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
             options.followUserEnabled : defConfig.followUserEnabled;
         if (typeof options.customCssContent !== 'undefined') {
@@ -1729,6 +1856,7 @@ var ConfigDialog = {
             if (customCssContent !== '') settings.customCssContent = customCssContent;
             else settings.customCssContent = defConfig.customCssContent;
         }
+
         if (typeof options.followUserList !== 'undefined') {
             if ($.isArray(options.followUserList)) {
                 settings.followUserList = [];
@@ -1741,6 +1869,7 @@ var ConfigDialog = {
         }
         settings.highlightFollowUserThreadInHPEnabled = typeof options.highlightFollowUserThreadInHPEnabled === 'boolean' ?
             options.highlightFollowUserThreadInHPEnabled : defConfig.highlightFollowUserThreadInHPEnabled;
+
         settings.blockUserEnabled = typeof options.blockUserEnabled === 'boolean' ?
             options.blockUserEnabled : defConfig.blockUserEnabled;
         if (typeof options.blockUserList !== 'undefined') {
@@ -1753,6 +1882,7 @@ var ConfigDialog = {
             }
             else settings.blockUserList = defConfig.blockUserList;
         }
+
         settings.autoSaveCurrentDepositEnabled = typeof options.autoSaveCurrentDepositEnabled === 'boolean' ?
             options.autoSaveCurrentDepositEnabled : defConfig.autoSaveCurrentDepositEnabled;
         if (typeof options.saveCurrentDepositAfterKfb !== 'undefined') {
@@ -4011,7 +4141,7 @@ var Bank = {
                 if (!isNaN(time) && time > (new Date()).getTime()) {
                     $account.html(
                         fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
-                            '期间不存取定期，才可以获得利息）<span style="color:#666">（到期时间：{0} {1}）</span>'
+                            '期间不存取定期，才可以获得利息）<span style="color:#888">（到期时间：{0} {1}）</span>'
                                 .replace('{0}', Tools.getDateString(new Date(time)))
                                 .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
                         )
@@ -4106,6 +4236,13 @@ var Loot = {
                         '{0}|{1}'.replace('{0}', remainingMatches[2] === '小时' ? 1 : 2).replace('{1}', nextTime.getTime()),
                         nextTime
                     );
+                    if (Config.attackWhenZeroLifeEnabled) {
+                        var nextCheckTime = Config.firstAttackCheckAttackInterval - (Config.defLootInterval - lootInterval);
+                        if (nextCheckTime < 0) nextCheckTime = 0;
+                        nextCheckTime = Tools.getDate('+' + nextCheckTime + 'm');
+                        Tools.setCookie(Config.attackCheckCookieName, nextCheckTime.getTime(), nextCheckTime);
+                        Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                    }
                 }
                 var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
                 if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
@@ -4127,6 +4264,11 @@ var Loot = {
                         function (html) {
                             var nextTime = Tools.getDate('+' + Config.defLootInterval + 'm');
                             Tools.setCookie(Config.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
+                            if (Config.attackWhenZeroLifeEnabled) {
+                                var nextCheckTime = Tools.getDate('+' + Config.firstAttackCheckAttackInterval + 'm');
+                                Tools.setCookie(Config.attackCheckCookieName, nextCheckTime.getTime(), nextCheckTime);
+                                Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                            }
                             KFOL.showFormatLog('领取争夺奖励', html);
                             if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
                                 Log.push('领取争夺奖励', '领取争夺奖励', {gain: {'KFB': gain}});
@@ -4157,9 +4299,25 @@ var Loot = {
      * @param {string} safeId 用户的SafeID
      */
     autoAttack: function (safeId) {
+        var attackList = {};
+        if (Config.attackWhenZeroLifeEnabled) {
+            var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
+            if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
+            var num = 0;
+            for (var id in Config.batchAttackList) {
+                for (var i = 1; i <= Config.batchAttackList[id]; i++) {
+                    num++;
+                    if (num > attackCount) {
+                        if (typeof attackList[id] === 'undefined') attackList[id] = 1;
+                        else attackList[id]++;
+                    }
+                }
+            }
+        }
+        if ($.isEmptyObject(attackList)) attackList = Config.batchAttackList;
         var totalAttackNum = 0;
-        for (var id in Config.batchAttackList) {
-            totalAttackNum += Config.batchAttackList[id];
+        for (var id in attackList) {
+            totalAttackNum += attackList[id];
         }
         if (!totalAttackNum) return;
         Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+4m'));
@@ -4170,7 +4328,7 @@ var Loot = {
         Loot.batchAttack({
             type: 2,
             totalAttackNum: totalAttackNum,
-            attackList: Config.batchAttackList,
+            attackList: attackList,
             safeId: safeId
         });
     },
@@ -4199,7 +4357,7 @@ var Loot = {
     /**
      * 批量攻击
      * @param {Object} options 设置项
-     * @param {number} options.type 攻击类型，1：在争夺页面中进行批量攻击；2：在自动争夺中进行批量攻击
+     * @param {number} options.type 攻击类型，1：在争夺页面中进行批量攻击；2：在自动争夺中进行批量攻击；3：只进行一次攻击试探
      * @param {number} options.totalAttackNum 总攻击次数
      * @param {Object} options.attackList 攻击目标列表
      * @param {string} options.safeId 用户的SafeID
@@ -4324,19 +4482,34 @@ var Loot = {
                         var $msg = KFOL.showMsg('<strong>共有<em>{0}</em>次攻击成功</strong>{1}{2}'
                                 .replace('{0}', successNum)
                                 .replace('{1}', msgStat)
-                                .replace('{2}', settings.type === 2 ? '<a href="#">查看日志</a>' : '')
+                                .replace('{2}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
                             , -1);
                         if (settings.type === 2 || count >= Config.maxAttackNum || isStop) {
                             Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
                             Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                            if (Config.attackWhenZeroLifeEnabled) {
+                                Tools.setCookie(Config.attackCheckCookieName, '', Tools.getDate('-1d'));
+                                Tools.setCookie(Config.attackCountCookieName, '', Tools.getDate('-1d'));
+                            }
                         }
-                        if (settings.type === 2) {
+                        else if (settings.type === 3) {
+                            var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
+                            if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
+                            attackCount++;
+                            if (attackCount >= Config.maxAttackNum) {
+                                Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                            }
+                            else {
+                                Tools.setCookie(Config.attackCountCookieName, attackCount, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                            }
+                        }
+                        if (settings.type >= 2) {
                             $('.pd_layer').remove();
                             $msg.find('a:last').click(function (event) {
                                 event.preventDefault();
                                 Loot.showAttackLogDialog(1, attackLog);
                             });
-                            if (KFOL.isInHomePage) {
+                            if (settings.type === 2 && KFOL.isInHomePage) {
                                 $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
                             }
                         }
@@ -4557,7 +4730,9 @@ var Loot = {
      * 检查自动攻击是否已完成
      */
     checkAutoAttack: function () {
-        var valueArr = Tools.getCookie(Config.autoAttackReadyCookieName).split('|');
+        var value = Tools.getCookie(Config.autoAttackReadyCookieName);
+        if (!value) return;
+        var valueArr = value.split('|');
         if (valueArr.length !== 2) return;
         var type = parseInt(valueArr[0]);
         if (isNaN(type)) return;
@@ -4565,7 +4740,10 @@ var Loot = {
         if (!safeId) safeId = valueArr[1];
         if (!safeId) return;
         if (type === 2 && Config.attackAfterTime > 0) {
-            if (Loot.isAutoAttackNow()) Loot.autoAttack(safeId);
+            if (Loot.isAutoAttackNow())
+                Loot.autoAttack(safeId);
+            else if (Config.attackWhenZeroLifeEnabled && !Tools.getCookie(Config.attackCheckCookieName))
+                Loot.checkLife(safeId);
         }
         else {
             if (window.confirm('之前的自动攻击似乎并未完成，是否继续自动攻击？'))
@@ -4573,6 +4751,56 @@ var Loot = {
             else
                 Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
         }
+    },
+
+    /**
+     * 检查当前生命值是否不超过低保线
+     * @param {string} safeId 用户的SafeID
+     */
+    checkLife: function (safeId) {
+        console.log('检查生命值Start');
+        $.get('kf_fw_ig_index.php', function (html) {
+            if (Tools.getCookie(Config.attackCheckCookieName)) return;
+            var time = Config.defAttackCheckAttackInterval;
+            var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
+            var minMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
+            var isAttack = false;
+            if (lifeMatches && minMatches) {
+                if (parseInt(lifeMatches[1]) <= parseInt(minMatches[1])) {
+                    time = 2;
+                    isAttack = true;
+                }
+            }
+            var nextTime = Tools.getDate('+' + time + 'm');
+            Tools.setCookie(Config.attackCheckCookieName, nextTime.getTime(), nextTime);
+            if (isAttack) {
+                var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
+                if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
+                var num = 0, attackId = 0;
+                for (var id in Config.batchAttackList) {
+                    for (var i = 1; i <= Config.batchAttackList[id]; i++) {
+                        if (attackCount === num) {
+                            attackId = id;
+                            break;
+                        }
+                        num++;
+                    }
+                    if (attackId > 0) break;
+                }
+                if (!attackId) return;
+                var attackList = {};
+                attackList[attackId] = 1;
+                KFOL.showWaitMsg('<strong>正在进行试探攻击中...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>'
+                        .replace('{0}', 1)
+                    , true);
+                Loot.batchAttack({
+                    type: 3,
+                    totalAttackNum: 1,
+                    attackList: attackList,
+                    safeId: safeId
+                });
+            }
+        }, 'html');
     },
 
     /**
@@ -4804,6 +5032,9 @@ var KFOL = {
             '.b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 10px; }' +
             '.b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 10px; }' +
             '.pd_custom_tips { cursor: help; }' +
+            '.pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }' +
+            '.pd_user_memo_tips { font-size: 12px; color: #FFF; margin-left: 3px; cursor: help; }' +
+            '.pd_user_memo_tips:hover { color: #DDD; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -5160,7 +5391,7 @@ var KFOL = {
                 donationInterval = Math.floor((donationTime - now) / 1000);
             }
         }
-        var getLootAwardInterval = -1, autoAttackInterval = -1;
+        var getLootAwardInterval = -1, autoAttackInterval = -1, attackCheckInterval = -1;
         if (Config.autoLootEnabled) {
             var lootTimeLog = Loot.getNextLootAwardTime();
             if (lootTimeLog.type > 0) {
@@ -5200,6 +5431,13 @@ var KFOL = {
                     if (autoAttackInterval < 0) autoAttackInterval = 0;
                 }
                 else autoAttackInterval = 0;
+                if (Config.attackWhenZeroLifeEnabled && autoAttackInterval > 0) {
+                    var time = parseInt(Tools.getCookie(Config.attackCheckCookieName));
+                    if (!isNaN(time) && time > 0 && time >= now.getTime()) {
+                        autoAttackInterval = Math.floor((time - now.getTime()) / 1000);
+                    }
+                    else autoAttackInterval = 0;
+                }
             }
         }
         var drawSmboxInterval = -1;
@@ -6152,55 +6390,91 @@ var KFOL = {
     },
 
     /**
-     * 添加关注和屏蔽用户的链接
+     * 添加关注和屏蔽用户以及用户备注的链接
      */
-    addFollowAndBlockUserLink: function () {
+    addFollowAndBlockAndMemoUserLink: function () {
         var matches = /(.+?)\s*详细信息/.exec($('td:contains("详细信息")').text());
         if (!matches) return;
-        var user = $.trim(matches[1]);
-        $('<span>[<a href="#">关注用户</a>] [<a href="#">屏蔽用户</a>]</span><br />')
+        var userName = $.trim(matches[1]);
+        $('<span>[<a href="#">关注用户</a>] [<a href="#">屏蔽用户</a>]</span><br /><span>[<a href="#">添加备注</a>]</span><br />')
             .appendTo($('a[href^="message.php?action=write&touid="]').parent())
             .find('a').each(function () {
                 var $this = $(this);
-                var str = '关注';
-                var userList = Config.followUserList;
-                if ($this.text().indexOf('屏蔽') > -1) {
-                    str = '屏蔽';
-                    userList = Config.blockUserList;
+                if ($this.is('a:contains("备注")')) {
+                    var memo = '';
+                    for (var name in Config.userMemoList) {
+                        if (name === userName) {
+                            memo = Config.userMemoList[name];
+                            break;
+                        }
+                    }
+                    if (memo !== '') {
+                        $this.text('修改备注').data('memo', memo);
+                        var $info = $('.log1 > tbody > tr:last-child > td:last-child');
+                        $info.html('备注：' + memo + '<br />' + $info.html());
+                    }
                 }
-                if ($.inArray(user, userList) > -1) {
-                    $this.addClass('pd_highlight').text('解除' + str);
+                else {
+                    var str = '关注';
+                    var userList = Config.followUserList;
+                    if ($this.text().indexOf('屏蔽') > -1) {
+                        str = '屏蔽';
+                        userList = Config.blockUserList;
+                    }
+                    if ($.inArray(userName, userList) > -1) {
+                        $this.addClass('pd_highlight').text('解除' + str);
+                    }
                 }
             }).click(function (event) {
                 event.preventDefault();
                 ConfigDialog.read();
                 var $this = $(this);
-                var str = '关注';
-                var userList = Config.followUserList;
-                if ($this.text().indexOf('屏蔽') > -1) {
-                    str = '屏蔽';
-                    userList = Config.blockUserList;
-                    if (!Config.blockUserEnabled) Config.blockUserEnabled = true;
+                if ($this.is('a:contains("备注")')) {
+                    var memo = $this.data('memo');
+                    if (!memo) memo = '';
+                    var value = window.prompt('为此用户添加备注：', memo);
+                    if (value === null) return;
+                    if (!Config.userMemoEnabled) Config.userMemoEnabled = true;
+                    value = $.trim(value);
+                    if (value) {
+                        Config.userMemoList[userName] = value;
+                        $this.text('修改备注');
+                    }
+                    else {
+                        delete Config.userMemoList[userName];
+                        $this.text('添加备注');
+                    }
+                    $this.data('memo', value);
+                    ConfigDialog.write();
                 }
                 else {
-                    if (!Config.followUserEnabled) Config.followUserEnabled = true;
-                }
-                if ($this.text() === '解除' + str) {
-                    var index = $.inArray(user, userList);
-                    if (index > -1) {
-                        userList.splice(index, 1);
-                        ConfigDialog.write();
+                    var str = '关注';
+                    var userList = Config.followUserList;
+                    if ($this.text().indexOf('屏蔽') > -1) {
+                        str = '屏蔽';
+                        userList = Config.blockUserList;
+                        if (!Config.blockUserEnabled) Config.blockUserEnabled = true;
                     }
-                    $this.removeClass('pd_highlight').text(str + '用户');
-                    alert('该用户已被解除' + str);
-                }
-                else {
-                    if ($.inArray(user, userList) === -1) {
-                        userList.push(user);
-                        ConfigDialog.write();
+                    else {
+                        if (!Config.followUserEnabled) Config.followUserEnabled = true;
                     }
-                    $this.addClass('pd_highlight').text('解除' + str);
-                    alert('该用户已被' + str);
+                    if ($this.text() === '解除' + str) {
+                        var index = $.inArray(userName, userList);
+                        if (index > -1) {
+                            userList.splice(index, 1);
+                            ConfigDialog.write();
+                        }
+                        $this.removeClass('pd_highlight').text(str + '用户');
+                        alert('该用户已被解除' + str);
+                    }
+                    else {
+                        if ($.inArray(userName, userList) === -1) {
+                            userList.push(userName);
+                            ConfigDialog.write();
+                        }
+                        $this.addClass('pd_highlight').text('解除' + str);
+                        alert('该用户已被' + str);
+                    }
                 }
             });
     },
@@ -6524,6 +6798,33 @@ var KFOL = {
     },
 
     /**
+     * 添加用户自定义备注
+     */
+    addUserMemo: function () {
+        if ($.isEmptyObject(Config.userMemoList)) return;
+        $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
+            var $this = $(this);
+            var userName = $.trim($this.text());
+            var memo = '';
+            for (var name in Config.userMemoList) {
+                if (name === userName) {
+                    memo = Config.userMemoList[name];
+                    break;
+                }
+            }
+            if (!memo) return;
+            if ($this.is('.readidmleft > a')) {
+                $this.after('<span class="pd_user_memo_tips" title="备注：{0}">[?]</span>'.replace('{0}', memo));
+            }
+            else {
+                var memoText = memo;
+                if (memo.length > 12) memoText = memoText.substring(0, 12) + '...';
+                $this.after('<br /><span class="pd_user_memo" title="备注：{0}">({1})</span>'.replace('{0}', memo).replace('{1}', memoText));
+            }
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -6563,6 +6864,7 @@ var KFOL = {
             if (Config.modifyKFOtherDomainEnabled) KFOL.modifyKFOtherDomainLink();
             KFOL.addBuyThreadWarning();
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
+            if (Config.userMemoEnabled) KFOL.addUserMemo();
         }
         else if (location.pathname === '/thread.php') {
             if (Config.highlightNewPostEnabled) KFOL.highlightNewPost();
@@ -6594,7 +6896,7 @@ var KFOL = {
             if (Config.modifyKFOtherDomainEnabled) KFOL.modifyKFOtherDomainLink();
         }
         else if (/\/profile\.php\?action=show/i.test(location.href)) {
-            KFOL.addFollowAndBlockUserLink();
+            KFOL.addFollowAndBlockAndMemoUserLink();
         }
         else if (/\/personal\.php\?action=post/i.test(location.href)) {
             KFOL.modifyMyPostLink();
