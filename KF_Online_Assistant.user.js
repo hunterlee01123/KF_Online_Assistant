@@ -41,7 +41,7 @@ var Config = {
     customMonsterNameList: {},
     // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
     autoAttackEnabled: false,
-    // 是否当生命值不超过低保线时自动进行一次攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
+    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
     attackWhenZeroLifeEnabled: false,
     // 在距本回合结束前指定时间内才自动完成（剩余）批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
     attackAfterTime: 0,
@@ -96,7 +96,7 @@ var Config = {
     batchBuyThreadEnabled: true,
     // 是否开启显示用户的自定义备注的功能，true：开启；false：关闭
     userMemoEnabled: false,
-    // 用户自定义备注列表，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
+    // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
     userMemoList: {},
     // 默认提示消息的持续时间（秒）
     defShowMsgDuration: 15,
@@ -118,6 +118,12 @@ var Config = {
     customCssEnabled: false,
     // 自定义CSS的内容
     customCssContent: '',
+    // 是否执行自定义的脚本，true：开启；false：关闭
+    customScriptEnabled: false,
+    // 在脚本开始后执行的自定义脚本内容
+    customScriptStartContent: '',
+    // 在脚本结束后执行的自定义脚本内容
+    customScriptEndContent: '',
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
     // 关注用户列表，例：['张三','李四','王五']
@@ -147,7 +153,7 @@ var Config = {
     // 每次攻击的时间间隔（毫秒）
     perAttackInterval: 2000,
     // 在领取争夺奖励后首次检查是否进行攻击的间隔时间（分钟）
-    firstAttackCheckAttackInterval: 185,
+    firstAttackCheckAttackInterval: 190,
     // 检查是否进行攻击的默认间隔时间（分钟）
     defAttackCheckAttackInterval: 25,
     // 神秘盒子的默认抽取间隔（分钟）
@@ -629,8 +635,8 @@ var ConfigDialog = {
             '      <fieldset>' +
             '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
             '<a class="pd_cfg_tips" href="#" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</a></label></legend>' +
-            '      <label><input id="pd_cfg_attack_when_zero_life_enabled" type="checkbox" />当生命值不超过低保线时自动进行一次攻击 ' +
-            '<a class="pd_cfg_tips" href="#" title="当生命值不超过低保线时自动进行一次攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</a></label><br />' +
+            '      <label><input id="pd_cfg_attack_when_zero_life_enabled" type="checkbox" />当生命值不超过低保线时进行试探攻击 ' +
+            '<a class="pd_cfg_tips" href="#" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</a></label><br />' +
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
             '<a class="pd_cfg_tips" href="#" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</a></label>'
                 .replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime) +
@@ -731,9 +737,12 @@ var ConfigDialog = {
             '<a class="pd_cfg_tips" href="#" title="为侧边栏添加快捷导航的链接">[?]</a></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
             '<a class="pd_cfg_tips" href="#" title="将侧边栏修改为和手机相同的平铺样式">[?]</a></label><br />' +
-            '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" />启用自定义CSS ' +
+            '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" />添加自定义CSS ' +
             '<a class="pd_cfg_tips" href="#" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</a></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br />' +
+            '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" />执行自定义脚本 ' +
+            '<a class="pd_cfg_tips" href="#" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</a></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
@@ -823,6 +832,11 @@ var ConfigDialog = {
         $dialog.find('#pd_cfg_custom_css_dialog').click(function (event) {
             event.preventDefault();
             ConfigDialog.showCustomCssDialog();
+        });
+
+        $dialog.find('#pd_cfg_custom_script_dialog').click(function (event) {
+            event.preventDefault();
+            ConfigDialog.showCustomScriptDialog();
         });
 
         $dialog.find('#pd_cfg_add_follow_user, #pd_cfg_add_block_user').keydown(function (event) {
@@ -1213,7 +1227,7 @@ var ConfigDialog = {
         var html =
             '<div class="pd_cfg_main">' +
             '  <strong>自定义CSS内容：</strong><br />' +
-            '  <textarea style="width:600px;height:400px"></textarea>' +
+            '  <textarea style="width:750px;height:400px"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
             '  <button>确定</button><button>取消</button>' +
@@ -1229,6 +1243,36 @@ var ConfigDialog = {
         });
         Dialog.show('pd_custom_css');
         $dialog.find('textarea').val(Config.customCssContent).focus();
+    },
+
+    /**
+     * 显示自定义脚本对话框
+     */
+    showCustomScriptDialog: function () {
+        if ($('#pd_custom_script').length > 0) return;
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <label><strong>在脚本开始后执行的内容：</strong><br />' +
+            '<textarea id="pd_custom_script_start_content" style="width:750px;height:250px;white-space:pre;margin-bottom:10px"></textarea></label><br />' +
+            '  <label><strong>在脚本结束后执行的内容：</strong><br />' +
+            '<textarea id="pd_custom_script_end_content" style="width:750px;height:250px;white-space:pre"></textarea></label>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <button>确定</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_custom_script', '自定义脚本', html);
+        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
+            event.preventDefault();
+            Config.customScriptStartContent = $.trim($('#pd_custom_script_start_content').val());
+            Config.customScriptEndContent = $.trim($('#pd_custom_script_end_content').val());
+            ConfigDialog.write();
+            Dialog.close('pd_custom_script');
+        }).next('button').click(function () {
+            return Dialog.close('pd_custom_script');
+        });
+        Dialog.show('pd_custom_script');
+        $dialog.find('#pd_custom_script_start_content').val(Config.customScriptStartContent).focus()
+            .end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent);
     },
 
     /**
@@ -1333,6 +1377,7 @@ var ConfigDialog = {
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
+        $('#pd_cfg_custom_script_enabled').prop('checked', Config.customScriptEnabled);
 
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         ConfigDialog.showFollowOrBlockUserList(1);
@@ -1409,6 +1454,7 @@ var ConfigDialog = {
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
+        options.customScriptEnabled = $('#pd_cfg_custom_script_enabled').prop('checked');
 
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.highlightFollowUserThreadInHPEnabled = $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked');
@@ -1490,7 +1536,7 @@ var ConfigDialog = {
         }
         else {
             if ($('#pd_cfg_attack_when_zero_life_enabled').prop('checked')) {
-                alert('开启“当生命值不超过低保线时进行攻击”必须同时设置“在指定时间之内才完成攻击”');
+                alert('开启“当生命值不超过低保线时进行试探攻击”必须同时设置“在指定时间之内才完成攻击”');
                 $txtAttackAfterTime.select();
                 $txtAttackAfterTime.focus();
                 return false;
@@ -1849,14 +1895,26 @@ var ConfigDialog = {
             options.modifySideBarEnabled : defConfig.modifySideBarEnabled;
         settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ?
             options.customCssEnabled : defConfig.customCssEnabled;
-        settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
-            options.followUserEnabled : defConfig.followUserEnabled;
         if (typeof options.customCssContent !== 'undefined') {
             var customCssContent = $.trim(options.customCssContent);
             if (customCssContent !== '') settings.customCssContent = customCssContent;
             else settings.customCssContent = defConfig.customCssContent;
         }
+        settings.customScriptEnabled = typeof options.customScriptEnabled === 'boolean' ?
+            options.customScriptEnabled : defConfig.customScriptEnabled;
+        if (typeof options.customScriptStartContent !== 'undefined') {
+            var customScriptStartContent = $.trim(options.customScriptStartContent);
+            if (customScriptStartContent !== '') settings.customScriptStartContent = customScriptStartContent;
+            else settings.customScriptStartContent = defConfig.customScriptStartContent;
+        }
+        if (typeof options.customScriptEndContent !== 'undefined') {
+            var customScriptEndContent = $.trim(options.customScriptEndContent);
+            if (customScriptEndContent !== '') settings.customScriptEndContent = customScriptEndContent;
+            else settings.customScriptEndContent = defConfig.customScriptEndContent;
+        }
 
+        settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
+            options.followUserEnabled : defConfig.followUserEnabled;
         if (typeof options.followUserList !== 'undefined') {
             if ($.isArray(options.followUserList)) {
                 settings.followUserList = [];
@@ -2168,8 +2226,8 @@ var Log = {
     getLogContent: function (date, logSortType) {
         var logList = Log.log[date];
         if (logSortType === 'type') {
-            var sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '将道具转换为能量', '将卡片转换为VIP时间',
-                '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '批量转账', '购买帖子', '自动存款'];
+            var sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '将道具转换为能量',
+                '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '批量转账', '购买帖子', '自动存款'];
             logList.sort(function (a, b) {
                 return $.inArray(a.type, sortTypeList) > $.inArray(b.type, sortTypeList);
             });
@@ -2193,7 +2251,7 @@ var Log = {
                     .replace('{1}', key.action.replace(/`([^`]+?)`/g, '<b style="color:#F00">$1</b>'));
             }
             else {
-                content += '<p><b>{0} ({1})：</b><br />{2}'
+                content += '<p><b>{0} ({1})：</b>{2}'
                     .replace('{0}', Tools.getTimeString(d))
                     .replace('{1}', key.type)
                     .replace('{2}', key.action.replace(/`([^`]+?)`/g, '<b style="color:#F00">$1</b>'));
@@ -4357,7 +4415,7 @@ var Loot = {
     /**
      * 批量攻击
      * @param {Object} options 设置项
-     * @param {number} options.type 攻击类型，1：在争夺页面中进行批量攻击；2：在自动争夺中进行批量攻击；3：只进行一次攻击试探
+     * @param {number} options.type 攻击类型，1：在争夺页面中进行批量攻击；2：在自动争夺中进行批量攻击；3：只进行一次试探攻击
      * @param {number} options.totalAttackNum 总攻击次数
      * @param {Object} options.attackList 攻击目标列表
      * @param {string} options.safeId 用户的SafeID
@@ -4414,7 +4472,10 @@ var Loot = {
                         $(document).queue('BatchAttack', []);
                     }
                     attackLog += '第{0}次：{1}{2}\n'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : '');
-                    console.log('【批量攻击】第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
+                    if (settings.type === 3)
+                        console.log('【试探攻击】{0}{1}'.replace('{0}', msg).replace('{1}', isStop ? '（攻击已中止）' : ''));
+                    else
+                        console.log('【批量攻击】第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
                     if (settings.type === 1) {
                         var html = '<li><b>第{0}次：</b>{1}{2}</li>'
                             .replace('{0}', count)
@@ -4457,7 +4518,8 @@ var Loot = {
                         if (gain['夺取KFB'] === 0) delete gain['夺取KFB'];
                         if (gain['经验值'] === 0) delete gain['经验值'];
                         if (successNum > 0) {
-                            Log.push('批量攻击', '共有`{0}`次攻击成功'.replace('{0}', successNum), {gain: gain});
+                            if (settings.type === 3) Log.push('试探攻击', '成功进行了`1`次试探攻击', {gain: gain});
+                            else Log.push('批量攻击', '共有`{0}`次攻击成功'.replace('{0}', successNum), {gain: gain});
                         }
                         var msgStat = '', logStat = '', resultStat = '';
                         for (var key in gain) {
@@ -4475,12 +4537,9 @@ var Loot = {
                                 resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', gain[key]);
                             }
                         }
-                        console.log('共有{0}次攻击成功{1}'
-                                .replace('{0}', successNum)
-                                .replace('{1}', logStat)
-                        );
-                        var $msg = KFOL.showMsg('<strong>共有<em>{0}</em>次攻击成功</strong>{1}{2}'
-                                .replace('{0}', successNum)
+                        console.log((settings.type === 3 ? '成功进行了1次试探攻击' : '共有{0}次攻击成功'.replace('{0}', successNum)) + logStat);
+                        var $msg = KFOL.showMsg('<strong>{0}</strong>{1}{2}'
+                                .replace('{0}', settings.type === 3 ? '成功进行了<em>1</em>次试探攻击' : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
                                 .replace('{1}', msgStat)
                                 .replace('{2}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
                             , -1);
@@ -6432,7 +6491,7 @@ var KFOL = {
                 if ($this.is('a:contains("备注")')) {
                     var memo = $this.data('memo');
                     if (!memo) memo = '';
-                    var value = window.prompt('为此用户添加备注：', memo);
+                    var value = window.prompt('为此用户添加备注（要删除备注请留空）：', memo);
                     if (value === null) return;
                     if (!Config.userMemoEnabled) Config.userMemoEnabled = true;
                     value = $.trim(value);
@@ -6818,10 +6877,29 @@ var KFOL = {
             }
             else {
                 var memoText = memo;
-                if (memo.length > 12) memoText = memoText.substring(0, 12) + '...';
+                var maxLength = 24;
+                if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '...';
                 $this.after('<br /><span class="pd_user_memo" title="备注：{0}">({1})</span>'.replace('{0}', memo).replace('{1}', memoText));
             }
         });
+    },
+
+    /**
+     * 执行自定义脚本
+     * @param {number} type 脚本类型，1：脚本开始后执行；2：脚本结束后执行
+     */
+    runCustomScript: function (type) {
+        var script = '';
+        if (type === 2) script = Config.customScriptEndContent;
+        else script = Config.customScriptStartContent;
+        if (script) {
+            try {
+                eval(script);
+            }
+            catch (ex) {
+                console.log(ex);
+            }
+        }
     },
 
     /**
@@ -6837,6 +6915,7 @@ var KFOL = {
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();
 
+        if (Config.customScriptEnabled) KFOL.runCustomScript(1);
         if (Config.modifySideBarEnabled) KFOL.modifySideBar();
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
@@ -6951,6 +7030,8 @@ var KFOL = {
 
         if (Config.autoRefreshEnabled && KFOL.isInHomePage)
             KFOL.startAutoRefreshMode();
+
+        if (Config.customScriptEnabled) KFOL.runCustomScript(2);
 
         var endDate = new Date();
         console.log('KF Online助手加载完毕，加载耗时：{0}ms'.replace('{0}', endDate - startDate));
