@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.3.0
+// @version     4.3.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.3.0';
+var version = '4.3.1';
 /**
  * 配置类
  */
@@ -612,7 +612,8 @@ var ConfigDialog = {
         ConfigDialog.read();
         var html =
             '<div class="pd_cfg_main">' +
-            '  <div class="pd_cfg_nav"><a href="#">查看日志</a><a href="#">导入/导出设置</a></div>' +
+            '  <div class="pd_cfg_nav"><a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
+            '<a href="#">查看日志</a><a href="#">导入/导出设置</a></div>' +
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox" />自动KFB捐款</label></legend>' +
@@ -788,6 +789,12 @@ var ConfigDialog = {
             }
         }).end().find('.pd_cfg_nav > a:first-child').click(function (event) {
             event.preventDefault();
+            if (window.confirm('是否清除与助手有关的Cookies和本地存储数据？（不包括助手设置和日志）')) {
+                ConfigDialog.clearCache();
+                alert('缓存已清除');
+            }
+        }).next().click(function (event) {
+            event.preventDefault();
             Log.show();
         }).next().click(function (event) {
             event.preventDefault();
@@ -940,6 +947,19 @@ var ConfigDialog = {
         });
         Dialog.show('pd_im_or_ex_setting');
         $('#pd_cfg_setting').val(JSON.stringify(Tools.getDifferentValueOfObject(ConfigDialog.defConfig, Config))).select();
+    },
+
+    /**
+     * 清除缓存
+     */
+    clearCache: function () {
+        for (var key in Config) {
+            if (/CookieName$/.test(key)) {
+                Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+            }
+        }
+        localStorage.removeItem(TmpLog.name + '_' + KFOL.uid);
+        localStorage.removeItem(Config.multiQuoteStorageName);
     },
 
     /**
@@ -1233,7 +1253,7 @@ var ConfigDialog = {
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_custom_css', '自定义CSS', html);
-        var $content=$dialog.find('textarea');
+        var $content = $dialog.find('textarea');
         $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
             Config.customCssContent = $.trim($content.val());
@@ -4300,9 +4320,9 @@ var Loot = {
                         nextTime
                     );
                     if (Config.attackWhenZeroLifeEnabled) {
-                        var nextCheckTime = Config.firstAttackCheckAttackInterval - (Config.defLootInterval - lootInterval);
-                        if (nextCheckTime < 0) nextCheckTime = 0;
-                        nextCheckTime = Tools.getDate('+' + nextCheckTime + 'm');
+                        var nextCheckInterval = Config.firstAttackCheckAttackInterval - (Config.defLootInterval - lootInterval);
+                        if (nextCheckInterval <= 0) nextCheckInterval = 1;
+                        var nextCheckTime = Tools.getDate('+' + nextCheckInterval + 'm');
                         Tools.setCookie(Config.attackCheckCookieName, nextCheckTime.getTime(), nextCheckTime);
                         Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
                     }
@@ -4523,7 +4543,7 @@ var Loot = {
                         if (gain['夺取KFB'] === 0) delete gain['夺取KFB'];
                         if (gain['经验值'] === 0) delete gain['经验值'];
                         if (successNum > 0) {
-                            if (settings.type === 3) Log.push('试探攻击', '成功进行了`1`次试探攻击', {gain: gain});
+                            if (settings.type === 3) Log.push('试探攻击', '成功进行了`{0}`次试探攻击'.replace('{0}', successNum), {gain: gain});
                             else Log.push('批量攻击', '共有`{0}`次攻击成功'.replace('{0}', successNum), {gain: gain});
                         }
                         var msgStat = '', logStat = '', resultStat = '';
@@ -4542,9 +4562,11 @@ var Loot = {
                                 resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', gain[key]);
                             }
                         }
-                        console.log((settings.type === 3 ? '成功进行了1次试探攻击' : '共有{0}次攻击成功'.replace('{0}', successNum)) + logStat);
+                        console.log((settings.type === 3 ? '成功进行了{0}次试探攻击'.replace('{0}', successNum) : '共有{0}次攻击成功'.replace('{0}', successNum)) + logStat);
                         var $msg = KFOL.showMsg('<strong>{0}</strong>{1}{2}'
-                                .replace('{0}', settings.type === 3 ? '成功进行了<em>1</em>次试探攻击' : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
+                                .replace('{0}', settings.type === 3 ?
+                                    '成功进行了<em>{0}</em>次试探攻击'.replace('{0}', successNum)
+                                    : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
                                 .replace('{1}', msgStat)
                                 .replace('{2}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
                             , -1);
@@ -5111,7 +5133,7 @@ var KFOL = {
             '#pd_log { width: 600px; }' +
             '#pd_custom_sm_color { width: 360px; }' +
             '.pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }' +
-            '.pd_cfg_nav a { margin-left: 7px; }' +
+            '.pd_cfg_nav a { margin-left: 10px; }' +
             '.pd_cfg_main { background-color: #FCFCFC; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 180px; overflow: auto; }' +
             '.pd_cfg_main fieldset { border: 1px solid #CCCCFF; }' +
             '.pd_cfg_main legend { font-weight: bold; }' +
@@ -5498,9 +5520,9 @@ var KFOL = {
                 if (Config.attackWhenZeroLifeEnabled && autoAttackInterval > 0) {
                     var time = parseInt(Tools.getCookie(Config.attackCheckCookieName));
                     if (!isNaN(time) && time > 0 && time >= now.getTime()) {
-                        autoAttackInterval = Math.floor((time - now.getTime()) / 1000);
+                        attackCheckInterval = Math.floor((time - now.getTime()) / 1000);
                     }
-                    else autoAttackInterval = 0;
+                    else attackCheckInterval = 0;
                 }
             }
         }
@@ -5513,7 +5535,7 @@ var KFOL = {
             }
             else drawSmboxInterval = 0;
         }
-        var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, drawSmboxInterval];
+        var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, attackCheckInterval, drawSmboxInterval];
         minArr.sort(function (a, b) {
             return a > b;
         });
