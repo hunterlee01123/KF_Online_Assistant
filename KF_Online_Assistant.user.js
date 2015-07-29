@@ -11,7 +11,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.3.0-dev
+// @version     4.3.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -908,7 +908,7 @@ var ConfigDialog = {
             '    <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br />' +
             '    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
             '  </div>' +
-            '  <textarea id="pd_cfg_setting" style="width:420px;height:200px;word-break:break-all"></textarea>' +
+            '  <textarea id="pd_cfg_setting" style="width:600px;height:400px;word-break:break-all"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
             '  <button>保存</button><button>取消</button>' +
@@ -1233,16 +1233,18 @@ var ConfigDialog = {
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_custom_css', '自定义CSS', html);
+        var $content=$dialog.find('textarea');
         $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
-            Config.customCssContent = $.trim($dialog.find('textarea').val());
+            Config.customCssContent = $.trim($content.val());
             ConfigDialog.write();
             Dialog.close('pd_custom_css');
         }).next('button').click(function () {
             return Dialog.close('pd_custom_css');
         });
+        $content.val(Config.customCssContent);
         Dialog.show('pd_custom_css');
-        $dialog.find('textarea').val(Config.customCssContent).focus();
+        $content.focus();
     },
 
     /**
@@ -1263,16 +1265,17 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_custom_script', '自定义脚本', html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
-            Config.customScriptStartContent = $.trim($('#pd_custom_script_start_content').val());
-            Config.customScriptEndContent = $.trim($('#pd_custom_script_end_content').val());
+            Config.customScriptStartContent = $('#pd_custom_script_start_content').val();
+            Config.customScriptEndContent = $('#pd_custom_script_end_content').val();
             ConfigDialog.write();
             Dialog.close('pd_custom_script');
         }).next('button').click(function () {
             return Dialog.close('pd_custom_script');
         });
-        Dialog.show('pd_custom_script');
-        $dialog.find('#pd_custom_script_start_content').val(Config.customScriptStartContent).focus()
+        $dialog.find('#pd_custom_script_start_content').val(Config.customScriptStartContent)
             .end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent);
+        Dialog.show('pd_custom_script');
+        $dialog.find('#pd_custom_script_start_content').focus();
     },
 
     /**
@@ -1903,14 +1906,16 @@ var ConfigDialog = {
         settings.customScriptEnabled = typeof options.customScriptEnabled === 'boolean' ?
             options.customScriptEnabled : defConfig.customScriptEnabled;
         if (typeof options.customScriptStartContent !== 'undefined') {
-            var customScriptStartContent = $.trim(options.customScriptStartContent);
-            if (customScriptStartContent !== '') settings.customScriptStartContent = customScriptStartContent;
-            else settings.customScriptStartContent = defConfig.customScriptStartContent;
+            if (typeof options.customScriptStartContent === 'string')
+                settings.customScriptStartContent = options.customScriptStartContent;
+            else
+                settings.customScriptStartContent = defConfig.customScriptStartContent;
         }
         if (typeof options.customScriptEndContent !== 'undefined') {
-            var customScriptEndContent = $.trim(options.customScriptEndContent);
-            if (customScriptEndContent !== '') settings.customScriptEndContent = customScriptEndContent;
-            else settings.customScriptEndContent = defConfig.customScriptEndContent;
+            if (typeof options.customScriptEndContent === 'string')
+                settings.customScriptEndContent = options.customScriptEndContent;
+            else
+                settings.customScriptEndContent = defConfig.customScriptEndContent;
         }
 
         settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
@@ -4199,7 +4204,7 @@ var Bank = {
                 if (!isNaN(time) && time > (new Date()).getTime()) {
                     $account.html(
                         fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
-                            '期间不存取定期，才可以获得利息）<span style="color:#888">（到期时间：{0} {1}）</span>'
+                            '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
                                 .replace('{0}', Tools.getDateString(new Date(time)))
                                 .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
                         )
@@ -6892,7 +6897,7 @@ var KFOL = {
         var script = '';
         if (type === 2) script = Config.customScriptEndContent;
         else script = Config.customScriptStartContent;
-        if (script) {
+        if ($.trim(script)) {
             try {
                 eval(script);
             }
