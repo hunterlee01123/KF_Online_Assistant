@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.3.1
+// @version     4.3.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.3.1';
+var version = '4.3.2';
 /**
  * 配置类
  */
@@ -156,6 +156,8 @@ var Config = {
     firstAttackCheckAttackInterval: 190,
     // 检查是否进行攻击的默认间隔时间（分钟）
     defAttackCheckAttackInterval: 25,
+    // 在生命值不超过低保线时检查是否进行攻击的间隔时间（分钟）
+    zeroLifeAttackCheckAttackInterval: 2,
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 在抽取神秘盒子后所推迟的争夺领取间隔（分钟）
@@ -366,6 +368,24 @@ var Tools = {
     },
 
     /**
+     * 判断指定时间是否处于规定时间段内
+     * @param {Date} time 指定时间
+     * @param {string} range 规定时间段，例：'08:00:15-15:30:30'或'23:30-01:20'
+     * @returns {?boolean} 是否处于规定时间段内，返回null表示规定时间段格式不正确
+     */
+    isBetweenInTimeRange: function (time, range) {
+        var rangeArr = range.split('-');
+        if (rangeArr.length !== 2) return null;
+        var start = Tools.getDateByTime(rangeArr[0]);
+        var end = Tools.getDateByTime(rangeArr[1]);
+        if (end < start) {
+            if (time > end) end.setDate(end.getDate() + 1);
+            else start.setDate(start.getDate() - 1);
+        }
+        return time >= start && time <= end;
+    },
+
+    /**
      * 获取当前域名的URL
      * @returns {string} 当前域名的URL
      */
@@ -460,7 +480,7 @@ var Tools = {
      */
     htmlDecode: function (str) {
         if (str.length === 0) return '';
-        return str.replace(/<br\/?>/gi, '\n')
+        return str.replace(/<br\s*\/?>/gi, '\n')
             .replace(/&quot;/gi, '\"')
             .replace(/&#39;/gi, '\'')
             .replace(/&nbsp;/gi, ' ')
@@ -1247,9 +1267,10 @@ var ConfigDialog = {
         var html =
             '<div class="pd_cfg_main">' +
             '  <strong>自定义CSS内容：</strong><br />' +
-            '  <textarea style="width:750px;height:400px"></textarea>' +
+            '  <textarea wrap="off" style="width:750px;height:400px;white-space:pre"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">其他人分享的CSS规则</a></span>' +
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_custom_css', '自定义CSS', html);
@@ -1275,11 +1296,12 @@ var ConfigDialog = {
         var html =
             '<div class="pd_cfg_main">' +
             '  <label><strong>在脚本开始后执行的内容：</strong><br />' +
-            '<textarea id="pd_custom_script_start_content" style="width:750px;height:250px;white-space:pre;margin-bottom:10px"></textarea></label><br />' +
+            '<textarea wrap="off" id="pd_custom_script_start_content" style="width:750px;height:250px;white-space:pre;margin-bottom:10px"></textarea></label><br />' +
             '  <label><strong>在脚本结束后执行的内容：</strong><br />' +
-            '<textarea id="pd_custom_script_end_content" style="width:750px;height:250px;white-space:pre"></textarea></label>' +
+            '<textarea wrap="off" id="pd_custom_script_end_content" style="width:750px;height:250px;white-space:pre"></textarea></label>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500968">其他人分享的自定义脚本</a></span>' +
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_custom_script', '自定义脚本', html);
@@ -2469,7 +2491,7 @@ var Log = {
         });
         Dialog.show('pd_im_or_ex_log');
         $('#pd_log_setting').val(JSON.stringify(Log.log)).select();
-        $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).click();
+        $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).prop('checked', true).click();
     },
 
     /**
@@ -4276,15 +4298,7 @@ var Loot = {
         if (Config.noAutoLootWhen.length > 0) {
             var now = new Date();
             for (var i in Config.noAutoLootWhen) {
-                var whenArr = Config.noAutoLootWhen[i].split('-');
-                if (whenArr.length !== 2) continue;
-                var start = Tools.getDateByTime(whenArr[0]);
-                var end = Tools.getDateByTime(whenArr[1]);
-                if (end < start) {
-                    if (now > end) end.setDate(end.getDate() + 1);
-                    else start.setDate(start.getDate() - 1);
-                }
-                if (now >= start && now <= end) return;
+                if (Tools.isBetweenInTimeRange(now, Config.noAutoLootWhen[i])) return;
             }
         }
         console.log('领取争夺奖励Start');
@@ -4853,7 +4867,7 @@ var Loot = {
             var isAttack = false;
             if (lifeMatches && minMatches) {
                 if (parseInt(lifeMatches[1]) <= parseInt(minMatches[1])) {
-                    time = 2;
+                    time = Config.zeroLifeAttackCheckAttackInterval;
                     isAttack = true;
                 }
             }
@@ -4899,8 +4913,8 @@ var Loot = {
         var html =
             '<div class="pd_cfg_main">' +
             '  <textarea style="width:{0}px;height:{1}px;margin:5px 0" readonly="readonly"></textarea>'
-                .replace('{0}', type === 2 ? 700 : 850)
-                .replace('{1}', type === 2 ? 270 : 350) +
+                .replace('{0}', type === 2 ? 750 : 850)
+                .replace('{1}', type === 2 ? 300 : 370) +
             '</div>';
         var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html, 'z-index:1002');
         var $log = $dialog.find('textarea');
@@ -6930,6 +6944,39 @@ var KFOL = {
     },
 
     /**
+     * 添加复制代码的链接
+     */
+    addCopyCodeLink: function () {
+        $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>');
+        if ($('.pd_copy_code').length === 0) return;
+        $('#alldiv').on('click', 'a.pd_copy_code', function (event) {
+            event.preventDefault();
+            var $fieldset = $(this).closest('fieldset');
+            var content = $fieldset.data('content');
+            if (content) {
+                $fieldset.html('<legend><a class="pd_copy_code" href="#">复制代码</a></legend>' + content).removeData('content');
+            }
+            else {
+                var html = $fieldset.html();
+                html = html.replace(/<legend>.+?<\/legend>/i, '');
+                $fieldset.data('content', html);
+                html = Tools.htmlDecode(html);
+                var height = $fieldset.height();
+                height -= 17;
+                if (height < 50) height = 50;
+                if (height > 540) height = 540;
+                $fieldset.html(
+                    ('<legend><a class="pd_copy_code" href="#">还原代码</a></legend><textarea wrap="off" class="pd_textarea" ' +
+                    'style="width:100%;height:{0}px;line-height:1.4em;white-space:pre">{1}</textarea>')
+                        .replace('{0}', height)
+                        .replace('{1}', html)
+                );
+                $fieldset.find('textarea').select().focus();
+            }
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -6971,6 +7018,7 @@ var KFOL = {
             KFOL.addBuyThreadWarning();
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
+            KFOL.addCopyCodeLink();
         }
         else if (location.pathname === '/thread.php') {
             if (Config.highlightNewPostEnabled) KFOL.highlightNewPost();
