@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.3.2
+// @version     4.3.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.3.2';
+var version = '4.3.3';
 /**
  * 配置类
  */
@@ -180,6 +180,8 @@ var Config = {
     smLevelUpTmpLogName: 'SmLevelUp',
     // 定期存款到期时间临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
+    // 上一次领取争夺奖励时被怪物攻击的总次数信息临时日志名称
+    attackedCountTmpLogName: 'AttackedCount',
     // 标记已KFB捐款的Cookie名称
     donationCookieName: 'pd_donation',
     // 标记已领取争夺奖励的Cookie名称
@@ -351,7 +353,7 @@ var Tools = {
     /**
      * 获取指定时间戳距现在所剩余时间的描述
      * @param {number} timestamp 指定时间戳
-     * @returns {{hours: number, minutes: number}} 剩余时间的描述，hours：剩余的小时数；minutes：剩余的分钟数
+     * @returns {{hours: number, minutes: number, seconds: number}} 剩余时间的描述，hours：剩余的小时数；minutes：剩余的分钟数；seconds：剩余的秒数
      */
     getTimeDiffInfo: function (timestamp) {
         var diff = timestamp - (new Date()).getTime();
@@ -361,10 +363,12 @@ var Tools = {
             if (hours >= 0) {
                 var minutes = Math.floor((diff - hours * 60 * 60) / 60);
                 if (minutes < 0) minutes = 0;
-                return {hours: hours, minutes: minutes};
+                var seconds = Math.floor(diff - hours * 60 * 60 - minutes * 60);
+                if (seconds < 0) seconds = 0;
+                return {hours: hours, minutes: minutes, seconds: seconds};
             }
         }
-        return {hours: 0, minutes: 0};
+        return {hours: 0, minutes: 0, seconds: 0};
     },
 
     /**
@@ -2560,7 +2564,7 @@ var TmpLog = {
             return;
         }
         if (!log || $.type(log) !== 'object') return;
-        var allowKey = [Config.smLevelUpTmpLogName, Config.fixedDepositDueTmpLogName];
+        var allowKey = [Config.smLevelUpTmpLogName, Config.fixedDepositDueTmpLogName, Config.attackedCountTmpLogName];
         for (var k in log) {
             if ($.inArray(k, allowKey) === -1) delete log[k];
         }
@@ -4341,6 +4345,16 @@ var Loot = {
                         Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
                     }
                 }
+                var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
+                if (attackedCountMatches) {
+                    var timeDiff = Config.defLootInterval - lootInterval;
+                    if (timeDiff > 0 && timeDiff <= 3 * 60) {
+                        TmpLog.setValue(Config.attackedCountTmpLogName, {
+                            time: (new Date()).getTime(),
+                            count: parseInt(attackedCountMatches[1])
+                        });
+                    }
+                }
                 var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
                 if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
                     autoAttack(safeId);
@@ -4356,6 +4370,9 @@ var Loot = {
                     if (attackLogMatches && /发起争夺/.test(attackLogMatches[1])) {
                         attackLog = attackLogMatches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '');
                     }
+                    var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
+                    var attackedCount = -1;
+                    if (attackedCountMatches) attackedCount = parseInt(attackedCountMatches[1]);
                     $.post('kf_fw_ig_index.php',
                         {submit1: 1, one: 1},
                         function (html) {
@@ -4368,12 +4385,32 @@ var Loot = {
                             }
                             KFOL.showFormatLog('领取争夺奖励', html);
                             if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
-                                Log.push('领取争夺奖励', '领取争夺奖励', {gain: {'KFB': gain}});
-                                console.log('领取争夺奖励，KFB+' + gain);
-                                var $msg = KFOL.showMsg('<strong>领取争夺奖励</strong><i>KFB<em>+{0}</em></i>{1}{2}'
-                                        .replace('{0}', gain)
-                                        .replace('{1}', attackLog ? '<a href="#">查看日志</a>' : '')
-                                        .replace('{2}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
+                                var attackedCountDiff = 0;
+                                if (attackedCount > -1) {
+                                    var now = (new Date()).getTime();
+                                    var attackedCountInfo = TmpLog.getValue(Config.attackedCountTmpLogName);
+                                    if (attackedCountInfo && $.type(attackedCountInfo) === 'object' && $.type(attackedCountInfo.time) === 'number' &&
+                                        $.type(attackedCountInfo.count) === 'number' && attackedCountInfo.time > 0 && attackedCountInfo.count >= 0) {
+                                        attackedCountDiff = attackedCount - attackedCountInfo.count;
+                                        if (now - attackedCountInfo.time <= 0) attackedCountDiff = 0;
+                                        else if (now - attackedCountInfo.time >= Config.defLootInterval * 60 * 1000 * 2 && attackedCountDiff >= 20)
+                                            attackedCountDiff = 0;
+                                    }
+                                    TmpLog.setValue(Config.attackedCountTmpLogName, {time: now, count: attackedCount});
+                                }
+                                Log.push('领取争夺奖励',
+                                    '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''),
+                                    {gain: {'KFB': gain}}
+                                );
+                                console.log('领取争夺奖励{0}，KFB+{1}'
+                                        .replace('{0}', attackedCountDiff > 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
+                                        .replace('{1}', gain)
+                                );
+                                var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}'
+                                        .replace('{0}', attackedCountDiff > 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
+                                        .replace('{1}', gain)
+                                        .replace('{2}', attackLog ? '<a href="#">查看日志</a>' : '')
+                                        .replace('{3}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
                                 );
                                 $msg.find('a[href="#"]:first').click(function (event) {
                                     event.preventDefault();
@@ -4771,7 +4808,7 @@ var Loot = {
             var timeLog = Loot.getNextLootAwardTime();
             if (timeLog.type >= 1) {
                 var diff = Tools.getTimeDiffInfo(timeLog.time);
-                if (diff.hours === 0 && diff.minutes === 0) return;
+                if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
                 var matches = /还有(\d+)小时领取，点击这里抢别人的/.exec($submit.val());
                 if (timeLog.type === 2 && matches) {
                     if (matches) {
@@ -5425,6 +5462,10 @@ var KFOL = {
                 if (timeLog.type > 0) {
                     var time = timeLog.time + Config.afterDrawSmboxLootDelayInterval * 60 * 1000;
                     Tools.setCookie(Config.getLootAwardCookieName, timeLog.type + '|' + time, new Date(time));
+                    var value = Tools.getCookie(Config.autoAttackReadyCookieName);
+                    if (value) Tools.setCookie(Config.autoAttackReadyCookieName, value, new Date(time));
+                    value = Tools.getCookie(Config.attackCountCookieName);
+                    if (value) Tools.setCookie(Config.attackCountCookieName, value, new Date(time));
                 }
                 KFOL.showFormatLog('抽取神秘盒子', html);
                 var kfbRegex = /获得了(\d+)KFB的奖励.*?(\(\d+\|\d+\))/i;
@@ -5470,6 +5511,10 @@ var KFOL = {
             if (timeLog.type > 0) {
                 var time = timeLog.time + Config.afterDrawSmboxLootDelayInterval * 60 * 1000;
                 Tools.setCookie(Config.getLootAwardCookieName, timeLog.type + '|' + time, new Date(time));
+                var value = Tools.getCookie(Config.autoAttackReadyCookieName);
+                if (value) Tools.setCookie(Config.autoAttackReadyCookieName, value, new Date(time));
+                value = Tools.getCookie(Config.attackCountCookieName);
+                if (value) Tools.setCookie(Config.attackCountCookieName, value, new Date(time));
             }
         });
     },
@@ -5582,7 +5627,7 @@ var KFOL = {
         var getFormatIntervalTitle = function (type, interval) {
             var textInterval = '';
             if (type === 1) {
-                var diff = Tools.getTimeDiffInfo(Tools.getDate('+' + interval + 'm').getTime());
+                var diff = Tools.getTimeDiffInfo(Tools.getDate('+' + interval + 's').getTime());
                 textInterval = (diff.hours > 0 ? diff.hours + '时' : '') + diff.minutes + '分';
             }
             else {
@@ -5597,18 +5642,18 @@ var KFOL = {
          */
         var showRefreshModeTips = function (interval, isShowTitle) {
             if (titleItvFunc) window.clearInterval(titleItvFunc);
-            var showInterval = interval < 60 ? interval : Math.floor(interval / 60);
+            var showInterval = interval;
             console.log('【定时模式】倒计时：' + getFormatIntervalTitle(interval < 60 ? 2 : 1, showInterval));
             if (Config.showRefreshModeTipsType.toLowerCase() !== 'never') {
                 var showIntervalTitle = function () {
                     document.title = '{0} (定时: {1})'
                         .replace('{0}', oriTitle)
                         .replace('{1}', getFormatIntervalTitle(interval < 60 ? 2 : 1, showInterval));
-                    showInterval -= 1;
+                    showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
                 };
                 if (isShowTitle || Config.showRefreshModeTipsType.toLowerCase() === 'always' || interval < 60)
                     showIntervalTitle();
-                else showInterval -= 1;
+                else showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
                 titleItvFunc = window.setInterval(showIntervalTitle, Config.showRefreshModeTipsInterval * 60 * 1000);
             }
         };
@@ -6870,7 +6915,7 @@ var KFOL = {
         var $msg = $('a[href="kf_fw_ig_index.php"]');
         if ($msg.length === 0) return;
         var diff = Tools.getTimeDiffInfo(timeLog.time);
-        if (diff.hours === 0 && diff.minutes === 0) return;
+        if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
         if (timeLog.type === 2) {
             $msg.text('争夺奖励(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
         }
@@ -6891,7 +6936,7 @@ var KFOL = {
         var $msg = $('a[href="kf_smbox.php"]');
         if ($msg.length === 0) return;
         var diff = Tools.getTimeDiffInfo(timeLog.time);
-        if (diff.hours === 0 && diff.minutes === 0) return;
+        if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
         $msg.text('神秘盒子(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
             .removeClass('indbox5')
             .addClass('indbox6');
