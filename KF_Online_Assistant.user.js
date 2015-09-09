@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.3.3
+// @version     4.4.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.3.3';
+var version = '4.4.0';
 /**
  * 配置类
  */
@@ -47,6 +47,8 @@ var Config = {
     attackAfterTime: 0,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
+    // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
+    deadlyAttackId: 0,
     // 是否自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，true：开启；false：关闭
     autoUseItemEnabled: false,
     // 自动使用批量攻击后刚掉落的道具的名称，例：['被遗弃的告白信','学校天台的钥匙','LOLI的钱包']
@@ -674,6 +676,9 @@ var ConfigDialog = {
             '            <tr><td>Lv.5：大魔王</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="5" />次</label></td></tr>' +
             '          </tbody>' +
             '        </table>' +
+            '        <label>拥有致命一击时的攻击目标<select id="pd_cfg_deadly_attack_id" style="width:130px"><option value="0">保持默认</option>' +
+            '<option value="1">Lv.1：小史莱姆</option><option value="2">Lv.2：笨蛋</option><option value="3">Lv.3：大果冻史莱姆</option><option value="4">Lv.4：肉山</option>' +
+            '<option value="5">Lv.5：大魔王</option></select><a class="pd_cfg_tips" href="#" title="当拥有致命一击时的自动攻击目标">[?]</a></label>' +
             '      </fieldset>' +
             '      <label><input id="pd_cfg_auto_use_item_enabled" type="checkbox" data-disabled="#pd_cfg_auto_use_item_names" />自动使用刚掉落的道具 ' +
             '<a class="pd_cfg_tips" href="#" title="自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，按Shift或Ctrl键可多选">[?]</a></label><br />' +
@@ -1332,7 +1337,7 @@ var ConfigDialog = {
         var html =
             '<div class="pd_cfg_main">' +
             '  按照“用户名:备注”的格式（注意是英文冒号），每行一个<br />' +
-            '  <textarea style="width:320px;height:400px"></textarea>' +
+            '  <textarea wrap="off" style="width:320px;height:400px;white-space:pre"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
             '  <button>确定</button><button>取消</button>' +
@@ -1364,12 +1369,13 @@ var ConfigDialog = {
         }).next('button').click(function () {
             return Dialog.close('pd_user_memo');
         });
-        Dialog.show('pd_user_memo');
         var content = '';
         for (var user in Config.userMemoList) {
             content += '{0}:{1}\n'.replace('{0}', user).replace('{1}', Config.userMemoList[user]);
         }
-        $userMemoList.val(content).focus();
+        $userMemoList.val(content);
+        Dialog.show('pd_user_memo');
+        $userMemoList.focus();
     },
 
     /**
@@ -1390,6 +1396,7 @@ var ConfigDialog = {
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
+        $('#pd_cfg_deadly_attack_id').val(Config.deadlyAttackId);
         $('#pd_cfg_auto_use_item_enabled').prop('checked', Config.autoUseItemEnabled);
         $('#pd_cfg_auto_use_item_names').val(Config.autoUseItemNames);
 
@@ -1469,6 +1476,7 @@ var ConfigDialog = {
             if (!id) return;
             options.batchAttackList[id] = attackNum;
         });
+        options.deadlyAttackId = parseInt($('#pd_cfg_deadly_attack_id').val());
         options.autoUseItemEnabled = $('#pd_cfg_auto_use_item_enabled').prop('checked');
         options.autoUseItemNames = $('#pd_cfg_auto_use_item_names').val();
 
@@ -1783,6 +1791,11 @@ var ConfigDialog = {
                 if (totalAttackNum > Config.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
             }
             else settings.batchAttackList = defConfig.batchAttackList;
+        }
+        if (typeof options.deadlyAttackId !== 'undefined') {
+            var deadlyAttackId = parseInt(options.deadlyAttackId);
+            if (!isNaN(deadlyAttackId) && deadlyAttackId >= 0 && deadlyAttackId <= 5) settings.deadlyAttackId = deadlyAttackId;
+            else settings.deadlyAttackId = defConfig.deadlyAttackId;
         }
         settings.autoUseItemEnabled = typeof options.autoUseItemEnabled === 'boolean' ?
             options.autoUseItemEnabled : defConfig.autoUseItemEnabled;
@@ -2373,7 +2386,7 @@ var Log = {
         else {
             log[date] = Log.log[date];
         }
-        var income = {}, expense = {}, profit = {}, smBox = [];
+        var income = {}, expense = {}, profit = {}, smBox = [], loot = [];
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
@@ -2383,7 +2396,10 @@ var Log = {
                         if (typeof income[k] === 'undefined') income[k] = key.gain[k];
                         else income[k] += key.gain[k];
                     }
-                    if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
+                    if (key.type === '领取争夺奖励' && typeof key.gain['KFB'] !== 'undefined') {
+                        loot.push(key.gain['KFB']);
+                    }
+                    else if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
                         smBox.push(key.gain['KFB']);
                     }
                 }
@@ -2422,7 +2438,23 @@ var Log = {
         $.each(sortStatItemList(profit), function (index, key) {
             content += '<i>{0}{1}</i> '.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(profit[key]));
         });
-        if (Config.autoDrawSmbox2Enabled) {
+        if (Config.autoLootEnabled) {
+            var lootIncome = 0, minLoot = 0, maxLoot = 0;
+            $.each(loot, function (index, kfb) {
+                lootIncome += kfb;
+                if (index === 0) minLoot = kfb;
+                if (minLoot > kfb) minLoot = kfb;
+                if (maxLoot < kfb) maxLoot = kfb;
+            });
+            content += ('<br /><strong>争夺收获(KFB)：</strong><i>回合数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
+            '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
+                .replace('{0}', loot.length.toLocaleString())
+                .replace('{1}', lootIncome.toLocaleString())
+                .replace('{2}', loot.length > 0 ? (lootIncome / loot.length).toFixed(2).toLocaleString() : 0)
+                .replace('{3}', minLoot.toLocaleString())
+                .replace('{4}', maxLoot.toLocaleString());
+        }
+        else if (Config.autoDrawSmbox2Enabled) {
             var smBoxIncome = 0, minSmBox = 0, maxSmBox = 0;
             $.each(smBox, function (index, kfb) {
                 smBoxIncome += kfb;
@@ -4302,7 +4334,10 @@ var Loot = {
         if (Config.noAutoLootWhen.length > 0) {
             var now = new Date();
             for (var i in Config.noAutoLootWhen) {
-                if (Tools.isBetweenInTimeRange(now, Config.noAutoLootWhen[i])) return;
+                if (Tools.isBetweenInTimeRange(now, Config.noAutoLootWhen[i])) {
+                    if (isAutoDonation) KFOL.donation();
+                    return;
+                }
             }
         }
         console.log('领取争夺奖励Start');
@@ -4344,15 +4379,15 @@ var Loot = {
                         Tools.setCookie(Config.attackCheckCookieName, nextCheckTime.getTime(), nextCheckTime);
                         Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
                     }
-                }
-                var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
-                if (attackedCountMatches) {
-                    var timeDiff = Config.defLootInterval - lootInterval;
-                    if (timeDiff > 0 && timeDiff <= 3 * 60) {
-                        TmpLog.setValue(Config.attackedCountTmpLogName, {
-                            time: (new Date()).getTime(),
-                            count: parseInt(attackedCountMatches[1])
-                        });
+                    var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
+                    if (attackedCountMatches) {
+                        var timeDiff = Config.defLootInterval - lootInterval;
+                        if (timeDiff > 0 && timeDiff <= 3 * 60) {
+                            TmpLog.setValue(Config.attackedCountTmpLogName, {
+                                time: Tools.getDate('-' + timeDiff + 'm').getTime(),
+                                count: parseInt(attackedCountMatches[1])
+                            });
+                        }
                     }
                 }
                 var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
@@ -4614,13 +4649,17 @@ var Loot = {
                             }
                         }
                         console.log((settings.type === 3 ? '成功进行了{0}次试探攻击'.replace('{0}', successNum) : '共有{0}次攻击成功'.replace('{0}', successNum)) + logStat);
+                        var duration = Config.defShowMsgDuration;
+                        if (settings.type === 1 || Config.defShowMsgDuration === -1) duration = -1;
+                        else if (settings.type === 3 && Config.defShowMsgDuration > 0 && Config.defShowMsgDuration < 30) duration = 30;
+                        else if (settings.type === 2 && Config.defShowMsgDuration > 0 && Config.defShowMsgDuration < 240) duration = 240;
                         var $msg = KFOL.showMsg('<strong>{0}</strong>{1}{2}'
                                 .replace('{0}', settings.type === 3 ?
                                     '成功进行了<em>{0}</em>次试探攻击'.replace('{0}', successNum)
                                     : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
                                 .replace('{1}', msgStat)
                                 .replace('{2}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
-                            , -1);
+                            , duration);
                         if (settings.type === 2 || count >= Config.maxAttackNum || isStop) {
                             Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
                             Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
@@ -4953,7 +4992,7 @@ var Loot = {
                 .replace('{0}', type === 2 ? 750 : 850)
                 .replace('{1}', type === 2 ? 300 : 370) +
             '</div>';
-        var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html, 'z-index:1002');
+        var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html);
         var $log = $dialog.find('textarea');
         if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
             $('<div style="margin-top:5px"><label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
@@ -5175,9 +5214,9 @@ var KFOL = {
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
-            '  position: fixed; border: 1px solid #9191FF; display: none; -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
-            '  -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
-            '  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
+            '  position: fixed; border: 1px solid #9191FF; display: none; z-index: 1002;' +
+            '  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
+            '  -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '}' +
             '.pd_cfg_box h1 {text-align: center; font-size: 14px; background-color: #9191FF; color: #FFF; line-height: 2em; margin: 0; padding-left: 20px; }' +
             '.pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }' +
@@ -5343,11 +5382,17 @@ var KFOL = {
     donation: function (isAutoSaveCurrentDeposit) {
         if (Config.donationAfterVipEnabled) {
             if (!KFOL.isInHomePage) return;
-            if ($('a[href="kf_vmember.php"]:contains("VIP会员(参与论坛获得的额外权限)")').length > 0) return;
+            if ($('a[href="kf_vmember.php"]:contains("VIP会员(参与论坛获得的额外权限)")').length > 0) {
+                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
+                return;
+            }
         }
         var now = new Date();
         var date = Tools.getDateByTime(Config.donationAfterTime);
-        if (now < date) return;
+        if (now < date) {
+            if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
+            return;
+        }
         console.log('KFB捐款Start');
         /**
          * 使用指定的KFB捐款
