@@ -11,17 +11,20 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.4.0-dev
+// @version     4.4.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
 var version = '4.4.0';
+// 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
+// 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
+var myConfig = {};
 /**
  * 配置类
  */
-// （注意：请到设置界面里修改相应设置，如非必要请勿在代码里修改）
+// （注意：请到设置界面里修改相应设置，请勿在代码里修改！）
 var Config = {
     // 是否自动KFB捐款，true：开启；false：关闭
     autoDonationEnabled: false,
@@ -627,6 +630,10 @@ var ConfigDialog = {
      */
     init: function () {
         $.extend(true, ConfigDialog.defConfig, Config);
+        if (myConfig && $.type(myConfig) === 'object' && !$.isEmptyObject(myConfig)) {
+            var options = ConfigDialog.getNormalizationConfig(myConfig);
+            Config = $.extend(true, {}, ConfigDialog.defConfig, options);
+        }
         ConfigDialog.read();
     },
 
@@ -4341,11 +4348,16 @@ var Loot = {
             }
         }
         console.log('领取争夺奖励Start');
-        var autoAttack = function (safeId) {
+        /**
+         * 自动攻击
+         * @param {string} safeId 用户的SafeID
+         * @param {int} deadlyAttackNum 致命一击的攻击次数
+         */
+        var autoAttack = function (safeId, deadlyAttackNum) {
             if (Config.autoAttackEnabled && !$.isEmptyObject(Config.batchAttackList) && safeId) {
                 if (Loot.isAutoAttackNow()) {
                     Tools.setCookie(Config.autoAttackReadyCookieName, '1|' + safeId);
-                    Loot.autoAttack(safeId);
+                    Loot.autoAttack(safeId, deadlyAttackNum);
                 }
                 else {
                     Tools.setCookie(Config.autoAttackReadyCookieName, '2|' + safeId, Tools.getDate('+' + Config.defLootInterval + 'm'));
@@ -4361,6 +4373,12 @@ var Loot = {
             var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
             var safeId = '';
             if (safeIdMatches) safeId = safeIdMatches[1];
+            var deadlyAttackNum = 0;
+            if (Config.deadlyAttackId > 0) {
+                var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次<\/span>/i.exec(html);
+                if (deadlyAttackMatches) deadlyAttackNum = parseInt(deadlyAttackMatches[1]);
+                if (deadlyAttackNum > Config.maxAttackNum) deadlyAttackNum = Config.maxAttackNum;
+            }
             var remainingMatches = /还有(\d+)(分钟|小时)领取/i.exec(matches[1]);
             if (remainingMatches) {
                 var lootInterval = parseInt(remainingMatches[1]);
@@ -4392,7 +4410,7 @@ var Loot = {
                 }
                 var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
                 if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
-                    autoAttack(safeId);
+                    autoAttack(safeId, deadlyAttackNum);
                 }
             }
             else {
@@ -4451,7 +4469,7 @@ var Loot = {
                                     event.preventDefault();
                                     Loot.showAttackLogDialog(2, attackLog);
                                 });
-                                autoAttack(safeId);
+                                autoAttack(safeId, deadlyAttackNum);
                             }
                         }, 'html');
                 }
@@ -4466,40 +4484,84 @@ var Loot = {
     /**
      * 自动攻击
      * @param {string} safeId 用户的SafeID
+     * @param {int} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
      */
-    autoAttack: function (safeId) {
-        var attackList = {};
-        if (Config.attackWhenZeroLifeEnabled) {
-            var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
-            if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
-            var num = 0;
-            for (var id in Config.batchAttackList) {
-                for (var i = 1; i <= Config.batchAttackList[id]; i++) {
-                    num++;
-                    if (num > attackCount) {
-                        if (typeof attackList[id] === 'undefined') attackList[id] = 1;
-                        else attackList[id]++;
+    autoAttack: function (safeId, deadlyAttackNum) {
+        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
+        /**
+         * 攻击
+         * @param {int} [deadlyAttackId=0] 致命一击的攻击目标ID
+         * @param {int} [deadlyAttackNum=0] 致命一击的攻击次数
+         */
+        var attack = function (deadlyAttackId, deadlyAttackNum) {
+            if (!deadlyAttackId) deadlyAttackId = 0;
+            if (!deadlyAttackNum) deadlyAttackNum = 0;
+            var attackList = {};
+            if (deadlyAttackNum > 0) attackList['0' + deadlyAttackId] = deadlyAttackNum;
+            if (Config.attackWhenZeroLifeEnabled) {
+                var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
+                if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
+                var num = 0;
+                for (var id in Config.batchAttackList) {
+                    for (var i = 1; i <= Config.batchAttackList[id]; i++) {
+                        num++;
+                        if (num > Config.maxAttackNum - deadlyAttackNum) break;
+                        if (num > attackCount) {
+                            if (typeof attackList['0' + id] === 'undefined') attackList['0' + id] = 1;
+                            else attackList['0' + id]++;
+                        }
                     }
                 }
             }
+            else if (deadlyAttackNum > 0) {
+                var num = 0;
+                for (var id in Config.batchAttackList) {
+                    for (var i = 1; i <= Config.batchAttackList[id]; i++) {
+                        num++;
+                        if (num > Config.maxAttackNum - deadlyAttackNum) break;
+                        if (typeof attackList['0' + id] === 'undefined') attackList['0' + id] = 1;
+                        else attackList['0' + id]++;
+                    }
+                }
+            }
+            if ($.isEmptyObject(attackList)) attackList = Config.batchAttackList;
+            var totalAttackNum = 0;
+            for (var id in attackList) {
+                totalAttackNum += attackList[id];
+            }
+            if (!totalAttackNum) return;
+            Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+4m'));
+            KFOL.showWaitMsg('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i><a target="_blank" href="{1}">浏览其它页面</a>'
+                    .replace('{0}', totalAttackNum)
+                    .replace('{1}', location.href)
+                , true);
+            Loot.batchAttack({
+                type: 2,
+                totalAttackNum: totalAttackNum,
+                attackList: attackList,
+                safeId: safeId
+            });
+        };
+
+        if (Config.deadlyAttackId > 0) {
+            if (deadlyAttackNum === -1) {
+                console.log('检查致命一击剩余攻击次数Start');
+                $.get('kf_fw_ig_index.php', function (html) {
+                    var deadlyAttackNum = 0;
+                    var matches = /致命一击剩余攻击次数\s*(\d+)\s*次<\/span>/i.exec(html);
+                    if (matches) deadlyAttackNum = parseInt(matches[1]);
+                    if (deadlyAttackNum > Config.maxAttackNum) deadlyAttackNum = Config.maxAttackNum;
+                    if (deadlyAttackNum > 0) attack(Config.deadlyAttackId, deadlyAttackNum);
+                    else attack();
+                }, 'html');
+            }
+            else {
+                attack(Config.deadlyAttackId, deadlyAttackNum);
+            }
         }
-        if ($.isEmptyObject(attackList)) attackList = Config.batchAttackList;
-        var totalAttackNum = 0;
-        for (var id in attackList) {
-            totalAttackNum += attackList[id];
+        else {
+            attack();
         }
-        if (!totalAttackNum) return;
-        Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+4m'));
-        KFOL.showWaitMsg('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i><a target="_blank" href="{1}">浏览其它页面</a>'
-                .replace('{0}', totalAttackNum)
-                .replace('{1}', location.href)
-            , true);
-        Loot.batchAttack({
-            type: 2,
-            totalAttackNum: totalAttackNum,
-            attackList: attackList,
-            safeId: safeId
-        });
     },
 
     /**
@@ -4730,7 +4792,7 @@ var Loot = {
         $.each(settings.attackList, function (id, num) {
             $.each(new Array(num), function () {
                 $(document).queue('BatchAttack', function () {
-                    attack(id);
+                    attack(parseInt(id));
                 });
             });
         });
@@ -4947,6 +5009,12 @@ var Loot = {
                     isAttack = true;
                 }
             }
+            var deadlyAttackNum = 0;
+            if (Config.deadlyAttackId > 0) {
+                var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次<\/span>/i.exec(html);
+                if (deadlyAttackMatches) deadlyAttackNum = parseInt(deadlyAttackMatches[1]);
+                if (deadlyAttackNum > Config.maxAttackNum) deadlyAttackNum = Config.maxAttackNum;
+            }
             var nextTime = Tools.getDate('+' + time + 'm');
             Tools.setCookie(Config.attackCheckCookieName, nextTime.getTime(), nextTime);
             if (isAttack) {
@@ -4964,6 +5032,7 @@ var Loot = {
                     if (attackId > 0) break;
                 }
                 if (!attackId) return;
+                if (deadlyAttackNum > 0) attackId = Config.deadlyAttackId;
                 var attackList = {};
                 attackList[attackId] = 1;
                 KFOL.showWaitMsg('<strong>正在进行试探攻击中...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>'
