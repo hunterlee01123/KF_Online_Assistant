@@ -61,3 +61,48 @@
 }());
 
 /*==========================================*/
+
+// 屏蔽标题包含指定关键词的帖子 V1.0
+(function () {
+    // 屏蔽关键词列表，可使用普通关键词及正则表达式，例：['标题1', /Title.*2/i]
+    var keyWords = ['标题1'];
+
+    var isInclude = function (str) {
+        for (var i in keyWords) {
+            var re = null;
+            if (typeof keyWords[i].test === 'undefined') re = new RegExp(keyWords[i], 'i');
+            else re = keyWords[i];
+            if (re.test(str)) return true;
+        }
+        return false;
+    };
+
+    var num = 0;
+    if (KFOL.isInHomePage) {
+        $('.b_tit4 a, .b_tit4_1 a').each(function () {
+            var $this = $(this);
+            if (isInclude($this.text())) {
+                num++;
+                $this.parent('li').remove();
+            }
+        });
+    }
+    else if (location.pathname === '/thread.php') {
+        $('.threadtit1 a').each(function () {
+            var $this = $(this);
+            if (isInclude($this.text())) {
+                num++;
+                $this.closest('tr').remove();
+            }
+        });
+    }
+    else if (location.pathname === '/read.php') {
+        var title = $('a[href^="kf_tidfavor.php?action=favor"]:first').closest('tr').prev('tr').find('td > span').text();
+        if (isInclude(title)) {
+            alert('此帖子标题包含屏蔽关键词，建议立即关闭页面！');
+        }
+    }
+    if (num > 0) console.log('共有{0}个帖子被屏蔽'.replace('{0}', num));
+}());
+
+/*==========================================*/
