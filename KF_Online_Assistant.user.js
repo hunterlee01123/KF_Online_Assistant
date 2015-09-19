@@ -909,6 +909,7 @@ var ConfigDialog = {
 
         ConfigDialog.setValue();
         $dialog.submit(function (event) {
+            event.preventDefault();
             $('.pd_cfg_btns > button:first').click();
         }).end().find('.pd_cfg_btns > button:first').click(function (event) {
             event.preventDefault();
