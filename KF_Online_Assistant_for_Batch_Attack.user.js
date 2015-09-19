@@ -189,7 +189,7 @@ var KFOL = {
         $('head').append(
             '<style type="text/css">' +
             '.pd_layer { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
-            '.pd_pop_box { position: fixed; width: 100%; z-index: 1001; }' +
+            '.pd_pop_box { position: absolute; width: 100%; z-index: 1001; }' +
             '.pd_pop_tips {' +
             '  border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0,0,0,0.1); border-radius: 3px; padding: 12px 40px; text-align: center;' +
             '  font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;' +
