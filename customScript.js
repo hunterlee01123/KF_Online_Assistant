@@ -106,3 +106,48 @@
 }());
 
 /*==========================================*/
+
+// 在本回合剩余攻击次数不小于指定次数的情况下，抽取神秘盒子以延长争夺时间 V1.0
+(function () {
+    var maxAttackCount = 10; // 在不小于指定剩余攻击次数时触发提示
+    var checkAttackCountCookieName = 'pd_check_attack_count';
+
+    if (Config.autoLootEnabled && !Tools.getCookie(Config.getLootAwardCookieName)) {
+        Config.autoLootEnabled = false;
+        var oriAutoRefreshEnabled = Config.autoRefreshEnabled;
+        if (oriAutoRefreshEnabled && KFOL.isInHomePage) Config.autoRefreshEnabled = false;
+        if (location.pathname === '/kf_smbox.php') return;
+        if (Tools.getCookie(checkAttackCountCookieName)) return;
+        console.log('检查剩余攻击次数Start');
+        $.get('kf_fw_ig_index.php', function (html) {
+            if (Tools.getCookie(checkAttackCountCookieName)) return;
+            Tools.setCookie(checkAttackCountCookieName, 1, Tools.getDate('+1m'));
+            if (!/已经可以领取KFB/i.test(html)) {
+                if (!Tools.getCookie(Config.getLootAwardCookieName)) continueLoot();
+                return;
+            }
+            var matches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
+            var count = 0;
+            if (matches) count = parseInt(matches[1]);
+            if (count >= maxAttackCount) {
+                if (window.confirm('检测到本回合剩余攻击次数还有{0}次，是否抽取神秘盒子以延长争夺时间？'.replace('{0}', count))) {
+                    KFOL.drawSmbox();
+                }
+            }
+            else {
+                continueLoot();
+            }
+        }, 'html');
+
+        var continueLoot = function () {
+            Config.autoLootEnabled = true;
+            if (!Tools.getCookie(Config.getLootAwardCookieName)) Loot.getLootAward();
+            if (oriAutoRefreshEnabled && KFOL.isInHomePage) {
+                Config.autoRefreshEnabled = true;
+                setTimeout(KFOL.startAutoRefreshMode, 60 * 1000);
+            }
+        }
+    }
+}());
+
+/*==========================================*/
