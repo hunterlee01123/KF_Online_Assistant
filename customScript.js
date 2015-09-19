@@ -109,7 +109,7 @@
 
 // 在本回合剩余攻击次数不小于指定次数的情况下，抽取神秘盒子以延长争夺时间 V1.0
 (function () {
-    var maxAttackCount = 10; // 在不小于指定剩余攻击次数时触发提示
+    var maxAttackCount = 20; // 在不小于指定剩余攻击次数时触发提示
     var checkAttackCountCookieName = 'pd_check_attack_count';
 
     if (Config.autoLootEnabled && !Tools.getCookie(Config.getLootAwardCookieName)) {
