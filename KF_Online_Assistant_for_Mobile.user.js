@@ -1,12 +1,10 @@
 // ==UserScript==
-// @name        KF Online助手
+// @name        KF Online助手 for Mobile
 // @namespace   https://greasyfork.org/users/4514
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
-// @homepage    https://greasyfork.org/scripts/8615
+// @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
-// @updateURL   https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.meta.js
-// @downloadURL https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.user.js
 // @include     http://2dgal.com/*
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
@@ -5277,7 +5275,7 @@ var KFOL = {
         $('head').append(
             '<style type="text/css">' +
             '.pd_layer { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
-            '.pd_pop_box { position: fixed; width: 100%; z-index: 1001; }' +
+            '.pd_pop_box { position: absolute; width: 100%; z-index: 1001; }' +
             '.pd_pop_tips {' +
             '  border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0,0,0,0.1); border-radius: 3px; padding: 12px 40px; text-align: center;' +
             '  font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;' +
@@ -5322,7 +5320,7 @@ var KFOL = {
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
-            '  position: fixed; border: 1px solid #9191FF; display: none; z-index: 1002;' +
+            '  position: absolute; border: 1px solid #9191FF; display: none; z-index: 1002;' +
             '  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '  -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '}' +
