@@ -9,13 +9,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.4.1
+// @version     4.4.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.4.1';
+var version = '4.4.2';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
@@ -1629,6 +1629,10 @@ var ConfigDialog = {
             alert('攻击次数不得超过{0}次'.replace('{0}', Config.maxAttackNum));
             return false;
         }
+        if ($('#pd_cfg_auto_attack_enabled').prop('checked') && !totalAttackNum) {
+            alert('请填写自动攻击的目标次数');
+            return false;
+        }
 
         if ($('#pd_cfg_auto_draw_smbox_enabled').prop('checked') && $('#pd_cfg_auto_loot_enabled').prop('checked')) {
             alert('请不要将自动争夺与自动抽取神秘盒子一起使用');
@@ -1800,6 +1804,8 @@ var ConfigDialog = {
             }
             else settings.batchAttackList = defConfig.batchAttackList;
         }
+        if (settings.autoAttackEnabled && (!settings.batchAttackList || $.isEmptyObject(settings.batchAttackList)))
+            settings.autoAttackEnabled = false;
         if (typeof options.deadlyAttackId !== 'undefined') {
             var deadlyAttackId = parseInt(options.deadlyAttackId);
             if (!isNaN(deadlyAttackId) && deadlyAttackId >= 0 && deadlyAttackId <= 5) settings.deadlyAttackId = deadlyAttackId;
@@ -3322,11 +3328,11 @@ var Item = {
     getSellItemGain: function (itemLevel) {
         switch (itemLevel) {
             case 3:
-                return 150;
+                return 300;
             case 4:
-                return 1000;
+                return 2000;
             case 5:
-                return 5000;
+                return 10000;
             default:
                 return 0;
         }
@@ -4697,7 +4703,7 @@ var Loot = {
                             var extraLog = '';
                             if (strongAttackNum > 0) extraLog += '暴击`+{0}`'.replace('{0}', strongAttackNum);
                             if (criticalStrikeNum > 0) extraLog += (extraLog ? '，' : '') + '致命一击`+{0}`'.replace('{0}', criticalStrikeNum);
-                            if (extraLog) extraLog = ' (' + extraLog + ')';
+                            if (extraLog) extraLog = '(' + extraLog + ')';
                             if (settings.type === 3) Log.push('试探攻击', '成功进行了`{0}`次试探攻击'.replace('{0}', successNum) + extraLog, {gain: gain});
                             else Log.push('批量攻击', '共有`{0}`次攻击成功'.replace('{0}', successNum) + extraLog, {gain: gain});
                         }
