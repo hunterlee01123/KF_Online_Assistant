@@ -21,6 +21,7 @@ var version = '4.4.3';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
+
 /**
  * 配置类
  */
@@ -4916,9 +4917,9 @@ var Loot = {
     },
 
     /**
-     * 显示领取争夺奖励的时间
+     * 在争夺首页进行对页面元素进行相关处理
      */
-    showGetLootAwardTime: function () {
+    handleInLootIndexPage: function () {
         var $btn = $('input[name="submit1"][value="已经可以领取KFB，请点击这里获取"]');
         if ($btn.length > 0) {
             if (Config.autoLootEnabled && Tools.getCookie(Config.getLootAwardCookieName)) {
@@ -4937,6 +4938,7 @@ var Loot = {
                 });
             }
         }
+
         var $submit = $('input[name="submit1"][value$="领取，点击这里抢别人的"]');
         if ($submit.length > 0) {
             var timeLog = Loot.getNextLootAwardTime();
@@ -4960,6 +4962,29 @@ var Loot = {
                         .replace('{1}', Tools.getTimeString(end1, ':', false))
                         .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
                 );
+            }
+        }
+
+        var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');
+        if ($lootInfo.length > 0) {
+            var html = $lootInfo.html();
+            var lootInfoMatches = html.match(/>.+?\s\d+\(\+\d+(\+\d+)?\)\s(点|%)<\/span>/gi);
+            if (lootInfoMatches) {
+                for (var i in lootInfoMatches) {
+                    var lineMatches = /(\d+)\(\+(\d+)(\+\d+)?\)/.exec(lootInfoMatches[i]);
+                    if (!lineMatches) continue;
+                    var totalNum = 0;
+                    for (var j = 1; j < lineMatches.length; j++) {
+                        var num = parseInt(lineMatches[j]);
+                        if (isNaN(num)) continue;
+                        totalNum += num;
+                    }
+                    if (totalNum > 0) {
+                        var replace = lootInfoMatches[i].replace(lineMatches[0], lineMatches[0] + '=' + totalNum + ' ');
+                        html = html.replace(lootInfoMatches[i], replace);
+                    }
+                }
+                $lootInfo.html(html);
             }
         }
     },
@@ -5707,6 +5732,7 @@ var KFOL = {
                 donationInterval = Math.floor((donationTime - now) / 1000);
             }
         }
+
         var getLootAwardInterval = -1, autoAttackInterval = -1, attackCheckInterval = -1;
         if (Config.autoLootEnabled) {
             var lootTimeLog = Loot.getNextLootAwardTime();
@@ -5755,7 +5781,10 @@ var KFOL = {
                     else attackCheckInterval = 0;
                 }
             }
+            if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Config.autoAttackingCookieName))
+                autoAttackInterval = 4 * 60 + 1;
         }
+
         var drawSmboxInterval = -1;
         if (Config.autoDrawSmbox2Enabled) {
             var smboxTimeLog = KFOL.getNextDrawSmboxTime();
@@ -5765,6 +5794,7 @@ var KFOL = {
             }
             else drawSmboxInterval = 0;
         }
+
         var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, attackCheckInterval, drawSmboxInterval];
         minArr.sort(function (a, b) {
             return a > b;
@@ -7115,7 +7145,7 @@ var KFOL = {
         }
         else {
             diff.hours += 1;
-            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '多小时'));
+            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
         }
         if (!Tools.getCookie(Config.autoAttackReadyCookieName))
             $msg.removeClass('indbox5').addClass('indbox6');
@@ -7304,7 +7334,7 @@ var KFOL = {
             Item.addBatchBuyItemsLink();
         }
         else if (location.pathname === '/kf_fw_ig_index.php') {
-            Loot.showGetLootAwardTime();
+            Loot.handleInLootIndexPage();
             if (Config.customMonsterNameEnabled) Loot.customMonsterName();
         }
         else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
