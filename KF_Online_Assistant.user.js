@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.4.2
+// @version     4.4.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.4.2';
+var version = '4.4.3';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
@@ -576,8 +576,8 @@ var Dialog = {
         var $dialog = $(html).appendTo('body');
         $dialog.on('click', '.pd_cfg_tips', function () {
             return false;
-        }).keydown(function (event) {
-            if (event.keyCode === 27) {
+        }).keydown(function (e) {
+            if (e.keyCode === 27) {
                 return Dialog.close(id);
             }
         }).find('h1 > span').click(function () {
@@ -816,35 +816,35 @@ var ConfigDialog = {
 
         $dialog.find('.pd_cfg_btns > button:eq(1)').click(function () {
             return Dialog.close('pd_config');
-        }).end().find('.pd_cfg_btns > button:eq(2)').click(function (event) {
-            event.preventDefault();
+        }).end().find('.pd_cfg_btns > button:eq(2)').click(function (e) {
+            e.preventDefault();
             if (window.confirm('是否重置所有设置？')) {
                 ConfigDialog.clear();
                 alert('设置已重置');
                 location.reload();
             }
-        }).end().find('.pd_cfg_nav > a:first-child').click(function (event) {
-            event.preventDefault();
+        }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
+            e.preventDefault();
             if (window.confirm('是否清除与助手有关的Cookies和本地存储数据？（不包括助手设置和日志）')) {
                 ConfigDialog.clearCache();
                 alert('缓存已清除');
             }
-        }).next().click(function (event) {
-            event.preventDefault();
+        }).next().click(function (e) {
+            e.preventDefault();
             Log.show();
-        }).next().click(function (event) {
-            event.preventDefault();
+        }).next().click(function (e) {
+            e.preventDefault();
             ConfigDialog.showImportOrExportSettingDialog();
         });
 
-        $dialog.find('#pd_cfg_custom_monster_name_dialog').click(function (event) {
-            event.preventDefault();
+        $dialog.find('#pd_cfg_custom_monster_name_dialog').click(function (e) {
+            e.preventDefault();
             ConfigDialog.showCustomMonsterNameDialog();
         });
 
-        $dialog.find('#pd_cfg_auto_use_item_names').keydown(function (event) {
-            if (event.ctrlKey && (event.keyCode === 65 || event.keyCode === 97)) {
-                event.preventDefault();
+        $dialog.find('#pd_cfg_auto_use_item_names').keydown(function (e) {
+            if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 97)) {
+                e.preventDefault();
                 $(this).children().each(function () {
                     $(this).prop('selected', true);
                 });
@@ -862,38 +862,38 @@ var ConfigDialog = {
             }
         });
 
-        $dialog.find('#pd_cfg_custom_sm_color_dialog').click(function (event) {
-            event.preventDefault();
+        $dialog.find('#pd_cfg_custom_sm_color_dialog').click(function (e) {
+            e.preventDefault();
             ConfigDialog.showCustomSmColorDialog();
         });
 
-        $dialog.find('#pd_cfg_user_memo_dialog').click(function (event) {
-            event.preventDefault();
+        $dialog.find('#pd_cfg_user_memo_dialog').click(function (e) {
+            e.preventDefault();
             ConfigDialog.showUserMemoDialog();
         });
 
-        $dialog.find('#pd_cfg_custom_css_dialog').click(function (event) {
-            event.preventDefault();
+        $dialog.find('#pd_cfg_custom_css_dialog').click(function (e) {
+            e.preventDefault();
             ConfigDialog.showCustomCssDialog();
         });
 
-        $dialog.find('#pd_cfg_custom_script_dialog').click(function (event) {
-            event.preventDefault();
+        $dialog.find('#pd_cfg_custom_script_dialog').click(function (e) {
+            e.preventDefault();
             ConfigDialog.showCustomScriptDialog();
         });
 
-        $dialog.find('#pd_cfg_add_follow_user, #pd_cfg_add_block_user').keydown(function (event) {
-            if (event.keyCode === 13) {
-                event.preventDefault();
+        $dialog.find('#pd_cfg_add_follow_user, #pd_cfg_add_block_user').keydown(function (e) {
+            if (e.keyCode === 13) {
+                e.preventDefault();
                 $(this).next('a').click();
             }
-        }).next('a').click(function (event) {
-            event.preventDefault();
+        }).next('a').click(function (e) {
+            e.preventDefault();
             var type = 1;
             if ($(this).prevAll().filter('#pd_cfg_add_block_user').length > 0) type = 2;
             ConfigDialog.addUserToFollowOrBlockList(type);
-        }).next('a').click(function (event) {
-            event.preventDefault();
+        }).next('a').click(function (e) {
+            e.preventDefault();
             var type = 1;
             if ($(this).prevAll().filter('#pd_cfg_add_block_user').length > 0) type = 2;
             if (!window.confirm('是否清除所有用户？')) return;
@@ -908,11 +908,11 @@ var ConfigDialog = {
         });
 
         ConfigDialog.setValue();
-        $dialog.submit(function (event) {
-            event.preventDefault();
+        $dialog.submit(function (e) {
+            e.preventDefault();
             $('.pd_cfg_btns > button:first').click();
-        }).end().find('.pd_cfg_btns > button:first').click(function (event) {
-            event.preventDefault();
+        }).end().find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
             if (!ConfigDialog.verify()) return;
             var oriAutoRefreshEnabled = Config.autoRefreshEnabled;
             var options = ConfigDialog.getValue();
@@ -960,8 +960,8 @@ var ConfigDialog = {
             '  <button>保存</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_im_or_ex_setting', '导入或导出设置', html);
-        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
-            event.preventDefault();
+        $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
             if (!window.confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_setting').val());
             if (!options) return;
@@ -1015,8 +1015,8 @@ var ConfigDialog = {
         $.each(userList, function (index, key) {
             $list.append('<span data-user="{0}">{0}<a href="#">&times;</a></span>'.replace(/\{0\}/g, key));
         });
-        $list.on('click', 'a', function (event) {
-            event.preventDefault();
+        $list.on('click', 'a', function (e) {
+            e.preventDefault();
             var $parent = $(this).parent();
             var user = $parent.data('user');
             var index = $.inArray(user, userList);
@@ -1087,8 +1087,8 @@ var ConfigDialog = {
         }).on('change', 'input[type="color"]', function () {
             var $this = $(this);
             $this.prev('input').val($this.val().toString().toUpperCase());
-        }).on('click', 'a', function (event) {
-            event.preventDefault();
+        }).on('click', 'a', function (e) {
+            e.preventDefault();
             $(this).closest('li').remove();
         });
 
@@ -1103,24 +1103,24 @@ var ConfigDialog = {
                 .replace(/\{2\}/g, typeof data.color === 'undefined' ? '' : data.color);
         };
 
-        $dialog.find('#pd_cfg_custom_sm_color_add_btns').find('a:lt(2)').click(function (event) {
-            event.preventDefault();
+        $dialog.find('#pd_cfg_custom_sm_color_add_btns').find('a:lt(2)').click(function (e) {
+            e.preventDefault();
             var num = 1;
             if ($(this).is('#pd_cfg_custom_sm_color_add_btns > a:eq(1)')) num = 5;
             for (var i = 1; i <= num; i++) {
                 $('#pd_cfg_custom_sm_color_list').append(getSmColorListLine());
             }
             Dialog.show('pd_custom_sm_color');
-        }).end().find('a:last').click(function (event) {
-            event.preventDefault();
+        }).end().find('a:last').click(function (e) {
+            e.preventDefault();
             if (window.confirm('是否清除所有设置？')) {
                 $('#pd_cfg_custom_sm_color_list').empty();
                 Dialog.show('pd_custom_sm_color');
             }
         });
 
-        $dialog.find('.pd_cfg_about a').click(function (event) {
-            event.preventDefault();
+        $dialog.find('.pd_cfg_about a').click(function (e) {
+            e.preventDefault();
             ConfigDialog.showImportOrExportSmColorConfigDialog();
         });
 
@@ -1130,8 +1130,8 @@ var ConfigDialog = {
         });
         $('#pd_cfg_custom_sm_color_list').html(smColorHtml);
 
-        $dialog.submit(function (event) {
-            event.preventDefault();
+        $dialog.submit(function (e) {
+            e.preventDefault();
             var list = [];
             var verification = true;
             $('#pd_cfg_custom_sm_color_list > li').each(function () {
@@ -1206,8 +1206,8 @@ var ConfigDialog = {
             '  <button>保存</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_im_or_ex_sm_color_config', '导入或导出配色方案', html);
-        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
-            event.preventDefault();
+        $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
             var options = $.trim($('#pd_cfg_sm_color_config').val());
             if (!options) return;
             try {
@@ -1254,8 +1254,8 @@ var ConfigDialog = {
             '  <button>确定</button><button>取消</button><button>重置</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_custom_monster_name', '自定义怪物名称', html);
-        $dialog.submit(function (event) {
-            event.preventDefault();
+        $dialog.submit(function (e) {
+            e.preventDefault();
             Config.customMonsterNameList = {};
             $('#pd_cfg_custom_monster_name_list input').each(function () {
                 var $this = $(this);
@@ -1268,8 +1268,8 @@ var ConfigDialog = {
             Dialog.close('pd_custom_monster_name');
         }).find('.pd_cfg_btns > button:eq(1)').click(function () {
             return Dialog.close('pd_custom_monster_name');
-        }).next('button').click(function (event) {
-            event.preventDefault();
+        }).next('button').click(function (e) {
+            e.preventDefault();
             $('#pd_cfg_custom_monster_name_list input').val('');
         });
         $.each(Config.customMonsterNameList, function (id, name) {
@@ -1294,8 +1294,8 @@ var ConfigDialog = {
             '</div>';
         var $dialog = Dialog.create('pd_custom_css', '自定义CSS', html);
         var $content = $dialog.find('textarea');
-        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
-            event.preventDefault();
+        $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
             Config.customCssContent = $.trim($content.val());
             ConfigDialog.write();
             Dialog.close('pd_custom_css');
@@ -1324,8 +1324,8 @@ var ConfigDialog = {
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_custom_script', '自定义脚本', html);
-        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
-            event.preventDefault();
+        $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
             Config.customScriptStartContent = $('#pd_custom_script_start_content').val();
             Config.customScriptEndContent = $('#pd_custom_script_end_content').val();
             ConfigDialog.write();
@@ -1354,8 +1354,8 @@ var ConfigDialog = {
             '</div>';
         var $dialog = Dialog.create('pd_user_memo', '用户备注', html);
         var $userMemoList = $dialog.find('textarea');
-        $dialog.find('.pd_cfg_btns > button:first').click(function (event) {
-            event.preventDefault();
+        $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
             var content = $.trim($userMemoList.val());
             Config.userMemoList = {};
             var lines = content.split('\n');
@@ -2216,8 +2216,8 @@ var Log = {
                 $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
             }
         }
-        $dialog.find('.pd_log_nav a').click(function (event) {
-            event.preventDefault();
+        $dialog.find('.pd_log_nav a').click(function (e) {
+            e.preventDefault();
             if ($(this).is('.pd_log_nav a:eq(0)')) {
                 curIndex = 0;
             }
@@ -2269,16 +2269,16 @@ var Log = {
             .end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click()
             .end().find('#pd_log_stat_days').val(Config.logStatDays);
 
-        $('#pd_log_im_or_ex_log_dialog').click(function (event) {
-            event.preventDefault();
+        $('#pd_log_im_or_ex_log_dialog').click(function (e) {
+            e.preventDefault();
             Log.showImportOrExportLogDialog();
         });
 
         Dialog.show('pd_log');
         $dialog.find('.pd_cfg_btns > button:first').focus().click(function () {
             return Dialog.close('pd_log');
-        }).next('button').click(function (event) {
-            event.preventDefault();
+        }).next('button').click(function (e) {
+            e.preventDefault();
             if (window.confirm('是否清除所有日志？')) {
                 Log.clear();
                 alert('日志已清除');
@@ -2518,8 +2518,8 @@ var Log = {
         var $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
         $dialog.find('input[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
             Log.showLogText();
-        }).end().find('.pd_cfg_btns > button:first').click(function (event) {
-            event.preventDefault();
+        }).end().find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
             if (!window.confirm('是否导入文本框中的日志？')) return;
             var log = $.trim($('#pd_log_setting').val());
             if (!log) return;
@@ -2793,8 +2793,8 @@ var Item = {
                 $this.find('td:nth-child(4)').html('<a href="#">批量转换道具为能量</a>').after('<td><a href="#">批量恢复道具</a></td>');
             }
         });
-        $('.kf_fw_ig1:last').on('click', 'a[href="#"]', function (event) {
-            event.preventDefault();
+        $('.kf_fw_ig1:last').on('click', 'a[href="#"]', function (e) {
+            e.preventDefault();
             var $this = $(this);
             var $itemLine = $this.closest('tr'),
                 itemLevel = parseInt($itemLine.find('td:first-child').text()),
@@ -3268,8 +3268,8 @@ var Item = {
                 $this.find('td:nth-child(3)').after('<td><a href="#">批量使用道具</a></td>');
             }
         });
-        $('.kf_fw_ig1:last').on('click', 'a[href="#"]', function (event) {
-            event.preventDefault();
+        $('.kf_fw_ig1:last').on('click', 'a[href="#"]', function (e) {
+            e.preventDefault();
             var $this = $(this);
             var $itemLine = $this.closest('tr'),
                 itemLevel = parseInt($itemLine.find('td:first-child').text()),
@@ -3578,8 +3578,8 @@ var Item = {
         $('.kf_fw_ig1 > tbody > tr:gt(1)').each(function () {
             $(this).find('td:last-child').css('width', '110px').append('<a class="pd__batch_buy_items" style="margin-left:15px" href="#">批量购买</a>');
         });
-        $('a.pd__batch_buy_items').click(function (event) {
-            event.preventDefault();
+        $('a.pd__batch_buy_items').click(function (e) {
+            e.preventDefault();
             KFOL.removePopTips($('.pd_pop_tips'));
             var $this = $(this);
             var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
@@ -3641,8 +3641,8 @@ var Item = {
                                 , duration: -1
                             });
                             $('<li><a href="#">统计购买价格</a></li>').appendTo('.pd_result:last')
-                                .find('a').click(function (event) {
-                                    event.preventDefault();
+                                .find('a').click(function (e) {
+                                    e.preventDefault();
                                     var $result = $(this).closest('.pd_result');
                                     $(this).parent().remove();
                                     KFOL.removePopTips($('.pd_pop_tips'));
@@ -3899,8 +3899,8 @@ var Card = {
                 var $cardLines = $('.kf_fw_ig2 > tbody > tr:gt(2)');
                 if ($this.text() === '开启批量模式') {
                     $this.text('关闭批量模式');
-                    $cardLines.on('click', 'a', function (event) {
-                        event.preventDefault();
+                    $cardLines.on('click', 'a', function (e) {
+                        e.preventDefault();
                         $(this).next('.pd_card_chk').click();
                     }).find('td').has('a').each(function () {
                         var matches = /kf_fw_card_my\.php\?id=(\d+)/.exec($(this).find('a').attr('href'));
@@ -4208,8 +4208,8 @@ var Bank = {
             '</tr>';
         $(html).appendTo('.bank1 > tbody')
             .find('form')
-            .submit(function (event) {
-                event.preventDefault();
+            .submit(function (e) {
+                e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
                 var cash = 0, currentDeposit = 0, fee = 0;
                 var matches = /当前所持：(-?\d+)KFB/i.exec($('td:contains("当前所持：")').text());
@@ -4345,8 +4345,9 @@ var Loot = {
     /**
      * 领取争夺奖励
      * @param {boolean} [isAutoDonation=false] 是否自动捐款
+     * @param {boolean} [isAutoSaveCurrentDeposit=false] 是否自动活期存款
      */
-    getLootAward: function (isAutoDonation) {
+    getLootAward: function (isAutoDonation, isAutoSaveCurrentDeposit) {
         if (Config.noAutoLootWhen.length > 0) {
             var now = new Date();
             for (var i in Config.noAutoLootWhen) {
@@ -4460,10 +4461,15 @@ var Loot = {
                                     }
                                     TmpLog.setValue(Config.attackedCountTmpLogName, {time: now, count: attackedCount});
                                 }
-                                Log.push('领取争夺奖励',
-                                    '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''),
-                                    {gain: {'KFB': gain}}
-                                );
+                                if (/已经预领\d+KFB/i.test(html)) {
+                                    gain = 0;
+                                }
+                                else {
+                                    Log.push('领取争夺奖励',
+                                        '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''),
+                                        {gain: {'KFB': gain}}
+                                    );
+                                }
                                 console.log('领取争夺奖励{0}，KFB+{1}'
                                         .replace('{0}', attackedCountDiff > 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
                                         .replace('{1}', gain)
@@ -4474,11 +4480,12 @@ var Loot = {
                                         .replace('{2}', attackLog ? '<a href="#">查看日志</a>' : '')
                                         .replace('{3}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
                                 );
-                                $msg.find('a[href="#"]:first').click(function (event) {
-                                    event.preventDefault();
+                                $msg.find('a[href="#"]:first').click(function (e) {
+                                    e.preventDefault();
                                     Loot.showAttackLogDialog(2, attackLog);
                                 });
                                 autoAttack(safeId, deadlyAttackNum);
+                                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
                             }
                         }, 'html');
                 }
@@ -4765,8 +4772,8 @@ var Loot = {
                         }
                         if (settings.type >= 2) {
                             $('.pd_layer').remove();
-                            $msg.find('a:last').click(function (event) {
-                                event.preventDefault();
+                            $msg.find('a:last').click(function (e) {
+                                e.preventDefault();
                                 Loot.showAttackLogDialog(1, attackLog, resultStat);
                             });
                             if (settings.type === 2 && KFOL.isInHomePage) {
@@ -4842,8 +4849,8 @@ var Loot = {
                     .replace('{1}', Config.batchAttackList[hitId] ? Config.batchAttackList[hitId] : '')
             );
         });
-        $('.pd_batch_attack .pd_input').keydown(function (event) {
-            if (event.keyCode === 13) {
+        $('.pd_batch_attack .pd_input').keydown(function (e) {
+            if (e.keyCode === 13) {
                 $('.pd_item_btns > button:last-child').click();
             }
         });
@@ -5426,8 +5433,8 @@ var KFOL = {
                 $(this).stop(true, true).fadeOut('slow', function () {
                     KFOL.removePopTips($(this));
                 });
-            }).find('a').click(function (event) {
-                event.stopPropagation();
+            }).find('a').click(function (e) {
+                e.stopPropagation();
             });
         }
         var popTipsHeight = $popTips.outerHeight();
@@ -5869,7 +5876,7 @@ var KFOL = {
             var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Config.donationCookieName);
             if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
                 isGetLootAwardStarted = true;
-                Loot.getLootAward(autoDonationAvailable);
+                Loot.getLootAward(autoDonationAvailable, Config.autoSaveCurrentDepositEnabled);
             }
             if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
                 KFOL.drawSmbox();
@@ -5908,14 +5915,14 @@ var KFOL = {
     addConfigAndLogDialogLink: function () {
         var $login = $('a[href^="login.php?action=quit"]:eq(0)');
         $('<a href="#">助手设置</a><span style="margin:0 4px">|</span>').insertBefore($login)
-            .filter('a').click(function (event) {
-                event.preventDefault();
+            .filter('a').click(function (e) {
+                e.preventDefault();
                 ConfigDialog.show();
             });
         if (Config.showLogLinkInPageEnabled) {
             $('<a href="#">助手日志</a><span style="margin:0 4px">|</span>').insertBefore($login)
-                .filter('a').click(function (event) {
-                    event.preventDefault();
+                .filter('a').click(function (e) {
+                    e.preventDefault();
                     Log.show();
                 });
         }
@@ -5991,8 +5998,8 @@ var KFOL = {
                 .replace('{1}', Tools.getUrlParam('tid'))
                 .replace('{2}', linkName);
             $this.html('<a class="pd_goto_link" href="{0}">{1}</a>'.replace('{0}', url).replace('{1}', floorText));
-            $this.find('a').click(function (event) {
-                event.preventDefault();
+            $this.find('a').click(function (e) {
+                e.preventDefault();
                 window.prompt('本楼的跳转链接（请按Ctrl+C复制）：', url);
             });
         });
@@ -6005,8 +6012,8 @@ var KFOL = {
         $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8" /> ' +
         '<span>楼</span></li></form>')
             .prependTo('.readlou:eq(0) > div:first-child > ul')
-            .submit(function (event) {
-                event.preventDefault();
+            .submit(function (e) {
+                e.preventDefault();
                 var floor = parseInt($.trim($(this).find('input').val()));
                 if (!floor || floor <= 0) return;
                 location.href = '{0}read.php?tid={1}&page={2}&floor={3}'
@@ -6044,8 +6051,8 @@ var KFOL = {
         $('<form><li class="pd_fast_goto_page">跳至 <input class="pd_input" style="width:30px" type="text" maxlength="8" /> ' +
         '<span>页</span></li></form>')
             .appendTo('table > tbody > tr > td > div > ul.pages')
-            .submit(function (event) {
-                event.preventDefault();
+            .submit(function (e) {
+                e.preventDefault();
                 var page = parseInt($.trim($(this).find('input').val()));
                 if (!page || page <= 0) return;
                 var fpage = parseInt(Tools.getUrlParam('fpage'));
@@ -6127,8 +6134,8 @@ var KFOL = {
     addCustomSmColorTips: function () {
         $('<span class="pd_highlight">低等级没人权？没有自己喜欢的颜色？快来试试助手的<a href="#">自定义本人神秘颜色</a>的功能吧！（虽然仅限自己可见 ╮(╯▽╰)╭）</span><br />')
             .appendTo('table div > table > tbody > tr > td:contains("自定义ID颜色")')
-            .find('a').click(function (event) {
-                event.preventDefault();
+            .find('a').click(function (e) {
+                e.preventDefault();
                 ConfigDialog.show();
             });
     },
@@ -6191,8 +6198,8 @@ var KFOL = {
      * 添加复制购买人名单的链接
      */
     addCopyBuyersListLink: function () {
-        $('<a style="margin:0 2px 0 5px" href="#">复制名单</a>').insertAfter('.readtext select[name="buyers"]').click(function (event) {
-            event.preventDefault();
+        $('<a style="margin:0 2px 0 5px" href="#">复制名单</a>').insertAfter('.readtext select[name="buyers"]').click(function (e) {
+            e.preventDefault();
             var buyerList = [];
             $(this).prev('select').children('option').each(function (index) {
                 var name = $(this).text();
@@ -6279,8 +6286,8 @@ var KFOL = {
         var page = Tools.getUrlParam('page');
         if (page !== null && parseInt(page) !== 1) return;
         $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readlou:eq(1) > div > .pages')
-            .find('a').click(function (event) {
-                event.preventDefault();
+            .find('a').click(function (e) {
+                e.preventDefault();
                 if ($('#pd_replyer_list').length > 0) return;
                 var value = $.trim(window.prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
                 if (value === '') return;
@@ -6410,8 +6417,8 @@ var KFOL = {
             .append(('<span class="b_tit2" style="margin-left:5px"><a style="display:inline-block" href="#" title="多重回复">回复</a> ' +
             '<a style="display:inline-block" href="{0}" title="多重引用">引用</a></span>')
                 .replace('{0}', replyUrl + '&multiquote=true'))
-            .find('.b_tit2 > a:eq(0)').click(function (event) {
-                event.preventDefault();
+            .find('.b_tit2 > a:eq(0)').click(function (e) {
+                e.preventDefault();
                 KFOL.handleMultiQuote(1);
             });
     },
@@ -6423,8 +6430,8 @@ var KFOL = {
     handleMultiQuote: function (type) {
         if ($('#pd_clear_multi_quote_data').length === 0) {
             $('<a id="pd_clear_multi_quote_data" style="margin-left:7px" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
-                .insertAfter('input[name="diy_guanjianci"]').click(function (event) {
-                    event.preventDefault();
+                .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
+                    e.preventDefault();
                     localStorage.removeItem(Config.multiQuoteStorageName);
                     $('input[name="diy_guanjianci"]').val('');
                     if (type === 2) $('#textarea').val('');
@@ -6514,16 +6521,16 @@ var KFOL = {
                 .replace(/给你转帐(\d+)KFB/i, '给你转帐<span class="pd_stat"><em>$1</em></span>KFB')
         );
         $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>').appendTo($msg)
-            .filter('a:eq(0)').click(function (event) {
-                event.preventDefault();
+            .filter('a:eq(0)').click(function (e) {
+                e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
                 var matches = /给你转帐(\d+)KFB/i.exec($msg.text());
                 if (!matches) return;
                 var money = parseInt(matches[1]);
                 Bank.drawCurrentDeposit(money);
             })
-            .end().filter('a:eq(1)').click(function (event) {
-                event.preventDefault();
+            .end().filter('a:eq(1)').click(function (e) {
+                e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
                 KFOL.showWaitMsg('正在获取当前活期存款金额...', true);
                 $.get('hack.php?H_name=bank', function (html) {
@@ -6568,8 +6575,8 @@ var KFOL = {
             var sell = parseInt(matches[1]);
             matches = /location\.href="(.+?)"/i.exec($this.attr('onclick'));
             if (!matches) return;
-            $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (event) {
-                event.preventDefault();
+            $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (e) {
+                e.preventDefault();
                 var $this = $(this);
                 var sell = $this.data('sell');
                 var url = $this.data('url');
@@ -6598,8 +6605,8 @@ var KFOL = {
             );
         });
         $('<span style="margin:0 5px">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
-            .filter('a').click(function (event) {
-                event.preventDefault();
+            .filter('a').click(function (e) {
+                e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
                 var threadList = [];
                 var totalSell = 0;
@@ -6632,14 +6639,14 @@ var KFOL = {
             .mouseenter(function () {
                 $('<span style="margin-left:5px">[<a href="#">全选</a><a style="margin-left:5px" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn'))
                     .find('a:first')
-                    .click(function (event) {
-                        event.preventDefault();
+                    .click(function (e) {
+                        e.preventDefault();
                         $('.pd_buy_thread').prop('checked', true);
                         alert('共选择了{0}项'.replace('{0}', $('.pd_buy_thread').length));
                     })
                     .next('a')
-                    .click(function (event) {
-                        event.preventDefault();
+                    .click(function (e) {
+                        e.preventDefault();
                         var totalNum = 0;
                         $('.pd_buy_thread').each(function () {
                             var $this = $(this);
@@ -6734,8 +6741,8 @@ var KFOL = {
                         $this.addClass('pd_highlight').text('解除' + str);
                     }
                 }
-            }).click(function (event) {
-                event.preventDefault();
+            }).click(function (e) {
+                e.preventDefault();
                 ConfigDialog.read();
                 var $this = $(this);
                 if ($this.is('a:contains("备注")')) {
@@ -6968,31 +6975,45 @@ var KFOL = {
 
     /**
      * 自动活期存款
+     * @param {boolean} [isRead=false] 是否读取个人信息页面以获得当前所拥有KFB的信息
      */
-    autoSaveCurrentDeposit: function () {
+    autoSaveCurrentDeposit: function (isRead) {
         if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb))
             return;
         var $kfb = $('a.indbox1[title="网站虚拟货币"]');
-        var matches = /拥有(\d+)KFB/i.exec($kfb.text());
-        if (!matches) return;
-        var income = parseInt(matches[1]);
-        if (income < Config.saveCurrentDepositAfterKfb) return;
-        var multiple = Math.floor((income - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
-        if (income - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb)
-            multiple++;
-        var money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > income) return;
-        $.post('hack.php?H_name=bank',
-            {action: 'save', btype: 1, savemoney: money},
-            function (html) {
-                if (/完成存款/.test(html)) {
-                    Log.push('自动存款', '共有`{0}`KFB已自动存入活期存款'.replace('{0}', money));
-                    KFOL.showFormatLog('自动存款', html);
-                    console.log('共有{0}KFB已自动存入活期存款'.replace('{0}', money));
-                    KFOL.showMsg('共有<em>{0}</em>KFB已自动存入活期存款'.replace('{0}', money));
-                    $kfb.text('拥有{0}KFB'.replace('{0}', income - money));
-                }
-            }, 'html');
+        /**
+         * 活期存款
+         * @param {number} income 当前拥有的KFB
+         */
+        var saveCurrentDeposit = function (income) {
+            if (income < Config.saveCurrentDepositAfterKfb) return;
+            var multiple = Math.floor((income - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
+            if (income - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb)
+                multiple++;
+            var money = Config.saveCurrentDepositKfb * multiple;
+            if (money <= 0 || money > income) return;
+            $.post('hack.php?H_name=bank',
+                {action: 'save', btype: 1, savemoney: money},
+                function (html) {
+                    if (/完成存款/.test(html)) {
+                        Log.push('自动存款', '共有`{0}`KFB已自动存入活期存款'.replace('{0}', money));
+                        KFOL.showFormatLog('自动存款', html);
+                        console.log('共有{0}KFB已自动存入活期存款'.replace('{0}', money));
+                        KFOL.showMsg('共有<em>{0}</em>KFB已自动存入活期存款'.replace('{0}', money));
+                        if (KFOL.isInHomePage) $kfb.text('拥有{0}KFB'.replace('{0}', income - money));
+                    }
+                }, 'html');
+        };
+        if (isRead) {
+            $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
+                var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
+                if (matches) saveCurrentDeposit(parseInt(matches[1]));
+            });
+        }
+        else {
+            var matches = /拥有(\d+)KFB/i.exec($kfb.text());
+            if (matches) saveCurrentDeposit(parseInt(matches[1]));
+        }
     },
 
     /**
@@ -7041,8 +7062,8 @@ var KFOL = {
      */
     addMsgSelectButton: function () {
         $('<input value="自定义" type="button" style="margin-right:3px">').insertBefore('input[type="button"][value="全选"]')
-            .click(function (event) {
-                event.preventDefault();
+            .click(function (e) {
+                e.preventDefault();
                 var title = $.trim(window.prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
                 if (title !== '') {
                     $('.thread1 > tbody > tr > td:nth-child(2) > a').each(function () {
@@ -7057,8 +7078,8 @@ var KFOL = {
             }).parent().attr('colspan', 4)
             .prev('td').attr('colspan', 3);
         $('<input value="反选" type="button" style="margin-left:5px;margin-right:1px">').insertAfter('input[type="button"][value="全选"]')
-            .click(function (event) {
-                event.preventDefault();
+            .click(function (e) {
+                e.preventDefault();
                 $('.thread1 > tbody > tr > td:last-child > input[type="checkbox"]').each(function () {
                     var $this = $(this);
                     $this.prop('checked', !$this.prop('checked'));
@@ -7167,8 +7188,8 @@ var KFOL = {
     addCopyCodeLink: function () {
         $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>');
         if ($('.pd_copy_code').length === 0) return;
-        $('#alldiv').on('click', 'a.pd_copy_code', function (event) {
-            event.preventDefault();
+        $('#alldiv').on('click', 'a.pd_copy_code', function (e) {
+            e.preventDefault();
             var $fieldset = $(this).closest('fieldset');
             var content = $fieldset.data('content');
             if (content) {
