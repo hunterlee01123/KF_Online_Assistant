@@ -204,6 +204,8 @@ var Config = {
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
+    // 存储之前已读的at提醒信息的Cookie名称
+    prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
     // 标记已进行定期存款到期提醒的Cookie名称
     fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert'
 };
@@ -5976,21 +5978,27 @@ var KFOL = {
         if (type === 'no_highlight_1' || type === 'no_highlight_2' || type === 'hide_box_1' || type === 'at_change_to_cao') {
             if ($atTips.length > 0) {
                 var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
-                var atTipsText = $atTips.text();
+                var atTipsText = $.trim($atTips.text());
+                var matches = /\d+日\d+时\d+分/.exec(atTipsText);
+                if (matches) atTipsText = matches[0];
                 if (cookieText && cookieText === atTipsText) {
                     handleBox();
                 }
                 else {
                     $atTips.click(function () {
+                        var $this = $(this);
+                        if ($this.data('disabled')) return;
+                        if (cookieText) Tools.setCookie(Config.prevReadAtTipsCookieName, cookieText);
                         Tools.setCookie(Config.hideMarkReadAtTipsCookieName,
                             atTipsText,
                             Tools.getDate('+' + Config.hideMarkReadAtTipsExpires + 'd')
                         );
+                        $this.data('disabled', true);
                         handleBox();
                     });
                 }
                 if (type === 'at_change_to_cao') {
-                    $atTips.text(atTipsText.replace('@', '艹'));
+                    $atTips.text($atTips.text().replace('@', '艹'));
                 }
             }
             else if ($atTips.length === 0 && (type === 'no_highlight_1' || type === 'at_change_to_cao')) {
@@ -6004,6 +6012,24 @@ var KFOL = {
         else if (type === 'hide_box_2') {
             if ($atTips.length > 0) handleBox();
         }
+    },
+
+    /**
+     * 高亮at提醒页面中未读的消息
+     */
+    highlightUnReadAtTipsMsg: function () {
+        if ($.trim($('.kf_share1:first').text()) !== '含有关键词 “{0}” 的内容'.replace('{0}', KFOL.userName)) return;
+        var timeString = Tools.getCookie(Config.prevReadAtTipsCookieName);
+        if (!timeString) timeString = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
+        if (!timeString || !/\d+日\d+时\d+分/.test(timeString)) return;
+        $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function () {
+            var $this = $(this);
+            if (timeString < $.trim($this.text())) $this.addClass('pd_highlight');
+            else return false;
+        });
+        $('.kf_share1').on('click', 'td > a', function () {
+            Tools.setCookie(Config.prevReadAtTipsCookieName, '', Tools.getDate('-1d'));
+        });
     },
 
     /**
@@ -7343,6 +7369,9 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();
+        }
+        else if (location.pathname === '/guanjianci.php') {
+            KFOL.highlightUnReadAtTipsMsg();
         }
         KFOL.blockUsers();
         KFOL.followUsers();
