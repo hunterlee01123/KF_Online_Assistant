@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.4.3
+// @version     4.4.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.4.3';
+var version = '4.4.4';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
@@ -5777,6 +5777,7 @@ var KFOL = {
                 else autoAttackInterval = 0;
                 if (Config.attackWhenZeroLifeEnabled && autoAttackInterval > 0) {
                     var time = parseInt(Tools.getCookie(Config.attackCheckCookieName));
+                    var now = new Date();
                     if (!isNaN(time) && time > 0 && time >= now.getTime()) {
                         attackCheckInterval = Math.floor((time - now.getTime()) / 1000);
                     }
@@ -5988,7 +5989,9 @@ var KFOL = {
                     $atTips.click(function () {
                         var $this = $(this);
                         if ($this.data('disabled')) return;
-                        if (cookieText) Tools.setCookie(Config.prevReadAtTipsCookieName, cookieText);
+                        var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
+                        if (!cookieText) Tools.setCookie(Config.prevReadAtTipsCookieName, (new Date()).getDate() + '日00时00分');
+                        else if (cookieText !== atTipsText) Tools.setCookie(Config.prevReadAtTipsCookieName, cookieText);
                         Tools.setCookie(Config.hideMarkReadAtTipsCookieName,
                             atTipsText,
                             Tools.getDate('+' + Config.hideMarkReadAtTipsExpires + 'd')
@@ -6020,8 +6023,7 @@ var KFOL = {
     highlightUnReadAtTipsMsg: function () {
         if ($.trim($('.kf_share1:first').text()) !== '含有关键词 “{0}” 的内容'.replace('{0}', KFOL.userName)) return;
         var timeString = Tools.getCookie(Config.prevReadAtTipsCookieName);
-        if (!timeString) timeString = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
-        if (!timeString || !/\d+日\d+时\d+分/.test(timeString)) return;
+        if (!timeString || !/^\d+日\d+时\d+分$/.test(timeString)) return;
         $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function () {
             var $this = $(this);
             if (timeString < $.trim($this.text())) $this.addClass('pd_highlight');
