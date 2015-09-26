@@ -11,16 +11,17 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.4.3
+// @version     4.4.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.4.3';
+var version = '4.4.4';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
+
 /**
  * 配置类
  */
@@ -203,6 +204,8 @@ var Config = {
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
+    // 存储之前已读的at提醒信息的Cookie名称
+    prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
     // 标记已进行定期存款到期提醒的Cookie名称
     fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert'
 };
@@ -4916,9 +4919,9 @@ var Loot = {
     },
 
     /**
-     * 显示领取争夺奖励的时间
+     * 在争夺首页进行对页面元素进行相关处理
      */
-    showGetLootAwardTime: function () {
+    handleInLootIndexPage: function () {
         var $btn = $('input[name="submit1"][value="已经可以领取KFB，请点击这里获取"]');
         if ($btn.length > 0) {
             if (Config.autoLootEnabled && Tools.getCookie(Config.getLootAwardCookieName)) {
@@ -4937,6 +4940,7 @@ var Loot = {
                 });
             }
         }
+
         var $submit = $('input[name="submit1"][value$="领取，点击这里抢别人的"]');
         if ($submit.length > 0) {
             var timeLog = Loot.getNextLootAwardTime();
@@ -4960,6 +4964,29 @@ var Loot = {
                         .replace('{1}', Tools.getTimeString(end1, ':', false))
                         .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
                 );
+            }
+        }
+
+        var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');
+        if ($lootInfo.length > 0) {
+            var html = $lootInfo.html();
+            var lootInfoMatches = html.match(/>.+?\s\d+\(\+\d+(\+\d+)?\)\s(点|%)<\/span>/gi);
+            if (lootInfoMatches) {
+                for (var i in lootInfoMatches) {
+                    var lineMatches = /(\d+)\(\+(\d+)(\+\d+)?\)/.exec(lootInfoMatches[i]);
+                    if (!lineMatches) continue;
+                    var totalNum = 0;
+                    for (var j = 1; j < lineMatches.length; j++) {
+                        var num = parseInt(lineMatches[j]);
+                        if (isNaN(num)) continue;
+                        totalNum += num;
+                    }
+                    if (totalNum > 0) {
+                        var replace = lootInfoMatches[i].replace(lineMatches[0], lineMatches[0] + '=' + totalNum + ' ');
+                        html = html.replace(lootInfoMatches[i], replace);
+                    }
+                }
+                $lootInfo.html(html);
             }
         }
     },
@@ -5707,6 +5734,7 @@ var KFOL = {
                 donationInterval = Math.floor((donationTime - now) / 1000);
             }
         }
+
         var getLootAwardInterval = -1, autoAttackInterval = -1, attackCheckInterval = -1;
         if (Config.autoLootEnabled) {
             var lootTimeLog = Loot.getNextLootAwardTime();
@@ -5749,13 +5777,17 @@ var KFOL = {
                 else autoAttackInterval = 0;
                 if (Config.attackWhenZeroLifeEnabled && autoAttackInterval > 0) {
                     var time = parseInt(Tools.getCookie(Config.attackCheckCookieName));
+                    var now = new Date();
                     if (!isNaN(time) && time > 0 && time >= now.getTime()) {
                         attackCheckInterval = Math.floor((time - now.getTime()) / 1000);
                     }
                     else attackCheckInterval = 0;
                 }
             }
+            if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Config.autoAttackingCookieName))
+                autoAttackInterval = 4 * 60 + 1;
         }
+
         var drawSmboxInterval = -1;
         if (Config.autoDrawSmbox2Enabled) {
             var smboxTimeLog = KFOL.getNextDrawSmboxTime();
@@ -5765,6 +5797,7 @@ var KFOL = {
             }
             else drawSmboxInterval = 0;
         }
+
         var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, attackCheckInterval, drawSmboxInterval];
         minArr.sort(function (a, b) {
             return a > b;
@@ -5946,21 +5979,29 @@ var KFOL = {
         if (type === 'no_highlight_1' || type === 'no_highlight_2' || type === 'hide_box_1' || type === 'at_change_to_cao') {
             if ($atTips.length > 0) {
                 var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
-                var atTipsText = $atTips.text();
+                var atTipsText = $.trim($atTips.text());
+                var matches = /\d+日\d+时\d+分/.exec(atTipsText);
+                if (matches) atTipsText = matches[0];
                 if (cookieText && cookieText === atTipsText) {
                     handleBox();
                 }
                 else {
                     $atTips.click(function () {
+                        var $this = $(this);
+                        if ($this.data('disabled')) return;
+                        var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
+                        if (!cookieText) Tools.setCookie(Config.prevReadAtTipsCookieName, (new Date()).getDate() + '日00时00分');
+                        else if (cookieText !== atTipsText) Tools.setCookie(Config.prevReadAtTipsCookieName, cookieText);
                         Tools.setCookie(Config.hideMarkReadAtTipsCookieName,
                             atTipsText,
                             Tools.getDate('+' + Config.hideMarkReadAtTipsExpires + 'd')
                         );
+                        $this.data('disabled', true);
                         handleBox();
                     });
                 }
                 if (type === 'at_change_to_cao') {
-                    $atTips.text(atTipsText.replace('@', '艹'));
+                    $atTips.text($atTips.text().replace('@', '艹'));
                 }
             }
             else if ($atTips.length === 0 && (type === 'no_highlight_1' || type === 'at_change_to_cao')) {
@@ -5974,6 +6015,23 @@ var KFOL = {
         else if (type === 'hide_box_2') {
             if ($atTips.length > 0) handleBox();
         }
+    },
+
+    /**
+     * 高亮at提醒页面中未读的消息
+     */
+    highlightUnReadAtTipsMsg: function () {
+        if ($.trim($('.kf_share1:first').text()) !== '含有关键词 “{0}” 的内容'.replace('{0}', KFOL.userName)) return;
+        var timeString = Tools.getCookie(Config.prevReadAtTipsCookieName);
+        if (!timeString || !/^\d+日\d+时\d+分$/.test(timeString)) return;
+        $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function () {
+            var $this = $(this);
+            if (timeString < $.trim($this.text())) $this.addClass('pd_highlight');
+            else return false;
+        });
+        $('.kf_share1').on('click', 'td > a', function () {
+            Tools.setCookie(Config.prevReadAtTipsCookieName, '', Tools.getDate('-1d'));
+        });
     },
 
     /**
@@ -7115,7 +7173,7 @@ var KFOL = {
         }
         else {
             diff.hours += 1;
-            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '多小时'));
+            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
         }
         if (!Tools.getCookie(Config.autoAttackReadyCookieName))
             $msg.removeClass('indbox5').addClass('indbox6');
@@ -7304,7 +7362,7 @@ var KFOL = {
             Item.addBatchBuyItemsLink();
         }
         else if (location.pathname === '/kf_fw_ig_index.php') {
-            Loot.showGetLootAwardTime();
+            Loot.handleInLootIndexPage();
             if (Config.customMonsterNameEnabled) Loot.customMonsterName();
         }
         else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
@@ -7313,6 +7371,9 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();
+        }
+        else if (location.pathname === '/guanjianci.php') {
+            KFOL.highlightUnReadAtTipsMsg();
         }
         KFOL.blockUsers();
         KFOL.followUsers();
