@@ -4819,7 +4819,7 @@ var Loot = {
                     }
                     window.setTimeout(function () {
                         $(document).dequeue('BatchAttack');
-                    }, Config.perAttackInterval);
+                    }, $.type(Config.perAttackInterval) === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
                 },
                 dataType: 'html'
             });
