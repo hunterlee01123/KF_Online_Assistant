@@ -4740,7 +4740,7 @@ var Loot = {
                         var duration = Config.defShowMsgDuration;
                         if (settings.type === 1 || Config.defShowMsgDuration === -1) duration = -1;
                         else if (settings.type === 3 && Config.defShowMsgDuration > 0 && Config.defShowMsgDuration < 30) duration = 30;
-                        else if (settings.type === 2 && Config.defShowMsgDuration > 0 && Config.defShowMsgDuration < 240) duration = 240;
+                        else if (settings.type === 2 && Config.defShowMsgDuration > 0 && Config.defShowMsgDuration < 480) duration = 480;
                         var extraMsg = '';
                         if (strongAttackNum > 0) extraMsg += '暴击<em>+{0}</em>'.replace('{0}', strongAttackNum);
                         if (criticalStrikeNum > 0) extraMsg += (extraMsg ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
