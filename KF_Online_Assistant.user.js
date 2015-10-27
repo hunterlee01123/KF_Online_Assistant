@@ -16,6 +16,9 @@
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
+// @todo 转账提醒
+// @todo 批量转账改善
+// @todo GM_getValue版
 // 版本号
 var version = '4.5.0';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
@@ -152,6 +155,16 @@ var Config = {
     saveCurrentDepositAfterKfb: 0,
     // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
     saveCurrentDepositKfb: 0,
+    // 是否自动更换神秘颜色，true：开启；false：关闭
+    autoChangeSMColorEnabled: false,
+    // 自动更换神秘颜色的更换顺序类型，random：随机；sequence：顺序
+    autoChangeSMColorType: 'random',
+    // 自动更换神秘颜色的间隔时间（小时）
+    autoChangeSMColorInterval: 24,
+    // 是否从当前所有可用的神秘颜色中进行更换，true：开启；false：关闭
+    changeAllAvailableSMColorEnabled: true,
+    // 自定义自动更换神秘颜色的ID列表，例：[1,8,13,20]
+    customAutoChangeSMColorList: [],
 
     /* 以下设置如非必要请勿修改： */
     // KFB捐款额度的最大值
@@ -191,12 +204,14 @@ var Config = {
     minBuyThreadWarningSell: 6,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
-    // 神秘升级提醒临时日志名称
+    // 神秘升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
-    // 定期存款到期时间临时日志名称
+    // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
-    // 上一次领取争夺奖励时被怪物攻击的总次数信息临时日志名称
+    // 上一次领取争夺奖励时被怪物攻击的总次数信息的临时日志名称
     attackedCountTmpLogName: 'AttackedCount',
+    // 上一次自动更换神秘颜色的ID的临时日志名称
+    prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
     // 标记已KFB捐款的Cookie名称
     donationCookieName: 'pd_donation',
     // 标记已领取争夺奖励的Cookie名称
@@ -216,7 +231,9 @@ var Config = {
     // 存储之前已读的at提醒信息的Cookie名称
     prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
     // 标记已进行定期存款到期提醒的Cookie名称
-    fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert'
+    fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
+    // 标记已自动更换神秘颜色的Cookie名称
+    autoChangeSMColorCookieName: 'pd_auto_change_sm_color'
 };
 
 /**
@@ -771,6 +788,9 @@ var ConfigDialog = {
             '<a class="pd_cfg_tips" href="#" title="调整帖子内容宽度，使其保持一致">[?]</a></label>' +
             '      <label style="margin-left:10px">帖子内容字体大小<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width:20px" type="text" />px ' +
             '<a class="pd_cfg_tips" href="#" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</a></label><br />' +
+            '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" />自动更换神秘颜色 ' +
+            '<a class="pd_cfg_tips" href="#" title="可自动更换神秘颜色，请点击详细设置前往相应页面进行自定义设置">[?]</a></label>' +
+            '<a style="margin-left:10px" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br />' +
             '      <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width:50px" type="text" />' +
             '<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">' +
             '<a class="pd_cfg_tips" href="#" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空">[?]</a></label><br />' +
@@ -785,7 +805,7 @@ var ConfigDialog = {
             '<a class="pd_cfg_tips" href="#" title="在帖子页面开启批量购买帖子的功能">[?]</a></label><br />' +
             '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" />显示用户备注 ' +
             '<a class="pd_cfg_tips" href="#" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</a></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a><br />' +
+            '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -918,6 +938,7 @@ var ConfigDialog = {
             e.preventDefault();
             if (!ConfigDialog.verify()) return;
             var oriAutoRefreshEnabled = Config.autoRefreshEnabled;
+            ConfigDialog.read();
             var options = ConfigDialog.getValue();
             options = ConfigDialog.getNormalizationConfig(options);
             $.extend(Config, options);
@@ -994,6 +1015,7 @@ var ConfigDialog = {
         $('#pd_cfg_multi_quote_enabled').prop('checked', Config.multiQuoteEnabled);
         $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
+        $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked', Config.autoChangeSMColorEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_log_save_days').val(Config.logSaveDays);
@@ -1068,6 +1090,7 @@ var ConfigDialog = {
         options.multiQuoteEnabled = $('#pd_cfg_multi_quote_enabled').prop('checked');
         options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
+        options.autoChangeSMColorEnabled = $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
@@ -2132,7 +2155,7 @@ var ConfigDialog = {
                 options.customSmColorEnabled : defConfig.customSmColorEnabled;
         }
         if (typeof options.customSmColorConfigList !== 'undefined') {
-            var customSmColorConfigList = options.customSmColorConfigList
+            var customSmColorConfigList = options.customSmColorConfigList;
             if ($.isArray(customSmColorConfigList)) {
                 settings.customSmColorConfigList = [];
                 $.each(customSmColorConfigList, function (index, data) {
@@ -2318,6 +2341,40 @@ var ConfigDialog = {
                 settings.saveCurrentDepositKfb = saveCurrentDepositKfb;
             else settings.saveCurrentDepositKfb = defConfig.saveCurrentDepositKfb;
         }
+
+        if (typeof options.autoChangeSMColorEnabled !== 'undefined') {
+            settings.autoChangeSMColorEnabled = typeof options.autoChangeSMColorEnabled === 'boolean' ?
+                options.autoChangeSMColorEnabled : defConfig.autoChangeSMColorEnabled;
+        }
+        if (typeof options.autoChangeSMColorType !== 'undefined') {
+            var autoChangeSMColorType = $.trim(options.autoChangeSMColorType).toLowerCase();
+            var allowTypes = ['random', 'sequence'];
+            if (autoChangeSMColorType !== '' && $.inArray(autoChangeSMColorType, allowTypes) > -1)
+                settings.autoChangeSMColorType = autoChangeSMColorType;
+            else settings.autoChangeSMColorType = defConfig.autoChangeSMColorType;
+        }
+        if (typeof options.autoChangeSMColorInterval !== 'undefined') {
+            var autoChangeSMColorInterval = parseInt(options.autoChangeSMColorInterval);
+            if (!isNaN(autoChangeSMColorInterval) && autoChangeSMColorInterval > 0) settings.autoChangeSMColorInterval = autoChangeSMColorInterval;
+            else settings.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
+        }
+        if (typeof options.changeAllAvailableSMColorEnabled !== 'undefined') {
+            settings.changeAllAvailableSMColorEnabled = typeof options.changeAllAvailableSMColorEnabled === 'boolean' ?
+                options.changeAllAvailableSMColorEnabled : defConfig.changeAllAvailableSMColorEnabled;
+        }
+        if (typeof options.customAutoChangeSMColorList !== 'undefined') {
+            if ($.isArray(options.customAutoChangeSMColorList)) {
+                settings.customAutoChangeSMColorList = [];
+                for (var i in options.customAutoChangeSMColorList) {
+                    var id = parseInt(options.customAutoChangeSMColorList[i]);
+                    if (!isNaN(id) && id >= 1 && id <= 20) {
+                        settings.customAutoChangeSMColorList.push(id);
+                    }
+                }
+            }
+            else settings.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
+        }
+
         return settings;
     },
 
@@ -2534,16 +2591,22 @@ var Log = {
                 $dialog.find('.pd_log_nav > a:gt(1)').removeAttr('title').addClass('pd_disabled_link');
             }
         }).end().find('input[name="pd_log_sort_type"]').click(function () {
-            Config.logSortType = $(this).val();
-            ConfigDialog.write();
-            Log.showLogContent(dateList[curIndex]);
+            var value = $(this).val();
+            if (Config.logSortType !== value) {
+                Config.logSortType = value;
+                ConfigDialog.write();
+                Log.showLogContent(dateList[curIndex]);
+            }
         }).end().find('input[name="pd_log_stat_type"]').click(function () {
-            Config.logStatType = $(this).val();
-            ConfigDialog.write();
-            Log.showLogStat(dateList[curIndex]);
+            var value = $(this).val();
+            if (Config.logStatType !== value) {
+                Config.logStatType = value;
+                ConfigDialog.write();
+                Log.showLogStat(dateList[curIndex]);
+            }
         }).end().find('#pd_log_stat_days').keyup(function () {
             var days = parseInt($.trim($(this).val()));
-            if (days > 0) {
+            if (days > 0 && Config.logStatDays !== days) {
                 Config.logStatDays = days;
                 ConfigDialog.write();
                 $('input[name="pd_log_stat_type"][value="custom"]:not(:checked)').click();
@@ -2553,13 +2616,7 @@ var Log = {
             .end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click()
             .end().find('#pd_log_stat_days').val(Config.logStatDays);
 
-        $('#pd_log_im_or_ex_log_dialog').click(function (e) {
-            e.preventDefault();
-            Log.showImportOrExportLogDialog();
-        });
-
-        Dialog.show('pd_log');
-        $dialog.find('.pd_cfg_btns > button:first').focus().click(function () {
+        $dialog.find('.pd_cfg_btns > button:first').click(function () {
             return Dialog.close('pd_log');
         }).next('button').click(function (e) {
             e.preventDefault();
@@ -2569,6 +2626,17 @@ var Log = {
                 location.reload();
             }
         });
+
+        $('#pd_log_im_or_ex_log_dialog').click(function (e) {
+            e.preventDefault();
+            Log.showImportOrExportLogDialog();
+        });
+
+        Log.showLogContent(dateList[curIndex]);
+        Log.showLogStat(dateList[curIndex]);
+
+        Dialog.show('pd_log');
+        $dialog.find('.pd_cfg_btns > button:first').focus();
     },
 
     /**
@@ -2896,7 +2964,10 @@ var TmpLog = {
             return;
         }
         if (!log || $.type(log) !== 'object') return;
-        var allowKey = [Config.smLevelUpTmpLogName, Config.fixedDepositDueTmpLogName, Config.attackedCountTmpLogName];
+        var allowKey = [];
+        for (var k in Config) {
+            if (k.indexOf('TmpLogName') > -1) allowKey.push(Config[k]);
+        }
         for (var k in log) {
             if ($.inArray(k, allowKey) === -1) delete log[k];
         }
@@ -5289,9 +5360,9 @@ var Loot = {
                     '<div class="pd_cfg_main">' +
                     '  <table style="text-align:center">' +
                     '    <tbody>' +
-                    '      <tr><th style="width:40px"></th><th style="width:120px">正常</th><th style="width:120px">致命一击</th></tr>' +
+                    '      <tr><th style="width:95px"></th><th style="width:120px">正常</th><th style="width:120px">致命一击(如果有)</th></tr>' +
                     '      <tr>' +
-                    '        <th style="text-align:left">普攻</th>' +
+                    '        <th style="text-align:left">普通攻击</th>' +
                     '        <td class="pd_custom_tips" title="争夺攻击+争夺燃烧">{0}+{1}={2}</td>'
                         .replace('{0}', attackNum)
                         .replace('{1}', attackBurnNum)
@@ -5302,7 +5373,7 @@ var Loot = {
                         .replace('{2}', Math.round(attackNum * deadlyAttackPercent) + attackBurnNum) +
                     '      </tr>' +
                     '      <tr>' +
-                    '        <th style="text-align:left">暴击</th>' +
+                    '        <th style="text-align:left">暴击(如果有)</th>' +
                     '        <td class="pd_custom_tips" title="争夺攻击×暴击比例+争夺燃烧">{0}+{1}={2}</td>'
                         .replace('{0}', Math.round(attackNum * strongAttackPercent))
                         .replace('{1}', attackBurnNum)
@@ -5716,6 +5787,8 @@ var KFOL = {
             '.pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }' +
             '.pd_user_memo_tips { font-size: 12px; color: #FFF; margin-left: 3px; cursor: help; }' +
             '.pd_user_memo_tips:hover { color: #DDD; }' +
+            '.pd_sm_color_select > td { position: relative; cursor: pointer; }' +
+            '.pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -5749,6 +5822,7 @@ var KFOL = {
             '  line-height: 1.6em; background-color: #FFF;' +
             '}' +
             '#pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }' +
+            '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
                 /* 日志对话框 */
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
@@ -6147,7 +6221,19 @@ var KFOL = {
             else drawSmboxInterval = 0;
         }
 
-        var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, attackCheckInterval, drawSmboxInterval];
+        var autoChangeSMColorInterval = -1;
+        if (Config.autoChangeSMColorEnabled) {
+            var nextTime = parseInt(Tools.getCookie(Config.autoChangeSMColorCookieName));
+            if (!isNaN(nextTime) && nextTime > 0) {
+                autoChangeSMColorInterval = Math.floor((nextTime - (new Date()).getTime()) / 1000);
+                if (autoChangeSMColorInterval < 0) autoChangeSMColorInterval = 0;
+                if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1)
+                    autoChangeSMColorInterval = -1;
+            }
+            else autoChangeSMColorInterval = 0;
+        }
+
+        var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, attackCheckInterval, drawSmboxInterval, autoChangeSMColorInterval];
         minArr.sort(function (a, b) {
             return a > b;
         });
@@ -6173,19 +6259,18 @@ var KFOL = {
         var prevInterval = -1, errorNum = 0;
         /**
          * 获取经过格式化的倒计时标题
-         * @param {number} type 倒计时类型，1：小时-分钟；2：秒钟
+         * @param {number} type 倒计时显示类型，1：[小时:][分钟:]秒钟；2：[小时:]分钟
          * @param {number} interval 倒计时
          * @returns {string} 经过格式化的倒计时标题
          */
         var getFormatIntervalTitle = function (type, interval) {
             var textInterval = '';
-            if (type === 1) {
-                var diff = Tools.getTimeDiffInfo(Tools.getDate('+' + interval + 's').getTime());
-                textInterval = (diff.hours > 0 ? diff.hours + '时' : '') + diff.minutes + '分';
-            }
-            else {
-                textInterval = interval + '秒';
-            }
+            var diff = Tools.getTimeDiffInfo(Tools.getDate('+' + interval + 's').getTime());
+            textInterval = diff.hours > 0 ? diff.hours + '时' : '';
+            if (type === 1)
+                textInterval += (diff.minutes > 0 ? diff.minutes + '分' : '') + diff.seconds + '秒';
+            else
+                textInterval += diff.minutes + '分';
             return textInterval;
         };
         /**
@@ -6196,12 +6281,12 @@ var KFOL = {
         var showRefreshModeTips = function (interval, isShowTitle) {
             if (titleItvFunc) window.clearInterval(titleItvFunc);
             var showInterval = interval;
-            console.log('【定时模式】倒计时：' + getFormatIntervalTitle(interval < 60 ? 2 : 1, showInterval));
+            console.log('【定时模式】倒计时：' + getFormatIntervalTitle(1, showInterval));
             if (Config.showRefreshModeTipsType.toLowerCase() !== 'never') {
                 var showIntervalTitle = function () {
                     document.title = '{0} (定时: {1})'
                         .replace('{0}', oriTitle)
-                        .replace('{1}', getFormatIntervalTitle(interval < 60 ? 2 : 1, showInterval));
+                        .replace('{1}', getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval));
                     showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
                 };
                 if (isShowTitle || Config.showRefreshModeTipsType.toLowerCase() === 'always' || interval < 60)
@@ -6538,18 +6623,6 @@ var KFOL = {
                 }
             });
         });
-    },
-
-    /**
-     * 添加自定义神秘颜色提示
-     */
-    addCustomSmColorTips: function () {
-        $('<span class="pd_highlight">低等级没人权？没有自己喜欢的颜色？快来试试助手的<a href="#">自定义本人神秘颜色</a>的功能吧！（虽然仅限自己可见 ╮(╯▽╰)╭）</span><br />')
-            .appendTo('table div > table > tbody > tr > td:contains("自定义ID颜色")')
-            .find('a').click(function (e) {
-                e.preventDefault();
-                ConfigDialog.show();
-            });
     },
 
     /**
@@ -7650,6 +7723,232 @@ var KFOL = {
     },
 
     /**
+     * 添加自动更换神秘颜色的按钮
+     */
+    addAutoChangeSmColorButton: function () {
+        var $autoChangeSMColor = $('table div > table > tbody > tr > td:contains("自定义ID颜色")');
+        $('<span class="pd_highlight">低等级没人权？没有自己喜欢的颜色？快来试试助手的<a href="#">自定义本人神秘颜色</a>的功能吧！（虽然仅限自己可见 ╮(╯▽╰)╭）</span><br />')
+            .appendTo($autoChangeSMColor)
+            .find('a').click(function (e) {
+                e.preventDefault();
+                ConfigDialog.show();
+            });
+
+        var $smColors = $autoChangeSMColor.parent('tr').nextAll('tr').not('tr:last');
+        if ($smColors.find('a').length <= 1) return;
+        $('<form><div id="pd_auto_change_sm_color_btns" style="margin-top:5px">' +
+        '<label><input id="pd_cfg_auto_change_sm_color_enabled" class="pd_input" type="checkbox" /> 自动更换神秘颜色</label></div></form>')
+            .appendTo($autoChangeSMColor)
+            .find('#pd_cfg_auto_change_sm_color_enabled')
+            .click(function () {
+                var $this = $(this);
+                var enabled = $this.prop('checked');
+                if (enabled !== Config.autoChangeSMColorEnabled) {
+                    ConfigDialog.read();
+                    Config.autoChangeSMColorEnabled = enabled;
+                    ConfigDialog.write();
+                }
+
+                if (enabled) {
+                    $smColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
+                    $('<label>更换顺序 <select id="pd_cfg_auto_change_sm_color_type" style="font-size:12px"><option value="random">随机</option>' +
+                    '<option value="sequence">顺序</option></select></label>' +
+                    '<label>每隔 <input id="pd_cfg_auto_change_sm_color_interval" class="pd_input" style="width:25px" type="text" maxlength="5" /> 小时</label>' +
+                    '<button>保存</button><button style="margin-left:3px">重置</button><br />' +
+                    '<a href="#">全选</a><a style="margin-left:7px;margin-right:10px" href="#">反选</a>' +
+                    '<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox" /> 选择当前所有可用的神秘颜色</label>')
+                        .insertAfter($this.parent())
+                        .filter('button:first').click(function (e) {
+                            e.preventDefault();
+                            var $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
+                            var interval = parseInt($.trim($autoChangeSMColorInterval.val()));
+                            if (isNaN(interval) || interval <= 0) {
+                                alert('神秘颜色更换间隔时间格式不正确');
+                                $autoChangeSMColorInterval.select();
+                                $autoChangeSMColorInterval.focus();
+                                return;
+                            }
+                            var changeAllAvailableSMColorEnabled = $('#pd_cfg_change_all_available_sm_color_enabled').prop('checked');
+                            var customChangeSMColorList = [];
+                            $smColors.find('input[type="checkbox"]:checked').each(function () {
+                                customChangeSMColorList.push(parseInt($(this).val()));
+                            });
+                            if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
+                                alert('必须选择2种或以上的神秘颜色');
+                                return;
+                            }
+
+                            var oriInterval = Config.autoChangeSMColorInterval;
+                            ConfigDialog.read();
+                            Config.autoChangeSMColorType = $('#pd_cfg_auto_change_sm_color_type').val().toLowerCase();
+                            Config.autoChangeSMColorInterval = interval;
+                            Config.changeAllAvailableSMColorEnabled = changeAllAvailableSMColorEnabled;
+                            Config.customAutoChangeSMColorList = customChangeSMColorList;
+                            ConfigDialog.write();
+                            if (oriInterval !== Config.autoChangeSMColorInterval)
+                                Tools.setCookie(Config.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
+                            alert('设置保存成功');
+                        })
+                        .end()
+                        .filter('button:eq(1)').click(function (e) {
+                            e.preventDefault();
+                            ConfigDialog.read();
+                            var defConfig = ConfigDialog.defConfig;
+                            Config.autoChangeSMColorEnabled = defConfig.autoChangeSMColorEnabled;
+                            Config.autoChangeSMColorType = defConfig.autoChangeSMColorType;
+                            Config.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
+                            Config.changeAllAvailableSMColorEnabled = defConfig.changeAllAvailableSMColorEnabled;
+                            Config.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
+                            ConfigDialog.write();
+                            Tools.setCookie(Config.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
+                            TmpLog.deleteValue(Config.prevAutoChangeSMColorIdTmpLogName);
+                            alert('设置已重置');
+                            location.reload();
+                        })
+                        .end()
+                        .filter('a')
+                        .click(function (e) {
+                            e.preventDefault();
+                            if ($smColors.find('input[disabled]').length > 0) {
+                                alert('请先取消勾选“选择当前所有可用的神秘颜色”复选框');
+                                $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                                return;
+                            }
+                            if ($(this).is('#pd_auto_change_sm_color_btns > a:first')) {
+                                $smColors.find('input[type="checkbox"]').prop('checked', true);
+                            }
+                            else {
+                                $smColors.find('input[type="checkbox"]').each(function () {
+                                    $(this).prop('checked', !$(this).prop('checked'));
+                                });
+                            }
+                        });
+
+                    $smColors.find('td:has(a)').each(function () {
+                        var $this = $(this);
+                        var matches = /&color=(\d+)/i.exec($this.find('a').attr('href'));
+                        if (matches) {
+                            $this.append('<input type="checkbox" class="pd_input" value="{0}" />'.replace('{0}', matches[1]));
+                        }
+                    });
+
+                    $('#pd_cfg_auto_change_sm_color_type').val(Config.autoChangeSMColorType);
+                    $('#pd_cfg_auto_change_sm_color_interval').val(Config.autoChangeSMColorInterval);
+                    $('#pd_cfg_change_all_available_sm_color_enabled').click(function () {
+                        $smColors.find('input').prop('disabled', $(this).prop('checked'));
+                    }).prop('checked', Config.changeAllAvailableSMColorEnabled).triggerHandler('click');
+                    for (var i in Config.customAutoChangeSMColorList) {
+                        $smColors.find('input[value="{0}"]'.replace('{0}', Config.customAutoChangeSMColorList[i])).prop('checked', true);
+                    }
+                }
+                else {
+                    $this.parent().nextAll().remove();
+                    $smColors.removeClass('pd_sm_color_select').find('input').remove();
+                }
+            });
+
+        $smColors.on('click', 'td', function (e) {
+            if (!$(e.target).is('a')) {
+                var $this = $(this);
+                if ($this.find('input[disabled]').length > 0) {
+                    alert('请先取消勾选“选择当前所有可用的神秘颜色”复选框');
+                    $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                }
+                else if (!$(e.target).is('input')) {
+                    $this.find('input').click();
+                }
+            }
+        });
+
+        if (Config.autoChangeSMColorEnabled) {
+            $('#pd_cfg_auto_change_sm_color_enabled').prop('checked', true).triggerHandler('click');
+        }
+    },
+
+    /**
+     * 更换神秘颜色
+     */
+    changeSMColor: function () {
+        if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1) return;
+        /**
+         * 写入Cookie
+         */
+        var setCookie = function () {
+            var nextTime = Tools.getDate('+' + Config.autoChangeSMColorInterval + 'h');
+            Tools.setCookie(Config.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
+        };
+        console.log('自动更换神秘颜色Start');
+        $.get('kf_growup.php', function (html) {
+            if (Tools.getCookie(Config.autoChangeSMColorCookieName)) return;
+            var matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/gi);
+            if (matches) {
+                var safeId = '';
+                var safeIdMatches = /safeid=(\w+)&/i.exec(matches[0]);
+                if (safeIdMatches)safeId = safeIdMatches[1];
+                if (!safeId) {
+                    setCookie();
+                    return;
+                }
+
+                var availableIdList = [];
+                for (var i in matches) {
+                    var idMatches = /color=(\d+)/i.exec(matches[i]);
+                    if (idMatches) availableIdList.push(parseInt(idMatches[1]));
+                }
+
+                var idList = availableIdList;
+                if (!Config.changeAllAvailableSMColorEnabled) {
+                    idList = [];
+                    for (var i in Config.customAutoChangeSMColorList) {
+                        if ($.inArray(Config.customAutoChangeSMColorList[i], availableIdList) > -1) {
+                            idList.push(Config.customAutoChangeSMColorList[i]);
+                        }
+                    }
+                }
+                if (idList.length <= 1) {
+                    setCookie();
+                    return;
+                }
+
+                var prevId = parseInt(TmpLog.getValue(Config.prevAutoChangeSMColorIdTmpLogName));
+                if (isNaN(prevId) || prevId < 0) prevId = 0;
+
+                var nextId = 0;
+                if (Config.autoChangeSMColorType.toLowerCase() === 'sequence') {
+                    for (var i in idList) {
+                        if (idList[i] > prevId) {
+                            nextId = idList[i];
+                            break;
+                        }
+                    }
+                    if (nextId === 0) nextId = idList[0];
+                }
+                else {
+                    for (var i in idList) {
+                        if (idList[i] === prevId) {
+                            idList.splice(i, 1);
+                            break;
+                        }
+                    }
+                    nextId = idList[Math.floor(Math.random() * idList.length)];
+                }
+
+                $.get('kf_growup.php?ok=2&safeid={0}&color={1}'.replace('{0}', safeId).replace('{1}', nextId), function (html) {
+                    setCookie();
+                    KFOL.showFormatLog('自动更换神秘颜色', html);
+                    if (/等级颜色修改完毕/.test(html)) {
+                        console.log('神秘颜色ID更换为：' + nextId);
+                        TmpLog.setValue(Config.prevAutoChangeSMColorIdTmpLogName, nextId);
+                    }
+                }, 'html');
+            }
+            else {
+                setCookie();
+            }
+        }, 'html');
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -7729,7 +8028,7 @@ var KFOL = {
             KFOL.modifyMyPostLink();
         }
         else if (location.pathname === '/kf_growup.php') {
-            KFOL.addCustomSmColorTips();
+            KFOL.addAutoChangeSmColorButton();
         }
         else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
             KFOL.addMsgSelectButton();
@@ -7778,6 +8077,8 @@ var KFOL = {
             && !Tools.getCookie(Config.autoAttackingCookieName)) {
             Loot.checkAutoAttack();
         }
+
+        if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Config.autoChangeSMColorCookieName)) KFOL.changeSMColor();
 
         if (Config.autoRefreshEnabled && KFOL.isInHomePage) KFOL.startAutoRefreshMode();
 
