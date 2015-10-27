@@ -4346,44 +4346,6 @@ var Bank = {
     minTransferMoney: 20,
 
     /**
-     * 验证批量转账的字段值是否正确
-     * @returns {boolean} 是否正确
-     */
-    batchTransferVerify: function () {
-        var $bankUsers = $('#pd_bank_users');
-        var users = $bankUsers.val();
-        if (!/^\s*\S+\s*$/m.test(users) || /^\s*:/m.test(users) || /:/.test(users) && /:(\D|$)/m.test(users)) {
-            alert('用户列表格式不正确');
-            $bankUsers.select();
-            $bankUsers.focus();
-            return false;
-        }
-        if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
-            alert('转帐金额不能小于{0}KFB'.replace('{0}', Bank.minTransferMoney));
-            $bankUsers.select();
-            $bankUsers.focus();
-            return false;
-        }
-        var $bankMoney = $('#pd_bank_money');
-        var money = parseInt($.trim($bankMoney.val()));
-        if (/^\s*[^:]+\s*$/m.test(users)) {
-            if (!$.isNumeric(money)) {
-                alert('通用转账金额格式不正确');
-                $bankMoney.select();
-                $bankMoney.focus();
-                return false;
-            }
-            else if (money < Bank.minTransferMoney) {
-                alert('转帐金额不能小于{0}KFB'.replace('{0}', Bank.minTransferMoney));
-                $bankMoney.select();
-                $bankMoney.focus();
-                return false;
-            }
-        }
-        return true;
-    },
-
-    /**
      * 给活期帐户存款
      * @param {number} money 存款金额（KFB）
      * @param {number} cash 现金（KFB）
@@ -4410,6 +4372,7 @@ var Bank = {
                     }, 5000);
                 }
                 else {
+                    $(document).queue('Bank', []);
                     alert('存款失败');
                 }
             }, 'html');
@@ -4538,6 +4501,44 @@ var Bank = {
     },
 
     /**
+     * 验证批量转账的字段值是否正确
+     * @returns {boolean} 是否正确
+     */
+    batchTransferVerify: function () {
+        var $bankUsers = $('#pd_bank_users');
+        var users = $bankUsers.val();
+        if (!/^\s*\S+\s*$/m.test(users) || /^\s*:/m.test(users) || /:/.test(users) && /:(\D|$)/m.test(users)) {
+            alert('用户列表格式不正确');
+            $bankUsers.select();
+            $bankUsers.focus();
+            return false;
+        }
+        if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
+            alert('转帐金额不能小于{0}KFB'.replace('{0}', Bank.minTransferMoney));
+            $bankUsers.select();
+            $bankUsers.focus();
+            return false;
+        }
+        var $bankMoney = $('#pd_bank_money');
+        var money = parseInt($.trim($bankMoney.val()));
+        if (/^\s*[^:]+\s*$/m.test(users)) {
+            if (!$.isNumeric(money)) {
+                alert('通用转账金额格式不正确');
+                $bankMoney.select();
+                $bankMoney.focus();
+                return false;
+            }
+            else if (money < Bank.minTransferMoney) {
+                alert('转帐金额不能小于{0}KFB'.replace('{0}', Bank.minTransferMoney));
+                $bankMoney.select();
+                $bankMoney.focus();
+                return false;
+            }
+        }
+        return true;
+    },
+
+    /**
      * 添加批量转账的按钮
      */
     addBatchTransferButton: function () {
@@ -4557,7 +4558,7 @@ var Bank = {
             '    </div>' +
             '    <div><label><input class="pd_input" type="submit" value="批量转账" /></label>' +
             '<label><input style="margin-left:5px" class="pd_input" type="reset" value="重置" /></label> ' +
-            '（活期存款不足时，可自动进行存款；在正常情况下，批量转账金额不会从定期存款中扣除）</div>' +
+            '（活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）</div>' +
             '  </form>' +
             '  </td>' +
             '</tr>';
@@ -4566,16 +4567,6 @@ var Bank = {
             .submit(function (e) {
                 e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
-                var cash = 0, currentDeposit = 0, fee = 0;
-                var matches = /当前所持：(-?\d+)KFB/i.exec($('td:contains("当前所持：")').text());
-                if (!matches) return;
-                cash = parseInt(matches[1]);
-                matches = /活期存款：(-?\d+)KFB/i.exec($('td:contains("活期存款：")').text());
-                if (!matches) return;
-                currentDeposit = parseInt(matches[1]);
-                matches = /\(手续费(\d+)%\)/i.exec($('td:contains("(手续费")').text());
-                if (!matches) return;
-                fee = parseInt(matches[1]) / 100;
                 if (!Bank.batchTransferVerify()) return;
                 var commonMoney = parseInt($.trim($('#pd_bank_money').val()));
                 if (!commonMoney) commonMoney = 0;
@@ -4594,25 +4585,40 @@ var Bank = {
                     }
                 });
                 if (users.length === 0) return;
-                var totalMoney = 0;
-                for (var i in users) {
-                    totalMoney += users[i][1];
-                }
-                totalMoney = Math.floor(totalMoney * (1 + fee));
-                if (!window.confirm('共计{0}名用户，总额{1}KFB，是否转账？'
-                            .replace('{0}', users.length)
-                            .replace('{1}', totalMoney)
-                    )
-                ) return;
-                if (totalMoney > cash + currentDeposit) {
-                    alert('资产不足');
-                    return;
-                }
-                $(document).queue('Bank', []);
-                var isDeposited = false;
-                var difference = totalMoney - currentDeposit;
-                if (difference > 0) {
-                    if (window.confirm('你的活期存款不足，是否将差额{0}KFB存入银行？'.replace('{0}', difference))) {
+
+                var $tips = KFOL.showWaitMsg('正在获取存款信息中...', true);
+                $.get('hack.php?H_name=bank', function (html) {
+                    KFOL.removePopTips($tips);
+                    var cash = 0, currentDeposit = 0, fee = 0;
+                    var matches = /当前所持：(-?\d+)KFB<br/i.exec(html);
+                    if (!matches) return;
+                    cash = parseInt(matches[1]);
+                    matches = /活期存款：(-?\d+)KFB<br/i.exec(html);
+                    if (!matches) return;
+                    currentDeposit = parseInt(matches[1]);
+                    matches = /\(手续费(\d+)%\)<br/i.exec(html);
+                    if (!matches) return;
+                    fee = parseInt(matches[1]) / 100;
+
+                    var totalMoney = 0;
+                    for (var i in users) {
+                        totalMoney += users[i][1];
+                    }
+                    totalMoney = Math.floor(totalMoney * (1 + fee));
+                    if (!window.confirm('共计{0}名用户，总额{1}KFB，是否转账？'
+                                .replace('{0}', users.length)
+                                .replace('{1}', totalMoney)
+                        )
+                    ) return;
+                    if (totalMoney > cash + currentDeposit) {
+                        alert('资金不足');
+                        return;
+                    }
+
+                    $(document).queue('Bank', []);
+                    var isDeposited = false;
+                    var difference = totalMoney - currentDeposit;
+                    if (difference > 0) {
                         isDeposited = true;
                         $(document).queue('Bank', function () {
                             Bank.saveCurrentDeposit(difference, cash, currentDeposit);
@@ -4621,15 +4627,19 @@ var Bank = {
                         });
                         $(document).dequeue('Bank');
                     }
-                    else return;
-                }
-                KFOL.showWaitMsg('<strong>正在批量转账中，请耐心等待...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
-                        .replace('{0}', users.length)
-                    , true);
-                $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
-                Bank.batchTransfer(users, msg, isDeposited, currentDeposit);
+                    KFOL.showWaitMsg('<strong>正在批量转账中，请耐心等待...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                            .replace('{0}', users.length)
+                        , true);
+                    $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
+                    Bank.batchTransfer(users, msg, isDeposited, currentDeposit);
+                }, 'html');
             });
+    },
 
+    /**
+     * 在银行页面对页面元素进行处理
+     */
+    handleInBankPage: function () {
         var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("可获利息：")');
         var interestHtml = $account.html();
         var matches = /可获利息：(\d+)\(/i.exec(interestHtml);
@@ -4669,6 +4679,22 @@ var Bank = {
             else money = parseInt($.trim($this.find('input[name="savemoney"]').val()));
             if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
                 TmpLog.setValue(Config.fixedDepositDueTmpLogName, Tools.getDate('+3M').getTime());
+            }
+        });
+
+        $('form[name="form3"]').submit(function () {
+            var matches = /活期存款：(-?\d+)KFB/i.exec($('td:contains("活期存款：")').text());
+            if (!matches) return;
+            var currentDeposit = parseInt(matches[1]);
+            matches = /定期存款：(\d+)KFB/i.exec($('td:contains("定期存款：")').text());
+            if (!matches) return;
+            var fixedDeposit = parseInt(matches[1]);
+            var money = parseInt($.trim($('input[name="to_money"]').val()));
+            if (!isNaN(money) && fixedDeposit > 0 && money > currentDeposit) {
+                if (!window.confirm('你的活期存款不足，转账金额将从定期存款里扣除，是否继续？')) {
+                    $(this).find('input[type="submit"]').prop('disabled', false);
+                    return false;
+                }
             }
         });
     },
@@ -6013,7 +6039,7 @@ var KFOL = {
         var donationKfb = Config.donationKfb;
         if (/%$/.test(donationKfb)) {
             $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
-                var matches = /论坛货币：(\d+)\s*KFB/i.exec(html);
+                var matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
                 var income = 1;
                 if (matches) income = parseInt(matches[1]);
                 else console.log('KFB余额获取失败');
@@ -6355,6 +6381,7 @@ var KFOL = {
                 && !Tools.getCookie(Config.autoAttackingCookieName)) {
                 Loot.checkAutoAttack();
             }
+            if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Config.autoChangeSMColorCookieName)) KFOL.changeSMColor();
 
             var interval = KFOL.getMinRefreshInterval();
             if (interval > 0) errorNum = 0;
@@ -8010,6 +8037,7 @@ var KFOL = {
         }
         else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
             Bank.addBatchTransferButton();
+            Bank.handleInBankPage();
         }
         else if (/\/kf_fw_card_my\.php$/i.test(location.href)) {
             Card.addStartBatchModeButton();
