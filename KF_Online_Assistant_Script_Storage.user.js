@@ -1,18 +1,20 @@
 // ==UserScript==
-// @name        KF Online助手 for Mobile
+// @name        KF Online助手
 // @namespace   https://greasyfork.org/users/4514
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
-// @updateURL   https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_for_Mobile.meta.js
-// @downloadURL https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_for_Mobile.user.js
+// @updateURL   https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Script_Storage.meta.js
+// @downloadURL https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Script_Storage.user.js
 // @include     http://2dgal.com/*
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
 // @version     4.5.0-dev
-// @grant       none
+// @grant       GM_getValue
+// @grant       GM_setValue
+// @grant       GM_deleteValue
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
@@ -22,7 +24,7 @@ var version = '4.5.0';
 // Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
 // Script：存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况）;
 // Global：存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况）；
-var storageType = 'Default';
+var storageType = 'Script';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（可用于设置经常会被浏览器清除或想要使用全局设置的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
@@ -5797,7 +5799,7 @@ var KFOL = {
         $('head').append(
             '<style type="text/css">' +
             '.pd_layer { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
-            '.pd_pop_box { position: absolute; width: 100%; z-index: 1001; }' +
+            '.pd_pop_box { position: fixed; width: 100%; z-index: 1001; }' +
             '.pd_pop_tips {' +
             '  border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0,0,0,0.1); border-radius: 3px; padding: 12px 40px; text-align: center;' +
             '  font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;' +
@@ -5844,7 +5846,7 @@ var KFOL = {
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
-            '  position: absolute; border: 1px solid #9191FF; display: none; z-index: 1002;' +
+            '  position: fixed; border: 1px solid #9191FF; display: none; z-index: 1002;' +
             '  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '  -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '}' +

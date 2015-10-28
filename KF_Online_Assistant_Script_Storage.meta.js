@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        KF Online助手 for Mobile
+// @name        KF Online助手
 // @namespace   https://greasyfork.org/users/4514
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
@@ -10,7 +10,9 @@
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
 // @version     4.5.0-dev
-// @grant       none
+// @grant       GM_getValue
+// @grant       GM_setValue
+// @grant       GM_deleteValue
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==

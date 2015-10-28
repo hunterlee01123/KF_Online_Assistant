@@ -16,12 +16,14 @@
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
-// @todo 转账提醒
-// @todo 批量转账改善
-// @todo GM_getValue版
 // 版本号
 var version = '4.5.0';
-// 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（主要用于设置经常会被清除的情况）
+// 助手设置和日志的存储位置类型
+// Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
+// Script：存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况）;
+// Global：存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况）；
+var storageType = 'Default';
+// 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（可用于设置经常会被浏览器清除或想要使用全局设置的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
 
@@ -175,8 +177,10 @@ var Config = {
     minAttackAfterTime: 63,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
-    // 每次攻击的时间间隔（毫秒）
+    // 每次攻击的时间间隔（毫秒），可设置为使用函数来返回值
     perAttackInterval: 2000,
+    // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
+    checkAutoAttackingInterval: 4,
     // 在领取争夺奖励后首次检查是否进行攻击的间隔时间（分钟）
     firstCheckAttackInterval: 190,
     // 检查是否进行攻击的默认间隔时间（分钟）
@@ -1354,7 +1358,7 @@ var ConfigDialog = {
                 Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
             }
         }
-        localStorage.removeItem(TmpLog.name + '_' + KFOL.uid);
+        TmpLog.clear();
         localStorage.removeItem(Config.multiQuoteStorageName);
     },
 
@@ -2382,7 +2386,10 @@ var ConfigDialog = {
      * 读取设置
      */
     read: function () {
-        var options = localStorage[ConfigDialog.name];
+        var options = null;
+        if (storageType === 'Script') options = GM_getValue(ConfigDialog.name + '_' + KFOL.uid);
+        else if (storageType === 'Global') options = GM_getValue(ConfigDialog.name);
+        else options = localStorage.getItem(ConfigDialog.name);
         if (!options) return;
         try {
             options = JSON.parse(options);
@@ -2400,14 +2407,18 @@ var ConfigDialog = {
      */
     write: function () {
         var options = Tools.getDifferentValueOfObject(ConfigDialog.defConfig, Config);
-        localStorage[ConfigDialog.name] = JSON.stringify(options);
+        if (storageType === 'Script') GM_setValue(ConfigDialog.name + '_' + KFOL.uid, JSON.stringify(options));
+        else if (storageType === 'Global') GM_setValue(ConfigDialog.name, JSON.stringify(options));
+        else localStorage.setItem(ConfigDialog.name, JSON.stringify(options));
     },
 
     /**
      * 清空设置
      */
     clear: function () {
-        localStorage.removeItem(ConfigDialog.name);
+        if (storageType === 'Script') GM_deleteValue(ConfigDialog.name + '_' + KFOL.uid);
+        else if (storageType === 'Global') GM_deleteValue(ConfigDialog.name);
+        else localStorage.removeItem(ConfigDialog.name);
     }
 };
 
@@ -2425,7 +2436,9 @@ var Log = {
      */
     read: function () {
         Log.log = {};
-        var log = localStorage[Log.name + '_' + KFOL.uid];
+        var log = null;
+        if (storageType === 'Script' || storageType === 'Global') log = GM_getValue(Log.name + '_' + KFOL.uid);
+        else log = localStorage.getItem(Log.name + '_' + KFOL.uid);
         if (!log) return;
         try {
             log = JSON.parse(log);
@@ -2442,14 +2455,16 @@ var Log = {
      * 写入日志
      */
     write: function () {
-        localStorage[Log.name + '_' + KFOL.uid] = JSON.stringify(Log.log);
+        if (storageType === 'Script' || storageType === 'Global') GM_setValue(Log.name + '_' + KFOL.uid, JSON.stringify(Log.log));
+        else localStorage.setItem(Log.name + '_' + KFOL.uid, JSON.stringify(Log.log));
     },
 
     /**
      * 清除日志
      */
     clear: function () {
-        localStorage.removeItem(Log.name + '_' + KFOL.uid);
+        if (storageType === 'Script' || storageType === 'Global') GM_deleteValue(Log.name + '_' + KFOL.uid);
+        else localStorage.removeItem(Log.name + '_' + KFOL.uid);
     },
 
     /**
@@ -2955,7 +2970,9 @@ var TmpLog = {
      */
     read: function () {
         TmpLog.log = {};
-        var log = localStorage[TmpLog.name + '_' + KFOL.uid];
+        var log = null;
+        if (storageType === 'Script' || storageType === 'Global') log = GM_getValue(TmpLog.name + '_' + KFOL.uid);
+        else log = localStorage.getItem(TmpLog.name + '_' + KFOL.uid);
         if (!log) return;
         try {
             log = JSON.parse(log);
@@ -2978,7 +2995,16 @@ var TmpLog = {
      * 写入临时日志
      */
     write: function () {
-        localStorage[TmpLog.name + '_' + KFOL.uid] = JSON.stringify(TmpLog.log);
+        if (storageType === 'Script' || storageType === 'Global') GM_setValue(TmpLog.name + '_' + KFOL.uid, JSON.stringify(TmpLog.log));
+        else localStorage.setItem(TmpLog.name + '_' + KFOL.uid, JSON.stringify(TmpLog.log));
+    },
+
+    /**
+     * 清除临时日志
+     */
+    clear: function () {
+        if (storageType === 'Script' || storageType === 'Global') GM_deleteValue(TmpLog.name + '_' + KFOL.uid);
+        else localStorage.removeItem(TmpLog.name + '_' + KFOL.uid);
     },
 
     /**
@@ -4927,7 +4953,7 @@ var Loot = {
                 totalAttackNum += attackList[id];
             }
             if (!totalAttackNum) return;
-            Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+4m'));
+            Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+' + Config.checkAutoAttackingInterval + 'm'));
             KFOL.showWaitMsg('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i><a target="_blank" href="{1}">浏览其它页面</a>'
                     .replace('{0}', totalAttackNum)
                     .replace('{1}', location.href)
@@ -7804,6 +7830,7 @@ var KFOL = {
                                 alert('必须选择2种或以上的神秘颜色');
                                 return;
                             }
+                            if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
 
                             var oriInterval = Config.autoChangeSMColorInterval;
                             ConfigDialog.read();
@@ -7983,8 +8010,8 @@ var KFOL = {
         var startDate = new Date();
         //console.log('KF Online助手启动');
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
-        ConfigDialog.init();
         if (!KFOL.getUidAndUserName()) return;
+        ConfigDialog.init();
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();
 
