@@ -3,7 +3,7 @@ import re
 
 defaultFileName = 'KF_Online_Assistant' # 标准版文件名
 scriptStorageFileName = defaultFileName + '_Script_Storage' # ScriptStorage版文件名
-globleStorageFileName = defaultFileName + '_Globle_Storage' # GlobleStorage版文件名
+GlobalStorageFileName = defaultFileName + '_Global_Storage' # GlobalStorage版文件名
 forMobileFileName = defaultFileName + '_for_Mobile' # 移动版文件名
 userScriptExt = '.user.js' # 油猴脚本文件扩展名
 metaScriptExt = '.meta.js' # 油猴脚本meta文件扩展名
@@ -53,21 +53,21 @@ def makeScriptStorageEdition(content):
     open(scriptStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
     print('生成ScriptStorage版meta文件')
 
-def makeGlobleStorageEdition(content):
+def makeGlobalStorageEdition(content):
     '''生成ScriptStorage版文件
 
     Args:
         content: 脚本文件内容
     '''
     content = re.sub(r'(// @homepage\s+).+', r'\g<1>https://github.com/miaolapd/KF_Online_Assistant', content, flags=re.I)
-    content = re.sub(r'(// @updateURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Globle_Storage.meta.js', content, flags=re.I)
-    content = re.sub(r'(// @downloadURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Globle_Storage.user.js', content, flags=re.I)
+    content = re.sub(r'(// @updateURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Global_Storage.meta.js', content, flags=re.I)
+    content = re.sub(r'(// @downloadURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Global_Storage.user.js', content, flags=re.I)
     content = re.sub(r'(// @grant\s+)none\n', r'\g<1>GM_getValue\n\g<1>GM_setValue\n\g<1>GM_deleteValue\n', content, flags=re.S | re.I)
-    content = content.replace("var storageType = 'Default';", "var storageType = 'Globle';")
-    open(globleStorageFileName + userScriptExt, 'w', encoding = encoding).write(content)
-    print('生成GlobleStorage版脚本文件')
-    open(globleStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
-    print('生成GlobleStorage版meta文件')
+    content = content.replace("var storageType = 'Default';", "var storageType = 'Global';")
+    open(GlobalStorageFileName + userScriptExt, 'w', encoding = encoding).write(content)
+    print('生成GlobalStorage版脚本文件')
+    open(GlobalStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
+    print('生成GlobalStorage版meta文件')
 
 def makeForMobileEdition(content):
     '''生成移动版文件
@@ -91,8 +91,8 @@ def main():
     print('标准版脚本文件：' + defaultFileName + userScriptExt)
     print('ScriptStorage版脚本文件：' + scriptStorageFileName + userScriptExt)
     print('ScriptStorage版meta文件：' + scriptStorageFileName + metaScriptExt)
-    print('GlobleStorage版脚本文件：' + globleStorageFileName + userScriptExt)
-    print('GlobleStorage版meta文件：' + globleStorageFileName + metaScriptExt)
+    print('GlobalStorage版脚本文件：' + GlobalStorageFileName + userScriptExt)
+    print('GlobalStorage版meta文件：' + GlobalStorageFileName + metaScriptExt)
     print('移动版脚本文件：' + forMobileFileName + userScriptExt)
     print('移动版meta文件：' + forMobileFileName + metaScriptExt)
     print('-------------------------------------------')
@@ -100,7 +100,7 @@ def main():
     content = getDefaultFileContent()
     makeScriptStorageEdition(content)
     print()
-    makeGlobleStorageEdition(content)
+    makeGlobalStorageEdition(content)
     print()
     makeForMobileEdition(content)
 

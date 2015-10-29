@@ -11,7 +11,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.5.0-dev
+// @version     4.5.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -20,10 +20,12 @@
 // ==/UserScript==
 // 版本号
 var version = '4.5.0';
-// 助手设置和日志的存储位置类型
-// Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
-// Script：存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况）;
-// Global：存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况）；
+/**
+ * 助手设置和日志的存储位置类型
+ * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
+ * Script：存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况）;
+ * Global：存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况）；
+ */
 var storageType = 'Script';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（可用于设置经常会被浏览器清除或想要使用全局设置的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
@@ -113,6 +115,8 @@ var Config = {
     userMemoList: {},
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
     defShowMsgDuration: 15,
+    // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
+    animationEffectOffEnabled: false,
     // 日志保存天数
     logSaveDays: 10,
     // 在页面上方显示助手日志的链接，true：开启；false：关闭
@@ -815,8 +819,10 @@ var ConfigDialog = {
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
-            '      <label>默认提示消息的持续时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width:32px" type="text" />秒 ' +
-            '<a class="pd_cfg_tips" href="#" title="设置为-1表示永久显示，默认值：15">[?]</a></label><br />' +
+            '      <label>默认提示消息的持续时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width:30px" type="text" />秒 ' +
+            '<a class="pd_cfg_tips" href="#" title="设置为-1表示永久显示，默认值：15">[?]</a></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_animation_effect_off_enabled" type="checkbox" />禁用动画效果 ' +
+            '<a class="pd_cfg_tips" href="#" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</a></label><br />' +
             '      <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +
             '<a class="pd_cfg_tips" href="#" title="默认值：10">[?]</a></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_show_log_link_in_page_enabled" type="checkbox" />在页面上方显示日志链接 ' +
@@ -1024,6 +1030,7 @@ var ConfigDialog = {
         $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked', Config.autoChangeSMColorEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
+        $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
         $('#pd_cfg_log_save_days').val(Config.logSaveDays);
         $('#pd_cfg_show_log_link_in_page_enabled').prop('checked', Config.showLogLinkInPageEnabled);
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
@@ -1099,6 +1106,7 @@ var ConfigDialog = {
         options.autoChangeSMColorEnabled = $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
+        options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
         options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
         options.showLogLinkInPageEnabled = $('#pd_cfg_show_log_link_in_page_enabled').prop('checked');
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
@@ -2206,6 +2214,10 @@ var ConfigDialog = {
             if ($.isNumeric(defShowMsgDuration) && defShowMsgDuration >= -1)
                 settings.defShowMsgDuration = defShowMsgDuration;
             else settings.defShowMsgDuration = defConfig.defShowMsgDuration;
+        }
+        if (typeof options.animationEffectOffEnabled !== 'undefined') {
+            settings.animationEffectOffEnabled = typeof options.animationEffectOffEnabled === 'boolean' ?
+                options.animationEffectOffEnabled : defConfig.animationEffectOffEnabled;
         }
         if (typeof options.logSaveDays !== 'undefined') {
             var logSaveDays = parseInt(options.logSaveDays);
@@ -5889,6 +5901,7 @@ var KFOL = {
             '#pd_log .pd_stat i { display: inline-block; }' +
             '</style>'
         );
+
         if (Config.customCssEnabled) {
             $('head').append(
                 '<style type="text/css">' + Config.customCssContent + '</style>'
@@ -8016,6 +8029,7 @@ var KFOL = {
         ConfigDialog.init();
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();
+        if (Config.animationEffectOffEnabled) $.fx.off = true;
 
         if (Config.customScriptEnabled) KFOL.runCustomScript(1);
         if (Config.modifySideBarEnabled) KFOL.modifySideBar();
