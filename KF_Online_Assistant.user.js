@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.5.0
+// @version     4.5.1-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.5.0';
+var version = '4.5.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -241,7 +241,9 @@ var Config = {
     // 标记已进行定期存款到期提醒的Cookie名称
     fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
     // 标记已自动更换神秘颜色的Cookie名称
-    autoChangeSMColorCookieName: 'pd_auto_change_sm_color'
+    autoChangeSMColorCookieName: 'pd_auto_change_sm_color',
+    // 标记已检查过期日志的Cookie名称
+    checkOverdueLogCookieName: 'pd_check_overdue_log'
 };
 
 /**
@@ -600,6 +602,15 @@ var Tools = {
             if (list[i].name && list[i].name === name) return i;
         }
         return -1;
+    },
+
+    /**
+     * 判断指定的页数URL参数是否为帖子的第一页
+     * @param {?string} page 指定的页数URL参数
+     * @returns {boolean} 是否为帖子的第一页
+     */
+    isThreadFirstPage: function (page) {
+        return isNaN(parseInt(page)) && page !== 'e' || parseInt(page) <= 1;
     }
 };
 
@@ -2460,7 +2471,7 @@ var Log = {
         }
         if (!log || $.type(log) !== 'object') return;
         Log.log = log;
-        Log.deleteOverdueLog();
+        if (!Tools.getCookie(Config.checkOverdueLogCookieName)) Log.deleteOverdueLog();
     },
 
     /**
@@ -2494,6 +2505,7 @@ var Log = {
             else break;
         }
         if (isDeleted) Log.write();
+        Tools.setCookie(Config.checkOverdueLogCookieName, 1, Tools.getMidnightHourDate(1));
     },
 
     /**
@@ -4716,7 +4728,7 @@ var Bank = {
             if ($this.is('[name="form2"]')) money = parseInt($.trim($this.find('input[name="drawmoney"]').val()));
             else money = parseInt($.trim($this.find('input[name="savemoney"]').val()));
             if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
-                TmpLog.setValue(Config.fixedDepositDueTmpLogName, Tools.getDate('+3M').getTime());
+                TmpLog.setValue(Config.fixedDepositDueTmpLogName, Tools.getDate('+90d').getTime());
             }
         });
 
@@ -6144,15 +6156,6 @@ var KFOL = {
             $.get(url, function (html) {
                 var nextTime = Tools.getDate('+' + Config.defDrawSmboxInterval + 'm');
                 Tools.setCookie(Config.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
-                /*var timeLog = Loot.getNextLootAwardTime();
-                 if (timeLog.type > 0) {
-                 var time = timeLog.time + Config.afterDrawSmboxLootDelayInterval * 60 * 1000;
-                 Tools.setCookie(Config.getLootAwardCookieName, timeLog.type + '|' + time, new Date(time));
-                 var value = Tools.getCookie(Config.autoAttackReadyCookieName);
-                 if (value) Tools.setCookie(Config.autoAttackReadyCookieName, value, new Date(time));
-                 value = Tools.getCookie(Config.attackCountCookieName);
-                 if (value) Tools.setCookie(Config.attackCountCookieName, value, new Date(time));
-                 }*/
                 KFOL.showFormatLog('抽取神秘盒子', html);
                 var kfbRegex = /获得了(\d+)KFB的奖励.*?(\(\d+\|\d+\))/i;
                 var smRegex = /获得本轮的头奖/i;
@@ -6193,15 +6196,6 @@ var KFOL = {
             if (KFOL.getNextDrawSmboxTime().type) return;
             var nextTime = Tools.getDate('+' + Config.defDrawSmboxInterval + 'm').getTime() + 10 * 1000;
             Tools.setCookie(Config.drawSmboxCookieName, '2|' + nextTime, new Date(nextTime));
-            /*var timeLog = Loot.getNextLootAwardTime();
-             if (timeLog.type > 0) {
-             var time = timeLog.time + Config.afterDrawSmboxLootDelayInterval * 60 * 1000;
-             Tools.setCookie(Config.getLootAwardCookieName, timeLog.type + '|' + time, new Date(time));
-             var value = Tools.getCookie(Config.autoAttackReadyCookieName);
-             if (value) Tools.setCookie(Config.autoAttackReadyCookieName, value, new Date(time));
-             value = Tools.getCookie(Config.attackCountCookieName);
-             if (value) Tools.setCookie(Config.attackCountCookieName, value, new Date(time));
-             }*/
         });
     },
 
@@ -6789,20 +6783,12 @@ var KFOL = {
             '</div>';
         var $dialog = Dialog.create('pd_replyer_list', '回帖者名单', html);
         Dialog.show('pd_replyer_list');
-        $dialog.find('textarea').data('replyer_list', JSON.stringify(replyerList));
-        var filterList = function () {
-            var $filterNodes = $('#pd_replyer_list_filter input');
+        var $filterNodes = $dialog.find('#pd_replyer_list_filter input');
+        $filterNodes.click(function () {
+            var list = replyerList.concat();
             var isShowFloor = $filterNodes.eq(0).prop('checked'),
                 isDeduplication = $filterNodes.eq(1).prop('checked'),
                 isRemoveTopFloor = $filterNodes.eq(2).prop('checked');
-            var list = $dialog.find('textarea').data('replyer_list');
-            try {
-                list = JSON.parse(list);
-            }
-            catch (ex) {
-                return;
-            }
-            if (!list || $.type(list) !== 'array') return;
             if (isDeduplication) {
                 for (var i in list) {
                     if ($.inArray(list[i], list) !== parseInt(i))
@@ -6825,17 +6811,15 @@ var KFOL = {
             }
             $dialog.find('textarea').val(content);
             $('#pd_replyer_list_stat').html('共有<b>{0}</b>条项目'.replace('{0}', num));
-        }
-        $dialog.find('#pd_replyer_list_filter input').click(filterList);
-        filterList();
+        });
+        $dialog.find('#pd_replyer_list_filter input:first').triggerHandler('click');
     },
 
     /**
      * 添加统计回帖者名单的链接
      */
     addStatReplyersLink: function () {
-        var page = Tools.getUrlParam('page');
-        if (page !== null && parseInt(page) !== 1) return;
+        if (!Tools.isThreadFirstPage(Tools.getUrlParam('page'))) return;
         $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readlou:eq(1) > div > .pages')
             .find('a').click(function (e) {
                 e.preventDefault();
@@ -7443,8 +7427,8 @@ var KFOL = {
                 var i = Tools.inFollowOrBlockUserList($this.text(), Config.blockUserList);
                 if (i > -1) {
                     var type = Config.blockUserList[i].type;
-                    if (index === 0 && (!page || page <= 1) && type > 1) return;
-                    else if (index > 0 && type === 1) return;
+                    if (index === 0 && Tools.isThreadFirstPage(page) && type > 1) return;
+                    else if ((index === 0 && !Tools.isThreadFirstPage(page) || index > 0) && type === 1) return;
                     blockNum++;
                     var $lou = $this.closest('.readtext');
                     $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
