@@ -11,7 +11,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.5.1-dev
+// @version     4.5.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -605,12 +605,12 @@ var Tools = {
     },
 
     /**
-     * 判断指定的页数URL参数是否为帖子的第一页
-     * @param {?string} page 指定的页数URL参数
-     * @returns {boolean} 是否为帖子的第一页
+     * 获取帖子当前所在的页数
+     * @returns {number} 帖子当前所在的页数
      */
-    isThreadFirstPage: function (page) {
-        return isNaN(parseInt(page)) && page !== 'e' || parseInt(page) <= 1;
+    getCurrentThreadPage: function () {
+        var matches = /- (\d+) -/.exec($('.pages:first > li > a[href="javascript:;"]').text());
+        return matches ? parseInt(matches[1]) : 1;
     }
 };
 
@@ -1324,10 +1324,24 @@ var ConfigDialog = {
     },
 
     /**
+     * 清除缓存
+     */
+    clearCache: function () {
+        for (var key in Config) {
+            if (/CookieName$/.test(key)) {
+                Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+            }
+        }
+        TmpLog.clear();
+        localStorage.removeItem(Config.multiQuoteStorageName);
+    },
+
+    /**
      * 显示导入或导出设置对话框
      */
     showImportOrExportSettingDialog: function () {
         if ($('#pd_im_or_ex_setting').length > 0) return;
+        ConfigDialog.read();
         var html =
             '<div class="pd_cfg_main">' +
             '  <div>' +
@@ -1366,19 +1380,6 @@ var ConfigDialog = {
         });
         Dialog.show('pd_im_or_ex_setting');
         $('#pd_cfg_setting').val(JSON.stringify(Tools.getDifferentValueOfObject(ConfigDialog.defConfig, Config))).select();
-    },
-
-    /**
-     * 清除缓存
-     */
-    clearCache: function () {
-        for (var key in Config) {
-            if (/CookieName$/.test(key)) {
-                Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
-            }
-        }
-        TmpLog.clear();
-        localStorage.removeItem(Config.multiQuoteStorageName);
     },
 
     /**
@@ -1446,7 +1447,7 @@ var ConfigDialog = {
             }
         });
 
-        $dialog.find('.pd_cfg_about a').click(function (e) {
+        $dialog.find('.pd_cfg_about > a').click(function (e) {
             e.preventDefault();
             ConfigDialog.showImportOrExportSmColorConfigDialog();
         });
@@ -1520,6 +1521,7 @@ var ConfigDialog = {
      */
     showImportOrExportSmColorConfigDialog: function () {
         if ($('#pd_im_or_ex_sm_color_config').length > 0) return;
+        ConfigDialog.read();
         var html =
             '<div class="pd_cfg_main">' +
             '  <div>' +
@@ -1535,6 +1537,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_im_or_ex_sm_color_config', '导入或导出配色方案', html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
+            if (!window.confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_sm_color_config').val());
             if (!options) return;
             try {
@@ -1738,6 +1741,7 @@ var ConfigDialog = {
             '<a style="margin-left:7px" href="#">添加</a></div>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a href="#">导入/导出关注用户</a></span>' +
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_follow_user', '关注用户', html);
@@ -1830,6 +1834,11 @@ var ConfigDialog = {
             $('#pd_cfg_add_follow_user').val('');
         });
 
+        $dialog.find('.pd_cfg_about > a').click(function (e) {
+            e.preventDefault();
+            ConfigDialog.showImportOrExportFollowOrBlockUserConfigDialog(1);
+        });
+
         Dialog.show('pd_follow_user');
         $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').focus();
     },
@@ -1857,6 +1866,7 @@ var ConfigDialog = {
             '<a style="margin-left:7px" href="#">添加</a></div>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a href="#">导入/导出屏蔽用户</a></span>' +
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_block_user', '屏蔽用户', html);
@@ -1960,9 +1970,60 @@ var ConfigDialog = {
             }
             $('#pd_cfg_add_block_user').val('');
         });
+        $dialog.find('.pd_cfg_about > a').click(function (e) {
+            e.preventDefault();
+            ConfigDialog.showImportOrExportFollowOrBlockUserConfigDialog(2);
+        });
 
         Dialog.show('pd_block_user');
         $('#pd_cfg_block_user_default_type').focus();
+    },
+
+    /**
+     * 显示导入/导出关注或屏蔽用户对话框
+     * @param {number} type 1：关注用户；2：屏蔽用户
+     */
+    showImportOrExportFollowOrBlockUserConfigDialog: function (type) {
+        if ($('#pd_im_or_ex_follow_or_block_user_config').length > 0) return;
+        ConfigDialog.read();
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <div>' +
+            '    <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br />' +
+            '    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
+            '  </div>' +
+            '  <textarea id="pd_cfg_follow_or_block_user_config" style="width:420px;height:200px;word-break:break-all"></textarea>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <button>保存</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_im_or_ex_follow_or_block_user_config', '导入或导出{0}用户'.replace('{0}', type === 2 ? '屏蔽' : '关注'), html);
+        $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
+            if (!window.confirm('是否导入文本框中的设置？')) return;
+            var options = $.trim($('#pd_cfg_follow_or_block_user_config').val());
+            if (!options) return;
+            try {
+                options = JSON.parse(options);
+            }
+            catch (ex) {
+                alert('设置有错误');
+                return;
+            }
+            if (!options || $.type(options) !== 'array') {
+                alert('设置有错误');
+                return;
+            }
+            if (type === 2) Config.blockUserList = options;
+            else Config.followUserList = options;
+            ConfigDialog.write();
+            alert('设置已导入');
+            location.reload();
+        }).next('button').click(function () {
+            return Dialog.close('pd_im_or_ex_follow_or_block_user_config');
+        });
+        Dialog.show('pd_im_or_ex_follow_or_block_user_config');
+        $dialog.find('#pd_cfg_follow_or_block_user_config').val(JSON.stringify(type === 2 ? Config.blockUserList : Config.followUserList)).select();
     },
 
     /**
@@ -6819,7 +6880,7 @@ var KFOL = {
      * 添加统计回帖者名单的链接
      */
     addStatReplyersLink: function () {
-        if (!Tools.isThreadFirstPage(Tools.getUrlParam('page'))) return;
+        if (Tools.getCurrentThreadPage() !== 1) return;
         $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readlou:eq(1) > div > .pages')
             .find('a').click(function (e) {
                 e.preventDefault();
@@ -6941,8 +7002,7 @@ var KFOL = {
                     localStorage.removeItem(Config.multiQuoteStorageName);
                     data = {tid: tid, quoteList: []};
                 }
-                var page = parseInt(Tools.getUrlParam('page'));
-                if (!page) page = 1;
+                var page = Tools.getCurrentThreadPage();
                 if (quoteList.length > 0) data.quoteList[page] = quoteList;
                 else delete data.quoteList[page];
                 localStorage[Config.multiQuoteStorageName] = JSON.stringify(data);
@@ -7055,8 +7115,10 @@ var KFOL = {
                 .replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
                 .replace(/给你转帐(\d+)KFB/i, '给你转帐<span class="pd_stat"><em>$1</em></span>KFB')
         );
-        $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>').appendTo($msg)
-            .filter('a:eq(0)').click(function (e) {
+        $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>')
+            .appendTo($msg)
+            .filter('a:eq(0)')
+            .click(function (e) {
                 e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
                 var matches = /给你转帐(\d+)KFB/i.exec($msg.text());
@@ -7064,7 +7126,9 @@ var KFOL = {
                 var money = parseInt(matches[1]);
                 Bank.drawCurrentDeposit(money);
             })
-            .end().filter('a:eq(1)').click(function (e) {
+            .end()
+            .filter('a:eq(1)')
+            .click(function (e) {
                 e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
                 KFOL.showWaitMsg('正在获取当前活期存款金额...', true);
@@ -7421,14 +7485,14 @@ var KFOL = {
             });
         }
         else if (location.pathname === '/read.php') {
-            var page = Tools.getUrlParam('page');
+            var page = Tools.getCurrentThreadPage();
             $('.readidmsbottom > a, .readidmleft > a').each(function (index) {
                 var $this = $(this);
                 var i = Tools.inFollowOrBlockUserList($this.text(), Config.blockUserList);
                 if (i > -1) {
                     var type = Config.blockUserList[i].type;
-                    if (index === 0 && Tools.isThreadFirstPage(page) && type > 1) return;
-                    else if ((index === 0 && !Tools.isThreadFirstPage(page) || index > 0) && type === 1) return;
+                    if (index === 0 && page === 1 && type > 1) return;
+                    else if ((index === 0 && page !== 1 || index > 0) && type === 1) return;
                     blockNum++;
                     var $lou = $this.closest('.readtext');
                     $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
