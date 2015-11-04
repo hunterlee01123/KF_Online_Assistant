@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name        KF Online助手
+// @name        KF Online助手 for Mobile
 // @namespace   https://greasyfork.org/users/4514
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
-// @homepage    https://greasyfork.org/scripts/8615
+// @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
-// @updateURL   https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.meta.js
-// @downloadURL https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.user.js
+// @updateURL   https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ForMobile.meta.js
+// @downloadURL https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ForMobile.user.js
 // @include     http://2dgal.com/*
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
@@ -244,6 +244,507 @@ var Config = {
     autoChangeSMColorCookieName: 'pd_auto_change_sm_color',
     // 标记已检查过期日志的Cookie名称
     checkOverdueLogCookieName: 'pd_check_overdue_log'
+};
+
+/**
+ * 配置方法类
+ */
+var ConfigMethod = {
+    // 保存设置的键值名称
+    name: 'pd_config',
+    // 默认的Config对象
+    defConfig: {},
+
+    /**
+     * 初始化
+     */
+    init: function () {
+        $.extend(true, ConfigMethod.defConfig, Config);
+        if (myConfig && $.type(myConfig) === 'object' && !$.isEmptyObject(myConfig)) {
+            var options = ConfigMethod.normalize(myConfig);
+            Config = $.extend(true, {}, ConfigMethod.defConfig, options);
+        }
+        ConfigMethod.read();
+    },
+
+    /**
+     * 读取设置
+     */
+    read: function () {
+        var options = null;
+        if (storageType === 'Script') options = GM_getValue(ConfigMethod.name + '_' + KFOL.uid);
+        else if (storageType === 'Global') options = GM_getValue(ConfigMethod.name);
+        else options = localStorage.getItem(ConfigMethod.name);
+        if (!options) return;
+        try {
+            options = JSON.parse(options);
+        }
+        catch (ex) {
+            return;
+        }
+        if (!options || $.type(options) !== 'object' || $.isEmptyObject(options)) return;
+        options = ConfigMethod.normalize(options);
+        Config = $.extend(true, {}, ConfigMethod.defConfig, options);
+    },
+
+    /**
+     * 写入设置
+     */
+    write: function () {
+        var options = Tools.getDifferentValueOfObject(ConfigMethod.defConfig, Config);
+        if (storageType === 'Script') GM_setValue(ConfigMethod.name + '_' + KFOL.uid, JSON.stringify(options));
+        else if (storageType === 'Global') GM_setValue(ConfigMethod.name, JSON.stringify(options));
+        else localStorage.setItem(ConfigMethod.name, JSON.stringify(options));
+    },
+
+    /**
+     * 清空设置
+     */
+    clear: function () {
+        if (storageType === 'Script') GM_deleteValue(ConfigMethod.name + '_' + KFOL.uid);
+        else if (storageType === 'Global') GM_deleteValue(ConfigMethod.name);
+        else localStorage.removeItem(ConfigMethod.name);
+    },
+
+    /**
+     * 获取经过规范化的Config对象
+     * @param {Config} options 待处理的Config对象
+     * @returns {Config} 经过规范化的Config对象
+     */
+    normalize: function (options) {
+        var settings = {};
+        var defConfig = ConfigMethod.defConfig;
+        if ($.type(options) !== 'object') return settings;
+
+        if (typeof options.autoRefreshEnabled !== 'undefined') {
+            settings.autoRefreshEnabled = typeof options.autoRefreshEnabled === 'boolean' ?
+                options.autoRefreshEnabled : defConfig.autoRefreshEnabled;
+        }
+        if (typeof options.showRefreshModeTipsType !== 'undefined') {
+            var showRefreshModeTipsType = $.trim(options.showRefreshModeTipsType).toLowerCase();
+            var allowTypes = ['auto', 'always', 'never'];
+            if (showRefreshModeTipsType !== '' && $.inArray(showRefreshModeTipsType, allowTypes) > -1)
+                settings.showRefreshModeTipsType = showRefreshModeTipsType;
+            else settings.showRefreshModeTipsType = defConfig.showRefreshModeTipsType;
+        }
+
+        if (typeof options.autoDonationEnabled !== 'undefined') {
+            settings.autoDonationEnabled = typeof options.autoDonationEnabled === 'boolean' ?
+                options.autoDonationEnabled : defConfig.autoDonationEnabled;
+        }
+        if (typeof options.donationKfb !== 'undefined') {
+            var donationKfb = options.donationKfb;
+            if ($.isNumeric(donationKfb) && donationKfb > 0 && donationKfb <= Config.maxDonationKfb)
+                settings.donationKfb = parseInt(donationKfb);
+            else if (/^1?\d?\d%$/.test(donationKfb) && parseInt(donationKfb) > 0 && parseInt(donationKfb) <= 100)
+                settings.donationKfb = parseInt(donationKfb) + '%';
+            else settings.donationKfb = defConfig.donationKfb;
+        }
+        if (typeof options.donationAfterTime !== 'undefined') {
+            var donationAfterTime = options.donationAfterTime;
+            if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime))
+                settings.donationAfterTime = donationAfterTime;
+            else settings.donationAfterTime = defConfig.donationAfterTime;
+        }
+        if (typeof options.donationAfterVipEnabled !== 'undefined') {
+            settings.donationAfterVipEnabled = typeof options.donationAfterVipEnabled === 'boolean' ?
+                options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
+        }
+
+        if (typeof options.autoLootEnabled !== 'undefined') {
+            settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
+                options.autoLootEnabled : defConfig.autoLootEnabled;
+        }
+        if (typeof options.noAutoLootWhen !== 'undefined') {
+            if ($.isArray(options.noAutoLootWhen)) {
+                settings.noAutoLootWhen = [];
+                for (var i in options.noAutoLootWhen) {
+                    var time = $.trim(options.noAutoLootWhen[i]);
+                    if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9]$/.test(time)) settings.noAutoLootWhen.push(time);
+                }
+            }
+            else settings.noAutoLootWhen = defConfig.noAutoLootWhen;
+        }
+        if (typeof options.customMonsterNameEnabled !== 'undefined') {
+            settings.customMonsterNameEnabled = typeof options.customMonsterNameEnabled === 'boolean' ?
+                options.customMonsterNameEnabled : defConfig.customMonsterNameEnabled;
+        }
+        if (typeof options.customMonsterNameList !== 'undefined') {
+            if ($.type(options.customMonsterNameList) === 'object') {
+                settings.customMonsterNameList = {};
+                for (var id in options.customMonsterNameList) {
+                    id = parseInt(id);
+                    var name = $.trim(options.customMonsterNameList[id]);
+                    if (id >= 1 && id <= 5 && name !== '' && name.length <= 18) {
+                        settings.customMonsterNameList[id] = name;
+                    }
+                }
+            }
+            else settings.customMonsterNameList = defConfig.customMonsterNameList;
+        }
+        if (typeof options.autoAttackEnabled !== 'undefined') {
+            settings.autoAttackEnabled = typeof options.autoAttackEnabled === 'boolean' ?
+                options.autoAttackEnabled : defConfig.autoAttackEnabled;
+        }
+        if (typeof options.attackWhenZeroLifeEnabled !== 'undefined') {
+            settings.attackWhenZeroLifeEnabled = typeof options.attackWhenZeroLifeEnabled === 'boolean' ?
+                options.attackWhenZeroLifeEnabled : defConfig.attackWhenZeroLifeEnabled;
+        }
+        if (typeof options.attackAfterTime !== 'undefined') {
+            var attackAfterTime = parseInt(options.attackAfterTime);
+            if ($.isNumeric(attackAfterTime) && attackAfterTime >= Config.minAttackAfterTime && attackAfterTime <= Config.defLootInterval)
+                settings.attackAfterTime = attackAfterTime;
+            else settings.attackAfterTime = defConfig.attackAfterTime;
+        }
+        if (settings.attackWhenZeroLifeEnabled && !settings.attackAfterTime) settings.attackWhenZeroLifeEnabled = false;
+        if (typeof options.batchAttackList !== 'undefined') {
+            if ($.type(options.batchAttackList) === 'object') {
+                settings.batchAttackList = {};
+                var totalAttackNum = 0;
+                for (var id in options.batchAttackList) {
+                    var attackNum = parseInt(options.batchAttackList[id]);
+                    if (!isNaN(attackNum) && attackNum > 0) {
+                        settings.batchAttackList[parseInt(id)] = attackNum;
+                        totalAttackNum += attackNum;
+                    }
+                }
+                if (totalAttackNum > Config.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
+            }
+            else settings.batchAttackList = defConfig.batchAttackList;
+        }
+        if (settings.autoAttackEnabled && (!settings.batchAttackList || $.isEmptyObject(settings.batchAttackList)))
+            settings.autoAttackEnabled = false;
+        if (typeof options.deadlyAttackId !== 'undefined') {
+            var deadlyAttackId = parseInt(options.deadlyAttackId);
+            if (!isNaN(deadlyAttackId) && deadlyAttackId >= 0 && deadlyAttackId <= 5) settings.deadlyAttackId = deadlyAttackId;
+            else settings.deadlyAttackId = defConfig.deadlyAttackId;
+        }
+        if (typeof options.autoUseItemEnabled !== 'undefined') {
+            settings.autoUseItemEnabled = typeof options.autoUseItemEnabled === 'boolean' ?
+                options.autoUseItemEnabled : defConfig.autoUseItemEnabled;
+        }
+        if (typeof options.autoUseItemNames !== 'undefined') {
+            var autoUseItemNames = options.autoUseItemNames;
+            var allowTypes = ['被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
+                '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
+            if ($.isArray(autoUseItemNames)) {
+                settings.autoUseItemNames = [];
+                for (var i in autoUseItemNames) {
+                    if ($.inArray(autoUseItemNames[i], allowTypes) > -1) {
+                        settings.autoUseItemNames.push(autoUseItemNames[i]);
+                    }
+                }
+            }
+            else settings.autoUseItemNames = defConfig.autoUseItemNames;
+        }
+
+        if (typeof options.autoDrawSmbox2Enabled !== 'undefined') {
+            settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
+                options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
+        }
+        if (settings.autoDrawSmbox2Enabled && settings.autoLootEnabled) settings.autoDrawSmbox2Enabled = false;
+        if (typeof options.favorSmboxNumbers !== 'undefined') {
+            if ($.isArray(options.favorSmboxNumbers)) {
+                settings.favorSmboxNumbers = [];
+                for (var i in options.favorSmboxNumbers) {
+                    var num = parseInt(options.favorSmboxNumbers[i]);
+                    if (num >= 1 && num <= 400) settings.favorSmboxNumbers.push(num);
+                }
+            }
+            else settings.favorSmboxNumbers = defConfig.favorSmboxNumbers;
+        }
+
+        if (typeof options.atTipsHandleType !== 'undefined') {
+            var atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
+            var allowTypes = ['no_highlight_1', 'no_highlight_2', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
+            if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, allowTypes) > -1)
+                settings.atTipsHandleType = atTipsHandleType;
+            else settings.atTipsHandleType = defConfig.atTipsHandleType;
+        }
+        if (typeof options.hideNoneVipEnabled !== 'undefined') {
+            settings.hideNoneVipEnabled = typeof options.hideNoneVipEnabled === 'boolean' ?
+                options.hideNoneVipEnabled : defConfig.hideNoneVipEnabled;
+        }
+        if (typeof options.smLevelUpAlertEnabled !== 'undefined') {
+            settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ?
+                options.smLevelUpAlertEnabled : defConfig.smLevelUpAlertEnabled;
+        }
+        if (typeof options.homePageThreadFastGotoLinkEnabled !== 'undefined') {
+            settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ?
+                options.homePageThreadFastGotoLinkEnabled : defConfig.homePageThreadFastGotoLinkEnabled;
+        }
+        if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
+            settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
+                options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
+        }
+
+        if (typeof options.showFastGotoThreadPageEnabled !== 'undefined') {
+            settings.showFastGotoThreadPageEnabled = typeof options.showFastGotoThreadPageEnabled === 'boolean' ?
+                options.showFastGotoThreadPageEnabled : defConfig.showFastGotoThreadPageEnabled;
+        }
+        if (typeof options.maxFastGotoThreadPageNum !== 'undefined') {
+            var maxFastGotoThreadPageNum = parseInt(options.maxFastGotoThreadPageNum);
+            if ($.isNumeric(maxFastGotoThreadPageNum) && maxFastGotoThreadPageNum > 0)
+                settings.maxFastGotoThreadPageNum = maxFastGotoThreadPageNum;
+            else settings.maxFastGotoThreadPageNum = defConfig.maxFastGotoThreadPageNum;
+        }
+        if (typeof options.perPageFloorNum !== 'undefined') {
+            var perPageFloorNum = parseInt(options.perPageFloorNum);
+            if ($.inArray(perPageFloorNum, [10, 20, 30]) > -1)
+                settings.perPageFloorNum = perPageFloorNum;
+            else settings.perPageFloorNum = defConfig.perPageFloorNum;
+        }
+        if (typeof options.highlightNewPostEnabled !== 'undefined') {
+            settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ?
+                options.highlightNewPostEnabled : defConfig.highlightNewPostEnabled;
+        }
+
+        if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
+            settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ?
+                options.adjustThreadContentWidthEnabled : defConfig.adjustThreadContentWidthEnabled;
+        }
+        if (typeof options.threadContentFontSize !== 'undefined') {
+            var threadContentFontSize = parseInt(options.threadContentFontSize);
+            if (threadContentFontSize > 0) settings.threadContentFontSize = threadContentFontSize;
+            else settings.threadContentFontSize = defConfig.threadContentFontSize;
+        }
+        if (typeof options.customMySmColor !== 'undefined') {
+            var customMySmColor = options.customMySmColor;
+            if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor))
+                settings.customMySmColor = customMySmColor;
+            else settings.customMySmColor = defConfig.customMySmColor;
+        }
+        if (typeof options.customSmColorEnabled !== 'undefined') {
+            settings.customSmColorEnabled = typeof options.customSmColorEnabled === 'boolean' ?
+                options.customSmColorEnabled : defConfig.customSmColorEnabled;
+        }
+        if (typeof options.customSmColorConfigList !== 'undefined') {
+            var customSmColorConfigList = options.customSmColorConfigList;
+            if ($.isArray(customSmColorConfigList)) {
+                settings.customSmColorConfigList = [];
+                $.each(customSmColorConfigList, function (index, data) {
+                    if ($.type(data) === 'object' && $.type(data.min) === 'string' && $.type(data.max) === 'string' && $.type(data.color) === 'string' &&
+                        /^(-?\d+|MAX)$/i.test(data.min) && /^(-?\d+|MAX)$/i.test(data.max) && /^#[0-9a-fA-F]{6}$/.test(data.color) &&
+                        Tools.compareSmLevel(data.min, data.max) <= 0) {
+                        settings.customSmColorConfigList.push(data);
+                    }
+                });
+            }
+            else settings.customSmColorConfigList = defConfig.customSmColorConfigList;
+        }
+        if (typeof options.modifyKFOtherDomainEnabled !== 'undefined') {
+            settings.modifyKFOtherDomainEnabled = typeof options.modifyKFOtherDomainEnabled === 'boolean' ?
+                options.modifyKFOtherDomainEnabled : defConfig.modifyKFOtherDomainEnabled;
+        }
+        if (typeof options.multiQuoteEnabled !== 'undefined') {
+            settings.multiQuoteEnabled = typeof options.multiQuoteEnabled === 'boolean' ?
+                options.multiQuoteEnabled : defConfig.multiQuoteEnabled;
+        }
+        if (typeof options.batchBuyThreadEnabled !== 'undefined') {
+            settings.batchBuyThreadEnabled = typeof options.batchBuyThreadEnabled === 'boolean' ?
+                options.batchBuyThreadEnabled : defConfig.batchBuyThreadEnabled;
+        }
+        if (typeof options.userMemoEnabled !== 'undefined') {
+            settings.userMemoEnabled = typeof options.userMemoEnabled === 'boolean' ?
+                options.userMemoEnabled : defConfig.userMemoEnabled;
+        }
+        if (typeof options.userMemoList !== 'undefined') {
+            if ($.type(options.userMemoList) === 'object') {
+                settings.userMemoList = {};
+                for (var user in options.userMemoList) {
+                    var memo = $.trim(options.userMemoList[user]);
+                    if (memo) settings.userMemoList[user] = memo;
+                }
+            }
+            else settings.userMemoList = defConfig.userMemoList;
+        }
+
+        if (typeof options.defShowMsgDuration !== 'undefined') {
+            var defShowMsgDuration = parseInt(options.defShowMsgDuration);
+            if ($.isNumeric(defShowMsgDuration) && defShowMsgDuration >= -1)
+                settings.defShowMsgDuration = defShowMsgDuration;
+            else settings.defShowMsgDuration = defConfig.defShowMsgDuration;
+        }
+        if (typeof options.animationEffectOffEnabled !== 'undefined') {
+            settings.animationEffectOffEnabled = typeof options.animationEffectOffEnabled === 'boolean' ?
+                options.animationEffectOffEnabled : defConfig.animationEffectOffEnabled;
+        }
+        if (typeof options.logSaveDays !== 'undefined') {
+            var logSaveDays = parseInt(options.logSaveDays);
+            if (logSaveDays > 0) settings.logSaveDays = logSaveDays;
+            else settings.logSaveDays = defConfig.logSaveDays;
+        }
+        if (typeof options.showLogLinkInPageEnabled !== 'undefined') {
+            settings.showLogLinkInPageEnabled = typeof options.showLogLinkInPageEnabled === 'boolean' ?
+                options.showLogLinkInPageEnabled : defConfig.showLogLinkInPageEnabled;
+        }
+        if (typeof options.logSortType !== 'undefined') {
+            var logSortType = $.trim(options.logSortType).toLowerCase();
+            var allowTypes = ['time', 'type'];
+            if (logSortType !== '' && $.inArray(logSortType, allowTypes) > -1)
+                settings.logSortType = logSortType;
+            else settings.logSortType = defConfig.logSortType;
+        }
+        if (typeof options.logStatType !== 'undefined') {
+            var logStatType = $.trim(options.logStatType).toLowerCase();
+            var allowTypes = ['cur', 'custom', 'all'];
+            if (logStatType !== '' && $.inArray(logStatType, allowTypes) > -1)
+                settings.logStatType = logStatType;
+            else settings.logStatType = defConfig.logStatType;
+        }
+        if (typeof options.logStatDays !== 'undefined') {
+            var logStatDays = parseInt(options.logStatDays);
+            if (logStatDays > 0) settings.logStatDays = logStatDays;
+            else settings.logStatDays = defConfig.logStatDays;
+        }
+        if (typeof options.addSideBarFastNavEnabled !== 'undefined') {
+            settings.addSideBarFastNavEnabled = typeof options.addSideBarFastNavEnabled === 'boolean' ?
+                options.addSideBarFastNavEnabled : defConfig.addSideBarFastNavEnabled;
+        }
+        if (typeof options.modifySideBarEnabled !== 'undefined') {
+            settings.modifySideBarEnabled = typeof options.modifySideBarEnabled === 'boolean' ?
+                options.modifySideBarEnabled : defConfig.modifySideBarEnabled;
+        }
+        if (typeof options.customCssEnabled !== 'undefined') {
+            settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ?
+                options.customCssEnabled : defConfig.customCssEnabled;
+        }
+        if (typeof options.customCssContent !== 'undefined') {
+            var customCssContent = $.trim(options.customCssContent);
+            if (customCssContent !== '') settings.customCssContent = customCssContent;
+            else settings.customCssContent = defConfig.customCssContent;
+        }
+        if (typeof options.customScriptEnabled !== 'undefined') {
+            settings.customScriptEnabled = typeof options.customScriptEnabled === 'boolean' ?
+                options.customScriptEnabled : defConfig.customScriptEnabled;
+        }
+        if (typeof options.customScriptStartContent !== 'undefined') {
+            if (typeof options.customScriptStartContent === 'string')
+                settings.customScriptStartContent = options.customScriptStartContent;
+            else
+                settings.customScriptStartContent = defConfig.customScriptStartContent;
+        }
+        if (typeof options.customScriptEndContent !== 'undefined') {
+            if (typeof options.customScriptEndContent === 'string')
+                settings.customScriptEndContent = options.customScriptEndContent;
+            else
+                settings.customScriptEndContent = defConfig.customScriptEndContent;
+        }
+
+        if (typeof options.followUserEnabled !== 'undefined') {
+            settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
+                options.followUserEnabled : defConfig.followUserEnabled;
+        }
+        if (typeof options.highlightFollowUserThreadInHPEnabled !== 'undefined') {
+            settings.highlightFollowUserThreadInHPEnabled = typeof options.highlightFollowUserThreadInHPEnabled === 'boolean' ?
+                options.highlightFollowUserThreadInHPEnabled : defConfig.highlightFollowUserThreadInHPEnabled;
+        }
+        if (typeof options.highlightFollowUserThreadLinkEnabled !== 'undefined') {
+            settings.highlightFollowUserThreadLinkEnabled = typeof options.highlightFollowUserThreadLinkEnabled === 'boolean' ?
+                options.highlightFollowUserThreadLinkEnabled : defConfig.highlightFollowUserThreadLinkEnabled;
+        }
+        if (typeof options.followUserList !== 'undefined') {
+            if ($.isArray(options.followUserList)) {
+                settings.followUserList = [];
+                for (var i in options.followUserList) {
+                    var user = options.followUserList[i];
+                    if ($.type(user) === 'object' && $.type(user.name) === 'string') {
+                        var name = $.trim(user.name);
+                        if (name) settings.followUserList.push({name: name});
+                    }
+                    else if ($.type(user) === 'string') {
+                        var name = $.trim(user);
+                        if (name) settings.followUserList.push({name: name});
+                    }
+                }
+            }
+            else settings.followUserList = defConfig.followUserList;
+        }
+
+        if (typeof options.blockUserEnabled !== 'undefined') {
+            settings.blockUserEnabled = typeof options.blockUserEnabled === 'boolean' ?
+                options.blockUserEnabled : defConfig.blockUserEnabled;
+        }
+        if (typeof options.blockUserDefaultType !== 'undefined') {
+            var blockUserDefaultType = parseInt(options.blockUserDefaultType);
+            if (!isNaN(blockUserDefaultType) && blockUserDefaultType >= 0 && blockUserDefaultType <= 2) settings.blockUserDefaultType = blockUserDefaultType;
+            else settings.blockUserDefaultType = defConfig.blockUserDefaultType;
+        }
+        if (typeof options.blockUserAtTipsEnabled !== 'undefined') {
+            settings.blockUserAtTipsEnabled = typeof options.blockUserAtTipsEnabled === 'boolean' ?
+                options.blockUserAtTipsEnabled : defConfig.blockUserAtTipsEnabled;
+        }
+        if (typeof options.blockUserList !== 'undefined') {
+            if ($.isArray(options.blockUserList)) {
+                settings.blockUserList = [];
+                for (var i in options.blockUserList) {
+                    var user = options.blockUserList[i];
+                    if ($.type(user) === 'object' && $.type(user.name) === 'string' && $.type(user.type) === 'number') {
+                        var type = user.type;
+                        if (type < 0 || type > 2) type = Config.blockUserDefaultType;
+                        var name = $.trim(user.name);
+                        if (name) settings.blockUserList.push({name: name, type: type});
+                    }
+                    else if ($.type(user) === 'string') {
+                        var name = $.trim(user);
+                        if (name) settings.blockUserList.push({name: name, type: Config.blockUserDefaultType});
+                    }
+                }
+            }
+            else settings.blockUserList = defConfig.blockUserList;
+        }
+
+        if (typeof options.autoSaveCurrentDepositEnabled !== 'undefined') {
+            settings.autoSaveCurrentDepositEnabled = typeof options.autoSaveCurrentDepositEnabled === 'boolean' ?
+                options.autoSaveCurrentDepositEnabled : defConfig.autoSaveCurrentDepositEnabled;
+        }
+        if (typeof options.saveCurrentDepositAfterKfb !== 'undefined') {
+            var saveCurrentDepositAfterKfb = parseInt(options.saveCurrentDepositAfterKfb);
+            if (saveCurrentDepositAfterKfb > 0) settings.saveCurrentDepositAfterKfb = saveCurrentDepositAfterKfb;
+            else settings.saveCurrentDepositAfterKfb = defConfig.saveCurrentDepositAfterKfb;
+        }
+        if (typeof options.saveCurrentDepositKfb !== 'undefined') {
+            var saveCurrentDepositKfb = parseInt(options.saveCurrentDepositKfb);
+            if (saveCurrentDepositKfb > 0 && saveCurrentDepositKfb <= settings.saveCurrentDepositAfterKfb)
+                settings.saveCurrentDepositKfb = saveCurrentDepositKfb;
+            else settings.saveCurrentDepositKfb = defConfig.saveCurrentDepositKfb;
+        }
+
+        if (typeof options.autoChangeSMColorEnabled !== 'undefined') {
+            settings.autoChangeSMColorEnabled = typeof options.autoChangeSMColorEnabled === 'boolean' ?
+                options.autoChangeSMColorEnabled : defConfig.autoChangeSMColorEnabled;
+        }
+        if (typeof options.autoChangeSMColorType !== 'undefined') {
+            var autoChangeSMColorType = $.trim(options.autoChangeSMColorType).toLowerCase();
+            var allowTypes = ['random', 'sequence'];
+            if (autoChangeSMColorType !== '' && $.inArray(autoChangeSMColorType, allowTypes) > -1)
+                settings.autoChangeSMColorType = autoChangeSMColorType;
+            else settings.autoChangeSMColorType = defConfig.autoChangeSMColorType;
+        }
+        if (typeof options.autoChangeSMColorInterval !== 'undefined') {
+            var autoChangeSMColorInterval = parseInt(options.autoChangeSMColorInterval);
+            if (!isNaN(autoChangeSMColorInterval) && autoChangeSMColorInterval > 0) settings.autoChangeSMColorInterval = autoChangeSMColorInterval;
+            else settings.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
+        }
+        if (typeof options.changeAllAvailableSMColorEnabled !== 'undefined') {
+            settings.changeAllAvailableSMColorEnabled = typeof options.changeAllAvailableSMColorEnabled === 'boolean' ?
+                options.changeAllAvailableSMColorEnabled : defConfig.changeAllAvailableSMColorEnabled;
+        }
+        if (typeof options.customAutoChangeSMColorList !== 'undefined') {
+            if ($.isArray(options.customAutoChangeSMColorList)) {
+                settings.customAutoChangeSMColorList = [];
+                for (var i in options.customAutoChangeSMColorList) {
+                    var id = parseInt(options.customAutoChangeSMColorList[i]);
+                    if (!isNaN(id) && id >= 1 && id <= 20) {
+                        settings.customAutoChangeSMColorList.push(id);
+                    }
+                }
+            }
+            else settings.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
+        }
+
+        return settings;
+    }
 };
 
 /**
@@ -681,29 +1182,12 @@ var Dialog = {
  * 设置对话框类
  */
 var ConfigDialog = {
-    // 保存设置的键值名称
-    name: 'pd_config',
-    // 默认的Config对象
-    defConfig: {},
-
-    /**
-     * 初始化
-     */
-    init: function () {
-        $.extend(true, ConfigDialog.defConfig, Config);
-        if (myConfig && $.type(myConfig) === 'object' && !$.isEmptyObject(myConfig)) {
-            var options = ConfigDialog.getNormalizationConfig(myConfig);
-            Config = $.extend(true, {}, ConfigDialog.defConfig, options);
-        }
-        ConfigDialog.read();
-    },
-
     /**
      * 显示设置对话框
      */
     show: function () {
         if ($('#pd_config').length > 0) return;
-        ConfigDialog.read();
+        ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_cfg_nav"><a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
@@ -878,14 +1362,14 @@ var ConfigDialog = {
         }).end().find('.pd_cfg_btns > button:eq(2)').click(function (e) {
             e.preventDefault();
             if (window.confirm('是否重置所有设置？')) {
-                ConfigDialog.clear();
+                ConfigMethod.clear();
                 alert('设置已重置');
                 location.reload();
             }
         }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
             e.preventDefault();
             if (window.confirm('是否清除与助手有关的Cookies和本地存储数据？（不包括助手设置和日志）')) {
-                ConfigDialog.clearCache();
+                ConfigMethod.clearCache();
                 alert('缓存已清除');
             }
         }).next().click(function (e) {
@@ -959,11 +1443,11 @@ var ConfigDialog = {
             e.preventDefault();
             if (!ConfigDialog.verify()) return;
             var oriAutoRefreshEnabled = Config.autoRefreshEnabled;
-            ConfigDialog.read();
+            ConfigMethod.read();
             var options = ConfigDialog.getValue();
-            options = ConfigDialog.getNormalizationConfig(options);
+            options = ConfigMethod.normalize(options);
             $.extend(Config, options);
-            ConfigDialog.write();
+            ConfigMethod.write();
             Dialog.close('pd_config');
             if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
                 if (window.confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
@@ -1341,7 +1825,7 @@ var ConfigDialog = {
      */
     showImportOrExportSettingDialog: function () {
         if ($('#pd_im_or_ex_setting').length > 0) return;
-        ConfigDialog.read();
+        ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
             '  <div>' +
@@ -1370,16 +1854,16 @@ var ConfigDialog = {
                 alert('设置有错误');
                 return;
             }
-            options = ConfigDialog.getNormalizationConfig(options);
-            Config = $.extend(true, {}, ConfigDialog.defConfig, options);
-            ConfigDialog.write();
+            options = ConfigMethod.normalize(options);
+            Config = $.extend(true, {}, ConfigMethod.defConfig, options);
+            ConfigMethod.write();
             alert('设置已导入');
             location.reload();
         }).next('button').click(function () {
             return Dialog.close('pd_im_or_ex_setting');
         });
         Dialog.show('pd_im_or_ex_setting');
-        $('#pd_cfg_setting').val(JSON.stringify(Tools.getDifferentValueOfObject(ConfigDialog.defConfig, Config))).select();
+        $('#pd_cfg_setting').val(JSON.stringify(Tools.getDifferentValueOfObject(ConfigMethod.defConfig, Config))).select();
     },
 
     /**
@@ -1508,7 +1992,7 @@ var ConfigDialog = {
                     return Tools.compareSmLevel(a.min, b.min) > 0;
                 });
                 Config.customSmColorConfigList = list;
-                ConfigDialog.write();
+                ConfigMethod.write();
                 Dialog.close('pd_custom_sm_color');
             }
         });
@@ -1521,7 +2005,7 @@ var ConfigDialog = {
      */
     showImportOrExportSmColorConfigDialog: function () {
         if ($('#pd_im_or_ex_sm_color_config').length > 0) return;
-        ConfigDialog.read();
+        ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
             '  <div>' +
@@ -1552,7 +2036,7 @@ var ConfigDialog = {
                 return;
             }
             Config.customSmColorConfigList = options;
-            ConfigDialog.write();
+            ConfigMethod.write();
             alert('配色方案已导入');
             location.reload();
         }).next('button').click(function () {
@@ -1594,7 +2078,7 @@ var ConfigDialog = {
                     Config.customMonsterNameList[parseInt($this.data('id'))] = name;
                 }
             });
-            ConfigDialog.write();
+            ConfigMethod.write();
             Dialog.close('pd_custom_monster_name');
         }).find('.pd_cfg_btns > button:eq(1)').click(function () {
             return Dialog.close('pd_custom_monster_name');
@@ -1628,7 +2112,7 @@ var ConfigDialog = {
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
             Config.customCssContent = $.trim($content.val());
-            ConfigDialog.write();
+            ConfigMethod.write();
             Dialog.close('pd_custom_css');
         }).next('button').click(function () {
             return Dialog.close('pd_custom_css');
@@ -1659,7 +2143,7 @@ var ConfigDialog = {
             e.preventDefault();
             Config.customScriptStartContent = $('#pd_custom_script_start_content').val();
             Config.customScriptEndContent = $('#pd_custom_script_end_content').val();
-            ConfigDialog.write();
+            ConfigMethod.write();
             Dialog.close('pd_custom_script');
         }).next('button').click(function () {
             return Dialog.close('pd_custom_script');
@@ -1705,7 +2189,7 @@ var ConfigDialog = {
                 if (!user || !memo) continue;
                 Config.userMemoList[user] = memo;
             }
-            ConfigDialog.write();
+            ConfigMethod.write();
             Dialog.close('pd_user_memo');
         }).next('button').click(function () {
             return Dialog.close('pd_user_memo');
@@ -1761,7 +2245,7 @@ var ConfigDialog = {
                     Config.followUserList.push({name: name});
                 }
             });
-            ConfigDialog.write();
+            ConfigMethod.write();
             Dialog.close('pd_follow_user');
         }).end().find('.pd_cfg_btns > button:last').click(function () {
             return Dialog.close('pd_follow_user');
@@ -1887,7 +2371,7 @@ var ConfigDialog = {
                     Config.blockUserList.push({name: name, type: type});
                 }
             });
-            ConfigDialog.write();
+            ConfigMethod.write();
             Dialog.close('pd_block_user');
         }).end().find('.pd_cfg_btns > button:last').click(function () {
             return Dialog.close('pd_block_user');
@@ -1985,7 +2469,7 @@ var ConfigDialog = {
      */
     showImportOrExportFollowOrBlockUserConfigDialog: function (type) {
         if ($('#pd_im_or_ex_follow_or_block_user_config').length > 0) return;
-        ConfigDialog.read();
+        ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
             '  <div>' +
@@ -2016,7 +2500,7 @@ var ConfigDialog = {
             }
             if (type === 2) Config.blockUserList = options;
             else Config.followUserList = options;
-            ConfigDialog.write();
+            ConfigMethod.write();
             alert('设置已导入');
             location.reload();
         }).next('button').click(function () {
@@ -2024,485 +2508,6 @@ var ConfigDialog = {
         });
         Dialog.show('pd_im_or_ex_follow_or_block_user_config');
         $dialog.find('#pd_cfg_follow_or_block_user_config').val(JSON.stringify(type === 2 ? Config.blockUserList : Config.followUserList)).select();
-    },
-
-    /**
-     * 获取经过规范化的Config对象
-     * @param {Config} options 待处理的Config对象
-     * @returns {Config} 经过规范化的Config对象
-     */
-    getNormalizationConfig: function (options) {
-        var settings = {};
-        var defConfig = ConfigDialog.defConfig;
-        if ($.type(options) !== 'object') return settings;
-
-        if (typeof options.autoRefreshEnabled !== 'undefined') {
-            settings.autoRefreshEnabled = typeof options.autoRefreshEnabled === 'boolean' ?
-                options.autoRefreshEnabled : defConfig.autoRefreshEnabled;
-        }
-        if (typeof options.showRefreshModeTipsType !== 'undefined') {
-            var showRefreshModeTipsType = $.trim(options.showRefreshModeTipsType).toLowerCase();
-            var allowTypes = ['auto', 'always', 'never'];
-            if (showRefreshModeTipsType !== '' && $.inArray(showRefreshModeTipsType, allowTypes) > -1)
-                settings.showRefreshModeTipsType = showRefreshModeTipsType;
-            else settings.showRefreshModeTipsType = defConfig.showRefreshModeTipsType;
-        }
-
-        if (typeof options.autoDonationEnabled !== 'undefined') {
-            settings.autoDonationEnabled = typeof options.autoDonationEnabled === 'boolean' ?
-                options.autoDonationEnabled : defConfig.autoDonationEnabled;
-        }
-        if (typeof options.donationKfb !== 'undefined') {
-            var donationKfb = options.donationKfb;
-            if ($.isNumeric(donationKfb) && donationKfb > 0 && donationKfb <= Config.maxDonationKfb)
-                settings.donationKfb = parseInt(donationKfb);
-            else if (/^1?\d?\d%$/.test(donationKfb) && parseInt(donationKfb) > 0 && parseInt(donationKfb) <= 100)
-                settings.donationKfb = parseInt(donationKfb) + '%';
-            else settings.donationKfb = defConfig.donationKfb;
-        }
-        if (typeof options.donationAfterTime !== 'undefined') {
-            var donationAfterTime = options.donationAfterTime;
-            if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime))
-                settings.donationAfterTime = donationAfterTime;
-            else settings.donationAfterTime = defConfig.donationAfterTime;
-        }
-        if (typeof options.donationAfterVipEnabled !== 'undefined') {
-            settings.donationAfterVipEnabled = typeof options.donationAfterVipEnabled === 'boolean' ?
-                options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
-        }
-
-        if (typeof options.autoLootEnabled !== 'undefined') {
-            settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
-                options.autoLootEnabled : defConfig.autoLootEnabled;
-        }
-        if (typeof options.noAutoLootWhen !== 'undefined') {
-            if ($.isArray(options.noAutoLootWhen)) {
-                settings.noAutoLootWhen = [];
-                for (var i in options.noAutoLootWhen) {
-                    var time = $.trim(options.noAutoLootWhen[i]);
-                    if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9]$/.test(time)) settings.noAutoLootWhen.push(time);
-                }
-            }
-            else settings.noAutoLootWhen = defConfig.noAutoLootWhen;
-        }
-        if (typeof options.customMonsterNameEnabled !== 'undefined') {
-            settings.customMonsterNameEnabled = typeof options.customMonsterNameEnabled === 'boolean' ?
-                options.customMonsterNameEnabled : defConfig.customMonsterNameEnabled;
-        }
-        if (typeof options.customMonsterNameList !== 'undefined') {
-            if ($.type(options.customMonsterNameList) === 'object') {
-                settings.customMonsterNameList = {};
-                for (var id in options.customMonsterNameList) {
-                    id = parseInt(id);
-                    var name = $.trim(options.customMonsterNameList[id]);
-                    if (id >= 1 && id <= 5 && name !== '' && name.length <= 18) {
-                        settings.customMonsterNameList[id] = name;
-                    }
-                }
-            }
-            else settings.customMonsterNameList = defConfig.customMonsterNameList;
-        }
-        if (typeof options.autoAttackEnabled !== 'undefined') {
-            settings.autoAttackEnabled = typeof options.autoAttackEnabled === 'boolean' ?
-                options.autoAttackEnabled : defConfig.autoAttackEnabled;
-        }
-        if (typeof options.attackWhenZeroLifeEnabled !== 'undefined') {
-            settings.attackWhenZeroLifeEnabled = typeof options.attackWhenZeroLifeEnabled === 'boolean' ?
-                options.attackWhenZeroLifeEnabled : defConfig.attackWhenZeroLifeEnabled;
-        }
-        if (typeof options.attackAfterTime !== 'undefined') {
-            var attackAfterTime = parseInt(options.attackAfterTime);
-            if ($.isNumeric(attackAfterTime) && attackAfterTime >= Config.minAttackAfterTime && attackAfterTime <= Config.defLootInterval)
-                settings.attackAfterTime = attackAfterTime;
-            else settings.attackAfterTime = defConfig.attackAfterTime;
-        }
-        if (settings.attackWhenZeroLifeEnabled && !settings.attackAfterTime) settings.attackWhenZeroLifeEnabled = false;
-        if (typeof options.batchAttackList !== 'undefined') {
-            if ($.type(options.batchAttackList) === 'object') {
-                settings.batchAttackList = {};
-                var totalAttackNum = 0;
-                for (var id in options.batchAttackList) {
-                    var attackNum = parseInt(options.batchAttackList[id]);
-                    if (!isNaN(attackNum) && attackNum > 0) {
-                        settings.batchAttackList[parseInt(id)] = attackNum;
-                        totalAttackNum += attackNum;
-                    }
-                }
-                if (totalAttackNum > Config.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
-            }
-            else settings.batchAttackList = defConfig.batchAttackList;
-        }
-        if (settings.autoAttackEnabled && (!settings.batchAttackList || $.isEmptyObject(settings.batchAttackList)))
-            settings.autoAttackEnabled = false;
-        if (typeof options.deadlyAttackId !== 'undefined') {
-            var deadlyAttackId = parseInt(options.deadlyAttackId);
-            if (!isNaN(deadlyAttackId) && deadlyAttackId >= 0 && deadlyAttackId <= 5) settings.deadlyAttackId = deadlyAttackId;
-            else settings.deadlyAttackId = defConfig.deadlyAttackId;
-        }
-        if (typeof options.autoUseItemEnabled !== 'undefined') {
-            settings.autoUseItemEnabled = typeof options.autoUseItemEnabled === 'boolean' ?
-                options.autoUseItemEnabled : defConfig.autoUseItemEnabled;
-        }
-        if (typeof options.autoUseItemNames !== 'undefined') {
-            var autoUseItemNames = options.autoUseItemNames;
-            var allowTypes = ['被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
-                '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
-            if ($.isArray(autoUseItemNames)) {
-                settings.autoUseItemNames = [];
-                for (var i in autoUseItemNames) {
-                    if ($.inArray(autoUseItemNames[i], allowTypes) > -1) {
-                        settings.autoUseItemNames.push(autoUseItemNames[i]);
-                    }
-                }
-            }
-            else settings.autoUseItemNames = defConfig.autoUseItemNames;
-        }
-
-        if (typeof options.autoDrawSmbox2Enabled !== 'undefined') {
-            settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
-                options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
-        }
-        if (settings.autoDrawSmbox2Enabled && settings.autoLootEnabled) settings.autoDrawSmbox2Enabled = false;
-        if (typeof options.favorSmboxNumbers !== 'undefined') {
-            if ($.isArray(options.favorSmboxNumbers)) {
-                settings.favorSmboxNumbers = [];
-                for (var i in options.favorSmboxNumbers) {
-                    var num = parseInt(options.favorSmboxNumbers[i]);
-                    if (num >= 1 && num <= 400) settings.favorSmboxNumbers.push(num);
-                }
-            }
-            else settings.favorSmboxNumbers = defConfig.favorSmboxNumbers;
-        }
-
-        if (typeof options.atTipsHandleType !== 'undefined') {
-            var atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
-            var allowTypes = ['no_highlight_1', 'no_highlight_2', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
-            if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, allowTypes) > -1)
-                settings.atTipsHandleType = atTipsHandleType;
-            else settings.atTipsHandleType = defConfig.atTipsHandleType;
-        }
-        if (typeof options.hideNoneVipEnabled !== 'undefined') {
-            settings.hideNoneVipEnabled = typeof options.hideNoneVipEnabled === 'boolean' ?
-                options.hideNoneVipEnabled : defConfig.hideNoneVipEnabled;
-        }
-        if (typeof options.smLevelUpAlertEnabled !== 'undefined') {
-            settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ?
-                options.smLevelUpAlertEnabled : defConfig.smLevelUpAlertEnabled;
-        }
-        if (typeof options.homePageThreadFastGotoLinkEnabled !== 'undefined') {
-            settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ?
-                options.homePageThreadFastGotoLinkEnabled : defConfig.homePageThreadFastGotoLinkEnabled;
-        }
-        if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
-            settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
-                options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
-        }
-
-        if (typeof options.showFastGotoThreadPageEnabled !== 'undefined') {
-            settings.showFastGotoThreadPageEnabled = typeof options.showFastGotoThreadPageEnabled === 'boolean' ?
-                options.showFastGotoThreadPageEnabled : defConfig.showFastGotoThreadPageEnabled;
-        }
-        if (typeof options.maxFastGotoThreadPageNum !== 'undefined') {
-            var maxFastGotoThreadPageNum = parseInt(options.maxFastGotoThreadPageNum);
-            if ($.isNumeric(maxFastGotoThreadPageNum) && maxFastGotoThreadPageNum > 0)
-                settings.maxFastGotoThreadPageNum = maxFastGotoThreadPageNum;
-            else settings.maxFastGotoThreadPageNum = defConfig.maxFastGotoThreadPageNum;
-        }
-        if (typeof options.perPageFloorNum !== 'undefined') {
-            var perPageFloorNum = parseInt(options.perPageFloorNum);
-            if ($.inArray(perPageFloorNum, [10, 20, 30]) > -1)
-                settings.perPageFloorNum = perPageFloorNum;
-            else settings.perPageFloorNum = defConfig.perPageFloorNum;
-        }
-        if (typeof options.highlightNewPostEnabled !== 'undefined') {
-            settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ?
-                options.highlightNewPostEnabled : defConfig.highlightNewPostEnabled;
-        }
-
-        if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
-            settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ?
-                options.adjustThreadContentWidthEnabled : defConfig.adjustThreadContentWidthEnabled;
-        }
-        if (typeof options.threadContentFontSize !== 'undefined') {
-            var threadContentFontSize = parseInt(options.threadContentFontSize);
-            if (threadContentFontSize > 0) settings.threadContentFontSize = threadContentFontSize;
-            else settings.threadContentFontSize = defConfig.threadContentFontSize;
-        }
-        if (typeof options.customMySmColor !== 'undefined') {
-            var customMySmColor = options.customMySmColor;
-            if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor))
-                settings.customMySmColor = customMySmColor;
-            else settings.customMySmColor = defConfig.customMySmColor;
-        }
-        if (typeof options.customSmColorEnabled !== 'undefined') {
-            settings.customSmColorEnabled = typeof options.customSmColorEnabled === 'boolean' ?
-                options.customSmColorEnabled : defConfig.customSmColorEnabled;
-        }
-        if (typeof options.customSmColorConfigList !== 'undefined') {
-            var customSmColorConfigList = options.customSmColorConfigList;
-            if ($.isArray(customSmColorConfigList)) {
-                settings.customSmColorConfigList = [];
-                $.each(customSmColorConfigList, function (index, data) {
-                    if ($.type(data) === 'object' && $.type(data.min) === 'string' && $.type(data.max) === 'string' && $.type(data.color) === 'string' &&
-                        /^(-?\d+|MAX)$/i.test(data.min) && /^(-?\d+|MAX)$/i.test(data.max) && /^#[0-9a-fA-F]{6}$/.test(data.color) &&
-                        Tools.compareSmLevel(data.min, data.max) <= 0) {
-                        settings.customSmColorConfigList.push(data);
-                    }
-                });
-            }
-            else settings.customSmColorConfigList = defConfig.customSmColorConfigList;
-        }
-        if (typeof options.modifyKFOtherDomainEnabled !== 'undefined') {
-            settings.modifyKFOtherDomainEnabled = typeof options.modifyKFOtherDomainEnabled === 'boolean' ?
-                options.modifyKFOtherDomainEnabled : defConfig.modifyKFOtherDomainEnabled;
-        }
-        if (typeof options.multiQuoteEnabled !== 'undefined') {
-            settings.multiQuoteEnabled = typeof options.multiQuoteEnabled === 'boolean' ?
-                options.multiQuoteEnabled : defConfig.multiQuoteEnabled;
-        }
-        if (typeof options.batchBuyThreadEnabled !== 'undefined') {
-            settings.batchBuyThreadEnabled = typeof options.batchBuyThreadEnabled === 'boolean' ?
-                options.batchBuyThreadEnabled : defConfig.batchBuyThreadEnabled;
-        }
-        if (typeof options.userMemoEnabled !== 'undefined') {
-            settings.userMemoEnabled = typeof options.userMemoEnabled === 'boolean' ?
-                options.userMemoEnabled : defConfig.userMemoEnabled;
-        }
-        if (typeof options.userMemoList !== 'undefined') {
-            if ($.type(options.userMemoList) === 'object') {
-                settings.userMemoList = {};
-                for (var user in options.userMemoList) {
-                    var memo = $.trim(options.userMemoList[user]);
-                    if (memo) settings.userMemoList[user] = memo;
-                }
-            }
-            else settings.userMemoList = defConfig.userMemoList;
-        }
-
-        if (typeof options.defShowMsgDuration !== 'undefined') {
-            var defShowMsgDuration = parseInt(options.defShowMsgDuration);
-            if ($.isNumeric(defShowMsgDuration) && defShowMsgDuration >= -1)
-                settings.defShowMsgDuration = defShowMsgDuration;
-            else settings.defShowMsgDuration = defConfig.defShowMsgDuration;
-        }
-        if (typeof options.animationEffectOffEnabled !== 'undefined') {
-            settings.animationEffectOffEnabled = typeof options.animationEffectOffEnabled === 'boolean' ?
-                options.animationEffectOffEnabled : defConfig.animationEffectOffEnabled;
-        }
-        if (typeof options.logSaveDays !== 'undefined') {
-            var logSaveDays = parseInt(options.logSaveDays);
-            if (logSaveDays > 0) settings.logSaveDays = logSaveDays;
-            else settings.logSaveDays = defConfig.logSaveDays;
-        }
-        if (typeof options.showLogLinkInPageEnabled !== 'undefined') {
-            settings.showLogLinkInPageEnabled = typeof options.showLogLinkInPageEnabled === 'boolean' ?
-                options.showLogLinkInPageEnabled : defConfig.showLogLinkInPageEnabled;
-        }
-        if (typeof options.logSortType !== 'undefined') {
-            var logSortType = $.trim(options.logSortType).toLowerCase();
-            var allowTypes = ['time', 'type'];
-            if (logSortType !== '' && $.inArray(logSortType, allowTypes) > -1)
-                settings.logSortType = logSortType;
-            else settings.logSortType = defConfig.logSortType;
-        }
-        if (typeof options.logStatType !== 'undefined') {
-            var logStatType = $.trim(options.logStatType).toLowerCase();
-            var allowTypes = ['cur', 'custom', 'all'];
-            if (logStatType !== '' && $.inArray(logStatType, allowTypes) > -1)
-                settings.logStatType = logStatType;
-            else settings.logStatType = defConfig.logStatType;
-        }
-        if (typeof options.logStatDays !== 'undefined') {
-            var logStatDays = parseInt(options.logStatDays);
-            if (logStatDays > 0) settings.logStatDays = logStatDays;
-            else settings.logStatDays = defConfig.logStatDays;
-        }
-        if (typeof options.addSideBarFastNavEnabled !== 'undefined') {
-            settings.addSideBarFastNavEnabled = typeof options.addSideBarFastNavEnabled === 'boolean' ?
-                options.addSideBarFastNavEnabled : defConfig.addSideBarFastNavEnabled;
-        }
-        if (typeof options.modifySideBarEnabled !== 'undefined') {
-            settings.modifySideBarEnabled = typeof options.modifySideBarEnabled === 'boolean' ?
-                options.modifySideBarEnabled : defConfig.modifySideBarEnabled;
-        }
-        if (typeof options.customCssEnabled !== 'undefined') {
-            settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ?
-                options.customCssEnabled : defConfig.customCssEnabled;
-        }
-        if (typeof options.customCssContent !== 'undefined') {
-            var customCssContent = $.trim(options.customCssContent);
-            if (customCssContent !== '') settings.customCssContent = customCssContent;
-            else settings.customCssContent = defConfig.customCssContent;
-        }
-        if (typeof options.customScriptEnabled !== 'undefined') {
-            settings.customScriptEnabled = typeof options.customScriptEnabled === 'boolean' ?
-                options.customScriptEnabled : defConfig.customScriptEnabled;
-        }
-        if (typeof options.customScriptStartContent !== 'undefined') {
-            if (typeof options.customScriptStartContent === 'string')
-                settings.customScriptStartContent = options.customScriptStartContent;
-            else
-                settings.customScriptStartContent = defConfig.customScriptStartContent;
-        }
-        if (typeof options.customScriptEndContent !== 'undefined') {
-            if (typeof options.customScriptEndContent === 'string')
-                settings.customScriptEndContent = options.customScriptEndContent;
-            else
-                settings.customScriptEndContent = defConfig.customScriptEndContent;
-        }
-
-        if (typeof options.followUserEnabled !== 'undefined') {
-            settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?
-                options.followUserEnabled : defConfig.followUserEnabled;
-        }
-        if (typeof options.highlightFollowUserThreadInHPEnabled !== 'undefined') {
-            settings.highlightFollowUserThreadInHPEnabled = typeof options.highlightFollowUserThreadInHPEnabled === 'boolean' ?
-                options.highlightFollowUserThreadInHPEnabled : defConfig.highlightFollowUserThreadInHPEnabled;
-        }
-        if (typeof options.highlightFollowUserThreadLinkEnabled !== 'undefined') {
-            settings.highlightFollowUserThreadLinkEnabled = typeof options.highlightFollowUserThreadLinkEnabled === 'boolean' ?
-                options.highlightFollowUserThreadLinkEnabled : defConfig.highlightFollowUserThreadLinkEnabled;
-        }
-        if (typeof options.followUserList !== 'undefined') {
-            if ($.isArray(options.followUserList)) {
-                settings.followUserList = [];
-                for (var i in options.followUserList) {
-                    var user = options.followUserList[i];
-                    if ($.type(user) === 'object' && $.type(user.name) === 'string') {
-                        var name = $.trim(user.name);
-                        if (name) settings.followUserList.push({name: name});
-                    }
-                    else if ($.type(user) === 'string') {
-                        var name = $.trim(user);
-                        if (name) settings.followUserList.push({name: name});
-                    }
-                }
-            }
-            else settings.followUserList = defConfig.followUserList;
-        }
-
-        if (typeof options.blockUserEnabled !== 'undefined') {
-            settings.blockUserEnabled = typeof options.blockUserEnabled === 'boolean' ?
-                options.blockUserEnabled : defConfig.blockUserEnabled;
-        }
-        if (typeof options.blockUserDefaultType !== 'undefined') {
-            var blockUserDefaultType = parseInt(options.blockUserDefaultType);
-            if (!isNaN(blockUserDefaultType) && blockUserDefaultType >= 0 && blockUserDefaultType <= 2) settings.blockUserDefaultType = blockUserDefaultType;
-            else settings.blockUserDefaultType = defConfig.blockUserDefaultType;
-        }
-        if (typeof options.blockUserAtTipsEnabled !== 'undefined') {
-            settings.blockUserAtTipsEnabled = typeof options.blockUserAtTipsEnabled === 'boolean' ?
-                options.blockUserAtTipsEnabled : defConfig.blockUserAtTipsEnabled;
-        }
-        if (typeof options.blockUserList !== 'undefined') {
-            if ($.isArray(options.blockUserList)) {
-                settings.blockUserList = [];
-                for (var i in options.blockUserList) {
-                    var user = options.blockUserList[i];
-                    if ($.type(user) === 'object' && $.type(user.name) === 'string' && $.type(user.type) === 'number') {
-                        var type = user.type;
-                        if (type < 0 || type > 2) type = Config.blockUserDefaultType;
-                        var name = $.trim(user.name);
-                        if (name) settings.blockUserList.push({name: name, type: type});
-                    }
-                    else if ($.type(user) === 'string') {
-                        var name = $.trim(user);
-                        if (name) settings.blockUserList.push({name: name, type: Config.blockUserDefaultType});
-                    }
-                }
-            }
-            else settings.blockUserList = defConfig.blockUserList;
-        }
-
-        if (typeof options.autoSaveCurrentDepositEnabled !== 'undefined') {
-            settings.autoSaveCurrentDepositEnabled = typeof options.autoSaveCurrentDepositEnabled === 'boolean' ?
-                options.autoSaveCurrentDepositEnabled : defConfig.autoSaveCurrentDepositEnabled;
-        }
-        if (typeof options.saveCurrentDepositAfterKfb !== 'undefined') {
-            var saveCurrentDepositAfterKfb = parseInt(options.saveCurrentDepositAfterKfb);
-            if (saveCurrentDepositAfterKfb > 0) settings.saveCurrentDepositAfterKfb = saveCurrentDepositAfterKfb;
-            else settings.saveCurrentDepositAfterKfb = defConfig.saveCurrentDepositAfterKfb;
-        }
-        if (typeof options.saveCurrentDepositKfb !== 'undefined') {
-            var saveCurrentDepositKfb = parseInt(options.saveCurrentDepositKfb);
-            if (saveCurrentDepositKfb > 0 && saveCurrentDepositKfb <= settings.saveCurrentDepositAfterKfb)
-                settings.saveCurrentDepositKfb = saveCurrentDepositKfb;
-            else settings.saveCurrentDepositKfb = defConfig.saveCurrentDepositKfb;
-        }
-
-        if (typeof options.autoChangeSMColorEnabled !== 'undefined') {
-            settings.autoChangeSMColorEnabled = typeof options.autoChangeSMColorEnabled === 'boolean' ?
-                options.autoChangeSMColorEnabled : defConfig.autoChangeSMColorEnabled;
-        }
-        if (typeof options.autoChangeSMColorType !== 'undefined') {
-            var autoChangeSMColorType = $.trim(options.autoChangeSMColorType).toLowerCase();
-            var allowTypes = ['random', 'sequence'];
-            if (autoChangeSMColorType !== '' && $.inArray(autoChangeSMColorType, allowTypes) > -1)
-                settings.autoChangeSMColorType = autoChangeSMColorType;
-            else settings.autoChangeSMColorType = defConfig.autoChangeSMColorType;
-        }
-        if (typeof options.autoChangeSMColorInterval !== 'undefined') {
-            var autoChangeSMColorInterval = parseInt(options.autoChangeSMColorInterval);
-            if (!isNaN(autoChangeSMColorInterval) && autoChangeSMColorInterval > 0) settings.autoChangeSMColorInterval = autoChangeSMColorInterval;
-            else settings.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
-        }
-        if (typeof options.changeAllAvailableSMColorEnabled !== 'undefined') {
-            settings.changeAllAvailableSMColorEnabled = typeof options.changeAllAvailableSMColorEnabled === 'boolean' ?
-                options.changeAllAvailableSMColorEnabled : defConfig.changeAllAvailableSMColorEnabled;
-        }
-        if (typeof options.customAutoChangeSMColorList !== 'undefined') {
-            if ($.isArray(options.customAutoChangeSMColorList)) {
-                settings.customAutoChangeSMColorList = [];
-                for (var i in options.customAutoChangeSMColorList) {
-                    var id = parseInt(options.customAutoChangeSMColorList[i]);
-                    if (!isNaN(id) && id >= 1 && id <= 20) {
-                        settings.customAutoChangeSMColorList.push(id);
-                    }
-                }
-            }
-            else settings.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
-        }
-
-        return settings;
-    },
-
-    /**
-     * 读取设置
-     */
-    read: function () {
-        var options = null;
-        if (storageType === 'Script') options = GM_getValue(ConfigDialog.name + '_' + KFOL.uid);
-        else if (storageType === 'Global') options = GM_getValue(ConfigDialog.name);
-        else options = localStorage.getItem(ConfigDialog.name);
-        if (!options) return;
-        try {
-            options = JSON.parse(options);
-        }
-        catch (ex) {
-            return;
-        }
-        if (!options || $.type(options) !== 'object' || $.isEmptyObject(options)) return;
-        options = ConfigDialog.getNormalizationConfig(options);
-        Config = $.extend(true, {}, ConfigDialog.defConfig, options);
-    },
-
-    /**
-     * 写入设置
-     */
-    write: function () {
-        var options = Tools.getDifferentValueOfObject(ConfigDialog.defConfig, Config);
-        if (storageType === 'Script') GM_setValue(ConfigDialog.name + '_' + KFOL.uid, JSON.stringify(options));
-        else if (storageType === 'Global') GM_setValue(ConfigDialog.name, JSON.stringify(options));
-        else localStorage.setItem(ConfigDialog.name, JSON.stringify(options));
-    },
-
-    /**
-     * 清空设置
-     */
-    clear: function () {
-        if (storageType === 'Script') GM_deleteValue(ConfigDialog.name + '_' + KFOL.uid);
-        else if (storageType === 'Global') GM_deleteValue(ConfigDialog.name);
-        else localStorage.removeItem(ConfigDialog.name);
     }
 };
 
@@ -2608,7 +2613,7 @@ var Log = {
     show: function () {
         if ($('#pd_log').length > 0) return;
         Dialog.close('pd_config');
-        ConfigDialog.read();
+        ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_log_nav">' +
@@ -2694,21 +2699,21 @@ var Log = {
             var value = $(this).val();
             if (Config.logSortType !== value) {
                 Config.logSortType = value;
-                ConfigDialog.write();
+                ConfigMethod.write();
                 Log.showLogContent(dateList[curIndex]);
             }
         }).end().find('input[name="pd_log_stat_type"]').click(function () {
             var value = $(this).val();
             if (Config.logStatType !== value) {
                 Config.logStatType = value;
-                ConfigDialog.write();
+                ConfigMethod.write();
                 Log.showLogStat(dateList[curIndex]);
             }
         }).end().find('#pd_log_stat_days').keyup(function () {
             var days = parseInt($.trim($(this).val()));
             if (days > 0 && Config.logStatDays !== days) {
                 Config.logStatDays = days;
-                ConfigDialog.write();
+                ConfigMethod.write();
                 $('input[name="pd_log_stat_type"][value="custom"]:not(:checked)').click();
                 Log.showLogStat(dateList[curIndex]);
             }
@@ -5381,16 +5386,16 @@ var Loot = {
                 var attackList = {};
                 var totalAttackNum = getAttackNum(attackList);
                 if (totalAttackNum == 0) return;
-                ConfigDialog.read();
+                ConfigMethod.read();
                 Config.batchAttackList = attackList;
-                ConfigDialog.write();
+                ConfigMethod.write();
                 alert('设置已保存');
             })
             .next()
             .click(function () {
-                ConfigDialog.read();
+                ConfigMethod.read();
                 Config.batchAttackList = {};
-                ConfigDialog.write();
+                ConfigMethod.write();
                 alert('设置已清除');
             })
             .next()
@@ -5840,6 +5845,8 @@ var Loot = {
     }
 };
 
+
+
 /**
  * KF Online主类
  */
@@ -5882,7 +5889,7 @@ var KFOL = {
         $('head').append(
             '<style type="text/css">' +
             '.pd_layer { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
-            '.pd_pop_box { position: fixed; width: 100%; z-index: 1001; }' +
+            '.pd_pop_box { position: absolute; width: 100%; z-index: 1001; }' +
             '.pd_pop_tips {' +
             '  border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0,0,0,0.1); border-radius: 3px; padding: 12px 40px; text-align: center;' +
             '  font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;' +
@@ -5929,7 +5936,7 @@ var KFOL = {
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
-            '  position: fixed; border: 1px solid #9191FF; display: none; z-index: 1002;' +
+            '  position: absolute; border: 1px solid #9191FF; display: none; z-index: 1002;' +
             '  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '  -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '}' +
@@ -6009,6 +6016,16 @@ var KFOL = {
         }
         var $popBox = $('.pd_pop_box');
         var isFirst = $popBox.length === 0;
+        if (!isFirst && $('.pd_layer').length === 0) {
+            var $lastTips = $('.pd_pop_tips:last');
+            if ($lastTips.length > 0) {
+                var top = $lastTips.offset().top;
+                if (top < 0 || top >= $(window).height()) {
+                    $popBox.remove();
+                    isFirst = true;
+                }
+            }
+        }
         if (settings.preventable && $('.pd_layer').length === 0) {
             $('<div class="pd_layer"></div>').appendTo('body');
         }
@@ -6660,30 +6677,6 @@ var KFOL = {
         var linkName = $floorNode.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         location.hash = '#' + linkName;
-    },
-
-    /**
-     * 添加快速跳转到指定页数的输入框
-     */
-    addFastGotoPageInput: function () {
-        $('<form><li class="pd_fast_goto_page">跳至 <input class="pd_input" style="width:30px" type="text" maxlength="8" /> ' +
-        '<span>页</span></li></form>')
-            .appendTo('table > tbody > tr > td > div > ul.pages')
-            .submit(function (e) {
-                e.preventDefault();
-                var page = parseInt($.trim($(this).find('input').val()));
-                if (!page || page <= 0) return;
-                var fpage = parseInt(Tools.getUrlParam('fpage'));
-                location.href = '{0}read.php?tid={1}&page={2}{3}'
-                    .replace('{0}', Tools.getHostNameUrl)
-                    .replace('{1}', Tools.getUrlParam('tid'))
-                    .replace('{2}', page)
-                    .replace('{3}', fpage ? '&fpage=' + fpage : '');
-            })
-            .find('span')
-            .click(function () {
-                $(this).closest('form').submit();
-            });
     },
 
     /**
@@ -7342,7 +7335,7 @@ var KFOL = {
                 }
             }).click(function (e) {
                 e.preventDefault();
-                ConfigDialog.read();
+                ConfigMethod.read();
                 var $this = $(this);
                 if ($this.is('a:contains("备注")')) {
                     var memo = $this.data('memo');
@@ -7360,7 +7353,7 @@ var KFOL = {
                         $this.text('添加备注');
                     }
                     $this.data('memo', value);
-                    ConfigDialog.write();
+                    ConfigMethod.write();
                 }
                 else {
                     var str = '关注';
@@ -7377,7 +7370,7 @@ var KFOL = {
                         var index = Tools.inFollowOrBlockUserList(userName, userList);
                         if (index > -1) {
                             userList.splice(index, 1);
-                            ConfigDialog.write();
+                            ConfigMethod.write();
                         }
                         $this.removeClass('pd_highlight').text(str + '用户');
                         alert('该用户已被解除' + str);
@@ -7395,7 +7388,7 @@ var KFOL = {
                             else {
                                 userList.push({name: userName});
                             }
-                            ConfigDialog.write();
+                            ConfigMethod.write();
                         }
                         $this.addClass('pd_highlight').text('解除' + str);
                         alert('该用户已被' + str);
@@ -7858,9 +7851,9 @@ var KFOL = {
                 var $this = $(this);
                 var enabled = $this.prop('checked');
                 if (enabled !== Config.autoChangeSMColorEnabled) {
-                    ConfigDialog.read();
+                    ConfigMethod.read();
                     Config.autoChangeSMColorEnabled = enabled;
-                    ConfigDialog.write();
+                    ConfigMethod.write();
                 }
 
                 if (enabled) {
@@ -7894,12 +7887,12 @@ var KFOL = {
                             if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
 
                             var oriInterval = Config.autoChangeSMColorInterval;
-                            ConfigDialog.read();
+                            ConfigMethod.read();
                             Config.autoChangeSMColorType = $('#pd_cfg_auto_change_sm_color_type').val().toLowerCase();
                             Config.autoChangeSMColorInterval = interval;
                             Config.changeAllAvailableSMColorEnabled = changeAllAvailableSMColorEnabled;
                             Config.customAutoChangeSMColorList = customChangeSMColorList;
-                            ConfigDialog.write();
+                            ConfigMethod.write();
                             if (oriInterval !== Config.autoChangeSMColorInterval)
                                 Tools.setCookie(Config.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
                             alert('设置保存成功');
@@ -7907,14 +7900,14 @@ var KFOL = {
                         .end()
                         .filter('button:eq(1)').click(function (e) {
                             e.preventDefault();
-                            ConfigDialog.read();
-                            var defConfig = ConfigDialog.defConfig;
+                            ConfigMethod.read();
+                            var defConfig = ConfigMethod.defConfig;
                             Config.autoChangeSMColorEnabled = defConfig.autoChangeSMColorEnabled;
                             Config.autoChangeSMColorType = defConfig.autoChangeSMColorType;
                             Config.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
                             Config.changeAllAvailableSMColorEnabled = defConfig.changeAllAvailableSMColorEnabled;
                             Config.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
-                            ConfigDialog.write();
+                            ConfigMethod.write();
                             Tools.setCookie(Config.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
                             TmpLog.deleteValue(Config.prevAutoChangeSMColorIdTmpLogName);
                             alert('设置已重置');
@@ -8072,10 +8065,10 @@ var KFOL = {
         //console.log('KF Online助手启动');
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
-        ConfigDialog.init();
+        ConfigMethod.init();
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();
-        if (Config.animationEffectOffEnabled) $.fx.off = true;
+        if (Config.animationEffectOffEnabled) jQuery.fx.off = true;
 
         if (Config.customScriptEnabled) KFOL.runCustomScript(1);
         if (Config.modifySideBarEnabled) KFOL.modifySideBar();
@@ -8099,7 +8092,6 @@ var KFOL = {
             if (Config.multiQuoteEnabled) KFOL.addMultiQuoteButton();
             KFOL.addFastGotoFloorInput();
             KFOL.addFloorGotoLink();
-            //KFOL.addFastGotoPageInput();
             KFOL.addCopyBuyersListLink();
             KFOL.addStatReplyersLink();
             if (Config.modifyKFOtherDomainEnabled) KFOL.modifyKFOtherDomainLink();

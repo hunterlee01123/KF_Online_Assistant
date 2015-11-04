@@ -1,4 +1,6 @@
-// 在不同时间段内采用不同的自动攻击方式 V1.1
+/* 自定义脚本 */
+
+// 在不同时间段内采用不同的自动攻击方式 V1.2
 (function () {
     var settings = {'19:00-01:00': 660, '08:00-19:00': 90}; // 格式：{'时间段': 分钟数, '时间段': 分钟数}
     var now = new Date();
@@ -8,7 +10,7 @@
         if (Tools.isBetweenInTimeRange(now, range)) {
             console.log('【在距本回合结束前指定时间内才完成攻击】的设置被修改为：' + newValue + '分钟');
             Config.attackAfterTime = newValue;
-            ConfigDialog.write();
+            ConfigMethod.write();
             break;
         }
     }
@@ -62,17 +64,41 @@
 
 /*==========================================*/
 
-// 屏蔽标题包含指定关键词的帖子 V1.0
+// 屏蔽标题包含指定关键词的帖子 V1.1
 (function () {
-    // 屏蔽关键词列表，可使用普通关键词及正则表达式，例：['标题1', /Title.*2/i]
-    var keyWords = ['标题1'];
+    /**
+     * 屏蔽关键词列表，格式：[{excludeFid:[不屏蔽指定的版块ID], includeFid:[只屏蔽指定的版块ID], keyWord:'关键词'}]
+     * 关键词可使用普通字符串或正则表达式，excludeFid和includeFid这两项为可选
+     * 例：[
+     *     {keyWord: '标题1'},
+     *     {keyWord: '标题2', excludeFid: [92, 127, 68]},
+     *     {keyWord: /Title.*3/i, includeFid: [5, 56]},
+     * ]
+     */
+    var keyWordList = [
+        {keyWord: '标题1'},
+        {keyWord: '标题2', excludeFid: [92, 127, 68]},
+        {keyWord: /标题.*3/, includeFid: [5, 56]},
+    ];
 
-    var isInclude = function (str) {
-        for (var i in keyWords) {
+    /**
+     * 是否屏蔽帖子
+     * @param {string} title 帖子标题
+     * @param {number} [fid] 版块ID
+     * @returns {boolean} 是否屏蔽
+     */
+    var isInclude = function (title, fid) {
+        for (var i in keyWordList) {
             var re = null;
-            if (typeof keyWords[i].test === 'undefined') re = new RegExp(keyWords[i], 'i');
-            else re = keyWords[i];
-            if (re.test(str)) return true;
+            if (typeof keyWordList[i].keyWord.test === 'undefined') re = new RegExp(keyWordList[i].keyWord, 'i');
+            else re = keyWordList[i].keyWord;
+            if (keyWordList[i].excludeFid) {
+                if ($.inArray(fid, keyWordList[i].excludeFid) > -1) return false;
+            }
+            else if (keyWordList[i].includeFid) {
+                if ($.inArray(fid, keyWordList[i].includeFid) === -1) return false;
+            }
+            if (re.test(title)) return true;
         }
         return false;
     };
@@ -88,19 +114,15 @@
         });
     }
     else if (location.pathname === '/thread.php') {
+        var fid = parseInt(Tools.getUrlParam('fid'));
+        if (isNaN(fid) || fid < 0) return;
         $('.threadtit1 a').each(function () {
             var $this = $(this);
-            if (isInclude($this.text())) {
+            if (isInclude($this.text(), fid)) {
                 num++;
                 $this.closest('tr').remove();
             }
         });
-    }
-    else if (location.pathname === '/read.php') {
-        var title = $('a[href^="kf_tidfavor.php?action=favor"]:first').closest('tr').prev('tr').find('td > span').text();
-        if (isInclude(title)) {
-            alert('此帖子标题包含屏蔽关键词，建议立即关闭页面！');
-        }
     }
     if (num > 0) console.log('共有{0}个帖子被屏蔽'.replace('{0}', num));
 }());
@@ -168,9 +190,9 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
 
 /*==========================================*/
 
-// 统计各楼层的彩票数字（ft1073833专用版） V1.0
+// 统计各楼层的彩票数字（ft1073833专用版） V1.1
 (function () {
-    var numberRegex = /【(\d{2,})】/; // 匹配彩票数字的正则表达式
+    var numberRegex = /【\s*(\d{2,})\s*】/; // 匹配彩票数字的正则表达式
     var levelRangeList = [0, 5, 50]; // 各等奖中与中奖数字相差的范围
     var threadTitle = '每周红包'; // 在标题包含指定关键字的帖子里显示彩票统计的按钮（留空表示任意标题均可）
 
@@ -243,6 +265,7 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
                             var $dialog = Dialog.create('pd_stat_lottery', '彩票统计', dialogHtml);
 
                             var floorContent = '';
+                            var normalNum = 0, errorNum = 0, repeatNum = 0;
                             for (var i = 1; i < floorList.length; i++) {
                                 var obj = floorList[i];
                                 if (obj) {
@@ -253,14 +276,21 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
                                         .replace('{3}', obj.name)
                                         .replace('{4}', obj.number > 0 ?
                                             '<span class="pd_highlight">{0}</span>'.replace('{0}', obj.number) :
-                                            '<span class="pd_notice">{0}</span>'.replace('{0}', obj.number === -2 ? '有重复' : '未找到符合的数字'));
+                                            '<span class="pd_notice">{0}</span>'.replace('{0}', obj.number === -2 ? '重复回贴' : '格式不正确'));
+                                    if (obj.number === -1) errorNum++;
+                                    else if (obj.number === -2) repeatNum++;
+                                    else if (obj.number >= 0) normalNum++;
                                 }
                                 else {
                                     floorContent += '<li>【{0}楼】<span class="pd_notice">未找到该楼层</span></li>'.replace('{0}', i);
                                 }
                             }
-                            floorContent = '<ul><li><strong>楼层统计情况：</strong></li>{0}</ul>'
-                                .replace('{0}', floorContent ? floorContent : '<li class="pd_notice">无</li>');
+                            floorContent = ('<ul><li><strong>楼层统计情况：</strong></li><li>（正常统计：<b class="pd_highlight">{0}</b>个；' +
+                            '格式不正确：<b class="pd_highlight">{1}</b>个；重复回贴：<b class="pd_highlight">{2}</b>个）</li>{3}</ul>')
+                                .replace('{0}', normalNum)
+                                .replace('{1}', errorNum)
+                                .replace('{2}', repeatNum)
+                                .replace('{3}', floorContent ? floorContent : '<li class="pd_notice">无</li>');
 
                             var levelContentList = new Array(levelRangeList.length);
                             for (var name in numberList) {
@@ -281,7 +311,8 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
                                     }
                                 }
                             }
-                            var resultContent = '<div style="margin-top:10px"><strong>中奖情况 (中奖数字【{0}】)：</strong></div>'.replace('{0}', targetNumber);
+                            var resultContent = '<div style="margin-top:10px"><strong>中奖情况 (中奖数字【<span class="pd_highlight">{0}</span>】)：</strong></div>'
+                                .replace('{0}', targetNumber);
                             for (var i = 0; i < levelContentList.length; i++) {
                                 resultContent += '<ul><li><b class="pd_highlight">{0}等奖(±{1})：</b></li>'.replace('{0}', i + 1).replace('{1}', levelRangeList[i]);
                                 if (levelContentList[i]) resultContent += levelContentList[i];
