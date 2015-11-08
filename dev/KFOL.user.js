@@ -28,7 +28,6 @@
 // @license     MIT
 // ==/UserScript==
 /*
- @todo 增加随机HB功能
  @todo 修改脚本地址
  @todo 添加注意事项（脚本地址修改、自定义脚本更新、屏蔽帖子自定义脚本删除）
  */

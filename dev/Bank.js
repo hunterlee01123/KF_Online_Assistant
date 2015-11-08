@@ -217,8 +217,9 @@ var Bank = {
             '<textarea class="pd_textarea" id="pd_bank_msg" style="width:225px;height:206px" id="pd_bank_users"></textarea></label>' +
             '    </div>' +
             '    <div><label><input class="pd_input" type="submit" value="批量转账" /></label>' +
-            '<label><input style="margin-left:5px" class="pd_input" type="reset" value="重置" /></label> ' +
-            '（活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）</div>' +
+            '<label style="margin-left:3px"><input class="pd_input" type="reset" value="重置" /></label>' +
+            '<label style="margin-left:3px"><input class="pd_input" type="button" value="随机金额" title="为用户列表上的每个用户设定指定范围内的随机金额" /></label>' +
+            ' （活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）</div>' +
             '  </form>' +
             '  </td>' +
             '</tr>';
@@ -232,13 +233,13 @@ var Bank = {
                 if (!commonMoney) commonMoney = 0;
                 var msg = $('#pd_bank_msg').val();
                 var users = [];
-                $.each($('#pd_bank_users').val().split('\n'), function (index, key) {
-                    var line = $.trim(key);
+                $.each($('#pd_bank_users').val().split('\n'), function (index, line) {
+                    line = $.trim(line);
                     if (!line) return;
                     if (line.indexOf(':') > -1) {
                         var arr = line.split(':');
                         if (arr.length < 2) return;
-                        users.push([arr[0], parseInt(arr[1])]);
+                        users.push([$.trim(arr[0]), parseInt(arr[1])]);
                     }
                     else {
                         users.push([line, commonMoney]);
@@ -293,6 +294,38 @@ var Bank = {
                     $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
                     Bank.batchTransfer(users, msg, isDeposited, currentDeposit);
                 }, 'html');
+            })
+            .end()
+            .find('.pd_input[type="button"]')
+            .click(function (e) {
+                e.preventDefault();
+                var userList = [];
+                $.each($('#pd_bank_users').val().split('\n'), function (index, line) {
+                    line = $.trim(line);
+                    if (!line) return;
+                    userList.push($.trim(line.split(':')[0]));
+                });
+                if (userList.length === 0) return;
+
+                var range = window.prompt('设定随机金额的范围（注：最低转账金额为20KFB）', '20-100');
+                if (range === null) return;
+                range = $.trim(range);
+                if (!/^\d+-\d+$/.test(range)) {
+                    alert('随机金额范围格式不正确');
+                    return;
+                }
+                var arr = range.split('-');
+                var min = parseInt(arr[0]), max = parseInt(arr[1]);
+                if (max < min) {
+                    alert('最大值不能低于最小值');
+                    return;
+                }
+
+                var content = '';
+                for (var i in userList) {
+                    content += userList[i] + ':' + Math.floor(Math.random() * (max - min + 1) + min) + '\n';
+                }
+                $('#pd_bank_users').val(content);
             });
     },
 

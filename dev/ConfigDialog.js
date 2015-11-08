@@ -1311,7 +1311,7 @@ var ConfigDialog = {
             '<div class="pd_cfg_main">' +
             '  <div style="border-bottom:1px solid #9191FF;margin-bottom:7px;padding-bottom:5px">' +
             '    标题关键字可使用普通字符串或正则表达式，正则表达式请使用/abc/的格式，例：/关键字A.*关键字B/i<br />' +
-            '    用户名和版块ID为可选项（多个用户名或ID请用英文逗号分隔）<br />' +
+            '    用户名和版块ID为可选项（多个用户名或版块ID请用英文逗号分隔）<br />' +
             '    <label>默认版块屏蔽范围<select id="pd_cfg_block_thread_def_forum_type"><option value="0">所有版块</option><option value="1">包括指定版块</option>' +
             '<option value="2">排除指定版块</option></select></label>' +
             '    <label style="margin-left:5px">默认版块ID列表<input id="pd_cfg_block_thread_def_fid_list" type="text" style="width:150px" /></label>' +
@@ -1319,7 +1319,7 @@ var ConfigDialog = {
             '  <table id="pd_cfg_block_thread_list" style="line-height:22px;text-align:center">' +
             '    <tbody>' +
             '      <tr>' +
-            '        <th style="width:187px">标题关键字</th>' +
+            '        <th style="width:187px">标题关键字(必填)</th>' +
             '        <th style="width:132px">用户名 <span class="pd_cfg_tips" title="多个用户名请用英文逗号分隔">[?]</span></th>' +
             '        <th style="width:105px">屏蔽范围</th>' +
             '        <th style="width:132px">版块ID <span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span></th>' +
