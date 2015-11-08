@@ -22,15 +22,11 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.6.0-dev
+// @version     4.6.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
-/*
- @todo 修改脚本地址
- @todo 添加注意事项（脚本地址修改、自定义脚本更新、屏蔽帖子自定义脚本删除）
- */
 // 版本号
 var version = '4.6.0';
 /**

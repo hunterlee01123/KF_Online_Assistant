@@ -2,11 +2,11 @@
 KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 
 ## 脚本下载地址
-* __标准版：__[点击此处安装](https://greasyfork.org/zh-CN/scripts/8615) ([备用安装地址](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant.user.js))  
+* __标准版：__[点击此处安装](https://greasyfork.org/zh-CN/scripts/8615) ([备用安装地址](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/KFOLAssistant.user.js))  
 设置和日志存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分
-* __ScriptStorage版：__[点击此处安装](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Script_Storage.user.js)  
+* __ScriptStorage版：__[点击此处安装](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ScriptStorage.user.js)  
 设置和日志存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况）__【Firefox下可能无法使用】__
-* __GlobalStorage版：__[点击此处安装](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant_Global_Storage.user.js)  
+* __GlobalStorage版：__[点击此处安装](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.user.js)  
 设置和日志存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况）__【Firefox下可能无法使用】__  
 __注：如需要改用其它版本，可先将设置及日志导出来，在安装后再导入即可__
 
@@ -17,7 +17,7 @@ __如安装之后发现脚本没有起效，请参见【常见问题1】__
 
 ## 常见问题
 1. __我安装了脚本，却发现助手似乎没有生效的样子，该怎么办？__  
-答：请尝试先删除脚本后再重新安装（删除后可能需要重启浏览器）；依然无效的话，请尝试[备用安装地址(标准版)](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/KF_Online_Assistant.user.js)；如果还不行，请尝试更新或重装一下相应的油猴扩展  
+答：请尝试先删除脚本后再重新安装（删除后可能需要重启浏览器）；依然无效的话，请尝试[备用安装地址(标准版)](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/KFOLAssistant.user.js)；如果还不行，请尝试更新或重装一下相应的油猴扩展  
 __注：删除ScriptStorage和GlobalStorage版脚本会导致设置和日志也被一同清除，标准版则无此问题__
 2. __助手能按时自动进行争夺、捐款等操作吗？是否需要刷新页面才能操作？__  
 答：开启定时模式后，助手可按时进行自动操作（包括捐款、争夺、抽取神秘盒子，需开启相关功能），__只在论坛首页生效__，默认情况下，在停留一分钟后页面标题会显示倒计时（如非必要，请勿同时使用浏览器的定时刷新功能，否则有可能会造成操作中断）
@@ -47,6 +47,10 @@ __注：删除ScriptStorage和GlobalStorage版脚本会导致设置和日志也�
 答：发现不正常的状况时，__请暂时不要刷新页面__，接着打开Web控制台（Firefox：菜单->开发者->Web控制台【快捷键：Ctrl+Shift+K】；Chrome：菜单->工具->Javascript控制台【快捷键：Ctrl+Shift+J】；其它：打开开发者工具栏后【可能的快捷键：F12】，切换到Console[或控制台]标签），将控制台里的信息复制或截图，并将其它有用的信息（如页面标题上的倒计时等）连同问题描述发表到讨论帖里
 
 ## 更新日志
+* __V4.6.0 (2015-11-08)__
+  * 增加了屏蔽帖子的功能
+  * 屏蔽用户可选择包括或排除指定版块
+  * 批量转账增加了随机金额的功能
 * __V4.5.1 (2015-11-01)__ ([详见](http://bbs.2dgal.com/read.php?tid=508450&spid=12512323))
   * 增加了争夺攻击数值合计的功能
   * 增加了自动更换神秘颜色的功能
