@@ -22,13 +22,18 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.5.1
+// @version     4.6.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
+/*
+ @todo 增加随机HB功能
+ @todo 修改脚本地址
+ @todo 添加注意事项（脚本地址修改、自定义脚本更新、屏蔽帖子自定义脚本删除）
+ */
 // 版本号
-var version = '4.5.1';
+var version = '4.6.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -41,7 +46,6 @@ var storageType = 'Default';
 var myConfig = {};
 
 /* {PartFileContent} */
-
 /**
  * KF Online主类
  */
@@ -147,7 +151,7 @@ var KFOL = {
             '.pd_cfg_main label input, .pd_cfg_main legend input, .pd_cfg_main label select { margin: 0 5px; }' +
             '.pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }' +
             '.pd_cfg_main button { vertical-align: middle; }' +
-            '.pd_cfg_main .pd_cfg_tips { text-decoration: none; cursor: help; }' +
+            '.pd_cfg_main .pd_cfg_tips { color: #51D; text-decoration: none; cursor: help; }' +
             '.pd_cfg_main .pd_cfg_tips:hover { color: #FF0000; }' +
             '#pd_config .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }' +
             '.pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }' +
@@ -1663,6 +1667,9 @@ var KFOL = {
             });
         }
         else if (location.pathname === '/thread.php') {
+            var fid = parseInt(Tools.getUrlParam('fid'));
+            if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
+            else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
             $('a.bl[href^="profile.php?action=show&uid="]').each(function () {
                 var $this = $(this);
                 var i = Tools.inFollowOrBlockUserList($this.text(), Config.blockUserList);
@@ -1673,6 +1680,13 @@ var KFOL = {
             });
         }
         else if (location.pathname === '/read.php') {
+            if (Config.blockUserForumType > 0) {
+                var matches = /fid=(\d+)/i.exec($('form[name="delatc"] > div:first > table > tbody > tr:nth-child(2) > td > a[href^="thread.php?fid="]').attr('href'));
+                if (!matches) return;
+                var fid = parseInt(matches[1]);
+                if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
+                else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
+            }
             var page = Tools.getCurrentThreadPage();
             $('.readidmsbottom > a, .readidmleft > a').each(function (index) {
                 var $this = $(this);
@@ -1705,7 +1719,7 @@ var KFOL = {
                 }
             });
         }
-        else if (Config.blockUserAtTipsEnabled && location.pathname === '/guanjianci.php') {
+        else if (location.pathname === '/guanjianci.php' && Config.blockUserAtTipsEnabled) {
             $('.kf_share1 > tbody > tr > td:last-child').each(function () {
                 var $this = $(this);
                 if (Tools.inFollowOrBlockUserList($this.text(), Config.blockUserList) > -1) {
@@ -1715,6 +1729,98 @@ var KFOL = {
             });
         }
         if (blockNum > 0) console.log('【屏蔽用户】共有{0}个项目被屏蔽'.replace('{0}', blockNum));
+    },
+
+    /**
+     * 屏蔽帖子
+     */
+    blockThread: function () {
+        if (Config.blockThreadList.length === 0) return;
+        /**
+         * 是否屏蔽帖子
+         * @param {string} title 帖子标题
+         * @param {string} userName 用户名
+         * @param {number} [fid] 版块ID
+         * @returns {boolean} 是否屏蔽
+         */
+        var isBlock = function (title, userName, fid) {
+            for (var i in Config.blockThreadList) {
+                var keyWord = Config.blockThreadList[i].keyWord;
+                var re = null;
+                if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+                    try {
+                        re = eval(keyWord);
+                    }
+                    catch (ex) {
+                        console.log(ex);
+                        continue;
+                    }
+                }
+                if (userName && Config.blockThreadList[i].userName) {
+                    if ($.inArray(userName, Config.blockThreadList[i].userName) === -1) continue;
+                }
+                if (fid) {
+                    if (Config.blockThreadList[i].includeFid) {
+                        if ($.inArray(fid, Config.blockThreadList[i].includeFid) === -1) continue;
+                    }
+                    else if (Config.blockThreadList[i].excludeFid) {
+                        if ($.inArray(fid, Config.blockThreadList[i].excludeFid) > -1) continue;
+                    }
+                }
+                if (re) {
+                    if (re.test(title)) return true;
+                }
+                else {
+                    if (title.toLowerCase().indexOf(keyWord.toLowerCase()) > -1) return true;
+                }
+            }
+            return false;
+        };
+
+        var num = 0;
+        if (KFOL.isInHomePage) {
+            $('.b_tit4 a, .b_tit4_1 a').each(function () {
+                var $this = $(this);
+                var matches = /》by：(.+)/.exec($this.attr('title'));
+                var userName = '';
+                if (matches) userName = matches[1];
+                if (isBlock($this.text(), userName)) {
+                    num++;
+                    $this.parent('li').remove();
+                }
+            });
+        }
+        else if (location.pathname === '/thread.php') {
+            var fid = parseInt(Tools.getUrlParam('fid'));
+            if (isNaN(fid) || fid <= 0) return;
+            $('.threadtit1 a[href^="read.php"]').each(function () {
+                var $this = $(this);
+                if (isBlock($this.text(), $this.closest('tr').find('td:last-child > a.bl').text(), fid)) {
+                    num++;
+                    $this.closest('tr').remove();
+                }
+            });
+        }
+        else if (location.pathname === '/read.php') {
+            if (Tools.getCurrentThreadPage() !== 1) return;
+            var $threadInfo = $('form[name="delatc"] > div:first > table > tbody');
+            var title = $threadInfo.find('tr:first-child > td > span').text();
+            if (!title) return;
+            var $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
+            if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text() !== '楼主') return;
+            var userName = $userName.text();
+            if (!userName) return;
+            var fid = 0;
+            var matches = /fid=(\d+)/i.exec($threadInfo.find('tr:nth-child(2) > td > a[href^="thread.php?fid="]').attr('href'));
+            if (matches) fid = parseInt(matches[1]);
+            if (isNaN(fid) || fid <= 0) return;
+            if (isBlock(title, userName, fid)) {
+                num++;
+                var $lou = $userName.closest('.readtext');
+                $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
+            }
+        }
+        if (num > 0) console.log('【屏蔽帖子】共有{0}个帖子被屏蔽'.replace('{0}', num));
     },
 
     /**
@@ -2355,6 +2461,7 @@ var KFOL = {
             KFOL.highlightUnReadAtTipsMsg();
         }
         if (Config.blockUserEnabled) KFOL.blockUsers();
+        if (Config.blockThreadEnabled) KFOL.blockThread();
         if (Config.followUserEnabled) KFOL.followUsers();
 
         var isGetLootAwardStarted = false;

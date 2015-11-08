@@ -246,30 +246,30 @@ var Bank = {
                 });
                 if (users.length === 0) return;
 
+                var matches = /\(手续费(\d+)%\)/.exec($('td:contains("(手续费")').text());
+                if (!matches) return;
+                var fee = parseInt(matches[1]) / 100;
+                var totalMoney = 0;
+                for (var i in users) {
+                    totalMoney += users[i][1];
+                }
+                totalMoney = Math.floor(totalMoney * (1 + fee));
+                if (!window.confirm('共计{0}名用户，总额{1}KFB，是否转账？'
+                            .replace('{0}', users.length)
+                            .replace('{1}', totalMoney)
+                    )
+                ) return;
+
                 var $tips = KFOL.showWaitMsg('正在获取存款信息中...', true);
                 $.get('hack.php?H_name=bank', function (html) {
                     KFOL.removePopTips($tips);
-                    var cash = 0, currentDeposit = 0, fee = 0;
+                    var cash = 0, currentDeposit = 0;
                     var matches = /当前所持：(-?\d+)KFB<br/i.exec(html);
                     if (!matches) return;
                     cash = parseInt(matches[1]);
                     matches = /活期存款：(-?\d+)KFB<br/i.exec(html);
                     if (!matches) return;
                     currentDeposit = parseInt(matches[1]);
-                    matches = /\(手续费(\d+)%\)<br/i.exec(html);
-                    if (!matches) return;
-                    fee = parseInt(matches[1]) / 100;
-
-                    var totalMoney = 0;
-                    for (var i in users) {
-                        totalMoney += users[i][1];
-                    }
-                    totalMoney = Math.floor(totalMoney * (1 + fee));
-                    if (!window.confirm('共计{0}名用户，总额{1}KFB，是否转账？'
-                                .replace('{0}', users.length)
-                                .replace('{1}', totalMoney)
-                        )
-                    ) return;
                     if (totalMoney > cash + currentDeposit) {
                         alert('资金不足');
                         return;

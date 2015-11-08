@@ -426,6 +426,21 @@ var ConfigMethod = {
             settings.blockUserAtTipsEnabled = typeof options.blockUserAtTipsEnabled === 'boolean' ?
                 options.blockUserAtTipsEnabled : defConfig.blockUserAtTipsEnabled;
         }
+        if (typeof options.blockUserForumType !== 'undefined') {
+            var blockUserForumType = parseInt(options.blockUserForumType);
+            if (!isNaN(blockUserForumType) && blockUserForumType >= 0 && blockUserForumType <= 2) settings.blockUserForumType = blockUserForumType;
+            else settings.blockUserForumType = defConfig.blockUserForumType;
+        }
+        if (typeof options.blockUserFidList !== 'undefined') {
+            if ($.isArray(options.blockUserFidList)) {
+                settings.blockUserFidList = [];
+                for (var i in options.blockUserFidList) {
+                    var fid = parseInt(options.blockUserFidList[i]);
+                    if (!isNaN(fid) && fid > 0) settings.blockUserFidList.push(fid);
+                }
+            }
+            else settings.blockUserFidList = defConfig.blockUserFidList;
+        }
         if (typeof options.blockUserList !== 'undefined') {
             if ($.isArray(options.blockUserList)) {
                 settings.blockUserList = [];
@@ -444,6 +459,61 @@ var ConfigMethod = {
                 }
             }
             else settings.blockUserList = defConfig.blockUserList;
+        }
+        if (typeof options.blockThreadEnabled !== 'undefined') {
+            settings.blockThreadEnabled = typeof options.blockThreadEnabled === 'boolean' ?
+                options.blockThreadEnabled : defConfig.blockThreadEnabled;
+        }
+        if (typeof options.blockThreadDefForumType !== 'undefined') {
+            var blockThreadDefForumType = parseInt(options.blockThreadDefForumType);
+            if (!isNaN(blockThreadDefForumType) && blockThreadDefForumType >= 0 && blockThreadDefForumType <= 2) settings.blockThreadDefForumType = blockThreadDefForumType;
+            else settings.blockThreadDefForumType = defConfig.blockThreadDefForumType;
+        }
+        if (typeof options.blockThreadDefFidList !== 'undefined') {
+            if ($.isArray(options.blockThreadDefFidList)) {
+                settings.blockThreadDefFidList = [];
+                for (var i in options.blockThreadDefFidList) {
+                    var fid = parseInt(options.blockThreadDefFidList[i]);
+                    if (!isNaN(fid) && fid > 0) settings.blockThreadDefFidList.push(fid);
+                }
+            }
+            else settings.blockThreadDefFidList = defConfig.blockThreadDefFidList;
+        }
+        if (typeof options.blockThreadList !== 'undefined') {
+            if ($.isArray(options.blockThreadList)) {
+                settings.blockThreadList = [];
+                for (var i in options.blockThreadList) {
+                    var obj = options.blockThreadList[i];
+                    if ($.type(obj) === 'object' && $.type(obj.keyWord) === 'string' && $.trim(obj.keyWord) !== '') {
+                        var newObj = {keyWord: obj.keyWord};
+                        var userNameList = [];
+                        if ($.isArray(obj.userName)) {
+                            for (var j in obj.userName) {
+                                var userName = $.trim(obj.userName[j]);
+                                if (userName) userNameList.push(userName);
+                            }
+                        }
+                        if (userNameList.length > 0) newObj.userName = userNameList;
+                        var includeFid = [], excludeFid = [];
+                        if ($.isArray(obj.includeFid)) {
+                            for (var j in obj.includeFid) {
+                                var fid = parseInt(obj.includeFid[j]);
+                                if (!isNaN(fid) && fid > 0) includeFid.push(fid);
+                            }
+                        }
+                        else if ($.isArray(obj.excludeFid)) {
+                            for (var j in obj.excludeFid) {
+                                var fid = parseInt(obj.excludeFid[j]);
+                                if (!isNaN(fid) && fid > 0) excludeFid.push(fid);
+                            }
+                        }
+                        if (includeFid.length > 0) newObj.includeFid = includeFid;
+                        else if (excludeFid.length > 0) newObj.excludeFid = excludeFid;
+                        settings.blockThreadList.push(newObj);
+                    }
+                }
+            }
+            else settings.blockThreadList = defConfig.blockThreadList;
         }
 
         if (typeof options.autoSaveCurrentDepositEnabled !== 'undefined') {

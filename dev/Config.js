@@ -122,8 +122,22 @@ var Config = {
     blockUserDefaultType: 0,
     // 是否屏蔽被屏蔽用户的@提醒，true：开启；false：关闭
     blockUserAtTipsEnabled: true,
+    // 屏蔽用户的版块屏蔽范围，0：所有版块；1：包括指定的版块；2：排除指定的版块
+    blockUserForumType: 0,
+    // 屏蔽用户的版块ID列表，例：[16, 41, 67, 57, 84, 92, 127, 68, 163, 182, 9]
+    blockUserFidList: [],
     // 屏蔽用户列表，格式：[{name:'用户名', type:屏蔽类型}]，例：[{name:'张三', type:0}, {name:'李四', type:1}]
     blockUserList: [],
+    // 是否开启屏蔽标题包含指定关键字的帖子的功能，true：开启；false：关闭
+    blockThreadEnabled: false,
+    // 屏蔽帖子的默认版块屏蔽范围，0：所有版块；1：包括指定的版块；2：排除指定的版块
+    blockThreadDefForumType: 0,
+    // 屏蔽帖子的默认版块ID列表，例：[16, 41, 67, 57, 84, 92, 127, 68, 163, 182, 9]
+    blockThreadDefFidList: [],
+    // 屏蔽帖子的关键字列表，格式：[{keyWord:'关键字', userName: ['用户名'], includeFid:[包括指定的版块ID], excludeFid:[排除指定的版块ID]}]
+    // 关键字可使用普通字符串或正则表达式（正则表达式请使用'/abc/'的格式），userName、includeFid和excludeFid这三项为可选
+    // 例：[{keyWord: '标题1'}, {keyWord: '标题2', userName:['用户名1', '用户名2'], includeFid: [5, 56]}, {keyWord: '/关键字A.*关键字B/i', excludeFid: [92, 127, 68]}]
+    blockThreadList: [],
     // 是否在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发，true：开启；false：关闭
     autoSaveCurrentDepositEnabled: false,
     // 在当前收入已满指定KFB额度之后自动进行活期存款，例：1000

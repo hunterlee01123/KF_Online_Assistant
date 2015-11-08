@@ -27,7 +27,18 @@ var Dialog = {
             }
         }).find('h1 > span').click(function () {
             return Dialog.close(id);
-        }).end();
+        }).end().find('legend input[type="checkbox"]').click(function () {
+            var $this = $(this);
+            var checked = $this.prop('checked');
+            if (Tools.isOpera())
+                $this.closest('fieldset').find('input, select, textarea, button').not('legend input').prop('disabled', !checked);
+            else
+                $this.closest('fieldset').prop('disabled', !checked);
+        }).end().find('input[data-disabled]').click(function () {
+            var $this = $(this);
+            var checked = $this.prop('checked');
+            $($this.data('disabled')).prop('disabled', !checked);
+        });
         $(window).on('resize.' + id, function () {
             Dialog.show(id);
         });
@@ -41,7 +52,12 @@ var Dialog = {
     show: function (id) {
         var $box = $('#' + id);
         if ($box.length === 0) return;
-        $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80);
+        $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80)
+            .end().find('legend input[type="checkbox"]').each(function () {
+                $(this).triggerHandler('click');
+            }).end().find('input[data-disabled]').each(function () {
+                $(this).triggerHandler('click');
+            });
         $box.css('top', $(window).height() / 2 - $box.height() / 2)
             .css('left', $(window).width() / 2 - $box.width() / 2)
             .fadeIn('fast');

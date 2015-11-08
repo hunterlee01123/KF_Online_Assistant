@@ -15,36 +15,36 @@ var ConfigDialog = {
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
-            '<a class="pd_cfg_tips" href="#" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子，需开启相关功能），只在论坛首页生效">[?]</a></label></legend>' +
+            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子，需开启相关功能），只在论坛首页生效">[?]</span></label></legend>' +
             '      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
-            '<a class="pd_cfg_tips" href="#" title="在首页的网页标题上显示定时模式提示的方案">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox" />自动KFB捐款</label></legend>' +
             '      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
-            '<a class="pd_cfg_tips" href="#" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
             '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
-            '之后捐款 <a class="pd_cfg_tips" href="#" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</a></label><br />' +
+            '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_donation_after_vip_enabled" type="checkbox" />在获得VIP后才进行捐款 ' +
-            '<a class="pd_cfg_tips" href="#" title="在获得VIP资格后才进行捐款，如开启此选项，将只能在首页进行捐款">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="在获得VIP资格后才进行捐款，如开启此选项，将只能在首页进行捐款">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
-            '<a class="pd_cfg_tips" href="#" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</a></label></legend>' +
+            '<span class="pd_cfg_tips" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</span></label></legend>' +
             '      <label>在<input placeholder="例：07:00-08:15,17:00-18:15" id="pd_cfg_no_auto_loot_when" maxlength="23" style="width:150px" type="text" />内不自动领取争夺奖励 ' +
-            '<a class="pd_cfg_tips" href="#" title="在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：07:00-08:15,17:00-18:15，留空表示不启用">[?]</a>' +
+            '<span class="pd_cfg_tips" title="在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：07:00-08:15,17:00-18:15，留空表示不启用">[?]</span>' +
             '</label><br />' +
             '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" />自定义怪物名称 ' +
-            '<a class="pd_cfg_tips" href="#" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_monster_name_dialog" href="#">详细设置&raquo;</a>' +
             '      <fieldset>' +
             '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
-            '<a class="pd_cfg_tips" href="#" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</a></label></legend>' +
+            '<span class="pd_cfg_tips" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</span></label></legend>' +
             '      <label><input id="pd_cfg_attack_when_zero_life_enabled" type="checkbox" />当生命值不超过低保线时进行试探攻击 ' +
-            '<a class="pd_cfg_tips" href="#" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label><br />' +
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
-            '<a class="pd_cfg_tips" href="#" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</a></label>'
+            '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label>'
                 .replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime) +
             '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
             '          <tbody>' +
@@ -57,10 +57,10 @@ var ConfigDialog = {
             '        </table>' +
             '        <label>拥有致命一击时的攻击目标<select id="pd_cfg_deadly_attack_id" style="width:130px"><option value="0">保持默认</option>' +
             '<option value="1">Lv.1：小史莱姆</option><option value="2">Lv.2：笨蛋</option><option value="3">Lv.3：大果冻史莱姆</option><option value="4">Lv.4：肉山</option>' +
-            '<option value="5">Lv.5：大魔王</option></select><a class="pd_cfg_tips" href="#" title="当拥有致命一击时的自动攻击目标">[?]</a></label>' +
+            '<option value="5">Lv.5：大魔王</option></select><span class="pd_cfg_tips" title="当拥有致命一击时的自动攻击目标">[?]</span></label>' +
             '      </fieldset>' +
             '      <label><input id="pd_cfg_auto_use_item_enabled" type="checkbox" data-disabled="#pd_cfg_auto_use_item_names" />自动使用刚掉落的道具 ' +
-            '<a class="pd_cfg_tips" href="#" title="自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，按Shift或Ctrl键可多选">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，按Shift或Ctrl键可多选">[?]</span></label><br />' +
             '      <label><select id="pd_cfg_auto_use_item_names" multiple="multiple" size="4">' +
             '<option value="被遗弃的告白信">Lv.1：被遗弃的告白信</option><option value="学校天台的钥匙">Lv.1：学校天台的钥匙</option>' +
             '<option value="TMA最新作压缩包">Lv.1：TMA最新作压缩包</option><option value="LOLI的钱包">Lv.2：LOLI的钱包</option>' +
@@ -71,102 +71,104 @@ var ConfigDialog = {
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
-            '<a class="pd_cfg_tips" href="#" title="注意：抽取神秘盒子将延长争夺奖励的领取时间">[?]</a></label></legend>' +
+            '<span class="pd_cfg_tips" title="注意：抽取神秘盒子将延长争夺奖励的领取时间">[?]</span></label></legend>' +
             '      <label>偏好的神秘盒子数字<input placeholder="例: 52,1,28,400" id="pd_cfg_favor_smbox_numbers" style="width:180px" type="text" />' +
-            '<a class="pd_cfg_tips" href="#" title="例：52,1,28,400（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空">' +
-            '[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="例：52,1,28,400（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>首页相关</legend>' +
             '      <label>@提醒<select id="pd_cfg_at_tips_handle_type" style="width:130px"><option value="no_highlight_1">取消已读提醒高亮，并在无提醒时补上消息框</option>' +
             '<option value="no_highlight_2">取消已读提醒高亮</option><option value="hide_box_1">不显示已读提醒的消息框</option><option value="hide_box_2">永不显示消息框</option>' +
             '<option value="default">保持默认</option><option value="at_change_to_cao">将@改为艹(其他和方式1相同)</option></select>' +
-            '<a class="pd_cfg_tips" href="#" title="对首页上的有人@你的消息框进行处理的方案">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_hide_none_vip_enabled" type="checkbox" />无VIP时取消高亮 ' +
-            '<a class="pd_cfg_tips" href="#" title="在无VIP时去除首页的VIP标识高亮">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="在无VIP时去除首页的VIP标识高亮">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
-            '<a class="pd_cfg_tips" href="#" title="在神秘等级升级后进行提醒，只在首页生效">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
-            '<a class="pd_cfg_tips" href="#" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox" />定期存款到期提醒 ' +
-            '<a class="pd_cfg_tips" href="#" title="在定时存款到期时进行提醒，只在首页生效">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span></label>' +
             '    </fieldset>' +
             '  </div>' +
             '  <div class="pd_cfg_panel">' +
             '    <fieldset>' +
             '      <legend>帖子列表页面相关</legend>' +
             '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
-            '显示帖子页数快捷链接 <a class="pd_cfg_tips" href="#" title="在帖子列表页面中显示帖子页数快捷链接">[?]</a></label>' +
+            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在帖子列表页面中显示帖子页数快捷链接">[?]</span></label>' +
             '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
-            '<a class="pd_cfg_tips" href="#" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br />' +
             '      <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>' +
             '<option value="20">20</option><option value="30">30</option></select>' +
-            '<a class="pd_cfg_tips" href="#" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
-            '<a class="pd_cfg_tips" href="#" title="在帖子列表中高亮今日新发表帖子的发表时间">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="在帖子列表中高亮今日新发表帖子的发表时间">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>帖子页面相关</legend>' +
             '      <label><input id="pd_cfg_adjust_thread_content_width_enabled" type="checkbox" />调整帖子内容宽度 ' +
-            '<a class="pd_cfg_tips" href="#" title="调整帖子内容宽度，使其保持一致">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span></label>' +
             '      <label style="margin-left:10px">帖子内容字体大小<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width:20px" type="text" />px ' +
-            '<a class="pd_cfg_tips" href="#" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" />自动更换神秘颜色 ' +
-            '<a class="pd_cfg_tips" href="#" title="可自动更换神秘颜色，请点击详细设置前往相应页面进行自定义设置">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="可自动更换神秘颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>' +
             '<a style="margin-left:10px" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br />' +
             '      <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width:50px" type="text" />' +
             '<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">' +
-            '<a class="pd_cfg_tips" href="#" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" />自定义各等级神秘颜色 ' +
-            '<a class="pd_cfg_tips" href="#" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_sm_color_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_modify_kf_other_domain_enabled" type="checkbox" />将绯月其它域名的链接修改为当前域名 ' +
-            '<a class="pd_cfg_tips" href="#" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox" />开启多重引用功能 ' +
-            '<a class="pd_cfg_tips" href="#" title="在帖子页面开启多重回复和多重引用功能">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="在帖子页面开启多重回复和多重引用功能">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
-            '<a class="pd_cfg_tips" href="#" title="在帖子页面开启批量购买帖子的功能">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" />显示用户备注 ' +
-            '<a class="pd_cfg_tips" href="#" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
             '      <label>默认提示消息的持续时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width:30px" type="text" />秒 ' +
-            '<a class="pd_cfg_tips" href="#" title="设置为-1表示永久显示，默认值：15">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="设置为-1表示永久显示，默认值：15">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_animation_effect_off_enabled" type="checkbox" />禁用动画效果 ' +
-            '<a class="pd_cfg_tips" href="#" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span></label><br />' +
             '      <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +
-            '<a class="pd_cfg_tips" href="#" title="默认值：10">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="默认值：10">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_show_log_link_in_page_enabled" type="checkbox" />在页面上方显示日志链接 ' +
-            '<a class="pd_cfg_tips" href="#" title="在论坛页面上方显示助手日志的链接">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="在论坛页面上方显示助手日志的链接">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox" />为侧边栏添加快捷导航 ' +
-            '<a class="pd_cfg_tips" href="#" title="为侧边栏添加快捷导航的链接">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
-            '<a class="pd_cfg_tips" href="#" title="将侧边栏修改为和手机相同的平铺样式">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" />添加自定义CSS ' +
-            '<a class="pd_cfg_tips" href="#" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" />执行自定义脚本 ' +
-            '<a class="pd_cfg_tips" href="#" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
-            '      <legend>关注和屏蔽用户</legend>' +
+            '      <legend>关注和屏蔽</legend>' +
             '      <label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
-            '<a class="pd_cfg_tips" href="#" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_follow_user_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_block_user_enabled" type="checkbox" />屏蔽用户 ' +
-            '<a class="pd_cfg_tips" href="#" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</a></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_block_user_dialog" href="#">详细设置&raquo;</a>' +
+            '<span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_block_user_dialog" href="#">详细设置&raquo;</a><br />' +
+            '      <label><input id="pd_cfg_block_thread_enabled" type="checkbox" />屏蔽帖子 ' +
+            '<span class="pd_cfg_tips" title="开启屏蔽标题包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_block_thread_dialog" href="#">详细设置&raquo;</a><br />' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_save_current_deposit_enabled" type="checkbox" />自动活期存款 ' +
-            '<a class="pd_cfg_tips" href="#" title="在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发">[?]</a></label></legend>' +
+            '<span class="pd_cfg_tips" title="在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发">[?]</span></label></legend>' +
             '      <label>在当前收入已满<input id="pd_cfg_save_current_deposit_after_kfb" maxlength="10" style="width:45px" type="text" />KFB之后 ' +
-            '<a class="pd_cfg_tips" href="#" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</span></label><br />' +
             '      <label>将<input id="pd_cfg_save_current_deposit_kfb" maxlength="10" style="width:45px" type="text" />KFB存入活期存款 ' +
-            '<a class="pd_cfg_tips" href="#" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</a></label>' +
+            '<span class="pd_cfg_tips" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</span></label>' +
             '    </fieldset>' +
             '  </div>' +
             '</div>' +
@@ -255,6 +257,11 @@ var ConfigDialog = {
             ConfigDialog.showBlockUserDialog();
         });
 
+        $dialog.find('#pd_cfg_block_thread_dialog').click(function (e) {
+            e.preventDefault();
+            ConfigDialog.showBlockThreadDialog();
+        });
+
         ConfigDialog.setValue();
         $dialog.submit(function (e) {
             e.preventDefault();
@@ -274,19 +281,6 @@ var ConfigDialog = {
                     location.reload();
                 }
             }
-        }).end().find('legend input[type="checkbox"]').click(function () {
-            var checked = $(this).prop('checked');
-            if (Tools.isOpera())
-                $(this).closest('fieldset').find('input, select, textarea, button').not('legend input').prop('disabled', !checked);
-            else
-                $(this).closest('fieldset').prop('disabled', !checked);
-        }).each(function () {
-            $(this).triggerHandler('click');
-        }).end().find('input[data-disabled]').click(function () {
-            var checked = $(this).prop('checked');
-            $($(this).data('disabled')).prop('disabled', !checked);
-        }).each(function () {
-            $(this).triggerHandler('click');
         });
 
         Dialog.show('pd_config');
@@ -353,6 +347,7 @@ var ConfigDialog = {
 
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         $('#pd_cfg_block_user_enabled').prop('checked', Config.blockUserEnabled);
+        $('#pd_cfg_block_thread_enabled').prop('checked', Config.blockThreadEnabled);
 
         $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked', Config.autoSaveCurrentDepositEnabled);
         if (Config.saveCurrentDepositAfterKfb > 0) $('#pd_cfg_save_current_deposit_after_kfb').val(Config.saveCurrentDepositAfterKfb);
@@ -429,6 +424,7 @@ var ConfigDialog = {
 
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
+        options.blockThreadEnabled = $('#pd_cfg_block_thread_enabled').prop('checked');
 
         options.autoSaveCurrentDepositEnabled = $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked');
         options.saveCurrentDepositAfterKfb = parseInt($.trim($('#pd_cfg_save_current_deposit_after_kfb').val()));
@@ -706,11 +702,12 @@ var ConfigDialog = {
             '  <button>确定</button><button>取消</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_custom_sm_color', '自定义各等级神秘颜色', html);
+        var $customSmColorList = $dialog.find('#pd_cfg_custom_sm_color_list');
         $dialog.find('.pd_cfg_btns > button:last').click(function () {
             return Dialog.close('pd_custom_sm_color');
         });
 
-        $dialog.find('#pd_cfg_custom_sm_color_list').on('keyup', '.pd_cfg_sm_color', function () {
+        $customSmColorList.on('keyup', '.pd_cfg_sm_color', function () {
             var $this = $(this);
             var color = $.trim($this.val());
             if (/^#[0-9a-fA-F]{6}$/.test(color)) {
@@ -740,13 +737,13 @@ var ConfigDialog = {
             var num = 1;
             if ($(this).is('#pd_cfg_custom_sm_color_add_btns > a:eq(1)')) num = 5;
             for (var i = 1; i <= num; i++) {
-                $('#pd_cfg_custom_sm_color_list').append(getSmColorListLine());
+                $customSmColorList.append(getSmColorListLine());
             }
             Dialog.show('pd_custom_sm_color');
         }).end().find('a:last').click(function (e) {
             e.preventDefault();
             if (window.confirm('是否清除所有设置？')) {
-                $('#pd_cfg_custom_sm_color_list').empty();
+                $customSmColorList.empty();
                 Dialog.show('pd_custom_sm_color');
             }
         });
@@ -760,13 +757,13 @@ var ConfigDialog = {
         $.each(Config.customSmColorConfigList, function (index, data) {
             smColorHtml += getSmColorListLine(data);
         });
-        $('#pd_cfg_custom_sm_color_list').html(smColorHtml);
+        $customSmColorList.html(smColorHtml);
 
         $dialog.submit(function (e) {
             e.preventDefault();
             var list = [];
             var verification = true;
-            $('#pd_cfg_custom_sm_color_list > li').each(function () {
+            $customSmColorList.find('li').each(function () {
                 var $this = $(this);
                 var $txtSmMin = $this.find('.pd_cfg_sm_min');
                 var smMin = $.trim($txtSmMin.val()).toUpperCase();
@@ -818,6 +815,8 @@ var ConfigDialog = {
         });
 
         Dialog.show('pd_custom_sm_color');
+        if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();
+        else $('#pd_cfg_custom_sm_color_add_btns > a:first').focus();
     },
 
     /**
@@ -1032,11 +1031,11 @@ var ConfigDialog = {
             '<div class="pd_cfg_main">' +
             '  <div style="margin-top:5px">' +
             '    <label><input id="pd_cfg_highlight_follow_user_thread_in_hp_enabled" type="checkbox" />高亮所关注用户的首页帖子链接 ' +
-            '<a class="pd_cfg_tips" href="#" title="高亮所关注用户在首页下的帖子链接">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="高亮所关注用户在首页下的帖子链接">[?]</span></label><br />' +
             '    <label><input id="pd_cfg_highlight_follow_user_thread_link_enabled" type="checkbox" />高亮所关注用户的帖子链接 ' +
-            '<a class="pd_cfg_tips" href="#" title="高亮所关注用户在帖子列表页面下的帖子链接">[?]</a></label><br />' +
+            '<span class="pd_cfg_tips" title="高亮所关注用户在帖子列表页面下的帖子链接">[?]</span></label><br />' +
             '  </div>' +
-            '  <ul id="pd_cfg_follow_user_list" style="margin-top:5px;width:274px;"></ul>' +
+            '  <ul id="pd_cfg_follow_user_list" style="margin-top:5px;width:274px;line-height:24px"></ul>' +
             '  <div id="pd_cfg_follow_user_btns" style="margin-top:5px;">' +
             '    <div style="display:inline-block"><a href="#">全选</a><a style="margin-left:7px" href="#">反选</a></div>' +
             '    <div style="float:right"><a style="margin-left:7px" href="#">删除</a></div>' +
@@ -1080,7 +1079,7 @@ var ConfigDialog = {
          */
         var addFollowUser = function (name) {
             $(
-                ('<li style="line-height:24px"><input type="checkbox" /><input type="text" style="width:178px;margin-left:5px" maxlength="15" value="{0}" />' +
+                ('<li><input type="checkbox" /><input type="text" style="width:178px;margin-left:5px" maxlength="15" value="{0}" />' +
                 '<a style="margin-left:7px" href="#">删除</a></li>')
                     .replace('{0}', name)
             ).appendTo($followUserList);
@@ -1116,6 +1115,7 @@ var ConfigDialog = {
                 if ($checked.length === 0) return;
                 if (window.confirm('是否删除所选用户？')) {
                     $checked.remove();
+                    Dialog.show('pd_follow_user');
                 }
             });
 
@@ -1136,11 +1136,12 @@ var ConfigDialog = {
                 }
             }
             $('#pd_cfg_add_follow_user').val('');
+            Dialog.show('pd_follow_user');
         });
 
         $dialog.find('.pd_cfg_about > a').click(function (e) {
             e.preventDefault();
-            ConfigDialog.showImportOrExportFollowOrBlockUserConfigDialog(1);
+            ConfigDialog.showCommonImportOrExportConfigDialog(1);
         });
 
         Dialog.show('pd_follow_user');
@@ -1154,13 +1155,17 @@ var ConfigDialog = {
         if ($('#pd_block_user').length > 0) return;
         var html =
             '<div class="pd_cfg_main">' +
-            '  <div style="margin-top:5px">' +
+            '  <div style="margin-top:5px;line-height:24px">' +
             '    <label>默认屏蔽类型<select id="pd_cfg_block_user_default_type"><option value="0">屏蔽主题和回帖</option>' +
             '<option value="1">仅屏蔽主题</option><option value="2">仅屏蔽回帖</option></select></label>' +
-            '<label style="margin-left:10px"><input id="pd_cfg_block_user_at_tips_enabled" type="checkbox" />屏蔽@提醒 ' +
-            '<a class="pd_cfg_tips" href="#" title="屏蔽被屏蔽用户的@提醒">[?]</a></label>' +
+            '    <label style="margin-left:10px"><input id="pd_cfg_block_user_at_tips_enabled" type="checkbox" />屏蔽@提醒 ' +
+            '<span class="pd_cfg_tips" title="屏蔽被屏蔽用户的@提醒">[?]</span></label><br />' +
+            '    <label>版块屏蔽范围<select id="pd_cfg_block_user_forum_type"><option value="0">所有版块</option><option value="1">包括指定版块</option>' +
+            '<option value="2">排除指定版块</option></select></label><br />' +
+            '    <label>版块ID列表<input id="pd_cfg_block_user_fid_list" type="text" style="width:220px" /> ' +
+            '<span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span></label>' +
             '  </div>' +
-            '  <ul id="pd_cfg_block_user_list" style="margin-top:5px;width:362px;"></ul>' +
+            '  <ul id="pd_cfg_block_user_list" style="margin-top:5px;width:362px;line-height:24px"></ul>' +
             '  <div id="pd_cfg_block_user_btns" style="margin-top:5px;">' +
             '    <div style="display:inline-block"><a href="#">全选</a><a style="margin-left:7px" href="#">反选</a></div>' +
             '    <div style="float:right"><a href="#">修改为</a><select style="margin-left:7px"><option value="0">屏蔽主题和回帖</option>' +
@@ -1182,6 +1187,12 @@ var ConfigDialog = {
             e.preventDefault();
             Config.blockUserDefaultType = $('#pd_cfg_block_user_default_type').val();
             Config.blockUserAtTipsEnabled = $('#pd_cfg_block_user_at_tips_enabled').prop('checked');
+            Config.blockUserForumType = parseInt($('#pd_cfg_block_user_forum_type').val());
+            Config.blockUserFidList = [];
+            $.each($.trim($('#pd_cfg_block_user_fid_list').val()).split(','), function (i, fid) {
+                fid = parseInt($.trim(fid));
+                if (!isNaN(fid) && fid > 0) Config.blockUserFidList.push(fid);
+            });
             Config.blockUserList = [];
             $blockUserList.find('li').each(function () {
                 var $this = $(this);
@@ -1199,6 +1210,8 @@ var ConfigDialog = {
 
         $('#pd_cfg_block_user_default_type').val(Config.blockUserDefaultType);
         $('#pd_cfg_block_user_at_tips_enabled').prop('checked', Config.blockUserAtTipsEnabled);
+        $('#pd_cfg_block_user_forum_type').val(Config.blockUserForumType);
+        $('#pd_cfg_block_user_fid_list').val(Config.blockUserFidList.join(','));
 
         /**
          * 添加屏蔽用户
@@ -1207,7 +1220,7 @@ var ConfigDialog = {
          */
         var addBlockUser = function (name, type) {
             $(
-                ('<li style="line-height:24px"><input type="checkbox" /><input type="text" style="width:150px;margin-left:5px" maxlength="15" value="{0}" />' +
+                ('<li><input type="checkbox" /><input type="text" style="width:150px;margin-left:5px" maxlength="15" value="{0}" />' +
                 '<select style="margin-left:5px"><option value="0">屏蔽主题和回帖</option><option value="1">仅屏蔽主题</option>' +
                 '<option value="2">仅屏蔽回帖</option></select><a style="margin-left:7px" href="#">删除</a></li>')
                     .replace('{0}', name)
@@ -1252,6 +1265,7 @@ var ConfigDialog = {
                 if ($checked.length === 0) return;
                 if (window.confirm('是否删除所选用户？')) {
                     $checked.remove();
+                    Dialog.show('pd_block_user');
                 }
             });
 
@@ -1273,22 +1287,208 @@ var ConfigDialog = {
                 }
             }
             $('#pd_cfg_add_block_user').val('');
+            Dialog.show('pd_block_user');
         });
-        $dialog.find('.pd_cfg_about > a').click(function (e) {
+
+        $dialog.find('#pd_cfg_block_user_forum_type').change(function () {
+            $('#pd_cfg_block_user_fid_list').prop('disabled', parseInt($(this).val()) === 0);
+        }).end().find('.pd_cfg_about > a').click(function (e) {
             e.preventDefault();
-            ConfigDialog.showImportOrExportFollowOrBlockUserConfigDialog(2);
+            ConfigDialog.showCommonImportOrExportConfigDialog(2);
         });
 
         Dialog.show('pd_block_user');
+        $('#pd_cfg_block_user_forum_type').triggerHandler('change');
         $('#pd_cfg_block_user_default_type').focus();
     },
 
     /**
-     * 显示导入/导出关注或屏蔽用户对话框
-     * @param {number} type 1：关注用户；2：屏蔽用户
+     * 显示屏蔽帖子对话框
      */
-    showImportOrExportFollowOrBlockUserConfigDialog: function (type) {
-        if ($('#pd_im_or_ex_follow_or_block_user_config').length > 0) return;
+    showBlockThreadDialog: function () {
+        if ($('#pd_block_thread').length > 0) return;
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <div style="border-bottom:1px solid #9191FF;margin-bottom:7px;padding-bottom:5px">' +
+            '    标题关键字可使用普通字符串或正则表达式，正则表达式请使用/abc/的格式，例：/关键字A.*关键字B/i<br />' +
+            '    用户名和版块ID为可选项（多个用户名或ID请用英文逗号分隔）<br />' +
+            '    <label>默认版块屏蔽范围<select id="pd_cfg_block_thread_def_forum_type"><option value="0">所有版块</option><option value="1">包括指定版块</option>' +
+            '<option value="2">排除指定版块</option></select></label>' +
+            '    <label style="margin-left:5px">默认版块ID列表<input id="pd_cfg_block_thread_def_fid_list" type="text" style="width:150px" /></label>' +
+            '  </div>' +
+            '  <table id="pd_cfg_block_thread_list" style="line-height:22px;text-align:center">' +
+            '    <tbody>' +
+            '      <tr>' +
+            '        <th style="width:187px">标题关键字</th>' +
+            '        <th style="width:132px">用户名 <span class="pd_cfg_tips" title="多个用户名请用英文逗号分隔">[?]</span></th>' +
+            '        <th style="width:105px">屏蔽范围</th>' +
+            '        <th style="width:132px">版块ID <span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span></th>' +
+            '        <th style="width:35px"></th>' +
+            '      </tr>' +
+            '    </tbody>' +
+            '  </table>' +
+            '  <div style="margin-top:5px" id="pd_cfg_block_thread_add_btns"><a href="#">增加1个</a><a href="#" style="margin-left:7px">增加5个</a>' +
+            '<a href="#" style="margin-left:7px">清除所有</a></div>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <span class="pd_cfg_about"><a href="#">导入/导出屏蔽帖子</a></span>' +
+            '  <button>确定</button><button>取消</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_block_thread', '屏蔽帖子', html, 'width:648px');
+        var $blockThreadList = $dialog.find('#pd_cfg_block_thread_list');
+
+        /**
+         * 验证设置是否正确
+         * @returns {boolean} 是否验证通过
+         */
+        var verify = function () {
+            var flag = true;
+            $blockThreadList.find('tr:gt(0)').each(function () {
+                var $this = $(this);
+                var $txtKeyWord = $this.find('td:first-child > input');
+                var keyWord = $txtKeyWord.val();
+                if ($.trim(keyWord) === '') return;
+                if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+                    try {
+                        eval(keyWord);
+                    }
+                    catch (ex) {
+                        alert('正则表达式不正确');
+                        $txtKeyWord.select();
+                        $txtKeyWord.focus();
+                        flag = false;
+                        return false;
+                    }
+                }
+            });
+            return flag;
+        };
+
+        $dialog.submit(function (e) {
+            e.preventDefault();
+            $dialog.find('.pd_cfg_btns > button:first').click();
+        }).find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
+            if (!verify()) return;
+            Config.blockThreadDefForumType = parseInt($('#pd_cfg_block_thread_def_forum_type').val());
+            Config.blockThreadDefFidList = [];
+            $.each($.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','), function (i, fid) {
+                fid = parseInt($.trim(fid));
+                if (!isNaN(fid) && fid > 0) Config.blockThreadDefFidList.push(fid);
+            });
+            Config.blockThreadList = [];
+            $blockThreadList.find('tr:gt(0)').each(function () {
+                var $this = $(this);
+                var keyWord = $this.find('td:first-child > input').val();
+                if ($.trim(keyWord) === '') return;
+                var newObj = {keyWord: keyWord};
+
+                var userNameList = [];
+                $.each($.trim($this.find('td:nth-child(2) > input').val()).split(','), function (i, userName) {
+                    userName = $.trim(userName);
+                    if (userName) userNameList.push(userName);
+                });
+                if (userNameList.length > 0) newObj.userName = userNameList;
+
+                var type = parseInt($this.find('td:nth-child(3) > select').val());
+                if (type > 0) {
+                    var fidList = [];
+                    $.each($.trim($this.find('td:nth-child(4) > input').val()).split(','), function (i, fid) {
+                        fid = parseInt($.trim(fid));
+                        if (!isNaN(fid) && fid > 0) fidList.push(fid);
+                    });
+                    if (fidList.length > 0) newObj[type === 2 ? 'excludeFid' : 'includeFid'] = fidList;
+                }
+                Config.blockThreadList.push(newObj);
+            });
+            ConfigMethod.write();
+            Dialog.close('pd_block_thread');
+        }).end().find('.pd_cfg_btns > button:last').click(function () {
+            return Dialog.close('pd_block_thread');
+        });
+
+        $blockThreadList.on('change', 'select', function () {
+            var $this = $(this);
+            $this.parent('td').next('td').find('input').prop('disabled', parseInt($this.val()) === 0);
+        }).on('click', 'td > a', function (e) {
+            e.preventDefault();
+            $(this).closest('tr').remove();
+        });
+
+        /**
+         * 添加屏蔽帖子
+         * @param {string} keyWord 标题关键字
+         * @param {string[]} userNameList 用户名
+         * @param {number} type 屏蔽范围，0：所有版块；1：包括指定版块；2：排除指定版块
+         * @param {number[]} fidList 版块ID列表
+         */
+        var addBlockThread = function (keyWord, userNameList, type, fidList) {
+            $(
+                ('<tr>' +
+                '  <td><input type="text" style="width:175px" value="{0}" /></td>' +
+                '  <td><input type="text" style="width:120px" value="{1}" /></td>' +
+                '  <td><select style="margin-left:5px"><option value="0">所有版块</option><option value="1">包括指定版块</option>' +
+                '<option value="2">排除指定版块</option></select></td>' +
+                '  <td><input type="text" style="width:120px" value="{2}" {3} /></td>' +
+                '  <td><a href="#">删除</a></td>' +
+                '</tr>')
+                    .replace('{0}', keyWord)
+                    .replace('{1}', userNameList.join(','))
+                    .replace('{2}', fidList.join(','))
+                    .replace('{3}', type === 0 ? 'disabled="disabled"' : '')
+            ).appendTo($blockThreadList)
+                .find('select').val(type);
+        };
+
+        for (var i in Config.blockThreadList) {
+            var userName = Config.blockThreadList[i].userName;
+            var type = 0;
+            var fidList = [];
+            if (typeof Config.blockThreadList[i].includeFid !== 'undefined') {
+                type = 1;
+                fidList = Config.blockThreadList[i].includeFid;
+            }
+            else if (typeof Config.blockThreadList[i].excludeFid !== 'undefined') {
+                type = 2;
+                fidList = Config.blockThreadList[i].excludeFid;
+            }
+            addBlockThread(Config.blockThreadList[i].keyWord, userName ? userName : [], type, fidList);
+        }
+
+        $('#pd_cfg_block_thread_add_btns').find('a:lt(2)').click(function (e) {
+            e.preventDefault();
+            var num = 1;
+            if ($(this).is('#pd_cfg_block_thread_add_btns > a:eq(1)')) num = 5;
+            for (var i = 1; i <= num; i++) {
+                addBlockThread('', [], parseInt($('#pd_cfg_block_thread_def_forum_type').val()), $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','));
+            }
+            Dialog.show('pd_block_thread');
+        }).end().find('a:last').click(function (e) {
+            e.preventDefault();
+            if (window.confirm('是否清除所有屏蔽关键字？')) {
+                $blockThreadList.find('tbody > tr:gt(0)').remove();
+                Dialog.show('pd_block_thread');
+            }
+        });
+
+        $dialog.find('#pd_cfg_block_thread_def_forum_type').change(function () {
+            $('#pd_cfg_block_thread_def_fid_list').prop('disabled', parseInt($(this).val()) === 0);
+        }).end().find('.pd_cfg_about > a').click(function (e) {
+            e.preventDefault();
+            ConfigDialog.showCommonImportOrExportConfigDialog(3);
+        });
+
+        Dialog.show('pd_block_thread');
+        $('#pd_cfg_block_thread_def_forum_type').val(Config.blockThreadDefForumType).focus().triggerHandler('change');
+        $('#pd_cfg_block_thread_def_fid_list').val(Config.blockThreadDefFidList.join(','));
+    },
+
+    /**
+     * 显示通用的导入/导出设置对话框
+     * @param {number} type 1：关注用户；2：屏蔽用户；3：屏蔽帖子
+     */
+    showCommonImportOrExportConfigDialog: function (type) {
+        if ($('#pd_common_im_or_ex_config').length > 0) return;
         ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
@@ -1296,16 +1496,19 @@ var ConfigDialog = {
             '    <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br />' +
             '    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
             '  </div>' +
-            '  <textarea id="pd_cfg_follow_or_block_user_config" style="width:420px;height:200px;word-break:break-all"></textarea>' +
+            '  <textarea id="pd_cfg_common_config" style="width:420px;height:200px;word-break:break-all"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
             '  <button>保存</button><button>取消</button>' +
             '</div>';
-        var $dialog = Dialog.create('pd_im_or_ex_follow_or_block_user_config', '导入或导出{0}用户'.replace('{0}', type === 2 ? '屏蔽' : '关注'), html);
+        var title = '关注用户';
+        if (type === 2) title = '屏蔽用户';
+        else if (type === 3) title = '屏蔽帖子';
+        var $dialog = Dialog.create('pd_common_im_or_ex_config', '导入或导出{0}'.replace('{0}', title), html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
             if (!window.confirm('是否导入文本框中的设置？')) return;
-            var options = $.trim($('#pd_cfg_follow_or_block_user_config').val());
+            var options = $.trim($('#pd_cfg_common_config').val());
             if (!options) return;
             try {
                 options = JSON.parse(options);
@@ -1319,14 +1522,19 @@ var ConfigDialog = {
                 return;
             }
             if (type === 2) Config.blockUserList = options;
+            else if (type === 3) Config.blockThreadList = options;
             else Config.followUserList = options;
             ConfigMethod.write();
             alert('设置已导入');
             location.reload();
         }).next('button').click(function () {
-            return Dialog.close('pd_im_or_ex_follow_or_block_user_config');
+            return Dialog.close('pd_common_im_or_ex_config');
         });
-        Dialog.show('pd_im_or_ex_follow_or_block_user_config');
-        $dialog.find('#pd_cfg_follow_or_block_user_config').val(JSON.stringify(type === 2 ? Config.blockUserList : Config.followUserList)).select();
+        Dialog.show('pd_common_im_or_ex_config');
+
+        var options = Config.followUserList;
+        if (type === 2) options = Config.blockUserList;
+        else if (type === 3) options = Config.blockThreadList;
+        $dialog.find('#pd_cfg_common_config').val(JSON.stringify(options)).select();
     }
 };
