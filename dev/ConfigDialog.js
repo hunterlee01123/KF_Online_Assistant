@@ -190,8 +190,11 @@ var ConfigDialog = {
             }
         }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除与助手有关的Cookies和本地存储数据？（不包括助手设置和日志）')) {
-                ConfigMethod.clearCache();
+            var type = window.prompt('可清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地缓存', 0);
+            if (type === null) return;
+            type = parseInt($.trim(type));
+            if (!isNaN(type) && type >= 0) {
+                ConfigDialog.clearCache(type);
                 alert('缓存已清除');
             }
         }).next().click(function (e) {
@@ -625,15 +628,20 @@ var ConfigDialog = {
 
     /**
      * 清除缓存
+     * @param {number} type 清除类别，0：全部清除；1：清除Cookies；2：清除本地缓存
      */
-    clearCache: function () {
-        for (var key in Config) {
-            if (/CookieName$/.test(key)) {
-                Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+    clearCache: function (type) {
+        if (type === 0 || type === 1) {
+            for (var key in Config) {
+                if (/CookieName$/.test(key)) {
+                    Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+                }
             }
         }
-        TmpLog.clear();
-        localStorage.removeItem(Config.multiQuoteStorageName);
+        if (type === 0 || type === 2) {
+            TmpLog.clear();
+            localStorage.removeItem(Config.multiQuoteStorageName);
+        }
     },
 
     /**

@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.6.0
+// @version     4.6.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.6.0';
+var version = '4.6.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1470,8 +1470,11 @@ var ConfigDialog = {
             }
         }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除与助手有关的Cookies和本地存储数据？（不包括助手设置和日志）')) {
-                ConfigMethod.clearCache();
+            var type = window.prompt('可清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地缓存', 0);
+            if (type === null) return;
+            type = parseInt($.trim(type));
+            if (!isNaN(type) && type >= 0) {
+                ConfigDialog.clearCache(type);
                 alert('缓存已清除');
             }
         }).next().click(function (e) {
@@ -1905,15 +1908,20 @@ var ConfigDialog = {
 
     /**
      * 清除缓存
+     * @param {number} type 清除类别，0：全部清除；1：清除Cookies；2：清除本地缓存
      */
-    clearCache: function () {
-        for (var key in Config) {
-            if (/CookieName$/.test(key)) {
-                Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+    clearCache: function (type) {
+        if (type === 0 || type === 1) {
+            for (var key in Config) {
+                if (/CookieName$/.test(key)) {
+                    Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+                }
             }
         }
-        TmpLog.clear();
-        localStorage.removeItem(Config.multiQuoteStorageName);
+        if (type === 0 || type === 2) {
+            TmpLog.clear();
+            localStorage.removeItem(Config.multiQuoteStorageName);
+        }
     },
 
     /**
@@ -3569,7 +3577,7 @@ var Item = {
                 $this.find('td:nth-child(4)').attr('width', 170).text('批量转换').prev('td').attr('width', 100).next().after('<td width="130">批量恢复</td>');
             }
             else {
-                $this.find('td:nth-child(4)').html('<a href="#">批量转换道具为能量</a>').after('<td><a href="#">批量恢复道具</a></td>');
+                $this.find('td:nth-child(4)').html('<a class="pd_highlight" href="#">批量转换道具为能量</a>').after('<td><a href="#">批量恢复道具</a></td>');
             }
         });
         $('.kf_fw_ig1:last').on('click', 'a[href="#"]', function (e) {
@@ -3801,7 +3809,7 @@ var Item = {
                     .replace('{0}', matches[1])
             );
         });
-        $('<div class="pd_item_btns"><button>转换能量</button><button>恢复道具</button><button>全选</button><button>反选</button></div>')
+        $('<div class="pd_item_btns"><button class="pd_highlight">转换能量</button><button>恢复道具</button><button>全选</button><button>反选</button></div>')
             .insertAfter('.kf_fw_ig1:eq(1)')
             .find('button:first-child')
             .click(function () {

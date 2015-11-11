@@ -127,7 +127,7 @@ var Item = {
                 $this.find('td:nth-child(4)').attr('width', 170).text('批量转换').prev('td').attr('width', 100).next().after('<td width="130">批量恢复</td>');
             }
             else {
-                $this.find('td:nth-child(4)').html('<a href="#">批量转换道具为能量</a>').after('<td><a href="#">批量恢复道具</a></td>');
+                $this.find('td:nth-child(4)').html('<a class="pd_highlight" href="#">批量转换道具为能量</a>').after('<td><a href="#">批量恢复道具</a></td>');
             }
         });
         $('.kf_fw_ig1:last').on('click', 'a[href="#"]', function (e) {
@@ -359,7 +359,7 @@ var Item = {
                     .replace('{0}', matches[1])
             );
         });
-        $('<div class="pd_item_btns"><button>转换能量</button><button>恢复道具</button><button>全选</button><button>反选</button></div>')
+        $('<div class="pd_item_btns"><button class="pd_highlight">转换能量</button><button>恢复道具</button><button>全选</button><button>反选</button></div>')
             .insertAfter('.kf_fw_ig1:eq(1)')
             .find('button:first-child')
             .click(function () {

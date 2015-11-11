@@ -86,6 +86,8 @@ def makeForMobileEdition(content):
     content = re.sub(r'(// @name\s+KF Online助手)', r'\g<1> for Mobile', content, flags=re.I)
     content = re.sub(r'(// @updateURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ForMobile.meta.js', content, flags=re.I)
     content = re.sub(r'(// @downloadURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ForMobile.user.js', content, flags=re.I)
+    content = re.sub(r"\s*\$\(window\)\.on\('resize\.'\s*\+\s*id,\s*function\s*\(\)\s*\{\n\s*Dialog\.show\(id\);\n\s*\}\);", "", content, flags=re.S | re.I)
+    content = re.sub(r"\s*\$\(window\)\.off\('resize\.'\s*\+\s*id\);", "", content, flags=re.S | re.I)
     content = content.replace('.pd_pop_box { position: fixed;', '.pd_pop_box { position: absolute;')
     content = re.sub(r"('\.pd_cfg_box\s*\{'\s*\+\n\s*'\s*position:\s*)fixed;", r"\g<1>absolute;", content, flags=re.I)
     open(releaseDirName + os.sep + forMobileFileName + userScriptExt, 'w', encoding = encoding).write(content)
