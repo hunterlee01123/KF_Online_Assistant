@@ -470,8 +470,7 @@ var Loot = {
                                     itemNameList[itemName] = gain['item'][itemName];
                                 }
                             }
-                            if (!$.isEmptyObject(itemNameList))
-                                Item.useItemsAfterBatchAttack(itemNameList);
+                            if (!$.isEmptyObject(itemNameList)) Item.useItemsAfterBatchAttack(itemNameList);
                         }
                     }
                     window.setTimeout(function () {
@@ -600,28 +599,30 @@ var Loot = {
 
         var $submit = $('input[name="submit1"][value$="领取，点击这里抢别人的"]');
         if ($submit.length > 0) {
-            var timeLog = Loot.getNextLootAwardTime();
-            if (timeLog.type >= 1) {
-                var diff = Tools.getTimeDiffInfo(timeLog.time);
-                if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-                var matches = /还有(\d+)小时领取，点击这里抢别人的/.exec($submit.val());
-                if (timeLog.type === 2 && matches) {
-                    if (matches) {
-                        if (diff.hours !== parseInt(matches[1])) return;
-                        $submit.css('width', '270px').val('还有{0}小时{1}分领取，点击这里抢别人的'.replace('{0}', diff.hours).replace('{1}', diff.minutes));
+            (function () {
+                var timeLog = Loot.getNextLootAwardTime();
+                if (timeLog.type >= 1) {
+                    var diff = Tools.getTimeDiffInfo(timeLog.time);
+                    if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
+                    var matches = /还有(\d+)小时领取，点击这里抢别人的/.exec($submit.val());
+                    if (timeLog.type === 2 && matches) {
+                        if (matches) {
+                            if (diff.hours !== parseInt(matches[1])) return;
+                            $submit.css('width', '270px').val('还有{0}小时{1}分领取，点击这里抢别人的'.replace('{0}', diff.hours).replace('{1}', diff.minutes));
+                        }
+                        else {
+                            if (diff.hours !== 0) return;
+                        }
                     }
-                    else {
-                        if (diff.hours !== 0) return;
-                    }
+                    var end1 = new Date(timeLog.time);
+                    var end2 = new Date(timeLog.time + 60 * 60 * 1000);
+                    $submit.prev().prev().before('<span class="pd_highlight">可领取时间：{0} {1}{2}</span>'
+                            .replace('{0}', Tools.getDateString(end1))
+                            .replace('{1}', Tools.getTimeString(end1, ':', false))
+                            .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
+                    );
                 }
-                var end1 = new Date(timeLog.time);
-                var end2 = new Date(timeLog.time + 60 * 60 * 1000);
-                $submit.prev().prev().before('<span class="pd_highlight">可领取时间：{0} {1}{2}</span>'
-                        .replace('{0}', Tools.getDateString(end1))
-                        .replace('{1}', Tools.getTimeString(end1, ':', false))
-                        .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
-                );
-            }
+            }());
         }
 
         var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');

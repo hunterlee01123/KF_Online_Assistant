@@ -913,9 +913,9 @@ var Item = {
             }
         });
         $('.kf_fw_ig1 > tbody > tr:gt(1)').each(function () {
-            $(this).find('td:last-child').css('width', '110px').append('<a class="pd__batch_buy_items" style="margin-left:15px" href="#">批量购买</a>');
+            $(this).find('td:last-child').css('width', '110px').append('<a class="pd_batch_buy_items" style="margin-left:15px" href="#">批量购买</a>');
         });
-        $('a.pd__batch_buy_items').click(function (e) {
+        $('a.pd_batch_buy_items').click(function (e) {
             e.preventDefault();
             KFOL.removePopTips($('.pd_pop_tips'));
             var $this = $(this);
@@ -1063,6 +1063,7 @@ var Item = {
                             itemList.push({
                                 itemId: parseInt(itemIdMatches[1]),
                                 itemLevel: parseInt(itemLevelMatches[1]),
+                                itemTypeId: itemTypeId,
                                 itemName: itemNameMatches[1]
                             });
                         }
@@ -1096,7 +1097,7 @@ var Item = {
                         var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
                         if (msgMatches) {
                             var stat = {'有效道具': 0, '无效道具': 0};
-                            var credits = Item.getCreditsViaResponse(msgMatches[1]);
+                            var credits = Item.getCreditsViaResponse(msgMatches[1], item.itemTypeId);
                             if (credits !== -1) {
                                 if ($.isEmptyObject(credits)) stat['无效道具']++;
                                 else stat['有效道具']++;
@@ -1109,15 +1110,17 @@ var Item = {
                             }
                             if (stat['有效道具'] === 0) delete stat['有效道具'];
                             if (stat['无效道具'] === 0) delete stat['无效道具'];
-                            Log.push('使用道具',
-                                '共有`1`个道具【`Lv.{0}：{1}`】使用成功'
-                                    .replace('{0}', item.itemLevel)
-                                    .replace('{1}', item.itemName),
-                                {
-                                    gain: $.extend({}, stat, {'已使用道具': 1}),
-                                    pay: {'道具': -1}
-                                }
-                            );
+                            if (credits !== -1) {
+                                Log.push('使用道具',
+                                    '共有`1`个道具【`Lv.{0}：{1}`】使用成功'
+                                        .replace('{0}', item.itemLevel)
+                                        .replace('{1}', item.itemName),
+                                    {
+                                        gain: $.extend({}, stat, {'已使用道具': 1}),
+                                        pay: {'道具': -1}
+                                    }
+                                );
+                            }
                             var logStat = '', msgStat = '';
                             for (var creditsType in stat) {
                                 logStat += '，{0}+{1}'
