@@ -35,6 +35,9 @@ var ConfigDialog = {
             '      <label>在<input placeholder="例：07:00-08:15,17:00-18:15" id="pd_cfg_no_auto_loot_when" maxlength="23" style="width:150px" type="text" />内不自动领取争夺奖励 ' +
             '<span class="pd_cfg_tips" title="在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：07:00-08:15,17:00-18:15，留空表示不启用">[?]</span>' +
             '</label><br />' +
+            '      <label><input id="pd_cfg_defer_loot_time_when_remain_attack_num_enabled" type="checkbox" data-disabled="#pd_cfg_defer_loot_time_when_remain_attack_num" />' +
+            '在剩余攻击次数不低于</label><label><input id="pd_cfg_defer_loot_time_when_remain_attack_num" maxlength="2" style="width:15px" type="text" />次时，抽盒子延长争夺时间 ' +
+            '<span class="pd_cfg_tips" title="在领取争夺奖励时，当本回合剩余攻击次数不低于指定次数的情况下，抽取神秘盒子以延长争夺时间">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" />自定义怪物名称 ' +
             '<span class="pd_cfg_tips" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_monster_name_dialog" href="#">详细设置&raquo;</a>' +
@@ -303,6 +306,8 @@ var ConfigDialog = {
 
         $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
         $('#pd_cfg_no_auto_loot_when').val(Config.noAutoLootWhen.join(','));
+        $('#pd_cfg_defer_loot_time_when_remain_attack_num_enabled').prop('checked', Config.deferLootTimeWhenRemainAttackNumEnabled);
+        $('#pd_cfg_defer_loot_time_when_remain_attack_num').val(Config.deferLootTimeWhenRemainAttackNum);
         $('#pd_cfg_custom_monster_name_enabled').prop('checked', Config.customMonsterNameEnabled);
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         $('#pd_cfg_attack_when_zero_life_enabled').prop('checked', Config.attackWhenZeroLifeEnabled);
@@ -374,6 +379,8 @@ var ConfigDialog = {
 
         options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
         options.noAutoLootWhen = $.trim($('#pd_cfg_no_auto_loot_when').val()).split(',');
+        options.deferLootTimeWhenRemainAttackNumEnabled = $('#pd_cfg_defer_loot_time_when_remain_attack_num_enabled').prop('checked');
+        options.deferLootTimeWhenRemainAttackNum = parseInt($.trim($('#pd_cfg_defer_loot_time_when_remain_attack_num').val()));
         options.customMonsterNameEnabled = $('#pd_cfg_custom_monster_name_enabled').prop('checked');
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
         options.attackWhenZeroLifeEnabled = $('#pd_cfg_attack_when_zero_life_enabled').prop('checked');
@@ -489,6 +496,21 @@ var ConfigDialog = {
                 $txtNoAutoLootWhen.focus();
                 return false;
             }
+        }
+
+        var $txtDeferLootTimeWhenRemainAttackNum = $('#pd_cfg_defer_loot_time_when_remain_attack_num');
+        var deferLootTimeWhenRemainAttackNum = parseInt($.trim($txtDeferLootTimeWhenRemainAttackNum.val()));
+        if (isNaN(deferLootTimeWhenRemainAttackNum)) {
+            alert('剩余攻击次数上限格式不正确');
+            $txtDeferLootTimeWhenRemainAttackNum.select();
+            $txtDeferLootTimeWhenRemainAttackNum.focus();
+            return false;
+        }
+        else if (deferLootTimeWhenRemainAttackNum < 1 || deferLootTimeWhenRemainAttackNum > Config.maxAttackNum) {
+            alert('剩余攻击次数上限范围在1-{0}之间'.replace('{0}', Config.maxAttackNum));
+            $txtDeferLootTimeWhenRemainAttackNum.select();
+            $txtDeferLootTimeWhenRemainAttackNum.focus();
+            return false;
         }
 
         var $txtAttackAfterTime = $('#pd_cfg_attack_after_time');

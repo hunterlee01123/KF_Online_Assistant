@@ -102,7 +102,11 @@ var ConfigMethod = {
             settings.donationAfterVipEnabled = typeof options.donationAfterVipEnabled === 'boolean' ?
                 options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
         }
-
+        if (typeof options.deferLootTimeWhenRemainAttackNum !== 'undefined') {
+            var attackNum = parseInt(options.deferLootTimeWhenRemainAttackNum);
+            if (!isNaN(attackNum) && attackNum >= 1 && attackNum <= Config.maxAttackNum) settings.deferLootTimeWhenRemainAttackNum = attackNum;
+            else settings.deferLootTimeWhenRemainAttackNum = defConfig.deferLootTimeWhenRemainAttackNum;
+        }
         if (typeof options.autoLootEnabled !== 'undefined') {
             settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
                 options.autoLootEnabled : defConfig.autoLootEnabled;
@@ -117,6 +121,11 @@ var ConfigMethod = {
             }
             else settings.noAutoLootWhen = defConfig.noAutoLootWhen;
         }
+        if (typeof options.deferLootTimeWhenRemainAttackNumEnabled !== 'undefined') {
+            settings.deferLootTimeWhenRemainAttackNumEnabled = typeof options.deferLootTimeWhenRemainAttackNumEnabled === 'boolean' ?
+                options.deferLootTimeWhenRemainAttackNumEnabled : defConfig.deferLootTimeWhenRemainAttackNumEnabled;
+        }
+
         if (typeof options.customMonsterNameEnabled !== 'undefined') {
             settings.customMonsterNameEnabled = typeof options.customMonsterNameEnabled === 'boolean' ?
                 options.customMonsterNameEnabled : defConfig.customMonsterNameEnabled;

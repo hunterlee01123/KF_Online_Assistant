@@ -994,6 +994,14 @@ var Item = {
             });
             $(document).dequeue('BatchBuyItems');
         });
+
+        $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)').each(function (index) {
+            var $this = $(this);
+            var itemIdList = [2231073, 2025284, 2025904, 2003056, 2122387, 1587342];
+            if (index < itemIdList.length) {
+                $this.html('<a href="kf_fw_ig_my.php?pro={0}">{1}</a>'.replace('{0}', itemIdList[index]).replace('{1}', $this.text()));
+            }
+        });
     },
 
     /**

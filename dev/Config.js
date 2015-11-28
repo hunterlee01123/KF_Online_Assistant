@@ -19,6 +19,10 @@ var Config = {
     autoLootEnabled: false,
     // 在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：['07:00-08:15','17:00-18:15']，留空表示不启用
     noAutoLootWhen: [],
+    // 是否在领取争夺奖励时，当本回合剩余攻击次数不低于{@link Config.deferLootTimeWhenRemainAttackNum}所设定的次数的情况下，抽取神秘盒子以延长争夺时间，true：开启；false：关闭
+    deferLootTimeWhenRemainAttackNumEnabled: false,
+    // 抽取神秘盒子以延长争夺时间的剩余攻击次数的上限
+    deferLootTimeWhenRemainAttackNum: 15,
     // 是否自定义怪物名称，true：开启；false：关闭
     customMonsterNameEnabled: false,
     // 自定义怪物名称列表，格式：{怪物ID：'自定义名称'}，例：{1:'萝莉',5:'信仰风'}

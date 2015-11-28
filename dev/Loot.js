@@ -85,17 +85,32 @@ var Loot = {
             }
             else {
                 if (/(点击这里预领KFB|已经可以领取KFB)/i.test(matches[1])) {
+                    if (Config.deferLootTimeWhenRemainAttackNumEnabled) {
+                        var remainAttackNumMatches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
+                        var remainAttackNum = 0;
+                        if (remainAttackNumMatches) remainAttackNum = parseInt(remainAttackNumMatches[1]);
+                        if (remainAttackNum >= Config.deferLootTimeWhenRemainAttackNum && !Tools.getCookie(Config.drawSmboxCookieName)) {
+                            console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
+                            KFOL.drawSmbox();
+                            if (isAutoDonation) KFOL.donation();
+                            return;
+                        }
+                    }
+
                     var gainMatches = /当前拥有\s*<span style=".+?">(\d+)<\/span>\s*预领KFB<br \/>/i.exec(html);
                     var gain = 0;
                     if (gainMatches) gain = parseInt(gainMatches[1]);
+
                     var attackLogMatches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?<br \/>)<\/td><\/tr>/i.exec(html);
                     var attackLog = '';
                     if (attackLogMatches && /发起争夺/.test(attackLogMatches[1])) {
                         attackLog = attackLogMatches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '');
                     }
+
                     var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
                     var attackedCount = -1;
                     if (attackedCountMatches) attackedCount = parseInt(attackedCountMatches[1]);
+
                     $.post('kf_fw_ig_index.php',
                         {submit1: 1, one: 1},
                         function (html) {
