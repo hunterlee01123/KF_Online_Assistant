@@ -9,7 +9,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.6.2
+// @version     4.6.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue

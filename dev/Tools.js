@@ -25,8 +25,8 @@ var Tools = {
      */
     getCookie: function (name, prefix) {
         var regex = new RegExp('(^| ){0}{1}=([^;]*)(;|$)'
-                .replace('{0}', typeof prefix === 'undefined' || prefix === null ? KFOL.uid + '_' : prefix)
-                .replace('{1}', name)
+            .replace('{0}', typeof prefix === 'undefined' || prefix === null ? KFOL.uid + '_' : prefix)
+            .replace('{1}', name)
         );
         var matches = document.cookie.match(regex);
         if (!matches) return null;

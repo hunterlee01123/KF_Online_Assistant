@@ -5,8 +5,6 @@
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
-// @updateURL   https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.meta.js
-// @downloadURL https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.user.js
 // @include     http://2dgal.com/*
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
@@ -22,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.6.2
+// @version     4.6.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.6.2';
+var version = '4.6.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -359,21 +357,21 @@ var KFOL = {
                 if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
             }, 'html');
         };
-        var donationKfb = Config.donationKfb;
-        if (/%$/.test(donationKfb)) {
+        if (/%$/.test(Config.donationKfb)) {
             $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
                 var matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
                 var income = 1;
                 if (matches) income = parseInt(matches[1]);
                 else console.log('KFB余额获取失败');
-                donationKfb = parseInt(income * parseInt(donationKfb) / 100);
+                var donationKfb = parseInt(Config.donationKfb);
+                donationKfb = parseInt(income * donationKfb / 100);
                 donationKfb = donationKfb > 0 ? donationKfb : 1;
                 donationKfb = donationKfb <= Config.maxDonationKfb ? donationKfb : Config.maxDonationKfb;
                 donationSubmit(donationKfb);
             }, 'html');
         }
         else {
-            donationSubmit(parseInt(donationKfb));
+            donationSubmit(parseInt(Config.donationKfb));
         }
     },
 

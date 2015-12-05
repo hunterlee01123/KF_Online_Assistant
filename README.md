@@ -12,7 +12,8 @@ __注：如需要改用其它版本，可先将设置及日志导出来，在安
 
 ## 安装方法
 1. __Firefox：__安装[Greasemonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/)扩展，重启浏览器后打开脚本下载地址安装脚本即可
-2. __Chrome（及各种采用Chrome内核的浏览器）：__安装[Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)扩展，然后打开脚本下载地址安装脚本即可  
+2. __Chrome（及各种采用Chrome内核的浏览器，如360、搜狗、QQ浏览器等）：__  
+安装[Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)扩展，然后打开脚本下载地址安装脚本即可  
 __（注意：安装脚本的时候请点击“安装”按钮，不要点“安装在Chrome”的按钮【[见251楼](http://bbs.2dgal.com/read.php?tid=508450&spid=12484531)】）__  
 _（各种采用了Chrome内核的国产浏览器也可到各自的应用市场里搜索Tampermonkey扩展）_
 3. __Opera：__安装[Violent monkey](https://addons.opera.com/zh-cn/extensions/details/violent-monkey/?display=zh)扩展，然后打开脚本下载地址安装脚本即可
@@ -48,7 +49,8 @@ __注：删除ScriptStorage和GlobalStorage版脚本会导致设置和日志也�
 9. __我希望能在不同时间段内采用不同的自动攻击方式（比如早上打怪时设置在距本回合结束前90分钟才进行自动攻击，而晚上打怪时则希望立即进行自动攻击），该怎么做？__  
 答：可使用自定义脚本做到，具体脚本请[参见这里](http://bbs.2dgal.com/read.php?tid=500968&spid=12318348)
 10. __试探攻击是什么？__  
-答：试探攻击是指每隔一段时间检查当前争夺剩余的KFB，当检查到KFB不超过低保值时，进行一次试探攻击以吸引怪物的攻击，在大量肉山来袭的情况下效果尤为显著。主要适用于较低等级玩家，可有效防止最终被打成低保（不过需要时间用来挂机），高等级玩家效果不太明显
+答：试探攻击是指每隔一段时间检查当前争夺剩余的KFB，当检查到KFB不超过低保值时，进行一次试探攻击以吸引怪物的攻击，在大量肉山来袭的情况下效果尤为显著。主要适用于较低等级玩家，可有效防止最终被打成低保（不过需要时间用来挂机），高等级玩家效果不太明显  
+关于修改试探攻击时间间隔的方法，[请参见此处](http://bbs.2dgal.com/read.php?tid=500968&spid=12512333)
 11. __我想在捐款时捐出当前持有KFB的一定比例，该怎么做？__  
 答：将KFB捐款额度设定为百分比即可，如捐出全部现金的话，只需设定为100%即可
 12. __IE或手机等不支持油猴脚本的浏览器可以用KFOL助手吗？__  
@@ -57,12 +59,13 @@ __注：删除ScriptStorage和GlobalStorage版脚本会导致设置和日志也�
 答：发现不正常的状况时， __请暂时不要刷新页面__，接着打开Web控制台（Firefox：菜单->开发者->Web控制台【快捷键：Ctrl+Shift+K】；Chrome：菜单->工具->Javascript控制台【快捷键：Ctrl+Shift+J】；其它：打开开发者工具栏后【可能的快捷键：F12】，切换到Console[或控制台]标签），将控制台里的信息复制或截图，并将其它有用的信息（如页面标题上的倒计时等）连同问题描述发表到讨论帖里
 
 ## 更新日志
-* __V4.6.2 (2015-11-28)__ ([详见](http://bbs.2dgal.com/read.php?tid=508450&spid=12536900))
+* __V4.6.3 (2015-12-05)__ ([详见](http://bbs.2dgal.com/read.php?tid=508450&spid=12536900))
   * 增加了屏蔽帖子的功能
   * 屏蔽用户可选择包括或排除指定版块
   * 批量转账增加了随机金额的功能
   * 修正了部分BUG
   * 增加了在剩余攻击次数不低于指定次数时抽取神秘盒子以延长争夺时间的功能
+  * 修正了道具商店样品链接错误的BUG
 * __V4.5.1 (2015-11-01)__ ([详见](http://bbs.2dgal.com/read.php?tid=508450&spid=12512323))
   * 增加了争夺攻击数值合计的功能
   * 增加了自动更换神秘颜色的功能

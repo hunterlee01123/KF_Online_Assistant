@@ -40,15 +40,18 @@ var Loot = {
                 Tools.setCookie(Config.getLootAwardCookieName, 1, Tools.getDate('+' + Config.defLootInterval + 'm'));
                 return;
             }
+
             var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
             var safeId = '';
             if (safeIdMatches) safeId = safeIdMatches[1];
+
             var deadlyAttackNum = 0;
             if (Config.deadlyAttackId > 0) {
                 var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
                 if (deadlyAttackMatches) deadlyAttackNum = parseInt(deadlyAttackMatches[1]);
                 if (deadlyAttackNum > Config.maxAttackNum) deadlyAttackNum = Config.maxAttackNum;
             }
+
             var remainingMatches = /还有(\d+)(分钟|小时)领取/i.exec(matches[1]);
             if (remainingMatches) {
                 var lootInterval = parseInt(remainingMatches[1]);
@@ -82,93 +85,93 @@ var Loot = {
                 if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
                     autoAttack(safeId, deadlyAttackNum);
                 }
+                if (isAutoDonation) KFOL.donation();
+            }
+            else if (/(点击这里预领KFB|已经可以领取KFB)/i.test(matches[1])) {
+                if (Config.deferLootTimeWhenRemainAttackNumEnabled) {
+                    var remainAttackNumMatches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
+                    var remainAttackNum = 0;
+                    if (remainAttackNumMatches) remainAttackNum = parseInt(remainAttackNumMatches[1]);
+                    if (remainAttackNum >= Config.deferLootTimeWhenRemainAttackNum && !Tools.getCookie(Config.drawSmboxCookieName)) {
+                        console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
+                        KFOL.drawSmbox();
+                        if (isAutoDonation) KFOL.donation();
+                        return;
+                    }
+                }
+
+                var gainMatches = /当前拥有\s*<span style=".+?">(\d+)<\/span>\s*预领KFB<br \/>/i.exec(html);
+                var gain = 0;
+                if (gainMatches) gain = parseInt(gainMatches[1]);
+
+                var attackLogMatches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?<br \/>)<\/td><\/tr>/i.exec(html);
+                var attackLog = '';
+                if (attackLogMatches && /发起争夺/.test(attackLogMatches[1])) {
+                    attackLog = attackLogMatches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '');
+                }
+
+                var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
+                var attackedCount = -1;
+                if (attackedCountMatches) attackedCount = parseInt(attackedCountMatches[1]);
+
+                $.post('kf_fw_ig_index.php',
+                    {submit1: 1, one: 1},
+                    function (html) {
+                        var nextTime = Tools.getDate('+' + Config.defLootInterval + 'm');
+                        Tools.setCookie(Config.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
+                        if (Config.attackWhenZeroLifeEnabled) {
+                            var nextCheckTime = Tools.getDate('+' + Config.firstCheckAttackInterval + 'm');
+                            Tools.setCookie(Config.attackCheckCookieName, nextCheckTime.getTime(), nextCheckTime);
+                            Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                        }
+                        KFOL.showFormatLog('领取争夺奖励', html);
+                        if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
+                            var attackedCountDiff = 0;
+                            if (attackedCount > -1) {
+                                var now = (new Date()).getTime();
+                                var attackedCountInfo = TmpLog.getValue(Config.attackedCountTmpLogName);
+                                if (attackedCountInfo && $.type(attackedCountInfo) === 'object' && $.type(attackedCountInfo.time) === 'number' &&
+                                    $.type(attackedCountInfo.count) === 'number' && attackedCountInfo.time > 0 && attackedCountInfo.count >= 0) {
+                                    attackedCountDiff = attackedCount - attackedCountInfo.count;
+                                    if (now - attackedCountInfo.time <= 0) attackedCountDiff = 0;
+                                    else if (now - attackedCountInfo.time >= Config.defLootInterval * 60 * 1000 * 2 && attackedCountDiff >= 20)
+                                        attackedCountDiff = 0;
+                                }
+                                TmpLog.setValue(Config.attackedCountTmpLogName, {time: now, count: attackedCount});
+                            }
+                            if (/已经预领\d+KFB/i.test(html)) {
+                                gain = 0;
+                            }
+                            else {
+                                Log.push('领取争夺奖励',
+                                    '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''),
+                                    {gain: {'KFB': gain}}
+                                );
+                            }
+                            console.log('领取争夺奖励{0}，KFB+{1}'
+                                .replace('{0}', attackedCountDiff > 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
+                                .replace('{1}', gain)
+                            );
+                            var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}'
+                                .replace('{0}', attackedCountDiff > 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
+                                .replace('{1}', gain)
+                                .replace('{2}', attackLog ? '<a href="#">查看日志</a>' : '')
+                                .replace('{3}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
+                            );
+                            $msg.find('a[href="#"]:first').click(function (e) {
+                                e.preventDefault();
+                                Loot.showAttackLogDialog(2, attackLog);
+                            });
+                            autoAttack(safeId, deadlyAttackNum);
+                            if (isAutoDonation) KFOL.donation();
+                            if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
+                        }
+                    }, 'html');
             }
             else {
-                if (/(点击这里预领KFB|已经可以领取KFB)/i.test(matches[1])) {
-                    if (Config.deferLootTimeWhenRemainAttackNumEnabled) {
-                        var remainAttackNumMatches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
-                        var remainAttackNum = 0;
-                        if (remainAttackNumMatches) remainAttackNum = parseInt(remainAttackNumMatches[1]);
-                        if (remainAttackNum >= Config.deferLootTimeWhenRemainAttackNum && !Tools.getCookie(Config.drawSmboxCookieName)) {
-                            console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
-                            KFOL.drawSmbox();
-                            if (isAutoDonation) KFOL.donation();
-                            return;
-                        }
-                    }
-
-                    var gainMatches = /当前拥有\s*<span style=".+?">(\d+)<\/span>\s*预领KFB<br \/>/i.exec(html);
-                    var gain = 0;
-                    if (gainMatches) gain = parseInt(gainMatches[1]);
-
-                    var attackLogMatches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?<br \/>)<\/td><\/tr>/i.exec(html);
-                    var attackLog = '';
-                    if (attackLogMatches && /发起争夺/.test(attackLogMatches[1])) {
-                        attackLog = attackLogMatches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '');
-                    }
-
-                    var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
-                    var attackedCount = -1;
-                    if (attackedCountMatches) attackedCount = parseInt(attackedCountMatches[1]);
-
-                    $.post('kf_fw_ig_index.php',
-                        {submit1: 1, one: 1},
-                        function (html) {
-                            var nextTime = Tools.getDate('+' + Config.defLootInterval + 'm');
-                            Tools.setCookie(Config.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
-                            if (Config.attackWhenZeroLifeEnabled) {
-                                var nextCheckTime = Tools.getDate('+' + Config.firstCheckAttackInterval + 'm');
-                                Tools.setCookie(Config.attackCheckCookieName, nextCheckTime.getTime(), nextCheckTime);
-                                Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
-                            }
-                            KFOL.showFormatLog('领取争夺奖励', html);
-                            if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
-                                var attackedCountDiff = 0;
-                                if (attackedCount > -1) {
-                                    var now = (new Date()).getTime();
-                                    var attackedCountInfo = TmpLog.getValue(Config.attackedCountTmpLogName);
-                                    if (attackedCountInfo && $.type(attackedCountInfo) === 'object' && $.type(attackedCountInfo.time) === 'number' &&
-                                        $.type(attackedCountInfo.count) === 'number' && attackedCountInfo.time > 0 && attackedCountInfo.count >= 0) {
-                                        attackedCountDiff = attackedCount - attackedCountInfo.count;
-                                        if (now - attackedCountInfo.time <= 0) attackedCountDiff = 0;
-                                        else if (now - attackedCountInfo.time >= Config.defLootInterval * 60 * 1000 * 2 && attackedCountDiff >= 20)
-                                            attackedCountDiff = 0;
-                                    }
-                                    TmpLog.setValue(Config.attackedCountTmpLogName, {time: now, count: attackedCount});
-                                }
-                                if (/已经预领\d+KFB/i.test(html)) {
-                                    gain = 0;
-                                }
-                                else {
-                                    Log.push('领取争夺奖励',
-                                        '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''),
-                                        {gain: {'KFB': gain}}
-                                    );
-                                }
-                                console.log('领取争夺奖励{0}，KFB+{1}'
-                                        .replace('{0}', attackedCountDiff > 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
-                                        .replace('{1}', gain)
-                                );
-                                var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}'
-                                        .replace('{0}', attackedCountDiff > 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
-                                        .replace('{1}', gain)
-                                        .replace('{2}', attackLog ? '<a href="#">查看日志</a>' : '')
-                                        .replace('{3}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
-                                );
-                                $msg.find('a[href="#"]:first').click(function (e) {
-                                    e.preventDefault();
-                                    Loot.showAttackLogDialog(2, attackLog);
-                                });
-                                autoAttack(safeId, deadlyAttackNum);
-                                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
-                            }
-                        }, 'html');
-                }
-                else {
-                    Tools.setCookie(Config.getLootAwardCookieName, 1, Tools.getDate('+' + Config.defLootInterval + 'm'));
-                }
+                Tools.setCookie(Config.getLootAwardCookieName, 1, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                if (isAutoDonation) KFOL.donation();
             }
-            if (isAutoDonation) KFOL.donation();
         }, 'html');
     },
 
@@ -223,8 +226,8 @@ var Loot = {
             if (!totalAttackNum) return;
             Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+' + Config.checkAutoAttackingInterval + 'm'));
             KFOL.showWaitMsg('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i><a target="_blank" href="{1}">浏览其它页面</a>'
-                    .replace('{0}', totalAttackNum)
-                    .replace('{1}', location.href)
+                .replace('{0}', totalAttackNum)
+                .replace('{1}', location.href)
                 , true);
             Loot.batchAttack({
                 type: 2,
@@ -418,12 +421,12 @@ var Loot = {
                         if (criticalStrikeNum > 0) extraMsg += (extraMsg ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
                         if (extraMsg) extraMsg = '（' + extraMsg + '）';
                         var $msg = KFOL.showMsg('<strong>{0}{1}</strong>{2}{3}'
-                                .replace('{0}', settings.type === 3 ?
-                                    '成功进行了<em>{0}</em>次试探攻击'.replace('{0}', successNum)
-                                    : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
-                                .replace('{1}', extraMsg)
-                                .replace('{2}', msgStat)
-                                .replace('{3}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
+                            .replace('{0}', settings.type === 3 ?
+                                '成功进行了<em>{0}</em>次试探攻击'.replace('{0}', successNum)
+                                : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
+                            .replace('{1}', extraMsg)
+                            .replace('{2}', msgStat)
+                            .replace('{3}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
                             , duration);
 
                         if (settings.type === 2 || count >= Config.maxAttackNum || isStop) {
@@ -458,13 +461,13 @@ var Loot = {
                         else {
                             var $result = $('.pd_result:last');
                             $result.append('<div class="pd_stat"><b>统计结果{0}：</b><br />{1}</div>'
-                                    .replace('{0}', extraMsg)
-                                    .replace('{1}', resultStat ? resultStat : '无')
+                                .replace('{0}', extraMsg)
+                                .replace('{1}', resultStat ? resultStat : '无')
                             );
                             if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
                                 $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-                                '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" />' +
-                                ' 自定义</label><br />')
+                                    '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" />' +
+                                    ' 自定义</label><br />')
                                     .prependTo($result)
                                     .find('input[name="pd_custom_attack_log"]')
                                     .click(function () {
@@ -518,10 +521,10 @@ var Loot = {
             if (!hitId) return;
             $this.parent().attr('colspan', '3')
                 .after(('<td class="pd_batch_attack" style="text-align:center"><label>' +
-                '<input style="width:15px" class="pd_input" type="text" maxlength="2" data-id="{0}" value="{1}" /> 次</label></td>')
+                    '<input style="width:15px" class="pd_input" type="text" maxlength="2" data-id="{0}" value="{1}" /> 次</label></td>')
                     .replace('{0}', hitId)
                     .replace('{1}', Config.batchAttackList[hitId] ? Config.batchAttackList[hitId] : '')
-            );
+                );
         });
         $('.pd_batch_attack .pd_input').keydown(function (e) {
             if (e.keyCode === 13) {
@@ -583,7 +586,7 @@ var Loot = {
                 if (!totalAttackNum) return;
                 if (!window.confirm('准备进行{0}次批量攻击，是否开始攻击？'.replace('{0}', totalAttackNum))) return;
                 KFOL.showWaitMsg('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i><a target="_blank" href="/">浏览其它页面</a>'
-                        .replace('{0}', totalAttackNum)
+                    .replace('{0}', totalAttackNum)
                     , true);
                 Loot.batchAttack({type: 1, totalAttackNum: totalAttackNum, attackList: attackList, safeId: safeId});
             });
@@ -632,9 +635,9 @@ var Loot = {
                     var end1 = new Date(timeLog.time);
                     var end2 = new Date(timeLog.time + 60 * 60 * 1000);
                     $submit.prev().prev().before('<span class="pd_highlight">可领取时间：{0} {1}{2}</span>'
-                            .replace('{0}', Tools.getDateString(end1))
-                            .replace('{1}', Tools.getTimeString(end1, ':', false))
-                            .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
+                        .replace('{0}', Tools.getDateString(end1))
+                        .replace('{1}', Tools.getTimeString(end1, ':', false))
+                        .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
                     );
                 }
             }());
@@ -820,7 +823,7 @@ var Loot = {
                 var attackList = {};
                 attackList[attackId] = 1;
                 KFOL.showWaitMsg('<strong>正在进行试探攻击中...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>'
-                        .replace('{0}', 1)
+                    .replace('{0}', 1)
                     , true);
                 Loot.batchAttack({
                     type: 3,
@@ -847,8 +850,8 @@ var Loot = {
                     var start = parseInt(rangeArr[0]), end = parseInt(rangeArr[1]);
                     if (minutes >= start && minutes <= end) {
                         console.log('距本回合开始已经过{0}分钟，下一次检查生命值的间隔时间为{1}分钟'
-                                .replace('{0}', minutes)
-                                .replace('{1}', Config.zeroLifeCheckAttackIntervalList[range])
+                            .replace('{0}', minutes)
+                            .replace('{1}', Config.zeroLifeCheckAttackIntervalList[range])
                         );
                         return Config.zeroLifeCheckAttackIntervalList[range];
                     }
@@ -891,7 +894,7 @@ var Loot = {
         };
         if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
             $('<div style="margin-top:5px"><label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-            '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label></div>')
+                '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label></div>')
                 .prependTo($dialog.find('.pd_cfg_main'))
                 .find('input[name="pd_custom_attack_log"]')
                 .click(function () {
@@ -963,7 +966,7 @@ var Loot = {
             if (!$.trim(oriLog)) return;
             $log.wrapInner('<div></div>');
             $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-            '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label><br />')
+                '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label><br />')
                 .prependTo($log)
                 .find('input[name="pd_custom_attack_log"]')
                 .click(function () {
