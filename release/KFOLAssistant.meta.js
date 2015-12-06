@@ -9,7 +9,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.6.3
+// @version     4.6.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT

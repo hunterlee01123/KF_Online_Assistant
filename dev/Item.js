@@ -938,7 +938,7 @@ var Item = {
             $(document).queue('BatchBuyItems', []);
             $.each(new Array(num), function (index) {
                 $(document).queue('BatchBuyItems', function () {
-                    $.get(link, function (html) {
+                    $.get(link + '&n=' + (index + 1), function (html) {
                         KFOL.showFormatLog('购买道具', html);
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
@@ -959,12 +959,14 @@ var Item = {
                         }
                         if (isStop || index === num - 1) {
                             KFOL.removePopTips($('.pd_pop_tips'));
-                            Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
-                                .replace('{0}', successNum)
-                                .replace('{1}', itemLevel)
-                                .replace('{2}', itemName)
-                                , {'道具': successNum}
-                            );
+                            if (successNum > 0) {
+                                Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', itemLevel)
+                                    .replace('{2}', itemName)
+                                    , {'道具': successNum}
+                                );
+                            }
                             console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
                                 .replace('{0}', successNum)
                                 .replace('{1}', itemLevel)
@@ -977,14 +979,16 @@ var Item = {
                                     .replace('{2}', itemName)
                                 , duration: -1
                             });
-                            $('<li><a href="#">统计购买价格</a></li>').appendTo('.pd_result:last')
-                                .find('a').click(function (e) {
-                                e.preventDefault();
-                                var $result = $(this).closest('.pd_result');
-                                $(this).parent().remove();
-                                KFOL.removePopTips($('.pd_pop_tips'));
-                                Item.statBuyItemsPrice($result, successNum);
-                            });
+                            if (successNum > 0) {
+                                $('<li><a href="#">统计购买价格</a></li>').appendTo('.pd_result:last')
+                                    .find('a').click(function (e) {
+                                    e.preventDefault();
+                                    var $result = $(this).closest('.pd_result');
+                                    $(this).parent().remove();
+                                    KFOL.removePopTips($('.pd_pop_tips'));
+                                    Item.statBuyItemsPrice($result, successNum);
+                                });
+                            }
                         }
                         window.setTimeout(function () {
                             $(document).dequeue('BatchBuyItems');

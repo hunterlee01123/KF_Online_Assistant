@@ -105,7 +105,7 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
             var matches = /(\d+)页/.exec($('.pages:eq(0) > li:last-child > a').text());
             var maxPage = matches ? parseInt(matches[1]) : 1;
             KFOL.showWaitMsg('<strong>正在统计数字中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i>'
-                    .replace('{0}', maxPage)
+                .replace('{0}', maxPage)
                 , true);
             $(document).queue('StatLottery', []);
             var floorList = [];

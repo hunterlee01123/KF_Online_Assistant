@@ -54,10 +54,10 @@ var Dialog = {
         if ($box.length === 0) return;
         $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80)
             .end().find('legend input[type="checkbox"]').each(function () {
-                $(this).triggerHandler('click');
-            }).end().find('input[data-disabled]').each(function () {
-                $(this).triggerHandler('click');
-            });
+            $(this).triggerHandler('click');
+        }).end().find('input[data-disabled]').each(function () {
+            $(this).triggerHandler('click');
+        });
         $box.css('top', $(window).height() / 2 - $box.height() / 2)
             .css('left', $(window).width() / 2 - $box.width() / 2)
             .fadeIn('fast');

@@ -22,9 +22,9 @@ var Bank = {
                     console.log('共有{0}KFB存入活期存款'.replace('{0}', money));
                     var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("当前所持：")');
                     $account.html($account.html().replace(/当前所持：-?\d+KFB/i,
-                            '当前所持：{0}KFB'.replace('{0}', cash - money)
+                        '当前所持：{0}KFB'.replace('{0}', cash - money)
                         ).replace(/活期存款：-?\d+KFB/i,
-                            '活期存款：{0}KFB'.replace('{0}', currentDeposit + money)
+                        '活期存款：{0}KFB'.replace('{0}', currentDeposit + money)
                         )
                     );
                     window.setTimeout(function () {
@@ -130,23 +130,23 @@ var Bank = {
                             KFOL.removePopTips($('.pd_pop_tips'));
                             var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("活期存款：")');
                             $account.html($account.html().replace(/活期存款：-?\d+KFB/i,
-                                    '活期存款：{0}KFB'.replace('{0}', currentDeposit - successMoney)
+                                '活期存款：{0}KFB'.replace('{0}', currentDeposit - successMoney)
                                 )
                             );
                             console.log('共有{0}名用户转账成功，共有{1}名用户转账失败，KFB-{2}'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', failNum)
-                                    .replace('{2}', successMoney)
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum)
+                                .replace('{2}', successMoney)
                             );
                             $('.pd_result').last().append('<li><b>共有<em>{0}</em>名用户转账成功{1}：</b>KFB <ins>-{2}</ins></li>'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>名用户转账失败'.replace('{0}', failNum) : '')
-                                    .replace('{2}', successMoney)
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>名用户转账失败'.replace('{0}', failNum) : '')
+                                .replace('{2}', successMoney)
                             );
                             KFOL.showMsg('<strong>共有<em>{0}</em>名用户转账成功{1}</strong><i>KFB<ins>-{2}</ins></i>'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>名用户转账失败'.replace('{0}', failNum) : '')
-                                    .replace('{2}', successMoney)
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>名用户转账失败'.replace('{0}', failNum) : '')
+                                .replace('{2}', successMoney)
                             );
                         }
                         window.setTimeout(function () {
@@ -256,8 +256,8 @@ var Bank = {
                 }
                 totalMoney = Math.floor(totalMoney * (1 + fee));
                 if (!window.confirm('共计{0}名用户，总额{1}KFB，是否转账？'
-                            .replace('{0}', users.length)
-                            .replace('{1}', totalMoney)
+                        .replace('{0}', users.length)
+                        .replace('{1}', totalMoney)
                     )
                 ) return;
 
@@ -289,7 +289,7 @@ var Bank = {
                         $(document).dequeue('Bank');
                     }
                     KFOL.showWaitMsg('<strong>正在批量转账中，请耐心等待...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
-                            .replace('{0}', users.length)
+                        .replace('{0}', users.length)
                         , true);
                     $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
                     Bank.batchTransfer(users, msg, isDeposited, currentDeposit);
@@ -341,7 +341,7 @@ var Bank = {
             interest = parseInt(matches[1]);
             if (interest > 0) {
                 $account.html(interestHtml.replace(/可获利息：\d+\(/i,
-                        '可获利息：<b class="pd_highlight">{0}</b>('.replace('{0}', interest)
+                    '可获利息：<b class="pd_highlight">{0}</b>('.replace('{0}', interest)
                     )
                 );
             }
