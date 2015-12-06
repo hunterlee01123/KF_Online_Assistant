@@ -52,8 +52,12 @@ def getMetaFileContent(content):
         raise Exception('未找到meta信息')
     return metaContent
 
-def makeDefaultEdition():
-    '''生成标准版文件'''
+def getDefaultEditionContent():
+    '''获取标准版文件内容
+
+    Returns:
+        标准版文件内容
+    '''
     partContent = ''
     for fileName in devPartFileNameList:
         partContent += open(devDirName + os.sep + fileName + '.js', 'r', encoding = encoding).read() + '\n\n'
@@ -74,6 +78,14 @@ def makeDefaultEdition():
     if num == 0: raise NoFoundReplaceStringError('标准版', 1)
     content, num  = re.subn(r'// @require.+?(// @version)', '\g<1>', content, count=1, flags=re.S | re.I)
     if num == 0: raise NoFoundReplaceStringError('标准版', 2)
+    return content
+
+def makeDefaultEdition(content):
+    '''生成标准版文件
+
+    Args:
+        content: 脚本文件内容
+    '''
     open(releaseDirName + os.sep + defaultFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成标准版脚本文件')
     open(releaseDirName + os.sep + defaultFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
@@ -158,9 +170,9 @@ def main():
     print('移动版meta文件：' + forMobileFileName + metaScriptExt)
     print('-------------------------------------------')
 
-    makeDefaultEdition()
+    content = getDefaultEditionContent()
+    makeDefaultEdition(content)
     print()
-    content = open(releaseDirName + os.sep + defaultFileName + userScriptExt, 'r', encoding = encoding).read()
     makeScriptStorageEdition(content)
     print()
     makeGlobalStorageEdition(content)
