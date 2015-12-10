@@ -10,8 +10,11 @@ var ConfigDialog = {
         ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
-            '  <div class="pd_cfg_nav"><a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
-            '<a href="#">查看日志</a><a href="#">导入/导出设置</a></div>' +
+            '  <div class="pd_cfg_nav">' +
+            '    <a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
+            '    <a href="#">查看日志</a>' +
+            '    <a href="#">导入/导出设置</a>' +
+            '  </div>' +
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
@@ -176,8 +179,11 @@ var ConfigDialog = {
             '  </div>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
-            '  <span class="pd_cfg_about"><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a> ' +
-            '<i style="color:#666;font-style:normal">(V{0})</i></span>'.replace('{0}', version) +
+            '  <span class="pd_cfg_about">' +
+            '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
+            '    <i style="color:#666;font-style:normal">(V{0})</i>'.replace('{0}', version) +
+            '    <a target="_blank" href="https://github.com/miaolapd/KF_Online_Assistant#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
+            '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_config', 'KF Online助手设置', html);

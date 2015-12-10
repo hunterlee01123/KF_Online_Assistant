@@ -11,7 +11,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.6.4
+// @version     4.6.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -19,7 +19,7 @@
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.6.4';
+var version = '4.6.5';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1305,8 +1305,11 @@ var ConfigDialog = {
         ConfigMethod.read();
         var html =
             '<div class="pd_cfg_main">' +
-            '  <div class="pd_cfg_nav"><a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
-            '<a href="#">查看日志</a><a href="#">导入/导出设置</a></div>' +
+            '  <div class="pd_cfg_nav">' +
+            '    <a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
+            '    <a href="#">查看日志</a>' +
+            '    <a href="#">导入/导出设置</a>' +
+            '  </div>' +
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
@@ -1471,8 +1474,11 @@ var ConfigDialog = {
             '  </div>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
-            '  <span class="pd_cfg_about"><a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a> ' +
-            '<i style="color:#666;font-style:normal">(V{0})</i></span>'.replace('{0}', version) +
+            '  <span class="pd_cfg_about">' +
+            '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
+            '    <i style="color:#666;font-style:normal">(V{0})</i>'.replace('{0}', version) +
+            '    <a target="_blank" href="https://github.com/miaolapd/KF_Online_Assistant#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
+            '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_config', 'KF Online助手设置', html);
@@ -4014,11 +4020,10 @@ var Item = {
                         if (stat['无效道具'] === 0) delete stat['无效道具'];
                         if (successNum > 0) {
                             Log.push('使用道具',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具使用成功{3}'
+                                '共有`{0}`个【`Lv.{1}：{2}`】道具被使用'
                                     .replace('{0}', successNum)
                                     .replace('{1}', settings.itemLevel)
-                                    .replace('{2}', settings.itemName)
-                                    .replace('{3}', failNum > 0 ? '，共有`{0}`个道具使用失败'.replace('{0}', failNum) : ''),
+                                    .replace('{2}', settings.itemName),
                                 {
                                     gain: $.extend({}, stat, {'已使用道具': successNum}),
                                     pay: {'道具': -successNum}
@@ -4037,15 +4042,15 @@ var Item = {
                                 .replace('{0}', creditsType)
                                 .replace('{1}', stat[creditsType]);
                         }
-                        console.log('共有{0}个道具使用成功，共有{1}个道具使用失败{2}'
+                        console.log('共有{0}个道具被使用{1}{2}'
                             .replace('{0}', successNum)
-                            .replace('{1}', failNum)
+                            .replace('{1}', failNum > 0 ? '，共有{0}个道具未能使用'.replace('{0}', failNum) : '')
                             .replace('{2}', logStat)
                         );
                         KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个道具使用成功{1}</strong>{2}'
+                            msg: '<strong>共有<em>{0}</em>个道具被使用{1}</strong>{2}'
                                 .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具使用失败'.replace('{0}', failNum) : '')
+                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具未能使用'.replace('{0}', failNum) : '')
                                 .replace('{2}', msgStat)
                             , duration: -1
                         });
@@ -4451,7 +4456,7 @@ var Item = {
                                     .replace('{0}', successNum)
                                     .replace('{1}', itemLevel)
                                     .replace('{2}', itemName)
-                                    , {'道具': successNum}
+                                    , {gain: {'道具': successNum}}
                                 );
                             }
                             console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
@@ -4611,7 +4616,7 @@ var Item = {
                             if (stat['无效道具'] === 0) delete stat['无效道具'];
                             if (credits !== -1) {
                                 Log.push('使用道具',
-                                    '共有`1`个道具【`Lv.{0}：{1}`】使用成功'
+                                    '共有`1`个道具【`Lv.{0}：{1}`】被使用'
                                         .replace('{0}', item.itemLevel)
                                         .replace('{1}', item.itemName),
                                     {
@@ -5537,7 +5542,7 @@ var Loot = {
             $('.kf_fw_ig1').parent().append('<div class="pd_result"><strong>攻击结果：</strong><ul></ul></div>');
         var count = 0, successNum = 0, failNum = 0, strongAttackNum = 0, criticalStrikeNum = 0;
         var gain = {'夺取KFB': 0, '经验值': 0};
-        var isStop = false;
+        var isStop = false, isRetakeSafeId = false;
         var attackLog = '', oriHtml = '', customHtml = '';
         /**
          * 攻击指定ID的怪物
@@ -5569,6 +5574,13 @@ var Loot = {
                         });
                     }
                     else if (/每次攻击间隔\d+秒/.test(msg)) {
+                        failNum++;
+                        $(document).queue('BatchAttack', function () {
+                            attack(id);
+                        });
+                    }
+                    else if (/⑧2/.test(msg)) {
+                        isRetakeSafeId = true;
                         failNum++;
                         $(document).queue('BatchAttack', function () {
                             attack(id);
@@ -5729,9 +5741,25 @@ var Loot = {
                             if (!$.isEmptyObject(itemNameList)) Item.useItemsAfterBatchAttack(itemNameList);
                         }
                     }
-                    window.setTimeout(function () {
-                        $(document).dequeue('BatchAttack');
-                    }, $.type(Config.perAttackInterval) === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
+                    if (isRetakeSafeId) {
+                        isRetakeSafeId = false;
+                        console.log('重新获取SafeID Start');
+                        $.get('kf_fw_ig_index.php', function (html) {
+                            var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
+                            var safeId = '';
+                            if (safeIdMatches) safeId = safeIdMatches[1];
+                            if (!safeId) return;
+                            settings.safeId = safeId;
+                            if (Tools.getCookie(Config.autoAttackReadyCookieName))
+                                Tools.setCookie(Config.autoAttackReadyCookieName, '2|' + safeId, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                            $(document).dequeue('BatchAttack');
+                        }, 'html');
+                    }
+                    else {
+                        window.setTimeout(function () {
+                            $(document).dequeue('BatchAttack');
+                        }, $.type(Config.perAttackInterval) === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
+                    }
                 },
                 dataType: 'html'
             });
@@ -5997,8 +6025,8 @@ var Loot = {
         if (valueArr.length !== 2) return;
         var type = parseInt(valueArr[0]);
         if (isNaN(type)) return;
-        var safeId = KFOL.getSafeId();
-        if (!safeId) safeId = valueArr[1];
+        var safeId = valueArr[1];
+        if (!safeId) safeId = KFOL.getSafeId();
         if (!safeId) return;
         if (type === 2 && Config.attackAfterTime > 0) {
             if (Loot.isAutoAttackNow())

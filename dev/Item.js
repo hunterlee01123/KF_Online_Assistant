@@ -527,11 +527,10 @@ var Item = {
                         if (stat['无效道具'] === 0) delete stat['无效道具'];
                         if (successNum > 0) {
                             Log.push('使用道具',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具使用成功{3}'
+                                '共有`{0}`个【`Lv.{1}：{2}`】道具被使用'
                                     .replace('{0}', successNum)
                                     .replace('{1}', settings.itemLevel)
-                                    .replace('{2}', settings.itemName)
-                                    .replace('{3}', failNum > 0 ? '，共有`{0}`个道具使用失败'.replace('{0}', failNum) : ''),
+                                    .replace('{2}', settings.itemName),
                                 {
                                     gain: $.extend({}, stat, {'已使用道具': successNum}),
                                     pay: {'道具': -successNum}
@@ -550,15 +549,15 @@ var Item = {
                                 .replace('{0}', creditsType)
                                 .replace('{1}', stat[creditsType]);
                         }
-                        console.log('共有{0}个道具使用成功，共有{1}个道具使用失败{2}'
+                        console.log('共有{0}个道具被使用{1}{2}'
                             .replace('{0}', successNum)
-                            .replace('{1}', failNum)
+                            .replace('{1}', failNum > 0 ? '，共有{0}个道具未能使用'.replace('{0}', failNum) : '')
                             .replace('{2}', logStat)
                         );
                         KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个道具使用成功{1}</strong>{2}'
+                            msg: '<strong>共有<em>{0}</em>个道具被使用{1}</strong>{2}'
                                 .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具使用失败'.replace('{0}', failNum) : '')
+                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具未能使用'.replace('{0}', failNum) : '')
                                 .replace('{2}', msgStat)
                             , duration: -1
                         });
@@ -964,7 +963,7 @@ var Item = {
                                     .replace('{0}', successNum)
                                     .replace('{1}', itemLevel)
                                     .replace('{2}', itemName)
-                                    , {'道具': successNum}
+                                    , {gain: {'道具': successNum}}
                                 );
                             }
                             console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
@@ -1124,7 +1123,7 @@ var Item = {
                             if (stat['无效道具'] === 0) delete stat['无效道具'];
                             if (credits !== -1) {
                                 Log.push('使用道具',
-                                    '共有`1`个道具【`Lv.{0}：{1}`】使用成功'
+                                    '共有`1`个道具【`Lv.{0}：{1}`】被使用'
                                         .replace('{0}', item.itemLevel)
                                         .replace('{1}', item.itemName),
                                     {

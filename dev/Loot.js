@@ -299,7 +299,7 @@ var Loot = {
             $('.kf_fw_ig1').parent().append('<div class="pd_result"><strong>攻击结果：</strong><ul></ul></div>');
         var count = 0, successNum = 0, failNum = 0, strongAttackNum = 0, criticalStrikeNum = 0;
         var gain = {'夺取KFB': 0, '经验值': 0};
-        var isStop = false;
+        var isStop = false, isRetakeSafeId = false;
         var attackLog = '', oriHtml = '', customHtml = '';
         /**
          * 攻击指定ID的怪物
@@ -331,6 +331,13 @@ var Loot = {
                         });
                     }
                     else if (/每次攻击间隔\d+秒/.test(msg)) {
+                        failNum++;
+                        $(document).queue('BatchAttack', function () {
+                            attack(id);
+                        });
+                    }
+                    else if (/⑧2/.test(msg)) {
+                        isRetakeSafeId = true;
                         failNum++;
                         $(document).queue('BatchAttack', function () {
                             attack(id);
@@ -491,9 +498,25 @@ var Loot = {
                             if (!$.isEmptyObject(itemNameList)) Item.useItemsAfterBatchAttack(itemNameList);
                         }
                     }
-                    window.setTimeout(function () {
-                        $(document).dequeue('BatchAttack');
-                    }, $.type(Config.perAttackInterval) === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
+                    if (isRetakeSafeId) {
+                        isRetakeSafeId = false;
+                        console.log('重新获取SafeID Start');
+                        $.get('kf_fw_ig_index.php', function (html) {
+                            var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
+                            var safeId = '';
+                            if (safeIdMatches) safeId = safeIdMatches[1];
+                            if (!safeId) return;
+                            settings.safeId = safeId;
+                            if (Tools.getCookie(Config.autoAttackReadyCookieName))
+                                Tools.setCookie(Config.autoAttackReadyCookieName, '2|' + safeId, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                            $(document).dequeue('BatchAttack');
+                        }, 'html');
+                    }
+                    else {
+                        window.setTimeout(function () {
+                            $(document).dequeue('BatchAttack');
+                        }, $.type(Config.perAttackInterval) === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
+                    }
                 },
                 dataType: 'html'
             });
@@ -759,8 +782,8 @@ var Loot = {
         if (valueArr.length !== 2) return;
         var type = parseInt(valueArr[0]);
         if (isNaN(type)) return;
-        var safeId = KFOL.getSafeId();
-        if (!safeId) safeId = valueArr[1];
+        var safeId = valueArr[1];
+        if (!safeId) safeId = KFOL.getSafeId();
         if (!safeId) return;
         if (type === 2 && Config.attackAfterTime > 0) {
             if (Loot.isAutoAttackNow())
