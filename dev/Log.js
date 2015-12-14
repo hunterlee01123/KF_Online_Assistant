@@ -228,7 +228,7 @@ var Log = {
         Log.showLogStat(dateList[curIndex]);
 
         Dialog.show('pd_log');
-        $dialog.find('.pd_cfg_btns > button:first').focus();
+        $dialog.find('input:first').focus();
     },
 
     /**

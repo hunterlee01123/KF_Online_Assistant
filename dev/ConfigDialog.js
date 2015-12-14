@@ -296,6 +296,7 @@ var ConfigDialog = {
         });
 
         Dialog.show('pd_config');
+        $dialog.find('a:first').focus();
     },
 
     /**

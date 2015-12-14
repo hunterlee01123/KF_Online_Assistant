@@ -20,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.6.5
+// @version     4.7.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.6.5';
+var version = '4.7.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -125,6 +125,7 @@ var KFOL = {
             '.pd_user_memo_tips:hover { color: #DDD; }' +
             '.pd_sm_color_select > td { position: relative; cursor: pointer; }' +
             '.pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }' +
+            '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -793,9 +794,15 @@ var KFOL = {
         if ($.trim($('.kf_share1:first').text()) !== '含有关键词 “{0}” 的内容'.replace('{0}', KFOL.userName)) return;
         var timeString = Tools.getCookie(Config.prevReadAtTipsCookieName);
         if (!timeString || !/^\d+日\d+时\d+分$/.test(timeString)) return;
-        $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function () {
+        var prevString = '';
+        $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function (index) {
             var $this = $(this);
-            if (timeString < $.trim($this.text())) $this.addClass('pd_highlight');
+            var curString = $.trim($this.text());
+            if (index === 0) prevString = curString;
+            if (timeString < curString && prevString >= curString) {
+                $this.addClass('pd_highlight');
+                prevString = curString;
+            }
             else return false;
         });
         $('.kf_share1').on('click', 'td > a', function () {
@@ -1028,7 +1035,7 @@ var KFOL = {
             '  <textarea style="width:250px;height:300px;margin:5px 0" readonly="readonly"></textarea>' +
             '</div>';
         var $dialog = Dialog.create('pd_replyer_list', '回帖者名单', html);
-        Dialog.show('pd_replyer_list');
+
         var $filterNodes = $dialog.find('#pd_replyer_list_filter input');
         $filterNodes.click(function () {
             var list = replyerList.concat();
@@ -1059,6 +1066,9 @@ var KFOL = {
             $('#pd_replyer_list_stat').html('共有<b>{0}</b>条项目'.replace('{0}', num));
         });
         $dialog.find('#pd_replyer_list_filter input:first').triggerHandler('click');
+
+        Dialog.show('pd_replyer_list');
+        $dialog.find('input:first').focus();
     },
 
     /**

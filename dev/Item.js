@@ -124,7 +124,11 @@ var Item = {
                 $this.find('td').attr('colspan', 6);
             }
             else if (index === 1) {
-                $this.find('td:nth-child(4)').attr('width', 170).text('批量转换').prev('td').attr('width', 100).next().after('<td width="130">批量恢复</td>');
+                $this.find('td:nth-child(2)').attr('width', 200)
+                    .next('td').attr('width', 100)
+                    .next('td').attr('width', 160).text('批量转换')
+                    .next('td').attr('width', 160)
+                    .before('<td width="130">批量恢复</td>');
             }
             else {
                 $this.find('td:nth-child(4)').html('<a class="pd_highlight" href="#">批量转换道具为能量</a>').after('<td><a href="#">批量恢复道具</a></td>');
@@ -135,7 +139,7 @@ var Item = {
             var $this = $(this);
             var $itemLine = $this.closest('tr'),
                 itemLevel = parseInt($itemLine.find('td:first-child').text()),
-                itemName = $itemLine.find('td:nth-child(2)').text(),
+                itemName = $itemLine.find('td:nth-child(2) > a').text(),
                 itemUsedNum = parseInt($itemLine.find('td:nth-child(3)').text()),
                 itemListUrl = $itemLine.find('td:last-child').find('a').attr('href');
             if (!itemUsedNum || itemUsedNum <= 0) {
@@ -219,6 +223,10 @@ var Item = {
                 }
             }
         });
+
+        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        Item.addSampleItemsLink($itemName);
+        Item.showItemUsedInfo($itemName.find('a'));
     },
 
     /**
@@ -573,6 +581,7 @@ var Item = {
                             var itemUsableNum = parseInt($itemUsable.text()) - successNum;
                             if (!itemUsableNum || itemUsableNum < 0) itemUsableNum = 0;
                             $itemUsable.text(itemUsableNum);
+                            Item.showItemUsedInfo(settings.$itemLine.closest('tbody').find('tr:gt(1) > td:nth-child(2) > a'));
                         }
                         if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
                         $('.pd_result:last').append('<li class="pd_stat"><b>统计结果：</b>{0}</li>'.replace('{0}', resultStat));
@@ -609,7 +618,7 @@ var Item = {
             var $this = $(this);
             var $itemLine = $this.closest('tr'),
                 itemLevel = parseInt($itemLine.find('td:first-child').text()),
-                itemName = $itemLine.find('td:nth-child(2)').text(),
+                itemName = $itemLine.find('td:nth-child(2) > a').text(),
                 itemUsableNum = parseInt($itemLine.find('td:nth-child(3)').text()),
                 itemListUrl = $itemLine.find('td:last-child').find('a').attr('href');
             if (!itemUsableNum || itemUsableNum <= 0) {
@@ -656,6 +665,11 @@ var Item = {
                 }, 'html');
             }
         });
+
+        $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)').css('width', '243px');
+        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        Item.addSampleItemsLink($itemName);
+        Item.showItemUsedInfo($itemName.find('a'));
     },
 
     /**
@@ -920,7 +934,7 @@ var Item = {
             var $this = $(this);
             var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
             if (!itemLevel) return;
-            var itemName = $this.closest('tr').find('td:nth-child(2)').text();
+            var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
             if (!itemName) return;
             var link = $this.prev('a').attr('href');
             if (!link) return;
@@ -998,13 +1012,10 @@ var Item = {
             $(document).dequeue('BatchBuyItems');
         });
 
-        $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)').each(function (index) {
-            var $this = $(this);
-            var itemIdList = [2025284, 2231073, 2025904, 2003056, 2122387, 1587342];
-            if (index < itemIdList.length) {
-                $this.html('<a href="kf_fw_ig_my.php?pro={0}">{1}</a>'.replace('{0}', itemIdList[index]).replace('{1}', $this.text()));
-            }
-        });
+        $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)').css('width', '243px');
+        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        Item.addSampleItemsLink($itemName);
+        Item.showItemUsedInfo($itemName.find('a'));
     },
 
     /**
@@ -1167,5 +1178,86 @@ var Item = {
             $(document).dequeue('UseItemList');
         };
         $(document).dequeue('GetItemList');
+    },
+
+    /**
+     * 添加道具样品的链接
+     * @param {jQuery} $nodes 道具名称的节点列表
+     */
+    addSampleItemsLink: function ($nodes) {
+        $nodes.each(function () {
+            var $this = $(this);
+            var itemName = $.trim($this.text());
+            if (itemName && typeof Config.sampleItemIdList[itemName] !== 'undefined') {
+                $this.html('<a href="kf_fw_ig_my.php?pro={0}">{1}</a>'.replace('{0}', Config.sampleItemIdList[itemName]).replace('{1}', itemName));
+            }
+        });
+    },
+
+    /**
+     * 获取指定道具的使用上限个数
+     * @param {string} itemName 指定道具名称
+     * @returns {number} 道具的使用上限个数
+     */
+    getItemMaxUsedNum: function (itemName) {
+        switch (itemName) {
+            case '蕾米莉亚同人漫画':
+            case '十六夜同人漫画':
+                return 50;
+            case '档案室钥匙':
+            case '傲娇LOLI娇蛮音CD':
+                return 30;
+            case '整形优惠卷':
+            case '消逝之药':
+                return 10;
+            default:
+                return -1;
+        }
+    },
+
+    /**
+     * 获取道具使用情况
+     * @param {jQuery} $links 道具名称的链接列表
+     */
+    showItemUsedInfo: function ($links) {
+        $.get('kf_fw_ig_index.php', function (html) {
+            var itemUsedNumList = {};
+
+            var matches = /争夺燃烧\s*\d+\(\+(\d+)\)\s*点/.exec(html);
+            if (matches) itemUsedNumList['蕾米莉亚同人漫画'] = parseInt(matches[1]);
+
+            matches = /争夺暴击几率\s*(\d+)\s*%/.exec(html);
+            if (matches) itemUsedNumList['整形优惠卷'] = Math.floor(parseInt(matches[1]) / 3);
+
+            matches = /争夺暴击比例\s*\d+\(\+(\d+)\)\s*%/.exec(html);
+            if (matches) itemUsedNumList['档案室钥匙'] = Math.floor(parseInt(matches[1]) / 10);
+
+            matches = /命中\s*\d+\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
+            if (matches) {
+                itemUsedNumList['十六夜同人漫画'] = Math.floor(parseInt(matches[1]) / 3);
+                itemUsedNumList['傲娇LOLI娇蛮音CD'] = parseInt(matches[2]);
+            }
+
+            matches = /防御\s*(\d+)\s*%/.exec(html);
+            if (matches) itemUsedNumList['消逝之药'] = Math.floor(parseInt(matches[1]) / 7);
+
+            $links.next('.pd_used_item_info').remove();
+            $links.each(function () {
+                var $this = $(this);
+                var itemName = $this.text();
+                if (typeof itemUsedNumList[itemName] === 'undefined') return;
+                var usedNum = itemUsedNumList[itemName];
+                var maxUsedNum = Item.getItemMaxUsedNum(itemName);
+                var nextSuccessPercent = 0;
+                if (usedNum > maxUsedNum) nextSuccessPercent = 0;
+                else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
+                $this.after('<span class="pd_used_item_info" title="下个道具使用成功几率：{0}">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
+                    .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
+                    .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
+                    .replace('{2}', usedNum)
+                    .replace('{3}', maxUsedNum)
+                );
+            });
+        });
     }
 };

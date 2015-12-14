@@ -900,9 +900,14 @@ var Loot = {
         if (matches) criticalStrikeNum = matches.length;
         var html =
             '<div class="pd_cfg_main">' +
+            '<div style="margin-top:5px">' +
+            '  <label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" checked="checked" /> 原版</label>' +
+            '  <label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" /> 自定义</label>' +
+            '</div>' +
             '  <div id="pd_attack_log_content" class="pd_stat"></div>' +
             '</div>';
         var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html);
+
         /**
          * 显示日志
          * @param {string} log 攻击日志
@@ -915,45 +920,45 @@ var Loot = {
             if (type === 1) log += '<br /><b>统计结果{0}：</b><br />'.replace('{0}', extraLog) + (stat ? stat : '无');
             $dialog.find('#pd_attack_log_content').html(log);
         };
-        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
-            $('<div style="margin-top:5px"><label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-                '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label></div>')
-                .prependTo($dialog.find('.pd_cfg_main'))
-                .find('input[name="pd_custom_attack_log"]')
-                .click(function () {
-                    var content = '';
-                    if ($(this).val() === 'custom') {
-                        var customLog = log;
-                        $.each(Config.customMonsterNameList, function (id, name) {
-                            var oriName = Loot.getMonsterNameById(parseInt(id));
-                            if (type === 2) {
-                                customLog = customLog.replace(
-                                    new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
-                                    '[{0}]对'.replace('{0}', name)
-                                );
-                            }
-                            else {
-                                customLog = customLog.replace(
-                                    new RegExp('对\\[{0}\\]'.replace('{0}', oriName), 'g'),
-                                    '对[{0}]'.replace('{0}', name)
-                                );
-                            }
-                        });
-                        content = customLog;
+
+        $dialog.find('input[name="pd_custom_attack_log"]').click(function () {
+            var content = '';
+            if ($(this).val() === 'custom') {
+                var customLog = log;
+                $.each(Config.customMonsterNameList, function (id, name) {
+                    var oriName = Loot.getMonsterNameById(parseInt(id));
+                    if (type === 2) {
+                        customLog = customLog.replace(
+                            new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
+                            '[{0}]对'.replace('{0}', name)
+                        );
                     }
                     else {
-                        content = log;
+                        customLog = customLog.replace(
+                            new RegExp('对\\[{0}\\]'.replace('{0}', oriName), 'g'),
+                            '对[{0}]'.replace('{0}', name)
+                        );
                     }
-                    showLog(content);
-                })
-                .end()
-                .find('input[value="custom"]')
+                });
+                content = customLog;
+            }
+            else {
+                content = log;
+            }
+            showLog(content);
+        });
+
+        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
+            $dialog.find('input[name="pd_custom_attack_log"][value="custom"]')
+                .prop('checked', true)
                 .triggerHandler('click');
         }
         else {
+            $dialog.find('input[name="pd_custom_attack_log"][value="custom"]').prop('disabled', true);
             showLog(log);
         }
         Dialog.show('pd_attack_log');
+        $dialog.find('input:first').focus();
     },
 
     /**
