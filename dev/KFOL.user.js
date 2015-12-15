@@ -126,6 +126,8 @@ var KFOL = {
             '.pd_sm_color_select > td { position: relative; cursor: pointer; }' +
             '.pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }' +
             '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
+            '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; }' +
+            '#pd_smile_panel img { margin: 3px; cursor: pointer; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -2361,6 +2363,76 @@ var KFOL = {
     },
 
     /**
+     * 在帖子页面添加更多表情的链接
+     */
+    addMoreSmileLink: function () {
+        /**
+         * 添加表情代码
+         * @param {string} id 表情ID
+         */
+        var addSmileCode = function (id) {
+            var textArea = $('textarea[name="atc_content"]').get(0);
+            if (!textArea) return;
+            var code = '[s:' + id + ']';
+            if (typeof textArea.selectionStart !== 'undefined') {
+                var prePos = textArea.selectionStart;
+                textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(prePos);
+                textArea.selectionStart = prePos + code.length;
+                textArea.selectionEnd = prePos + code.length;
+            }
+            else {
+                textArea.value += code;
+            }
+            textArea.focus();
+        };
+
+        var $parent = $('input[name="diy_guanjianci"]').parent();
+        $parent.on('click', 'a[href="javascript:;"]', function (e) {
+            e.preventDefault();
+            var id = $(this).data('id');
+            if (id) addSmileCode(id);
+        }).find('a[onclick^="javascript:addsmile"]').each(function () {
+            var $this = $(this);
+            var matches = /addsmile\((\d+)\)/i.exec($this.attr('onclick'));
+            if (matches) {
+                $this.data('id', matches[1]).removeAttr('onclick').attr('href', 'javascript:;');
+            }
+        });
+
+        $('<a class="pd_highlight" href="#">[更多]</a>')
+            .appendTo($parent)
+            .click(function (e) {
+                e.preventDefault();
+                var $this = $(this);
+                var $panel = $('#pd_smile_panel');
+                if ($panel.length > 0) {
+                    $this.text('[更多]');
+                    $panel.remove();
+                    return;
+                }
+                $this.text('[关闭]');
+
+                var smileIdList = ['48', '35', '34', '33', '32', '31', '30', '29', '28', '27', '26', '36', '37', '47', '46', '45', '44', '43', '42', '41', '40',
+                    '39', '38', '25', '24', '11', '10', '09', '08', '01', '02', '03', '04', '05', '06', '12', '13', '23', '22', '21', '20', '19', '18', '17', '16',
+                    '15', '14', '07'];
+                var html = '';
+                $.each(smileIdList, function (i, id) {
+                    html += '<img src="{0}/post/smile/em/em{1}.gif" alt="[表情]" data-id="{1}" />'.replace('{0}', imgpath).replace(/\{1\}/g, id);
+                });
+                html = '<div class="pd_panel" id="pd_smile_panel" style="width:308px;height:185px;opacity:0.9;">' + html + '</div>';
+
+                var offset = $parent.offset();
+                $panel = $(html).appendTo('body');
+                $panel.css('top', offset.top + $parent.height() + 4)
+                    .css('left', offset.left + $parent.width() - $panel.width() + 9)
+                    .on('click', 'img', function () {
+                        var id = $(this).data('id');
+                        if (id) addSmileCode(id);
+                    });
+            });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -2403,6 +2475,7 @@ var KFOL = {
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
             KFOL.addCopyCodeLink();
+            KFOL.addMoreSmileLink();
         }
         else if (location.pathname === '/thread.php') {
             if (Config.highlightNewPostEnabled) KFOL.highlightNewPost();

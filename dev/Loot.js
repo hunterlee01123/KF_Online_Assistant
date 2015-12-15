@@ -692,7 +692,14 @@ var Loot = {
             $lootInfo.css('position', 'relative');
             $('<a style="position:absolute;top:4px;right:5px;" href="#">[合计]</a>').appendTo($lootInfo).click(function (e) {
                 e.preventDefault();
-                if ($('#pd_attack_sum').length > 0) return;
+                var $this = $(this);
+                var $panel = $('#pd_attack_sum_panel');
+                if ($panel.length > 0) {
+                    $this.text('[合计]');
+                    $panel.remove();
+                    return;
+                }
+                $this.text('[关闭]');
 
                 var attackNum = 0, attackBurnNum = 0, strongAttackPercent = 0, deadlyAttackPercent = 1.5;
                 var content = $lootInfo.html();
@@ -704,37 +711,36 @@ var Loot = {
                 if (matches) strongAttackPercent = parseInt(matches[1]) / 100;
 
                 var html =
-                    '<div class="pd_cfg_main">' +
-                    '  <table style="text-align:center">' +
-                    '    <tbody>' +
-                    '      <tr><th style="width:95px"></th><th style="width:120px">正常</th><th style="width:120px">致命一击(如果有)</th></tr>' +
-                    '      <tr>' +
-                    '        <th style="text-align:left">普通攻击</th>' +
-                    '        <td class="pd_custom_tips" title="争夺攻击+争夺燃烧">{0}+{1}={2}</td>'
+                    '<table class="pd_panel" id="pd_attack_sum_panel" style="text-align:center;opacity:0.9;padding:0 5px">' +
+                    '  <tbody>' +
+                    '    <tr>' +
+                    '      <th style="width:95px;text-align:left">攻击|攻击+燃烧</th>' +
+                    '      <th style="width:120px">正常</th>' +
+                    '      <th style="width:120px">致命一击(如果有)</th>' +
+                    '    </tr>' +
+                    '    <tr>' +
+                    '      <th style="text-align:left">普通攻击</th>' +
+                    '      <td class="pd_custom_tips" title="争夺攻击+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', attackNum)
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', attackNum + attackBurnNum) +
-                    '        <td class="pd_custom_tips" title="争夺攻击×150%+争夺燃烧">{0}+{1}={2}</td>'
+                        .replace('{1}', attackNum + attackBurnNum) +
+                    '      <td class="pd_custom_tips" title="争夺攻击×150%+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', Math.round(attackNum * deadlyAttackPercent))
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', Math.round(attackNum * deadlyAttackPercent) + attackBurnNum) +
-                    '      </tr>' +
-                    '      <tr>' +
-                    '        <th style="text-align:left">暴击(如果有)</th>' +
-                    '        <td class="pd_custom_tips" title="争夺攻击×暴击比例+争夺燃烧">{0}+{1}={2}</td>'
+                        .replace('{1}', Math.round(attackNum * deadlyAttackPercent) + attackBurnNum) +
+                    '    </tr>' +
+                    '    <tr>' +
+                    '      <th style="text-align:left">暴击(如果有)</th>' +
+                    '      <td class="pd_custom_tips" title="争夺攻击×暴击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', Math.round(attackNum * strongAttackPercent))
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', Math.round(attackNum * strongAttackPercent) + attackBurnNum) +
-                    '        <td class="pd_custom_tips" title="争夺攻击×暴击比例×150%+争夺燃烧">{0}+{1}={2}</td>'
+                        .replace('{1}', Math.round(attackNum * strongAttackPercent) + attackBurnNum) +
+                    '      <td class="pd_custom_tips" title="争夺攻击×暴击比例×150%+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent))
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent) + attackBurnNum) +
-                    '      </tr>' +
-                    '    </tbody>' +
-                    '  </table>' +
-                    '</div>';
-                Dialog.create('pd_attack_sum', '攻击合计', html);
-                Dialog.show('pd_attack_sum');
+                        .replace('{1}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent) + attackBurnNum) +
+                    '    </tr>' +
+                    '  </tbody>' +
+                    '</table>';
+                var offset = $this.offset();
+                $panel = $(html).appendTo('body');
+                $panel.css('top', offset.top - $panel.height() - 6).css('left', offset.left + $this.width() - $panel.width() - 6);
             });
         }
     },
