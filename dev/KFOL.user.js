@@ -140,7 +140,6 @@ var KFOL = {
             '}' +
             '.pd_cfg_box h1 {text-align: center; font-size: 14px; background-color: #9191FF; color: #FFF; line-height: 2em; margin: 0; padding-left: 20px; }' +
             '.pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }' +
-            '#pd_log { width: 600px; }' +
             '#pd_custom_sm_color { width: 360px; }' +
             '.pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }' +
             '.pd_cfg_nav a { margin-left: 10px; }' +
@@ -167,6 +166,7 @@ var KFOL = {
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
                 /* 日志对话框 */
+            '#pd_log { width: 680px; }' +
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
             '.pd_log_nav a { display: inline-block; }' +
             '.pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }' +

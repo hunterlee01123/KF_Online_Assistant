@@ -261,6 +261,7 @@ var Log = {
                 return a.time > b.time;
             });
         }
+
         var content = '', curType = '';
         $.each(logList, function (index, key) {
             if (typeof key.time === 'undefined' || typeof key.type === 'undefined' || typeof key.action === 'undefined') return;
@@ -280,6 +281,7 @@ var Log = {
                     .replace('{1}', key.type)
                     .replace('{2}', key.action.replace(/`([^`]+?)`/g, '<b style="color:#F00">$1</b>'));
             }
+
             var stat = '';
             if ($.type(key.gain) === 'object' && !$.isEmptyObject(key.gain)) {
                 stat += '，';
@@ -307,8 +309,10 @@ var Log = {
                     }
                 }
             }
+
             content += stat + '</p>';
         });
+
         return content;
     },
 
@@ -329,6 +333,7 @@ var Log = {
      */
     getLogStat: function (date, logStatType) {
         var log = {};
+
         if (logStatType === 'custom') {
             var dateList = Tools.getObjectKeyList(Log.log, 1);
             var minDate = new Date(date);
@@ -346,7 +351,8 @@ var Log = {
         else {
             log[date] = Log.log[date];
         }
-        var income = {}, expense = {}, profit = {}, smBox = [], loot = [];
+
+        var income = {}, expense = {}, profit = {}, smBoxGain = [], lootGain = [], lootItemGain = {};
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
@@ -357,10 +363,17 @@ var Log = {
                         else income[k] += key.gain[k];
                     }
                     if (key.type === '领取争夺奖励' && typeof key.gain['KFB'] !== 'undefined') {
-                        loot.push(key.gain['KFB']);
+                        lootGain.push(key.gain['KFB']);
+                    }
+                    else if ((key.type === '批量攻击' || key.type === '试探攻击') && $.type(key.gain['item']) === 'object') {
+                        for (var itemName in key.gain['item']) {
+                            var num = parseInt(key.gain['item'][itemName]);
+                            if (typeof lootItemGain[itemName] === 'undefined') lootItemGain[itemName] = num;
+                            else lootItemGain[itemName] += num;
+                        }
                     }
                     else if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
-                        smBox.push(key.gain['KFB']);
+                        smBoxGain.push(key.gain['KFB']);
                     }
                 }
                 if ($.type(key.pay) === 'object') {
@@ -372,6 +385,12 @@ var Log = {
                 }
             });
         }
+
+        /**
+         * 为统计项目排序
+         * @param {{}} obj 统计结果列表
+         * @returns {string[]} 经过排序项目列表
+         */
         var sortStatItemList = function (obj) {
             var sortTypeList = ['KFB', '经验值', '能量', 'VIP小时', '贡献', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率',
                 '防御', '道具', '已使用道具', '有效道具', '无效道具', '卡片'];
@@ -381,9 +400,9 @@ var Log = {
             });
             return list;
         };
+
         var content = '';
         content += '<strong>收获：</strong>';
-        sortStatItemList(income);
         $.each(sortStatItemList(income), function (index, key) {
             profit[key] = income[key];
             content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', income[key].toLocaleString());
@@ -398,38 +417,52 @@ var Log = {
         $.each(sortStatItemList(profit), function (index, key) {
             content += '<i>{0}{1}</i> '.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(profit[key]));
         });
+
         if (Config.autoLootEnabled) {
             var lootIncome = 0, minLoot = 0, maxLoot = 0;
-            $.each(loot, function (index, kfb) {
+            $.each(lootGain, function (index, kfb) {
                 lootIncome += kfb;
                 if (index === 0) minLoot = kfb;
                 if (minLoot > kfb) minLoot = kfb;
                 if (maxLoot < kfb) maxLoot = kfb;
             });
-            content += ('<br /><strong>争夺收获(KFB)：</strong><i>回合数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
+            content += ('<br /><strong>争夺KFB收获：</strong><i>回合数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
             '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', loot.length.toLocaleString())
+                .replace('{0}', lootGain.length.toLocaleString())
                 .replace('{1}', lootIncome.toLocaleString())
-                .replace('{2}', loot.length > 0 ? (lootIncome / loot.length).toFixed(2).toLocaleString() : 0)
+                .replace('{2}', lootGain.length > 0 ? (lootIncome / lootGain.length).toFixed(2).toLocaleString() : 0)
                 .replace('{3}', minLoot.toLocaleString())
                 .replace('{4}', maxLoot.toLocaleString());
+
+            var lootItemGainContent = '';
+            var lootItemGainKeyList = Tools.getObjectKeyList(lootItemGain, 0);
+            lootItemGainKeyList.sort(function (a, b) {
+                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
+            });
+            var lootItemGainTotalNum = 0;
+            $.each(lootItemGainKeyList, function (index, key) {
+                lootItemGainTotalNum += lootItemGain[key];
+                lootItemGainContent += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', lootItemGain[key]);
+            });
+            content += '<br /><strong>争夺道具收获：</strong><i>道具<em>+{0}</em></i> {1}'.replace('{0}', lootItemGainTotalNum).replace('{1}', lootItemGainContent);
         }
         else if (Config.autoDrawSmbox2Enabled) {
             var smBoxIncome = 0, minSmBox = 0, maxSmBox = 0;
-            $.each(smBox, function (index, kfb) {
+            $.each(smBoxGain, function (index, kfb) {
                 smBoxIncome += kfb;
                 if (index === 0) minSmBox = kfb;
                 if (minSmBox > kfb) minSmBox = kfb;
                 if (maxSmBox < kfb) maxSmBox = kfb;
             });
-            content += ('<br /><strong>神秘盒子收获(KFB)：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
+            content += ('<br /><strong>神秘盒子KFB收获：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
             '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', smBox.length.toLocaleString())
+                .replace('{0}', smBoxGain.length.toLocaleString())
                 .replace('{1}', smBoxIncome.toLocaleString())
-                .replace('{2}', smBox.length > 0 ? (smBoxIncome / smBox.length).toFixed(2).toLocaleString() : 0)
+                .replace('{2}', smBoxGain.length > 0 ? (smBoxIncome / smBoxGain.length).toFixed(2).toLocaleString() : 0)
                 .replace('{3}', minSmBox.toLocaleString())
                 .replace('{4}', maxSmBox.toLocaleString());
         }
+
         return content;
     },
 

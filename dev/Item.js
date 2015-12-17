@@ -3,6 +3,150 @@
  */
 var Item = {
     /**
+     * 获得转换指定等级道具可获得的能量点
+     * @param {number} itemLevel 道具等级
+     * @returns {number} 能量点
+     */
+    getGainEnergyNumByItemLevel: function (itemLevel) {
+        switch (itemLevel) {
+            case 1:
+                return 2;
+            case 2:
+                return 10;
+            case 3:
+                return 50;
+            case 4:
+                return 300;
+            case 5:
+                return 2000;
+        }
+    },
+
+    /**
+     * 获得恢复指定等级道具所需的能量点
+     * @param {number} itemLevel 道具等级
+     * @returns {number} 能量点
+     */
+    getRestoreEnergyNumByItemLevel: function (itemLevel) {
+        switch (itemLevel) {
+            case 1:
+                return 10;
+            case 2:
+                return 50;
+            case 3:
+                return 300;
+            case 4:
+                return 2000;
+            case 5:
+                return 10000;
+        }
+    },
+
+    /**
+     * 获取指定等级道具的出售所得
+     * @param {number} itemLevel 道具等级
+     * @returns {number} 出售所得
+     */
+    getSellItemGainByItemLevel: function (itemLevel) {
+        switch (itemLevel) {
+            case 3:
+                return 300;
+            case 4:
+                return 2000;
+            case 5:
+                return 10000;
+            default:
+                return 0;
+        }
+    },
+
+    /**
+     * 获取指定名称的道具种类ID
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具种类ID
+     */
+    getItemTypeIdByItemName: function (itemName) {
+        switch (itemName) {
+            case '零时迷子的碎片':
+                return 1;
+            case '被遗弃的告白信':
+                return 2;
+            case '学校天台的钥匙':
+                return 3;
+            case 'TMA最新作压缩包':
+                return 4;
+            case 'LOLI的钱包':
+                return 5;
+            case '棒棒糖':
+                return 6;
+            case '蕾米莉亚同人漫画':
+                return 11;
+            case '十六夜同人漫画':
+                return 7;
+            case '档案室钥匙':
+                return 8;
+            case '傲娇LOLI娇蛮音CD':
+                return 12;
+            case '整形优惠卷':
+                return 9;
+            case '消逝之药':
+                return 10;
+            default:
+                return 0;
+        }
+    },
+
+    /**
+     * 获取指定名称的道具等级
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具等级
+     */
+    getItemLevelByItemName: function (itemName) {
+        switch (itemName) {
+            case '零时迷子的碎片':
+            case '被遗弃的告白信':
+            case '学校天台的钥匙':
+            case 'TMA最新作压缩包':
+                return 1;
+            case 'LOLI的钱包':
+            case '棒棒糖':
+                return 2;
+            case '蕾米莉亚同人漫画':
+            case '十六夜同人漫画':
+                return 3;
+            case '档案室钥匙':
+            case '傲娇LOLI娇蛮音CD':
+                return 4;
+            case '整形优惠卷':
+            case '消逝之药':
+                return 5;
+            default:
+                return 0;
+        }
+    },
+
+    /**
+     * 获取指定名称的道具使用上限个数
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具的使用上限个数
+     */
+    getItemMaxUsedNumByItemName: function (itemName) {
+        switch (itemName) {
+            case '蕾米莉亚同人漫画':
+            case '十六夜同人漫画':
+                return 50;
+            case '档案室钥匙':
+            case '傲娇LOLI娇蛮音CD':
+                return 30;
+            case '整形优惠卷':
+            case '消逝之药':
+                return 10;
+            default:
+                return -1;
+        }
+    },
+
+    /**
      * 转换指定的一系列道具为能量
      * @param {{}} options 设置项
      * @param {number} options.type 转换类型，1：转换本级全部已使用的道具为能量；2：转换本级部分已使用的道具为能量
@@ -23,7 +167,7 @@ var Item = {
         };
         $.extend(settings, options);
         var successNum = 0;
-        var energyNum = Item.getGainEnergyNumByLevel(settings.itemLevel);
+        var energyNum = Item.getGainEnergyNumByItemLevel(settings.itemLevel);
         $(document).queue('ConvertItemsToEnergy', []);
         $.each(settings.urlList, function (index, key) {
             var id = /pro=(\d+)/i.exec(key);
@@ -90,26 +234,6 @@ var Item = {
             });
         });
         $(document).dequeue('ConvertItemsToEnergy');
-    },
-
-    /**
-     * 获得转换指定道具等级可获得的能量点
-     * @param {number} level 道具等级
-     * @returns {number} 能量点
-     */
-    getGainEnergyNumByLevel: function (level) {
-        switch (level) {
-            case 1:
-                return 2;
-            case 2:
-                return 10;
-            case 3:
-                return 50;
-            case 4:
-                return 300;
-            case 5:
-                return 2000;
-        }
     },
 
     /**
@@ -230,26 +354,6 @@ var Item = {
     },
 
     /**
-     * 获得恢复指定道具等级所需的能量点
-     * @param {number} level 道具等级
-     * @returns {number} 能量点
-     */
-    getRestoreEnergyNumByLevel: function (level) {
-        switch (level) {
-            case 1:
-                return 10;
-            case 2:
-                return 50;
-            case 3:
-                return 300;
-            case 4:
-                return 2000;
-            case 5:
-                return 10000;
-        }
-    },
-
-    /**
      * 恢复指定的一系列道具
      * @param {{}} options 设置项
      * @param {number} options.type 恢复类型，1：恢复本级全部已使用的道具；2：恢复本级部分已使用的道具
@@ -271,7 +375,7 @@ var Item = {
         $.extend(settings, options);
         var successNum = 0;
         var failNum = 0;
-        var energyNum = Item.getRestoreEnergyNumByLevel(settings.itemLevel);
+        var energyNum = Item.getRestoreEnergyNumByItemLevel(settings.itemLevel);
         $(document).queue('RestoreItems', []);
         $.each(settings.urlList, function (index, key) {
             var id = /pro=(\d+)/i.exec(key);
@@ -397,7 +501,7 @@ var Item = {
                     urlList.push('kf_fw_ig_my.php?pro={0}'.replace('{0}', $(this).val()));
                 });
                 if (urlList.length === 0) return;
-                var totalRequiredEnergyNum = urlList.length * Item.getRestoreEnergyNumByLevel(itemLevel);
+                var totalRequiredEnergyNum = urlList.length * Item.getRestoreEnergyNumByItemLevel(itemLevel);
                 if (!window.confirm('共选择了{0}个道具，共需要{1}点恢复能量，是否恢复道具？'
                         .replace('{0}', urlList.length)
                         .replace('{1}', totalRequiredEnergyNum)
@@ -673,24 +777,6 @@ var Item = {
     },
 
     /**
-     * 获取指定等级道具的出售所得
-     * @param {number} itemLevel 道具等级
-     * @returns {number} 出售所得
-     */
-    getSellItemGain: function (itemLevel) {
-        switch (itemLevel) {
-            case 3:
-                return 300;
-            case 4:
-                return 2000;
-            case 5:
-                return 10000;
-            default:
-                return 0;
-        }
-    },
-
-    /**
      * 出售指定的一系列道具
      * @param {{}} options 设置项
      * @param {string[]} options.itemList 指定的道具ID列表
@@ -714,7 +800,7 @@ var Item = {
                     KFOL.showFormatLog('出售道具', html);
                     if (/出售成功/.test(html)) {
                         successNum++;
-                        totalGain += Item.getSellItemGain(settings.itemLevel);
+                        totalGain += Item.getSellItemGainByItemLevel(settings.itemLevel);
                     }
                     else failNum++;
                     var $remainingNum = $('#pd_remaining_num');
@@ -1019,42 +1105,6 @@ var Item = {
     },
 
     /**
-     * 通过道具名称获取道具种类ID
-     * @param {string} itemName 道具名称
-     * @returns {number} 道具种类ID
-     */
-    getItemTypeIdByItemName: function (itemName) {
-        switch (itemName) {
-            case '零时迷子的碎片':
-                return 1;
-            case '被遗弃的告白信':
-                return 2;
-            case '学校天台的钥匙':
-                return 3;
-            case 'TMA最新作压缩包':
-                return 4;
-            case 'LOLI的钱包':
-                return 5;
-            case '棒棒糖':
-                return 6;
-            case '蕾米莉亚同人漫画':
-                return 11;
-            case '十六夜同人漫画':
-                return 7;
-            case '档案室钥匙':
-                return 8;
-            case '傲娇LOLI娇蛮音CD':
-                return 12;
-            case '整形优惠卷':
-                return 9;
-            case '消逝之药':
-                return 10;
-            default:
-                return 0;
-        }
-    },
-
-    /**
      * 在批量攻击后使用刚掉落的指定种类ID列表的道具
      * @param {{}} itemNameList 刚掉落的道具名称列表
      */
@@ -1195,27 +1245,6 @@ var Item = {
     },
 
     /**
-     * 获取指定道具的使用上限个数
-     * @param {string} itemName 指定道具名称
-     * @returns {number} 道具的使用上限个数
-     */
-    getItemMaxUsedNum: function (itemName) {
-        switch (itemName) {
-            case '蕾米莉亚同人漫画':
-            case '十六夜同人漫画':
-                return 50;
-            case '档案室钥匙':
-            case '傲娇LOLI娇蛮音CD':
-                return 30;
-            case '整形优惠卷':
-            case '消逝之药':
-                return 10;
-            default:
-                return -1;
-        }
-    },
-
-    /**
      * 显示道具使用情况
      * @param {jQuery} $links 道具名称的链接列表
      */
@@ -1228,7 +1257,7 @@ var Item = {
                 var itemName = $this.text();
                 if (typeof itemUsedNumList[itemName] === 'undefined') return;
                 var usedNum = itemUsedNumList[itemName];
-                var maxUsedNum = Item.getItemMaxUsedNum(itemName);
+                var maxUsedNum = Item.getItemMaxUsedNumByItemName(itemName);
                 var nextSuccessPercent = 0;
                 if (usedNum > maxUsedNum) nextSuccessPercent = 0;
                 else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
