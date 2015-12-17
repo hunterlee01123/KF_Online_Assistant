@@ -65,9 +65,9 @@ var Log = {
      * 记录一条新日志
      * @param {string} type 日志类别
      * @param {string} action 行为
-     * @param {Object} [options] 设置对象
-     * @param {Object} [options.gain] 收获
-     * @param {Object} [options.pay] 付出
+     * @param {{}} [options] 设置对象
+     * @param {{}} [options.gain] 收获
+     * @param {{}} [options.pay] 付出
      * @param {boolean} [options.notStat=false] 是否不参与统计
      */
     push: function (type, action, options) {

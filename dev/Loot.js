@@ -261,7 +261,7 @@ var Loot = {
     /**
      * 通过回应获取攻击收获
      * @param {string} msg 攻击回应
-     * @returns {Object} 攻击收获
+     * @returns {{}} 攻击收获
      */
     getGainViaMsg: function (msg) {
         var gain = {};
@@ -281,10 +281,10 @@ var Loot = {
 
     /**
      * 批量攻击
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 攻击类型，1：在争夺页面中进行批量攻击；2：在自动争夺中进行批量攻击；3：只进行一次试探攻击
      * @param {number} options.totalAttackNum 总攻击次数
-     * @param {Object} options.attackList 攻击目标列表
+     * @param {{}} options.attackList 攻击目标列表
      * @param {string} options.safeId 用户的SafeID
      */
     batchAttack: function (options) {
@@ -556,7 +556,7 @@ var Loot = {
         });
         /**
          * 获取攻击列表和总次数
-         * @param {Object} attackList 攻击目标列表
+         * @param {{}} attackList 攻击目标列表
          * @returns {number} 攻击总次数
          */
         var getAttackNum = function (attackList) {
@@ -1058,5 +1058,164 @@ var Loot = {
                 });
             });
         }
+    },
+
+    /**
+     * 获取争夺属性列表
+     * @param {string} html 争夺首页的HTML代码
+     * @returns {{}} 争夺属性列表
+     */
+    getLootPropertyList: function (html) {
+        var lootPropertyList = {
+            '剩余攻击次数': 0,
+            '致命一击剩余攻击次数': 0,
+            '争夺攻击': 0,
+            '神秘系数': 0,
+            '争夺燃烧': 0,
+            '争夺暴击几率': 0,
+            '争夺暴击比例': 0,
+            '命中': 0,
+            '闪避': 0,
+            '防御': 0,
+            '道具使用列表': {}
+        };
+        var itemUsedNumList = {'蕾米莉亚同人漫画': 0, '十六夜同人漫画': 0, '档案室钥匙': 0, '傲娇LOLI娇蛮音CD': 0, '整形优惠卷': 0, '消逝之药': 0};
+
+        var matches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
+        if (matches) lootPropertyList['剩余攻击次数'] = parseInt(matches[1]);
+
+        matches = /致命一击剩余攻击次数\s*(\d+)\s*次/.exec(html);
+        if (matches) lootPropertyList['致命一击剩余攻击次数'] = parseInt(matches[1]);
+
+        matches = /争夺攻击\s*(\d+)\(\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺攻击'] = parseInt(matches[1]) + parseInt(matches[2]);
+            lootPropertyList['神秘系数'] = parseInt(matches[2]);
+        }
+
+        matches = /争夺燃烧\s*(\d+)\(\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺燃烧'] = parseInt(matches[1]) + parseInt(matches[2]);
+            itemUsedNumList['蕾米莉亚同人漫画'] = parseInt(matches[2]);
+        }
+
+        matches = /争夺暴击几率\s*(\d+)\s*%/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺暴击几率'] = parseInt(matches[1]);
+            itemUsedNumList['整形优惠卷'] = Math.floor(parseInt(matches[1]) / 3);
+        }
+
+        matches = /争夺暴击比例\s*(\d+)\(\+(\d+)\)\s*%/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺暴击比例'] = parseInt(matches[1]) + parseInt(matches[2]);
+            itemUsedNumList['档案室钥匙'] = Math.floor(parseInt(matches[2]) / 10);
+        }
+
+        matches = /命中\s*(\d+)\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['命中'] = parseInt(matches[1]) + parseInt(matches[2]) + parseInt(matches[3]);
+            itemUsedNumList['傲娇LOLI娇蛮音CD'] = parseInt(matches[3]);
+        }
+
+        matches = /闪避\s*(\d+)\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['闪避'] = parseInt(matches[1]) + parseInt(matches[2]) + parseInt(matches[3]);
+            itemUsedNumList['十六夜同人漫画'] = parseInt(matches[2]);
+        }
+
+        matches = /防御\s*(\d+)\s*%/.exec(html);
+        if (matches) {
+            lootPropertyList['防御'] = parseInt(matches[1]);
+            itemUsedNumList['消逝之药'] = Math.floor(parseInt(matches[1]) / 7);
+        }
+
+        lootPropertyList['道具使用列表'] = itemUsedNumList;
+        return lootPropertyList;
+    },
+
+    /**
+     * 添加怪物争夺信息的提示
+     */
+    addMonsterLootInfoTips: function () {
+        $.get('kf_fw_ig_index.php', function (html) {
+            var lootPropertyList = Loot.getLootPropertyList(html);
+            $('.kf_fw_ig1 > tbody > tr').each(function (index) {
+                var $this = $(this);
+                if (index === 0) {
+                    $this.find('td').append(
+                        ('<span style="color:#FFF;margin-left:7px;font-weight:normal;font-size:12px">' +
+                        '(本回合剩余攻击次数 <b>{0}</b> 次，致命一击剩余次数 <b>{1}</b> 次)</span>')
+                            .replace('{0}', lootPropertyList['剩余攻击次数'])
+                            .replace('{1}', lootPropertyList['致命一击剩余攻击次数'])
+                    );
+                    return;
+                }
+                if (index === 1 || $this.children('td').length !== 4) return;
+                $this.children('td:gt(0)').each(function (index) {
+                    var $this = $(this);
+                    var html = $this.html();
+                    if (index === 0) {
+                        var matches = /(\d+)生命值\s*\|\s*(\d+)闪避/.exec(html);
+                        if (!matches) return;
+                        var life = parseInt(matches[1]), avoid = parseInt(matches[2]);
+                        var lifeTips = '', avoidTips = '';
+
+                        var attackTypeName = '', tipsClassName = '';
+                        var totalAttack = 0;
+                        if (life <= (totalAttack = lootPropertyList['争夺攻击'] + lootPropertyList['争夺燃烧'])) {
+                            attackTypeName = '普通攻击';
+                            tipsClassName = 'pd_monster_tips_ok';
+                        }
+                        else {
+                            if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * 1.5) + lootPropertyList['争夺燃烧']))
+                                attackTypeName = '致命一击';
+                            else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100) + lootPropertyList['争夺燃烧']))
+                                attackTypeName = '暴击';
+                            else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) + lootPropertyList['争夺燃烧']))
+                                attackTypeName = '致命一击+暴击';
+                            if (attackTypeName) tipsClassName = 'pd_monster_tips_conditional';
+                        }
+                        if (attackTypeName) {
+                            var kfbOverflow = totalAttack - lootPropertyList['争夺燃烧'] - life;
+                            if (kfbOverflow < 0) kfbOverflow = 0;
+                            var expOverflow = totalAttack - life;
+                            if (expOverflow < 0) expOverflow = 0;
+                            if (expOverflow > lootPropertyList['争夺燃烧']) expOverflow = lootPropertyList['争夺燃烧'];
+                            var overflowTips = '争夺攻击溢出{0}点，争夺燃烧溢出{1}点'.replace('{0}', kfbOverflow).replace('{1}', expOverflow);
+                            lifeTips = '<span class="pd_monster_tips" title="{0}即可清空生命值（{1}）">[<b class="{2}">&#10003;</b>]</span>'
+                                .replace('{0}', attackTypeName)
+                                .replace('{1}', overflowTips)
+                                .replace('{2}', tipsClassName);
+                            html = html.replace('生命值', '生命值' + lifeTips);
+                        }
+
+                        if (avoid < lootPropertyList['命中']) {
+                            avoidTips = '<span class="pd_monster_tips" title="攻击此怪物可全部命中">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                        }
+                        if (avoidTips) {
+                            html = html.replace('闪避', '闪避' + avoidTips);
+                        }
+
+                        if (lifeTips || avoidTips) $this.html(html);
+                    }
+                    else if (index === 1) {
+                        matches = /(\d+)命中/.exec(html);
+                        if (!matches) return;
+                        var hit = parseInt(matches[1]);
+                        var htiTips = '';
+                        if (hit < lootPropertyList['命中']) {
+                            htiTips = '<span class="pd_monster_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                        }
+                        if (htiTips) {
+                            $this.html(html.replace(matches[0], matches[0] + htiTips));
+                        }
+                    }
+                    else if (index === 2) {
+                        var itemDropPercent = parseInt($.trim($this.text()));
+                        $this.wrapInner('<span class="pd_custom_tips" title="在20次攻击中预计可掉落{0}个道具"></span>'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
+                    }
+                });
+            });
+        }, 'html');
     }
 };

@@ -128,6 +128,9 @@ var KFOL = {
             '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
             '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; }' +
             '#pd_smile_panel img { margin: 3px; cursor: pointer; }' +
+            '.pd_monster_tips { cursor: help; color: #999; }' +
+            '.pd_monster_tips_ok { color: #99CC00; }' +
+            '.pd_monster_tips_conditional { color: #FF9900; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -1437,8 +1440,9 @@ var KFOL = {
                     .find('a:first')
                     .click(function (e) {
                         e.preventDefault();
-                        $('.pd_buy_thread').prop('checked', true);
-                        alert('共选择了{0}项'.replace('{0}', $('.pd_buy_thread').length));
+                        var $buyThread = $('.pd_buy_thread');
+                        $buyThread.prop('checked', true);
+                        alert('共选择了{0}项'.replace('{0}', $buyThread.length));
                     })
                     .next('a')
                     .click(function (e) {
@@ -2529,6 +2533,7 @@ var KFOL = {
         else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
             Loot.addBatchAttackButton();
             if (Config.customMonsterNameEnabled) Loot.customMonsterName();
+            Loot.addMonsterLootInfoTips();
         }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();

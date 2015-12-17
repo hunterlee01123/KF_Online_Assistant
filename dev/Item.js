@@ -4,7 +4,7 @@
 var Item = {
     /**
      * 转换指定的一系列道具为能量
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 转换类型，1：转换本级全部已使用的道具为能量；2：转换本级部分已使用的道具为能量
      * @param {string[]} options.urlList 指定的道具Url列表
      * @param {string} options.safeId 用户的SafeID
@@ -251,7 +251,7 @@ var Item = {
 
     /**
      * 恢复指定的一系列道具
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 恢复类型，1：恢复本级全部已使用的道具；2：恢复本级部分已使用的道具
      * @param {string[]} options.urlList 指定的道具Url列表
      * @param {string} options.safeId 用户的SafeID
@@ -475,7 +475,7 @@ var Item = {
 
     /**
      * 使用指定的一系列道具
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 使用类型，1：使用本级全部道具；2：使用本级部分道具
      * @param {string[]} options.urlList 指定的道具Url列表
      * @param {string} options.safeId 用户的SafeID
@@ -692,7 +692,7 @@ var Item = {
 
     /**
      * 出售指定的一系列道具
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {string[]} options.itemList 指定的道具ID列表
      * @param {string} options.safeId 用户的SafeID
      * @param {number} options.itemLevel 道具等级
@@ -1056,7 +1056,7 @@ var Item = {
 
     /**
      * 在批量攻击后使用刚掉落的指定种类ID列表的道具
-     * @param {Object} itemNameList 刚掉落的道具名称列表
+     * @param {{}} itemNameList 刚掉落的道具名称列表
      */
     useItemsAfterBatchAttack: function (itemNameList) {
         var totalCount = 0;
@@ -1216,31 +1216,12 @@ var Item = {
     },
 
     /**
-     * 获取道具使用情况
+     * 显示道具使用情况
      * @param {jQuery} $links 道具名称的链接列表
      */
     showItemUsedInfo: function ($links) {
         $.get('kf_fw_ig_index.php', function (html) {
-            var itemUsedNumList = {};
-
-            var matches = /争夺燃烧\s*\d+\(\+(\d+)\)\s*点/.exec(html);
-            if (matches) itemUsedNumList['蕾米莉亚同人漫画'] = parseInt(matches[1]);
-
-            matches = /争夺暴击几率\s*(\d+)\s*%/.exec(html);
-            if (matches) itemUsedNumList['整形优惠卷'] = Math.floor(parseInt(matches[1]) / 3);
-
-            matches = /争夺暴击比例\s*\d+\(\+(\d+)\)\s*%/.exec(html);
-            if (matches) itemUsedNumList['档案室钥匙'] = Math.floor(parseInt(matches[1]) / 10);
-
-            matches = /命中\s*\d+\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
-            if (matches) {
-                itemUsedNumList['十六夜同人漫画'] = Math.floor(parseInt(matches[1]) / 3);
-                itemUsedNumList['傲娇LOLI娇蛮音CD'] = parseInt(matches[2]);
-            }
-
-            matches = /防御\s*(\d+)\s*%/.exec(html);
-            if (matches) itemUsedNumList['消逝之药'] = Math.floor(parseInt(matches[1]) / 7);
-
+            var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
             $links.next('.pd_used_item_info').remove();
             $links.each(function () {
                 var $this = $(this);
