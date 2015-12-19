@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.7.0
+// @version     4.7.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.7.0';
+var version = '4.7.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -8990,13 +8990,18 @@ var KFOL = {
                 }
                 $this.text('[关闭]');
 
-                var smileIdList = ['48', '35', '34', '33', '32', '31', '30', '29', '28', '27', '26', '36', '37', '47', '46', '45', '44', '43', '42', '41', '40',
+                var smileImageIdList = ['48', '35', '34', '33', '32', '31', '30', '29', '28', '27', '26', '36', '37', '47', '46', '45', '44', '43', '42', '41', '40',
                     '39', '38', '25', '24', '11', '10', '09', '08', '01', '02', '03', '04', '05', '06', '12', '13', '23', '22', '21', '20', '19', '18', '17', '16',
                     '15', '14', '07'];
+                var smileCodeIdList = [57, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 45, 46, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 34, 33, 20, 19, 18, 17, 10, 11, 12,
+                    13, 14, 15, 21, 22, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 16];
                 var html = '';
-                $.each(smileIdList, function (i, id) {
-                    html += '<img src="{0}/post/smile/em/em{1}.gif" alt="[表情]" data-id="{1}" />'.replace('{0}', imgpath).replace(/\{1\}/g, id);
-                });
+                for (var i = 0; i < smileImageIdList.length; i++) {
+                    html += '<img src="{0}/post/smile/em/em{1}.gif" alt="[表情]" data-id="{2}" />'
+                        .replace('{0}', imgpath)
+                        .replace('{1}', smileImageIdList[i])
+                        .replace('{2}', smileCodeIdList[i]);
+                }
                 html = '<div class="pd_panel" id="pd_smile_panel" style="width:308px;height:185px;opacity:0.9;">' + html + '</div>';
 
                 var offset = $parent.offset();
