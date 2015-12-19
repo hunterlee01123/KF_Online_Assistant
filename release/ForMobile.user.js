@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.6.5
+// @version     4.7.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.6.5';
+var version = '4.7.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -228,6 +228,21 @@ var Config = {
     defAjaxInterval: 200,
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
+    // 道具样品ID列表
+    sampleItemIdList: {
+        '零时迷子的碎片': 2257935,
+        '被遗弃的告白信': 2005272,
+        '学校天台的钥匙': 2001303,
+        'TMA最新作压缩包': 1990834,
+        'LOLI的钱包': 1836588,
+        '棒棒糖': 2015243,
+        '蕾米莉亚同人漫画': 2231073,
+        '十六夜同人漫画': 2025284,
+        '档案室钥匙': 2025904,
+        '傲娇LOLI娇蛮音CD': 2003056,
+        '整形优惠卷': 2122387,
+        '消逝之药': 1587342
+    },
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
@@ -1585,6 +1600,7 @@ var ConfigDialog = {
         });
 
         Dialog.show('pd_config');
+        $dialog.find('a:first').focus();
     },
 
     /**
@@ -2931,9 +2947,9 @@ var Log = {
      * 记录一条新日志
      * @param {string} type 日志类别
      * @param {string} action 行为
-     * @param {Object} [options] 设置对象
-     * @param {Object} [options.gain] 收获
-     * @param {Object} [options.pay] 付出
+     * @param {{}} [options] 设置对象
+     * @param {{}} [options.gain] 收获
+     * @param {{}} [options.pay] 付出
      * @param {boolean} [options.notStat=false] 是否不参与统计
      */
     push: function (type, action, options) {
@@ -3094,7 +3110,7 @@ var Log = {
         Log.showLogStat(dateList[curIndex]);
 
         Dialog.show('pd_log');
-        $dialog.find('.pd_cfg_btns > button:first').focus();
+        $dialog.find('input:first').focus();
     },
 
     /**
@@ -3127,6 +3143,7 @@ var Log = {
                 return a.time > b.time;
             });
         }
+
         var content = '', curType = '';
         $.each(logList, function (index, key) {
             if (typeof key.time === 'undefined' || typeof key.type === 'undefined' || typeof key.action === 'undefined') return;
@@ -3146,6 +3163,7 @@ var Log = {
                     .replace('{1}', key.type)
                     .replace('{2}', key.action.replace(/`([^`]+?)`/g, '<b style="color:#F00">$1</b>'));
             }
+
             var stat = '';
             if ($.type(key.gain) === 'object' && !$.isEmptyObject(key.gain)) {
                 stat += '，';
@@ -3173,8 +3191,10 @@ var Log = {
                     }
                 }
             }
+
             content += stat + '</p>';
         });
+
         return content;
     },
 
@@ -3195,6 +3215,7 @@ var Log = {
      */
     getLogStat: function (date, logStatType) {
         var log = {};
+
         if (logStatType === 'custom') {
             var dateList = Tools.getObjectKeyList(Log.log, 1);
             var minDate = new Date(date);
@@ -3212,7 +3233,8 @@ var Log = {
         else {
             log[date] = Log.log[date];
         }
-        var income = {}, expense = {}, profit = {}, smBox = [], loot = [];
+
+        var income = {}, expense = {}, profit = {}, smBoxGain = [], lootGain = [], lootItemGain = {};
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
@@ -3223,10 +3245,17 @@ var Log = {
                         else income[k] += key.gain[k];
                     }
                     if (key.type === '领取争夺奖励' && typeof key.gain['KFB'] !== 'undefined') {
-                        loot.push(key.gain['KFB']);
+                        lootGain.push(key.gain['KFB']);
+                    }
+                    else if ((key.type === '批量攻击' || key.type === '试探攻击') && $.type(key.gain['item']) === 'object') {
+                        for (var itemName in key.gain['item']) {
+                            var num = parseInt(key.gain['item'][itemName]);
+                            if (typeof lootItemGain[itemName] === 'undefined') lootItemGain[itemName] = num;
+                            else lootItemGain[itemName] += num;
+                        }
                     }
                     else if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
-                        smBox.push(key.gain['KFB']);
+                        smBoxGain.push(key.gain['KFB']);
                     }
                 }
                 if ($.type(key.pay) === 'object') {
@@ -3238,6 +3267,12 @@ var Log = {
                 }
             });
         }
+
+        /**
+         * 为统计项目排序
+         * @param {{}} obj 统计结果列表
+         * @returns {string[]} 经过排序项目列表
+         */
         var sortStatItemList = function (obj) {
             var sortTypeList = ['KFB', '经验值', '能量', 'VIP小时', '贡献', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率',
                 '防御', '道具', '已使用道具', '有效道具', '无效道具', '卡片'];
@@ -3247,9 +3282,9 @@ var Log = {
             });
             return list;
         };
+
         var content = '';
         content += '<strong>收获：</strong>';
-        sortStatItemList(income);
         $.each(sortStatItemList(income), function (index, key) {
             profit[key] = income[key];
             content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', income[key].toLocaleString());
@@ -3264,38 +3299,52 @@ var Log = {
         $.each(sortStatItemList(profit), function (index, key) {
             content += '<i>{0}{1}</i> '.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(profit[key]));
         });
+
         if (Config.autoLootEnabled) {
             var lootIncome = 0, minLoot = 0, maxLoot = 0;
-            $.each(loot, function (index, kfb) {
+            $.each(lootGain, function (index, kfb) {
                 lootIncome += kfb;
                 if (index === 0) minLoot = kfb;
                 if (minLoot > kfb) minLoot = kfb;
                 if (maxLoot < kfb) maxLoot = kfb;
             });
-            content += ('<br /><strong>争夺收获(KFB)：</strong><i>回合数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
+            content += ('<br /><strong>争夺KFB收获：</strong><i>回合数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
             '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', loot.length.toLocaleString())
+                .replace('{0}', lootGain.length.toLocaleString())
                 .replace('{1}', lootIncome.toLocaleString())
-                .replace('{2}', loot.length > 0 ? (lootIncome / loot.length).toFixed(2).toLocaleString() : 0)
+                .replace('{2}', lootGain.length > 0 ? (lootIncome / lootGain.length).toFixed(2).toLocaleString() : 0)
                 .replace('{3}', minLoot.toLocaleString())
                 .replace('{4}', maxLoot.toLocaleString());
+
+            var lootItemGainContent = '';
+            var lootItemGainKeyList = Tools.getObjectKeyList(lootItemGain, 0);
+            lootItemGainKeyList.sort(function (a, b) {
+                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
+            });
+            var lootItemGainTotalNum = 0;
+            $.each(lootItemGainKeyList, function (index, key) {
+                lootItemGainTotalNum += lootItemGain[key];
+                lootItemGainContent += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', lootItemGain[key]);
+            });
+            content += '<br /><strong>争夺道具收获：</strong><i>道具<em>+{0}</em></i> {1}'.replace('{0}', lootItemGainTotalNum).replace('{1}', lootItemGainContent);
         }
         else if (Config.autoDrawSmbox2Enabled) {
             var smBoxIncome = 0, minSmBox = 0, maxSmBox = 0;
-            $.each(smBox, function (index, kfb) {
+            $.each(smBoxGain, function (index, kfb) {
                 smBoxIncome += kfb;
                 if (index === 0) minSmBox = kfb;
                 if (minSmBox > kfb) minSmBox = kfb;
                 if (maxSmBox < kfb) maxSmBox = kfb;
             });
-            content += ('<br /><strong>神秘盒子收获(KFB)：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
+            content += ('<br /><strong>神秘盒子KFB收获：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
             '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', smBox.length.toLocaleString())
+                .replace('{0}', smBoxGain.length.toLocaleString())
                 .replace('{1}', smBoxIncome.toLocaleString())
-                .replace('{2}', smBox.length > 0 ? (smBoxIncome / smBox.length).toFixed(2).toLocaleString() : 0)
+                .replace('{2}', smBoxGain.length > 0 ? (smBoxIncome / smBoxGain.length).toFixed(2).toLocaleString() : 0)
                 .replace('{3}', minSmBox.toLocaleString())
                 .replace('{4}', maxSmBox.toLocaleString());
         }
+
         return content;
     },
 
@@ -3490,8 +3539,152 @@ var TmpLog = {
  */
 var Item = {
     /**
+     * 获得转换指定等级道具可获得的能量点
+     * @param {number} itemLevel 道具等级
+     * @returns {number} 能量点
+     */
+    getGainEnergyNumByItemLevel: function (itemLevel) {
+        switch (itemLevel) {
+            case 1:
+                return 2;
+            case 2:
+                return 10;
+            case 3:
+                return 50;
+            case 4:
+                return 300;
+            case 5:
+                return 2000;
+        }
+    },
+
+    /**
+     * 获得恢复指定等级道具所需的能量点
+     * @param {number} itemLevel 道具等级
+     * @returns {number} 能量点
+     */
+    getRestoreEnergyNumByItemLevel: function (itemLevel) {
+        switch (itemLevel) {
+            case 1:
+                return 10;
+            case 2:
+                return 50;
+            case 3:
+                return 300;
+            case 4:
+                return 2000;
+            case 5:
+                return 10000;
+        }
+    },
+
+    /**
+     * 获取指定等级道具的出售所得
+     * @param {number} itemLevel 道具等级
+     * @returns {number} 出售所得
+     */
+    getSellItemGainByItemLevel: function (itemLevel) {
+        switch (itemLevel) {
+            case 3:
+                return 300;
+            case 4:
+                return 2000;
+            case 5:
+                return 10000;
+            default:
+                return 0;
+        }
+    },
+
+    /**
+     * 获取指定名称的道具种类ID
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具种类ID
+     */
+    getItemTypeIdByItemName: function (itemName) {
+        switch (itemName) {
+            case '零时迷子的碎片':
+                return 1;
+            case '被遗弃的告白信':
+                return 2;
+            case '学校天台的钥匙':
+                return 3;
+            case 'TMA最新作压缩包':
+                return 4;
+            case 'LOLI的钱包':
+                return 5;
+            case '棒棒糖':
+                return 6;
+            case '蕾米莉亚同人漫画':
+                return 11;
+            case '十六夜同人漫画':
+                return 7;
+            case '档案室钥匙':
+                return 8;
+            case '傲娇LOLI娇蛮音CD':
+                return 12;
+            case '整形优惠卷':
+                return 9;
+            case '消逝之药':
+                return 10;
+            default:
+                return 0;
+        }
+    },
+
+    /**
+     * 获取指定名称的道具等级
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具等级
+     */
+    getItemLevelByItemName: function (itemName) {
+        switch (itemName) {
+            case '零时迷子的碎片':
+            case '被遗弃的告白信':
+            case '学校天台的钥匙':
+            case 'TMA最新作压缩包':
+                return 1;
+            case 'LOLI的钱包':
+            case '棒棒糖':
+                return 2;
+            case '蕾米莉亚同人漫画':
+            case '十六夜同人漫画':
+                return 3;
+            case '档案室钥匙':
+            case '傲娇LOLI娇蛮音CD':
+                return 4;
+            case '整形优惠卷':
+            case '消逝之药':
+                return 5;
+            default:
+                return 0;
+        }
+    },
+
+    /**
+     * 获取指定名称的道具使用上限个数
+     * @param {string} itemName 道具名称
+     * @returns {number} 道具的使用上限个数
+     */
+    getItemMaxUsedNumByItemName: function (itemName) {
+        switch (itemName) {
+            case '蕾米莉亚同人漫画':
+            case '十六夜同人漫画':
+                return 50;
+            case '档案室钥匙':
+            case '傲娇LOLI娇蛮音CD':
+                return 30;
+            case '整形优惠卷':
+            case '消逝之药':
+                return 10;
+            default:
+                return -1;
+        }
+    },
+
+    /**
      * 转换指定的一系列道具为能量
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 转换类型，1：转换本级全部已使用的道具为能量；2：转换本级部分已使用的道具为能量
      * @param {string[]} options.urlList 指定的道具Url列表
      * @param {string} options.safeId 用户的SafeID
@@ -3510,7 +3703,7 @@ var Item = {
         };
         $.extend(settings, options);
         var successNum = 0;
-        var energyNum = Item.getGainEnergyNumByLevel(settings.itemLevel);
+        var energyNum = Item.getGainEnergyNumByItemLevel(settings.itemLevel);
         $(document).queue('ConvertItemsToEnergy', []);
         $.each(settings.urlList, function (index, key) {
             var id = /pro=(\d+)/i.exec(key);
@@ -3580,26 +3773,6 @@ var Item = {
     },
 
     /**
-     * 获得转换指定道具等级可获得的能量点
-     * @param {number} level 道具等级
-     * @returns {number} 能量点
-     */
-    getGainEnergyNumByLevel: function (level) {
-        switch (level) {
-            case 1:
-                return 2;
-            case 2:
-                return 10;
-            case 3:
-                return 50;
-            case 4:
-                return 300;
-            case 5:
-                return 2000;
-        }
-    },
-
-    /**
      * 添加转换本级全部已使用的道具为能量和恢复本级全部已使用的道具的链接
      */
     addAllItemsConvertToEnergyAndRestoreLink: function () {
@@ -3611,7 +3784,11 @@ var Item = {
                 $this.find('td').attr('colspan', 6);
             }
             else if (index === 1) {
-                $this.find('td:nth-child(4)').attr('width', 170).text('批量转换').prev('td').attr('width', 100).next().after('<td width="130">批量恢复</td>');
+                $this.find('td:nth-child(2)').attr('width', 200)
+                    .next('td').attr('width', 100)
+                    .next('td').attr('width', 160).text('批量转换')
+                    .next('td').attr('width', 160)
+                    .before('<td width="130">批量恢复</td>');
             }
             else {
                 $this.find('td:nth-child(4)').html('<a class="pd_highlight" href="#">批量转换道具为能量</a>').after('<td><a href="#">批量恢复道具</a></td>');
@@ -3622,7 +3799,7 @@ var Item = {
             var $this = $(this);
             var $itemLine = $this.closest('tr'),
                 itemLevel = parseInt($itemLine.find('td:first-child').text()),
-                itemName = $itemLine.find('td:nth-child(2)').text(),
+                itemName = $itemLine.find('td:nth-child(2) > a').text(),
                 itemUsedNum = parseInt($itemLine.find('td:nth-child(3)').text()),
                 itemListUrl = $itemLine.find('td:last-child').find('a').attr('href');
             if (!itemUsedNum || itemUsedNum <= 0) {
@@ -3706,31 +3883,15 @@ var Item = {
                 }
             }
         });
-    },
 
-    /**
-     * 获得恢复指定道具等级所需的能量点
-     * @param {number} level 道具等级
-     * @returns {number} 能量点
-     */
-    getRestoreEnergyNumByLevel: function (level) {
-        switch (level) {
-            case 1:
-                return 10;
-            case 2:
-                return 50;
-            case 3:
-                return 300;
-            case 4:
-                return 2000;
-            case 5:
-                return 10000;
-        }
+        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        Item.addSampleItemsLink($itemName);
+        Item.showItemUsedInfo($itemName.find('a'));
     },
 
     /**
      * 恢复指定的一系列道具
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 恢复类型，1：恢复本级全部已使用的道具；2：恢复本级部分已使用的道具
      * @param {string[]} options.urlList 指定的道具Url列表
      * @param {string} options.safeId 用户的SafeID
@@ -3750,7 +3911,7 @@ var Item = {
         $.extend(settings, options);
         var successNum = 0;
         var failNum = 0;
-        var energyNum = Item.getRestoreEnergyNumByLevel(settings.itemLevel);
+        var energyNum = Item.getRestoreEnergyNumByItemLevel(settings.itemLevel);
         $(document).queue('RestoreItems', []);
         $.each(settings.urlList, function (index, key) {
             var id = /pro=(\d+)/i.exec(key);
@@ -3876,7 +4037,7 @@ var Item = {
                     urlList.push('kf_fw_ig_my.php?pro={0}'.replace('{0}', $(this).val()));
                 });
                 if (urlList.length === 0) return;
-                var totalRequiredEnergyNum = urlList.length * Item.getRestoreEnergyNumByLevel(itemLevel);
+                var totalRequiredEnergyNum = urlList.length * Item.getRestoreEnergyNumByItemLevel(itemLevel);
                 if (!window.confirm('共选择了{0}个道具，共需要{1}点恢复能量，是否恢复道具？'
                         .replace('{0}', urlList.length)
                         .replace('{1}', totalRequiredEnergyNum)
@@ -3954,7 +4115,7 @@ var Item = {
 
     /**
      * 使用指定的一系列道具
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 使用类型，1：使用本级全部道具；2：使用本级部分道具
      * @param {string[]} options.urlList 指定的道具Url列表
      * @param {string} options.safeId 用户的SafeID
@@ -4060,6 +4221,7 @@ var Item = {
                             var itemUsableNum = parseInt($itemUsable.text()) - successNum;
                             if (!itemUsableNum || itemUsableNum < 0) itemUsableNum = 0;
                             $itemUsable.text(itemUsableNum);
+                            Item.showItemUsedInfo(settings.$itemLine.closest('tbody').find('tr:gt(1) > td:nth-child(2) > a'));
                         }
                         if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
                         $('.pd_result:last').append('<li class="pd_stat"><b>统计结果：</b>{0}</li>'.replace('{0}', resultStat));
@@ -4096,7 +4258,7 @@ var Item = {
             var $this = $(this);
             var $itemLine = $this.closest('tr'),
                 itemLevel = parseInt($itemLine.find('td:first-child').text()),
-                itemName = $itemLine.find('td:nth-child(2)').text(),
+                itemName = $itemLine.find('td:nth-child(2) > a').text(),
                 itemUsableNum = parseInt($itemLine.find('td:nth-child(3)').text()),
                 itemListUrl = $itemLine.find('td:last-child').find('a').attr('href');
             if (!itemUsableNum || itemUsableNum <= 0) {
@@ -4143,29 +4305,16 @@ var Item = {
                 }, 'html');
             }
         });
-    },
 
-    /**
-     * 获取指定等级道具的出售所得
-     * @param {number} itemLevel 道具等级
-     * @returns {number} 出售所得
-     */
-    getSellItemGain: function (itemLevel) {
-        switch (itemLevel) {
-            case 3:
-                return 300;
-            case 4:
-                return 2000;
-            case 5:
-                return 10000;
-            default:
-                return 0;
-        }
+        $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)').css('width', '243px');
+        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        Item.addSampleItemsLink($itemName);
+        Item.showItemUsedInfo($itemName.find('a'));
     },
 
     /**
      * 出售指定的一系列道具
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {string[]} options.itemList 指定的道具ID列表
      * @param {string} options.safeId 用户的SafeID
      * @param {number} options.itemLevel 道具等级
@@ -4187,7 +4336,7 @@ var Item = {
                     KFOL.showFormatLog('出售道具', html);
                     if (/出售成功/.test(html)) {
                         successNum++;
-                        totalGain += Item.getSellItemGain(settings.itemLevel);
+                        totalGain += Item.getSellItemGainByItemLevel(settings.itemLevel);
                     }
                     else failNum++;
                     var $remainingNum = $('#pd_remaining_num');
@@ -4407,7 +4556,7 @@ var Item = {
             var $this = $(this);
             var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
             if (!itemLevel) return;
-            var itemName = $this.closest('tr').find('td:nth-child(2)').text();
+            var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
             if (!itemName) return;
             var link = $this.prev('a').attr('href');
             if (!link) return;
@@ -4485,54 +4634,15 @@ var Item = {
             $(document).dequeue('BatchBuyItems');
         });
 
-        $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)').each(function (index) {
-            var $this = $(this);
-            var itemIdList = [2025284, 2231073, 2025904, 2003056, 2122387, 1587342];
-            if (index < itemIdList.length) {
-                $this.html('<a href="kf_fw_ig_my.php?pro={0}">{1}</a>'.replace('{0}', itemIdList[index]).replace('{1}', $this.text()));
-            }
-        });
-    },
-
-    /**
-     * 通过道具名称获取道具种类ID
-     * @param {string} itemName 道具名称
-     * @returns {number} 道具种类ID
-     */
-    getItemTypeIdByItemName: function (itemName) {
-        switch (itemName) {
-            case '零时迷子的碎片':
-                return 1;
-            case '被遗弃的告白信':
-                return 2;
-            case '学校天台的钥匙':
-                return 3;
-            case 'TMA最新作压缩包':
-                return 4;
-            case 'LOLI的钱包':
-                return 5;
-            case '棒棒糖':
-                return 6;
-            case '蕾米莉亚同人漫画':
-                return 11;
-            case '十六夜同人漫画':
-                return 7;
-            case '档案室钥匙':
-                return 8;
-            case '傲娇LOLI娇蛮音CD':
-                return 12;
-            case '整形优惠卷':
-                return 9;
-            case '消逝之药':
-                return 10;
-            default:
-                return 0;
-        }
+        $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)').css('width', '243px');
+        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        Item.addSampleItemsLink($itemName);
+        Item.showItemUsedInfo($itemName.find('a'));
     },
 
     /**
      * 在批量攻击后使用刚掉落的指定种类ID列表的道具
-     * @param {Object} itemNameList 刚掉落的道具名称列表
+     * @param {{}} itemNameList 刚掉落的道具名称列表
      */
     useItemsAfterBatchAttack: function (itemNameList) {
         var totalCount = 0;
@@ -4654,6 +4764,47 @@ var Item = {
             $(document).dequeue('UseItemList');
         };
         $(document).dequeue('GetItemList');
+    },
+
+    /**
+     * 添加道具样品的链接
+     * @param {jQuery} $nodes 道具名称的节点列表
+     */
+    addSampleItemsLink: function ($nodes) {
+        $nodes.each(function () {
+            var $this = $(this);
+            var itemName = $.trim($this.text());
+            if (itemName && typeof Config.sampleItemIdList[itemName] !== 'undefined') {
+                $this.html('<a href="kf_fw_ig_my.php?pro={0}">{1}</a>'.replace('{0}', Config.sampleItemIdList[itemName]).replace('{1}', itemName));
+            }
+        });
+    },
+
+    /**
+     * 显示道具使用情况
+     * @param {jQuery} $links 道具名称的链接列表
+     */
+    showItemUsedInfo: function ($links) {
+        $.get('kf_fw_ig_index.php', function (html) {
+            var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
+            $links.next('.pd_used_item_info').remove();
+            $links.each(function () {
+                var $this = $(this);
+                var itemName = $this.text();
+                if (typeof itemUsedNumList[itemName] === 'undefined') return;
+                var usedNum = itemUsedNumList[itemName];
+                var maxUsedNum = Item.getItemMaxUsedNumByItemName(itemName);
+                var nextSuccessPercent = 0;
+                if (usedNum > maxUsedNum) nextSuccessPercent = 0;
+                else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
+                $this.after('<span class="pd_used_item_info" title="下个道具使用成功几率：{0}">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
+                    .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
+                    .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
+                    .replace('{2}', usedNum)
+                    .replace('{3}', maxUsedNum)
+                );
+            });
+        });
     }
 };
 
@@ -5498,7 +5649,7 @@ var Loot = {
     /**
      * 通过回应获取攻击收获
      * @param {string} msg 攻击回应
-     * @returns {Object} 攻击收获
+     * @returns {{}} 攻击收获
      */
     getGainViaMsg: function (msg) {
         var gain = {};
@@ -5518,10 +5669,10 @@ var Loot = {
 
     /**
      * 批量攻击
-     * @param {Object} options 设置项
+     * @param {{}} options 设置项
      * @param {number} options.type 攻击类型，1：在争夺页面中进行批量攻击；2：在自动争夺中进行批量攻击；3：只进行一次试探攻击
      * @param {number} options.totalAttackNum 总攻击次数
-     * @param {Object} options.attackList 攻击目标列表
+     * @param {{}} options.attackList 攻击目标列表
      * @param {string} options.safeId 用户的SafeID
      */
     batchAttack: function (options) {
@@ -5793,7 +5944,7 @@ var Loot = {
         });
         /**
          * 获取攻击列表和总次数
-         * @param {Object} attackList 攻击目标列表
+         * @param {{}} attackList 攻击目标列表
          * @returns {number} 攻击总次数
          */
         var getAttackNum = function (attackList) {
@@ -5929,7 +6080,14 @@ var Loot = {
             $lootInfo.css('position', 'relative');
             $('<a style="position:absolute;top:4px;right:5px;" href="#">[合计]</a>').appendTo($lootInfo).click(function (e) {
                 e.preventDefault();
-                if ($('#pd_attack_sum').length > 0) return;
+                var $this = $(this);
+                var $panel = $('#pd_attack_sum_panel');
+                if ($panel.length > 0) {
+                    $this.text('[合计]');
+                    $panel.remove();
+                    return;
+                }
+                $this.text('[关闭]');
 
                 var attackNum = 0, attackBurnNum = 0, strongAttackPercent = 0, deadlyAttackPercent = 1.5;
                 var content = $lootInfo.html();
@@ -5941,37 +6099,36 @@ var Loot = {
                 if (matches) strongAttackPercent = parseInt(matches[1]) / 100;
 
                 var html =
-                    '<div class="pd_cfg_main">' +
-                    '  <table style="text-align:center">' +
-                    '    <tbody>' +
-                    '      <tr><th style="width:95px"></th><th style="width:120px">正常</th><th style="width:120px">致命一击(如果有)</th></tr>' +
-                    '      <tr>' +
-                    '        <th style="text-align:left">普通攻击</th>' +
-                    '        <td class="pd_custom_tips" title="争夺攻击+争夺燃烧">{0}+{1}={2}</td>'
+                    '<table class="pd_panel" id="pd_attack_sum_panel" style="text-align:center;opacity:0.9;padding:0 5px">' +
+                    '  <tbody>' +
+                    '    <tr>' +
+                    '      <th style="width:95px;text-align:left">攻击|攻击+燃烧</th>' +
+                    '      <th style="width:120px">正常</th>' +
+                    '      <th style="width:120px">致命一击(如果有)</th>' +
+                    '    </tr>' +
+                    '    <tr>' +
+                    '      <th style="text-align:left">普通攻击</th>' +
+                    '      <td class="pd_custom_tips" title="争夺攻击+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', attackNum)
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', attackNum + attackBurnNum) +
-                    '        <td class="pd_custom_tips" title="争夺攻击×150%+争夺燃烧">{0}+{1}={2}</td>'
+                        .replace('{1}', attackNum + attackBurnNum) +
+                    '      <td class="pd_custom_tips" title="争夺攻击×150%+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', Math.round(attackNum * deadlyAttackPercent))
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', Math.round(attackNum * deadlyAttackPercent) + attackBurnNum) +
-                    '      </tr>' +
-                    '      <tr>' +
-                    '        <th style="text-align:left">暴击(如果有)</th>' +
-                    '        <td class="pd_custom_tips" title="争夺攻击×暴击比例+争夺燃烧">{0}+{1}={2}</td>'
+                        .replace('{1}', Math.round(attackNum * deadlyAttackPercent) + attackBurnNum) +
+                    '    </tr>' +
+                    '    <tr>' +
+                    '      <th style="text-align:left">暴击(如果有)</th>' +
+                    '      <td class="pd_custom_tips" title="争夺攻击×暴击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', Math.round(attackNum * strongAttackPercent))
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', Math.round(attackNum * strongAttackPercent) + attackBurnNum) +
-                    '        <td class="pd_custom_tips" title="争夺攻击×暴击比例×150%+争夺燃烧">{0}+{1}={2}</td>'
+                        .replace('{1}', Math.round(attackNum * strongAttackPercent) + attackBurnNum) +
+                    '      <td class="pd_custom_tips" title="争夺攻击×暴击比例×150%+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent))
-                        .replace('{1}', attackBurnNum)
-                        .replace('{2}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent) + attackBurnNum) +
-                    '      </tr>' +
-                    '    </tbody>' +
-                    '  </table>' +
-                    '</div>';
-                Dialog.create('pd_attack_sum', '攻击合计', html);
-                Dialog.show('pd_attack_sum');
+                        .replace('{1}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent) + attackBurnNum) +
+                    '    </tr>' +
+                    '  </tbody>' +
+                    '</table>';
+                var offset = $this.offset();
+                $panel = $(html).appendTo('body');
+                $panel.css('top', offset.top - $panel.height() - 6).css('left', offset.left + $this.width() - $panel.width() - 6);
             });
         }
     },
@@ -6137,9 +6294,14 @@ var Loot = {
         if (matches) criticalStrikeNum = matches.length;
         var html =
             '<div class="pd_cfg_main">' +
+            '<div style="margin-top:5px">' +
+            '  <label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" checked="checked" /> 原版</label>' +
+            '  <label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" /> 自定义</label>' +
+            '</div>' +
             '  <div id="pd_attack_log_content" class="pd_stat"></div>' +
             '</div>';
         var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html);
+
         /**
          * 显示日志
          * @param {string} log 攻击日志
@@ -6152,45 +6314,45 @@ var Loot = {
             if (type === 1) log += '<br /><b>统计结果{0}：</b><br />'.replace('{0}', extraLog) + (stat ? stat : '无');
             $dialog.find('#pd_attack_log_content').html(log);
         };
-        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
-            $('<div style="margin-top:5px"><label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-                '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label></div>')
-                .prependTo($dialog.find('.pd_cfg_main'))
-                .find('input[name="pd_custom_attack_log"]')
-                .click(function () {
-                    var content = '';
-                    if ($(this).val() === 'custom') {
-                        var customLog = log;
-                        $.each(Config.customMonsterNameList, function (id, name) {
-                            var oriName = Loot.getMonsterNameById(parseInt(id));
-                            if (type === 2) {
-                                customLog = customLog.replace(
-                                    new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
-                                    '[{0}]对'.replace('{0}', name)
-                                );
-                            }
-                            else {
-                                customLog = customLog.replace(
-                                    new RegExp('对\\[{0}\\]'.replace('{0}', oriName), 'g'),
-                                    '对[{0}]'.replace('{0}', name)
-                                );
-                            }
-                        });
-                        content = customLog;
+
+        $dialog.find('input[name="pd_custom_attack_log"]').click(function () {
+            var content = '';
+            if ($(this).val() === 'custom') {
+                var customLog = log;
+                $.each(Config.customMonsterNameList, function (id, name) {
+                    var oriName = Loot.getMonsterNameById(parseInt(id));
+                    if (type === 2) {
+                        customLog = customLog.replace(
+                            new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
+                            '[{0}]对'.replace('{0}', name)
+                        );
                     }
                     else {
-                        content = log;
+                        customLog = customLog.replace(
+                            new RegExp('对\\[{0}\\]'.replace('{0}', oriName), 'g'),
+                            '对[{0}]'.replace('{0}', name)
+                        );
                     }
-                    showLog(content);
-                })
-                .end()
-                .find('input[value="custom"]')
+                });
+                content = customLog;
+            }
+            else {
+                content = log;
+            }
+            showLog(content);
+        });
+
+        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
+            $dialog.find('input[name="pd_custom_attack_log"][value="custom"]')
+                .prop('checked', true)
                 .triggerHandler('click');
         }
         else {
+            $dialog.find('input[name="pd_custom_attack_log"][value="custom"]').prop('disabled', true);
             showLog(log);
         }
         Dialog.show('pd_attack_log');
+        $dialog.find('input:first').focus();
     },
 
     /**
@@ -6284,6 +6446,165 @@ var Loot = {
                 });
             });
         }
+    },
+
+    /**
+     * 获取争夺属性列表
+     * @param {string} html 争夺首页的HTML代码
+     * @returns {{}} 争夺属性列表
+     */
+    getLootPropertyList: function (html) {
+        var lootPropertyList = {
+            '剩余攻击次数': 0,
+            '致命一击剩余攻击次数': 0,
+            '争夺攻击': 0,
+            '神秘系数': 0,
+            '争夺燃烧': 0,
+            '争夺暴击几率': 0,
+            '争夺暴击比例': 0,
+            '命中': 0,
+            '闪避': 0,
+            '防御': 0,
+            '道具使用列表': {}
+        };
+        var itemUsedNumList = {'蕾米莉亚同人漫画': 0, '十六夜同人漫画': 0, '档案室钥匙': 0, '傲娇LOLI娇蛮音CD': 0, '整形优惠卷': 0, '消逝之药': 0};
+
+        var matches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
+        if (matches) lootPropertyList['剩余攻击次数'] = parseInt(matches[1]);
+
+        matches = /致命一击剩余攻击次数\s*(\d+)\s*次/.exec(html);
+        if (matches) lootPropertyList['致命一击剩余攻击次数'] = parseInt(matches[1]);
+
+        matches = /争夺攻击\s*(\d+)\(\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺攻击'] = parseInt(matches[1]) + parseInt(matches[2]);
+            lootPropertyList['神秘系数'] = parseInt(matches[2]);
+        }
+
+        matches = /争夺燃烧\s*(\d+)\(\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺燃烧'] = parseInt(matches[1]) + parseInt(matches[2]);
+            itemUsedNumList['蕾米莉亚同人漫画'] = parseInt(matches[2]);
+        }
+
+        matches = /争夺暴击几率\s*(\d+)\s*%/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺暴击几率'] = parseInt(matches[1]);
+            itemUsedNumList['整形优惠卷'] = Math.floor(parseInt(matches[1]) / 3);
+        }
+
+        matches = /争夺暴击比例\s*(\d+)\(\+(\d+)\)\s*%/.exec(html);
+        if (matches) {
+            lootPropertyList['争夺暴击比例'] = parseInt(matches[1]) + parseInt(matches[2]);
+            itemUsedNumList['档案室钥匙'] = Math.floor(parseInt(matches[2]) / 10);
+        }
+
+        matches = /命中\s*(\d+)\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['命中'] = parseInt(matches[1]) + parseInt(matches[2]) + parseInt(matches[3]);
+            itemUsedNumList['傲娇LOLI娇蛮音CD'] = parseInt(matches[3]);
+        }
+
+        matches = /闪避\s*(\d+)\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
+        if (matches) {
+            lootPropertyList['闪避'] = parseInt(matches[1]) + parseInt(matches[2]) + parseInt(matches[3]);
+            itemUsedNumList['十六夜同人漫画'] = parseInt(matches[2]);
+        }
+
+        matches = /防御\s*(\d+)\s*%/.exec(html);
+        if (matches) {
+            lootPropertyList['防御'] = parseInt(matches[1]);
+            itemUsedNumList['消逝之药'] = Math.floor(parseInt(matches[1]) / 7);
+        }
+
+        lootPropertyList['道具使用列表'] = itemUsedNumList;
+        return lootPropertyList;
+    },
+
+    /**
+     * 添加怪物争夺信息的提示
+     */
+    addMonsterLootInfoTips: function () {
+        $.get('kf_fw_ig_index.php', function (html) {
+            var lootPropertyList = Loot.getLootPropertyList(html);
+            $('.kf_fw_ig1 > tbody > tr').each(function (index) {
+                var $this = $(this);
+                if (index === 0) {
+                    $this.find('td').append(
+                        ('<span style="color:#FFF;margin-left:7px;font-weight:normal;font-size:12px">' +
+                        '(本回合剩余攻击次数 <b>{0}</b> 次，致命一击剩余次数 <b>{1}</b> 次)</span>')
+                            .replace('{0}', lootPropertyList['剩余攻击次数'])
+                            .replace('{1}', lootPropertyList['致命一击剩余攻击次数'])
+                    );
+                    return;
+                }
+                if (index === 1 || $this.children('td').length !== 4) return;
+                $this.children('td:gt(0)').each(function (index) {
+                    var $this = $(this);
+                    var html = $this.html();
+                    if (index === 0) {
+                        var matches = /(\d+)生命值\s*\|\s*(\d+)闪避/.exec(html);
+                        if (!matches) return;
+                        var life = parseInt(matches[1]), avoid = parseInt(matches[2]);
+                        var lifeTips = '', avoidTips = '';
+
+                        var attackTypeName = '', tipsClassName = '';
+                        var totalAttack = 0;
+                        if (life <= (totalAttack = lootPropertyList['争夺攻击'] + lootPropertyList['争夺燃烧'])) {
+                            attackTypeName = '普通攻击';
+                            tipsClassName = 'pd_monster_tips_ok';
+                        }
+                        else {
+                            if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * 1.5) + lootPropertyList['争夺燃烧']))
+                                attackTypeName = '致命一击';
+                            else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100) + lootPropertyList['争夺燃烧']))
+                                attackTypeName = '暴击';
+                            else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) + lootPropertyList['争夺燃烧']))
+                                attackTypeName = '致命一击+暴击';
+                            if (attackTypeName) tipsClassName = 'pd_monster_tips_conditional';
+                        }
+                        if (attackTypeName) {
+                            var kfbOverflow = totalAttack - lootPropertyList['争夺燃烧'] - life;
+                            if (kfbOverflow < 0) kfbOverflow = 0;
+                            var expOverflow = totalAttack - life;
+                            if (expOverflow < 0) expOverflow = 0;
+                            if (expOverflow > lootPropertyList['争夺燃烧']) expOverflow = lootPropertyList['争夺燃烧'];
+                            var overflowTips = '争夺攻击溢出{0}点，争夺燃烧溢出{1}点'.replace('{0}', kfbOverflow).replace('{1}', expOverflow);
+                            lifeTips = '<span class="pd_monster_tips" title="{0}即可清空生命值（{1}）">[<b class="{2}">&#10003;</b>]</span>'
+                                .replace('{0}', attackTypeName)
+                                .replace('{1}', overflowTips)
+                                .replace('{2}', tipsClassName);
+                            html = html.replace('生命值', '生命值' + lifeTips);
+                        }
+
+                        if (avoid < lootPropertyList['命中']) {
+                            avoidTips = '<span class="pd_monster_tips" title="攻击此怪物可全部命中">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                        }
+                        if (avoidTips) {
+                            html = html.replace('闪避', '闪避' + avoidTips);
+                        }
+
+                        if (lifeTips || avoidTips) $this.html(html);
+                    }
+                    else if (index === 1) {
+                        matches = /(\d+)命中/.exec(html);
+                        if (!matches) return;
+                        var hit = parseInt(matches[1]);
+                        var htiTips = '';
+                        if (hit < lootPropertyList['命中']) {
+                            htiTips = '<span class="pd_monster_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                        }
+                        if (htiTips) {
+                            $this.html(html.replace(matches[0], matches[0] + htiTips));
+                        }
+                    }
+                    else if (index === 2) {
+                        var itemDropPercent = parseInt($.trim($this.text()));
+                        $this.wrapInner('<span class="pd_custom_tips" title="在20次攻击中预计可掉落{0}个道具"></span>'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
+                    }
+                });
+            });
+        }, 'html');
     }
 };
 
@@ -6374,6 +6695,12 @@ var KFOL = {
             '.pd_user_memo_tips:hover { color: #DDD; }' +
             '.pd_sm_color_select > td { position: relative; cursor: pointer; }' +
             '.pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }' +
+            '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
+            '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; }' +
+            '#pd_smile_panel img { margin: 3px; cursor: pointer; }' +
+            '.pd_monster_tips { cursor: help; color: #999; }' +
+            '.pd_monster_tips_ok { color: #99CC00; }' +
+            '.pd_monster_tips_conditional { color: #FF9900; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -6383,7 +6710,6 @@ var KFOL = {
             '}' +
             '.pd_cfg_box h1 {text-align: center; font-size: 14px; background-color: #9191FF; color: #FFF; line-height: 2em; margin: 0; padding-left: 20px; }' +
             '.pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }' +
-            '#pd_log { width: 600px; }' +
             '#pd_custom_sm_color { width: 360px; }' +
             '.pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }' +
             '.pd_cfg_nav a { margin-left: 10px; }' +
@@ -6410,6 +6736,7 @@ var KFOL = {
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
                 /* 日志对话框 */
+            '#pd_log { width: 680px; }' +
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
             '.pd_log_nav a { display: inline-block; }' +
             '.pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }' +
@@ -7042,9 +7369,15 @@ var KFOL = {
         if ($.trim($('.kf_share1:first').text()) !== '含有关键词 “{0}” 的内容'.replace('{0}', KFOL.userName)) return;
         var timeString = Tools.getCookie(Config.prevReadAtTipsCookieName);
         if (!timeString || !/^\d+日\d+时\d+分$/.test(timeString)) return;
-        $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function () {
+        var prevString = '';
+        $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function (index) {
             var $this = $(this);
-            if (timeString < $.trim($this.text())) $this.addClass('pd_highlight');
+            var curString = $.trim($this.text());
+            if (index === 0) prevString = curString;
+            if (timeString < curString && prevString >= curString) {
+                $this.addClass('pd_highlight');
+                prevString = curString;
+            }
             else return false;
         });
         $('.kf_share1').on('click', 'td > a', function () {
@@ -7277,7 +7610,7 @@ var KFOL = {
             '  <textarea style="width:250px;height:300px;margin:5px 0" readonly="readonly"></textarea>' +
             '</div>';
         var $dialog = Dialog.create('pd_replyer_list', '回帖者名单', html);
-        Dialog.show('pd_replyer_list');
+
         var $filterNodes = $dialog.find('#pd_replyer_list_filter input');
         $filterNodes.click(function () {
             var list = replyerList.concat();
@@ -7308,6 +7641,9 @@ var KFOL = {
             $('#pd_replyer_list_stat').html('共有<b>{0}</b>条项目'.replace('{0}', num));
         });
         $dialog.find('#pd_replyer_list_filter input:first').triggerHandler('click');
+
+        Dialog.show('pd_replyer_list');
+        $dialog.find('input:first').focus();
     },
 
     /**
@@ -7674,8 +8010,9 @@ var KFOL = {
                     .find('a:first')
                     .click(function (e) {
                         e.preventDefault();
-                        $('.pd_buy_thread').prop('checked', true);
-                        alert('共选择了{0}项'.replace('{0}', $('.pd_buy_thread').length));
+                        var $buyThread = $('.pd_buy_thread');
+                        $buyThread.prop('checked', true);
+                        alert('共选择了{0}项'.replace('{0}', $buyThread.length));
                     })
                     .next('a')
                     .click(function (e) {
@@ -8600,6 +8937,76 @@ var KFOL = {
     },
 
     /**
+     * 在帖子页面添加更多表情的链接
+     */
+    addMoreSmileLink: function () {
+        /**
+         * 添加表情代码
+         * @param {string} id 表情ID
+         */
+        var addSmileCode = function (id) {
+            var textArea = $('textarea[name="atc_content"]').get(0);
+            if (!textArea) return;
+            var code = '[s:' + id + ']';
+            if (typeof textArea.selectionStart !== 'undefined') {
+                var prePos = textArea.selectionStart;
+                textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(prePos);
+                textArea.selectionStart = prePos + code.length;
+                textArea.selectionEnd = prePos + code.length;
+            }
+            else {
+                textArea.value += code;
+            }
+            textArea.focus();
+        };
+
+        var $parent = $('input[name="diy_guanjianci"]').parent();
+        $parent.on('click', 'a[href="javascript:;"]', function (e) {
+            e.preventDefault();
+            var id = $(this).data('id');
+            if (id) addSmileCode(id);
+        }).find('a[onclick^="javascript:addsmile"]').each(function () {
+            var $this = $(this);
+            var matches = /addsmile\((\d+)\)/i.exec($this.attr('onclick'));
+            if (matches) {
+                $this.data('id', matches[1]).removeAttr('onclick').attr('href', 'javascript:;');
+            }
+        });
+
+        $('<a class="pd_highlight" href="#">[更多]</a>')
+            .appendTo($parent)
+            .click(function (e) {
+                e.preventDefault();
+                var $this = $(this);
+                var $panel = $('#pd_smile_panel');
+                if ($panel.length > 0) {
+                    $this.text('[更多]');
+                    $panel.remove();
+                    return;
+                }
+                $this.text('[关闭]');
+
+                var smileIdList = ['48', '35', '34', '33', '32', '31', '30', '29', '28', '27', '26', '36', '37', '47', '46', '45', '44', '43', '42', '41', '40',
+                    '39', '38', '25', '24', '11', '10', '09', '08', '01', '02', '03', '04', '05', '06', '12', '13', '23', '22', '21', '20', '19', '18', '17', '16',
+                    '15', '14', '07'];
+                var html = '';
+                $.each(smileIdList, function (i, id) {
+                    html += '<img src="{0}/post/smile/em/em{1}.gif" alt="[表情]" data-id="{1}" />'.replace('{0}', imgpath).replace(/\{1\}/g, id);
+                });
+                html = '<div class="pd_panel" id="pd_smile_panel" style="width:308px;height:185px;opacity:0.9;">' + html + '</div>';
+
+                var offset = $parent.offset();
+                $panel = $(html).appendTo('body');
+                $panel.css('top', offset.top + $parent.height() + 4)
+                    .css('left', offset.left + $parent.width() - $panel.width() + 9)
+                    .on('click', 'img', function () {
+                        var id = $(this).data('id');
+                        if (id) addSmileCode(id);
+                    });
+            });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -8642,6 +9049,7 @@ var KFOL = {
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
             KFOL.addCopyCodeLink();
+            KFOL.addMoreSmileLink();
         }
         else if (location.pathname === '/thread.php') {
             if (Config.highlightNewPostEnabled) KFOL.highlightNewPost();
@@ -8695,6 +9103,7 @@ var KFOL = {
         else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
             Loot.addBatchAttackButton();
             if (Config.customMonsterNameEnabled) Loot.customMonsterName();
+            Loot.addMonsterLootInfoTips();
         }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();
