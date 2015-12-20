@@ -224,3 +224,48 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
 }());
 
 /*==========================================*/
+
+// 发帖时自动附加额外内容 V1.0
+(function () {
+    if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
+    var options = {
+        // 附加在内容末尾的文本，如不需要则留空，例：'\n文本1'
+        addText: '',
+        // 附加在内容开头的文本，如不需要则留空，例：'文本2\n'
+        insertText: '',
+        // 如果原文本框内容包含了指定文本则不附加，留空表示不启用，可使用正则表达式，例：'文本3'或/Text.*3/i
+        excludeText: '',
+        attachType: 0, // 附加内容的类型，0：任何时候都附加；1：只在发表新主题时附加；2：只在发表新回复时附加
+        attachWhenLteWordNum: -1 // 在原文本框内容的字数不超过指定字数时才附加，-1表示不限制
+    };
+
+    if (!options.addText && !options.insertText) return;
+    var action = Tools.getUrlParam('action');
+    if (action === 'modify') return;
+    else if (options.attachType === 1 && (location.pathname === '/read.php' || action === 'reply' || action === 'quote')) return;
+    else if (options.attachType === 2 && location.pathname === '/post.php' && !action) return;
+
+    var $form = $('form[name="FORM"][action="post.php?"]');
+    var switchHtml = '<label style="margin-left:7px"><input type="checkbox" id="pd_no_attach" class="pd_input" /> 不附加额外内容</label>';
+    if (location.pathname === '/post.php') $form.find('input[name="diy_guanjianci"]').after(switchHtml);
+    else $form.find('input[name="Submit"]').after(switchHtml);
+    $form.submit(function () {
+        var $this = $(this);
+        var $textArea = $this.find('#textarea, textarea[name="atc_content"]').eq(0);
+        var content = $textArea.val();
+        if (!content) return;
+        if ($this.find('#pd_no_attach').prop('checked')) return;
+        if (options.excludeText) {
+            if ($.type(options.excludeText) === 'regexp') {
+                if (options.excludeText.test(content)) return;
+            }
+            else {
+                if (content.toLowerCase().indexOf(options.excludeText.toLowerCase()) > -1) return;
+            }
+        }
+        if (options.attachWhenLteWordNum > -1 && content.length > options.attachWhenLteWordNum) return;
+        $textArea.val(options.insertText + content + options.addText);
+    });
+}());
+
+/*==========================================*/
