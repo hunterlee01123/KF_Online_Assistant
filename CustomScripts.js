@@ -269,3 +269,221 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
 }());
 
 /*==========================================*/
+
+// 记录被怪物攻击日志 V1.0
+(function () {
+    if (!KFOL.isInHomePage && location.pathname !== '/kf_fw_ig_index.php') return;
+    var recordInterval = 5; // 记录的时间间隔（分钟）
+    var autoRecordType = 0; // 自动记录的类型，0：不自动记录；1：只在争夺首页自动记录；2：只在论坛首页自动记录；3：在论坛首页和争夺首页均自动记录
+    var recordStorageName = 'pd_monster_attack_log'; // 保存日志的键值名称
+    var recordItvFunc = null;
+
+    /**
+     * 读取被怪物攻击日志
+     */
+    var readLog = function () {
+        var log = localStorage.getItem(recordStorageName + '_' + KFOL.uid);
+        if (log) {
+            try {
+                log = JSON.parse(log);
+            }
+            catch (ex) {
+                log = [];
+            }
+            if (!log || $.type(log) !== 'array') log = [];
+        }
+        else {
+            log = [];
+        }
+        return log;
+    };
+
+    /**
+     * 写入被怪物攻击日志
+     * @param {string[]} log 日志列表
+     */
+    var writeLog = function (log) {
+        localStorage.setItem(recordStorageName + '_' + KFOL.uid, JSON.stringify(log));
+    };
+
+    /**
+     * 记录被怪物攻击日志
+     */
+    var recordMonsterAttackLog = function () {
+        if (!parseInt(recordInterval)) return;
+        console.log('记录被怪物攻击日志Start(间隔：{0}分钟)'.replace('{0}', recordInterval));
+        $.get('kf_fw_ig_index.php', function (html) {
+            var attackLogMatches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?)<br \/><\/td><\/tr>/i.exec(html);
+            if (!attackLogMatches || !/发起争夺/.test(attackLogMatches[1])) {
+                console.log('未发现日志');
+                return;
+            }
+            var attackLogList = readLog();
+            var newAttackLogList = [];
+            newAttackLogList = attackLogMatches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '').split('\n');
+            var tmpAttackLogList = attackLogList.slice(-newAttackLogList.length);
+            var index = 0;
+            if (tmpAttackLogList.length < newAttackLogList.length) {
+                for (index = 0; index < newAttackLogList.length; index++) {
+                    if ($.inArray(newAttackLogList[index], tmpAttackLogList) > -1) break;
+                }
+                index--;
+            }
+            else {
+                for (index = newAttackLogList.length - 1; index >= 0; index--) {
+                    if ($.inArray(newAttackLogList[index], tmpAttackLogList) === -1) break;
+                }
+            }
+            if (index >= 0) {
+                for (var i = index; i >= 0; i--) {
+                    attackLogList.push(newAttackLogList[i]);
+                }
+                console.log('新增日志{0}条'.replace('{0}', index + 1));
+                writeLog(attackLogList);
+            }
+            else {
+                console.log('暂无新增日志');
+            }
+        }, 'html');
+    };
+
+    /**
+     * 获取选中文本的日志统计结果
+     * @param {string} content 选中文本
+     * @returns {{}} 日志统计结果
+     */
+    var statLog = function (content) {
+        var stat = {};
+        var matches = content.match(/发起争夺/g);
+        if (matches) stat['攻击次数'] = matches.length;
+        else return {};
+
+        matches = content.match(/(被实际夺取\d+KFB|被实际燃烧\d+KFB)/ig);
+        if (matches) {
+            var totalKfb = 0;
+            for (var i in matches) {
+                var kfbMatches = /(\d+)KFB/i.exec(matches[i]);
+                totalKfb += parseInt(kfbMatches[1]);
+            }
+            stat['损失KFB'] = totalKfb;
+        }
+
+        matches = content.match(/被对方闪避/g);
+        if (matches) stat['闪避'] = matches.length;
+
+        matches = content.match(/触发暴击/g);
+        if (matches) stat['暴击'] = matches.length;
+
+        matches = content.match(/清空生命值，被实际燃烧/g);
+        if (matches) stat['清空生命值'] = matches.length;
+
+        var monsterList = ['小史莱姆', '笨蛋', '大果冻史莱姆', '肉山', '大魔王'];
+        stat['怪物攻击次数'] = {};
+        for (var i in monsterList) {
+            matches = content.match(new RegExp('\\[' + monsterList[i] + '\\]', 'g'));
+            if (matches) stat['怪物攻击次数'][monsterList[i]] = matches.length;
+        }
+        return stat;
+    };
+
+    if (KFOL.isInHomePage && autoRecordType >= 2) {
+        window.setTimeout(function () {
+            recordMonsterAttackLog();
+            recordItvFunc = window.setInterval(recordMonsterAttackLog, Math.floor((recordInterval * 60 + Math.random() * 5) * 1000));
+        }, Math.floor((30 + Math.random() * 5) * 1000));
+    }
+    else if (location.pathname === '/kf_fw_ig_index.php') {
+        $('<div id="pd_record_monster_attack_log"><button style="color:#00F" title="记录被怪物攻击日志">开始记录</button> <button title="查看被怪物攻击日志">查看日志</button> ' +
+            '<button title="清除被怪物攻击日志">清除日志</button></div>')
+            .appendTo('.kf_fw_ig1 > tbody > tr:last-child > td')
+            .find('button:first')
+            .click(function (e) {
+                e.preventDefault();
+                var $this = $(this);
+                if ($this.text() === '开始记录') {
+                    $this.text('停止记录').css('color', '#F00');
+                    recordMonsterAttackLog();
+                    recordItvFunc = window.setInterval(recordMonsterAttackLog, Math.floor((recordInterval * 60 + Math.random() * 5) * 1000));
+                }
+                else {
+                    $this.text('开始记录').css('color', '#00F');
+                    if (recordItvFunc) window.clearInterval(recordItvFunc);
+                }
+            })
+            .end()
+            .find('button:eq(1)')
+            .click(function (e) {
+                e.preventDefault();
+                if ($('#pd_monster_attack_log').length > 0) return;
+                var attackLogList = readLog();
+                if (attackLogList.length === 0) {
+                    alert('目前暂无日志');
+                    return;
+                }
+                attackLogList.reverse();
+
+                var html =
+                    '<div class="pd_cfg_main">' +
+                    '  <textarea style="width:850px;height:404px;margin:5px 0;line-height:1.6em;white-space:pre" wrap="off" readonly="readonly"></textarea><br />' +
+                    '  <div id="pd_monster_attack_log_stat" class="pd_stat" style="margin-bottom:5px">' +
+                    '    <strong>统计结果（需选中相应文本）：</strong><br /><span class="pd_notice">无</span><br />' +
+                    '    <strong>怪物攻击次数：</strong><br /><span class="pd_notice">无</span>' +
+                    '  </div>' +
+                    '</div>';
+                var $dialog = Dialog.create('pd_monster_attack_log', '怪物攻击日志', html);
+
+                $dialog.find('textarea').val(attackLogList.join('\n')).select(function () {
+                    if (typeof this.selectionStart === 'undefined') return;
+                    var selectedContent = this.value.substring(this.selectionStart, this.selectionEnd);
+                    if (!selectedContent) return;
+                    var stat = statLog(selectedContent);
+                    var result = '<strong>统计结果（已选中{0}行）：</strong><br />'.replace('{0}', selectedContent.split('\n').length);
+                    if ($.isEmptyObject(stat)) {
+                        result += '<span class="pd_notice">无</span>';
+                    }
+                    else {
+                        $.each(stat, function (key, value) {
+                            if (key === '怪物攻击次数') return;
+                            result += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', value);
+                        });
+                        result += '<br /><strong>怪物攻击次数：</strong><br />';
+                        if (!$.isEmptyObject(stat['怪物攻击次数'])) {
+                            $.each(stat['怪物攻击次数'], function (monsterName, num) {
+                                result += '<i>{0}<em>+{1}</em></i> '.replace('{0}', monsterName).replace('{1}', num);
+                            });
+                        }
+                        else {
+                            result += '<span class="pd_notice">无</span>';
+                        }
+                    }
+                    $dialog.find('#pd_monster_attack_log_stat').html(result);
+                });
+
+                Dialog.show('pd_monster_attack_log');
+                $dialog.find('textarea').focus();
+            })
+            .end()
+            .find('button:last')
+            .click(function (e) {
+                e.preventDefault();
+                var num = window.prompt('你想保留最近几条日志？（0表示全部删除）', 0);
+                if (num === null) return;
+                num = parseInt($.trim(num));
+                if (num < 0) return;
+                if (num === 0) {
+                    localStorage.removeItem(recordStorageName + '_' + KFOL.uid);
+                    alert('日志已全部清除');
+                }
+                else {
+                    var attackLogList = readLog();
+                    if (attackLogList.length > 0) writeLog(attackLogList.slice(-num));
+                    alert('除最近{0}条外的日志已删除'.replace('{0}', num));
+                }
+            });
+
+        if (autoRecordType === 1 || autoRecordType === 3)
+            $('#pd_record_monster_attack_log > button:first').triggerHandler('click');
+    }
+}());
+
+/*==========================================*/
