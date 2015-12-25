@@ -225,18 +225,20 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
 
 /*==========================================*/
 
-// 发帖时自动附加额外内容 V1.0
+// 发帖时自动附加额外内容 V1.2
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
     var options = {
-        // 附加在内容末尾的文本，如不需要则留空，例：'\n文本1'
+        // 附加在内容末尾的文本，如不需要则留空，例：'\n文本1'（\n表示换行符）
         addText: '',
-        // 附加在内容开头的文本，如不需要则留空，例：'文本2\n'
+        // 附加在内容开头的文本，如不需要则留空，例：'文本2\n'（\n表示换行符）
         insertText: '',
         // 如果原文本框内容包含了指定文本则不附加，留空表示不启用，可使用正则表达式，例：'文本3'或/Text.*3/i
         excludeText: '',
-        attachType: 0, // 附加内容的类型，0：任何时候都附加；1：只在发表新主题时附加；2：只在发表新回复时附加
-        attachWhenLteWordNum: -1 // 在原文本框内容的字数不超过指定字数时才附加，-1表示不限制
+        // 附加内容的类型，0：任何时候都附加；1：只在发表新主题时附加；2：只在发表新回复时附加
+        attachType: 0,
+        // 在原文本框内容的字数不超过指定字数时才附加，-1表示不限制
+        attachWhenLteWordNum: -1
     };
 
     if (!options.addText && !options.insertText) return;
@@ -264,7 +266,17 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
             }
         }
         if (options.attachWhenLteWordNum > -1 && content.length > options.attachWhenLteWordNum) return;
-        $textArea.val(options.insertText + content + options.addText);
+
+        var handleText = function (text) {
+            text = text.substr(0, 250).replace(/\[(img|url|sell).+?\/(img|url|sell)\]/gi, '[代码已屏蔽]');
+            var matches = text.match(/\[size=\d+\]/gi);
+            for (var i in matches) {
+                var size = parseInt(/\d+/.exec(matches[i])[0]);
+                if (size >= 4) text = text.replace(matches[i], '[size=1]');
+            }
+            return text;
+        };
+        $textArea.val(handleText(options.insertText) + content + handleText(options.addText));
     });
 }());
 
@@ -280,6 +292,7 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
 
     /**
      * 读取被怪物攻击日志
+     * @returns {string[]} 日志列表
      */
     var readLog = function () {
         var log = localStorage.getItem(recordStorageName + '_' + KFOL.uid);
