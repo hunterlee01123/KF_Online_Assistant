@@ -20,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.7.1
+// @version     4.7.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.7.1';
+var version = '4.7.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -131,6 +131,10 @@ var KFOL = {
             '.pd_monster_tips { cursor: help; color: #999; }' +
             '.pd_monster_tips_ok { color: #99CC00; }' +
             '.pd_monster_tips_conditional { color: #FF9900; }' +
+            '#pd_attack_log_content {' +
+            '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
+            '  line-height: 1.6em; background-color: #FFF;' +
+            '}' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -158,10 +162,6 @@ var KFOL = {
             '.pd_cfg_btns button { width: 80px; margin-left: 5px; }' +
             '.pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }' +
             '#pd_cfg_custom_monster_name_list td input[type="text"] { width: 140px; }' +
-            '#pd_attack_log_content {' +
-            '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
-            '  line-height: 1.6em; background-color: #FFF;' +
-            '}' +
             '#pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }' +
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
@@ -309,13 +309,6 @@ var KFOL = {
      * @param {boolean} [isAutoSaveCurrentDeposit=false] 是否在捐款完毕之后自动活期存款
      */
     donation: function (isAutoSaveCurrentDeposit) {
-        if (Config.donationAfterVipEnabled) {
-            if (!KFOL.isInHomePage) return;
-            if ($('a[href="kf_vmember.php"]:contains("VIP会员(参与论坛获得的额外权限)")').length > 0) {
-                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
-                return;
-            }
-        }
         var now = new Date();
         var date = Tools.getDateByTime(Config.donationAfterTime);
         if (now < date) {
@@ -784,7 +777,7 @@ var KFOL = {
                 '<br /><div class="line"></div><div class="c"></div></div><div class="line"></div>')
                     .replace('{0}', KFOL.userName)
                     .replace('{1}', type === 'at_change_to_cao' ? '艹' : '@');
-                $('a[href="kf_vmember.php"]:contains("VIP会员")').parent().before(html);
+                $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
             }
         }
         else if (type === 'hide_box_2') {
@@ -813,13 +806,6 @@ var KFOL = {
         $('.kf_share1').on('click', 'td > a', function () {
             Tools.setCookie(Config.prevReadAtTipsCookieName, '', Tools.getDate('-1d'));
         });
-    },
-
-    /**
-     * 去除首页的VIP标识高亮
-     */
-    hideNoneVipTips: function () {
-        $('a[href="kf_vmember.php"]:contains("VIP会员(参与论坛获得的额外权限)")').removeClass('indbox5').addClass('indbox6');
     },
 
     /**
@@ -1904,7 +1890,7 @@ var KFOL = {
     autoSaveCurrentDeposit: function (isRead) {
         if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb))
             return;
-        var $kfb = $('a.indbox1[title="网站虚拟货币"]');
+        var $kfb = $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]');
         /**
          * 活期存款
          * @param {number} income 当前拥有的KFB
@@ -1944,7 +1930,7 @@ var KFOL = {
      * 在神秘等级升级后进行提醒
      */
     smLevelUpAlert: function () {
-        var matches = /神秘(\d+)级/.exec($('a.indbox1[href="kf_growup.php"]').text());
+        var matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
         if (!matches) return;
         var smLevel = parseInt(matches[1]);
         var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
@@ -2460,7 +2446,6 @@ var KFOL = {
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
-            if (Config.hideNoneVipEnabled) KFOL.hideNoneVipTips();
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();

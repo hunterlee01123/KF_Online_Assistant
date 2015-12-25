@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.7.1
+// @version     4.7.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.7.1';
+var version = '4.7.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -44,8 +44,6 @@ var Config = {
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     donationAfterTime: '00:05:00',
-    // 在获得VIP资格后才进行捐款，如开启此选项，将只能在首页进行捐款，true：开启；false：关闭
-    donationAfterVipEnabled: false,
     // 是否自动争夺，可自动领取争夺奖励，并可自动进行批量攻击（可选），true：开启；false：关闭
     autoLootEnabled: false,
     // 在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：['07:00-08:15','17:00-18:15']，留空表示不启用
@@ -79,8 +77,6 @@ var Config = {
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight_1：取消已读提醒高亮，并在无提醒时补上消息框；no_highlight_2：取消已读提醒高亮；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式1相同)
     atTipsHandleType: 'no_highlight_1',
-    // 是否在无VIP时去除首页的VIP标识高亮，true：开启；false：关闭
-    hideNoneVipEnabled: true,
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
@@ -379,10 +375,6 @@ var ConfigMethod = {
                 settings.donationAfterTime = donationAfterTime;
             else settings.donationAfterTime = defConfig.donationAfterTime;
         }
-        if (typeof options.donationAfterVipEnabled !== 'undefined') {
-            settings.donationAfterVipEnabled = typeof options.donationAfterVipEnabled === 'boolean' ?
-                options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
-        }
         if (typeof options.deferLootTimeWhenRemainAttackNum !== 'undefined') {
             var attackNum = parseInt(options.deferLootTimeWhenRemainAttackNum);
             if (!isNaN(attackNum) && attackNum >= 1 && attackNum <= Config.maxAttackNum) settings.deferLootTimeWhenRemainAttackNum = attackNum;
@@ -502,10 +494,6 @@ var ConfigMethod = {
             if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, allowTypes) > -1)
                 settings.atTipsHandleType = atTipsHandleType;
             else settings.atTipsHandleType = defConfig.atTipsHandleType;
-        }
-        if (typeof options.hideNoneVipEnabled !== 'undefined') {
-            settings.hideNoneVipEnabled = typeof options.hideNoneVipEnabled === 'boolean' ?
-                options.hideNoneVipEnabled : defConfig.hideNoneVipEnabled;
         }
         if (typeof options.smLevelUpAlertEnabled !== 'undefined') {
             settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ?
@@ -1336,9 +1324,7 @@ var ConfigDialog = {
             '      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
             '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
             '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
-            '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_donation_after_vip_enabled" type="checkbox" />在获得VIP后才进行捐款 ' +
-            '<span class="pd_cfg_tips" title="在获得VIP资格后才进行捐款，如开启此选项，将只能在首页进行捐款">[?]</span></label>' +
+            '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
@@ -1395,14 +1381,12 @@ var ConfigDialog = {
             '<option value="no_highlight_2">取消已读提醒高亮</option><option value="hide_box_1">不显示已读提醒的消息框</option><option value="hide_box_2">永不显示消息框</option>' +
             '<option value="default">保持默认</option><option value="at_change_to_cao">将@改为艹(其他和方式1相同)</option></select>' +
             '<span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_hide_none_vip_enabled" type="checkbox" />无VIP时取消高亮 ' +
-            '<span class="pd_cfg_tips" title="在无VIP时去除首页的VIP标识高亮">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
-            '<span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
-            '<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label><br />' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
+            '<span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox" />定期存款到期提醒 ' +
             '<span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
+            '<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label>' +
             '    </fieldset>' +
             '  </div>' +
             '  <div class="pd_cfg_panel">' +
@@ -1617,7 +1601,6 @@ var ConfigDialog = {
         $('#pd_cfg_auto_donation_enabled').prop('checked', Config.autoDonationEnabled);
         $('#pd_cfg_donation_kfb').val(Config.donationKfb);
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
-        $('#pd_cfg_donation_after_vip_enabled').prop('checked', Config.donationAfterVipEnabled);
 
         $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
         $('#pd_cfg_no_auto_loot_when').val(Config.noAutoLootWhen.join(','));
@@ -1638,7 +1621,6 @@ var ConfigDialog = {
         $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
 
         $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
-        $('#pd_cfg_hide_none_vip_enabled').prop('checked', Config.hideNoneVipEnabled);
         $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
         $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked', Config.homePageThreadFastGotoLinkEnabled);
         $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
@@ -1689,7 +1671,6 @@ var ConfigDialog = {
         options.autoDonationEnabled = $('#pd_cfg_auto_donation_enabled').prop('checked');
         options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
         options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
-        options.donationAfterVipEnabled = $('#pd_cfg_donation_after_vip_enabled').prop('checked');
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
 
         options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
@@ -1719,7 +1700,6 @@ var ConfigDialog = {
         options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
 
         options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
-        options.hideNoneVipEnabled = $('#pd_cfg_hide_none_vip_enabled').prop('checked');
         options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
         options.homePageThreadFastGotoLinkEnabled = $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked');
         options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
@@ -6705,6 +6685,10 @@ var KFOL = {
             '.pd_monster_tips { cursor: help; color: #999; }' +
             '.pd_monster_tips_ok { color: #99CC00; }' +
             '.pd_monster_tips_conditional { color: #FF9900; }' +
+            '#pd_attack_log_content {' +
+            '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
+            '  line-height: 1.6em; background-color: #FFF;' +
+            '}' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -6732,10 +6716,6 @@ var KFOL = {
             '.pd_cfg_btns button { width: 80px; margin-left: 5px; }' +
             '.pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }' +
             '#pd_cfg_custom_monster_name_list td input[type="text"] { width: 140px; }' +
-            '#pd_attack_log_content {' +
-            '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
-            '  line-height: 1.6em; background-color: #FFF;' +
-            '}' +
             '#pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }' +
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
@@ -6883,13 +6863,6 @@ var KFOL = {
      * @param {boolean} [isAutoSaveCurrentDeposit=false] 是否在捐款完毕之后自动活期存款
      */
     donation: function (isAutoSaveCurrentDeposit) {
-        if (Config.donationAfterVipEnabled) {
-            if (!KFOL.isInHomePage) return;
-            if ($('a[href="kf_vmember.php"]:contains("VIP会员(参与论坛获得的额外权限)")').length > 0) {
-                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
-                return;
-            }
-        }
         var now = new Date();
         var date = Tools.getDateByTime(Config.donationAfterTime);
         if (now < date) {
@@ -7358,7 +7331,7 @@ var KFOL = {
                 '<br /><div class="line"></div><div class="c"></div></div><div class="line"></div>')
                     .replace('{0}', KFOL.userName)
                     .replace('{1}', type === 'at_change_to_cao' ? '艹' : '@');
-                $('a[href="kf_vmember.php"]:contains("VIP会员")').parent().before(html);
+                $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
             }
         }
         else if (type === 'hide_box_2') {
@@ -7387,13 +7360,6 @@ var KFOL = {
         $('.kf_share1').on('click', 'td > a', function () {
             Tools.setCookie(Config.prevReadAtTipsCookieName, '', Tools.getDate('-1d'));
         });
-    },
-
-    /**
-     * 去除首页的VIP标识高亮
-     */
-    hideNoneVipTips: function () {
-        $('a[href="kf_vmember.php"]:contains("VIP会员(参与论坛获得的额外权限)")').removeClass('indbox5').addClass('indbox6');
     },
 
     /**
@@ -8478,7 +8444,7 @@ var KFOL = {
     autoSaveCurrentDeposit: function (isRead) {
         if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb))
             return;
-        var $kfb = $('a.indbox1[title="网站虚拟货币"]');
+        var $kfb = $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]');
         /**
          * 活期存款
          * @param {number} income 当前拥有的KFB
@@ -8518,7 +8484,7 @@ var KFOL = {
      * 在神秘等级升级后进行提醒
      */
     smLevelUpAlert: function () {
-        var matches = /神秘(\d+)级/.exec($('a.indbox1[href="kf_growup.php"]').text());
+        var matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
         if (!matches) return;
         var smLevel = parseInt(matches[1]);
         var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
@@ -9034,7 +9000,6 @@ var KFOL = {
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
-            if (Config.hideNoneVipEnabled) KFOL.hideNoneVipTips();
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();

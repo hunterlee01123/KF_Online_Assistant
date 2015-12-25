@@ -13,8 +13,6 @@ var Config = {
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     donationAfterTime: '00:05:00',
-    // 在获得VIP资格后才进行捐款，如开启此选项，将只能在首页进行捐款，true：开启；false：关闭
-    donationAfterVipEnabled: false,
     // 是否自动争夺，可自动领取争夺奖励，并可自动进行批量攻击（可选），true：开启；false：关闭
     autoLootEnabled: false,
     // 在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：['07:00-08:15','17:00-18:15']，留空表示不启用
@@ -48,8 +46,6 @@ var Config = {
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight_1：取消已读提醒高亮，并在无提醒时补上消息框；no_highlight_2：取消已读提醒高亮；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式1相同)
     atTipsHandleType: 'no_highlight_1',
-    // 是否在无VIP时去除首页的VIP标识高亮，true：开启；false：关闭
-    hideNoneVipEnabled: true,
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭

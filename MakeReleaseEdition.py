@@ -149,6 +149,8 @@ def makeForMobileEdition(content):
     if num == 0: raise NoFoundReplaceStringError('移动版', 6)
     content, num = re.subn(r"('\.pd_cfg_box\s*\{'\s*\+\n\s*'\s*position:\s*)fixed;", r"\g<1>absolute;", content, count=1, flags=re.I)
     if num == 0: raise NoFoundReplaceStringError('移动版', 7)
+    content, num = re.subn(r'(else\s*\{\n\s*textArea\.value\s*\+\=\s*code;\n\s*\})\n\s*textArea\.focus\(\);', r'\g<1>', content, count=1, flags=re.I)
+    if num == 0: raise NoFoundReplaceStringError('移动版', 8)
     open(releaseDirName + os.sep + forMobileFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成移动版脚本文件')
     open(releaseDirName + os.sep + forMobileFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))

@@ -98,10 +98,6 @@ var ConfigMethod = {
                 settings.donationAfterTime = donationAfterTime;
             else settings.donationAfterTime = defConfig.donationAfterTime;
         }
-        if (typeof options.donationAfterVipEnabled !== 'undefined') {
-            settings.donationAfterVipEnabled = typeof options.donationAfterVipEnabled === 'boolean' ?
-                options.donationAfterVipEnabled : defConfig.donationAfterVipEnabled;
-        }
         if (typeof options.deferLootTimeWhenRemainAttackNum !== 'undefined') {
             var attackNum = parseInt(options.deferLootTimeWhenRemainAttackNum);
             if (!isNaN(attackNum) && attackNum >= 1 && attackNum <= Config.maxAttackNum) settings.deferLootTimeWhenRemainAttackNum = attackNum;
@@ -221,10 +217,6 @@ var ConfigMethod = {
             if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, allowTypes) > -1)
                 settings.atTipsHandleType = atTipsHandleType;
             else settings.atTipsHandleType = defConfig.atTipsHandleType;
-        }
-        if (typeof options.hideNoneVipEnabled !== 'undefined') {
-            settings.hideNoneVipEnabled = typeof options.hideNoneVipEnabled === 'boolean' ?
-                options.hideNoneVipEnabled : defConfig.hideNoneVipEnabled;
         }
         if (typeof options.smLevelUpAlertEnabled !== 'undefined') {
             settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ?

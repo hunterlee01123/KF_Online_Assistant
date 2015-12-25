@@ -28,9 +28,7 @@ var ConfigDialog = {
             '      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
             '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
             '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
-            '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_donation_after_vip_enabled" type="checkbox" />在获得VIP后才进行捐款 ' +
-            '<span class="pd_cfg_tips" title="在获得VIP资格后才进行捐款，如开启此选项，将只能在首页进行捐款">[?]</span></label>' +
+            '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
@@ -87,14 +85,12 @@ var ConfigDialog = {
             '<option value="no_highlight_2">取消已读提醒高亮</option><option value="hide_box_1">不显示已读提醒的消息框</option><option value="hide_box_2">永不显示消息框</option>' +
             '<option value="default">保持默认</option><option value="at_change_to_cao">将@改为艹(其他和方式1相同)</option></select>' +
             '<span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_hide_none_vip_enabled" type="checkbox" />无VIP时取消高亮 ' +
-            '<span class="pd_cfg_tips" title="在无VIP时去除首页的VIP标识高亮">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
-            '<span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
-            '<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label><br />' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
+            '<span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox" />定期存款到期提醒 ' +
             '<span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
+            '<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label>' +
             '    </fieldset>' +
             '  </div>' +
             '  <div class="pd_cfg_panel">' +
@@ -309,7 +305,6 @@ var ConfigDialog = {
         $('#pd_cfg_auto_donation_enabled').prop('checked', Config.autoDonationEnabled);
         $('#pd_cfg_donation_kfb').val(Config.donationKfb);
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
-        $('#pd_cfg_donation_after_vip_enabled').prop('checked', Config.donationAfterVipEnabled);
 
         $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
         $('#pd_cfg_no_auto_loot_when').val(Config.noAutoLootWhen.join(','));
@@ -330,7 +325,6 @@ var ConfigDialog = {
         $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
 
         $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
-        $('#pd_cfg_hide_none_vip_enabled').prop('checked', Config.hideNoneVipEnabled);
         $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
         $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked', Config.homePageThreadFastGotoLinkEnabled);
         $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
@@ -381,7 +375,6 @@ var ConfigDialog = {
         options.autoDonationEnabled = $('#pd_cfg_auto_donation_enabled').prop('checked');
         options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
         options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
-        options.donationAfterVipEnabled = $('#pd_cfg_donation_after_vip_enabled').prop('checked');
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
 
         options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
@@ -411,7 +404,6 @@ var ConfigDialog = {
         options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
 
         options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
-        options.hideNoneVipEnabled = $('#pd_cfg_hide_none_vip_enabled').prop('checked');
         options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
         options.homePageThreadFastGotoLinkEnabled = $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked');
         options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
