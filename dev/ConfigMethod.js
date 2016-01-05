@@ -226,6 +226,10 @@ var ConfigMethod = {
             settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
                 options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
         }
+        if (typeof options.smRankChangeAlertEnabled !== 'undefined') {
+            settings.smRankChangeAlertEnabled = typeof options.smRankChangeAlertEnabled === 'boolean' ?
+                options.smRankChangeAlertEnabled : defConfig.smRankChangeAlertEnabled;
+        }
         if (typeof options.homePageThreadFastGotoLinkEnabled !== 'undefined') {
             settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ?
                 options.homePageThreadFastGotoLinkEnabled : defConfig.homePageThreadFastGotoLinkEnabled;

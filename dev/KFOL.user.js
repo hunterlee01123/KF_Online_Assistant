@@ -1933,27 +1933,79 @@ var KFOL = {
         var matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
         if (!matches) return;
         var smLevel = parseInt(matches[1]);
-        var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
-        var writeData = function () {
+
+        /**
+         * 写入神秘等级数据
+         * @param {number} smLevel 神秘等级
+         */
+        var writeData = function (smLevel) {
             TmpLog.setValue(Config.smLevelUpTmpLogName, {time: (new Date()).getTime(), smLevel: smLevel});
         };
+
+        var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
         if (!data || $.type(data.time) !== 'number' || $.type(data.smLevel) !== 'number') {
-            writeData();
+            writeData(smLevel);
         }
         else if (smLevel > data.smLevel) {
             var date = new Date(data.time);
-            Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级总共上升了`{1}`级'
+            writeData(smLevel);
+            Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级共上升了`{1}`级'
                 .replace('{0}', Tools.getDateString(date))
                 .replace('{1}', smLevel - data.smLevel)
             );
-            KFOL.showMsg('自<em>{0}</em>以来，你的神秘等级总共上升了<em>{1}</em>级'
+            KFOL.showMsg('自<em>{0}</em>以来，你的神秘等级共上升了<em>{1}</em>级'
                 .replace('{0}', Tools.getDateString(date))
                 .replace('{1}', smLevel - data.smLevel)
             );
-            writeData();
         }
         else if (smLevel < data.smLevel) {
-            writeData();
+            writeData(smLevel);
+        }
+    },
+
+    /**
+     * 在神秘系数排名发生变化时进行提醒
+     */
+    smRankChangeAlert: function () {
+        var matches = /系数排名第\s*(\d+)\s*位/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
+        if (!matches) return;
+        var smRank = parseInt(matches[1]);
+
+        /**
+         * 写入神秘系数排名数据
+         * @param {number} smRank 神秘系数排名
+         */
+        var writeData = function (smRank) {
+            TmpLog.setValue(Config.smRankChangeTmpLogName, {time: (new Date()).getTime(), smRank: smRank});
+        };
+
+        var data = TmpLog.getValue(Config.smRankChangeTmpLogName);
+        if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
+            writeData(smRank);
+        }
+        else if (smRank !== data.smRank) {
+            var diff = Math.floor(((new Date()).getTime() - data.time) / 60 / 60 / 1000);
+            if (diff >= Config.smRankChangeAlertInterval) {
+                var date = new Date(data.time);
+                var isUp = smRank > data.smRank;
+                writeData(smRank);
+                Log.push('神秘系数排名变化', '自`{0}`以来，你的神秘系数排名共`{1}`了`{2}`名 (No.`{3}`->No.`{4}`)'
+                    .replace('{0}', Tools.getDateString(date))
+                    .replace('{1}', isUp ? '上升' : '下降')
+                    .replace('{2}', Math.abs(smRank - data.smRank))
+                    .replace('{3}', data.smRank)
+                    .replace('{4}', smRank)
+                );
+                KFOL.showMsg('自<em>{0}</em>以来，你的神秘系数排名共<b style="color:{1}">{2}</b>了<em>{3}</em>名'
+                    .replace('{0}', Tools.getDateString(date))
+                    .replace('{1}', isUp ? '#F00' : '#393')
+                    .replace('{2}', isUp ? '上升' : '下降')
+                    .replace('{3}', Math.abs(smRank - data.smRank))
+                );
+            }
+            else if (diff < 0) {
+                writeData(smRank);
+            }
         }
     },
 
@@ -2436,7 +2488,7 @@ var KFOL = {
          * @param {number} hours VIP剩余时间（小时）
          */
         var addVipHoursTips = function (hours) {
-            $('a[href="kf_fw_1wkfb.php"]:contains("自助评分")').parent().after(
+            $('a[href="kf_growup.php"][title="用户等级和权限"]').parent().after(
                 '<div class="line"></div><div style="width:300px;"><a href="kf_vmember.php" class="indbox{0}">VIP会员 ({1})</a><div class="c"></div></div>'
                     .replace('{0}', hours > 0 ? 5 : 6)
                     .replace('{1}', hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限')
@@ -2480,8 +2532,9 @@ var KFOL = {
             KFOL.handleAtTips();
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
-            if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
+            if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
+            if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
             if (Config.homePageThreadFastGotoLinkEnabled) KFOL.addHomePageThreadFastGotoLink();
             if (Config.fixedDepositDueAlertEnabled && !Tools.getCookie(Config.fixedDepositDueAlertCookieName))
                 Bank.fixedDepositDueAlert();

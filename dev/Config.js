@@ -48,10 +48,12 @@ var Config = {
     atTipsHandleType: 'no_highlight_1',
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
-    // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
-    homePageThreadFastGotoLinkEnabled: true,
     // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
     fixedDepositDueAlertEnabled: false,
+    // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
+    smRankChangeAlertEnabled: false,
+    // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
+    homePageThreadFastGotoLinkEnabled: true,
     // 是否在首页显示VIP剩余时间，true：开启；false：关闭
     showVipSurplusTimeEnabled: false,
     // 是否在帖子列表页面中显示帖子页数快捷链接，true：开启；false：关闭
@@ -191,6 +193,8 @@ var Config = {
     showRefreshModeTipsInterval: 1,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
+    // 神秘系数排名变化的提醒间隔（小时）
+    smRankChangeAlertInterval: 24,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
     // ajax请求的默认间隔时间（毫秒）
@@ -216,6 +220,8 @@ var Config = {
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
+    // 神秘系数排名变化提醒的临时日志名称
+    smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 上一次领取争夺奖励时被怪物攻击的总次数信息的临时日志名称
