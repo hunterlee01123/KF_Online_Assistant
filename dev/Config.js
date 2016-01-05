@@ -52,6 +52,8 @@ var Config = {
     homePageThreadFastGotoLinkEnabled: true,
     // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
     fixedDepositDueAlertEnabled: false,
+    // 是否在首页显示VIP剩余时间，true：开启；false：关闭
+    showVipSurplusTimeEnabled: false,
     // 是否在帖子列表页面中显示帖子页数快捷链接，true：开启；false：关闭
     showFastGotoThreadPageEnabled: false,
     // 在帖子页数快捷链接中显示页数链接的最大数量
@@ -189,6 +191,8 @@ var Config = {
     showRefreshModeTipsInterval: 1,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
+    // 存储VIP剩余时间的Cookie有效期（分钟）
+    vipSurplusTimeExpires: 60,
     // ajax请求的默认间隔时间（毫秒）
     defAjaxInterval: 200,
     // 购买帖子提醒的最低售价（KFB）
@@ -238,6 +242,8 @@ var Config = {
     prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
     // 标记已进行定期存款到期提醒的Cookie名称
     fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
+    // 存储VIP剩余时间的Cookie名称
+    vipSurplusTimeCookieName: 'pd_vip_surplus_time',
     // 标记已自动更换神秘颜色的Cookie名称
     autoChangeSMColorCookieName: 'pd_auto_change_sm_color',
     // 标记已检查过期日志的Cookie名称

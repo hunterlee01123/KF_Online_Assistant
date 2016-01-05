@@ -222,13 +222,17 @@ var ConfigMethod = {
             settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ?
                 options.smLevelUpAlertEnabled : defConfig.smLevelUpAlertEnabled;
         }
+        if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
+            settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
+                options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
+        }
         if (typeof options.homePageThreadFastGotoLinkEnabled !== 'undefined') {
             settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ?
                 options.homePageThreadFastGotoLinkEnabled : defConfig.homePageThreadFastGotoLinkEnabled;
         }
-        if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
-            settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
-                options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
+        if (typeof options.showVipSurplusTimeEnabled !== 'undefined') {
+            settings.showVipSurplusTimeEnabled = typeof options.showVipSurplusTimeEnabled === 'boolean' ?
+                options.showVipSurplusTimeEnabled : defConfig.showVipSurplusTimeEnabled;
         }
 
         if (typeof options.showFastGotoThreadPageEnabled !== 'undefined') {

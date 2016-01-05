@@ -20,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.7.2
+// @version     4.8.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.7.2';
+var version = '4.8.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -735,7 +735,7 @@ var KFOL = {
             $atTips.removeClass('indbox5').addClass('indbox6');
         };
         var hideBox = function () {
-            $atTips.parent().prev('div').addBack().remove();
+            $atTips.parent().next('div.line').addBack().remove();
         };
         var handleBox = noHighlight;
         if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
@@ -2021,11 +2021,11 @@ var KFOL = {
         var diff = Tools.getTimeDiffInfo(timeLog.time);
         if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
         if (timeLog.type === 2) {
-            $msg.text('争夺奖励(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
+            $msg.text('争夺奖励 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
         }
         else {
             diff.hours += 1;
-            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
+            $msg.text('争夺奖励 (剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
         }
         if (!Tools.getCookie(Config.autoAttackReadyCookieName))
             $msg.removeClass('indbox5').addClass('indbox6');
@@ -2041,7 +2041,7 @@ var KFOL = {
         if ($msg.length === 0) return;
         var diff = Tools.getTimeDiffInfo(timeLog.time);
         if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-        $msg.text('神秘盒子(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
+        $msg.text('神秘盒子 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
             .removeClass('indbox5')
             .addClass('indbox6');
     },
@@ -2428,6 +2428,38 @@ var KFOL = {
     },
 
     /**
+     * 在首页显示VIP剩余时间
+     */
+    showVipSurplusTime: function () {
+        /**
+         * 添加VIP剩余时间的提示
+         * @param {number} hours VIP剩余时间（小时）
+         */
+        var addVipHoursTips = function (hours) {
+            $('a[href="kf_fw_1wkfb.php"]:contains("自助评分")').parent().after(
+                '<div class="line"></div><div style="width:300px;"><a href="kf_vmember.php" class="indbox{0}">VIP会员 ({1})</a><div class="c"></div></div>'
+                    .replace('{0}', hours > 0 ? 5 : 6)
+                    .replace('{1}', hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限')
+            );
+        };
+
+        var vipHours = parseInt(Tools.getCookie(Config.vipSurplusTimeCookieName));
+        if (isNaN(vipHours) || vipHours < 0) {
+            console.log('检查VIP剩余时间Start');
+            $.get('kf_vmember.php', function (html) {
+                var hours = 0;
+                var matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
+                if (matches) hours = parseInt(matches[1]);
+                Tools.setCookie(Config.vipSurplusTimeCookieName, hours, Tools.getDate('+' + Config.vipSurplusTimeExpires + 'm'));
+                addVipHoursTips(hours);
+            }, 'html');
+        }
+        else {
+            addVipHoursTips(vipHours);
+        }
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -2448,6 +2480,7 @@ var KFOL = {
             KFOL.handleAtTips();
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
+            if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.homePageThreadFastGotoLinkEnabled) KFOL.addHomePageThreadFastGotoLink();
             if (Config.fixedDepositDueAlertEnabled && !Tools.getCookie(Config.fixedDepositDueAlertCookieName))
