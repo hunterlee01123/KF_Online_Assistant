@@ -11,7 +11,7 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     4.7.2
+// @version     4.8.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -19,7 +19,7 @@
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.7.2';
+var version = '4.8.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -76,15 +76,19 @@ var Config = {
     autoDrawSmbox2Enabled: false,
     // 偏好的神秘盒子数字，例：[52,1,28,400]（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空
     favorSmboxNumbers: [],
-    // 对首页上的有人@你的消息框进行处理的方案，no_highlight_1：取消已读提醒高亮，并在无提醒时补上消息框；no_highlight_2：取消已读提醒高亮；
-    // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式1相同)
-    atTipsHandleType: 'no_highlight_1',
+    // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
+    // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
+    atTipsHandleType: 'no_highlight',
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
-    // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
-    homePageThreadFastGotoLinkEnabled: true,
     // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
     fixedDepositDueAlertEnabled: false,
+    // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
+    smRankChangeAlertEnabled: false,
+    // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
+    homePageThreadFastGotoLinkEnabled: true,
+    // 是否在首页显示VIP剩余时间，true：开启；false：关闭
+    showVipSurplusTimeEnabled: false,
     // 是否在帖子列表页面中显示帖子页数快捷链接，true：开启；false：关闭
     showFastGotoThreadPageEnabled: false,
     // 在帖子页数快捷链接中显示页数链接的最大数量
@@ -222,6 +226,10 @@ var Config = {
     showRefreshModeTipsInterval: 1,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
+    // 神秘系数排名变化的提醒间隔（小时）
+    smRankChangeAlertInterval: 12,
+    // 存储VIP剩余时间的Cookie有效期（分钟）
+    vipSurplusTimeExpires: 60,
     // ajax请求的默认间隔时间（毫秒）
     defAjaxInterval: 200,
     // 购买帖子提醒的最低售价（KFB）
@@ -245,6 +253,8 @@ var Config = {
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
+    // 神秘系数排名变化提醒的临时日志名称
+    smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 上一次领取争夺奖励时被怪物攻击的总次数信息的临时日志名称
@@ -271,6 +281,8 @@ var Config = {
     prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
     // 标记已进行定期存款到期提醒的Cookie名称
     fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
+    // 存储VIP剩余时间的Cookie名称
+    vipSurplusTimeCookieName: 'pd_vip_surplus_time',
     // 标记已自动更换神秘颜色的Cookie名称
     autoChangeSMColorCookieName: 'pd_auto_change_sm_color',
     // 标记已检查过期日志的Cookie名称
@@ -492,7 +504,7 @@ var ConfigMethod = {
 
         if (typeof options.atTipsHandleType !== 'undefined') {
             var atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
-            var allowTypes = ['no_highlight_1', 'no_highlight_2', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
+            var allowTypes = ['no_highlight', 'no_highlight_extra', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
             if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, allowTypes) > -1)
                 settings.atTipsHandleType = atTipsHandleType;
             else settings.atTipsHandleType = defConfig.atTipsHandleType;
@@ -501,13 +513,21 @@ var ConfigMethod = {
             settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ?
                 options.smLevelUpAlertEnabled : defConfig.smLevelUpAlertEnabled;
         }
+        if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
+            settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
+                options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
+        }
+        if (typeof options.smRankChangeAlertEnabled !== 'undefined') {
+            settings.smRankChangeAlertEnabled = typeof options.smRankChangeAlertEnabled === 'boolean' ?
+                options.smRankChangeAlertEnabled : defConfig.smRankChangeAlertEnabled;
+        }
         if (typeof options.homePageThreadFastGotoLinkEnabled !== 'undefined') {
             settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ?
                 options.homePageThreadFastGotoLinkEnabled : defConfig.homePageThreadFastGotoLinkEnabled;
         }
-        if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
-            settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ?
-                options.fixedDepositDueAlertEnabled : defConfig.fixedDepositDueAlertEnabled;
+        if (typeof options.showVipSurplusTimeEnabled !== 'undefined') {
+            settings.showVipSurplusTimeEnabled = typeof options.showVipSurplusTimeEnabled === 'boolean' ?
+                options.showVipSurplusTimeEnabled : defConfig.showVipSurplusTimeEnabled;
         }
 
         if (typeof options.showFastGotoThreadPageEnabled !== 'undefined') {
@@ -1379,16 +1399,21 @@ var ConfigDialog = {
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>首页相关</legend>' +
-            '      <label>@提醒<select id="pd_cfg_at_tips_handle_type" style="width:130px"><option value="no_highlight_1">取消已读提醒高亮，并在无提醒时补上消息框</option>' +
-            '<option value="no_highlight_2">取消已读提醒高亮</option><option value="hide_box_1">不显示已读提醒的消息框</option><option value="hide_box_2">永不显示消息框</option>' +
-            '<option value="default">保持默认</option><option value="at_change_to_cao">将@改为艹(其他和方式1相同)</option></select>' +
+            '      <label>@提醒<select id="pd_cfg_at_tips_handle_type" style="width:130px"><option value="no_highlight">取消已读提醒高亮</option>' +
+            '<option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option><option value="hide_box_1">不显示已读提醒的消息框</option>' +
+            '<option value="hide_box_2">永不显示消息框</option><option value="default">保持默认</option>' +
+            '<option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option></select>' +
             '<span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox" />神秘等级升级提醒 ' +
             '<span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox" />定期存款到期提醒 ' +
             '<span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_sm_rank_change_alert_enabled" type="checkbox" />系数排名变化提醒 ' +
+            '<span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox" />在首页帖子旁显示跳转链接 ' +
             '<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_show_vip_surplus_time_enabled" type="checkbox" />显示VIP剩余时间 ' +
+            '<span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span></label>' +
             '    </fieldset>' +
             '  </div>' +
             '  <div class="pd_cfg_panel">' +
@@ -1624,8 +1649,10 @@ var ConfigDialog = {
 
         $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
         $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
-        $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked', Config.homePageThreadFastGotoLinkEnabled);
         $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
+        $('#pd_cfg_sm_rank_change_alert_enabled').prop('checked', Config.smRankChangeAlertEnabled);
+        $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked', Config.homePageThreadFastGotoLinkEnabled);
+        $('#pd_cfg_show_vip_surplus_time_enabled').prop('checked', Config.showVipSurplusTimeEnabled);
 
         $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked', Config.showFastGotoThreadPageEnabled);
         $('#pd_cfg_max_fast_goto_thread_page_num').val(Config.maxFastGotoThreadPageNum);
@@ -1703,8 +1730,11 @@ var ConfigDialog = {
 
         options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
         options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
-        options.homePageThreadFastGotoLinkEnabled = $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked');
         options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
+        options.smRankChangeAlertEnabled = $('#pd_cfg_sm_rank_change_alert_enabled').prop('checked');
+        options.homePageThreadFastGotoLinkEnabled = $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked');
+        options.showVipSurplusTimeEnabled = $('#pd_cfg_show_vip_surplus_time_enabled').prop('checked');
+
         options.showFastGotoThreadPageEnabled = $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked');
         options.maxFastGotoThreadPageNum = parseInt($.trim($('#pd_cfg_max_fast_goto_thread_page_num').val()));
         options.perPageFloorNum = $('#pd_cfg_per_page_floor_num').val();
@@ -3119,7 +3149,8 @@ var Log = {
         var logList = Log.log[date];
         if (logSortType === 'type') {
             var sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '将道具转换为能量',
-                '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '批量转账', '购买帖子', '自动存款'];
+                '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子',
+                '自动存款'];
             logList.sort(function (a, b) {
                 return $.inArray(a.type, sortTypeList) > $.inArray(b.type, sortTypeList);
             });
@@ -4121,7 +4152,11 @@ var Item = {
             $itemLine: null
         };
         $.extend(settings, options);
-        $('.kf_fw_ig1:last').parent().append('<ul class="pd_result"><li><strong>使用结果：</strong></li></ul>');
+        $('.kf_fw_ig1:last').parent().append(
+            '<ul class="pd_result"><li><strong>【Lv.{0}：{1}】使用结果：</strong></li></ul>'
+                .replace('{0}', settings.itemLevel)
+                .replace('{1}', settings.itemName)
+        );
         var successNum = 0, failNum = 0;
         $(document).queue('UseItems', []);
         $.each(settings.urlList, function (index, key) {
@@ -4515,28 +4550,124 @@ var Item = {
     },
 
     /**
+     * 购买指定种类的道具
+     * @param {{}} options 设置项
+     * @param {number} options.itemTypeId 指定的道具种类ID
+     * @param {number} options.num 欲购买的道具数量
+     * @param {string} options.safeId 用户的SafeID
+     * @param {number} options.itemLevel 道具等级
+     * @param {string} options.itemName 道具名称
+     */
+    buyItems: function (options) {
+        var settings = {
+            itemTypeId: 0,
+            num: 0,
+            safeId: '',
+            itemLevel: 0,
+            itemName: ''
+        };
+        $.extend(settings, options);
+        $('.kf_fw_ig1').parent().append('<ul class="pd_result"><li><strong>【Lv.{0}：{1}】购买结果：</strong></li></ul>'
+            .replace('{0}', settings.itemLevel)
+            .replace('{1}', settings.itemName)
+        );
+        var successNum = 0;
+        $(document).queue('BatchBuyItems', []);
+        $.each(new Array(settings.num), function (index) {
+            $(document).queue('BatchBuyItems', function () {
+                var url = 'kf_fw_ig_shop.php?lvid={0}&safeid={1}&n={2}'
+                    .replace('{0}', settings.itemTypeId)
+                    .replace('{1}', settings.safeId)
+                    .replace('{2}', (new Date()).getTime().toString() + index);
+                $.get(url, function (html) {
+                    KFOL.showFormatLog('购买道具', html);
+                    var $remainingNum = $('#pd_remaining_num');
+                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    var isStop = false;
+                    var matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
+                    if (matches) {
+                        successNum++;
+                        $('.pd_result:last').append(
+                            '<li>第{0}次：获得了<a target="_blank" href="kf_fw_ig_my.php?pro={1}" data-id="{1}">一个道具</a></li>'
+                                .replace('{0}', index + 1)
+                                .replace(/\{1\}/g, matches[1])
+                        );
+                    }
+                    else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
+                        $('.pd_result:last').append('<li>第{0}次：你需要持有该道具两倍市场价的KFB，购买操作中止</li>'.replace('{0}', index + 1));
+                        isStop = true;
+                        $(document).queue('BatchBuyItems', []);
+                    }
+                    if (isStop || index === settings.num - 1) {
+                        KFOL.removePopTips($('.pd_pop_tips'));
+                        if (successNum > 0) {
+                            Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
+                                .replace('{0}', successNum)
+                                .replace('{1}', settings.itemLevel)
+                                .replace('{2}', settings.itemName)
+                                , {gain: {'道具': successNum}}
+                            );
+                        }
+                        console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
+                            .replace('{0}', successNum)
+                            .replace('{1}', settings.itemLevel)
+                            .replace('{2}', settings.itemName)
+                        );
+                        KFOL.showMsg({
+                            msg: '<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
+                                .replace('{0}', successNum)
+                                .replace('{1}', settings.itemLevel)
+                                .replace('{2}', settings.itemName)
+                            , duration: -1
+                        });
+                        if (successNum > 0) {
+                            $('<li><a href="#">统计购买价格</a></li>')
+                                .appendTo('.pd_result:last')
+                                .find('a')
+                                .click(function (e) {
+                                    e.preventDefault();
+                                    var $result = $(this).closest('.pd_result');
+                                    $(this).parent().remove();
+                                    KFOL.removePopTips($('.pd_pop_tips'));
+                                    Item.statBuyItemsPrice($result, successNum);
+                                });
+                            Item.showItemShopBuyInfo();
+                        }
+                    }
+                    window.setTimeout(function () {
+                        $(document).dequeue('BatchBuyItems');
+                    }, Config.defAjaxInterval);
+                }, 'html');
+            });
+        });
+        $(document).dequeue('BatchBuyItems');
+    },
+
+    /**
      * 添加批量购买道具的链接
      */
     addBatchBuyItemsLink: function () {
-        $('.kf_fw_ig1 > tbody > tr > td:last-child > a').click(function () {
+        var $shop = $('.kf_fw_ig1');
+
+        $shop.find('tbody > tr:nth-child(2)')
+            .find('td:nth-child(2)').css('width', '243px')
+            .end().find('td:nth-child(3)').css('width', '155px')
+            .end().find('td:last-child').css('width', '110px');
+
+        $shop.find('tbody > tr:gt(1)').each(function () {
+            $(this).find('td:last-child').append('<a class="pd_batch_buy_items" style="margin-left:15px" href="#">批量购买</a>');
+        });
+
+        $shop.on('click', 'a[href^="kf_fw_ig_shop.php?lvid="]', function () {
             var $this = $(this);
             var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
             if (!itemLevel) return;
             var itemName = $this.closest('tr').find('td:nth-child(2)').text();
             if (!itemName) return;
-            if (!window.confirm(
-                    '是否购买【Lv.{0}：{1}】道具？'
-                        .replace('{0}', itemLevel)
-                        .replace('{1}', itemName)
-                )
-            ) {
+            if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', itemLevel).replace('{1}', itemName))) {
                 return false;
             }
-        });
-        $('.kf_fw_ig1 > tbody > tr:gt(1)').each(function () {
-            $(this).find('td:last-child').css('width', '110px').append('<a class="pd_batch_buy_items" style="margin-left:15px" href="#">批量购买</a>');
-        });
-        $('a.pd_batch_buy_items').click(function (e) {
+        }).on('click', 'a.pd_batch_buy_items', function (e) {
             e.preventDefault();
             KFOL.removePopTips($('.pd_pop_tips'));
             var $this = $(this);
@@ -4544,86 +4675,38 @@ var Item = {
             if (!itemLevel) return;
             var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
             if (!itemName) return;
-            var link = $this.prev('a').attr('href');
-            if (!link) return;
-            var num = parseInt($.trim(window.prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
-                .replace('{0}', itemLevel)
-                .replace('{1}', itemName)
-                , 0)));
+            var matches = /lvid=(\d+)&safeid=(\w+)/i.exec($this.prev('a').attr('href'));
+            if (!matches) return;
+            var itemTypeId = parseInt(matches[1]);
+            var safeId = matches[2];
+            var num = parseInt(
+                $.trim(window.prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
+                    .replace('{0}', itemLevel)
+                    .replace('{1}', itemName)
+                    , 0))
+            );
             if (isNaN(num) || num <= 0) return;
             KFOL.showWaitMsg('<strong>正在购买道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
                 .replace('{0}', num)
                 , true);
-            $('.kf_fw_ig1').parent().append('<ul class="pd_result"><li><strong>购买结果：</strong></li></ul>');
-            var successNum = 0;
-            $(document).queue('BatchBuyItems', []);
-            $.each(new Array(num), function (index) {
-                $(document).queue('BatchBuyItems', function () {
-                    $.get(link + '&n=' + (index + 1), function (html) {
-                        KFOL.showFormatLog('购买道具', html);
-                        var $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        var isStop = false;
-                        var matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
-                        if (matches) {
-                            successNum++;
-                            $('.pd_result:last').append(
-                                '<li>第{0}次：获得了<a target="_blank" href="kf_fw_ig_my.php?pro={1}" data-id="{1}">一个道具</a></li>'
-                                    .replace('{0}', index + 1)
-                                    .replace(/\{1\}/g, matches[1])
-                            );
-                        }
-                        else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
-                            $('.pd_result:last').append('<li>第{0}次：你需要持有该道具两倍市场价的KFB，购买操作中止</li>'.replace('{0}', index + 1));
-                            isStop = true;
-                            $(document).queue('BatchBuyItems', []);
-                        }
-                        if (isStop || index === num - 1) {
-                            KFOL.removePopTips($('.pd_pop_tips'));
-                            if (successNum > 0) {
-                                Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', itemLevel)
-                                    .replace('{2}', itemName)
-                                    , {gain: {'道具': successNum}}
-                                );
-                            }
-                            console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
-                                .replace('{0}', successNum)
-                                .replace('{1}', itemLevel)
-                                .replace('{2}', itemName)
-                            );
-                            KFOL.showMsg({
-                                msg: '<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', itemLevel)
-                                    .replace('{2}', itemName)
-                                , duration: -1
-                            });
-                            if (successNum > 0) {
-                                $('<li><a href="#">统计购买价格</a></li>').appendTo('.pd_result:last')
-                                    .find('a').click(function (e) {
-                                    e.preventDefault();
-                                    var $result = $(this).closest('.pd_result');
-                                    $(this).parent().remove();
-                                    KFOL.removePopTips($('.pd_pop_tips'));
-                                    Item.statBuyItemsPrice($result, successNum);
-                                });
-                            }
-                        }
-                        window.setTimeout(function () {
-                            $(document).dequeue('BatchBuyItems');
-                        }, Config.defAjaxInterval);
-                    }, 'html');
-                });
-            });
-            $(document).dequeue('BatchBuyItems');
+            Item.buyItems({itemTypeId: itemTypeId, num: num, safeId: safeId, itemLevel: itemLevel, itemName: itemName});
         });
 
-        $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)').css('width', '243px');
-        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        $shop.find('tbody > tr:gt(1) > td:nth-child(4)').each(function () {
+            var $this = $(this);
+            var price = parseInt($.trim($this.prev('td').text()));
+            if (isNaN(price)) return;
+            $this.addClass('pd_custom_tips').attr('title', '{0}~{1}（均价：{2}）'
+                .replace('{0}', Math.floor(price * 0.5))
+                .replace('{1}', price * 2)
+                .replace('{2}', Math.floor(price * 1.25))
+            );
+        });
+
+        var $itemName = $shop.find('tbody > tr:gt(1) > td:nth-child(2)');
         Item.addSampleItemsLink($itemName);
         Item.showItemUsedInfo($itemName.find('a'));
+        Item.showItemShopBuyInfo();
     },
 
     /**
@@ -4767,6 +4850,30 @@ var Item = {
     },
 
     /**
+     * 添加道具样品提示
+     */
+    addSampleItemTips: function () {
+        var itemId = parseInt(Tools.getUrlParam('pro'));
+        if (isNaN(itemId) || itemId <= 0) return;
+        var flag = false;
+        for (var itemName in Config.sampleItemIdList) {
+            if (itemId === Config.sampleItemIdList[itemName]) {
+                flag = true;
+                break;
+            }
+        }
+        if (flag) {
+            var $itemNode = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child');
+            var matches = /现持有者：(.+?)<\/span>/i.exec($itemNode.html());
+            if (matches) {
+                var itemOwner = matches[1];
+                if (itemOwner === KFOL.userName) return;
+            }
+            $itemNode.find('span:first').after('<span class="pd_notice" style="margin-left:5px">(展示用样品)</span>');
+        }
+    },
+
+    /**
      * 显示道具使用情况
      * @param {jQuery} $links 道具名称的链接列表
      */
@@ -4789,6 +4896,35 @@ var Item = {
                     .replace('{2}', usedNum)
                     .replace('{3}', maxUsedNum)
                 );
+            });
+        });
+    },
+
+    /**
+     * 显示道具商店可购买情况
+     */
+    showItemShopBuyInfo: function () {
+        $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
+            var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
+            if (!matches) return;
+            var cash = parseInt(matches[1]);
+            $('.kf_fw_ig_title1:last').find('span:last').remove()
+                .end().append('<span style="margin-left:7px">(当前持有 <b>{0}</b> KFB)</span>'.replace('{0}', cash));
+            $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
+                var $this = $(this);
+                $this.find('.pd_verify_tips').remove();
+                var price = parseInt($.trim($this.text()));
+                if (isNaN(price)) return;
+                var tips = '', title = '';
+                if (price * 2 <= cash) {
+                    tips = '<span style="color:#669933">可买</span>';
+                    title = '有足够KFB购买此道具';
+                }
+                else {
+                    tips = '<span style="color:#FF0033">差{0}</span>'.replace('{0}', price * 2 - cash);
+                    title = '还差{0}KFB才可购买此道具'.replace('{0}', price * 2 - cash);
+                }
+                $this.append('<span class="pd_verify_tips" title="{0}" style="font-size:12px;margin-left:3px">({1})</span>'.replace('{0}', title).replace('{1}', tips));
             });
         });
     }
@@ -6538,7 +6674,7 @@ var Loot = {
                         var totalAttack = 0;
                         if (life <= (totalAttack = lootPropertyList['争夺攻击'] + lootPropertyList['争夺燃烧'])) {
                             attackTypeName = '普通攻击';
-                            tipsClassName = 'pd_monster_tips_ok';
+                            tipsClassName = 'pd_verify_tips_ok';
                         }
                         else {
                             if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * 1.5) + lootPropertyList['争夺燃烧']))
@@ -6547,7 +6683,7 @@ var Loot = {
                                 attackTypeName = '暴击';
                             else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) + lootPropertyList['争夺燃烧']))
                                 attackTypeName = '致命一击+暴击';
-                            if (attackTypeName) tipsClassName = 'pd_monster_tips_conditional';
+                            if (attackTypeName) tipsClassName = 'pd_verify_tips_conditional';
                         }
                         if (attackTypeName) {
                             var kfbOverflow = totalAttack - lootPropertyList['争夺燃烧'] - life;
@@ -6556,37 +6692,46 @@ var Loot = {
                             if (expOverflow < 0) expOverflow = 0;
                             if (expOverflow > lootPropertyList['争夺燃烧']) expOverflow = lootPropertyList['争夺燃烧'];
                             var overflowTips = '争夺攻击溢出{0}点，争夺燃烧溢出{1}点'.replace('{0}', kfbOverflow).replace('{1}', expOverflow);
-                            lifeTips = '<span class="pd_monster_tips" title="{0}即可清空生命值（{1}）">[<b class="{2}">&#10003;</b>]</span>'
+                            lifeTips = '<span class="pd_verify_tips" title="{0}即可清空生命值（{1}）">[<b class="{2}">&#10003;</b>]</span>'
                                 .replace('{0}', attackTypeName)
                                 .replace('{1}', overflowTips)
                                 .replace('{2}', tipsClassName);
-                            html = html.replace('生命值', '生命值' + lifeTips);
                         }
+                        else {
+                            lifeTips = '<span class="pd_verify_tips" title="无法清空生命值（还差{0}点可用致命一击+暴击清空生命值）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                                .replace('{0}', life - Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) - lootPropertyList['争夺燃烧']);
+                        }
+                        html = html.replace('生命值', '生命值' + lifeTips);
 
                         if (avoid < lootPropertyList['命中']) {
-                            avoidTips = '<span class="pd_monster_tips" title="攻击此怪物可全部命中">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物可全部命中">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
                         }
-                        if (avoidTips) {
-                            html = html.replace('闪避', '闪避' + avoidTips);
+                        else {
+                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物有40%的几率命中（还差{0}点可全部命中）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                                .replace('{0}', avoid - lootPropertyList['命中'] + 1);
                         }
+                        html = html.replace('闪避', '闪避' + avoidTips);
 
-                        if (lifeTips || avoidTips) $this.html(html);
+                        $this.html(html);
                     }
                     else if (index === 1) {
                         matches = /(\d+)命中/.exec(html);
                         if (!matches) return;
                         var hit = parseInt(matches[1]);
                         var htiTips = '';
-                        if (hit < lootPropertyList['命中']) {
-                            htiTips = '<span class="pd_monster_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                        if (hit < lootPropertyList['闪避']) {
+                            htiTips = '<span class="pd_verify_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
                         }
-                        if (htiTips) {
-                            $this.html(html.replace(matches[0], matches[0] + htiTips));
+                        else {
+                            htiTips = '<span class="pd_verify_tips" title="无法闪避此怪物的攻击（还差{0}点可全部闪避）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                                .replace('{0}', hit - lootPropertyList['闪避'] + 1);
                         }
+                        $this.html(html.replace(matches[0], matches[0] + htiTips));
                     }
                     else if (index === 2) {
                         var itemDropPercent = parseInt($.trim($this.text()));
-                        $this.wrapInner('<span class="pd_custom_tips" title="在20次攻击中预计可掉落{0}个道具"></span>'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
+                        if (isNaN(itemDropPercent)) return;
+                        $this.addClass('pd_custom_tips').attr('title', '在20次攻击中预计可掉落{0}个道具'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
                     }
                 });
             });
@@ -6684,9 +6829,10 @@ var KFOL = {
             '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
             '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; }' +
             '#pd_smile_panel img { margin: 3px; cursor: pointer; }' +
-            '.pd_monster_tips { cursor: help; color: #999; }' +
-            '.pd_monster_tips_ok { color: #99CC00; }' +
-            '.pd_monster_tips_conditional { color: #FF9900; }' +
+            '.pd_verify_tips { cursor: help; color: #999; }' +
+            '.pd_verify_tips_ok { color: #99CC66; }' +
+            '.pd_verify_tips_conditional { color: #FF9900; }' +
+            '.pd_verify_tips_unable { color: #FF0033; }' +
             '#pd_attack_log_content {' +
             '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
             '  line-height: 1.6em; background-color: #FFF;' +
@@ -7291,11 +7437,11 @@ var KFOL = {
             $atTips.removeClass('indbox5').addClass('indbox6');
         };
         var hideBox = function () {
-            $atTips.parent().prev('div').addBack().remove();
+            $atTips.parent().next('div.line').addBack().remove();
         };
         var handleBox = noHighlight;
         if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
-        if (type === 'no_highlight_1' || type === 'no_highlight_2' || type === 'hide_box_1' || type === 'at_change_to_cao') {
+        if (type === 'no_highlight' || type === 'no_highlight_extra' || type === 'hide_box_1' || type === 'at_change_to_cao') {
             if ($atTips.length > 0) {
                 var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
                 var atTipsText = $.trim($atTips.text());
@@ -7328,7 +7474,7 @@ var KFOL = {
                     $atTips.text($atTips.text().replace('@', '艹'));
                 }
             }
-            else if ($atTips.length === 0 && (type === 'no_highlight_1' || type === 'at_change_to_cao')) {
+            else if ($atTips.length === 0 && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
                 var html = ('<div style="width:300px;"><a href="guanjianci.php?gjc={0}" target="_blank" class="indbox6">最近无人{1}你</a>' +
                 '<br /><div class="line"></div><div class="c"></div></div><div class="line"></div>')
                     .replace('{0}', KFOL.userName)
@@ -8489,27 +8635,81 @@ var KFOL = {
         var matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
         if (!matches) return;
         var smLevel = parseInt(matches[1]);
-        var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
-        var writeData = function () {
+
+        /**
+         * 写入神秘等级数据
+         * @param {number} smLevel 神秘等级
+         */
+        var writeData = function (smLevel) {
             TmpLog.setValue(Config.smLevelUpTmpLogName, {time: (new Date()).getTime(), smLevel: smLevel});
         };
+
+        var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
         if (!data || $.type(data.time) !== 'number' || $.type(data.smLevel) !== 'number') {
-            writeData();
+            writeData(smLevel);
         }
         else if (smLevel > data.smLevel) {
             var date = new Date(data.time);
-            Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级总共上升了`{1}`级'
+            writeData(smLevel);
+            Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级共上升了`{1}`级 (Lv.`{2}`->Lv.`{3}`)'
+                .replace('{0}', Tools.getDateString(date))
+                .replace('{1}', smLevel - data.smLevel)
+                .replace('{2}', data.smLevel)
+                .replace('{3}', smLevel)
+            );
+            KFOL.showMsg('自<em>{0}</em>以来，你的神秘等级共上升了<em>{1}</em>级'
                 .replace('{0}', Tools.getDateString(date))
                 .replace('{1}', smLevel - data.smLevel)
             );
-            KFOL.showMsg('自<em>{0}</em>以来，你的神秘等级总共上升了<em>{1}</em>级'
-                .replace('{0}', Tools.getDateString(date))
-                .replace('{1}', smLevel - data.smLevel)
-            );
-            writeData();
         }
         else if (smLevel < data.smLevel) {
-            writeData();
+            writeData(smLevel);
+        }
+    },
+
+    /**
+     * 在神秘系数排名发生变化时进行提醒
+     */
+    smRankChangeAlert: function () {
+        var matches = /系数排名第\s*(\d+)\s*位/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
+        if (!matches) return;
+        var smRank = parseInt(matches[1]);
+
+        /**
+         * 写入神秘系数排名数据
+         * @param {number} smRank 神秘系数排名
+         */
+        var writeData = function (smRank) {
+            TmpLog.setValue(Config.smRankChangeTmpLogName, {time: (new Date()).getTime(), smRank: smRank});
+        };
+
+        var data = TmpLog.getValue(Config.smRankChangeTmpLogName);
+        if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
+            writeData(smRank);
+        }
+        else if (smRank !== data.smRank) {
+            var diff = Math.floor(((new Date()).getTime() - data.time) / 60 / 60 / 1000);
+            if (diff >= Config.smRankChangeAlertInterval) {
+                var date = new Date(data.time);
+                var isUp = smRank < data.smRank;
+                writeData(smRank);
+                Log.push('神秘系数排名变化', '自`{0}`以来，你的神秘系数排名共`{1}`了`{2}`名 (No.`{3}`->No.`{4}`)'
+                    .replace('{0}', Tools.getDateString(date))
+                    .replace('{1}', isUp ? '上升' : '下降')
+                    .replace('{2}', Math.abs(smRank - data.smRank))
+                    .replace('{3}', data.smRank)
+                    .replace('{4}', smRank)
+                );
+                KFOL.showMsg('自<em>{0}</em>以来，你的神秘系数排名共<b style="color:{1}">{2}</b>了<em>{3}</em>名'
+                    .replace('{0}', Tools.getDateString(date))
+                    .replace('{1}', isUp ? '#F00' : '#393')
+                    .replace('{2}', isUp ? '上升' : '下降')
+                    .replace('{3}', Math.abs(smRank - data.smRank))
+                );
+            }
+            else if (diff < 0) {
+                writeData(smRank);
+            }
         }
     },
 
@@ -8577,11 +8777,11 @@ var KFOL = {
         var diff = Tools.getTimeDiffInfo(timeLog.time);
         if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
         if (timeLog.type === 2) {
-            $msg.text('争夺奖励(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
+            $msg.text('争夺奖励 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
         }
         else {
             diff.hours += 1;
-            $msg.text('争夺奖励(剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
+            $msg.text('争夺奖励 (剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
         }
         if (!Tools.getCookie(Config.autoAttackReadyCookieName))
             $msg.removeClass('indbox5').addClass('indbox6');
@@ -8597,7 +8797,7 @@ var KFOL = {
         if ($msg.length === 0) return;
         var diff = Tools.getTimeDiffInfo(timeLog.time);
         if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-        $msg.text('神秘盒子(剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
+        $msg.text('神秘盒子 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
             .removeClass('indbox5')
             .addClass('indbox6');
     },
@@ -8984,6 +9184,38 @@ var KFOL = {
     },
 
     /**
+     * 在首页显示VIP剩余时间
+     */
+    showVipSurplusTime: function () {
+        /**
+         * 添加VIP剩余时间的提示
+         * @param {number} hours VIP剩余时间（小时）
+         */
+        var addVipHoursTips = function (hours) {
+            $('a[href="kf_growup.php"][title="用户等级和权限"]').parent().after(
+                '<div class="line"></div><div style="width:300px;"><a href="kf_vmember.php" class="indbox{0}">VIP会员 ({1})</a><div class="c"></div></div>'
+                    .replace('{0}', hours > 0 ? 5 : 6)
+                    .replace('{1}', hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限')
+            );
+        };
+
+        var vipHours = parseInt(Tools.getCookie(Config.vipSurplusTimeCookieName));
+        if (isNaN(vipHours) || vipHours < 0) {
+            console.log('检查VIP剩余时间Start');
+            $.get('kf_vmember.php', function (html) {
+                var hours = 0;
+                var matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
+                if (matches) hours = parseInt(matches[1]);
+                Tools.setCookie(Config.vipSurplusTimeCookieName, hours, Tools.getDate('+' + Config.vipSurplusTimeExpires + 'm'));
+                addVipHoursTips(hours);
+            }, 'html');
+        }
+        else {
+            addVipHoursTips(vipHours);
+        }
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -9005,6 +9237,8 @@ var KFOL = {
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
+            if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
+            if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
             if (Config.homePageThreadFastGotoLinkEnabled) KFOL.addHomePageThreadFastGotoLink();
             if (Config.fixedDepositDueAlertEnabled && !Tools.getCookie(Config.fixedDepositDueAlertCookieName))
                 Bank.fixedDepositDueAlert();
@@ -9042,6 +9276,9 @@ var KFOL = {
         }
         else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
             Item.addSellAndUseItemsButton();
+        }
+        else if (/\/kf_fw_ig_my\.php\?pro=\d+$/i.test(location.href)) {
+            Item.addSampleItemTips();
         }
         else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
             Bank.addBatchTransferButton();

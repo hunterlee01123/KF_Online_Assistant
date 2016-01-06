@@ -1364,14 +1364,14 @@ var Item = {
                 if (isNaN(price)) return;
                 var tips = '', title = '';
                 if (price * 2 <= cash) {
-                    tips = '<b class="pd_verify_tips_ok">&#10003;</b>';
+                    tips = '<span style="color:#669933">可买</span>';
                     title = '有足够KFB购买此道具';
                 }
                 else {
-                    tips = '<b class="pd_verify_tips_unable">&times;</b>';
+                    tips = '<span style="color:#FF0033">差{0}</span>'.replace('{0}', price * 2 - cash);
                     title = '还差{0}KFB才可购买此道具'.replace('{0}', price * 2 - cash);
                 }
-                $this.append('<span class="pd_verify_tips" title="{0}" style="font-size:12px;margin-left:3px">[{1}]</span>'.replace('{0}', title).replace('{1}', tips));
+                $this.append('<span class="pd_verify_tips" title="{0}" style="font-size:12px;margin-left:3px">({1})</span>'.replace('{0}', title).replace('{1}', tips));
             });
         });
     }
