@@ -225,15 +225,17 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
 
 /*==========================================*/
 
-// 发帖时自动附加额外内容 V1.2
+// 发帖时自动附加额外内容 V1.3
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
     var options = {
-        // 附加在内容末尾的文本，如不需要则留空，例：'\n文本1'（\n表示换行符）
-        addText: '',
-        // 附加在内容开头的文本，如不需要则留空，例：'文本2\n'（\n表示换行符）
-        insertText: '',
-        // 如果原文本框内容包含了指定文本则不附加，留空表示不启用，可使用正则表达式，例：'文本3'或/Text.*3/i
+        // 附加在内容末尾的文本，如不需要则留空，可设置多组文本（发帖时将随机挑选一个进行附加），还可设置为函数（\n表示换行符）
+        // 例：['\n文本1'] 或 ['\n文本1','\n文本2'] 或 function() { return '\n文本3'; }
+        addText: [''],
+        // 附加在内容开头的文本，如不需要则留空，可设置多组文本（发帖时将随机挑选一个进行附加），还可设置为函数（\n表示换行符）
+        // 例：['文本1\n'] 或 ['文本1\n','文本2\n'] 或 function() { return '文本3\n'; }
+        insertText: [''],
+        // 如果原文本框内容包含了指定文本则不附加，留空表示不启用，可使用正则表达式，例：'文本4'或/Text.*4/i
         excludeText: '',
         // 附加内容的类型，0：任何时候都附加；1：只在发表新主题时附加；2：只在发表新回复时附加
         attachType: 0,
@@ -241,7 +243,6 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
         attachWhenLteWordNum: -1
     };
 
-    if (!options.addText && !options.insertText) return;
     var action = Tools.getUrlParam('action');
     if (action === 'modify') return;
     else if (options.attachType === 1 && (location.pathname === '/read.php' || action === 'reply' || action === 'quote')) return;
@@ -276,7 +277,14 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
             }
             return text;
         };
-        $textArea.val(handleText(options.insertText) + content + handleText(options.addText));
+        var getText = function (text) {
+            if (typeof text === 'function')
+                return handleText(text().toString());
+            else
+                return handleText(text[Math.floor(Math.random() * text.length)]);
+        };
+        if (handleText('[img]a[/img]').indexOf('[img]') > -1) return;
+        $textArea.val(getText(options.insertText) + content + getText(options.addText));
     });
 }());
 
