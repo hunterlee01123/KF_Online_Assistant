@@ -213,7 +213,7 @@ var ConfigMethod = {
 
         if (typeof options.atTipsHandleType !== 'undefined') {
             var atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
-            var allowTypes = ['no_highlight_1', 'no_highlight_2', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
+            var allowTypes = ['no_highlight', 'no_highlight_extra', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
             if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, allowTypes) > -1)
                 settings.atTipsHandleType = atTipsHandleType;
             else settings.atTipsHandleType = defConfig.atTipsHandleType;

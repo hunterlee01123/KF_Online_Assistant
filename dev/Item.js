@@ -599,7 +599,11 @@ var Item = {
             $itemLine: null
         };
         $.extend(settings, options);
-        $('.kf_fw_ig1:last').parent().append('<ul class="pd_result"><li><strong>使用结果：</strong></li></ul>');
+        $('.kf_fw_ig1:last').parent().append(
+            '<ul class="pd_result"><li><strong>【Lv.{0}：{1}】使用结果：</strong></li></ul>'
+                .replace('{0}', settings.itemLevel)
+                .replace('{1}', settings.itemName)
+        );
         var successNum = 0, failNum = 0;
         $(document).queue('UseItems', []);
         $.each(settings.urlList, function (index, key) {
@@ -993,28 +997,124 @@ var Item = {
     },
 
     /**
+     * 购买指定种类的道具
+     * @param {{}} options 设置项
+     * @param {number} options.itemTypeId 指定的道具种类ID
+     * @param {number} options.num 欲购买的道具数量
+     * @param {string} options.safeId 用户的SafeID
+     * @param {number} options.itemLevel 道具等级
+     * @param {string} options.itemName 道具名称
+     */
+    buyItems: function (options) {
+        var settings = {
+            itemTypeId: 0,
+            num: 0,
+            safeId: '',
+            itemLevel: 0,
+            itemName: ''
+        };
+        $.extend(settings, options);
+        $('.kf_fw_ig1').parent().append('<ul class="pd_result"><li><strong>【Lv.{0}：{1}】购买结果：</strong></li></ul>'
+            .replace('{0}', settings.itemLevel)
+            .replace('{1}', settings.itemName)
+        );
+        var successNum = 0;
+        $(document).queue('BatchBuyItems', []);
+        $.each(new Array(settings.num), function (index) {
+            $(document).queue('BatchBuyItems', function () {
+                var url = 'kf_fw_ig_shop.php?lvid={0}&safeid={1}&n={2}'
+                    .replace('{0}', settings.itemTypeId)
+                    .replace('{1}', settings.safeId)
+                    .replace('{2}', (new Date()).getTime().toString() + index);
+                $.get(url, function (html) {
+                    KFOL.showFormatLog('购买道具', html);
+                    var $remainingNum = $('#pd_remaining_num');
+                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    var isStop = false;
+                    var matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
+                    if (matches) {
+                        successNum++;
+                        $('.pd_result:last').append(
+                            '<li>第{0}次：获得了<a target="_blank" href="kf_fw_ig_my.php?pro={1}" data-id="{1}">一个道具</a></li>'
+                                .replace('{0}', index + 1)
+                                .replace(/\{1\}/g, matches[1])
+                        );
+                    }
+                    else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
+                        $('.pd_result:last').append('<li>第{0}次：你需要持有该道具两倍市场价的KFB，购买操作中止</li>'.replace('{0}', index + 1));
+                        isStop = true;
+                        $(document).queue('BatchBuyItems', []);
+                    }
+                    if (isStop || index === settings.num - 1) {
+                        KFOL.removePopTips($('.pd_pop_tips'));
+                        if (successNum > 0) {
+                            Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
+                                .replace('{0}', successNum)
+                                .replace('{1}', settings.itemLevel)
+                                .replace('{2}', settings.itemName)
+                                , {gain: {'道具': successNum}}
+                            );
+                        }
+                        console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
+                            .replace('{0}', successNum)
+                            .replace('{1}', settings.itemLevel)
+                            .replace('{2}', settings.itemName)
+                        );
+                        KFOL.showMsg({
+                            msg: '<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
+                                .replace('{0}', successNum)
+                                .replace('{1}', settings.itemLevel)
+                                .replace('{2}', settings.itemName)
+                            , duration: -1
+                        });
+                        if (successNum > 0) {
+                            $('<li><a href="#">统计购买价格</a></li>')
+                                .appendTo('.pd_result:last')
+                                .find('a')
+                                .click(function (e) {
+                                    e.preventDefault();
+                                    var $result = $(this).closest('.pd_result');
+                                    $(this).parent().remove();
+                                    KFOL.removePopTips($('.pd_pop_tips'));
+                                    Item.statBuyItemsPrice($result, successNum);
+                                });
+                            Item.showItemShopBuyInfo();
+                        }
+                    }
+                    window.setTimeout(function () {
+                        $(document).dequeue('BatchBuyItems');
+                    }, Config.defAjaxInterval);
+                }, 'html');
+            });
+        });
+        $(document).dequeue('BatchBuyItems');
+    },
+
+    /**
      * 添加批量购买道具的链接
      */
     addBatchBuyItemsLink: function () {
-        $('.kf_fw_ig1 > tbody > tr > td:last-child > a').click(function () {
+        var $shop = $('.kf_fw_ig1');
+
+        $shop.find('tbody > tr:nth-child(2)')
+            .find('td:nth-child(2)').css('width', '243px')
+            .end().find('td:nth-child(3)').css('width', '155px')
+            .end().find('td:last-child').css('width', '110px');
+
+        $shop.find('tbody > tr:gt(1)').each(function () {
+            $(this).find('td:last-child').append('<a class="pd_batch_buy_items" style="margin-left:15px" href="#">批量购买</a>');
+        });
+
+        $shop.on('click', 'a[href^="kf_fw_ig_shop.php?lvid="]', function () {
             var $this = $(this);
             var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
             if (!itemLevel) return;
             var itemName = $this.closest('tr').find('td:nth-child(2)').text();
             if (!itemName) return;
-            if (!window.confirm(
-                    '是否购买【Lv.{0}：{1}】道具？'
-                        .replace('{0}', itemLevel)
-                        .replace('{1}', itemName)
-                )
-            ) {
+            if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', itemLevel).replace('{1}', itemName))) {
                 return false;
             }
-        });
-        $('.kf_fw_ig1 > tbody > tr:gt(1)').each(function () {
-            $(this).find('td:last-child').css('width', '110px').append('<a class="pd_batch_buy_items" style="margin-left:15px" href="#">批量购买</a>');
-        });
-        $('a.pd_batch_buy_items').click(function (e) {
+        }).on('click', 'a.pd_batch_buy_items', function (e) {
             e.preventDefault();
             KFOL.removePopTips($('.pd_pop_tips'));
             var $this = $(this);
@@ -1022,86 +1122,38 @@ var Item = {
             if (!itemLevel) return;
             var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
             if (!itemName) return;
-            var link = $this.prev('a').attr('href');
-            if (!link) return;
-            var num = parseInt($.trim(window.prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
-                .replace('{0}', itemLevel)
-                .replace('{1}', itemName)
-                , 0)));
+            var matches = /lvid=(\d+)&safeid=(\w+)/i.exec($this.prev('a').attr('href'));
+            if (!matches) return;
+            var itemTypeId = parseInt(matches[1]);
+            var safeId = matches[2];
+            var num = parseInt(
+                $.trim(window.prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
+                    .replace('{0}', itemLevel)
+                    .replace('{1}', itemName)
+                    , 0))
+            );
             if (isNaN(num) || num <= 0) return;
             KFOL.showWaitMsg('<strong>正在购买道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
                 .replace('{0}', num)
                 , true);
-            $('.kf_fw_ig1').parent().append('<ul class="pd_result"><li><strong>购买结果：</strong></li></ul>');
-            var successNum = 0;
-            $(document).queue('BatchBuyItems', []);
-            $.each(new Array(num), function (index) {
-                $(document).queue('BatchBuyItems', function () {
-                    $.get(link + '&n=' + (index + 1), function (html) {
-                        KFOL.showFormatLog('购买道具', html);
-                        var $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        var isStop = false;
-                        var matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
-                        if (matches) {
-                            successNum++;
-                            $('.pd_result:last').append(
-                                '<li>第{0}次：获得了<a target="_blank" href="kf_fw_ig_my.php?pro={1}" data-id="{1}">一个道具</a></li>'
-                                    .replace('{0}', index + 1)
-                                    .replace(/\{1\}/g, matches[1])
-                            );
-                        }
-                        else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
-                            $('.pd_result:last').append('<li>第{0}次：你需要持有该道具两倍市场价的KFB，购买操作中止</li>'.replace('{0}', index + 1));
-                            isStop = true;
-                            $(document).queue('BatchBuyItems', []);
-                        }
-                        if (isStop || index === num - 1) {
-                            KFOL.removePopTips($('.pd_pop_tips'));
-                            if (successNum > 0) {
-                                Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', itemLevel)
-                                    .replace('{2}', itemName)
-                                    , {gain: {'道具': successNum}}
-                                );
-                            }
-                            console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
-                                .replace('{0}', successNum)
-                                .replace('{1}', itemLevel)
-                                .replace('{2}', itemName)
-                            );
-                            KFOL.showMsg({
-                                msg: '<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', itemLevel)
-                                    .replace('{2}', itemName)
-                                , duration: -1
-                            });
-                            if (successNum > 0) {
-                                $('<li><a href="#">统计购买价格</a></li>').appendTo('.pd_result:last')
-                                    .find('a').click(function (e) {
-                                    e.preventDefault();
-                                    var $result = $(this).closest('.pd_result');
-                                    $(this).parent().remove();
-                                    KFOL.removePopTips($('.pd_pop_tips'));
-                                    Item.statBuyItemsPrice($result, successNum);
-                                });
-                            }
-                        }
-                        window.setTimeout(function () {
-                            $(document).dequeue('BatchBuyItems');
-                        }, Config.defAjaxInterval);
-                    }, 'html');
-                });
-            });
-            $(document).dequeue('BatchBuyItems');
+            Item.buyItems({itemTypeId: itemTypeId, num: num, safeId: safeId, itemLevel: itemLevel, itemName: itemName});
         });
 
-        $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)').css('width', '243px');
-        var $itemName = $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)');
+        $shop.find('tbody > tr:gt(1) > td:nth-child(4)').each(function () {
+            var $this = $(this);
+            var price = parseInt($.trim($this.prev('td').text()));
+            if (isNaN(price)) return;
+            $this.addClass('pd_custom_tips').attr('title', '{0}~{1}（均价：{2}）'
+                .replace('{0}', Math.floor(price * 0.5))
+                .replace('{1}', price * 2)
+                .replace('{2}', Math.floor(price * 1.25))
+            );
+        });
+
+        var $itemName = $shop.find('tbody > tr:gt(1) > td:nth-child(2)');
         Item.addSampleItemsLink($itemName);
         Item.showItemUsedInfo($itemName.find('a'));
+        Item.showItemShopBuyInfo();
     },
 
     /**
@@ -1245,6 +1297,30 @@ var Item = {
     },
 
     /**
+     * 添加道具样品提示
+     */
+    addSampleItemTips: function () {
+        var itemId = parseInt(Tools.getUrlParam('pro'));
+        if (isNaN(itemId) || itemId <= 0) return;
+        var flag = false;
+        for (var itemName in Config.sampleItemIdList) {
+            if (itemId === Config.sampleItemIdList[itemName]) {
+                flag = true;
+                break;
+            }
+        }
+        if (flag) {
+            var $itemNode = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child');
+            var matches = /现持有者：(.+?)<\/span>/i.exec($itemNode.html());
+            if (matches) {
+                var itemOwner = matches[1];
+                if (itemOwner === KFOL.userName) return;
+            }
+            $itemNode.find('span:first').after('<span class="pd_notice" style="margin-left:5px">(展示用样品)</span>');
+        }
+    },
+
+    /**
      * 显示道具使用情况
      * @param {jQuery} $links 道具名称的链接列表
      */
@@ -1267,6 +1343,35 @@ var Item = {
                     .replace('{2}', usedNum)
                     .replace('{3}', maxUsedNum)
                 );
+            });
+        });
+    },
+
+    /**
+     * 显示道具商店可购买情况
+     */
+    showItemShopBuyInfo: function () {
+        $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
+            var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
+            if (!matches) return;
+            var cash = parseInt(matches[1]);
+            $('.kf_fw_ig_title1:last').find('span:last').remove()
+                .end().append('<span style="margin-left:7px">(当前持有 <b>{0}</b> KFB)</span>'.replace('{0}', cash));
+            $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
+                var $this = $(this);
+                $this.find('.pd_verify_tips').remove();
+                var price = parseInt($.trim($this.text()));
+                if (isNaN(price)) return;
+                var tips = '', title = '';
+                if (price * 2 <= cash) {
+                    tips = '<b class="pd_verify_tips_ok">&#10003;</b>';
+                    title = '有足够KFB购买此道具';
+                }
+                else {
+                    tips = '<b class="pd_verify_tips_unable">&times;</b>';
+                    title = '还差{0}KFB才可购买此道具'.replace('{0}', price * 2 - cash);
+                }
+                $this.append('<span class="pd_verify_tips" title="{0}" style="font-size:12px;margin-left:3px">[{1}]</span>'.replace('{0}', title).replace('{1}', tips));
             });
         });
     }

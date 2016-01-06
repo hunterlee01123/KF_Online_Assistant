@@ -43,9 +43,9 @@ var Config = {
     autoDrawSmbox2Enabled: false,
     // 偏好的神秘盒子数字，例：[52,1,28,400]（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空
     favorSmboxNumbers: [],
-    // 对首页上的有人@你的消息框进行处理的方案，no_highlight_1：取消已读提醒高亮，并在无提醒时补上消息框；no_highlight_2：取消已读提醒高亮；
-    // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式1相同)
-    atTipsHandleType: 'no_highlight_1',
+    // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
+    // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
+    atTipsHandleType: 'no_highlight',
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
@@ -194,7 +194,7 @@ var Config = {
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘系数排名变化的提醒间隔（小时）
-    smRankChangeAlertInterval: 24,
+    smRankChangeAlertInterval: 12,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
     // ajax请求的默认间隔时间（毫秒）

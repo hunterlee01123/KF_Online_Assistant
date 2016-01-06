@@ -1164,7 +1164,7 @@ var Loot = {
                         var totalAttack = 0;
                         if (life <= (totalAttack = lootPropertyList['争夺攻击'] + lootPropertyList['争夺燃烧'])) {
                             attackTypeName = '普通攻击';
-                            tipsClassName = 'pd_monster_tips_ok';
+                            tipsClassName = 'pd_verify_tips_ok';
                         }
                         else {
                             if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * 1.5) + lootPropertyList['争夺燃烧']))
@@ -1173,7 +1173,7 @@ var Loot = {
                                 attackTypeName = '暴击';
                             else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) + lootPropertyList['争夺燃烧']))
                                 attackTypeName = '致命一击+暴击';
-                            if (attackTypeName) tipsClassName = 'pd_monster_tips_conditional';
+                            if (attackTypeName) tipsClassName = 'pd_verify_tips_conditional';
                         }
                         if (attackTypeName) {
                             var kfbOverflow = totalAttack - lootPropertyList['争夺燃烧'] - life;
@@ -1182,37 +1182,46 @@ var Loot = {
                             if (expOverflow < 0) expOverflow = 0;
                             if (expOverflow > lootPropertyList['争夺燃烧']) expOverflow = lootPropertyList['争夺燃烧'];
                             var overflowTips = '争夺攻击溢出{0}点，争夺燃烧溢出{1}点'.replace('{0}', kfbOverflow).replace('{1}', expOverflow);
-                            lifeTips = '<span class="pd_monster_tips" title="{0}即可清空生命值（{1}）">[<b class="{2}">&#10003;</b>]</span>'
+                            lifeTips = '<span class="pd_verify_tips" title="{0}即可清空生命值（{1}）">[<b class="{2}">&#10003;</b>]</span>'
                                 .replace('{0}', attackTypeName)
                                 .replace('{1}', overflowTips)
                                 .replace('{2}', tipsClassName);
-                            html = html.replace('生命值', '生命值' + lifeTips);
                         }
+                        else {
+                            lifeTips = '<span class="pd_verify_tips" title="无法清空生命值（还差{0}点可用致命一击+暴击清空生命值）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                                .replace('{0}', life - Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) - lootPropertyList['争夺燃烧']);
+                        }
+                        html = html.replace('生命值', '生命值' + lifeTips);
 
                         if (avoid < lootPropertyList['命中']) {
-                            avoidTips = '<span class="pd_monster_tips" title="攻击此怪物可全部命中">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物可全部命中">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
                         }
-                        if (avoidTips) {
-                            html = html.replace('闪避', '闪避' + avoidTips);
+                        else {
+                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物有40%的几率命中（还差{0}点可全部命中）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                                .replace('{0}', avoid - lootPropertyList['命中'] + 1);
                         }
+                        html = html.replace('闪避', '闪避' + avoidTips);
 
-                        if (lifeTips || avoidTips) $this.html(html);
+                        $this.html(html);
                     }
                     else if (index === 1) {
                         matches = /(\d+)命中/.exec(html);
                         if (!matches) return;
                         var hit = parseInt(matches[1]);
                         var htiTips = '';
-                        if (hit < lootPropertyList['命中']) {
-                            htiTips = '<span class="pd_monster_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_monster_tips_ok">&#10003;</b>]</span>';
+                        if (hit < lootPropertyList['闪避']) {
+                            htiTips = '<span class="pd_verify_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
                         }
-                        if (htiTips) {
-                            $this.html(html.replace(matches[0], matches[0] + htiTips));
+                        else {
+                            htiTips = '<span class="pd_verify_tips" title="无法闪避此怪物的攻击（还差{0}点可全部闪避）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                                .replace('{0}', hit - lootPropertyList['闪避'] + 1);
                         }
+                        $this.html(html.replace(matches[0], matches[0] + htiTips));
                     }
                     else if (index === 2) {
                         var itemDropPercent = parseInt($.trim($this.text()));
-                        $this.wrapInner('<span class="pd_custom_tips" title="在20次攻击中预计可掉落{0}个道具"></span>'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
+                        if (isNaN(itemDropPercent)) return;
+                        $this.addClass('pd_custom_tips').attr('title', '在20次攻击中预计可掉落{0}个道具'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
                     }
                 });
             });

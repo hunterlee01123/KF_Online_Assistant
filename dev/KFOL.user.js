@@ -128,9 +128,10 @@ var KFOL = {
             '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
             '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; }' +
             '#pd_smile_panel img { margin: 3px; cursor: pointer; }' +
-            '.pd_monster_tips { cursor: help; color: #999; }' +
-            '.pd_monster_tips_ok { color: #99CC00; }' +
-            '.pd_monster_tips_conditional { color: #FF9900; }' +
+            '.pd_verify_tips { cursor: help; color: #999; }' +
+            '.pd_verify_tips_ok { color: #99CC66; }' +
+            '.pd_verify_tips_conditional { color: #FF9900; }' +
+            '.pd_verify_tips_unable { color: #FF0033; }' +
             '#pd_attack_log_content {' +
             '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
             '  line-height: 1.6em; background-color: #FFF;' +
@@ -739,7 +740,7 @@ var KFOL = {
         };
         var handleBox = noHighlight;
         if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
-        if (type === 'no_highlight_1' || type === 'no_highlight_2' || type === 'hide_box_1' || type === 'at_change_to_cao') {
+        if (type === 'no_highlight' || type === 'no_highlight_extra' || type === 'hide_box_1' || type === 'at_change_to_cao') {
             if ($atTips.length > 0) {
                 var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
                 var atTipsText = $.trim($atTips.text());
@@ -772,7 +773,7 @@ var KFOL = {
                     $atTips.text($atTips.text().replace('@', '艹'));
                 }
             }
-            else if ($atTips.length === 0 && (type === 'no_highlight_1' || type === 'at_change_to_cao')) {
+            else if ($atTips.length === 0 && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
                 var html = ('<div style="width:300px;"><a href="guanjianci.php?gjc={0}" target="_blank" class="indbox6">最近无人{1}你</a>' +
                 '<br /><div class="line"></div><div class="c"></div></div><div class="line"></div>')
                     .replace('{0}', KFOL.userName)
@@ -1949,9 +1950,11 @@ var KFOL = {
         else if (smLevel > data.smLevel) {
             var date = new Date(data.time);
             writeData(smLevel);
-            Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级共上升了`{1}`级'
+            Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级共上升了`{1}`级 (Lv.`{2}`->Lv.`{3}`)'
                 .replace('{0}', Tools.getDateString(date))
                 .replace('{1}', smLevel - data.smLevel)
+                .replace('{2}', data.smLevel)
+                .replace('{3}', smLevel)
             );
             KFOL.showMsg('自<em>{0}</em>以来，你的神秘等级共上升了<em>{1}</em>级'
                 .replace('{0}', Tools.getDateString(date))
@@ -1987,7 +1990,7 @@ var KFOL = {
             var diff = Math.floor(((new Date()).getTime() - data.time) / 60 / 60 / 1000);
             if (diff >= Config.smRankChangeAlertInterval) {
                 var date = new Date(data.time);
-                var isUp = smRank > data.smRank;
+                var isUp = smRank < data.smRank;
                 writeData(smRank);
                 Log.push('神秘系数排名变化', '自`{0}`以来，你的神秘系数排名共`{1}`了`{2}`名 (No.`{3}`->No.`{4}`)'
                     .replace('{0}', Tools.getDateString(date))
@@ -2572,6 +2575,9 @@ var KFOL = {
         }
         else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
             Item.addSellAndUseItemsButton();
+        }
+        else if (/\/kf_fw_ig_my\.php\?pro=\d+$/i.test(location.href)) {
+            Item.addSampleItemTips();
         }
         else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
             Bank.addBatchTransferButton();
