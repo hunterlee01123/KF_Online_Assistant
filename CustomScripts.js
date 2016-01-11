@@ -80,9 +80,9 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
 
 /*==========================================*/
 
-// 统计各楼层的彩票数字（ft1073833专用版） V1.1
+// 统计各楼层的彩票数字（ft1073833专用版） V1.2
 (function () {
-    var numberRegex = /【\s*(\d{2,})\s*】/; // 匹配彩票数字的正则表达式
+    var numberRegex = /【\s*(\d+)\s*】/; // 匹配彩票数字的正则表达式
     var levelRangeList = [0, 5, 50]; // 各等奖中与中奖数字相差的范围
     var threadTitle = '每周红包'; // 在标题包含指定关键字的帖子里显示彩票统计的按钮（留空表示任意标题均可）
 
@@ -120,7 +120,7 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
                             var pid = parseInt(floorMatches[1]);
                             var floor = parseInt(floorMatches[2]);
                             var name = floorMatches[3];
-                            var content = floorMatches[4].replace(/<fieldset>(.|\n|\r\n)+?<\/fieldset>/gi, '');
+                            var content = floorMatches[4].replace(/<fieldset><legend>Quote:(.|\n|\r\n)+?<\/fieldset>/gi, '');
                             var numberMatches = numberRegex.exec(content);
                             floorList[floor] = {
                                 pid: pid,
@@ -175,7 +175,7 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
                                     floorContent += '<li>【{0}楼】<span class="pd_notice">未找到该楼层</span></li>'.replace('{0}', i);
                                 }
                             }
-                            floorContent = ('<ul><li><strong>楼层统计情况：</strong></li><li>（正常统计：<b class="pd_highlight">{0}</b>个；' +
+                            floorContent = ('<ul style="margin-top:10px"><li><strong>楼层统计情况：</strong></li><li>（正常统计：<b class="pd_highlight">{0}</b>个；' +
                             '格式不正确：<b class="pd_highlight">{1}</b>个；重复回贴：<b class="pd_highlight">{2}</b>个）</li>{3}</ul>')
                                 .replace('{0}', normalNum)
                                 .replace('{1}', errorNum)
@@ -201,7 +201,7 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
                                     }
                                 }
                             }
-                            var resultContent = '<div style="margin-top:10px"><strong>中奖情况 (中奖数字【<span class="pd_highlight">{0}</span>】)：</strong></div>'
+                            var resultContent = '<div><strong>中奖情况 (中奖数字【<span class="pd_highlight">{0}</span>】)：</strong></div>'
                                 .replace('{0}', targetNumber);
                             for (var i = 0; i < levelContentList.length; i++) {
                                 resultContent += '<ul><li><b class="pd_highlight">{0}等奖(±{1})：</b></li>'.replace('{0}', i + 1).replace('{1}', levelRangeList[i]);
@@ -210,7 +210,7 @@ Config.zeroLifeCheckAttackIntervalList = {'190-205': 3, '205-225': 5, '225-600':
                                 resultContent += '</ul>';
                             }
 
-                            $dialog.find('#pd_stat_lottery_list').html(floorContent + resultContent);
+                            $dialog.find('#pd_stat_lottery_list').html(resultContent + floorContent);
                             Dialog.show('pd_stat_lottery');
                         }
                         window.setTimeout(function () {
