@@ -173,10 +173,11 @@ var Item = {
             var id = /pro=(\d+)/i.exec(key);
             id = id ? id[1] : 0;
             if (!id) return;
-            var url = 'kf_fw_ig_doit.php?tomp={0}&id={1}'
-                .replace('{0}', settings.safeId)
-                .replace('{1}', id);
             $(document).queue('ConvertItemsToEnergy', function () {
+                var url = 'kf_fw_ig_doit.php?tomp={0}&id={1}&t={2}'
+                    .replace('{0}', settings.safeId)
+                    .replace('{1}', id)
+                    .replace('{2}', (new Date()).getTime());
                 $.get(url, function (html) {
                     KFOL.showFormatLog('将道具转换为能量', html);
                     if (/转换为了\s*\d+\s*点能量/i.test(html)) {
@@ -293,7 +294,7 @@ var Item = {
                             if (i + 1 > num) break;
                             urlList.push(matches[i]);
                         }
-                        console.log('转换本级全部已使用的道具为能量Start，转换道具数量：' + urlList.length);
+                        console.log('批量转换道具为能量Start，转换道具数量：' + urlList.length);
                         KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
                             .replace('{0}', urlList.length)
                             , true);
@@ -331,7 +332,7 @@ var Item = {
                             if (i + 1 > num) break;
                             urlList.push(matches[i]);
                         }
-                        console.log('恢复本级全部已使用的道具Start，恢复道具数量：' + urlList.length);
+                        console.log('批量恢复道具Start，恢复道具数量：' + urlList.length);
                         KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
                             .replace('{0}', urlList.length)
                             , true);
@@ -381,10 +382,11 @@ var Item = {
             var id = /pro=(\d+)/i.exec(key);
             id = id ? id[1] : 0;
             if (!id) return;
-            var url = 'kf_fw_ig_doit.php?renew={0}&id={1}'
-                .replace('{0}', settings.safeId)
-                .replace('{1}', id);
             $(document).queue('RestoreItems', function () {
+                var url = 'kf_fw_ig_doit.php?renew={0}&id={1}&t={2}'
+                    .replace('{0}', settings.safeId)
+                    .replace('{1}', id)
+                    .replace('{2}', (new Date()).getTime());
                 $.get(url, function (html) {
                     KFOL.showFormatLog('恢复道具', html);
                     if (/该道具已经被恢复/i.test(html)) {
@@ -443,7 +445,7 @@ var Item = {
                     }
                     window.setTimeout(function () {
                         $(document).dequeue('RestoreItems');
-                    }, Config.defAjaxInterval);
+                    }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
                 }, 'html');
             });
         });
@@ -610,8 +612,8 @@ var Item = {
             var id = /pro=(\d+)/i.exec(key);
             id = id ? id[1] : 0;
             if (!id) return;
-            var url = 'kf_fw_ig_doit.php?id={0}'.replace('{0}', id);
             $(document).queue('UseItems', function () {
+                var url = 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', id).replace('{1}', (new Date()).getTime());
                 $.get(url, function (html) {
                     KFOL.showFormatLog('使用道具', html);
                     var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
@@ -696,7 +698,7 @@ var Item = {
                     }
                     window.setTimeout(function () {
                         $(document).dequeue('UseItems');
-                    }, Config.defAjaxInterval);
+                    }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
                 }, 'html');
             });
         });
@@ -757,7 +759,7 @@ var Item = {
                         if (i + 1 > num) break;
                         urlList.push(matches[i]);
                     }
-                    console.log('使用本级全部道具Start，使用道具数量：' + urlList.length);
+                    console.log('批量使用道具Start，使用道具数量：' + urlList.length);
                     KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
                         .replace('{0}', urlList.length)
                         , true);
@@ -798,8 +800,8 @@ var Item = {
         var successNum = 0, failNum = 0, totalGain = 0;
         $(document).queue('SellItems', []);
         $.each(settings.itemList, function (index, itemId) {
-            var url = 'kf_fw_ig_shop.php?sell=yes&id={0}'.replace('{0}', itemId);
             $(document).queue('SellItems', function () {
+                var url = 'kf_fw_ig_shop.php?sell=yes&id={0}&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime());
                 $.get(url, function (html) {
                     KFOL.showFormatLog('出售道具', html);
                     if (/出售成功/.test(html)) {
@@ -1022,10 +1024,10 @@ var Item = {
         $(document).queue('BatchBuyItems', []);
         $.each(new Array(settings.num), function (index) {
             $(document).queue('BatchBuyItems', function () {
-                var url = 'kf_fw_ig_shop.php?lvid={0}&safeid={1}&n={2}'
+                var url = 'kf_fw_ig_shop.php?lvid={0}&safeid={1}&t={2}'
                     .replace('{0}', settings.itemTypeId)
                     .replace('{1}', settings.safeId)
-                    .replace('{2}', (new Date()).getTime().toString() + index);
+                    .replace('{2}', (new Date()).getTime());
                 $.get(url, function (html) {
                     KFOL.showFormatLog('购买道具', html);
                     var $remainingNum = $('#pd_remaining_num');
@@ -1083,7 +1085,7 @@ var Item = {
                     }
                     window.setTimeout(function () {
                         $(document).dequeue('BatchBuyItems');
-                    }, Config.defAjaxInterval);
+                    }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
                 }, 'html');
             });
         });
@@ -1215,7 +1217,8 @@ var Item = {
             $(document).queue('UseItemList', []);
             $.each(itemList, function (index, item) {
                 $(document).queue('UseItemList', function () {
-                    $.get('kf_fw_ig_doit.php?id=' + item.itemId, function (html) {
+                    var url = 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', (new Date()).getTime());
+                    $.get(url, function (html) {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
@@ -1273,7 +1276,7 @@ var Item = {
                         }
                         window.setTimeout(function () {
                             $(document).dequeue('UseItemList');
-                        }, Config.defAjaxInterval);
+                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
                     }, 'html');
                 });
             });
@@ -1291,7 +1294,7 @@ var Item = {
             var $this = $(this);
             var itemName = $.trim($this.text());
             if (itemName && typeof Config.sampleItemIdList[itemName] !== 'undefined') {
-                $this.html('<a href="kf_fw_ig_my.php?pro={0}">{1}</a>'.replace('{0}', Config.sampleItemIdList[itemName]).replace('{1}', itemName));
+                $this.html('<a href="kf_fw_ig_my.php?pro={0}&display=1">{1}</a>'.replace('{0}', Config.sampleItemIdList[itemName]).replace('{1}', itemName));
             }
         });
     },
@@ -1302,21 +1305,11 @@ var Item = {
     addSampleItemTips: function () {
         var itemId = parseInt(Tools.getUrlParam('pro'));
         if (isNaN(itemId) || itemId <= 0) return;
-        var flag = false;
         for (var itemName in Config.sampleItemIdList) {
             if (itemId === Config.sampleItemIdList[itemName]) {
-                flag = true;
+                $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').find('span:first').after('<span class="pd_notice" style="margin-left:5px">(展示用样品)</span>');
                 break;
             }
-        }
-        if (flag) {
-            var $itemNode = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child');
-            var matches = /现持有者：(.+?)<\/span>/i.exec($itemNode.html());
-            if (matches) {
-                var itemOwner = matches[1];
-                if (itemOwner === KFOL.userName) return;
-            }
-            $itemNode.find('span:first').after('<span class="pd_notice" style="margin-left:5px">(展示用样品)</span>');
         }
     },
 

@@ -104,11 +104,7 @@ var Loot = {
                 var gain = 0;
                 if (gainMatches) gain = parseInt(gainMatches[1]);
 
-                var attackLogMatches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?<br \/>)<\/td><\/tr>/i.exec(html);
-                var attackLog = '';
-                if (attackLogMatches && /发起争夺/.test(attackLogMatches[1])) {
-                    attackLog = attackLogMatches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '');
-                }
+                var attackLogList = Loot.getMonsterAttackLogList(html);
 
                 var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
                 var attackedCount = -1;
@@ -155,12 +151,12 @@ var Loot = {
                             var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}'
                                 .replace('{0}', attackedCountDiff > 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
                                 .replace('{1}', gain)
-                                .replace('{2}', attackLog ? '<a href="#">查看日志</a>' : '')
+                                .replace('{2}', attackLogList.length > 0 ? '<a href="#">查看日志</a>' : '')
                                 .replace('{3}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
                             );
                             $msg.find('a[href="#"]:first').click(function (e) {
                                 e.preventDefault();
-                                Loot.showAttackLogDialog(2, attackLog);
+                                Loot.showAttackLogDialog(2, attackLogList);
                             });
                             autoAttack(safeId, deadlyAttackNum);
                             if (isAutoDonation) KFOL.donation();
@@ -286,13 +282,17 @@ var Loot = {
      * @param {number} options.totalAttackNum 总攻击次数
      * @param {{}} options.attackList 攻击目标列表
      * @param {string} options.safeId 用户的SafeID
+     * @param {string} [options.prevGain] 上一次试探攻击的KFB收获（用于在出现被清空生命值的情况下进行试探攻击）
+     * @param {string} [options.prevMonsterAttackLog] 上一次被怪物攻击日志（用于在出现被清空生命值的情况下进行试探攻击）
      */
     batchAttack: function (options) {
         var settings = {
             type: 1,
             totalAttackNum: 0,
             attackList: {},
-            safeId: ''
+            safeId: '',
+            prevGain: 0,
+            prevMonsterAttackLog: ''
         };
         $.extend(settings, options);
         if (settings.type === 1)
@@ -300,7 +300,8 @@ var Loot = {
         var count = 0, successNum = 0, failNum = 0, strongAttackNum = 0, criticalStrikeNum = 0;
         var gain = {'夺取KFB': 0, '经验值': 0};
         var isStop = false, isRetakeSafeId = false;
-        var attackLog = '', oriHtml = '', customHtml = '';
+        var attackLogList = [];
+        var oriHtml = '', customHtml = '';
         /**
          * 攻击指定ID的怪物
          * @param {number} id 攻击ID
@@ -347,7 +348,7 @@ var Loot = {
                         isStop = true;
                         $(document).queue('BatchAttack', []);
                     }
-                    attackLog += '第{0}次：{1}{2}\n'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : '');
+                    attackLogList.push('第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
                     if (settings.type === 3)
                         console.log('【试探攻击】{0}{1}'.replace('{0}', msg).replace('{1}', isStop ? '（攻击已中止）' : ''));
                     else
@@ -374,7 +375,7 @@ var Loot = {
                 },
                 error: function () {
                     failNum++;
-                    attackLog += '第{0}次：{1}\n'.replace('{0}', count).replace('{1}', '网络超时');
+                    attackLogList.push('第{0}次：{1}'.replace('{0}', count).replace('{1}', '网络超时'));
                     console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '网络超时'));
                     if (settings.type === 1) {
                         var html = '<li><b>第{0}次：</b>{1}</li>'
@@ -442,6 +443,7 @@ var Loot = {
                             if (Config.attackWhenZeroLifeEnabled) {
                                 Tools.setCookie(Config.attackCheckCookieName, '', Tools.getDate('-1d'));
                                 Tools.setCookie(Config.attackCountCookieName, '', Tools.getDate('-1d'));
+                                Tools.setCookie(Config.prevCheckAttackInfoCookieName, '', Tools.getDate('-1d'));
                             }
                         }
                         else if (settings.type === 3) {
@@ -450,16 +452,25 @@ var Loot = {
                             attackCount++;
                             if (attackCount >= Config.maxAttackNum) {
                                 Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                                Tools.setCookie(Config.prevCheckAttackInfoCookieName, '', Tools.getDate('-1d'));
                             }
                             else {
-                                Tools.setCookie(Config.attackCountCookieName, attackCount, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                                Tools.setCookie(Config.attackCountCookieName, attackCount, new Date(Loot.getNextLootAwardTime().time));
+                                if (options.prevMonsterAttackLog) {
+                                    var thisGainKfb = 0;
+                                    if (gain['夺取KFB']) thisGainKfb = gain['夺取KFB'];
+                                    Tools.setCookie(Config.prevCheckAttackInfoCookieName,
+                                        (thisGainKfb + options.prevGain) + '/' + options.prevMonsterAttackLog,
+                                        new Date(Loot.getNextLootAwardTime().time)
+                                    );
+                                }
                             }
                         }
                         if (settings.type >= 2) {
                             $('.pd_layer').remove();
                             $msg.find('a:last').click(function (e) {
                                 e.preventDefault();
-                                Loot.showAttackLogDialog(1, attackLog, resultStat);
+                                Loot.showAttackLogDialog(1, attackLogList, resultStat);
                             });
                             if (settings.type === 2 && KFOL.isInHomePage) {
                                 $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
@@ -508,14 +519,14 @@ var Loot = {
                             if (!safeId) return;
                             settings.safeId = safeId;
                             if (Tools.getCookie(Config.autoAttackReadyCookieName))
-                                Tools.setCookie(Config.autoAttackReadyCookieName, '2|' + safeId, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                                Tools.setCookie(Config.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
                             $(document).dequeue('BatchAttack');
                         }, 'html');
                     }
                     else {
                         window.setTimeout(function () {
                             $(document).dequeue('BatchAttack');
-                        }, $.type(Config.perAttackInterval) === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
+                        }, typeof Config.perAttackInterval === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
                     }
                 },
                 dataType: 'html'
@@ -817,10 +828,13 @@ var Loot = {
             }
             var time = Config.defCheckAttackInterval;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
-            var minMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
+            var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
+            var life = 0, minLife = 0;
             var isAttack = false;
-            if (lifeMatches && minMatches) {
-                if (parseInt(lifeMatches[1]) <= parseInt(minMatches[1])) {
+            if (lifeMatches && minLifeMatches) {
+                life = parseInt(lifeMatches[1]);
+                minLife = parseInt(minLifeMatches[1]);
+                if (life <= minLife) {
                     time = Loot.getZeroLifeCheckAttackInterval();
                     isAttack = true;
                 }
@@ -833,7 +847,62 @@ var Loot = {
             }
             var nextTime = Tools.getDate('+' + time + 'm');
             Tools.setCookie(Config.attackCheckCookieName, nextTime.getTime(), nextTime);
+
             if (isAttack) {
+                var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
+                var isClearLife = false;
+                var prevGain = 0;
+                var prevMonsterAttackLog = '';
+                var prevCheckAttackInfo = Tools.getCookie(Config.prevCheckAttackInfoCookieName);
+                if (prevCheckAttackInfo) {
+                    var arr = prevCheckAttackInfo.split('/');
+                    if (arr.length === 2 && $.type(parseInt(arr[0])) === 'number') {
+                        prevGain = parseInt(arr[0]);
+                        if (prevGain < 0) prevGain = 0;
+                        prevMonsterAttackLog = arr[1];
+                        var loss = 0;
+                        var index = 0;
+                        for (; index <= monsterAttackLogList.length; index++) {
+                            if (monsterAttackLogList[index] === prevMonsterAttackLog) break;
+                            var matches = /被实际夺取(\d+)KFB.+被实际燃烧(\d+)KFB/i.exec(monsterAttackLogList[index]);
+                            if (matches) loss += parseInt(matches[1]) + parseInt(matches[2]);
+                        }
+                        console.log('prevGain：' + prevGain);
+                        console.log('loss：' + loss);
+                        console.log('prevMonsterAttackLog: ' + prevMonsterAttackLog);
+                        if (prevGain - loss >= Config.minNotCheckAttackLifeNum) {
+                            console.log('在上一次被清空生命值后，共损失{0}KFB，尚无继续试探攻击的必要，下一次检查生命值的间隔时间为{1}分钟'
+                                .replace('{0}', loss)
+                                .replace('{1}', Config.defCheckAttackInterval)
+                            );
+                            nextTime = Tools.getDate('+' + Config.defCheckAttackInterval + 'm');
+                            Tools.setCookie(Config.attackCheckCookieName, nextTime.getTime(), nextTime);
+                            return;
+                        }
+                        if (index === 0 && prevGain < Config.minNotCheckAttackLifeNum) {
+                            console.log('actionA：isClearLife');
+                            isClearLife = true;
+                        }
+                        else {
+                            console.log('actionB');
+                            Tools.setCookie(Config.prevCheckAttackInfoCookieName, 0, Tools.getDate('-1d'));
+                        }
+                    }
+                }
+                else {
+                    if (monsterAttackLogList.length > 0 && /清空生命值/.test(monsterAttackLogList[0])) {
+                        isClearLife = true;
+                        prevMonsterAttackLog = monsterAttackLogList[0];
+                        console.log('prevMonsterAttackLog: ' + prevMonsterAttackLog);
+                        console.log('在最近一次被怪物攻击日志中发现被清空生命值的情况，下一次检查生命值的间隔时间为{0}分钟'.replace('{0}', Config.defCheckAttackInterval));
+                        nextTime = Tools.getDate('+' + Config.defCheckAttackInterval + 'm');
+                        Tools.setCookie(Config.attackCheckCookieName, nextTime.getTime(), nextTime);
+                    }
+                    else {
+                        console.log('actionD');
+                    }
+                }
+
                 var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
                 if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                 var num = 0, attackId = 0;
@@ -854,12 +923,21 @@ var Loot = {
                 KFOL.showWaitMsg('<strong>正在进行试探攻击中...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>'
                     .replace('{0}', 1)
                     , true);
-                Loot.batchAttack({
+                var options = {
                     type: 3,
                     totalAttackNum: 1,
                     attackList: attackList,
                     safeId: safeId
-                });
+                };
+                if (isClearLife) {
+                    options.prevGain = prevGain;
+                    options.prevMonsterAttackLog = prevMonsterAttackLog;
+                }
+                Loot.batchAttack(options);
+            }
+            else {
+                console.log('actionC');
+                Tools.setCookie(Config.prevCheckAttackInfoCookieName, 0, Tools.getDate('-1d'));
             }
         }, 'html');
     },
@@ -893,12 +971,12 @@ var Loot = {
     /**
      * 显示批量攻击或被NPC攻击的日志对话框
      * @param {number} type 对话框类型，1：批量攻击日志；2：被NPC攻击日志
-     * @param {string} log 批量攻击日志
-     * @param {string} stat 批量攻击收获
+     * @param {string[]} logList 攻击日志列表
+     * @param {string} [stat] 批量攻击收获
      */
-    showAttackLogDialog: function (type, log, stat) {
+    showAttackLogDialog: function (type, logList, stat) {
         if ($('#pd_attack_log').length > 0) return;
-        log = log.replace(/\n/g, '<br />');
+        var log = '<li>' + logList.join('</li><li>') + '</li>';
         var strongAttackNum = 0, criticalStrikeNum = 0;
         var matches = log.match(/触发暴击!/g);
         if (matches) strongAttackNum = matches.length;
@@ -910,7 +988,7 @@ var Loot = {
             '  <label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" checked="checked" /> 原版</label>' +
             '  <label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" /> 自定义</label>' +
             '</div>' +
-            '  <div id="pd_attack_log_content" class="pd_stat"></div>' +
+            '  <ul id="pd_attack_log_content"></ul>' +
             '</div>';
         var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html);
 
@@ -923,7 +1001,11 @@ var Loot = {
             if (strongAttackNum > 0) extraLog += '暴击<em>+{0}</em>'.replace('{0}', strongAttackNum);
             if (criticalStrikeNum > 0) extraLog += (extraLog ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
             if (extraLog) extraLog = '（' + extraLog + '）';
-            if (type === 1) log += '<br /><b>统计结果{0}：</b><br />'.replace('{0}', extraLog) + (stat ? stat : '无');
+            if (type === 1) {
+                log += '<li class="pd_stat" style="margin-top:10px"><b>统计结果{0}：</b><br />{1}</li>'
+                    .replace('{0}', extraLog)
+                    .replace('{1}', stat ? stat : '无');
+            }
             $dialog.find('#pd_attack_log_content').html(log);
         };
 
@@ -1226,5 +1308,19 @@ var Loot = {
                 });
             });
         }, 'html');
+    },
+
+    /**
+     * 获取被怪物攻击日志列表
+     * @param {string} html 争夺首页的HTML代码
+     * @returns {string[]} 被怪物攻击日志列表
+     */
+    getMonsterAttackLogList: function (html) {
+        var matches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?)<br \/><\/td><\/tr>/i.exec(html);
+        var attackLogList = [];
+        if (matches && /发起争夺/.test(matches[1])) {
+            attackLogList = matches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '').split('\n');
+        }
+        return attackLogList;
     }
 };

@@ -168,8 +168,10 @@ var Config = {
     minAttackAfterTime: 63,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
-    // 每次攻击的时间间隔（毫秒），可设置为使用函数来返回值
-    perAttackInterval: 2000,
+    // 每次攻击的时间间隔（毫秒），可设置为函数来返回值
+    perAttackInterval: function () {
+        return Math.floor(Math.random() * 500) + 2000;
+    },
     // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
     checkAutoAttackingInterval: 4,
     // 在领取争夺奖励后首次检查是否进行攻击的间隔时间（分钟）
@@ -181,6 +183,8 @@ var Config = {
     zeroLifeCheckAttackIntervalList: {'190-205': 3, '205-225': 5, '225-600': 10},
     // 在生命值不超过低保线时检查是否进行攻击的默认间隔时间（分钟）
     defZeroLifeCheckAttackInterval: 3,
+    // 不进行试探攻击的最低生命值
+    minNotCheckAttackLifeNum: 13,
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 在抽取神秘盒子后所推迟的争夺领取间隔（分钟）
@@ -199,6 +203,10 @@ var Config = {
     vipSurplusTimeExpires: 60,
     // ajax请求的默认间隔时间（毫秒）
     defAjaxInterval: 200,
+    // 特殊情况下的ajax请求（如购买道具等）的默认间隔时间（毫秒），可设置为函数来返回值
+    specialAjaxInterval: function () {
+        return Math.floor(Math.random() * 100) + 200;
+    },
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
     // 道具样品ID列表
@@ -236,10 +244,12 @@ var Config = {
     autoAttackReadyCookieName: 'pd_auto_attack_ready',
     // 标记正在进行自动攻击的Cookie名称
     autoAttackingCookieName: 'pd_auto_attacking',
-    // 标记检查是否进行攻击的Cookie名称
+    // 标记已检查试探攻击的Cookie名称
     attackCheckCookieName: 'pd_attack_check',
     // 标记已完成的试探攻击次数的Cookie名称
     attackCountCookieName: 'pd_attack_count',
+    // 存储上一次检查试探攻击信息的Cookie名称
+    prevCheckAttackInfoCookieName: 'pd_prev_check_attack_info',
     // 标记已抽取神秘盒子的Cookie名称
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称

@@ -20,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.8.0
+// @version     4.9.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.8.0';
+var version = '4.9.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1456,7 +1456,7 @@ var KFOL = {
         $(document).queue('SellItems', []);
         $.each(threadList, function (index, thread) {
             $(document).queue('BuyThreads', function () {
-                $.get(thread.url, function (html) {
+                $.get(thread.url + '&t=' + (new Date()).getTime(), function (html) {
                     KFOL.showFormatLog('购买帖子', html);
                     if (/操作完成/.test(html)) {
                         successNum++;
@@ -2576,7 +2576,7 @@ var KFOL = {
         else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
             Item.addSellAndUseItemsButton();
         }
-        else if (/\/kf_fw_ig_my\.php\?pro=\d+$/i.test(location.href)) {
+        else if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
             Item.addSampleItemTips();
         }
         else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
