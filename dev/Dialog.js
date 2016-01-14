@@ -21,6 +21,8 @@ var Dialog = {
         var $dialog = $(html).appendTo('body');
         $dialog.on('click', '.pd_cfg_tips', function () {
             return false;
+        }).on('click', 'a.pd_disabled_link', function () {
+            return false;
         }).keydown(function (e) {
             if (e.keyCode === 27) {
                 return Dialog.close(id);
@@ -37,7 +39,16 @@ var Dialog = {
         }).end().find('input[data-disabled]').click(function () {
             var $this = $(this);
             var checked = $this.prop('checked');
-            $($this.data('disabled')).prop('disabled', !checked);
+            $($this.data('disabled')).each(function () {
+                var $this = $(this);
+                if ($this.is('a')) {
+                    if (checked) $this.removeClass('pd_disabled_link');
+                    else $this.addClass('pd_disabled_link');
+                }
+                else {
+                    $this.prop('disabled', !checked);
+                }
+            });
         });
         $(window).on('resize.' + id, function () {
             Dialog.show(id);

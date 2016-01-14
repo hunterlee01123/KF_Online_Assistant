@@ -39,17 +39,19 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_defer_loot_time_when_remain_attack_num_enabled" type="checkbox" data-disabled="#pd_cfg_defer_loot_time_when_remain_attack_num" />' +
             '在剩余攻击次数不低于</label><label><input id="pd_cfg_defer_loot_time_when_remain_attack_num" maxlength="2" style="width:15px" type="text" />次时，抽盒子延长争夺时间 ' +
             '<span class="pd_cfg_tips" title="在领取争夺奖励时，当本回合剩余攻击次数不低于指定次数的情况下，抽取神秘盒子以延长争夺时间">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" />自定义怪物名称 ' +
+            '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" data-disabled="#pd_cfg_custom_monster_name_dialog" />自定义怪物名称 ' +
             '<span class="pd_cfg_tips" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_monster_name_dialog" href="#">详细设置&raquo;</a>' +
             '      <fieldset>' +
             '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
             '<span class="pd_cfg_tips" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</span></label></legend>' +
-            '      <label><input id="pd_cfg_attack_when_zero_life_enabled" type="checkbox" />当生命值不超过低保线时进行试探攻击 ' +
-            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label><br />' +
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
-            '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label>'
+            '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
                 .replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime) +
+            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
+            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label>' +
+            '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
+            '<span class="pd_cfg_tips" title="在实际生命值不超过指定阙值时才进行试探攻击，留空表示使用低保值，例：12（不同等级的阙值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
             '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
@@ -117,13 +119,13 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span></label>' +
             '      <label style="margin-left:10px">帖子内容字体大小<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width:20px" type="text" />px ' +
             '<span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" />自动更换神秘颜色 ' +
+            '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page" />自动更换神秘颜色 ' +
             '<span class="pd_cfg_tips" title="可自动更换神秘颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>' +
-            '<a style="margin-left:10px" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br />' +
+            '<a id="pd_cfg_auto_change_sm_color_page" style="margin-left:10px" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br />' +
             '      <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width:50px" type="text" />' +
             '<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">' +
             '<span class="pd_cfg_tips" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" />自定义各等级神秘颜色 ' +
+            '      <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" data-disabled="#pd_cfg_custom_sm_color_dialog" />自定义各等级神秘颜色 ' +
             '<span class="pd_cfg_tips" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_sm_color_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_modify_kf_other_domain_enabled" type="checkbox" />将绯月其它域名的链接修改为当前域名 ' +
@@ -132,7 +134,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在帖子页面开启多重回复和多重引用功能">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
             '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" />显示用户备注 ' +
+            '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" data-disabled="#pd_cfg_user_memo_dialog" />显示用户备注 ' +
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
@@ -150,22 +152,22 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
             '<span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" />添加自定义CSS ' +
+            '      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" data-disabled="#pd_cfg_custom_css_dialog" />添加自定义CSS ' +
             '<span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br />' +
-            '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" />执行自定义脚本 ' +
+            '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" data-disabled="#pd_cfg_custom_script_dialog" />执行自定义脚本 ' +
             '<span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>关注和屏蔽</legend>' +
-            '      <label><input id="pd_cfg_follow_user_enabled" type="checkbox" />关注用户 ' +
+            '      <label><input id="pd_cfg_follow_user_enabled" type="checkbox" data-disabled="#pd_cfg_follow_user_dialog" />关注用户 ' +
             '<span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_follow_user_dialog" href="#">详细设置&raquo;</a><br />' +
-            '      <label><input id="pd_cfg_block_user_enabled" type="checkbox" />屏蔽用户 ' +
+            '      <label><input id="pd_cfg_block_user_enabled" type="checkbox" data-disabled="#pd_cfg_block_user_dialog" />屏蔽用户 ' +
             '<span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_block_user_dialog" href="#">详细设置&raquo;</a><br />' +
-            '      <label><input id="pd_cfg_block_thread_enabled" type="checkbox" />屏蔽帖子 ' +
+            '      <label><input id="pd_cfg_block_thread_enabled" type="checkbox" data-disabled="#pd_cfg_block_thread_dialog" />屏蔽帖子 ' +
             '<span class="pd_cfg_tips" title="开启屏蔽标题包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_block_thread_dialog" href="#">详细设置&raquo;</a><br />' +
             '    </fieldset>' +
@@ -215,64 +217,31 @@ var ConfigDialog = {
             ConfigDialog.showImportOrExportSettingDialog();
         });
 
-        $dialog.find('#pd_cfg_custom_monster_name_dialog').click(function (e) {
+        $dialog.on('click', 'a[id^="pd_cfg_"][href="#"]', function (e) {
             e.preventDefault();
-            ConfigDialog.showCustomMonsterNameDialog();
-        });
-
-        $dialog.find('#pd_cfg_auto_use_item_names').keydown(function (e) {
+            if ($(this).hasClass('pd_disabled_link')) return;
+            if (this.id === 'pd_cfg_custom_monster_name_dialog') ConfigDialog.showCustomMonsterNameDialog();
+            else if (this.id === 'pd_cfg_custom_sm_color_dialog') ConfigDialog.showCustomSmColorDialog();
+            else if (this.id === 'pd_cfg_user_memo_dialog') ConfigDialog.showUserMemoDialog();
+            else if (this.id === 'pd_cfg_custom_css_dialog') ConfigDialog.showCustomCssDialog();
+            else if (this.id === 'pd_cfg_custom_script_dialog') ConfigDialog.showCustomScriptDialog();
+            else if (this.id === 'pd_cfg_follow_user_dialog') ConfigDialog.showFollowUserDialog();
+            else if (this.id === 'pd_cfg_block_user_dialog') ConfigDialog.showBlockUserDialog();
+            else if (this.id === 'pd_cfg_block_thread_dialog') ConfigDialog.showBlockThreadDialog();
+        }).end().find('#pd_cfg_custom_my_sm_color_select').change(function () {
+            $('#pd_cfg_custom_my_sm_color').val($(this).val().toString().toUpperCase());
+        }).end().find('pd_cfg_custom_my_sm_color').keyup(function () {
+            var customMySmColor = $.trim($(this).val());
+            if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
+                $('pd_cfg_custom_my_sm_color_select').val(customMySmColor.toUpperCase());
+            }
+        }).end().find('#pd_cfg_auto_use_item_names').keydown(function (e) {
             if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 97)) {
                 e.preventDefault();
                 $(this).children().each(function () {
                     $(this).prop('selected', true);
                 });
             }
-        });
-
-        $dialog.find('#pd_cfg_custom_my_sm_color_select').change(function () {
-            $('#pd_cfg_custom_my_sm_color').val($(this).val().toString().toUpperCase());
-        });
-
-        $dialog.find('#pd_cfg_custom_my_sm_color').keyup(function () {
-            var customMySmColor = $.trim($(this).val());
-            if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
-                $('#pd_cfg_custom_my_sm_color_select').val(customMySmColor.toUpperCase());
-            }
-        });
-
-        $dialog.find('#pd_cfg_custom_sm_color_dialog').click(function (e) {
-            e.preventDefault();
-            ConfigDialog.showCustomSmColorDialog();
-        });
-
-        $dialog.find('#pd_cfg_user_memo_dialog').click(function (e) {
-            e.preventDefault();
-            ConfigDialog.showUserMemoDialog();
-        });
-
-        $dialog.find('#pd_cfg_custom_css_dialog').click(function (e) {
-            e.preventDefault();
-            ConfigDialog.showCustomCssDialog();
-        });
-
-        $dialog.find('#pd_cfg_custom_script_dialog').click(function (e) {
-            e.preventDefault();
-            ConfigDialog.showCustomScriptDialog();
-        });
-
-        $dialog.find('#pd_cfg_follow_user_dialog').click(function (e) {
-            e.preventDefault();
-            ConfigDialog.showFollowUserDialog();
-        });
-
-        $dialog.find('#pd_cfg_block_user_dialog').click(function (e) {
-            e.preventDefault();
-            ConfigDialog.showBlockUserDialog();
-        });
-
-        $dialog.find('#pd_cfg_block_thread_dialog').click(function (e) {
-            e.preventDefault();
-            ConfigDialog.showBlockThreadDialog();
         });
 
         ConfigDialog.setValue();
@@ -317,8 +286,9 @@ var ConfigDialog = {
         $('#pd_cfg_defer_loot_time_when_remain_attack_num').val(Config.deferLootTimeWhenRemainAttackNum);
         $('#pd_cfg_custom_monster_name_enabled').prop('checked', Config.customMonsterNameEnabled);
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
-        $('#pd_cfg_attack_when_zero_life_enabled').prop('checked', Config.attackWhenZeroLifeEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
+        $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
+        $('#pd_cfg_max_attempt_attack_life_num').val(Config.maxAttemptAttackLifeNum > 0 ? Config.maxAttemptAttackLifeNum : '');
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
@@ -390,8 +360,9 @@ var ConfigDialog = {
         options.deferLootTimeWhenRemainAttackNum = parseInt($.trim($('#pd_cfg_defer_loot_time_when_remain_attack_num').val()));
         options.customMonsterNameEnabled = $('#pd_cfg_custom_monster_name_enabled').prop('checked');
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
-        options.attackWhenZeroLifeEnabled = $('#pd_cfg_attack_when_zero_life_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
+        options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
+        options.maxAttemptAttackLifeNum = parseInt($.trim($('#pd_cfg_max_attempt_attack_life_num').val()));
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
             var $this = $(this);
@@ -534,10 +505,22 @@ var ConfigDialog = {
             }
         }
         else {
-            if ($('#pd_cfg_attack_when_zero_life_enabled').prop('checked')) {
-                alert('开启“当生命值不超过低保线时进行试探攻击”必须同时设置“在指定时间之内才完成攻击”');
+            if ($('#pd_cfg_attempt_attack_enabled').prop('checked')) {
+                alert('开启“试探攻击”必须同时设置“在指定时间之内才完成攻击”');
                 $txtAttackAfterTime.select();
                 $txtAttackAfterTime.focus();
+                return false;
+            }
+        }
+
+        var $txtMaxAttemptAttackLifeNum = $('#pd_cfg_max_attempt_attack_life_num');
+        var maxAttemptAttackLifeNum = $.trim($txtMaxAttemptAttackLifeNum.val());
+        if (maxAttemptAttackLifeNum) {
+            maxAttemptAttackLifeNum = parseInt(maxAttemptAttackLifeNum);
+            if (isNaN(maxAttemptAttackLifeNum) || maxAttemptAttackLifeNum < 0) {
+                alert('进行试探攻击的生命值上限格式不正确');
+                $txtMaxAttemptAttackLifeNum.select();
+                $txtMaxAttemptAttackLifeNum.focus();
                 return false;
             }
         }

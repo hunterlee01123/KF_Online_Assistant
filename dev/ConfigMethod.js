@@ -143,17 +143,23 @@ var ConfigMethod = {
             settings.autoAttackEnabled = typeof options.autoAttackEnabled === 'boolean' ?
                 options.autoAttackEnabled : defConfig.autoAttackEnabled;
         }
-        if (typeof options.attackWhenZeroLifeEnabled !== 'undefined') {
-            settings.attackWhenZeroLifeEnabled = typeof options.attackWhenZeroLifeEnabled === 'boolean' ?
-                options.attackWhenZeroLifeEnabled : defConfig.attackWhenZeroLifeEnabled;
-        }
         if (typeof options.attackAfterTime !== 'undefined') {
             var attackAfterTime = parseInt(options.attackAfterTime);
-            if ($.isNumeric(attackAfterTime) && attackAfterTime >= Config.minAttackAfterTime && attackAfterTime <= Config.defLootInterval)
+            if (!isNaN(attackAfterTime) && attackAfterTime >= Config.minAttackAfterTime && attackAfterTime <= Config.defLootInterval)
                 settings.attackAfterTime = attackAfterTime;
             else settings.attackAfterTime = defConfig.attackAfterTime;
         }
-        if (settings.attackWhenZeroLifeEnabled && !settings.attackAfterTime) settings.attackWhenZeroLifeEnabled = false;
+        if (typeof options.attemptAttackEnabled !== 'undefined') {
+            settings.attemptAttackEnabled = typeof options.attemptAttackEnabled === 'boolean' ?
+                options.attemptAttackEnabled : defConfig.attemptAttackEnabled;
+        }
+        if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
+        if (typeof options.maxAttemptAttackLifeNum !== 'undefined') {
+            var maxAttemptAttackLifeNum = parseInt(options.maxAttemptAttackLifeNum);
+            if (!isNaN(maxAttemptAttackLifeNum) && maxAttemptAttackLifeNum >= 0)
+                settings.maxAttemptAttackLifeNum = maxAttemptAttackLifeNum;
+            else settings.maxAttemptAttackLifeNum = defConfig.maxAttemptAttackLifeNum;
+        }
         if (typeof options.batchAttackList !== 'undefined') {
             if ($.type(options.batchAttackList) === 'object') {
                 settings.batchAttackList = {};
@@ -245,7 +251,7 @@ var ConfigMethod = {
         }
         if (typeof options.maxFastGotoThreadPageNum !== 'undefined') {
             var maxFastGotoThreadPageNum = parseInt(options.maxFastGotoThreadPageNum);
-            if ($.isNumeric(maxFastGotoThreadPageNum) && maxFastGotoThreadPageNum > 0)
+            if (!isNaN(maxFastGotoThreadPageNum) && maxFastGotoThreadPageNum > 0)
                 settings.maxFastGotoThreadPageNum = maxFastGotoThreadPageNum;
             else settings.maxFastGotoThreadPageNum = defConfig.maxFastGotoThreadPageNum;
         }
@@ -322,7 +328,7 @@ var ConfigMethod = {
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);
-            if ($.isNumeric(defShowMsgDuration) && defShowMsgDuration >= -1)
+            if (!isNaN(defShowMsgDuration) && defShowMsgDuration >= -1)
                 settings.defShowMsgDuration = defShowMsgDuration;
             else settings.defShowMsgDuration = defConfig.defShowMsgDuration;
         }

@@ -27,10 +27,12 @@ var Config = {
     customMonsterNameList: {},
     // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
     autoAttackEnabled: false,
-    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
-    attackWhenZeroLifeEnabled: false,
     // 在距本回合结束前指定时间内才自动完成（剩余）批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
     attackAfterTime: 0,
+    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
+    attemptAttackEnabled: false,
+    // 在实际生命值不超过指定阙值时才进行试探攻击，-1表示使用低保值，例：12（不同等级的阙值可能有所不同，请自行判断，超过低保值无效）
+    maxAttemptAttackLifeNum: -1,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
@@ -152,7 +154,7 @@ var Config = {
     autoChangeSMColorEnabled: false,
     // 自动更换神秘颜色的更换顺序类型，random：随机；sequence：顺序
     autoChangeSMColorType: 'random',
-    // 自动更换神秘颜色的间隔时间（小时）
+    // 自动更换神秘颜色的时间间隔（小时）
     autoChangeSMColorInterval: 24,
     // 是否从当前所有可用的神秘颜色中进行更换，true：开启；false：关闭
     changeAllAvailableSMColorEnabled: true,
@@ -174,22 +176,18 @@ var Config = {
     },
     // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
     checkAutoAttackingInterval: 4,
-    // 在领取争夺奖励后首次检查是否进行攻击的间隔时间（分钟）
-    firstCheckAttackInterval: 190,
-    // 检查是否进行攻击的默认间隔时间（分钟）
-    defCheckAttackInterval: 25,
-    // 在生命值不超过低保线时检查是否进行攻击的间隔时间列表，格式：{'距本回合开始已经过的分钟数A-距本回合开始已经过的分钟数B':间隔分钟数}，例：{'190-205': 3, '205-225': 5, '225-600': 10}
-    // （不在此列表里的时间段将按照{@link Config.defZeroLifeCheckAttackInterval}所设定的默认间隔时间）
-    zeroLifeCheckAttackIntervalList: {'190-205': 3, '205-225': 5, '225-600': 10},
-    // 在生命值不超过低保线时检查是否进行攻击的默认间隔时间（分钟）
-    defZeroLifeCheckAttackInterval: 3,
-    // 不进行试探攻击的最低生命值
-    minNotCheckAttackLifeNum: 13,
+    // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
+    firstCheckLifeInterval: 190,
+    // 检查生命值的默认时间间隔（分钟）
+    defCheckLifeInterval: 25,
+    // 在进行试探攻击后检查生命值的时间间隔列表，格式：{'距本回合开始已经过的分钟数A-距本回合开始已经过的分钟数B':间隔分钟数}，例：{'190-205': 3, '205-225': 5, '225-600': 10}
+    // （不在此列表里的时间段将按照{@link Config.defCheckLifeAfterAttemptAttackInterval}所设定的默认时间间隔）
+    checkLifeAfterAttemptAttackIntervalList: {'190-205': 3, '205-225': 5, '225-600': 10},
+    // 在进行试探攻击后检查生命值的默认时间间隔（分钟）
+    defCheckLifeAfterAttemptAttackInterval: 3,
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
-    // 在抽取神秘盒子后所推迟的争夺领取间隔（分钟）
-    afterDrawSmboxLootDelayInterval: 480,
-    // 抽奖操作结束后的再刷新间隔（秒），用于在定时模式中进行判断，并非是定时模式的实际间隔时间
+    // 抽奖操作结束后的再刷新间隔（秒），用于在定时模式中进行判断，并非是定时模式的实际时间间隔
     actionFinishRefreshInterval: 30,
     // 在网络超时的情况下获取剩余时间失败后的重试间隔（分钟），用于定时模式
     errorRefreshInterval: 1,
@@ -201,9 +199,9 @@ var Config = {
     smRankChangeAlertInterval: 12,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
-    // ajax请求的默认间隔时间（毫秒）
+    // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
-    // 特殊情况下的ajax请求（如购买道具等）的默认间隔时间（毫秒），可设置为函数来返回值
+    // 特殊情况下的ajax请求（如购买道具等）的默认时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function () {
         return Math.floor(Math.random() * 100) + 200;
     },
@@ -244,12 +242,12 @@ var Config = {
     autoAttackReadyCookieName: 'pd_auto_attack_ready',
     // 标记正在进行自动攻击的Cookie名称
     autoAttackingCookieName: 'pd_auto_attacking',
-    // 标记已检查试探攻击的Cookie名称
-    attackCheckCookieName: 'pd_attack_check',
+    // 标记已检查生命值的Cookie名称
+    checkLifeCookieName: 'pd_check_life',
     // 标记已完成的试探攻击次数的Cookie名称
     attackCountCookieName: 'pd_attack_count',
-    // 存储上一次检查试探攻击信息的Cookie名称
-    prevCheckAttackInfoCookieName: 'pd_prev_check_attack_info',
+    // 存储上一次试探攻击日志的Cookie名称
+    prevAttemptAttackLogCookieName: 'pd_prev_attempt_attack_log',
     // 标记已抽取神秘盒子的Cookie名称
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称

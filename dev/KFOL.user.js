@@ -20,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     4.9.0-dev
+// @version     5.0.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '4.9.0';
+var version = '5.0.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -80,7 +80,7 @@ var KFOL = {
     appendCss: function () {
         $('head').append(
             '<style type="text/css">' +
-            '.pd_layer { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
+            '.pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
             '.pd_pop_box { position: fixed; width: 100%; z-index: 1001; }' +
             '.pd_pop_tips {' +
             '  border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0,0,0,0.1); border-radius: 3px; padding: 12px 40px; text-align: center;' +
@@ -136,6 +136,9 @@ var KFOL = {
             '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
             '  line-height: 1.6em; background-color: #FFF;' +
             '}' +
+            '.pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }' +
+            '.pd_usable_num { color: #669933; }' +
+            '.pd_used_num { color: #FF0033; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -215,7 +218,7 @@ var KFOL = {
         }
         var $popBox = $('.pd_pop_box');
         var isFirst = $popBox.length === 0;
-        if (!isFirst && $('.pd_layer').length === 0) {
+        if (!isFirst && $('.pd_mask').length === 0) {
             var $lastTips = $('.pd_pop_tips:last');
             if ($lastTips.length > 0) {
                 var top = $lastTips.offset().top;
@@ -225,8 +228,8 @@ var KFOL = {
                 }
             }
         }
-        if (settings.preventable && $('.pd_layer').length === 0) {
-            $('<div class="pd_layer"></div>').appendTo('body');
+        if (settings.preventable && $('.pd_mask').length === 0) {
+            $('<div class="pd_mask"></div>').appendTo('body');
         }
         if (isFirst) {
             $popBox = $('<div class="pd_pop_box"></div>').appendTo('body');
@@ -274,13 +277,15 @@ var KFOL = {
     /**
      * 移除指定的提示消息框
      * @param {jQuery} $popTips 指定的消息框节点
+     * @param {boolean} [isRemoveMask=false] 是否移除遮罩
      */
-    removePopTips: function ($popTips) {
+    removePopTips: function ($popTips, isRemoveMask) {
         var $parent = $popTips.parent();
         $popTips.remove();
+        if (isRemoveMask) $('.pd_mask').remove();
         if ($('.pd_pop_tips').length === 0) {
             $parent.remove();
-            $('.pd_layer').remove();
+            $('.pd_mask').remove();
         }
     },
 
@@ -470,8 +475,8 @@ var KFOL = {
     },
 
     /**
-     * 获取倒计时的最小间隔时间（秒）
-     * @returns {number} 倒计时的最小间隔时间（秒）
+     * 获取倒计时的最小时间间隔（秒）
+     * @returns {number} 倒计时的最小时间间隔（秒）
      */
     getMinRefreshInterval: function () {
         var donationInterval = -1;
@@ -527,8 +532,8 @@ var KFOL = {
                     if (autoAttackInterval < 0) autoAttackInterval = 0;
                 }
                 else autoAttackInterval = 0;
-                if (Config.attackWhenZeroLifeEnabled && autoAttackInterval > 0) {
-                    var time = parseInt(Tools.getCookie(Config.attackCheckCookieName));
+                if (Config.attemptAttackEnabled && autoAttackInterval > 0) {
+                    var time = parseInt(Tools.getCookie(Config.checkLifeCookieName));
                     var now = new Date();
                     if (!isNaN(time) && time > 0 && time >= now.getTime()) {
                         attackCheckInterval = Math.floor((time - now.getTime()) / 1000);
@@ -604,7 +609,7 @@ var KFOL = {
         };
         /**
          * 显示定时模式标题提示
-         * @param {number} interval 倒计时的间隔时间（秒）
+         * @param {number} interval 倒计时的时间间隔（秒）
          * @param {boolean} [isShowTitle=false] 是否立即显示标题
          */
         var showRefreshModeTips = function (interval, isShowTitle) {
@@ -2137,7 +2142,7 @@ var KFOL = {
         var script = '';
         if (type === 2) script = Config.customScriptEndContent;
         else script = Config.customScriptStartContent;
-        if ($.trim(script)) {
+        if (script) {
             try {
                 eval(script);
             }
@@ -2221,7 +2226,7 @@ var KFOL = {
                             var $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
                             var interval = parseInt($.trim($autoChangeSMColorInterval.val()));
                             if (isNaN(interval) || interval <= 0) {
-                                alert('神秘颜色更换间隔时间格式不正确');
+                                alert('神秘颜色更换时间间隔格式不正确');
                                 $autoChangeSMColorInterval.select();
                                 $autoChangeSMColorInterval.focus();
                                 return;
@@ -2565,10 +2570,10 @@ var KFOL = {
             if (Config.showFastGotoThreadPageEnabled) KFOL.addFastGotoThreadPageLink();
         }
         else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
-            Item.addUseAllItemsLink();
+            Item.enhanceMyItemsPage();
         }
         else if (/\/kf_fw_ig_renew\.php$/i.test(location.href)) {
-            Item.addAllItemsConvertToEnergyAndRestoreLink();
+            Item.addBatchConvertEnergyAndRestoreItemsLink();
         }
         else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
             Item.addConvertEnergyAndRestoreItemsButton();
