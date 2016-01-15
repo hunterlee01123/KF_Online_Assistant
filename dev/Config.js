@@ -87,7 +87,7 @@ var Config = {
     // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
     userMemoList: {},
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
-    defShowMsgDuration: 15,
+    defShowMsgDuration: -1,
     // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
     animationEffectOffEnabled: false,
     // 日志保存天数
@@ -177,7 +177,7 @@ var Config = {
     // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
     checkAutoAttackingInterval: 4,
     // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
-    firstCheckLifeInterval: 185,
+    firstCheckLifeInterval: 165,
     // 检查生命值的默认时间间隔（分钟）
     defCheckLifeInterval: 20,
     // 在进行试探攻击后检查生命值的时间间隔（分钟）

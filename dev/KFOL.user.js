@@ -235,6 +235,10 @@ var KFOL = {
             $popBox = $('<div class="pd_pop_box"></div>').appendTo('body');
         }
         var $popTips = $('<div class="pd_pop_tips">' + settings.msg + '</div>').appendTo($popBox);
+        $popTips.on('click', 'a.pd_stop_action', function (e) {
+            e.preventDefault();
+            $(this).text('正在停止...').closest('.pd_pop_tips').data('stop', true);
+        });
         if (settings.clickable) {
             $popTips.css('cursor', 'pointer').click(function () {
                 $(this).stop(true, true).fadeOut('slow', function () {
@@ -331,7 +335,7 @@ var KFOL = {
          */
         var donationSubmit = function (kfb) {
             $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
-                var date = Tools.getDateByTime('02:00:00');
+                var date = Tools.getDateByTime('12:00:00');
                 if (new Date() > date) date = Tools.getMidnightHourDate(1);
                 Tools.setCookie(Config.donationCookieName, 1, date);
                 KFOL.showFormatLog('捐款{0}KFB'.replace('{0}', kfb), html);
@@ -1112,7 +1116,7 @@ var KFOL = {
             }
             var tid = Tools.getUrlParam('tid');
             if (!tid) return;
-            KFOL.showWaitMsg('<strong>正在统计回帖名单中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i>'
+            KFOL.showWaitMsg('<strong>正在统计回帖名单中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                 .replace('{0}', endPage - startPage + 1)
                 , true);
             $(document).queue('StatReplyers', []);
@@ -1120,7 +1124,7 @@ var KFOL = {
             $.each(new Array(endPage), function (index) {
                 if (index + 1 < startPage) return;
                 $(document).queue('StatReplyers', function () {
-                    var url = 'read.php?tid={0}&page={1}'.replace('{0}', tid).replace('{1}', index + 1);
+                    var url = 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', (new Date()).getTime());
                     $.get(url, function (html) {
                         var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
                         var isStop = false;
@@ -1135,8 +1139,12 @@ var KFOL = {
                             }
                             replyerList[floor] = floorMatches[2];
                         }
+
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('StatReplyers', []);
+
                         if (isStop || index === endPage - 1) {
                             KFOL.removePopTips($('.pd_pop_tips'));
                             KFOL.showStatReplyersDialog(replyerList);
@@ -1425,7 +1433,7 @@ var KFOL = {
                         .replace('{2}', (totalSell / threadList.length).toFixed(2))
                     )
                 ) {
-                    KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                    KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', threadList.length)
                         , true);
                     KFOL.buyThreads(threadList);
@@ -1463,7 +1471,7 @@ var KFOL = {
      */
     buyThreads: function (threadList) {
         var successNum = 0, failNum = 0, totalSell = 0;
-        $(document).queue('SellItems', []);
+        $(document).queue('BuyThreads', []);
         $.each(threadList, function (index, thread) {
             $(document).queue('BuyThreads', function () {
                 $.get(thread.url + '&t=' + (new Date()).getTime(), function (html) {
@@ -1473,9 +1481,13 @@ var KFOL = {
                         totalSell += thread.sell;
                     }
                     else failNum++;
+
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    if (index === threadList.length - 1) {
+                    var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                    if (isStop) $(document).queue('BuyThreads', []);
+
+                    if (isStop || index === threadList.length - 1) {
                         KFOL.removePopTips($('.pd_pop_tips'));
                         if (successNum > 0) {
                             Log.push('购买帖子', '共有`{0}`个帖子购买成功'.replace('{0}', successNum), {pay: {'KFB': -totalSell}});
@@ -1493,6 +1505,7 @@ var KFOL = {
                             , duration: -1
                         });
                     }
+
                     window.setTimeout(function () {
                         $(document).dequeue('BuyThreads');
                     }, Config.defAjaxInterval);

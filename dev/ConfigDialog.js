@@ -141,7 +141,7 @@ var ConfigDialog = {
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
             '      <label>默认提示消息的持续时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width:30px" type="text" />秒 ' +
-            '<span class="pd_cfg_tips" title="设置为-1表示永久显示，默认值：15">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="设置为-1表示永久显示，例：15">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_animation_effect_off_enabled" type="checkbox" />禁用动画效果 ' +
             '<span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span></label><br />' +
             '      <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +

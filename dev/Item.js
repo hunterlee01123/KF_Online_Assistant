@@ -230,66 +230,70 @@ var Item = {
                 .replace('{0}', settings.itemLevel)
                 .replace('{1}', settings.itemName)
         );
+
         var successNum = 0;
         var energyNum = Item.getGainEnergyNumByItemLevel(settings.itemLevel);
         $(document).queue('ConvertItemsToEnergy', []);
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('ConvertItemsToEnergy', function () {
-                var url = 'kf_fw_ig_doit.php?tomp={0}&id={1}1&t={2}'
-                    .replace('{0}', settings.safeId)
-                    .replace('{1}', itemId)
-                    .replace('{2}', (new Date()).getTime());
-                $.get(url, function (html) {
-                    KFOL.showFormatLog('将道具转换为能量', html);
-                    if (/转换为了\s*\d+\s*点能量/i.test(html)) {
-                        successNum++;
-                    }
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                        var successEnergyNum = successNum * energyNum;
-                        if (successNum > 0) {
-                            Log.push('将道具转换为能量',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具成功转换为能量'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', settings.itemLevel)
-                                    .replace('{2}', settings.itemName),
-                                {
-                                    gain: {'能量': successEnergyNum},
-                                    pay: {'已使用道具': -successNum}
-                                }
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_ig_doit.php?tomp={0}&id={1}1&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', (new Date()).getTime()),
+                    success: function (html) {
+                        KFOL.showFormatLog('将道具转换为能量', html);
+                        if (/转换为了\s*\d+\s*点能量/i.test(html)) {
+                            successNum++;
+                        }
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('ConvertItemsToEnergy', []);
+
+                        if (isStop || index === settings.itemIdList.length - 1) {
+                            KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
+                            var successEnergyNum = successNum * energyNum;
+                            if (successNum > 0) {
+                                Log.push('将道具转换为能量',
+                                    '共有`{0}`个【`Lv.{1}：{2}`】道具成功转换为能量'
+                                        .replace('{0}', successNum)
+                                        .replace('{1}', settings.itemLevel)
+                                        .replace('{2}', settings.itemName),
+                                    {gain: {'能量': successEnergyNum}, pay: {'已使用道具': -successNum}}
+                                );
+                            }
+                            console.log('共有{0}个道具成功转换为能量，能量+{1}'
+                                .replace('{0}', successNum)
+                                .replace('{1}', successEnergyNum)
                             );
-                        }
-                        console.log('共有{0}个道具成功转换为能量，能量+{1}'
-                            .replace('{0}', successNum)
-                            .replace('{1}', successEnergyNum)
-                        );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个道具成功转换为能量</strong><i>能量<em>+{1}</em></i>'
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具成功转换为能量</strong><i>能量<em>+{1}</em></i>'
                                 .replace('{0}', successNum)
                                 .replace('{1}', successEnergyNum)
-                            , duration: -1
-                        });
-                        $('.pd_result:last').append(
-                            '<li class="pd_stat">共有<em>{0}</em>个道具成功转换为能量，<i>能量<em>+{1}</em></i></li>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', successEnergyNum)
-                        );
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked')
-                                .closest('tr')
-                                .fadeOut('normal', function () {
-                                    $(this).remove();
-                                });
+                                , -1);
+                            $('.pd_result:last').append(
+                                '<li class="pd_stat">共有<em>{0}</em>个道具成功转换为能量，<i>能量<em>+{1}</em></i></li>'
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', successEnergyNum)
+                            );
+
+                            if (settings.type === 2) {
+                                $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked')
+                                    .closest('tr')
+                                    .fadeOut('normal', function () {
+                                        $(this).remove();
+                                    });
+                            }
+                            Item.showCurrentUsedItemNum();
                         }
-                        Item.showCurrentUsedItemNum();
-                    }
-                    window.setTimeout(function () {
-                        $(document).dequeue('ConvertItemsToEnergy');
-                    }, Config.defAjaxInterval);
-                }, 'html');
+
+                        window.setTimeout(function () {
+                            $(document).dequeue('ConvertItemsToEnergy');
+                        }, Config.defAjaxInterval);
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('ConvertItemsToEnergy');
@@ -318,78 +322,83 @@ var Item = {
                 .replace('{0}', settings.itemLevel)
                 .replace('{1}', settings.itemName)
         );
-        var successNum = 0;
-        var failNum = 0;
+
+        var successNum = 0, failNum = 0;
         var energyNum = Item.getRestoreEnergyNumByItemLevel(settings.itemLevel);
         $(document).queue('RestoreItems', []);
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('RestoreItems', function () {
-                var url = 'kf_fw_ig_doit.php?renew={0}&id={1}1&t={2}'
-                    .replace('{0}', settings.safeId)
-                    .replace('{1}', itemId)
-                    .replace('{2}', (new Date()).getTime());
-                $.get(url, function (html) {
-                    KFOL.showFormatLog('恢复道具', html);
-                    var msg = '';
-                    var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
-                    if (matches) {
-                        if (/该道具已经被恢复/i.test(html)) successNum++;
-                        else if (/恢复失败/i.test(html)) failNum++;
-                    }
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'
-                        .replace('{0}', index + 1)
-                        .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
-                    );
-                    if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                        var successEnergyNum = successNum * energyNum;
-                        if (successNum > 0 || failNum > 0) {
-                            Log.push('恢复道具',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具恢复成功，共有`{3}`个道具恢复失败'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', settings.itemLevel)
-                                    .replace('{2}', settings.itemName)
-                                    .replace('{3}', failNum),
-                                {
-                                    gain: {'道具': successNum},
-                                    pay: {'已使用道具': -(successNum + failNum), '能量': -successEnergyNum}
-                                }
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_ig_doit.php?renew={0}&id={1}1&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', (new Date()).getTime()),
+                    success: function (html) {
+                        KFOL.showFormatLog('恢复道具', html);
+                        var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
+                        if (matches) {
+                            if (/该道具已经被恢复/i.test(html)) successNum++;
+                            else if (/恢复失败/i.test(html)) failNum++;
+                        }
+                        $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'
+                            .replace('{0}', index + 1)
+                            .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
+                        );
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('RestoreItems', []);
+
+                        if (isStop || index === settings.itemIdList.length - 1) {
+                            KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
+                            var successEnergyNum = successNum * energyNum;
+                            if (successNum > 0 || failNum > 0) {
+                                Log.push('恢复道具',
+                                    '共有`{0}`个【`Lv.{1}：{2}`】道具恢复成功，共有`{3}`个道具恢复失败'
+                                        .replace('{0}', successNum)
+                                        .replace('{1}', settings.itemLevel)
+                                        .replace('{2}', settings.itemName)
+                                        .replace('{3}', failNum),
+                                    {
+                                        gain: {'道具': successNum},
+                                        pay: {'已使用道具': -(successNum + failNum), '能量': -successEnergyNum}
+                                    }
+                                );
+                            }
+                            console.log('共有{0}个道具恢复成功，共有{1}个道具恢复失败，能量-{2}'
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum)
+                                .replace('{2}', successEnergyNum)
                             );
-                        }
-                        console.log('共有{0}个道具恢复成功，共有{1}个道具恢复失败，能量-{2}'
-                            .replace('{0}', successNum)
-                            .replace('{1}', failNum)
-                            .replace('{2}', successEnergyNum)
-                        );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个道具恢复成功，共有<em>{1}</em>个道具恢复失败</strong><i>能量<ins>-{2}</ins></i>'
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具恢复成功，共有<em>{1}</em>个道具恢复失败</strong><i>能量<ins>-{2}</ins></i>'
                                 .replace('{0}', successNum)
                                 .replace('{1}', failNum)
                                 .replace('{2}', successEnergyNum)
-                            , duration: -1
-                        });
-                        $('.pd_result:last').append(
-                            '<li class="pd_stat">共有<em>{0}</em>个道具恢复成功，共有<em>{1}</em>个道具恢复失败，<i>能量<ins>-{2}</ins></i></li>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', failNum)
-                                .replace('{2}', successEnergyNum)
-                        );
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked')
-                                .closest('tr')
-                                .fadeOut('normal', function () {
-                                    $(this).remove();
-                                });
+                                , -1);
+                            $('.pd_result:last').append(
+                                '<li class="pd_stat">共有<em>{0}</em>个道具恢复成功，共有<em>{1}</em>个道具恢复失败，<i>能量<ins>-{2}</ins></i></li>'
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', failNum)
+                                    .replace('{2}', successEnergyNum)
+                            );
+
+                            if (settings.type === 2) {
+                                $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked')
+                                    .closest('tr')
+                                    .fadeOut('normal', function () {
+                                        $(this).remove();
+                                    });
+                            }
+                            Item.showCurrentUsedItemNum();
                         }
-                        Item.showCurrentUsedItemNum();
-                    }
-                    window.setTimeout(function () {
-                        $(document).dequeue('RestoreItems');
-                    }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
-                }, 'html');
+
+                        window.setTimeout(function () {
+                            $(document).dequeue('RestoreItems');
+                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('RestoreItems');
@@ -427,7 +436,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 if (!window.confirm('共选择了{0}个道具，是否转换为能量？'.replace('{0}', itemIdList.length))) return;
-                KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', itemIdList.length)
                     , true);
                 Item.convertItemsToEnergy({
@@ -457,7 +466,7 @@ var Item = {
                     alert('所需恢复能量不足');
                     return;
                 }
-                KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', itemIdList.length)
                     , true);
                 Item.restoreItems({
@@ -540,100 +549,113 @@ var Item = {
                 .replace('{0}', settings.itemLevel)
                 .replace('{1}', settings.itemName)
         );
+
         var successNum = 0, failNum = 0;
         $(document).queue('UseItems', []);
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('UseItems', function () {
-                var url = 'kf_fw_ig_doit.php?id={0}1&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime());
-                $.get(url, function (html) {
-                    KFOL.showFormatLog('使用道具', html);
-                    var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
-                    if (matches && !/错误的物品编号/i.test(html) && !/无法再使用/i.test(html)) successNum++;
-                    else failNum++;
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'
-                        .replace('{0}', index + 1)
-                        .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
-                    );
-                    if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                        var stat = {'有效道具': 0, '无效道具': 0};
-                        $('.pd_result').last().find('li').not(':first-child').each(function () {
-                            var credits = Item.getCreditsViaResponse($(this).text(), settings.itemTypeId);
-                            if (credits !== -1) {
-                                if ($.isEmptyObject(credits)) stat['无效道具']++;
-                                else stat['有效道具']++;
-                                $.each(credits, function (index, credit) {
-                                    if (typeof stat[index] === 'undefined')
-                                        stat[index] = credit;
-                                    else
-                                        stat[index] += credit;
-                                });
-                            }
-                        });
-                        if (stat['有效道具'] === 0) delete stat['有效道具'];
-                        if (stat['无效道具'] === 0) delete stat['无效道具'];
-                        if (successNum > 0) {
-                            Log.push('使用道具',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具被使用'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', settings.itemLevel)
-                                    .replace('{2}', settings.itemName),
-                                {
-                                    gain: $.extend({}, stat, {'已使用道具': successNum}),
-                                    pay: {'道具': -successNum}
-                                }
-                            );
-                        }
-                        var logStat = '', msgStat = '', resultStat = '';
-                        for (var creditsType in stat) {
-                            logStat += '，{0}+{1}'
-                                .replace('{0}', creditsType)
-                                .replace('{1}', stat[creditsType]);
-                            msgStat += '<i>{0}<em>+{1}</em></i>'
-                                .replace('{0}', creditsType)
-                                .replace('{1}', stat[creditsType]);
-                            resultStat += '<i>{0}<em>+{1}</em></i> '
-                                .replace('{0}', creditsType)
-                                .replace('{1}', stat[creditsType]);
-                        }
-                        console.log('共有{0}个道具被使用{1}{2}'
-                            .replace('{0}', successNum)
-                            .replace('{1}', failNum > 0 ? '，共有{0}个道具未能使用'.replace('{0}', failNum) : '')
-                            .replace('{2}', logStat)
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_ig_doit.php?id={0}1&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime()),
+                    success: function (html) {
+                        KFOL.showFormatLog('使用道具', html);
+                        var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
+                        if (matches && !/错误的物品编号/i.test(html) && !/无法再使用/i.test(html)) successNum++;
+                        else failNum++;
+                        $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'
+                            .replace('{0}', index + 1)
+                            .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
                         );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个道具被使用{1}</strong>{2}'
+                    },
+                    error: function () {
+                        failNum++;
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('UseItems', []);
+
+                        if (isStop || index === settings.itemIdList.length - 1) {
+                            KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
+                            var stat = {'有效道具': 0, '无效道具': 0};
+                            $('.pd_result').last().find('li').not(':first-child').each(function () {
+                                var credits = Item.getCreditsViaResponse($(this).text(), settings.itemTypeId);
+                                if (credits !== -1) {
+                                    if ($.isEmptyObject(credits)) stat['无效道具']++;
+                                    else stat['有效道具']++;
+                                    $.each(credits, function (index, credit) {
+                                        if (typeof stat[index] === 'undefined')
+                                            stat[index] = credit;
+                                        else
+                                            stat[index] += credit;
+                                    });
+                                }
+                            });
+                            if (stat['有效道具'] === 0) delete stat['有效道具'];
+                            if (stat['无效道具'] === 0) delete stat['无效道具'];
+                            if (successNum > 0) {
+                                Log.push('使用道具',
+                                    '共有`{0}`个【`Lv.{1}：{2}`】道具被使用'
+                                        .replace('{0}', successNum)
+                                        .replace('{1}', settings.itemLevel)
+                                        .replace('{2}', settings.itemName),
+                                    {
+                                        gain: $.extend({}, stat, {'已使用道具': successNum}),
+                                        pay: {'道具': -successNum}
+                                    }
+                                );
+                            }
+                            var logStat = '', msgStat = '', resultStat = '';
+                            for (var creditsType in stat) {
+                                logStat += '，{0}+{1}'
+                                    .replace('{0}', creditsType)
+                                    .replace('{1}', stat[creditsType]);
+                                msgStat += '<i>{0}<em>+{1}</em></i>'
+                                    .replace('{0}', creditsType)
+                                    .replace('{1}', stat[creditsType]);
+                                resultStat += '<i>{0}<em>+{1}</em></i> '
+                                    .replace('{0}', creditsType)
+                                    .replace('{1}', stat[creditsType]);
+                            }
+                            console.log('共有{0}个道具被使用{1}{2}'
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum > 0 ? '，共有{0}个道具未能使用'.replace('{0}', failNum) : '')
+                                .replace('{2}', logStat)
+                            );
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具被使用{1}</strong>{2}'
                                 .replace('{0}', successNum)
                                 .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具未能使用'.replace('{0}', failNum) : '')
                                 .replace('{2}', msgStat)
-                            , duration: -1
-                        });
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1 input[type="checkbox"]:checked')
-                                .closest('tr')
-                                .fadeOut('normal', function () {
-                                    $(this).remove();
-                                });
+                                , -1);
+                            if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
+                            $('.pd_result:last').append(
+                                '<li class="pd_stat"><b>统计结果（共有<em>{0}</em>个道具被使用）：</b><br />{1}</li>'
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', resultStat)
+                            );
+
+                            if (settings.type === 2) {
+                                $('.kf_fw_ig1 input[type="checkbox"]:checked')
+                                    .closest('tr')
+                                    .fadeOut('normal', function () {
+                                        $(this).remove();
+                                    });
+                            }
+                            else {
+                                Item.showItemUsedInfo($('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(2) > a'));
+                                Item.showCurrentUsableItemNum();
+                                Item.showCurrentUsedItemNum();
+                            }
                         }
-                        else {
-                            Item.showItemUsedInfo($('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(2) > a'));
-                            Item.showCurrentUsableItemNum();
-                            Item.showCurrentUsedItemNum();
-                        }
-                        if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
-                        $('.pd_result:last').append(
-                            '<li class="pd_stat"><b>统计结果（共有<em>{0}</em>个道具被使用）：</b><br />{1}</li>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', resultStat)
-                        );
-                    }
-                    window.setTimeout(function () {
-                        $(document).dequeue('UseItems');
-                    }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
-                }, 'html');
+
+                        window.setTimeout(function () {
+                            $(document).dequeue('UseItems');
+                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('UseItems');
@@ -659,58 +681,70 @@ var Item = {
                 .replace('{0}', settings.itemLevel)
                 .replace('{1}', settings.itemName)
         );
+
         var successNum = 0, failNum = 0, totalGain = 0;
         $(document).queue('SellItems', []);
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('SellItems', function () {
-                var url = 'kf_fw_ig_shop.php?sell=yes&id={0}1&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime());
-                $.get(url, function (html) {
-                    KFOL.showFormatLog('出售道具', html);
-                    if (/出售成功/.test(html)) {
-                        successNum++;
-                        totalGain += Item.getSellItemGainByItemLevel(settings.itemLevel);
-                    }
-                    else failNum++;
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                        if (successNum > 0) {
-                            Log.push('出售道具',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具出售成功'
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_ig_shop.php?sell=yes&id={0}1&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime()),
+                    success: function (html) {
+                        KFOL.showFormatLog('出售道具', html);
+                        if (/出售成功/.test(html)) {
+                            successNum++;
+                            totalGain += Item.getSellItemGainByItemLevel(settings.itemLevel);
+                        }
+                        else failNum++;
+                    },
+                    error: function () {
+                        failNum++;
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('SellItems', []);
+
+                        if (isStop || index === settings.itemIdList.length - 1) {
+                            KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
+                            if (successNum > 0) {
+                                Log.push('出售道具',
+                                    '共有`{0}`个【`Lv.{1}：{2}`】道具出售成功'
+                                        .replace('{0}', successNum)
+                                        .replace('{1}', settings.itemLevel)
+                                        .replace('{2}', settings.itemName),
+                                    {
+                                        gain: {'KFB': totalGain},
+                                        pay: {'道具': -successNum}
+                                    }
+                                );
+                            }
+                            console.log('共有{0}个道具出售成功，共有{1}个道具出售失败，KFB+{2}'
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum)
+                                .replace('{2}', totalGain)
+                            );
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具出售成功{1}</strong><i>KFB<em>+{2}</em></i>'
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具出售失败'.replace('{0}', failNum) : '')
+                                .replace('{2}', totalGain)
+                                , -1);
+                            $('.pd_result:last').append(
+                                '<li class="pd_stat">共有<em>{0}</em>个道具出售成功{1}，<i>KFB<em>+{2}</em></i></li>'
                                     .replace('{0}', successNum)
-                                    .replace('{1}', settings.itemLevel)
-                                    .replace('{2}', settings.itemName),
-                                {
-                                    gain: {'KFB': totalGain},
-                                    pay: {'道具': -successNum}
-                                }
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具出售失败'.replace('{0}', failNum) : '')
+                                    .replace('{2}', totalGain)
                             );
                         }
-                        console.log('共有{0}个道具出售成功，共有{1}个道具出售失败，KFB+{2}'
-                            .replace('{0}', successNum)
-                            .replace('{1}', failNum)
-                            .replace('{2}', totalGain)
-                        );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个道具出售成功{1}</strong><i>KFB<em>+{2}</em></i>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具出售失败'.replace('{0}', failNum) : '')
-                                .replace('{2}', totalGain)
-                            , duration: -1
-                        });
-                        $('.pd_result:last').append(
-                            '<li class="pd_stat">共有<em>{0}</em>个道具出售成功{1}，<i>KFB<em>+{2}</em></i></li>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具出售失败'.replace('{0}', failNum) : '')
-                                .replace('{2}', totalGain)
-                        );
-                    }
-                    window.setTimeout(function () {
-                        $(document).dequeue('SellItems');
-                    }, Config.defAjaxInterval);
-                }, 'html');
+
+                        window.setTimeout(function () {
+                            $(document).dequeue('SellItems');
+                        }, Config.defAjaxInterval);
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('SellItems');
@@ -751,7 +785,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 if (!window.confirm('共选择了{0}个道具，是否批量使用道具？'.replace('{0}', itemIdList.length))) return;
-                KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', itemIdList.length)
                     , true);
                 Item.useItems({
@@ -782,7 +816,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 if (!window.confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
-                KFOL.showWaitMsg('<strong>正在出售道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                KFOL.showWaitMsg('<strong>正在出售道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', itemIdList.length)
                     , true);
                 Item.sellItems({
@@ -834,7 +868,7 @@ var Item = {
                         return;
                     }
                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                    KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                    KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                         , true);
                     Item.useItems({
@@ -870,7 +904,7 @@ var Item = {
                         return;
                     }
                     console.log('批量恢复道具Start，恢复道具数量：' + itemIdList.length);
-                    KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                    KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                         , true);
                     Item.restoreItems({
@@ -902,7 +936,7 @@ var Item = {
                         return;
                     }
                     console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                    KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                    KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                         , true);
                     Item.convertItemsToEnergy({
@@ -1171,73 +1205,84 @@ var Item = {
             .replace('{0}', settings.itemLevel)
             .replace('{1}', settings.itemName)
         );
+
         var successNum = 0;
+        var isStop = false;
         $(document).queue('BatchBuyItems', []);
         $.each(new Array(settings.num), function (index) {
             $(document).queue('BatchBuyItems', function () {
-                var url = 'kf_fw_ig_shop.php?lvid={0}&safeid={1}&t={2}'
-                    .replace('{0}', settings.itemTypeId)
-                    .replace('{1}', settings.safeId)
-                    .replace('{2}', (new Date()).getTime());
-                $.get(url, function (html) {
-                    KFOL.showFormatLog('购买道具', html);
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = false;
-                    var matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
-                    if (matches) {
-                        successNum++;
-                        $('.pd_result:last').append(
-                            '<li>第{0}次：获得了<a target="_blank" href="kf_fw_ig_my.php?pro={1}" data-id="{1}">一个道具</a></li>'
-                                .replace('{0}', index + 1)
-                                .replace(/\{1\}/g, matches[1])
-                        );
-                    }
-                    else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
-                        $('.pd_result:last').append('<li>第{0}次：你需要持有该道具两倍市场价的KFB，购买操作中止</li>'.replace('{0}', index + 1));
-                        isStop = true;
-                        $(document).queue('BatchBuyItems', []);
-                    }
-                    if (isStop || index === settings.num - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                        if (successNum > 0) {
-                            Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_ig_shop.php?lvid={0}&safeid={1}&t={2}'
+                        .replace('{0}', settings.itemTypeId)
+                        .replace('{1}', settings.safeId)
+                        .replace('{2}', (new Date()).getTime()),
+                    success: function (html) {
+                        KFOL.showFormatLog('购买道具', html);
+                        var msg = '';
+                        var matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
+                        if (matches) {
+                            successNum++;
+                            msg = '获得了<a target="_blank" href="kf_fw_ig_my.php?pro={0}" data-id="{0}">一个道具</a>'.replace(/\{0\}/g, matches[1]);
+                        }
+                        else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
+                            msg = '你需要持有该道具两倍市场价的KFB（购买操作中止）';
+                            isStop = true;
+                        }
+                        else {
+                            msg = '未能获得预期的回应';
+                        }
+                        $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'.replace('{0}', index + 1).replace('{1}', msg));
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('BatchBuyItems', []);
+
+                        if (isStop || index === settings.num - 1) {
+                            KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
+                            if (successNum > 0) {
+                                Log.push('购买道具',
+                                    '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
+                                        .replace('{0}', successNum)
+                                        .replace('{1}', settings.itemLevel)
+                                        .replace('{2}', settings.itemName),
+                                    {gain: {'道具': successNum}}
+                                );
+                            }
+                            console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
                                 .replace('{0}', successNum)
                                 .replace('{1}', settings.itemLevel)
                                 .replace('{2}', settings.itemName)
-                                , {gain: {'道具': successNum}}
                             );
-                        }
-                        console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
-                            .replace('{0}', successNum)
-                            .replace('{1}', settings.itemLevel)
-                            .replace('{2}', settings.itemName)
-                        );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
                                 .replace('{0}', successNum)
                                 .replace('{1}', settings.itemLevel)
                                 .replace('{2}', settings.itemName)
-                            , duration: -1
-                        });
-                        if (successNum > 0) {
-                            $('<li><a href="#">统计购买价格</a></li>')
-                                .appendTo('.pd_result:last')
-                                .find('a')
-                                .click(function (e) {
-                                    e.preventDefault();
-                                    var $result = $(this).closest('.pd_result');
-                                    $(this).parent().remove();
-                                    KFOL.removePopTips($('.pd_pop_tips'));
-                                    Item.statBuyItemsPrice($result, successNum);
-                                });
-                            Item.showItemShopBuyInfo();
+                                , -1);
+
+                            if (successNum > 0) {
+                                $('<li><a href="#">统计购买价格</a></li>')
+                                    .appendTo('.pd_result:last')
+                                    .find('a')
+                                    .click(function (e) {
+                                        e.preventDefault();
+                                        var $result = $(this).closest('.pd_result');
+                                        $(this).parent().remove();
+                                        KFOL.removePopTips($('.pd_pop_tips'));
+                                        Item.statBuyItemsPrice($result, successNum);
+                                    });
+                                Item.showItemShopBuyInfo();
+                            }
                         }
-                    }
-                    window.setTimeout(function () {
-                        $(document).dequeue('BatchBuyItems');
-                    }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
-                }, 'html');
+
+                        window.setTimeout(function () {
+                            $(document).dequeue('BatchBuyItems');
+                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('BatchBuyItems');
@@ -1286,7 +1331,7 @@ var Item = {
                     , 0))
             );
             if (isNaN(num) || num <= 0) return;
-            KFOL.showWaitMsg('<strong>正在购买道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+            KFOL.showWaitMsg('<strong>正在购买道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                 .replace('{0}', num)
                 , true);
             Item.buyItems({itemTypeId: itemTypeId, num: num, safeId: safeId, itemLevel: itemLevel, itemName: itemName});

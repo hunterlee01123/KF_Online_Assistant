@@ -12,57 +12,68 @@ var Card = {
         $(document).queue('ConvertCardsToVipTime', []);
         $.each(cardList, function (index, cardId) {
             $(document).queue('ConvertCardsToVipTime', function () {
-                var url = 'kf_fw_card_doit.php?do=recard&id={0}&safeid={1}&t={2}'
-                    .replace('{0}', cardId)
-                    .replace('{1}', safeId)
-                    .replace('{2}', (new Date()).getTime());
-                $.get(url, function (html) {
-                    KFOL.showFormatLog('将卡片转换为VIP时间', html);
-                    var matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/i.exec(html);
-                    if (matches) {
-                        successNum++;
-                        totalVipTime += parseInt(matches[1]);
-                        if (typeof matches[2] !== 'undefined') totalEnergy += parseInt(matches[2]);
-                    }
-                    else failNum++;
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    if (index === cardList.length - 1) {
-                        if (successNum > 0) {
-                            Log.push('将卡片转换为VIP时间', '共有`{0}`张卡片成功为VIP时间'.replace('{0}', successNum),
-                                {
-                                    gain: {'VIP小时': totalVipTime, '能量': totalEnergy},
-                                    pay: {'卡片': -successNum}
-                                }
-                            );
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_card_doit.php?do=recard&id={0}&safeid={1}&t={2}'
+                        .replace('{0}', cardId)
+                        .replace('{1}', safeId)
+                        .replace('{2}', (new Date()).getTime()),
+                    success: function (html) {
+                        KFOL.showFormatLog('将卡片转换为VIP时间', html);
+                        var matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/i.exec(html);
+                        if (matches) {
+                            successNum++;
+                            totalVipTime += parseInt(matches[1]);
+                            if (typeof matches[2] !== 'undefined') totalEnergy += parseInt(matches[2]);
                         }
-                        KFOL.removePopTips($('.pd_pop_tips'));
-                        console.log('共有{0}张卡片转换成功，共有{1}张卡片转换失败，VIP小时+{2}，能量+{3}'
-                            .replace('{0}', successNum)
-                            .replace('{1}', failNum)
-                            .replace('{2}', totalVipTime)
-                            .replace('{3}', totalEnergy)
-                        );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>张卡片转换成功{1}</strong><i>VIP小时<em>+{2}</em></i><i>能量<em>+{3}</em></i>'
+                        else failNum++;
+                    },
+                    error: function () {
+                        failNum++;
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('ConvertCardsToVipTime', []);
+
+                        if (isStop || index === cardList.length - 1) {
+                            if (successNum > 0) {
+                                Log.push('将卡片转换为VIP时间', '共有`{0}`张卡片成功为VIP时间'.replace('{0}', successNum),
+                                    {
+                                        gain: {'VIP小时': totalVipTime, '能量': totalEnergy},
+                                        pay: {'卡片': -successNum}
+                                    }
+                                );
+                            }
+                            KFOL.removePopTips($('.pd_pop_tips'));
+                            console.log('共有{0}张卡片转换成功，共有{1}张卡片转换失败，VIP小时+{2}，能量+{3}'
+                                .replace('{0}', successNum)
+                                .replace('{1}', failNum)
+                                .replace('{2}', totalVipTime)
+                                .replace('{3}', totalEnergy)
+                            );
+                            KFOL.showMsg('<strong>共有<em>{0}</em>张卡片转换成功{1}</strong><i>VIP小时<em>+{2}</em></i><i>能量<em>+{3}</em></i>'
                                 .replace('{0}', successNum)
                                 .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>张卡片转换失败'.replace('{0}', failNum) : '')
                                 .replace('{2}', totalVipTime)
                                 .replace('{3}', totalEnergy)
-                            , duration: -1
-                        });
-                        $('.kf_fw_ig2 .pd_card_chk:checked')
-                            .closest('td')
-                            .fadeOut('normal', function () {
-                                var $parent = $(this).parent();
-                                $(this).remove();
-                                if ($parent.children().length === 0) $parent.remove();
-                            });
-                    }
-                    window.setTimeout(function () {
-                        $(document).dequeue('ConvertCardsToVipTime');
-                    }, Config.defAjaxInterval);
-                }, 'html');
+                                , -1);
+                            $('.kf_fw_ig2 .pd_card_chk:checked')
+                                .closest('td')
+                                .fadeOut('normal', function () {
+                                    var $parent = $(this).parent();
+                                    $(this).remove();
+                                    if ($parent.children().length === 0) $parent.remove();
+                                });
+                        }
+
+                        window.setTimeout(function () {
+                            $(document).dequeue('ConvertCardsToVipTime');
+                        }, Config.defAjaxInterval);
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('ConvertCardsToVipTime');
@@ -114,7 +125,7 @@ var Card = {
                         });
                         if (cardList.length === 0) return;
                         if (!window.confirm('共选择了{0}张卡片，是否将卡片批量转换为VIP时间？'.replace('{0}', cardList.length))) return;
-                        KFOL.showWaitMsg('<strong>正在批量转换中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                        KFOL.showWaitMsg('<strong>正在批量转换中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                             .replace('{0}', cardList.length)
                             , true);
                         Card.convertCardsToVipTime(cardList, safeId);

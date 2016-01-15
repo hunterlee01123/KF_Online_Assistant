@@ -78,7 +78,7 @@ var Bank = {
             $(document).queue('Bank', function () {
                 $.ajax({
                     url: 'hack.php?H_name=bank',
-                    type: 'post',
+                    type: 'POST',
                     data: '&action=virement&pwuser={0}&to_money={1}&memo={2}'
                         .replace('{0}', Tools.getGBKEncodeString(key[0]))
                         .replace('{1}', key[1])
@@ -121,9 +121,17 @@ var Bank = {
                             statMsg = '<span class="pd_notice">({0})</span>'.replace('{0}', statMsg);
                         }
                         $('.pd_result').last().append('<li>{0} {1}</li>'.replace('{0}', key[0]).replace('{1}', statMsg));
+                    },
+                    error: function () {
+                        failNum++;
+                    },
+                    complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        if (index === users.length - 1) {
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).queue('Bank', []);
+
+                        if (isStop || index === users.length - 1) {
                             if (successNum > 0) {
                                 Log.push('批量转账', '共有`{0}`名用户转账成功'.replace('{0}', successNum), {pay: {'KFB': -successMoney}});
                             }
@@ -149,6 +157,7 @@ var Bank = {
                                 .replace('{2}', successMoney)
                             );
                         }
+
                         window.setTimeout(function () {
                             $(document).dequeue('Bank');
                         }, 5000);
@@ -288,7 +297,7 @@ var Bank = {
                         });
                         $(document).dequeue('Bank');
                     }
-                    KFOL.showWaitMsg('<strong>正在批量转账中，请耐心等待...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                    KFOL.showWaitMsg('<strong>正在批量转账中，请耐心等待...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', users.length)
                         , true);
                     $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');

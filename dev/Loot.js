@@ -177,7 +177,9 @@ var Loot = {
      * @param {int} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
      */
     autoAttack: function (safeId, deadlyAttackNum) {
+        if ($('#pd_remaining_num').length > 0) return;
         if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
+
         /**
          * 攻击
          * @param {int} [deadlyAttackId=0] 致命一击的攻击目标ID
@@ -221,9 +223,11 @@ var Loot = {
             }
             if (!totalAttackNum) return;
             Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+' + Config.checkAutoAttackingInterval + 'm'));
-            KFOL.showWaitMsg('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i><a target="_blank" href="{1}">浏览其它页面</a>'
-                .replace('{0}', totalAttackNum)
-                .replace('{1}', location.href)
+            KFOL.showWaitMsg(
+                ('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>' +
+                '<a target="_blank" href="{1}">浏览其它页面</a><a class="pd_stop_action pd_highlight" href="#">停止操作</a>')
+                    .replace('{0}', totalAttackNum)
+                    .replace('{1}', location.href)
                 , true);
             Loot.batchAttack({
                 type: 2,
@@ -302,6 +306,7 @@ var Loot = {
         var isStop = false, isRetakeSafeId = false;
         var attackLogList = [];
         var oriHtml = '', customHtml = '';
+
         /**
          * 攻击指定ID的怪物
          * @param {number} id 攻击ID
@@ -346,7 +351,6 @@ var Loot = {
                     }
                     else {
                         isStop = true;
-                        $(document).queue('BatchAttack', []);
                     }
                     attackLogList.push('第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
                     if (settings.type === 3)
@@ -390,6 +394,9 @@ var Loot = {
                 complete: function () {
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(settings.totalAttackNum + failNum - count);
+                    isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                    if (isStop) $(document).queue('BatchAttack', []);
+
                     if (isStop || count === settings.totalAttackNum + failNum) {
                         KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
                         if (gain['夺取KFB'] === 0) delete gain['夺取KFB'];
@@ -420,10 +427,11 @@ var Loot = {
                             }
                         }
                         console.log((settings.type === 3 ? '成功进行了{0}次试探攻击'.replace('{0}', successNum) : '共有{0}次攻击成功'.replace('{0}', successNum)) + logStat);
+
                         var duration = Config.defShowMsgDuration;
-                        if (settings.type === 1 || Config.defShowMsgDuration === -1) duration = -1;
-                        else if (settings.type === 3 && Config.defShowMsgDuration > 0 && Config.defShowMsgDuration < 30) duration = 30;
-                        else if (settings.type === 2 && Config.defShowMsgDuration > 0 && Config.defShowMsgDuration < 480) duration = 480;
+                        if (settings.type === 1 || duration === -1) duration = -1;
+                        else if (settings.type === 3 && duration > 0 && duration < 30) duration = 30;
+                        else if (settings.type === 2 && duration > 0 && duration < 480) duration = 480;
                         var extraMsg = '';
                         if (strongAttackNum > 0) extraMsg += '暴击<em>+{0}</em>'.replace('{0}', strongAttackNum);
                         if (criticalStrikeNum > 0) extraMsg += (extraMsg ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
@@ -435,9 +443,10 @@ var Loot = {
                             .replace('{1}', extraMsg)
                             .replace('{2}', msgStat)
                             .replace('{3}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
-                            , duration);
+                            , duration
+                        );
 
-                        if (settings.type === 2 || count >= Config.maxAttackNum || isStop) {
+                        if (isStop || settings.type === 2 || count >= Config.maxAttackNum) {
                             Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
                             Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
                             if (Config.attemptAttackEnabled) {
@@ -508,6 +517,7 @@ var Loot = {
                             if (!$.isEmptyObject(itemNameList)) Loot.useItemsAfterBatchAttack(itemNameList);
                         }
                     }
+
                     if (isRetakeSafeId) {
                         isRetakeSafeId = false;
                         console.log('重新获取SafeID Start');
@@ -531,6 +541,7 @@ var Loot = {
                 dataType: 'html'
             });
         };
+
         $(document).queue('BatchAttack', []);
         $.each(settings.attackList, function (id, num) {
             $.each(new Array(num), function () {
@@ -564,6 +575,7 @@ var Loot = {
                 $('.pd_item_btns > button:last-child').click();
             }
         });
+
         /**
          * 获取攻击列表和总次数
          * @param {{}} attackList 攻击目标列表
@@ -592,6 +604,7 @@ var Loot = {
             }
             return totalAttackNum;
         };
+
         $('<div class="pd_item_btns"><button>保存设置</button><button>清除设置</button><button><b>批量攻击</b></button></div>')
             .insertAfter('.kf_fw_ig1')
             .find('button:first-child')
@@ -613,13 +626,16 @@ var Loot = {
             })
             .next()
             .click(function () {
+                if ($('#pd_remaining_num').length > 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
                 var attackList = {};
                 var totalAttackNum = getAttackNum(attackList);
                 if (!totalAttackNum) return;
                 if (!window.confirm('准备进行{0}次批量攻击，是否开始攻击？'.replace('{0}', totalAttackNum))) return;
-                KFOL.showWaitMsg('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i><a target="_blank" href="/">浏览其它页面</a>'
-                    .replace('{0}', totalAttackNum)
+                KFOL.showWaitMsg(
+                    ('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>' +
+                    '<a target="_blank" href="/">浏览其它页面</a><a class="pd_stop_action pd_highlight" href="#">停止操作</a>')
+                        .replace('{0}', totalAttackNum)
                     , true);
                 Loot.batchAttack({type: 1, totalAttackNum: totalAttackNum, attackList: attackList, safeId: safeId});
             });
@@ -927,13 +943,13 @@ var Loot = {
                     var realLife = parseInt(arr[0]), loss = 0;
                     if (realLife < 0) realLife = 0;
                     var prevMonsterAttackLog = $.trim(arr[1]);
-                    console.log('最近一次的被怪物攻击日志：' + recentMonsterAttackLog);
-                    console.log('上次记录的被怪物攻击日志：' + prevMonsterAttackLog);
+                    console.log('最近一次的被攻击日志：' + recentMonsterAttackLog);
+                    console.log('上次记录的被攻击日志：' + prevMonsterAttackLog);
                     var index = 0;
                     for (; index <= monsterAttackLogList.length; index++) {
                         if ($.trim(monsterAttackLogList[index]) === prevMonsterAttackLog) break;
                         if (/清空生命值/.test(monsterAttackLogList[index])) {
-                            attemptAttack(0, recentMonsterAttackLog, '自上次试探攻击以来，在后续的被攻击日志中发现被清空生命值的情况，需要进行试探攻击');
+                            attemptAttack(0, recentMonsterAttackLog, '自上次记录以来，在后续的被攻击日志中发现被清空生命值的情况，需要进行试探攻击');
                             return;
                         }
                         var matches = /被实际夺取(\d+)KFB.+被实际燃烧(\d+)KFB/i.exec(monsterAttackLogList[index]);
@@ -942,23 +958,23 @@ var Loot = {
                     realLife -= loss;
                     if (realLife < 0) realLife = 0;
                     if (index > monsterAttackLogList.length) {
-                        attemptAttack(0, recentMonsterAttackLog, '在当前被怪物攻击日志中未找到上次记录的日志，需要进行试探攻击');
+                        attemptAttack(0, recentMonsterAttackLog, '在当前被攻击日志中未找到上次记录的日志，需要进行试探攻击');
                     }
                     else {
                         if (index === 0 && realLife <= maxCheckAttackLifeNum) {
-                            attemptAttack(realLife, prevMonsterAttackLog, '自上次试探攻击以来，当前生命值未超过阙值，继续进行试探攻击');
+                            attemptAttack(realLife, prevMonsterAttackLog, '当前生命值未超过阙值，继续进行试探攻击');
                         }
                         else {
                             if (realLife > maxCheckAttackLifeNum) {
                                 writeNextCheckLifeCookie(realLife,
                                     Config.defCheckLifeInterval,
-                                    '自上次试探攻击以来，共损失{0}KFB，生命值高于阙值，暂无试探攻击的必要'.replace('{0}', loss)
+                                    '自上次记录以来，共损失{0}KFB，生命值高于阙值，暂无试探攻击的必要'.replace('{0}', loss)
                                 );
                             }
                             else {
                                 attemptAttack(realLife,
                                     recentMonsterAttackLog,
-                                    '自上次试探攻击以来，共损失{0}KFB，生命值未超过阙值，需要进行试探攻击'.replace('{0}', loss)
+                                    '自上次记录以来，共损失{0}KFB，生命值未超过阙值，需要进行试探攻击'.replace('{0}', loss)
                                 );
                             }
                         }
@@ -1369,7 +1385,7 @@ var Loot = {
                     if (count === totalCount) {
                         KFOL.removePopTips($getItemListMsg);
                         if (itemList.length > 0) {
-                            KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
+                            KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                                 .replace('{0}', itemList.length)
                                 , true);
                             useItemList(itemList);
@@ -1390,66 +1406,76 @@ var Loot = {
             $(document).queue('UseItemList', []);
             $.each(itemList, function (index, item) {
                 $(document).queue('UseItemList', function () {
-                    var url = 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', (new Date()).getTime());
-                    $.get(url, function (html) {
-                        var $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
-                        if (msgMatches) {
-                            var stat = {'有效道具': 0, '无效道具': 0};
-                            var credits = Item.getCreditsViaResponse(msgMatches[1], item.itemTypeId);
-                            if (credits !== -1) {
-                                if ($.isEmptyObject(credits)) stat['无效道具']++;
-                                else stat['有效道具']++;
-                                $.each(credits, function (key, credit) {
-                                    if (typeof stat[key] === 'undefined')
-                                        stat[key] = credit;
-                                    else
-                                        stat[key] += credit;
-                                });
-                            }
-                            if (stat['有效道具'] === 0) delete stat['有效道具'];
-                            if (stat['无效道具'] === 0) delete stat['无效道具'];
-                            if (credits !== -1) {
-                                Log.push('使用道具',
-                                    '共有`1`个道具【`Lv.{0}：{1}`】被使用'
-                                        .replace('{0}', item.itemLevel)
-                                        .replace('{1}', item.itemName),
-                                    {
-                                        gain: $.extend({}, stat, {'已使用道具': 1}),
-                                        pay: {'道具': -1}
-                                    }
+                    $.ajax({
+                        type: 'GET',
+                        url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', (new Date()).getTime()),
+                        success: function (html) {
+                            var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
+                            if (msgMatches) {
+                                var stat = {'有效道具': 0, '无效道具': 0};
+                                var credits = Item.getCreditsViaResponse(msgMatches[1], item.itemTypeId);
+                                if (credits !== -1) {
+                                    if ($.isEmptyObject(credits)) stat['无效道具']++;
+                                    else stat['有效道具']++;
+                                    $.each(credits, function (key, credit) {
+                                        if (typeof stat[key] === 'undefined')
+                                            stat[key] = credit;
+                                        else
+                                            stat[key] += credit;
+                                    });
+                                }
+                                if (stat['有效道具'] === 0) delete stat['有效道具'];
+                                if (stat['无效道具'] === 0) delete stat['无效道具'];
+                                if (credits !== -1) {
+                                    Log.push('使用道具',
+                                        '共有`1`个道具【`Lv.{0}：{1}`】被使用'
+                                            .replace('{0}', item.itemLevel)
+                                            .replace('{1}', item.itemName),
+                                        {
+                                            gain: $.extend({}, stat, {'已使用道具': 1}),
+                                            pay: {'道具': -1}
+                                        }
+                                    );
+                                }
+                                var logStat = '', msgStat = '';
+                                for (var creditsType in stat) {
+                                    logStat += '，{0}+{1}'
+                                        .replace('{0}', creditsType)
+                                        .replace('{1}', stat[creditsType]);
+                                    msgStat += '<i>{0}<em>+{1}</em></i>'
+                                        .replace('{0}', creditsType)
+                                        .replace('{1}', stat[creditsType]);
+                                }
+                                console.log('道具【Lv.{0}：{1}】被使用{2}【{3}】'
+                                    .replace('{0}', item.itemLevel)
+                                    .replace('{1}', item.itemName)
+                                    .replace('{2}', logStat)
+                                    .replace('{3}', msgMatches[1])
                                 );
+                                KFOL.showMsg('道具【<b><em>Lv.{0}</em>{1}</b>】被使用{2}<br /><span style="font-style:italic">{3}</span>'
+                                    .replace('{0}', item.itemLevel)
+                                    .replace('{1}', item.itemName)
+                                    .replace('{2}', msgStat)
+                                    .replace('{3}', msgMatches[1])
+                                    , -1);
                             }
-                            var logStat = '', msgStat = '';
-                            for (var creditsType in stat) {
-                                logStat += '，{0}+{1}'
-                                    .replace('{0}', creditsType)
-                                    .replace('{1}', stat[creditsType]);
-                                msgStat += '<i>{0}<em>+{1}</em></i>'
-                                    .replace('{0}', creditsType)
-                                    .replace('{1}', stat[creditsType]);
+                        },
+                        complete: function () {
+                            var $remainingNum = $('#pd_remaining_num');
+                            $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                            var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                            if (isStop) $(document).queue('UseItemList', []);
+
+                            if (isStop || index === itemList.length - 1) {
+                                KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
                             }
-                            console.log('道具【Lv.{0}：{1}】被使用{2}【{3}】'
-                                .replace('{0}', item.itemLevel)
-                                .replace('{1}', item.itemName)
-                                .replace('{2}', logStat)
-                                .replace('{3}', msgMatches[1])
-                            );
-                            KFOL.showMsg('道具【<b><em>Lv.{0}</em>{1}</b>】被使用{2}<br /><span style="font-style:italic">{3}</span>'
-                                .replace('{0}', item.itemLevel)
-                                .replace('{1}', item.itemName)
-                                .replace('{2}', msgStat)
-                                .replace('{3}', msgMatches[1])
-                            );
-                        }
-                        if (index === itemList.length - 1) {
-                            KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
-                        }
-                        window.setTimeout(function () {
-                            $(document).dequeue('UseItemList');
-                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
-                    }, 'html');
+
+                            window.setTimeout(function () {
+                                $(document).dequeue('UseItemList');
+                            }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                        },
+                        dataType: 'html'
+                    });
                 });
             });
             $(document).dequeue('UseItemList');
