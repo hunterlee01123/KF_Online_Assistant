@@ -277,14 +277,15 @@ var KFOL = {
     /**
      * 移除指定的提示消息框
      * @param {jQuery} $popTips 指定的消息框节点
-     * @param {boolean} [isRemoveMask=false] 是否移除遮罩
      */
-    removePopTips: function ($popTips, isRemoveMask) {
+    removePopTips: function ($popTips) {
         var $parent = $popTips.parent();
         $popTips.remove();
-        if (isRemoveMask) $('.pd_mask').remove();
         if ($('.pd_pop_tips').length === 0) {
             $parent.remove();
+            $('.pd_mask').remove();
+        }
+        else if ($('#pd_remaining_num').length === 0) {
             $('.pd_mask').remove();
         }
     },
@@ -322,6 +323,8 @@ var KFOL = {
             return;
         }
         console.log('KFB捐款Start');
+        var $tips = KFOL.showWaitMsg('<strong>正在进行捐款，请稍候……</strong>', true);
+
         /**
          * 使用指定的KFB捐款
          * @param {number} kfb 指定的KFB
@@ -332,6 +335,7 @@ var KFOL = {
                 if (new Date() > date) date = Tools.getMidnightHourDate(1);
                 Tools.setCookie(Config.donationCookieName, 1, date);
                 KFOL.showFormatLog('捐款{0}KFB'.replace('{0}', kfb), html);
+                KFOL.removePopTips($tips);
                 var msg = '<strong>捐款<em>{0}</em>KFB</strong>'.replace('{0}', kfb);
                 var matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(html);
                 if (!matches) {
@@ -362,12 +366,13 @@ var KFOL = {
                 if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
             }, 'html');
         };
+
         if (/%$/.test(Config.donationKfb)) {
             $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
                 var matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
                 var income = 1;
                 if (matches) income = parseInt(matches[1]);
-                else console.log('KFB余额获取失败');
+                else console.log('当前持有KFB获取失败');
                 var donationKfb = parseInt(Config.donationKfb);
                 donationKfb = parseInt(income * donationKfb / 100);
                 donationKfb = donationKfb > 0 ? donationKfb : 1;

@@ -177,14 +177,11 @@ var Config = {
     // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
     checkAutoAttackingInterval: 4,
     // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
-    firstCheckLifeInterval: 190,
+    firstCheckLifeInterval: 185,
     // 检查生命值的默认时间间隔（分钟）
-    defCheckLifeInterval: 25,
-    // 在进行试探攻击后检查生命值的时间间隔列表，格式：{'距本回合开始已经过的分钟数A-距本回合开始已经过的分钟数B':间隔分钟数}，例：{'190-205': 3, '205-225': 5, '225-600': 10}
-    // （不在此列表里的时间段将按照{@link Config.defCheckLifeAfterAttemptAttackInterval}所设定的默认时间间隔）
-    checkLifeAfterAttemptAttackIntervalList: {'190-205': 3, '205-225': 5, '225-600': 10},
-    // 在进行试探攻击后检查生命值的默认时间间隔（分钟）
-    defCheckLifeAfterAttemptAttackInterval: 3,
+    defCheckLifeInterval: 20,
+    // 在进行试探攻击后检查生命值的时间间隔（分钟）
+    checkLifeAfterAttemptAttackInterval: 3,
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 抽奖操作结束后的再刷新间隔（秒），用于在定时模式中进行判断，并非是定时模式的实际时间间隔
@@ -203,7 +200,7 @@ var Config = {
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如购买道具等）的默认时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function () {
-        return Math.floor(Math.random() * 100) + 200;
+        return Math.floor(Math.random() * 150) + 200;
     },
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,

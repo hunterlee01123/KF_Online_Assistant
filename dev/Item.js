@@ -236,7 +236,7 @@ var Item = {
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('ConvertItemsToEnergy', function () {
-                var url = 'kf_fw_ig_doit.php?tomp={0}&id={1}&t={2}'
+                var url = 'kf_fw_ig_doit.php?tomp={0}&id={1}1&t={2}'
                     .replace('{0}', settings.safeId)
                     .replace('{1}', itemId)
                     .replace('{2}', (new Date()).getTime());
@@ -248,7 +248,7 @@ var Item = {
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(parseInt($remainingNum.text()) - 1);
                     if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'), true);
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
                         var successEnergyNum = successNum * energyNum;
                         if (successNum > 0) {
                             Log.push('将道具转换为能量',
@@ -325,7 +325,7 @@ var Item = {
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('RestoreItems', function () {
-                var url = 'kf_fw_ig_doit.php?renew={0}&id={1}&t={2}'
+                var url = 'kf_fw_ig_doit.php?renew={0}&id={1}1&t={2}'
                     .replace('{0}', settings.safeId)
                     .replace('{1}', itemId)
                     .replace('{2}', (new Date()).getTime());
@@ -344,7 +344,7 @@ var Item = {
                         .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
                     );
                     if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'), true);
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
                         var successEnergyNum = successNum * energyNum;
                         if (successNum > 0 || failNum > 0) {
                             Log.push('恢复道具',
@@ -545,7 +545,7 @@ var Item = {
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('UseItems', function () {
-                var url = 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime());
+                var url = 'kf_fw_ig_doit.php?id={0}1&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime());
                 $.get(url, function (html) {
                     KFOL.showFormatLog('使用道具', html);
                     var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
@@ -558,7 +558,7 @@ var Item = {
                         .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
                     );
                     if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'), true);
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
                         var stat = {'有效道具': 0, '无效道具': 0};
                         $('.pd_result').last().find('li').not(':first-child').each(function () {
                             var credits = Item.getCreditsViaResponse($(this).text(), settings.itemTypeId);
@@ -664,7 +664,7 @@ var Item = {
         $.each(settings.itemIdList, function (index, itemId) {
             if (!itemId) return;
             $(document).queue('SellItems', function () {
-                var url = 'kf_fw_ig_shop.php?sell=yes&id={0}&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime());
+                var url = 'kf_fw_ig_shop.php?sell=yes&id={0}1&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime());
                 $.get(url, function (html) {
                     KFOL.showFormatLog('出售道具', html);
                     if (/出售成功/.test(html)) {
@@ -675,7 +675,7 @@ var Item = {
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(parseInt($remainingNum.text()) - 1);
                     if (index === settings.itemIdList.length - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'), true);
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
                         if (successNum > 0) {
                             Log.push('出售道具',
                                 '共有`{0}`个【`Lv.{1}：{2}`】道具出售成功'
@@ -1199,7 +1199,7 @@ var Item = {
                         $(document).queue('BatchBuyItems', []);
                     }
                     if (isStop || index === settings.num - 1) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'), true);
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
                         if (successNum > 0) {
                             Log.push('购买道具', '共有`{0}`个【`Lv.{1}：{2}`】道具购买成功'
                                 .replace('{0}', successNum)

@@ -282,8 +282,8 @@ var Loot = {
      * @param {number} options.totalAttackNum 总攻击次数
      * @param {{}} options.attackList 攻击目标列表
      * @param {string} options.safeId 用户的SafeID
-     * @param {string} [options.prevGain] 上一次试探攻击的KFB收获（用于试探攻击）
-     * @param {string} [options.prevMonsterAttackLog] 上一次试探攻击时的最近一条被怪物攻击日志（用于试探攻击）
+     * @param {string} [options.life] 当前实际生命值（用于试探攻击）
+     * @param {string} [options.recentMonsterAttackLog] 最近一次的被怪物攻击日志（用于试探攻击）
      */
     batchAttack: function (options) {
         var settings = {
@@ -291,8 +291,8 @@ var Loot = {
             totalAttackNum: 0,
             attackList: {},
             safeId: '',
-            prevGain: 0,
-            prevMonsterAttackLog: ''
+            life: 0,
+            recentMonsterAttackLog: ''
         };
         $.extend(settings, options);
         if (settings.type === 1)
@@ -391,7 +391,7 @@ var Loot = {
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(settings.totalAttackNum + failNum - count);
                     if (isStop || count === settings.totalAttackNum + failNum) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'), true);
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
                         if (gain['夺取KFB'] === 0) delete gain['夺取KFB'];
                         if (gain['经验值'] === 0) delete gain['经验值'];
                         if (successNum > 0) {
@@ -456,11 +456,11 @@ var Loot = {
                             }
                             else {
                                 Tools.setCookie(Config.attackCountCookieName, attackCount, new Date(Loot.getNextLootAwardTime().time));
-                                if (options.prevMonsterAttackLog) {
+                                if (options.recentMonsterAttackLog) {
                                     var thisGainKfb = 0;
                                     if (gain['夺取KFB']) thisGainKfb = gain['夺取KFB'];
                                     Tools.setCookie(Config.prevAttemptAttackLogCookieName,
-                                        (thisGainKfb + options.prevGain) + '/' + options.prevMonsterAttackLog,
+                                        (thisGainKfb + options.life) + '/' + options.recentMonsterAttackLog,
                                         new Date(Loot.getNextLootAwardTime().time)
                                     );
                                 }
@@ -826,7 +826,6 @@ var Loot = {
                 Tools.setCookie(Config.attackCountCookieName, '', Tools.getDate('-1d'));
                 Tools.setCookie(Config.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
             }
-            var now = (new Date()).getTime();
             var checkLifeInterval = Config.defCheckLifeInterval;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
             var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
@@ -836,12 +835,15 @@ var Loot = {
                 life = parseInt(lifeMatches[1]);
                 minLife = parseInt(minLifeMatches[1]);
                 if (life <= minLife) {
-                    checkLifeInterval = Loot.getZeroLifeCheckAttackInterval(now);
+                    checkLifeInterval = Config.checkLifeAfterAttemptAttackInterval;
                     isLteMinLife = true;
                 }
             }
             var maxCheckAttackLifeNum = Config.maxAttemptAttackLifeNum;
             if (maxCheckAttackLifeNum > minLife || maxCheckAttackLifeNum < 0) maxCheckAttackLifeNum = minLife;
+            var recentMonsterAttackLog = '';
+            var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
+            if (monsterAttackLogList.length > 0) recentMonsterAttackLog = $.trim(monsterAttackLogList[0]);
             var deadlyAttackNum = 0;
             if (Config.deadlyAttackId > 0) {
                 var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
@@ -851,32 +853,36 @@ var Loot = {
 
             /**
              * 写入下次检查生命值的Cookie信息
+             * @param {number} life 当前实际生命值
              * @param {number} interval 下次检查生命值的时间间隔（分钟）
+             * @param {string} msg 提示消息
              */
-            var writeNextCheckLifeCookie = function (interval) {
+            var writeNextCheckLifeCookie = function (life, interval, msg) {
                 var nextTime = Tools.getDate('+' + interval + 'm');
                 Tools.setCookie(Config.checkLifeCookieName, nextTime.getTime(), nextTime);
 
                 var lootInfo = Loot.getNextLootAwardTime();
                 if (lootInfo.time > 0) {
-                    console.log('当前显示生命值：{0}，低保线：{1}，试探攻击阙值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟'
+                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}，阙值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
                         .replace('{0}', life)
                         .replace('{1}', minLife)
                         .replace('{2}', maxCheckAttackLifeNum)
-                        .replace('{3}', Config.defLootInterval - Math.floor((lootInfo.time - now) / 60 / 1000))
-                        .replace('{4}', lootInfo.type === 1 ? '（估计时间）' : '')
+                        .replace('{3}', Config.defLootInterval - Math.floor((lootInfo.time - (new Date()).getTime()) / 60 / 1000))
+                        .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
                         .replace('{5}', interval)
+                        .replace('{6}', msg)
                     );
                 }
             };
 
             /**
              * 试探攻击
-             * @param {number} prevGain 上一次试探攻击的KFB收获
-             * @param {string} prevMonsterAttackLog 上一次试探攻击时的最近一条被怪物攻击日志
+             * @param {number} life 当前实际生命值
+             * @param {string} recentMonsterAttackLog 最近一次的被怪物攻击日志
+             * @param {string} msg 提示消息
              */
-            var attemptAttack = function (prevGain, prevMonsterAttackLog) {
-                writeNextCheckLifeCookie(checkLifeInterval);
+            var attemptAttack = function (life, recentMonsterAttackLog, msg) {
+                writeNextCheckLifeCookie(life, checkLifeInterval, msg);
                 var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
                 if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                 var num = 0, attackId = 0;
@@ -894,114 +900,78 @@ var Loot = {
                 if (deadlyAttackNum > 0) attackId = Config.deadlyAttackId;
                 var attackList = {};
                 attackList[attackId] = 1;
-                KFOL.showWaitMsg('<strong>正在进行试探攻击中...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>'
-                    .replace('{0}', 1)
-                    , true);
+                KFOL.showWaitMsg('<strong>正在进行试探攻击中...</strong><i>攻击次数：<em id="pd_remaining_num">1</em></i>', true);
                 Loot.batchAttack({
                     type: 3,
                     totalAttackNum: 1,
                     attackList: attackList,
                     safeId: safeId,
-                    prevGain: prevGain,
-                    prevMonsterAttackLog: prevMonsterAttackLog
+                    life: life,
+                    recentMonsterAttackLog: recentMonsterAttackLog
                 });
             };
 
             if (!isLteMinLife) {
-                console.log('检查到当前生命值大于低保值，清除上次试探攻击所记录的日志');
-                Tools.setCookie(Config.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
-                writeNextCheckLifeCookie(checkLifeInterval);
+                writeNextCheckLifeCookie(life, checkLifeInterval, '当前生命值大于低保线，不进行试探攻击');
+                if (recentMonsterAttackLog)
+                    Tools.setCookie(Config.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(Loot.getNextLootAwardTime().time));
+                else
+                    Tools.setCookie(Config.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
                 return;
             }
 
-            var prevGain = 0;
-            var recentMonsterAttackLog = '', prevMonsterAttackLog = '';
-            var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
-            if (monsterAttackLogList.length > 0) recentMonsterAttackLog = $.trim(monsterAttackLogList[0]);
-            console.log('recentMonsterAttackLog: ' + recentMonsterAttackLog);
             var prevCheckAttackInfo = Tools.getCookie(Config.prevAttemptAttackLogCookieName);
             if (prevCheckAttackInfo && recentMonsterAttackLog) {
                 var arr = prevCheckAttackInfo.split('/');
                 if (arr.length === 2 && $.type(parseInt(arr[0])) === 'number') {
-                    prevGain = parseInt(arr[0]);
-                    if (prevGain < 0) prevGain = 0;
-                    prevMonsterAttackLog = $.trim(arr[1]);
-                    console.log('prevMonsterAttackLog: ' + prevMonsterAttackLog);
-                    var loss = 0;
+                    var realLife = parseInt(arr[0]), loss = 0;
+                    if (realLife < 0) realLife = 0;
+                    var prevMonsterAttackLog = $.trim(arr[1]);
+                    console.log('最近一次的被怪物攻击日志：' + recentMonsterAttackLog);
+                    console.log('上次记录的被怪物攻击日志：' + prevMonsterAttackLog);
                     var index = 0;
                     for (; index <= monsterAttackLogList.length; index++) {
                         if ($.trim(monsterAttackLogList[index]) === prevMonsterAttackLog) break;
                         if (/清空生命值/.test(monsterAttackLogList[index])) {
-                            console.log('自上次试探攻击以来，在后续的被攻击日志中发现被清空生命值的情况，需要进行试探攻击');
-                            attemptAttack(0, recentMonsterAttackLog);
+                            attemptAttack(0, recentMonsterAttackLog, '自上次试探攻击以来，在后续的被攻击日志中发现被清空生命值的情况，需要进行试探攻击');
                             return;
                         }
                         var matches = /被实际夺取(\d+)KFB.+被实际燃烧(\d+)KFB/i.exec(monsterAttackLogList[index]);
                         if (matches) loss += parseInt(matches[1]) + parseInt(matches[2]);
                     }
+                    realLife -= loss;
+                    if (realLife < 0) realLife = 0;
                     if (index > monsterAttackLogList.length) {
-                        console.log('在当前被攻击日志中未找到上次试探攻击所记录的日志，需要进行试探攻击');
-                        attemptAttack(0, recentMonsterAttackLog);
+                        attemptAttack(0, recentMonsterAttackLog, '在当前被怪物攻击日志中未找到上次记录的日志，需要进行试探攻击');
                     }
                     else {
-                        console.log('prevGain：' + prevGain);
-                        console.log('loss：' + loss);
-                        if (index === 0 && prevGain <= maxCheckAttackLifeNum) {
-                            console.log('自上次试探攻击以来，共收获{0}KFB，未超过指定值，因此继续进行试探攻击'.replace('{0}', prevGain));
-                            attemptAttack(prevGain, prevMonsterAttackLog);
+                        if (index === 0 && realLife <= maxCheckAttackLifeNum) {
+                            attemptAttack(realLife, prevMonsterAttackLog, '自上次试探攻击以来，当前生命值未超过阙值，继续进行试探攻击');
                         }
                         else {
-                            if (prevGain - loss > maxCheckAttackLifeNum) {
-                                console.log('自上次试探攻击以来，共收获{0}KFB，共损失{1}KFB，暂无试探攻击的必要'
-                                    .replace('{0}', prevGain)
-                                    .replace('{1}', loss)
+                            if (realLife > maxCheckAttackLifeNum) {
+                                writeNextCheckLifeCookie(realLife,
+                                    Config.defCheckLifeInterval,
+                                    '自上次试探攻击以来，共损失{0}KFB，生命值高于阙值，暂无试探攻击的必要'.replace('{0}', loss)
                                 );
-                                writeNextCheckLifeCookie(Config.defCheckLifeInterval);
                             }
                             else {
-                                console.log('自上次试探攻击以来，共收获{0}KFB，共损失{1}KFB，需要进行试探攻击'
-                                    .replace('{0}', prevGain)
-                                    .replace('{1}', loss)
+                                attemptAttack(realLife,
+                                    recentMonsterAttackLog,
+                                    '自上次试探攻击以来，共损失{0}KFB，生命值未超过阙值，需要进行试探攻击'.replace('{0}', loss)
                                 );
-                                var diff = prevGain - loss;
-                                attemptAttack(diff > 0 ? diff : 0, recentMonsterAttackLog);
                             }
                         }
                     }
                 }
                 else {
-                    console.log('未发现上次试探攻击所记录的日志，需要进行试探攻击');
-                    attemptAttack(0, recentMonsterAttackLog);
+                    attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值所记录的日志，需要进行试探攻击');
                 }
             }
             else {
-                console.log('未发现上次试探攻击所记录的日志，需要进行试探攻击');
-                attemptAttack(0, recentMonsterAttackLog);
+                attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值所记录的日志，需要进行试探攻击');
             }
         }, 'html');
-    },
-
-    /**
-     * 获取在试探攻击后检查生命值的时间间隔（分钟）
-     * @param {number} time 指定时刻的unix时间戳
-     * @returns {number} 时间间隔（分钟）
-     */
-    getZeroLifeCheckAttackInterval: function (time) {
-        var nextLootTime = Loot.getNextLootAwardTime().time;
-        if (nextLootTime > 0) {
-            var minutes = Config.defLootInterval - Math.floor((nextLootTime - time) / 60 / 1000);
-            if (minutes > 0) {
-                for (var range in Config.checkLifeAfterAttemptAttackIntervalList) {
-                    var rangeArr = range.split('-');
-                    if (rangeArr.length !== 2) continue;
-                    var start = parseInt(rangeArr[0]), end = parseInt(rangeArr[1]);
-                    if (minutes >= start && minutes <= end) {
-                        return Config.checkLifeAfterAttemptAttackIntervalList[range];
-                    }
-                }
-            }
-        }
-        return Config.defCheckLifeAfterAttemptAttackInterval;
     },
 
     /**
@@ -1474,7 +1444,7 @@ var Loot = {
                             );
                         }
                         if (index === itemList.length - 1) {
-                            KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'), true);
+                            KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
                         }
                         window.setTimeout(function () {
                             $(document).dequeue('UseItemList');
