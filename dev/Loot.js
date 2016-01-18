@@ -177,7 +177,7 @@ var Loot = {
      * @param {int} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
      */
     autoAttack: function (safeId, deadlyAttackNum) {
-        if ($('#pd_remaining_num').length > 0) return;
+        $('#pd_remaining_num').remove();
         if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
 
         /**
@@ -626,7 +626,6 @@ var Loot = {
             })
             .next()
             .click(function () {
-                if ($('#pd_remaining_num').length > 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
                 var attackList = {};
                 var totalAttackNum = getAttackNum(attackList);
@@ -860,6 +859,7 @@ var Loot = {
             var recentMonsterAttackLog = '';
             var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
             if (monsterAttackLogList.length > 0) recentMonsterAttackLog = $.trim(monsterAttackLogList[0]);
+            if (Config.debug) console.log('最近一次的被攻击日志：' + (recentMonsterAttackLog ? recentMonsterAttackLog : '无'));
             var deadlyAttackNum = 0;
             if (Config.deadlyAttackId > 0) {
                 var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
@@ -879,7 +879,7 @@ var Loot = {
 
                 var lootInfo = Loot.getNextLootAwardTime();
                 if (lootInfo.time > 0) {
-                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}，阙值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
+                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}，攻击阙值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
                         .replace('{0}', life)
                         .replace('{1}', minLife)
                         .replace('{2}', maxCheckAttackLifeNum)
@@ -899,6 +899,7 @@ var Loot = {
              */
             var attemptAttack = function (life, recentMonsterAttackLog, msg) {
                 writeNextCheckLifeCookie(life, checkLifeInterval, msg);
+                $('#pd_remaining_num').remove();
                 var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
                 if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                 var num = 0, attackId = 0;
@@ -943,8 +944,7 @@ var Loot = {
                     var realLife = parseInt(arr[0]), loss = 0;
                     if (realLife < 0) realLife = 0;
                     var prevMonsterAttackLog = $.trim(arr[1]);
-                    console.log('最近一次的被攻击日志：' + recentMonsterAttackLog);
-                    console.log('上次记录的被攻击日志：' + prevMonsterAttackLog);
+                    if (Config.debug) console.log('上次记录的被攻击日志：' + prevMonsterAttackLog);
                     var index = 0;
                     for (; index <= monsterAttackLogList.length; index++) {
                         if ($.trim(monsterAttackLogList[index]) === prevMonsterAttackLog) break;
@@ -958,7 +958,7 @@ var Loot = {
                     realLife -= loss;
                     if (realLife < 0) realLife = 0;
                     if (index > monsterAttackLogList.length) {
-                        attemptAttack(0, recentMonsterAttackLog, '在当前被攻击日志中未找到上次记录的日志，需要进行试探攻击');
+                        attemptAttack(0, recentMonsterAttackLog, '在当前被攻击日志中未找到上次记录的被攻击日志，需要进行试探攻击');
                     }
                     else {
                         if (index === 0 && realLife <= maxCheckAttackLifeNum) {
@@ -969,6 +969,10 @@ var Loot = {
                                 writeNextCheckLifeCookie(realLife,
                                     Config.defCheckLifeInterval,
                                     '自上次记录以来，共损失{0}KFB，生命值高于阙值，暂无试探攻击的必要'.replace('{0}', loss)
+                                );
+                                Tools.setCookie(Config.prevAttemptAttackLogCookieName,
+                                    realLife + '/' + recentMonsterAttackLog,
+                                    new Date(Loot.getNextLootAwardTime().time)
                                 );
                             }
                             else {
@@ -981,11 +985,11 @@ var Loot = {
                     }
                 }
                 else {
-                    attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值所记录的日志，需要进行试探攻击');
+                    attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值的记录，需要进行试探攻击');
                 }
             }
             else {
-                attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值所记录的日志，需要进行试探攻击');
+                attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值的记录，需要进行试探攻击');
             }
         }, 'html');
     },
@@ -1248,7 +1252,7 @@ var Loot = {
                 if (index === 0) {
                     $this.find('td').append(
                         ('<span style="color:#FFF;margin-left:7px;font-weight:normal;font-size:12px">' +
-                        '(本回合剩余攻击次数 <b>{0}</b> 次，致命一击剩余次数 <b>{1}</b> 次)</span>')
+                        '(本回合剩余攻击次数 <b style="font-size:14px">{0}</b> 次，致命一击剩余次数 <b style="font-size:14px">{1}</b> 次)</span>')
                             .replace('{0}', lootPropertyList['剩余攻击次数'])
                             .replace('{1}', lootPropertyList['致命一击剩余攻击次数'])
                     );
@@ -1297,12 +1301,12 @@ var Loot = {
                         }
                         html = html.replace('生命值', '生命值' + lifeTips);
 
-                        if (avoid < lootPropertyList['命中']) {
-                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物可全部命中">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
+                        if (avoid <= lootPropertyList['命中']) {
+                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物可100%命中">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
                         }
                         else {
-                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物有40%的几率命中（还差{0}点可全部命中）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
-                                .replace('{0}', avoid - lootPropertyList['命中'] + 1);
+                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物有40%的几率命中（还差{0}点可100%命中）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                                .replace('{0}', avoid - lootPropertyList['命中']);
                         }
                         html = html.replace('闪避', '闪避' + avoidTips);
 

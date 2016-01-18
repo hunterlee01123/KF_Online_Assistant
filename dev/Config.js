@@ -162,6 +162,8 @@ var Config = {
     customAutoChangeSMColorList: [],
 
     /* 以下设置如非必要请勿修改： */
+    // 是否开启调试模式，true：开启；false：关闭
+    debug: false,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
     // 争夺的默认领取间隔（分钟）
@@ -177,11 +179,11 @@ var Config = {
     // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
     checkAutoAttackingInterval: 4,
     // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
-    firstCheckLifeInterval: 165,
+    firstCheckLifeInterval: 145,
     // 检查生命值的默认时间间隔（分钟）
     defCheckLifeInterval: 20,
     // 在进行试探攻击后检查生命值的时间间隔（分钟）
-    checkLifeAfterAttemptAttackInterval: 3,
+    checkLifeAfterAttemptAttackInterval: 2,
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 抽奖操作结束后的再刷新间隔（秒），用于在定时模式中进行判断，并非是定时模式的实际时间间隔
@@ -198,10 +200,12 @@ var Config = {
     vipSurplusTimeExpires: 60,
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
-    // 特殊情况下的ajax请求（如购买道具等）的默认时间间隔（毫秒），可设置为函数来返回值
+    // 特殊情况下的ajax请求（如使用、恢复、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function () {
         return Math.floor(Math.random() * 150) + 200;
     },
+    // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒）
+    cycleUseItemsFirstAjaxInterval: 2000,
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
     // 道具样品ID列表

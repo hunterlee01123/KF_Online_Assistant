@@ -120,7 +120,7 @@ var Bank = {
                             }
                             statMsg = '<span class="pd_notice">({0})</span>'.replace('{0}', statMsg);
                         }
-                        $('.pd_result').last().append('<li>{0} {1}</li>'.replace('{0}', key[0]).replace('{1}', statMsg));
+                        $('.pd_result:last').append('<li>{0} {1}</li>'.replace('{0}', key[0]).replace('{1}', statMsg));
                     },
                     error: function () {
                         failNum++;
@@ -146,7 +146,7 @@ var Bank = {
                                 .replace('{1}', failNum)
                                 .replace('{2}', successMoney)
                             );
-                            $('.pd_result').last().append('<li><b>共有<em>{0}</em>名用户转账成功{1}：</b>KFB <ins>-{2}</ins></li>'
+                            $('.pd_result:last').append('<li><b>共有<em>{0}</em>名用户转账成功{1}：</b>KFB <ins>-{2}</ins></li>'
                                 .replace('{0}', successNum)
                                 .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>名用户转账失败'.replace('{0}', failNum) : '')
                                 .replace('{2}', successMoney)

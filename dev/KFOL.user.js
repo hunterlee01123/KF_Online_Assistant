@@ -112,6 +112,8 @@ var KFOL = {
             '.pd_item_btns { text-align: right; margin-top: 5px;  }' +
             '.pd_item_btns button, .pd_item_btns input { margin-left: 3px; margin-bottom: 2px; vertical-align: middle; }' +
             '.pd_result { border: 1px solid #99F; padding: 5px; margin-top: 10px; line-height: 2em; }' +
+            '.pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }' +
+            '.pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }' +
             '.pd_thread_page { margin-left: 5px; }' +
             '.pd_thread_page a { color: #444; padding: 0 3px; }' +
             '.pd_thread_page a:hover { color: #51D; }' +
@@ -216,13 +218,15 @@ var KFOL = {
             settings.msg = options;
             settings.duration = typeof duration === 'undefined' ? Config.defShowMsgDuration : duration;
         }
+        if ($('.pd_pop_tips').length > 20) KFOL.removePopTips($('.pd_pop_tips'));
         var $popBox = $('.pd_pop_box');
         var isFirst = $popBox.length === 0;
         if (!isFirst && $('.pd_mask').length === 0) {
             var $lastTips = $('.pd_pop_tips:last');
             if ($lastTips.length > 0) {
                 var top = $lastTips.offset().top;
-                if (top < 0 || top >= $(window).height()) {
+                var winScrollTop = $(window).scrollTop();
+                if (top < winScrollTop || top >= winScrollTop + $(window).height() - $lastTips.outerHeight() - 10) {
                     $popBox.remove();
                     isFirst = true;
                 }
@@ -254,7 +258,7 @@ var KFOL = {
             $popBox.css('top', $(window).height() / 2 - popTipsHeight / 2);
         }
         else {
-            $popBox.animate({'top': '-=' + popTipsHeight / 1.5});
+            $popBox.stop(false, true).animate({'top': '-=' + popTipsHeight / 1.75});
         }
         var $prev = $popTips.prev('.pd_pop_tips');
         $popTips.css('top', $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0)
