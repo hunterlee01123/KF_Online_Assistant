@@ -820,7 +820,7 @@ var Loot = {
             if (Loot.isAutoAttackNow())
                 Loot.autoAttack(safeId);
             else if (Config.attemptAttackEnabled && !Tools.getCookie(Const.checkLifeCookieName))
-                Loot.checkLife(safeId);
+                Loot.checkLife();
         }
         else {
             Loot.autoAttack(safeId);
@@ -829,9 +829,8 @@ var Loot = {
 
     /**
      * 检查当前生命值
-     * @param {string} safeId 用户的SafeID
      */
-    checkLife: function (safeId) {
+    checkLife: function () {
         console.log('检查生命值Start');
         $.get('kf_fw_ig_index.php', function (html) {
             if (Tools.getCookie(Const.checkLifeCookieName)) return;
@@ -841,6 +840,11 @@ var Loot = {
                 Tools.setCookie(Const.attackCountCookieName, '', Tools.getDate('-1d'));
                 Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
             }
+            var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
+            var safeId = '';
+            if (safeIdMatches) safeId = safeIdMatches[1];
+            if (!safeId) return;
+
             var checkLifeInterval = Const.defCheckLifeInterval;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
             var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);

@@ -614,7 +614,7 @@ var Item = {
         var showResult = function (type, stat) {
             var resultStat = '';
             for (var key in stat) {
-                if (key === '道具' || key === '已使用道具') continue;
+                if (type > 0 && (key === '道具' || key === '已使用道具')) continue;
                 resultStat += '<i>{0}{1}</i> '.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(cycle.stat[key]));
             }
             $('.pd_result:last').append(

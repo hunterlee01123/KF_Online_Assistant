@@ -12,6 +12,7 @@ var ConfigDialog = {
             '<div class="pd_cfg_main">' +
             '  <div class="pd_cfg_nav">' +
             '    <a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
+            '    <a href="#">运行命令</a>' +
             '    <a href="#">查看日志</a>' +
             '    <a href="#">导入/导出设置</a>' +
             '  </div>' +
@@ -209,10 +210,13 @@ var ConfigDialog = {
                 ConfigDialog.clearCache(type);
                 alert('缓存已清除');
             }
-        }).next().click(function (e) {
+        }).next('a').click(function (e) {
+            e.preventDefault();
+            ConfigDialog.showRunCommandDialog();
+        }).next('a').click(function (e) {
             e.preventDefault();
             Log.show();
-        }).next().click(function (e) {
+        }).next('a').click(function (e) {
             e.preventDefault();
             ConfigDialog.showImportOrExportSettingDialog();
         });
@@ -656,6 +660,50 @@ var ConfigDialog = {
             TmpLog.clear();
             localStorage.removeItem(Const.multiQuoteStorageName);
         }
+    },
+
+    /**
+     * 显示运行命令对话框
+     */
+    showRunCommandDialog: function () {
+        if ($('#pd_run_command').length > 0) return;
+        Dialog.close('pd_config');
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <div style="margin:5px 0">运行命令快捷键：<b>Ctrl+Enter</b>；清除命令快捷键：<b>Ctrl+退格键</b><br />' +
+            '按<b>F12键</b>可打开浏览器控制台查看消息（需切换至控制台或Console标签项）</div>' +
+            '  <textarea wrap="off" style="width:750px;height:300px;white-space:pre"></textarea>' +
+            '</div>' +
+            '<div class="pd_cfg_btns">' +
+            '  <button>运行</button><button>清除</button><button>关闭</button>' +
+            '</div>';
+        var $dialog = Dialog.create('pd_run_command', '运行命令', html);
+        var $textArea = $dialog.find('textarea');
+        $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+            e.preventDefault();
+            var content = $textArea.val();
+            if (!content) return;
+            try {
+                console.log(eval(content));
+            }
+            catch (ex) {
+                console.log(ex);
+            }
+        }).next('button').click(function (e) {
+            e.preventDefault();
+            $textArea.val('').focus();
+        }).next('button').click(function () {
+            return Dialog.close('pd_run_command');
+        });
+        Dialog.show('pd_run_command');
+        $textArea.keyup(function (e) {
+            if (e.ctrlKey && e.keyCode === 13) {
+                $dialog.find('.pd_cfg_btns > button:first').click();
+            }
+            else if (e.ctrlKey && e.keyCode === 8) {
+                $dialog.find('.pd_cfg_btns > button:eq(1)').click();
+            }
+        }).focus();
     },
 
     /**
