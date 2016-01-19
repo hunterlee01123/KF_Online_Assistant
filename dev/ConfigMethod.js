@@ -86,7 +86,7 @@ var ConfigMethod = {
         }
         if (typeof options.donationKfb !== 'undefined') {
             var donationKfb = options.donationKfb;
-            if ($.isNumeric(donationKfb) && donationKfb > 0 && donationKfb <= Config.maxDonationKfb)
+            if ($.isNumeric(donationKfb) && donationKfb > 0 && donationKfb <= Const.maxDonationKfb)
                 settings.donationKfb = parseInt(donationKfb);
             else if (/^1?\d?\d%$/.test(donationKfb) && parseInt(donationKfb) > 0 && parseInt(donationKfb) <= 100)
                 settings.donationKfb = parseInt(donationKfb) + '%';
@@ -100,7 +100,7 @@ var ConfigMethod = {
         }
         if (typeof options.deferLootTimeWhenRemainAttackNum !== 'undefined') {
             var attackNum = parseInt(options.deferLootTimeWhenRemainAttackNum);
-            if (!isNaN(attackNum) && attackNum >= 1 && attackNum <= Config.maxAttackNum) settings.deferLootTimeWhenRemainAttackNum = attackNum;
+            if (!isNaN(attackNum) && attackNum >= 1 && attackNum <= Const.maxAttackNum) settings.deferLootTimeWhenRemainAttackNum = attackNum;
             else settings.deferLootTimeWhenRemainAttackNum = defConfig.deferLootTimeWhenRemainAttackNum;
         }
         if (typeof options.autoLootEnabled !== 'undefined') {
@@ -145,7 +145,7 @@ var ConfigMethod = {
         }
         if (typeof options.attackAfterTime !== 'undefined') {
             var attackAfterTime = parseInt(options.attackAfterTime);
-            if (!isNaN(attackAfterTime) && attackAfterTime >= Config.minAttackAfterTime && attackAfterTime <= Config.defLootInterval)
+            if (!isNaN(attackAfterTime) && attackAfterTime >= Const.minAttackAfterTime && attackAfterTime <= Const.defLootInterval)
                 settings.attackAfterTime = attackAfterTime;
             else settings.attackAfterTime = defConfig.attackAfterTime;
         }
@@ -171,7 +171,7 @@ var ConfigMethod = {
                         totalAttackNum += attackNum;
                     }
                 }
-                if (totalAttackNum > Config.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
+                if (totalAttackNum > Const.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
             }
             else settings.batchAttackList = defConfig.batchAttackList;
         }

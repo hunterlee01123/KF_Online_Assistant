@@ -361,7 +361,7 @@ var Bank = {
         if (matches) {
             var fixedDeposit = parseInt(matches[1]);
             if (fixedDeposit > 0 && interest === 0) {
-                var time = parseInt(TmpLog.getValue(Config.fixedDepositDueTmpLogName));
+                var time = parseInt(TmpLog.getValue(Const.fixedDepositDueTmpLogName));
                 if (!isNaN(time) && time > (new Date()).getTime()) {
                     $account.html(
                         fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
@@ -380,7 +380,7 @@ var Bank = {
             if ($this.is('[name="form2"]')) money = parseInt($.trim($this.find('input[name="drawmoney"]').val()));
             else money = parseInt($.trim($this.find('input[name="savemoney"]').val()));
             if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
-                TmpLog.setValue(Config.fixedDepositDueTmpLogName, Tools.getDate('+90d').getTime());
+                TmpLog.setValue(Const.fixedDepositDueTmpLogName, Tools.getDate('+90d').getTime());
             }
         });
 
@@ -407,12 +407,12 @@ var Bank = {
     fixedDepositDueAlert: function () {
         console.log('定期存款到期提醒Start');
         $.get('hack.php?H_name=bank', function (html) {
-            Tools.setCookie(Config.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(1));
+            Tools.setCookie(Const.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(1));
             var matches = /可获利息：(\d+)\(/.exec(html);
             if (!matches) return;
             var interest = parseInt(matches[1]);
             if (interest > 0) {
-                Tools.setCookie(Config.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(7));
+                Tools.setCookie(Const.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(7));
                 if (window.confirm('您的定期存款已到期，共产生利息{0}KFB，是否前往银行取款？'.replace('{0}', interest))) {
                     location.href = 'hack.php?H_name=bank';
                 }

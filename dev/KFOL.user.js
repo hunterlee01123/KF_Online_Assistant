@@ -10,6 +10,7 @@
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Config.js
+// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Const.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/ConfigMethod.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Tools.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Dialog.js
@@ -339,9 +340,10 @@ var KFOL = {
          */
         var donationSubmit = function (kfb) {
             $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
-                var date = Tools.getDateByTime('12:00:00');
+                var date = Tools.getDateByTime('02:00:00');
+                if (new Date() > date) date = Tools.getDateByTime('14:00:00');
                 if (new Date() > date) date = Tools.getMidnightHourDate(1);
-                Tools.setCookie(Config.donationCookieName, 1, date);
+                Tools.setCookie(Const.donationCookieName, 1, date);
                 KFOL.showFormatLog('捐款{0}KFB'.replace('{0}', kfb), html);
                 KFOL.removePopTips($tips);
                 var msg = '<strong>捐款<em>{0}</em>KFB</strong>'.replace('{0}', kfb);
@@ -384,7 +386,7 @@ var KFOL = {
                 var donationKfb = parseInt(Config.donationKfb);
                 donationKfb = parseInt(income * donationKfb / 100);
                 donationKfb = donationKfb > 0 ? donationKfb : 1;
-                donationKfb = donationKfb <= Config.maxDonationKfb ? donationKfb : Config.maxDonationKfb;
+                donationKfb = donationKfb <= Const.maxDonationKfb ? donationKfb : Const.maxDonationKfb;
                 donationSubmit(donationKfb);
             }, 'html');
         }
@@ -398,7 +400,7 @@ var KFOL = {
      * @returns {{type: number, time: number}} 下次抽取神秘盒子的时间对象，type：时间类型（0：获取失败；1：估计时间；2：精确时间）；time：下次领取时间
      */
     getNextDrawSmboxTime: function () {
-        var log = Tools.getCookie(Config.drawSmboxCookieName);
+        var log = Tools.getCookie(Const.drawSmboxCookieName);
         if (log) {
             log = log.split('|');
             if (log.length === 2) {
@@ -442,8 +444,8 @@ var KFOL = {
                 smboxNumber = numberMatches ? numberMatches[1] : 0;
             }
             $.get(url, function (html) {
-                var nextTime = Tools.getDate('+' + Config.defDrawSmboxInterval + 'm');
-                Tools.setCookie(Config.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
+                var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm');
+                Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
                 KFOL.showFormatLog('抽取神秘盒子', html);
                 var kfbRegex = /获得了(\d+)KFB的奖励.*?(\(\d+\|\d+\))/i;
                 var smRegex = /获得本轮的头奖/i;
@@ -464,7 +466,7 @@ var KFOL = {
                 }
                 else {
                     nextTime = Tools.getDate('+1h');
-                    Tools.setCookie(Config.drawSmboxCookieName, '1|' + nextTime.getTime(), nextTime);
+                    Tools.setCookie(Const.drawSmboxCookieName, '1|' + nextTime.getTime(), nextTime);
                     return;
                 }
                 Log.push('抽取神秘盒子', action, {gain: gain});
@@ -482,8 +484,8 @@ var KFOL = {
     addSmboxLinkClickEvent: function () {
         $('.box1').on('click', 'a[href^="kf_smbox.php?box="]', function () {
             if (KFOL.getNextDrawSmboxTime().type) return;
-            var nextTime = Tools.getDate('+' + Config.defDrawSmboxInterval + 'm').getTime() + 10 * 1000;
-            Tools.setCookie(Config.drawSmboxCookieName, '2|' + nextTime, new Date(nextTime));
+            var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm').getTime() + 10 * 1000;
+            Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime, new Date(nextTime));
         });
     },
 
@@ -496,7 +498,7 @@ var KFOL = {
         if (Config.autoDonationEnabled) {
             var donationTime = Tools.getDateByTime(Config.donationAfterTime);
             var now = new Date();
-            if (!Tools.getCookie(Config.donationCookieName) && now <= donationTime) {
+            if (!Tools.getCookie(Const.donationCookieName) && now <= donationTime) {
                 donationInterval = Math.floor((donationTime - now) / 1000);
             }
             else {
@@ -532,11 +534,11 @@ var KFOL = {
                 }
             }
             if (Config.autoAttackEnabled && Config.attackAfterTime > 0 && !$.isEmptyObject(Config.batchAttackList)
-                && Tools.getCookie(Config.autoAttackReadyCookieName) && !Tools.getCookie(Config.autoAttackingCookieName)) {
+                && Tools.getCookie(Const.autoAttackReadyCookieName) && !Tools.getCookie(Const.autoAttackingCookieName)) {
                 if (lootTimeLog.type > 0) {
                     var attackAfterTime = Config.attackAfterTime;
                     if (lootTimeLog.type === 1) {
-                        var diff = attackAfterTime - Config.minAttackAfterTime - 30;
+                        var diff = attackAfterTime - Const.minAttackAfterTime - 30;
                         if (diff < 0) diff = 0;
                         else if (diff > 30) diff = 30;
                         attackAfterTime -= diff;
@@ -546,7 +548,7 @@ var KFOL = {
                 }
                 else autoAttackInterval = 0;
                 if (Config.attemptAttackEnabled && autoAttackInterval > 0) {
-                    var time = parseInt(Tools.getCookie(Config.checkLifeCookieName));
+                    var time = parseInt(Tools.getCookie(Const.checkLifeCookieName));
                     var now = new Date();
                     if (!isNaN(time) && time > 0 && time >= now.getTime()) {
                         attackCheckInterval = Math.floor((time - now.getTime()) / 1000);
@@ -554,7 +556,7 @@ var KFOL = {
                     else attackCheckInterval = 0;
                 }
             }
-            if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Config.autoAttackingCookieName))
+            if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Const.autoAttackingCookieName))
                 autoAttackInterval = 4 * 60 + 1;
         }
 
@@ -570,7 +572,7 @@ var KFOL = {
 
         var autoChangeSMColorInterval = -1;
         if (Config.autoChangeSMColorEnabled) {
-            var nextTime = parseInt(Tools.getCookie(Config.autoChangeSMColorCookieName));
+            var nextTime = parseInt(Tools.getCookie(Const.autoChangeSMColorCookieName));
             if (!isNaN(nextTime) && nextTime > 0) {
                 autoChangeSMColorInterval = Math.floor((nextTime - (new Date()).getTime()) / 1000);
                 if (autoChangeSMColorInterval < 0) autoChangeSMColorInterval = 0;
@@ -639,7 +641,7 @@ var KFOL = {
                 if (isShowTitle || Config.showRefreshModeTipsType.toLowerCase() === 'always' || interval < 60)
                     showIntervalTitle();
                 else showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
-                titleItvFunc = window.setInterval(showIntervalTitle, Config.showRefreshModeTipsInterval * 60 * 1000);
+                titleItvFunc = window.setInterval(showIntervalTitle, Const.showRefreshModeTipsInterval * 60 * 1000);
             }
         };
         var handleError = function () {
@@ -654,8 +656,8 @@ var KFOL = {
                     }
                 },
                 error: function () {
-                    interval = Config.errorRefreshInterval;
-                    errorText = '网络超时';
+                    interval = Const.errorRefreshInterval;
+                    errorText = '连接超时';
                 },
                 complete: function () {
                     if (interval > 0) {
@@ -687,7 +689,7 @@ var KFOL = {
         var checkRefreshInterval = function () {
             KFOL.removePopTips($('.pd_refresh_notice').parent());
             var isGetLootAwardStarted = false;
-            var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Config.donationCookieName);
+            var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
             if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
                 isGetLootAwardStarted = true;
                 Loot.getLootAward(autoDonationAvailable, Config.autoSaveCurrentDepositEnabled);
@@ -698,11 +700,11 @@ var KFOL = {
             if (autoDonationAvailable && !isGetLootAwardStarted) {
                 KFOL.donation();
             }
-            if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Config.autoAttackReadyCookieName)
-                && !Tools.getCookie(Config.autoAttackingCookieName)) {
+            if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
+                && !Tools.getCookie(Const.autoAttackingCookieName)) {
                 Loot.checkAutoAttack();
             }
-            if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Config.autoChangeSMColorCookieName)) KFOL.changeSMColor();
+            if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeSMColor();
 
             var interval = KFOL.getMinRefreshInterval();
             if (interval > 0) errorNum = 0;
@@ -716,7 +718,7 @@ var KFOL = {
                 if (titleItvFunc) window.clearInterval(titleItvFunc);
                 return;
             }
-            else if (interval === 0) interval = Config.actionFinishRefreshInterval;
+            else if (interval === 0) interval = Const.actionFinishRetryInterval;
             window.setTimeout(checkRefreshInterval, interval * 1000);
             showRefreshModeTips(interval, true);
         };
@@ -760,7 +762,7 @@ var KFOL = {
         if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
         if (type === 'no_highlight' || type === 'no_highlight_extra' || type === 'hide_box_1' || type === 'at_change_to_cao') {
             if ($atTips.length > 0) {
-                var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
+                var cookieText = Tools.getCookie(Const.hideMarkReadAtTipsCookieName);
                 var atTipsText = $.trim($atTips.text());
                 var matches = /\d+日\d+时\d+分/.exec(atTipsText);
                 if (matches) atTipsText = matches[0];
@@ -771,17 +773,17 @@ var KFOL = {
                     $atTips.click(function () {
                         var $this = $(this);
                         if ($this.data('disabled')) return;
-                        var cookieText = Tools.getCookie(Config.hideMarkReadAtTipsCookieName);
+                        var cookieText = Tools.getCookie(Const.hideMarkReadAtTipsCookieName);
                         if (!cookieText) {
                             var curDate = (new Date()).getDate();
-                            Tools.setCookie(Config.prevReadAtTipsCookieName, (curDate < 10 ? '0' + curDate : curDate) + '日00时00分');
+                            Tools.setCookie(Const.prevReadAtTipsCookieName, (curDate < 10 ? '0' + curDate : curDate) + '日00时00分');
                         }
                         else if (cookieText !== atTipsText) {
-                            Tools.setCookie(Config.prevReadAtTipsCookieName, cookieText);
+                            Tools.setCookie(Const.prevReadAtTipsCookieName, cookieText);
                         }
-                        Tools.setCookie(Config.hideMarkReadAtTipsCookieName,
+                        Tools.setCookie(Const.hideMarkReadAtTipsCookieName,
                             atTipsText,
-                            Tools.getDate('+' + Config.hideMarkReadAtTipsExpires + 'd')
+                            Tools.getDate('+' + Const.hideMarkReadAtTipsExpires + 'd')
                         );
                         $this.data('disabled', true);
                         handleBox();
@@ -809,7 +811,7 @@ var KFOL = {
      */
     highlightUnReadAtTipsMsg: function () {
         if ($.trim($('.kf_share1:first').text()) !== '含有关键词 “{0}” 的内容'.replace('{0}', KFOL.userName)) return;
-        var timeString = Tools.getCookie(Config.prevReadAtTipsCookieName);
+        var timeString = Tools.getCookie(Const.prevReadAtTipsCookieName);
         if (!timeString || !/^\d+日\d+时\d+分$/.test(timeString)) return;
         var prevString = '';
         $('.kf_share1:eq(1) > tbody > tr:gt(0) > td:first-child').each(function (index) {
@@ -823,7 +825,7 @@ var KFOL = {
             else return false;
         });
         $('.kf_share1').on('click', 'td > a', function () {
-            Tools.setCookie(Config.prevReadAtTipsCookieName, '', Tools.getDate('-1d'));
+            Tools.setCookie(Const.prevReadAtTipsCookieName, '', Tools.getDate('-1d'));
         });
     },
 
@@ -1155,7 +1157,7 @@ var KFOL = {
                         }
                         window.setTimeout(function () {
                             $(document).dequeue('StatReplyers');
-                        }, Config.defAjaxInterval);
+                        }, Const.defAjaxInterval);
                     }, 'html');
                 });
             });
@@ -1191,7 +1193,7 @@ var KFOL = {
             .prependTo($('.readlou > div:first-child > ul').has('a[title="引用回复这个帖子"]'))
             .find('input').click(function () {
             var tid = parseInt(Tools.getUrlParam('tid'));
-            var data = localStorage[Config.multiQuoteStorageName];
+            var data = localStorage[Const.multiQuoteStorageName];
             if (data) {
                 try {
                     data = JSON.parse(data);
@@ -1208,13 +1210,13 @@ var KFOL = {
             }
             var quoteList = KFOL.getMultiQuoteData();
             if (!data) {
-                localStorage.removeItem(Config.multiQuoteStorageName);
+                localStorage.removeItem(Const.multiQuoteStorageName);
                 data = {tid: tid, quoteList: []};
             }
             var page = Tools.getCurrentThreadPage();
             if (quoteList.length > 0) data.quoteList[page] = quoteList;
             else delete data.quoteList[page];
-            localStorage[Config.multiQuoteStorageName] = JSON.stringify(data);
+            localStorage[Const.multiQuoteStorageName] = JSON.stringify(data);
         });
         $('.readlou:last').next('div').find('table > tbody > tr > td:last-child')
             .css({'text-align': 'right', 'width': '320px'})
@@ -1236,14 +1238,14 @@ var KFOL = {
             $('<a id="pd_clear_multi_quote_data" style="margin-left:7px" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
                 .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
                 e.preventDefault();
-                localStorage.removeItem(Config.multiQuoteStorageName);
+                localStorage.removeItem(Const.multiQuoteStorageName);
                 $('input[name="diy_guanjianci"]').val('');
                 if (type === 2) $('#textarea').val('');
                 else $('textarea[name="atc_content"]').val('');
                 alert('多重引用数据已被清除');
             });
         }
-        var data = localStorage[Config.multiQuoteStorageName];
+        var data = localStorage[Const.multiQuoteStorageName];
         if (!data) return;
         try {
             data = JSON.parse(data);
@@ -1264,7 +1266,7 @@ var KFOL = {
             }
         }
         if (list.length === 0) {
-            localStorage.removeItem(Config.multiQuoteStorageName);
+            localStorage.removeItem(Const.multiQuoteStorageName);
             return;
         }
         var keyword = [];
@@ -1308,7 +1310,7 @@ var KFOL = {
         });
         $('input[name="diy_guanjianci"]').val(keyword.join(','));
         $('form[name="FORM"]').submit(function () {
-            localStorage.removeItem(Config.multiQuoteStorageName);
+            localStorage.removeItem(Const.multiQuoteStorageName);
         });
         if (type === 2) $(document).dequeue('MultiQuote');
         else $('textarea[name="atc_content"]').val(content).focus();
@@ -1389,7 +1391,7 @@ var KFOL = {
                 var sell = $this.data('sell');
                 var url = $this.data('url');
                 if (!sell || !url) return;
-                if (sell < Config.minBuyThreadWarningSell || window.confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) {
+                if (sell < Const.minBuyThreadWarningSell || window.confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) {
                     location.href = url;
                 }
             });
@@ -1512,7 +1514,7 @@ var KFOL = {
 
                     window.setTimeout(function () {
                         $(document).dequeue('BuyThreads');
-                    }, Config.defAjaxInterval);
+                    }, Const.defAjaxInterval);
                 }, 'html');
             });
         });
@@ -1967,10 +1969,10 @@ var KFOL = {
          * @param {number} smLevel 神秘等级
          */
         var writeData = function (smLevel) {
-            TmpLog.setValue(Config.smLevelUpTmpLogName, {time: (new Date()).getTime(), smLevel: smLevel});
+            TmpLog.setValue(Const.smLevelUpTmpLogName, {time: (new Date()).getTime(), smLevel: smLevel});
         };
 
-        var data = TmpLog.getValue(Config.smLevelUpTmpLogName);
+        var data = TmpLog.getValue(Const.smLevelUpTmpLogName);
         if (!data || $.type(data.time) !== 'number' || $.type(data.smLevel) !== 'number') {
             writeData(smLevel);
         }
@@ -2006,16 +2008,16 @@ var KFOL = {
          * @param {number} smRank 神秘系数排名
          */
         var writeData = function (smRank) {
-            TmpLog.setValue(Config.smRankChangeTmpLogName, {time: (new Date()).getTime(), smRank: smRank});
+            TmpLog.setValue(Const.smRankChangeTmpLogName, {time: (new Date()).getTime(), smRank: smRank});
         };
 
-        var data = TmpLog.getValue(Config.smRankChangeTmpLogName);
+        var data = TmpLog.getValue(Const.smRankChangeTmpLogName);
         if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
             writeData(smRank);
         }
         else if (smRank !== data.smRank) {
             var diff = Math.floor(((new Date()).getTime() - data.time) / 60 / 60 / 1000);
-            if (diff >= Config.smRankChangeAlertInterval) {
+            if (diff >= Const.smRankChangeAlertInterval) {
                 var date = new Date(data.time);
                 var isUp = smRank < data.smRank;
                 writeData(smRank);
@@ -2109,7 +2111,7 @@ var KFOL = {
             diff.hours += 1;
             $msg.text('争夺奖励 (剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
         }
-        if (!Tools.getCookie(Config.autoAttackReadyCookieName))
+        if (!Tools.getCookie(Const.autoAttackReadyCookieName))
             $msg.removeClass('indbox5').addClass('indbox6');
     },
 
@@ -2272,7 +2274,7 @@ var KFOL = {
                             Config.customAutoChangeSMColorList = customChangeSMColorList;
                             ConfigMethod.write();
                             if (oriInterval !== Config.autoChangeSMColorInterval)
-                                Tools.setCookie(Config.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
+                                Tools.setCookie(Const.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
                             alert('设置保存成功');
                         })
                         .end()
@@ -2286,8 +2288,8 @@ var KFOL = {
                             Config.changeAllAvailableSMColorEnabled = defConfig.changeAllAvailableSMColorEnabled;
                             Config.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
                             ConfigMethod.write();
-                            Tools.setCookie(Config.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
-                            TmpLog.deleteValue(Config.prevAutoChangeSMColorIdTmpLogName);
+                            Tools.setCookie(Const.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
+                            TmpLog.deleteValue(Const.prevAutoChangeSMColorIdTmpLogName);
                             alert('设置已重置');
                             location.reload();
                         })
@@ -2361,11 +2363,11 @@ var KFOL = {
          */
         var setCookie = function () {
             var nextTime = Tools.getDate('+' + Config.autoChangeSMColorInterval + 'h');
-            Tools.setCookie(Config.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
+            Tools.setCookie(Const.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
         };
         console.log('自动更换神秘颜色Start');
         $.get('kf_growup.php', function (html) {
-            if (Tools.getCookie(Config.autoChangeSMColorCookieName)) return;
+            if (Tools.getCookie(Const.autoChangeSMColorCookieName)) return;
             var matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/gi);
             if (matches) {
                 var safeId = '';
@@ -2396,7 +2398,7 @@ var KFOL = {
                     return;
                 }
 
-                var prevId = parseInt(TmpLog.getValue(Config.prevAutoChangeSMColorIdTmpLogName));
+                var prevId = parseInt(TmpLog.getValue(Const.prevAutoChangeSMColorIdTmpLogName));
                 if (isNaN(prevId) || prevId < 0) prevId = 0;
 
                 var nextId = 0;
@@ -2424,7 +2426,7 @@ var KFOL = {
                     KFOL.showFormatLog('自动更换神秘颜色', html);
                     if (/等级颜色修改完毕/.test(html)) {
                         console.log('神秘颜色ID更换为：' + nextId);
-                        TmpLog.setValue(Config.prevAutoChangeSMColorIdTmpLogName, nextId);
+                        TmpLog.setValue(Const.prevAutoChangeSMColorIdTmpLogName, nextId);
                     }
                 }, 'html');
             }
@@ -2525,14 +2527,14 @@ var KFOL = {
             );
         };
 
-        var vipHours = parseInt(Tools.getCookie(Config.vipSurplusTimeCookieName));
+        var vipHours = parseInt(Tools.getCookie(Const.vipSurplusTimeCookieName));
         if (isNaN(vipHours) || vipHours < 0) {
             console.log('检查VIP剩余时间Start');
             $.get('kf_vmember.php', function (html) {
                 var hours = 0;
                 var matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
                 if (matches) hours = parseInt(matches[1]);
-                Tools.setCookie(Config.vipSurplusTimeCookieName, hours, Tools.getDate('+' + Config.vipSurplusTimeExpires + 'm'));
+                Tools.setCookie(Const.vipSurplusTimeCookieName, hours, Tools.getDate('+' + Const.vipSurplusTimeExpires + 'm'));
                 addVipHoursTips(hours);
             }, 'html');
         }
@@ -2566,7 +2568,7 @@ var KFOL = {
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
             if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
             if (Config.homePageThreadFastGotoLinkEnabled) KFOL.addHomePageThreadFastGotoLink();
-            if (Config.fixedDepositDueAlertEnabled && !Tools.getCookie(Config.fixedDepositDueAlertCookieName))
+            if (Config.fixedDepositDueAlertEnabled && !Tools.getCookie(Const.fixedDepositDueAlertCookieName))
                 Bank.fixedDepositDueAlert();
         }
         else if (location.pathname === '/read.php') {
@@ -2655,7 +2657,7 @@ var KFOL = {
         if (Config.followUserEnabled) KFOL.followUsers();
 
         var isGetLootAwardStarted = false;
-        var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Config.donationCookieName);
+        var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
         if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
             isGetLootAwardStarted = true;
             Loot.getLootAward(autoDonationAvailable);
@@ -2674,12 +2676,12 @@ var KFOL = {
 
         if (autoSaveCurrentDepositAvailable && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
 
-        if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Config.autoAttackReadyCookieName)
-            && !Tools.getCookie(Config.autoAttackingCookieName)) {
+        if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
+            && !Tools.getCookie(Const.autoAttackingCookieName)) {
             Loot.checkAutoAttack();
         }
 
-        if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Config.autoChangeSMColorCookieName)) KFOL.changeSMColor();
+        if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeSMColor();
 
         if (Config.autoRefreshEnabled && KFOL.isInHomePage) KFOL.startAutoRefreshMode();
 

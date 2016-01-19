@@ -4,7 +4,7 @@ import re
 
 devDirName = 'dev' # 开发版文件夹名
 devKFOLFileName = 'KFOL' # 开发版KFOL主文件名
-devPartFileNameList = ['Config', 'ConfigMethod', 'Tools', 'Dialog', 'ConfigDialog', 'Log', 'TmpLog', 'Item', 'Card', 'Bank', 'Loot'] # 开发版各部分文件名
+devPartFileNameList = ['Config', 'Const', 'ConfigMethod', 'Tools', 'Dialog', 'ConfigDialog', 'Log', 'TmpLog', 'Item', 'Card', 'Bank', 'Loot'] # 开发版各部分文件名
 releaseDirName = 'release' # 正式版文件夹名
 defaultFileName = 'KFOLAssistant' # 标准版文件名
 scriptStorageFileName = 'ScriptStorage' # ScriptStorage版文件名

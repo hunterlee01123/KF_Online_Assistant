@@ -66,7 +66,7 @@
 
 // 随机设置批量攻击时每次攻击的时间间隔（毫秒） V1.0
 // 设随机间隔范围为m-n毫秒，公式：Math.random()*(n-m)+m
-Config.perAttackInterval = function () {
+Const.perAttackInterval = function () {
     var t = Math.floor(Math.random() * 3000 + 2000);
     console.log('间隔：' + t + 'ms');
     return t;
@@ -209,7 +209,7 @@ Config.perAttackInterval = function () {
                         }
                         window.setTimeout(function () {
                             $(document).dequeue('StatLottery');
-                        }, Config.defAjaxInterval);
+                        }, Const.defAjaxInterval);
                     }, 'html');
                 });
             });

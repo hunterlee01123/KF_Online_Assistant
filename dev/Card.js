@@ -70,7 +70,7 @@ var Card = {
 
                         window.setTimeout(function () {
                             $(document).dequeue('ConvertCardsToVipTime');
-                        }, Config.defAjaxInterval);
+                        }, Const.defAjaxInterval);
                     },
                     dataType: 'html'
                 });

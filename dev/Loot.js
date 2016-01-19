@@ -26,18 +26,18 @@ var Loot = {
         var autoAttack = function (safeId, deadlyAttackNum) {
             if (Config.autoAttackEnabled && !$.isEmptyObject(Config.batchAttackList) && safeId) {
                 if (Loot.isAutoAttackNow()) {
-                    Tools.setCookie(Config.autoAttackReadyCookieName, '1|' + safeId);
+                    Tools.setCookie(Const.autoAttackReadyCookieName, '1|' + safeId);
                     Loot.autoAttack(safeId, deadlyAttackNum);
                 }
                 else {
-                    Tools.setCookie(Config.autoAttackReadyCookieName, '2|' + safeId, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                    Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, Tools.getDate('+' + Const.defLootInterval + 'm'));
                 }
             }
         };
         $.get('kf_fw_ig_index.php', function (html) {
             var matches = /<INPUT name="submit1" type="submit" value="(.+?)"/i.exec(html);
             if (!matches) {
-                Tools.setCookie(Config.getLootAwardCookieName, 1, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                Tools.setCookie(Const.getLootAwardCookieName, 1, Tools.getDate('+' + Const.defLootInterval + 'm'));
                 return;
             }
 
@@ -49,7 +49,7 @@ var Loot = {
             if (Config.deadlyAttackId > 0) {
                 var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
                 if (deadlyAttackMatches) deadlyAttackNum = parseInt(deadlyAttackMatches[1]);
-                if (deadlyAttackNum > Config.maxAttackNum) deadlyAttackNum = Config.maxAttackNum;
+                if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
             }
 
             var remainingMatches = /还有(\d+)(分钟|小时)领取/i.exec(matches[1]);
@@ -59,22 +59,22 @@ var Loot = {
                 lootInterval++;
                 if (!Loot.getNextLootAwardTime().type) {
                     var nextTime = Tools.getDate('+' + lootInterval + 'm');
-                    Tools.setCookie(Config.getLootAwardCookieName,
+                    Tools.setCookie(Const.getLootAwardCookieName,
                         '{0}|{1}'.replace('{0}', remainingMatches[2] === '小时' ? 1 : 2).replace('{1}', nextTime.getTime()),
                         nextTime
                     );
                     if (Config.attemptAttackEnabled) {
-                        var nextCheckInterval = Config.firstCheckLifeInterval - (Config.defLootInterval - lootInterval);
+                        var nextCheckInterval = Const.firstCheckLifeInterval - (Const.defLootInterval - lootInterval);
                         if (nextCheckInterval <= 0) nextCheckInterval = 1;
                         var nextCheckTime = Tools.getDate('+' + nextCheckInterval + 'm');
-                        Tools.setCookie(Config.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                        Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                        Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
+                        Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
                     }
                     var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
                     if (attackedCountMatches) {
-                        var timeDiff = Config.defLootInterval - lootInterval;
+                        var timeDiff = Const.defLootInterval - lootInterval;
                         if (timeDiff > 0 && timeDiff <= 3 * 60) {
-                            TmpLog.setValue(Config.attackedCountTmpLogName, {
+                            TmpLog.setValue(Const.attackedCountTmpLogName, {
                                 time: Tools.getDate('-' + timeDiff + 'm').getTime(),
                                 count: parseInt(attackedCountMatches[1])
                             });
@@ -92,7 +92,7 @@ var Loot = {
                     var remainAttackNumMatches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
                     var remainAttackNum = 0;
                     if (remainAttackNumMatches) remainAttackNum = parseInt(remainAttackNumMatches[1]);
-                    if (remainAttackNum >= Config.deferLootTimeWhenRemainAttackNum && !Tools.getCookie(Config.drawSmboxCookieName)) {
+                    if (remainAttackNum >= Config.deferLootTimeWhenRemainAttackNum && !Tools.getCookie(Const.drawSmboxCookieName)) {
                         console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
                         KFOL.drawSmbox();
                         if (isAutoDonation) KFOL.donation();
@@ -113,27 +113,27 @@ var Loot = {
                 $.post('kf_fw_ig_index.php',
                     {submit1: 1, one: 1},
                     function (html) {
-                        var nextTime = Tools.getDate('+' + Config.defLootInterval + 'm');
-                        Tools.setCookie(Config.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
+                        var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
+                        Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
                         if (Config.attemptAttackEnabled) {
-                            var nextCheckTime = Tools.getDate('+' + Config.firstCheckLifeInterval + 'm');
-                            Tools.setCookie(Config.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                            Tools.setCookie(Config.attackCountCookieName, 0, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                            var nextCheckTime = Tools.getDate('+' + Const.firstCheckLifeInterval + 'm');
+                            Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
+                            Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
                         }
                         KFOL.showFormatLog('领取争夺奖励', html);
                         if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
                             var attackedCountDiff = 0;
                             if (attackedCount > -1) {
                                 var now = (new Date()).getTime();
-                                var attackedCountInfo = TmpLog.getValue(Config.attackedCountTmpLogName);
+                                var attackedCountInfo = TmpLog.getValue(Const.attackedCountTmpLogName);
                                 if (attackedCountInfo && $.type(attackedCountInfo) === 'object' && $.type(attackedCountInfo.time) === 'number' &&
                                     $.type(attackedCountInfo.count) === 'number' && attackedCountInfo.time > 0 && attackedCountInfo.count >= 0) {
                                     attackedCountDiff = attackedCount - attackedCountInfo.count;
                                     if (now - attackedCountInfo.time <= 0) attackedCountDiff = 0;
-                                    else if (now - attackedCountInfo.time >= Config.defLootInterval * 60 * 1000 * 2 && attackedCountDiff >= 20)
+                                    else if (now - attackedCountInfo.time >= Const.defLootInterval * 60 * 1000 * 2 && attackedCountDiff >= 20)
                                         attackedCountDiff = 0;
                                 }
-                                TmpLog.setValue(Config.attackedCountTmpLogName, {time: now, count: attackedCount});
+                                TmpLog.setValue(Const.attackedCountTmpLogName, {time: now, count: attackedCount});
                             }
                             if (/已经预领\d+KFB/i.test(html)) {
                                 gain = 0;
@@ -165,7 +165,7 @@ var Loot = {
                     }, 'html');
             }
             else {
-                Tools.setCookie(Config.getLootAwardCookieName, 1, Tools.getDate('+' + Config.defLootInterval + 'm'));
+                Tools.setCookie(Const.getLootAwardCookieName, 1, Tools.getDate('+' + Const.defLootInterval + 'm'));
                 if (isAutoDonation) KFOL.donation();
             }
         }, 'html');
@@ -191,13 +191,13 @@ var Loot = {
             var attackList = {};
             if (deadlyAttackNum > 0) attackList['0' + deadlyAttackId] = deadlyAttackNum;
             if (Config.attemptAttackEnabled) {
-                var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
+                var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
                 if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                 var num = 0;
                 for (var id in Config.batchAttackList) {
                     for (var i = 1; i <= Config.batchAttackList[id]; i++) {
                         num++;
-                        if (num > Config.maxAttackNum - deadlyAttackNum) break;
+                        if (num > Const.maxAttackNum - deadlyAttackNum) break;
                         if (num > attackCount) {
                             if (typeof attackList['0' + id] === 'undefined') attackList['0' + id] = 1;
                             else attackList['0' + id]++;
@@ -210,7 +210,7 @@ var Loot = {
                 for (var id in Config.batchAttackList) {
                     for (var i = 1; i <= Config.batchAttackList[id]; i++) {
                         num++;
-                        if (num > Config.maxAttackNum - deadlyAttackNum) break;
+                        if (num > Const.maxAttackNum - deadlyAttackNum) break;
                         if (typeof attackList['0' + id] === 'undefined') attackList['0' + id] = 1;
                         else attackList['0' + id]++;
                     }
@@ -222,7 +222,7 @@ var Loot = {
                 totalAttackNum += attackList[id];
             }
             if (!totalAttackNum) return;
-            Tools.setCookie(Config.autoAttackingCookieName, 1, Tools.getDate('+' + Config.checkAutoAttackingInterval + 'm'));
+            Tools.setCookie(Const.autoAttackingCookieName, 1, Tools.getDate('+' + Const.checkAutoAttackingInterval + 'm'));
             KFOL.showWaitMsg(
                 ('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>' +
                 '<a target="_blank" href="{1}">浏览其它页面</a><a class="pd_stop_action pd_highlight" href="#">停止操作</a>')
@@ -244,7 +244,7 @@ var Loot = {
                     var deadlyAttackNum = 0;
                     var matches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
                     if (matches) deadlyAttackNum = parseInt(matches[1]);
-                    if (deadlyAttackNum > Config.maxAttackNum) deadlyAttackNum = Config.maxAttackNum;
+                    if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
                     if (deadlyAttackNum > 0) attack(Config.deadlyAttackId, deadlyAttackNum);
                     else attack();
                 }, 'html');
@@ -379,12 +379,12 @@ var Loot = {
                 },
                 error: function () {
                     failNum++;
-                    attackLogList.push('第{0}次：{1}'.replace('{0}', count).replace('{1}', '网络超时'));
-                    console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '网络超时'));
+                    attackLogList.push('第{0}次：{1}'.replace('{0}', count).replace('{1}', '连接超时'));
+                    console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '连接超时'));
                     if (settings.type === 1) {
                         var html = '<li><b>第{0}次：</b>{1}</li>'
                             .replace('{0}', count)
-                            .replace('{1}', '<span class="pd_notice">网络超时</span>');
+                            .replace('{1}', '<span class="pd_notice">连接超时</span>');
                         $('.pd_result:last > ul').append(html);
                     }
                     $(document).queue('BatchAttack', function () {
@@ -446,29 +446,29 @@ var Loot = {
                             , duration
                         );
 
-                        if (isStop || settings.type === 2 || count >= Config.maxAttackNum) {
-                            Tools.setCookie(Config.autoAttackingCookieName, '', Tools.getDate('-1d'));
-                            Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                        if (isStop || settings.type === 2 || count >= Const.maxAttackNum) {
+                            Tools.setCookie(Const.autoAttackingCookieName, '', Tools.getDate('-1d'));
+                            Tools.setCookie(Const.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
                             if (Config.attemptAttackEnabled) {
-                                Tools.setCookie(Config.checkLifeCookieName, '', Tools.getDate('-1d'));
-                                Tools.setCookie(Config.attackCountCookieName, '', Tools.getDate('-1d'));
-                                Tools.setCookie(Config.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
+                                Tools.setCookie(Const.checkLifeCookieName, '', Tools.getDate('-1d'));
+                                Tools.setCookie(Const.attackCountCookieName, '', Tools.getDate('-1d'));
+                                Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
                             }
                         }
                         else if (settings.type === 3) {
-                            var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
+                            var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
                             if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                             attackCount++;
-                            if (attackCount >= Config.maxAttackNum) {
-                                Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
-                                Tools.setCookie(Config.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
+                            if (attackCount >= Const.maxAttackNum) {
+                                Tools.setCookie(Const.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                                Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
                             }
                             else {
-                                Tools.setCookie(Config.attackCountCookieName, attackCount, new Date(Loot.getNextLootAwardTime().time));
+                                Tools.setCookie(Const.attackCountCookieName, attackCount, new Date(Loot.getNextLootAwardTime().time));
                                 if (options.recentMonsterAttackLog) {
                                     var thisGainKfb = 0;
                                     if (gain['夺取KFB']) thisGainKfb = gain['夺取KFB'];
-                                    Tools.setCookie(Config.prevAttemptAttackLogCookieName,
+                                    Tools.setCookie(Const.prevAttemptAttackLogCookieName,
                                         (thisGainKfb + options.life) + '/' + options.recentMonsterAttackLog,
                                         new Date(Loot.getNextLootAwardTime().time)
                                     );
@@ -527,15 +527,15 @@ var Loot = {
                             if (safeIdMatches) safeId = safeIdMatches[1];
                             if (!safeId) return;
                             settings.safeId = safeId;
-                            if (Tools.getCookie(Config.autoAttackReadyCookieName))
-                                Tools.setCookie(Config.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
+                            if (Tools.getCookie(Const.autoAttackReadyCookieName))
+                                Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
                             $(document).dequeue('BatchAttack');
                         }, 'html');
                     }
                     else {
                         window.setTimeout(function () {
                             $(document).dequeue('BatchAttack');
-                        }, typeof Config.perAttackInterval === 'function' ? Config.perAttackInterval() : Config.perAttackInterval);
+                        }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
                     }
                 },
                 dataType: 'html'
@@ -598,8 +598,8 @@ var Loot = {
                 totalAttackNum += attackNum;
             });
             if ($.isEmptyObject(attackList)) return 0;
-            if (totalAttackNum > Config.maxAttackNum) {
-                alert('攻击次数不得超过{0}次'.replace('{0}', Config.maxAttackNum));
+            if (totalAttackNum > Const.maxAttackNum) {
+                alert('攻击次数不得超过{0}次'.replace('{0}', Const.maxAttackNum));
                 return 0;
             }
             return totalAttackNum;
@@ -646,17 +646,17 @@ var Loot = {
     handleInLootIndexPage: function () {
         var $btn = $('input[name="submit1"][value="已经可以领取KFB，请点击这里获取"]');
         if ($btn.length > 0) {
-            if (Config.autoLootEnabled && Tools.getCookie(Config.getLootAwardCookieName)) {
+            if (Config.autoLootEnabled && Tools.getCookie(Const.getLootAwardCookieName)) {
                 $btn.prop('disabled', true);
-                Tools.setCookie(Config.getLootAwardCookieName, '', Tools.getDate('-1d'));
+                Tools.setCookie(Const.getLootAwardCookieName, '', Tools.getDate('-1d'));
                 Loot.getLootAward();
             }
             else {
                 $('form[name="rvrc1"]').submit(function () {
                     var gain = parseInt($btn.parent('td').find('span:eq(0)').text());
                     if (!isNaN(gain) && gain >= 0) {
-                        var nextTime = Tools.getDate('+' + Config.defLootInterval + 'm').getTime() + 10 * 1000;
-                        Tools.setCookie(Config.getLootAwardCookieName, '2|' + nextTime, new Date(nextTime));
+                        var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm').getTime() + 10 * 1000;
+                        Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime, new Date(nextTime));
                         Log.push('领取争夺奖励', '领取争夺奖励', {gain: {'KFB': gain}});
                     }
                 });
@@ -775,7 +775,7 @@ var Loot = {
      * @returns {{type: number, time: number}} 下次领取争夺奖励的时间对象，type：时间类型（0：获取失败；1：估计时间；2：精确时间）；time：下次领取时间
      */
     getNextLootAwardTime: function () {
-        var log = Tools.getCookie(Config.getLootAwardCookieName);
+        var log = Tools.getCookie(Const.getLootAwardCookieName);
         if (log) {
             log = log.split('|');
             if (log.length === 2) {
@@ -807,7 +807,7 @@ var Loot = {
      * 检查自动攻击是否已完成
      */
     checkAutoAttack: function () {
-        var value = Tools.getCookie(Config.autoAttackReadyCookieName);
+        var value = Tools.getCookie(Const.autoAttackReadyCookieName);
         if (!value) return;
         var valueArr = value.split('|');
         if (valueArr.length !== 2) return;
@@ -819,7 +819,7 @@ var Loot = {
         if (type === 2 && Config.attackAfterTime > 0) {
             if (Loot.isAutoAttackNow())
                 Loot.autoAttack(safeId);
-            else if (Config.attemptAttackEnabled && !Tools.getCookie(Config.checkLifeCookieName))
+            else if (Config.attemptAttackEnabled && !Tools.getCookie(Const.checkLifeCookieName))
                 Loot.checkLife(safeId);
         }
         else {
@@ -834,14 +834,14 @@ var Loot = {
     checkLife: function (safeId) {
         console.log('检查生命值Start');
         $.get('kf_fw_ig_index.php', function (html) {
-            if (Tools.getCookie(Config.checkLifeCookieName)) return;
+            if (Tools.getCookie(Const.checkLifeCookieName)) return;
             if (/本回合剩余攻击次数\s*0\s*次/.test(html)) {
-                Tools.setCookie(Config.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
-                Tools.setCookie(Config.checkLifeCookieName, '', Tools.getDate('-1d'));
-                Tools.setCookie(Config.attackCountCookieName, '', Tools.getDate('-1d'));
-                Tools.setCookie(Config.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
+                Tools.setCookie(Const.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
+                Tools.setCookie(Const.checkLifeCookieName, '', Tools.getDate('-1d'));
+                Tools.setCookie(Const.attackCountCookieName, '', Tools.getDate('-1d'));
+                Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
             }
-            var checkLifeInterval = Config.defCheckLifeInterval;
+            var checkLifeInterval = Const.defCheckLifeInterval;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
             var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
             var life = 0, minLife = 0;
@@ -850,7 +850,7 @@ var Loot = {
                 life = parseInt(lifeMatches[1]);
                 minLife = parseInt(minLifeMatches[1]);
                 if (life <= minLife) {
-                    checkLifeInterval = Config.checkLifeAfterAttemptAttackInterval;
+                    checkLifeInterval = Const.checkLifeAfterAttemptAttackInterval;
                     isLteMinLife = true;
                 }
             }
@@ -859,12 +859,12 @@ var Loot = {
             var recentMonsterAttackLog = '';
             var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
             if (monsterAttackLogList.length > 0) recentMonsterAttackLog = $.trim(monsterAttackLogList[0]);
-            if (Config.debug) console.log('最近一次的被攻击日志：' + (recentMonsterAttackLog ? recentMonsterAttackLog : '无'));
+            if (Const.debug) console.log('最近一次的被攻击日志：' + (recentMonsterAttackLog ? recentMonsterAttackLog : '无'));
             var deadlyAttackNum = 0;
             if (Config.deadlyAttackId > 0) {
                 var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
                 if (deadlyAttackMatches) deadlyAttackNum = parseInt(deadlyAttackMatches[1]);
-                if (deadlyAttackNum > Config.maxAttackNum) deadlyAttackNum = Config.maxAttackNum;
+                if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
             }
 
             /**
@@ -875,7 +875,7 @@ var Loot = {
              */
             var writeNextCheckLifeCookie = function (life, interval, msg) {
                 var nextTime = Tools.getDate('+' + interval + 'm');
-                Tools.setCookie(Config.checkLifeCookieName, nextTime.getTime(), nextTime);
+                Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
 
                 var lootInfo = Loot.getNextLootAwardTime();
                 if (lootInfo.time > 0) {
@@ -883,7 +883,7 @@ var Loot = {
                         .replace('{0}', life)
                         .replace('{1}', minLife)
                         .replace('{2}', maxCheckAttackLifeNum)
-                        .replace('{3}', Config.defLootInterval - Math.floor((lootInfo.time - (new Date()).getTime()) / 60 / 1000))
+                        .replace('{3}', Const.defLootInterval - Math.floor((lootInfo.time - (new Date()).getTime()) / 60 / 1000))
                         .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
                         .replace('{5}', interval)
                         .replace('{6}', msg)
@@ -900,7 +900,7 @@ var Loot = {
             var attemptAttack = function (life, recentMonsterAttackLog, msg) {
                 writeNextCheckLifeCookie(life, checkLifeInterval, msg);
                 $('#pd_remaining_num').remove();
-                var attackCount = parseInt(Tools.getCookie(Config.attackCountCookieName));
+                var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
                 if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                 var num = 0, attackId = 0;
                 for (var id in Config.batchAttackList) {
@@ -931,25 +931,25 @@ var Loot = {
             if (!isLteMinLife) {
                 writeNextCheckLifeCookie(life, checkLifeInterval, '当前生命值大于低保线，不进行试探攻击');
                 if (recentMonsterAttackLog)
-                    Tools.setCookie(Config.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(Loot.getNextLootAwardTime().time));
+                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(Loot.getNextLootAwardTime().time));
                 else
-                    Tools.setCookie(Config.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
+                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
                 return;
             }
 
-            var prevCheckAttackInfo = Tools.getCookie(Config.prevAttemptAttackLogCookieName);
+            var prevCheckAttackInfo = Tools.getCookie(Const.prevAttemptAttackLogCookieName);
             if (prevCheckAttackInfo && recentMonsterAttackLog) {
                 var arr = prevCheckAttackInfo.split('/');
                 if (arr.length === 2 && $.type(parseInt(arr[0])) === 'number') {
                     var realLife = parseInt(arr[0]), loss = 0;
                     if (realLife < 0) realLife = 0;
                     var prevMonsterAttackLog = $.trim(arr[1]);
-                    if (Config.debug) console.log('上次记录的被攻击日志：' + prevMonsterAttackLog);
+                    if (Const.debug) console.log('上次记录的被攻击日志：' + prevMonsterAttackLog);
                     var index = 0;
                     for (; index <= monsterAttackLogList.length; index++) {
                         if ($.trim(monsterAttackLogList[index]) === prevMonsterAttackLog) break;
                         if (/清空生命值/.test(monsterAttackLogList[index])) {
-                            attemptAttack(0, recentMonsterAttackLog, '自上次记录以来，在后续的被攻击日志中发现被清空生命值的情况，需要进行试探攻击');
+                            attemptAttack(0, recentMonsterAttackLog, '自上次检查生命值以来，在后续的被攻击日志中发现被清空生命值的情况，需要进行试探攻击');
                             return;
                         }
                         var matches = /被实际夺取(\d+)KFB.+被实际燃烧(\d+)KFB/i.exec(monsterAttackLogList[index]);
@@ -966,11 +966,14 @@ var Loot = {
                         }
                         else {
                             if (realLife > maxCheckAttackLifeNum) {
+                                var msg = '';
+                                if (recentMonsterAttackLog === prevMonsterAttackLog) msg = '未遭到新的攻击';
+                                else msg = '共损失{0}KFB'.replace('{0}', loss);
                                 writeNextCheckLifeCookie(realLife,
-                                    Config.defCheckLifeInterval,
-                                    '自上次记录以来，共损失{0}KFB，生命值高于阙值，暂无试探攻击的必要'.replace('{0}', loss)
+                                    Const.defCheckLifeInterval,
+                                    '自上次检查生命值以来，{0}，生命值高于阙值，暂无试探攻击的必要'.replace('{0}', msg)
                                 );
-                                Tools.setCookie(Config.prevAttemptAttackLogCookieName,
+                                Tools.setCookie(Const.prevAttemptAttackLogCookieName,
                                     realLife + '/' + recentMonsterAttackLog,
                                     new Date(Loot.getNextLootAwardTime().time)
                                 );
@@ -978,7 +981,7 @@ var Loot = {
                             else {
                                 attemptAttack(realLife,
                                     recentMonsterAttackLog,
-                                    '自上次记录以来，共损失{0}KFB，生命值未超过阙值，需要进行试探攻击'.replace('{0}', loss)
+                                    '自上次检查生命值以来，共损失{0}KFB，生命值未超过阙值，需要进行试探攻击'.replace('{0}', loss)
                                 );
                             }
                         }
@@ -1397,7 +1400,7 @@ var Loot = {
                     }
                     window.setTimeout(function () {
                         $(document).dequeue('GetItemList');
-                    }, Config.defAjaxInterval);
+                    }, Const.defAjaxInterval);
                 }, 'html');
             });
         });
@@ -1476,7 +1479,7 @@ var Loot = {
 
                             window.setTimeout(function () {
                                 $(document).dequeue('UseItemList');
-                            }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                            }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                         },
                         dataType: 'html'
                     });

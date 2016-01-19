@@ -24,7 +24,7 @@ var Log = {
         }
         if (!log || $.type(log) !== 'object') return;
         Log.log = log;
-        if (!Tools.getCookie(Config.checkOverdueLogCookieName)) Log.deleteOverdueLog();
+        if (!Tools.getCookie(Const.checkOverdueLogCookieName)) Log.deleteOverdueLog();
     },
 
     /**
@@ -58,7 +58,7 @@ var Log = {
             else break;
         }
         if (isDeleted) Log.write();
-        Tools.setCookie(Config.checkOverdueLogCookieName, 1, Tools.getMidnightHourDate(1));
+        Tools.setCookie(Const.checkOverdueLogCookieName, 1, Tools.getMidnightHourDate(1));
     },
 
     /**

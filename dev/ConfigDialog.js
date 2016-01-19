@@ -47,7 +47,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</span></label></legend>' +
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
             '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
-                .replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime) +
+                .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
             '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
             '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label>' +
             '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
@@ -450,8 +450,8 @@ var ConfigDialog = {
                 $txtDonationKfb.focus();
                 return false;
             }
-            if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Config.maxDonationKfb) {
-                alert('KFB捐款额度的取值范围在1-{0}之间'.replace('{0}', Config.maxDonationKfb));
+            if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
+                alert('KFB捐款额度的取值范围在1-{0}之间'.replace('{0}', Const.maxDonationKfb));
                 $txtDonationKfb.select();
                 $txtDonationKfb.focus();
                 return false;
@@ -486,8 +486,8 @@ var ConfigDialog = {
             $txtDeferLootTimeWhenRemainAttackNum.focus();
             return false;
         }
-        else if (deferLootTimeWhenRemainAttackNum < 1 || deferLootTimeWhenRemainAttackNum > Config.maxAttackNum) {
-            alert('剩余攻击次数上限范围在1-{0}之间'.replace('{0}', Config.maxAttackNum));
+        else if (deferLootTimeWhenRemainAttackNum < 1 || deferLootTimeWhenRemainAttackNum > Const.maxAttackNum) {
+            alert('剩余攻击次数上限范围在1-{0}之间'.replace('{0}', Const.maxAttackNum));
             $txtDeferLootTimeWhenRemainAttackNum.select();
             $txtDeferLootTimeWhenRemainAttackNum.focus();
             return false;
@@ -497,8 +497,8 @@ var ConfigDialog = {
         var attackAfterTime = $.trim($txtAttackAfterTime.val());
         if (attackAfterTime) {
             attackAfterTime = parseInt(attackAfterTime);
-            if (isNaN(attackAfterTime) || attackAfterTime > Config.defLootInterval || attackAfterTime < Config.minAttackAfterTime) {
-                alert('在指定时间之内才完成攻击的取值范围为：{0}-{1}'.replace('{0}', Config.defLootInterval).replace('{1}', Config.minAttackAfterTime));
+            if (isNaN(attackAfterTime) || attackAfterTime > Const.defLootInterval || attackAfterTime < Const.minAttackAfterTime) {
+                alert('在指定时间之内才完成攻击的取值范围为：{0}-{1}'.replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime));
                 $txtAttackAfterTime.select();
                 $txtAttackAfterTime.focus();
                 return false;
@@ -542,8 +542,8 @@ var ConfigDialog = {
             totalAttackNum += attackNum;
         });
         if (!isAttackVerification) return false;
-        if (totalAttackNum > Config.maxAttackNum) {
-            alert('攻击次数不得超过{0}次'.replace('{0}', Config.maxAttackNum));
+        if (totalAttackNum > Const.maxAttackNum) {
+            alert('攻击次数不得超过{0}次'.replace('{0}', Const.maxAttackNum));
             return false;
         }
         if ($('#pd_cfg_auto_attack_enabled').prop('checked') && !totalAttackNum) {
@@ -654,7 +654,7 @@ var ConfigDialog = {
         }
         if (type === 0 || type === 2) {
             TmpLog.clear();
-            localStorage.removeItem(Config.multiQuoteStorageName);
+            localStorage.removeItem(Const.multiQuoteStorageName);
         }
     },
 

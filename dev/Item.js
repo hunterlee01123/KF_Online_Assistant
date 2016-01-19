@@ -380,13 +380,7 @@ var Item = {
                                     });
                             }
                             else {
-                                if (cycle) {
-                                    Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, successNum);
-                                }
-                                else {
-                                    Item.showCurrentUsableItemNum();
-                                    Item.showCurrentUsedItemNum();
-                                }
+                                Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
                                 Item.showItemUsedInfo(settings.$itemLine.closest('tbody').find('tr:gt(1) > td:nth-child(2) > a'));
                             }
 
@@ -402,7 +396,7 @@ var Item = {
 
                         window.setTimeout(function () {
                             $(document).dequeue('UseItems');
-                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                        }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                     },
                     dataType: 'html'
                 });
@@ -543,13 +537,7 @@ var Item = {
                                         $(this).remove();
                                     });
                             }
-                            if (cycle) {
-                                Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -(successNum + failNum), cycle.totalEnergyNum - successEnergyNum);
-                            }
-                            else {
-                                if (location.pathname === '/kf_fw_ig_my.php') Item.showCurrentUsableItemNum();
-                                Item.showCurrentUsedItemNum();
-                            }
+                            Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, -(successNum + failNum), successNum, -successEnergyNum);
 
                             if (cycle) {
                                 settings.itemIdList = nextRoundItemIdList;
@@ -567,7 +555,7 @@ var Item = {
 
                         window.setTimeout(function () {
                             $(document).dequeue('RestoreItems');
-                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                        }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                     },
                     dataType: 'html'
                 });
@@ -656,7 +644,7 @@ var Item = {
                 , true);
             window.setTimeout(function () {
                 Item.useItems(options, cycle);
-            }, cycle.round === 1 ? 500 : Config.cycleUseItemsFirstAjaxInterval);
+            }, cycle.round === 1 ? 500 : Const.cycleUseItemsFirstAjaxInterval);
         }
         else if (type === 2) {
             KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
@@ -664,7 +652,7 @@ var Item = {
                 , true);
             window.setTimeout(function () {
                 Item.restoreItems(options, cycle);
-            }, Config.cycleUseItemsFirstAjaxInterval);
+            }, Const.cycleUseItemsFirstAjaxInterval);
         }
         else {
             if (cycle.stat['道具'] === 0) delete cycle.stat['道具'];
@@ -712,9 +700,6 @@ var Item = {
                 KFOL.removePopTips($('.pd_pop_tips'));
             });
             showResult(type, cycle.stat);
-
-            if (options.type === 1) Item.showCurrentUsableItemNum();
-            Item.showCurrentUsedItemNum();
         }
     },
 
@@ -726,6 +711,7 @@ var Item = {
      * @param {string} options.safeId 用户的SafeID
      * @param {number} options.itemLevel 道具等级
      * @param {string} options.itemName 道具名称
+     * @param {jQuery} [options.$itemLine] 当前恢复道具种类所在的表格行（用于转换类型1）
      */
     convertItemsToEnergy: function (options) {
         var settings = {
@@ -795,12 +781,12 @@ var Item = {
                                         $(this).remove();
                                     });
                             }
-                            Item.showCurrentUsedItemNum();
+                            Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, null, successEnergyNum);
                         }
 
                         window.setTimeout(function () {
                             $(document).dequeue('ConvertItemsToEnergy');
-                        }, Config.defAjaxInterval);
+                        }, Const.defAjaxInterval);
                     },
                     dataType: 'html'
                 });
@@ -893,7 +879,7 @@ var Item = {
 
                         window.setTimeout(function () {
                             $(document).dequeue('SellItems');
-                        }, Config.defAjaxInterval);
+                        }, Const.defAjaxInterval);
                     },
                     dataType: 'html'
                 });
@@ -1337,7 +1323,8 @@ var Item = {
                         itemIdList: itemIdList,
                         safeId: safeId,
                         itemLevel: itemLevel,
-                        itemName: itemName
+                        itemName: itemName,
+                        $itemLine: $itemLine
                     });
                 }, 'html');
             }
@@ -1391,62 +1378,46 @@ var Item = {
     },
 
     /**
-     * 设定当前指定种类道具的未使用和已使用数量
+     * 设定当前指定种类道具的未使用和已使用数量以及道具恢复能量
      * @param {?jQuery} $itemLine 当前道具所在的表格行
-     * @param {number} usableChangeNum 未使用道具的变化数量
-     * @param {number} usedChangeNum 已使用道具的变化数量
-     * @param {number} [totalEnergyNum] 当前道具恢复能量
+     * @param {?number} usedChangeNum 已使用道具的变化数量
+     * @param {?number} [usableChangeNum] 未使用道具的变化数量
+     * @param {?number} [energyChangeNum] 道具恢复能量的变化数量
      */
-    setCurrentItemUsableAndUsedNum: function ($itemLine, usableChangeNum, usedChangeNum, totalEnergyNum) {
+    setCurrentItemUsableAndUsedNum: function ($itemLine, usedChangeNum, usableChangeNum, energyChangeNum) {
+        var flag = false;
         if ($itemLine) {
-            var $itemUsable = $itemLine.find('td:nth-child(3) > .pd_usable_num');
-            if ($itemUsable.length > 0) {
-                var num = parseInt($itemUsable.text()) + usableChangeNum;
-                if (!num || num < 0) num = 0;
-                $itemUsable.text(num);
-            }
-
             var $itemUsed = $itemLine.find('td:nth-child(3) > .pd_used_num');
             if ($itemUsed.length > 0) {
-                var num = parseInt($itemUsed.text()) + usedChangeNum;
-                if (!num || num < 0) num = 0;
-                $itemUsed.text(num);
+                var num = parseInt($itemUsed.text());
+                if (isNaN(num) || num + usedChangeNum < 0) flag = true;
+                else $itemUsed.text(num + usedChangeNum);
+            }
+            if (usableChangeNum) {
+                var $itemUsable = $itemLine.find('td:nth-child(3) > .pd_usable_num');
+                if ($itemUsable.length > 0) {
+                    var num = parseInt($itemUsable.text());
+                    if (isNaN(num) || num + usableChangeNum < 0) flag = true;
+                    else $itemUsable.text(num + usableChangeNum);
+                }
             }
         }
-
-        if ($.type(totalEnergyNum) === 'number')
-            $('.pd_total_energy_num').text(totalEnergyNum);
-    },
-
-    /**
-     * 在我的道具页面中显示当前各种类可使用道具的数量
-     * @param {string} [html] 我的道具页面的HTML代码（留空表示自动获取HTML代码）
-     */
-    showCurrentUsableItemNum: function (html) {
-        /**
-         * 显示数量
-         * @param {string} html 我的道具页面的HTML代码
-         */
-        var show = function (html) {
-            var matches = html.match(/">\d+<\/td><td><a href="kf_fw_ig_my\.php\?lv=/ig);
-            if (!matches) return;
-            var usableItemNumList = [];
-            for (var i in matches) {
-                var usableItemNumMatches = /">(\d+)<\/td>/i.exec(matches[i]);
-                if (usableItemNumMatches) usableItemNumList.push(usableItemNumMatches[1]);
+        if (energyChangeNum) {
+            var $totalEnergy = $('.pd_total_energy_num');
+            if (location.pathname === '/kf_fw_ig_renew.php')
+                $totalEnergy = $('.kf_fw_ig1:first > tbody > tr:nth-child(2) > td:contains("道具恢复能量") > span');
+            if ($totalEnergy.length > 0) {
+                var num = parseInt($totalEnergy.text());
+                if (isNaN(num) || num + energyChangeNum < 0) flag = true;
+                else $totalEnergy.text(num + energyChangeNum);
             }
-            $('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(3) > .pd_usable_num').each(function (index) {
-                $(this).text(usableItemNumList[index] ? usableItemNumList[index] : 0);
-            });
-        };
-
-        if (html) {
-            show(html);
+            else {
+                flag = true;
+            }
         }
-        else {
-            $.get('kf_fw_ig_my.php', function (html) {
-                show(html);
-            }, 'html');
+        if (flag) {
+            Item.showCurrentUsedItemNum();
+            if (location.pathname === '/kf_fw_ig_my.php' && !Tools.getUrlParam('lv')) Item.showCurrentUsableItemNum();
         }
     },
 
@@ -1482,7 +1453,7 @@ var Item = {
                 );
             }
             else {
-                $('.kf_fw_ig1 td:contains("道具恢复能量") > span').text(energyNum);
+                $('.kf_fw_ig1:first > tbody > tr:nth-child(2) > td:contains("道具恢复能量") > span').text(energyNum);
             }
 
             if ($('.pd_used_num').length > 0) {
@@ -1508,6 +1479,38 @@ var Item = {
         }
         else {
             $.get('kf_fw_ig_renew.php', function (html) {
+                show(html);
+            }, 'html');
+        }
+    },
+
+    /**
+     * 在我的道具页面中显示当前各种类可使用道具的数量
+     * @param {string} [html] 我的道具页面的HTML代码（留空表示自动获取HTML代码）
+     */
+    showCurrentUsableItemNum: function (html) {
+        /**
+         * 显示数量
+         * @param {string} html 我的道具页面的HTML代码
+         */
+        var show = function (html) {
+            var matches = html.match(/">\d+<\/td><td><a href="kf_fw_ig_my\.php\?lv=/ig);
+            if (!matches) return;
+            var usableItemNumList = [];
+            for (var i in matches) {
+                var usableItemNumMatches = /">(\d+)<\/td>/i.exec(matches[i]);
+                if (usableItemNumMatches) usableItemNumList.push(usableItemNumMatches[1]);
+            }
+            $('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(3) > .pd_usable_num').each(function (index) {
+                $(this).text(usableItemNumList[index] ? usableItemNumList[index] : 0);
+            });
+        };
+
+        if (html) {
+            show(html);
+        }
+        else {
+            $.get('kf_fw_ig_my.php', function (html) {
                 show(html);
             }, 'html');
         }
@@ -1549,7 +1552,7 @@ var Item = {
             var $this = $(this);
             var itemName = $.trim($this.text());
             var itemLevel = Item.getItemLevelByItemName(itemName);
-            if (itemName && typeof Config.sampleItemIdList[itemName] !== 'undefined') {
+            if (itemName && typeof Const.sampleItemIdList[itemName] !== 'undefined') {
                 var title = '';
                 if (itemName !== '零时迷子的碎片') {
                     title = '恢复此道具需{0}点能量，转换此道具可得{1}点能量'
@@ -1560,7 +1563,7 @@ var Item = {
                     title = '此道具不可恢复和转换';
                 }
                 $this.html('<a href="kf_fw_ig_my.php?pro={0}&display=1" title="{1}">{2}</a>'
-                    .replace('{0}', Config.sampleItemIdList[itemName])
+                    .replace('{0}', Const.sampleItemIdList[itemName])
                     .replace('{1}', title)
                     .replace('{2}', itemName)
                 );
@@ -1574,8 +1577,8 @@ var Item = {
     addSampleItemTips: function () {
         var itemId = parseInt(Tools.getUrlParam('pro'));
         if (isNaN(itemId) || itemId <= 0) return;
-        for (var itemName in Config.sampleItemIdList) {
-            if (itemId === Config.sampleItemIdList[itemName]) {
+        for (var itemName in Const.sampleItemIdList) {
+            if (itemId === Const.sampleItemIdList[itemName]) {
                 $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').find('span:first').after('<span class="pd_notice" style="margin-left:5px">(展示用样品)</span>');
                 break;
             }
@@ -1678,7 +1681,7 @@ var Item = {
 
                         window.setTimeout(function () {
                             $(document).dequeue('BatchBuyItems');
-                        }, typeof Config.specialAjaxInterval === 'function' ? Config.specialAjaxInterval() : Config.specialAjaxInterval);
+                        }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                     },
                     dataType: 'html'
                 });
@@ -1753,7 +1756,7 @@ var Item = {
                     }
                     window.setTimeout(function () {
                         $(document).dequeue('StatBuyItemsPrice');
-                    }, Config.defAjaxInterval);
+                    }, Const.defAjaxInterval);
                 }, 'html');
             });
         });
