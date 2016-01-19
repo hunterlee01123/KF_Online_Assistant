@@ -74,7 +74,7 @@ Const.perAttackInterval = function () {
 
 /*==========================================*/
 
-// 统计各楼层的彩票数字（ft1073833专用版） V1.2
+// 统计各楼层的彩票数字（ft1073833专用版） V1.3
 (function () {
     var numberRegex = /【\s*(\d+)\s*】/; // 匹配彩票数字的正则表达式
     var levelRangeList = [0, 5, 50]; // 各等奖中与中奖数字相差的范围
@@ -82,8 +82,8 @@ Const.perAttackInterval = function () {
 
     if (location.pathname !== '/read.php' || Tools.getCurrentThreadPage() !== 1) return;
     if (threadTitle && $('form[name="delatc"] > div:first > table > tbody > tr > td > span:contains("{0}")'.replace('{0}', threadTitle)).length === 0) return;
-    $('<span style="margin-left:5px;margin-right:5px;">|</span><a href="#">彩票统计</a>')
-        .appendTo($('a[href^="kf_tidfavor.php?action=favor"]:first').parent())
+    $('<li><a href="#" title="统计各楼层的彩票数字">[彩票统计]</a></li>')
+        .insertBefore('.readlou:eq(1) > div > .pages > li:first-child')
         .click(function (e) {
             e.preventDefault();
             var tid = Tools.getUrlParam('tid');
@@ -98,10 +98,10 @@ Const.perAttackInterval = function () {
 
             var matches = /(\d+)页/.exec($('.pages:eq(0) > li:last-child > a').text());
             var maxPage = matches ? parseInt(matches[1]) : 1;
-            KFOL.showWaitMsg('<strong>正在统计数字中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i>'
+            KFOL.showWaitMsg('<strong>正在统计数字中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                 .replace('{0}', maxPage)
                 , true);
-            $(document).queue('StatLottery', []);
+            $(document).clearQueue('StatLottery');
             var floorList = [];
             $.each(new Array(maxPage), function (index) {
                 $(document).queue('StatLottery', function () {
@@ -124,8 +124,10 @@ Const.perAttackInterval = function () {
                         }
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).clearQueue('StatLottery');
 
-                        if (index === maxPage - 1) {
+                        if (isStop || index === maxPage - 1) {
                             KFOL.removePopTips($('.pd_pop_tips'));
                             //console.log(floorList);
                             var numberList = {};
