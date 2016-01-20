@@ -22,14 +22,11 @@ _（各种采用了Chrome内核的国产浏览器也可到各自的应用市场�
 
 ## 使用说明
 安装完脚本后请点击KF页面上方的助手设置链接，打开设置界面进行相应设置，如不清楚各选项的意思可将鼠标停留在其之后的问号上即可获得相应提示 __（自动捐款、争夺、抽取神秘盒子等功能默认关闭，请自行开启）__  
-开启定时模式可按时进行自动操作（包括捐款、争夺、抽取神秘盒子、自动更换神秘颜色，需开启相关功能），只在论坛首页生效（如非必要，请勿同时使用浏览器的定时刷新功能，否则有可能会造成操作中断）  
-__如安装之后发现脚本没有起效，请参见【常见问题1】__
+__开启定时模式可按时进行自动操作__（包括捐款、争夺、抽取神秘盒子、自动更换神秘颜色，需开启相关功能）， __只在论坛首页生效__（如非必要，请勿同时使用浏览器的定时刷新功能，否则有可能会造成操作中断）  
+__如安装之后发现脚本没有起效，请参见【[常见问题1](https://github.com/miaolapd/KF_Online_Assistant/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#1)】__
 
 ## 常见问题
-1. __我安装了脚本，却发现助手似乎没有生效的样子，该怎么办？__  
-答：请尝试先删除脚本后再重新安装（删除后可能需要重启浏览器）；依然无效的话，请尝试[备用安装地址(标准版)](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/KFOLAssistant.user.js)；如果还不行，请尝试更新或重装一下相应的油猴扩展  
-__注：删除ScriptStorage和GlobalStorage版脚本会导致设置和日志也被一同清除，标准版则无此问题__  
-[更多问题请参见此页面&raquo;](https://github.com/miaolapd/KF_Online_Assistant/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
+[详细问题请参见此页面&raquo;](https://github.com/miaolapd/KF_Online_Assistant/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 
 ## 更新日志
 [详细日志请参见此页面&raquo;](https://github.com/miaolapd/KF_Online_Assistant/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
