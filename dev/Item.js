@@ -279,7 +279,7 @@ var Item = {
         var successNum = 0, failNum = 0;
         var responseMsg = '';
         var nextRoundItemIdList = [];
-        $(document).queue('UseItems', []);
+        $(document).clearQueue('UseItems');
         $.each(settings.itemIdList, function (index, itemId) {
             $(document).queue('UseItems', function () {
                 $.ajax({
@@ -306,7 +306,7 @@ var Item = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('UseItems', []);
+                        if (isStop) $(document).clearQueue('UseItems');
 
                         if (isStop || index === settings.itemIdList.length - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
@@ -393,10 +393,11 @@ var Item = {
                                 Item.cycleUseItems(isStop ? 0 : 2, settings, cycle);
                             }
                         }
-
-                        window.setTimeout(function () {
-                            $(document).dequeue('UseItems');
-                        }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('UseItems');
+                            }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                        }
                     },
                     dataType: 'html'
                 });
@@ -451,7 +452,7 @@ var Item = {
         var perEnergyNum = Item.getRestoreEnergyNumByItemLevel(settings.itemLevel);
         var isStop = false;
         var nextRoundItemIdList = [];
-        $(document).queue('RestoreItems', []);
+        $(document).clearQueue('RestoreItems');
         $.each(settings.itemIdList, function (index, itemId) {
             $(document).queue('RestoreItems', function () {
                 $.ajax({
@@ -496,7 +497,7 @@ var Item = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('RestoreItems', []);
+                        if (isStop) $(document).clearQueue('RestoreItems');
 
                         if (isStop || index === settings.itemIdList.length - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
@@ -552,10 +553,11 @@ var Item = {
                                 Item.cycleUseItems(isStop ? 0 : 1, settings, cycle);
                             }
                         }
-
-                        window.setTimeout(function () {
-                            $(document).dequeue('RestoreItems');
-                        }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('RestoreItems');
+                            }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                        }
                     },
                     dataType: 'html'
                 });
@@ -730,7 +732,7 @@ var Item = {
 
         var successNum = 0;
         var energyNum = Item.getGainEnergyNumByItemLevel(settings.itemLevel);
-        $(document).queue('ConvertItemsToEnergy', []);
+        $(document).clearQueue('ConvertItemsToEnergy');
         $.each(settings.itemIdList, function (index, itemId) {
             $(document).queue('ConvertItemsToEnergy', function () {
                 $.ajax({
@@ -746,7 +748,7 @@ var Item = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('ConvertItemsToEnergy', []);
+                        if (isStop) $(document).clearQueue('ConvertItemsToEnergy');
 
                         if (isStop || index === settings.itemIdList.length - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
@@ -783,10 +785,11 @@ var Item = {
                             }
                             Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, null, successEnergyNum);
                         }
-
-                        window.setTimeout(function () {
-                            $(document).dequeue('ConvertItemsToEnergy');
-                        }, Const.defAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('ConvertItemsToEnergy');
+                            }, Const.defAjaxInterval);
+                        }
                     },
                     dataType: 'html'
                 });
@@ -817,7 +820,7 @@ var Item = {
         );
 
         var successNum = 0, failNum = 0, totalGain = 0;
-        $(document).queue('SellItems', []);
+        $(document).clearQueue('SellItems');
         $.each(settings.itemIdList, function (index, itemId) {
             $(document).queue('SellItems', function () {
                 $.ajax({
@@ -838,7 +841,7 @@ var Item = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('SellItems', []);
+                        if (isStop) $(document).clearQueue('SellItems');
 
                         if (isStop || index === settings.itemIdList.length - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
@@ -876,10 +879,11 @@ var Item = {
                                     .replace('{2}', totalGain)
                             );
                         }
-
-                        window.setTimeout(function () {
-                            $(document).dequeue('SellItems');
-                        }, Const.defAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('SellItems');
+                            }, Const.defAjaxInterval);
+                        }
                     },
                     dataType: 'html'
                 });
@@ -1610,7 +1614,7 @@ var Item = {
 
         var successNum = 0;
         var isStop = false;
-        $(document).queue('BatchBuyItems', []);
+        $(document).clearQueue('BatchBuyItems');
         $.each(new Array(settings.num), function (index) {
             $(document).queue('BatchBuyItems', function () {
                 $.ajax({
@@ -1640,7 +1644,7 @@ var Item = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('BatchBuyItems', []);
+                        if (isStop) $(document).clearQueue('BatchBuyItems');
 
                         if (isStop || index === settings.num - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
@@ -1678,10 +1682,11 @@ var Item = {
                                 Item.showItemShopBuyInfo();
                             }
                         }
-
-                        window.setTimeout(function () {
-                            $(document).dequeue('BatchBuyItems');
-                        }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('BatchBuyItems');
+                            }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                        }
                     },
                     dataType: 'html'
                 });
@@ -1699,7 +1704,7 @@ var Item = {
         KFOL.showWaitMsg('<strong>正在统计购买价格中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
             .replace('{0}', totalNum)
             , true);
-        $(document).queue('StatBuyItemsPrice', []);
+        $(document).clearQueue('StatBuyItemsPrice');
         $result.find('li > a').each(function (index) {
             var $this = $(this);
             var itemId = $this.data('id');
@@ -1754,9 +1759,11 @@ var Item = {
                                 .replace('{5}', maxPrice.toLocaleString())
                         );
                     }
-                    window.setTimeout(function () {
-                        $(document).dequeue('StatBuyItemsPrice');
-                    }, Const.defAjaxInterval);
+                    else {
+                        window.setTimeout(function () {
+                            $(document).dequeue('StatBuyItemsPrice');
+                        }, Const.defAjaxInterval);
+                    }
                 }, 'html');
             });
         });

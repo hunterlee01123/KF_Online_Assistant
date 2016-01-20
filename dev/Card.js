@@ -9,7 +9,7 @@ var Card = {
      */
     convertCardsToVipTime: function (cardList, safeId) {
         var successNum = 0, failNum = 0, totalVipTime = 0, totalEnergy = 0;
-        $(document).queue('ConvertCardsToVipTime', []);
+        $(document).clearQueue('ConvertCardsToVipTime');
         $.each(cardList, function (index, cardId) {
             $(document).queue('ConvertCardsToVipTime', function () {
                 $.ajax({
@@ -35,7 +35,7 @@ var Card = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('ConvertCardsToVipTime', []);
+                        if (isStop) $(document).clearQueue('ConvertCardsToVipTime');
 
                         if (isStop || index === cardList.length - 1) {
                             if (successNum > 0) {
@@ -67,10 +67,11 @@ var Card = {
                                     if ($parent.children().length === 0) $parent.remove();
                                 });
                         }
-
-                        window.setTimeout(function () {
-                            $(document).dequeue('ConvertCardsToVipTime');
-                        }, Const.defAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('ConvertCardsToVipTime');
+                            }, Const.defAjaxInterval);
+                        }
                     },
                     dataType: 'html'
                 });

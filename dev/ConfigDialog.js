@@ -671,7 +671,7 @@ var ConfigDialog = {
         var html =
             '<div class="pd_cfg_main">' +
             '  <div style="margin:5px 0">运行命令快捷键：<b>Ctrl+Enter</b>；清除命令快捷键：<b>Ctrl+退格键</b><br />' +
-            '按<b>F12键</b>可打开浏览器控制台查看消息（需切换至控制台或Console标签项）</div>' +
+            '按<b>F12键</b>可打开浏览器控制台查看消息（需切换至控制台或Console标签）</div>' +
             '  <textarea wrap="off" style="width:750px;height:300px;white-space:pre"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +

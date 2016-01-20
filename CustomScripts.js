@@ -64,16 +64,6 @@
 
 /*==========================================*/
 
-// 随机设置批量攻击时每次攻击的时间间隔（毫秒） V1.0
-// 设随机间隔范围为m-n毫秒，公式：Math.random()*(n-m)+m
-Const.perAttackInterval = function () {
-    var t = Math.floor(Math.random() * 3000 + 2000);
-    console.log('间隔：' + t + 'ms');
-    return t;
-};
-
-/*==========================================*/
-
 // 统计各楼层的彩票数字（ft1073833专用版） V1.3
 (function () {
     var numberRegex = /【\s*(\d+)\s*】/; // 匹配彩票数字的正则表达式
@@ -209,9 +199,11 @@ Const.perAttackInterval = function () {
                             $dialog.find('#pd_stat_lottery_list').html(resultContent + floorContent);
                             Dialog.show('pd_stat_lottery');
                         }
-                        window.setTimeout(function () {
-                            $(document).dequeue('StatLottery');
-                        }, Const.defAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('StatLottery');
+                            }, Const.defAjaxInterval);
+                        }
                     }, 'html');
                 });
             });

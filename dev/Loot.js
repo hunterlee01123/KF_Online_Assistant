@@ -395,7 +395,7 @@ var Loot = {
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(settings.totalAttackNum + failNum - count);
                     isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
-                    if (isStop) $(document).queue('BatchAttack', []);
+                    if (isStop) $(document).clearQueue('BatchAttack');
 
                     if (isStop || count === settings.totalAttackNum + failNum) {
                         KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
@@ -517,32 +517,33 @@ var Loot = {
                             if (!$.isEmptyObject(itemNameList)) Loot.useItemsAfterBatchAttack(itemNameList);
                         }
                     }
-
-                    if (isRetakeSafeId) {
-                        isRetakeSafeId = false;
-                        console.log('重新获取SafeID Start');
-                        $.get('kf_fw_ig_index.php', function (html) {
-                            var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
-                            var safeId = '';
-                            if (safeIdMatches) safeId = safeIdMatches[1];
-                            if (!safeId) return;
-                            settings.safeId = safeId;
-                            if (Tools.getCookie(Const.autoAttackReadyCookieName))
-                                Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
-                            $(document).dequeue('BatchAttack');
-                        }, 'html');
-                    }
                     else {
-                        window.setTimeout(function () {
-                            $(document).dequeue('BatchAttack');
-                        }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
+                        if (isRetakeSafeId) {
+                            isRetakeSafeId = false;
+                            console.log('重新获取SafeID Start');
+                            $.get('kf_fw_ig_index.php', function (html) {
+                                var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
+                                var safeId = '';
+                                if (safeIdMatches) safeId = safeIdMatches[1];
+                                if (!safeId) return;
+                                settings.safeId = safeId;
+                                if (Tools.getCookie(Const.autoAttackReadyCookieName))
+                                    Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
+                                $(document).dequeue('BatchAttack');
+                            }, 'html');
+                        }
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('BatchAttack');
+                            }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
+                        }
                     }
                 },
                 dataType: 'html'
             });
         };
 
-        $(document).queue('BatchAttack', []);
+        $(document).clearQueue('BatchAttack');
         $.each(settings.attackList, function (id, num) {
             $.each(new Array(num), function () {
                 $(document).queue('BatchAttack', function () {
@@ -1370,7 +1371,7 @@ var Loot = {
         var $getItemListMsg = KFOL.showWaitMsg('正在获取刚掉落道具的信息，请稍后...', true);
         var itemList = [];
         var count = 0;
-        $(document).queue('GetItemList', []);
+        $(document).clearQueue('GetItemList');
         $.each(itemNameList, function (itemName, num) {
             var itemTypeId = Item.getItemTypeIdByItemName(itemName);
             if (!itemTypeId) return;
@@ -1402,9 +1403,11 @@ var Loot = {
                             useItemList(itemList);
                         }
                     }
-                    window.setTimeout(function () {
-                        $(document).dequeue('GetItemList');
-                    }, Const.defAjaxInterval);
+                    else {
+                        window.setTimeout(function () {
+                            $(document).dequeue('GetItemList');
+                        }, Const.defAjaxInterval);
+                    }
                 }, 'html');
             });
         });
@@ -1414,7 +1417,7 @@ var Loot = {
          * @param {{}[]} itemList 道具列表
          */
         var useItemList = function (itemList) {
-            $(document).queue('UseItemList', []);
+            $(document).clearQueue('UseItemList');
             $.each(itemList, function (index, item) {
                 $(document).queue('UseItemList', function () {
                     $.ajax({
@@ -1475,15 +1478,16 @@ var Loot = {
                             var $remainingNum = $('#pd_remaining_num');
                             $remainingNum.text(parseInt($remainingNum.text()) - 1);
                             var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                            if (isStop) $(document).queue('UseItemList', []);
+                            if (isStop) $(document).clearQueue('UseItemList');
 
                             if (isStop || index === itemList.length - 1) {
                                 KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
                             }
-
-                            window.setTimeout(function () {
-                                $(document).dequeue('UseItemList');
-                            }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                            else {
+                                window.setTimeout(function () {
+                                    $(document).dequeue('UseItemList');
+                                }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
+                            }
                         },
                         dataType: 'html'
                     });

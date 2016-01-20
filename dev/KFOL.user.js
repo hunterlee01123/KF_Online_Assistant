@@ -21,7 +21,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.0.0-dev
+// @version     5.0.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -1125,7 +1125,7 @@ var KFOL = {
             KFOL.showWaitMsg('<strong>正在统计回帖名单中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                 .replace('{0}', endPage - startPage + 1)
                 , true);
-            $(document).queue('StatReplyers', []);
+            $(document).clearQueue('StatReplyers');
             var replyerList = [];
             $.each(new Array(endPage), function (index) {
                 if (index + 1 < startPage) return;
@@ -1149,15 +1149,17 @@ var KFOL = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('StatReplyers', []);
+                        if (isStop) $(document).clearQueue('StatReplyers');
 
                         if (isStop || index === endPage - 1) {
                             KFOL.removePopTips($('.pd_pop_tips'));
                             KFOL.showStatReplyersDialog(replyerList);
                         }
-                        window.setTimeout(function () {
-                            $(document).dequeue('StatReplyers');
-                        }, Const.defAjaxInterval);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('StatReplyers');
+                            }, Const.defAjaxInterval);
+                        }
                     }, 'html');
                 });
             });
@@ -1275,7 +1277,7 @@ var KFOL = {
             KFOL.showWaitMsg('<strong>正在获取引用内容中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
                 .replace('{0}', list.length)
                 , true);
-            $(document).queue('MultiQuote', []);
+            $(document).clearQueue('MultiQuote');
         }
         $.each(list, function (index, quote) {
             if (typeof quote.floor === 'undefined' || typeof quote.spid === 'undefined') return;
@@ -1296,9 +1298,11 @@ var KFOL = {
                             KFOL.removePopTips($('.pd_pop_tips'));
                             $('#textarea').val(content).focus();
                         }
-                        window.setTimeout(function () {
-                            $(document).dequeue('MultiQuote');
-                        }, 100);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('MultiQuote');
+                            }, 100);
+                        }
                     }, 'html');
                 });
             }
@@ -1477,7 +1481,7 @@ var KFOL = {
      */
     buyThreads: function (threadList) {
         var successNum = 0, failNum = 0, totalSell = 0;
-        $(document).queue('BuyThreads', []);
+        $(document).clearQueue('BuyThreads');
         $.each(threadList, function (index, thread) {
             $(document).queue('BuyThreads', function () {
                 $.get(thread.url + '&t=' + (new Date()).getTime(), function (html) {
@@ -1491,7 +1495,7 @@ var KFOL = {
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(parseInt($remainingNum.text()) - 1);
                     var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                    if (isStop) $(document).queue('BuyThreads', []);
+                    if (isStop) $(document).clearQueue('BuyThreads');
 
                     if (isStop || index === threadList.length - 1) {
                         KFOL.removePopTips($('.pd_pop_tips'));
@@ -1511,10 +1515,11 @@ var KFOL = {
                             , duration: -1
                         });
                     }
-
-                    window.setTimeout(function () {
-                        $(document).dequeue('BuyThreads');
-                    }, Const.defAjaxInterval);
+                    else {
+                        window.setTimeout(function () {
+                            $(document).dequeue('BuyThreads');
+                        }, Const.defAjaxInterval);
+                    }
                 }, 'html');
             });
         });

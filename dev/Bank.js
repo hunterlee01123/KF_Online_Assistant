@@ -32,7 +32,7 @@ var Bank = {
                     }, 5000);
                 }
                 else {
-                    $(document).queue('Bank', []);
+                    $(document).clearQueue('Bank');
                     alert('存款失败');
                 }
             }, 'html');
@@ -129,7 +129,7 @@ var Bank = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).queue('Bank', []);
+                        if (isStop) $(document).clearQueue('Bank');
 
                         if (isStop || index === users.length - 1) {
                             if (successNum > 0) {
@@ -157,10 +157,11 @@ var Bank = {
                                 .replace('{2}', successMoney)
                             );
                         }
-
-                        window.setTimeout(function () {
-                            $(document).dequeue('Bank');
-                        }, 5000);
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('Bank');
+                            }, 5000);
+                        }
                     },
                     dataType: 'html'
                 });
@@ -285,7 +286,7 @@ var Bank = {
                         return;
                     }
 
-                    $(document).queue('Bank', []);
+                    $(document).clearQueue('Bank');
                     var isDeposited = false;
                     var difference = totalMoney - currentDeposit;
                     if (difference > 0) {

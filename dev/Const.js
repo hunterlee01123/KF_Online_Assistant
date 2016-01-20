@@ -13,9 +13,9 @@ var Const = {
     minAttackAfterTime: 63,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
-    // 每次攻击的时间间隔（毫秒），可设置为函数来返回值
+    // 在批量攻击中每次攻击的时间间隔（毫秒），可设置为函数来返回值
     perAttackInterval: function () {
-        return Math.floor(Math.random() * 500) + 2000;
+        return Math.floor(Math.random() * 1000) + 2000;
     },
     // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
     checkAutoAttackingInterval: 4,
