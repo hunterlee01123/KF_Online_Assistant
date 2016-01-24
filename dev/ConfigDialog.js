@@ -650,9 +650,9 @@ var ConfigDialog = {
      */
     clearCache: function (type) {
         if (type === 0 || type === 1) {
-            for (var key in Config) {
+            for (var key in Const) {
                 if (/CookieName$/.test(key)) {
-                    Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+                    Tools.setCookie(Const[key], '', Tools.getDate('-1d'));
                 }
             }
         }

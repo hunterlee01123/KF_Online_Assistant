@@ -343,6 +343,7 @@ var Loot = {
                         });
                     }
                     else if (/⑧2/.test(msg)) {
+                        msg = 'SafeID错误（尝试重新获取SafeID）';
                         isRetakeSafeId = true;
                         failNum++;
                         $(document).queue('BatchAttack', function () {
@@ -690,6 +691,34 @@ var Loot = {
                     );
                 }
             }());
+        }
+
+        if (Tools.getCookie(Const.checkLifeCookieName)) {
+            var value = Tools.getCookie(Const.prevAttemptAttackLogCookieName);
+            if (value) {
+                var arr = value.split('/');
+                if (arr.length === 2 && !isNaN(parseInt(arr[0]))) {
+                    var realLife = parseInt(arr[0]);
+                    var prevMonsterAttackLog = $.trim(arr[1]);
+                    var recentMonsterAttackLogTime = '';
+                    var attackLogMatches = />(\d+:\d+:\d+)\s*\|/.exec($('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html());
+                    if (attackLogMatches) recentMonsterAttackLogTime = attackLogMatches[1];
+
+                    var $lifeNode = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child');
+                    var text = $lifeNode.text();
+                    var life = 0, minLife = 0;
+                    var lifeMatches = /当前拥有\s*(\d+)\s*预领KFB/i.exec(text);
+                    if (lifeMatches) life = parseInt(lifeMatches[1]);
+                    var minLifeMatches = /则你可以领取(\d+)KFB\)/i.exec(text);
+                    if (minLifeMatches) minLife = parseInt(minLifeMatches[1]);
+                    if (minLife > 0 && life === minLife && recentMonsterAttackLogTime && prevMonsterAttackLog.indexOf(recentMonsterAttackLogTime) === 0) {
+                        $lifeNode.find('br:first').before(
+                            '<span class="pd_custom_tips" style="color:#339933" title="上次检查生命值时记录的实际生命值，在某些情况下可能会不准确"> (生命值：<b>{0}</b>)</span>'
+                                .replace('{0}', realLife)
+                        );
+                    }
+                }
+            }
         }
 
         var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');

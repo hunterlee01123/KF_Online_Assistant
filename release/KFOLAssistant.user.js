@@ -11,13 +11,13 @@
 // @include     http://*.2dgal.com/*
 // @include     http://9baka.com/*
 // @include     http://*.9baka.com/*
-// @version     5.0.0
+// @version     5.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.0.0';
+var version = '5.0.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1997,9 +1997,9 @@ var ConfigDialog = {
      */
     clearCache: function (type) {
         if (type === 0 || type === 1) {
-            for (var key in Config) {
+            for (var key in Const) {
                 if (/CookieName$/.test(key)) {
-                    Tools.setCookie(Config[key], '', Tools.getDate('-1d'));
+                    Tools.setCookie(Const[key], '', Tools.getDate('-1d'));
                 }
             }
         }
@@ -3551,8 +3551,8 @@ var TmpLog = {
         }
         if (!log || $.type(log) !== 'object') return;
         var allowKey = [];
-        for (var k in Config) {
-            if (k.indexOf('TmpLogName') > -1) allowKey.push(Config[k]);
+        for (var k in Const) {
+            if (k.indexOf('TmpLogName') > -1) allowKey.push(Const[k]);
         }
         for (var k in log) {
             if ($.inArray(k, allowKey) === -1) delete log[k];
@@ -6427,6 +6427,7 @@ var Loot = {
                         });
                     }
                     else if (/⑧2/.test(msg)) {
+                        msg = 'SafeID错误（尝试重新获取SafeID）';
                         isRetakeSafeId = true;
                         failNum++;
                         $(document).queue('BatchAttack', function () {
@@ -6774,6 +6775,34 @@ var Loot = {
                     );
                 }
             }());
+        }
+
+        if (Tools.getCookie(Const.checkLifeCookieName)) {
+            var value = Tools.getCookie(Const.prevAttemptAttackLogCookieName);
+            if (value) {
+                var arr = value.split('/');
+                if (arr.length === 2 && !isNaN(parseInt(arr[0]))) {
+                    var realLife = parseInt(arr[0]);
+                    var prevMonsterAttackLog = $.trim(arr[1]);
+                    var recentMonsterAttackLogTime = '';
+                    var attackLogMatches = />(\d+:\d+:\d+)\s*\|/.exec($('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html());
+                    if (attackLogMatches) recentMonsterAttackLogTime = attackLogMatches[1];
+
+                    var $lifeNode = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child');
+                    var text = $lifeNode.text();
+                    var life = 0, minLife = 0;
+                    var lifeMatches = /当前拥有\s*(\d+)\s*预领KFB/i.exec(text);
+                    if (lifeMatches) life = parseInt(lifeMatches[1]);
+                    var minLifeMatches = /则你可以领取(\d+)KFB\)/i.exec(text);
+                    if (minLifeMatches) minLife = parseInt(minLifeMatches[1]);
+                    if (minLife > 0 && life === minLife && recentMonsterAttackLogTime && prevMonsterAttackLog.indexOf(recentMonsterAttackLogTime) === 0) {
+                        $lifeNode.find('br:first').before(
+                            '<span class="pd_custom_tips" style="color:#339933" title="上次检查生命值时记录的实际生命值，在某些情况下可能会不准确"> (生命值：<b>{0}</b>)</span>'
+                                .replace('{0}', realLife)
+                        );
+                    }
+                }
+            }
         }
 
         var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');
