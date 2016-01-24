@@ -496,3 +496,14 @@
 }());
 
 /*==========================================*/
+
+// 屏蔽首页神秘系数排名 V1.0
+(function () {
+    if (KFOL.isInHomePage) {
+        var $smRank = $('a.indbox5[href="kf_growup.php"]');
+        var matches = /神秘\d+级/.exec($smRank.text());
+        if (matches) $smRank.html(matches[0]);
+    }
+}());
+
+/*==========================================*/
