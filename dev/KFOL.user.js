@@ -5,10 +5,9 @@
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
-// @include     http://2dgal.com/*
-// @include     http://*.2dgal.com/*
-// @include     http://9baka.com/*
-// @include     http://*.9baka.com/*
+// @include     http://*2dgal.com/*
+// @include     http://*9baka.com/*
+// @include     http://*2dkf.com/*
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Config.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Const.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/ConfigMethod.js
@@ -21,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.0.1
+// @version     5.0.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.0.1';
+var version = '5.0.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1371,7 +1370,7 @@ var KFOL = {
         $('.readtext a, .thread2 a').each(function () {
             var $this = $(this);
             var url = $this.attr('href');
-            var regex = /^http:\/\/(.+?\.)?(2dgal|9gal|9baka|9moe)\.com\//i;
+            var regex = /^http:\/\/(.+?\.)?(2dgal|9gal|9baka|9moe|2dkf)\.com\//i;
             if (regex.test(url)) {
                 $this.attr('href', url.replace(regex, Tools.getHostNameUrl()));
             }

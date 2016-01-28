@@ -177,7 +177,7 @@ var Loot = {
      * @param {int} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
      */
     autoAttack: function (safeId, deadlyAttackNum) {
-        $('#pd_remaining_num').remove();
+        KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
         if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
 
         /**
@@ -381,7 +381,7 @@ var Loot = {
                 error: function () {
                     failNum++;
                     attackLogList.push('第{0}次：{1}'.replace('{0}', count).replace('{1}', '连接超时'));
-                    console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '连接超时'));
+                    console.log('【{0}攻击】第{1}次：{2}'.replace('{0}', settings.type === 3 ? '试探' : '批量').replace('{1}', count).replace('{2}', '连接超时'));
                     if (settings.type === 1) {
                         var html = '<li><b>第{0}次：</b>{1}</li>'
                             .replace('{0}', count)
@@ -933,7 +933,7 @@ var Loot = {
              */
             var attemptAttack = function (life, recentMonsterAttackLog, msg) {
                 writeNextCheckLifeCookie(life, checkLifeInterval, msg);
-                $('#pd_remaining_num').remove();
+                KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
                 var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
                 if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                 var num = 0, attackId = 0;

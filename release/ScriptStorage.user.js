@@ -7,11 +7,10 @@
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 // @updateURL   https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ScriptStorage.meta.js
 // @downloadURL https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ScriptStorage.user.js
-// @include     http://2dgal.com/*
-// @include     http://*.2dgal.com/*
-// @include     http://9baka.com/*
-// @include     http://*.9baka.com/*
-// @version     5.0.1
+// @include     http://*2dgal.com/*
+// @include     http://*9baka.com/*
+// @include     http://*2dkf.com/*
+// @version     5.0.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -19,7 +18,7 @@
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.0.1';
+var version = '5.0.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -6263,7 +6262,7 @@ var Loot = {
      * @param {int} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
      */
     autoAttack: function (safeId, deadlyAttackNum) {
-        $('#pd_remaining_num').remove();
+        KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
         if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
 
         /**
@@ -6467,7 +6466,7 @@ var Loot = {
                 error: function () {
                     failNum++;
                     attackLogList.push('第{0}次：{1}'.replace('{0}', count).replace('{1}', '连接超时'));
-                    console.log('【批量攻击】第{0}次：{1}'.replace('{0}', count).replace('{1}', '连接超时'));
+                    console.log('【{0}攻击】第{1}次：{2}'.replace('{0}', settings.type === 3 ? '试探' : '批量').replace('{1}', count).replace('{2}', '连接超时'));
                     if (settings.type === 1) {
                         var html = '<li><b>第{0}次：</b>{1}</li>'
                             .replace('{0}', count)
@@ -7019,7 +7018,7 @@ var Loot = {
              */
             var attemptAttack = function (life, recentMonsterAttackLog, msg) {
                 writeNextCheckLifeCookie(life, checkLifeInterval, msg);
-                $('#pd_remaining_num').remove();
+                KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
                 var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
                 if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
                 var num = 0, attackId = 0;
@@ -8946,7 +8945,7 @@ var KFOL = {
         $('.readtext a, .thread2 a').each(function () {
             var $this = $(this);
             var url = $this.attr('href');
-            var regex = /^http:\/\/(.+?\.)?(2dgal|9gal|9baka|9moe)\.com\//i;
+            var regex = /^http:\/\/(.+?\.)?(2dgal|9gal|9baka|9moe|2dkf)\.com\//i;
             if (regex.test(url)) {
                 $this.attr('href', url.replace(regex, Tools.getHostNameUrl()));
             }
