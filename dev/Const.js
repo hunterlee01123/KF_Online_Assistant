@@ -13,6 +13,8 @@ var Const = {
     minAttackAfterTime: 63,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
+    // 致命一击比例
+    deadlyAttackPercent: 1.5,
     // 在批量攻击中每次攻击的时间间隔（毫秒），可设置为函数来返回值
     perAttackInterval: function () {
         return Math.floor(Math.random() * 1000) + 2000;

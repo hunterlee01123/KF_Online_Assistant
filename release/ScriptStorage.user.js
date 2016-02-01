@@ -10,7 +10,7 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9baka.com/*
 // @include     http://*2dkf.com/*
-// @version     5.0.2
+// @version     5.1.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -18,7 +18,7 @@
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.0.2';
+var version = '5.1.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -63,8 +63,8 @@ var Config = {
     attackAfterTime: 0,
     // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
     attemptAttackEnabled: false,
-    // 在实际生命值不超过指定阙值时才进行试探攻击，-1表示使用低保值，例：12（不同等级的阙值可能有所不同，请自行判断，超过低保值无效）
-    maxAttemptAttackLifeNum: -1,
+    // 在实际生命值不超过指定阈值时才进行试探攻击，-1表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）
+    maxAttemptAttackLifeNum: 10,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
@@ -109,7 +109,7 @@ var Config = {
     // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009CFF'},{min:'800',max:'MAX',color:'#FF0000'}]
     customSmColorConfigList: [],
     // 是否将帖子中的绯月其它域名的链接修改为当前域名，true：开启；false：关闭
-    modifyKFOtherDomainEnabled: false,
+    modifyKFOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
@@ -209,6 +209,8 @@ var Const = {
     minAttackAfterTime: 63,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
+    // 致命一击比例
+    deadlyAttackPercent: 1.5,
     // 在批量攻击中每次攻击的时间间隔（毫秒），可设置为函数来返回值
     perAttackInterval: function () {
         return Math.floor(Math.random() * 1000) + 2000;
@@ -1400,7 +1402,7 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
             '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label>' +
             '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
-            '<span class="pd_cfg_tips" title="在实际生命值不超过指定阙值时才进行试探攻击，留空表示使用低保值，例：12（不同等级的阙值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在实际生命值不超过指定阈值时才进行试探攻击，留空表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
             '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
@@ -1534,7 +1536,7 @@ var ConfigDialog = {
             '  <span class="pd_cfg_about">' +
             '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
             '    <i style="color:#666;font-style:normal">(V{0})</i>'.replace('{0}', version) +
-            '    <a target="_blank" href="https://github.com/miaolapd/KF_Online_Assistant#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
+            '    <a target="_blank" href="https://github.com/miaolapd/KF_Online_Assistant/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
             '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
@@ -6102,11 +6104,11 @@ var Loot = {
                 }
             }
         }
-        console.log('领取争夺奖励Start');
+
         /**
          * 自动攻击
          * @param {string} safeId 用户的SafeID
-         * @param {int} deadlyAttackNum 致命一击的攻击次数
+         * @param {number} deadlyAttackNum 致命一击的攻击次数
          */
         var autoAttack = function (safeId, deadlyAttackNum) {
             if (Config.autoAttackEnabled && !$.isEmptyObject(Config.batchAttackList) && safeId) {
@@ -6119,6 +6121,8 @@ var Loot = {
                 }
             }
         };
+
+        console.log('领取争夺奖励Start');
         $.get('kf_fw_ig_index.php', function (html) {
             var matches = /<INPUT name="submit1" type="submit" value="(.+?)"/i.exec(html);
             if (!matches) {
@@ -6259,16 +6263,21 @@ var Loot = {
     /**
      * 自动攻击
      * @param {string} safeId 用户的SafeID
-     * @param {int} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
+     * @param {number} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
      */
     autoAttack: function (safeId, deadlyAttackNum) {
-        KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
-        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
+        var $remainingTips = $('#pd_remaining_num').closest('.pd_pop_tips');
+        if ($remainingTips.length > 0 && !$remainingTips.data('retry')) {
+            Tools.setCookie(Const.autoAttackingCookieName, 1, Tools.getDate('+' + Const.checkAutoAttackingInterval + 'm'));
+            $remainingTips.data('retry', 1);
+            return;
+        }
+        KFOL.removePopTips($remainingTips);
 
         /**
          * 攻击
-         * @param {int} [deadlyAttackId=0] 致命一击的攻击目标ID
-         * @param {int} [deadlyAttackNum=0] 致命一击的攻击次数
+         * @param {number} [deadlyAttackId=0] 致命一击的攻击目标ID
+         * @param {number} [deadlyAttackNum=0] 致命一击的攻击次数
          */
         var attack = function (deadlyAttackId, deadlyAttackNum) {
             if (!deadlyAttackId) deadlyAttackId = 0;
@@ -6322,6 +6331,7 @@ var Loot = {
             });
         };
 
+        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
         if (Config.deadlyAttackId > 0) {
             if (deadlyAttackNum === -1) {
                 console.log('检查致命一击剩余攻击次数Start');
@@ -6798,7 +6808,7 @@ var Loot = {
                     if (minLifeMatches) minLife = parseInt(minLifeMatches[1]);
                     if (minLife > 0 && life === minLife && recentMonsterAttackLogTime && prevMonsterAttackLog.indexOf(recentMonsterAttackLogTime) === 0) {
                         $lifeNode.find('br:first').before(
-                            '<span class="pd_custom_tips" style="color:#339933" title="上次检查生命值时记录的实际生命值，在某些情况下可能会不准确"> (生命值：<b>{0}</b>)</span>'
+                            '<span class="pd_custom_tips" style="color:#339933" title="当前实际生命值（在少数情况下可能会不准确）"> (生命值：<b>{0}</b>)</span>'
                                 .replace('{0}', realLife)
                         );
                     }
@@ -6841,7 +6851,7 @@ var Loot = {
                 }
                 $this.text('[关闭]');
 
-                var attackNum = 0, attackBurnNum = 0, strongAttackPercent = 0, deadlyAttackPercent = 1.5;
+                var attackNum = 0, attackBurnNum = 0, strongAttackPercent = 0;
                 var content = $lootInfo.html();
                 var matches = /争夺攻击\s*\d+\(\+\d+\)=(\d+)\s*点/.exec(content);
                 if (matches) attackNum = parseInt(matches[1]);
@@ -6863,24 +6873,24 @@ var Loot = {
                     '      <td class="pd_custom_tips" title="争夺攻击+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', attackNum)
                         .replace('{1}', attackNum + attackBurnNum) +
-                    '      <td class="pd_custom_tips" title="争夺攻击×150%+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
-                        .replace('{0}', Math.round(attackNum * deadlyAttackPercent))
-                        .replace('{1}', Math.round(attackNum * deadlyAttackPercent) + attackBurnNum) +
+                    '      <td class="pd_custom_tips" title="争夺攻击×致命一击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
+                        .replace('{0}', Math.round(attackNum * Const.deadlyAttackPercent))
+                        .replace('{1}', Math.round(attackNum * Const.deadlyAttackPercent) + attackBurnNum) +
                     '    </tr>' +
                     '    <tr>' +
                     '      <th style="text-align:left">暴击(如果有)</th>' +
                     '      <td class="pd_custom_tips" title="争夺攻击×暴击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
                         .replace('{0}', Math.round(attackNum * strongAttackPercent))
                         .replace('{1}', Math.round(attackNum * strongAttackPercent) + attackBurnNum) +
-                    '      <td class="pd_custom_tips" title="争夺攻击×暴击比例×150%+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
-                        .replace('{0}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent))
-                        .replace('{1}', Math.round(attackNum * strongAttackPercent * deadlyAttackPercent) + attackBurnNum) +
+                    '      <td class="pd_custom_tips" title="争夺攻击×致命一击比例×暴击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
+                        .replace('{0}', Math.round(Math.round(attackNum * Const.deadlyAttackPercent) * strongAttackPercent))
+                        .replace('{1}', Math.round(Math.round(attackNum * Const.deadlyAttackPercent) * strongAttackPercent) + attackBurnNum) +
                     '    </tr>' +
                     '  </tbody>' +
                     '</table>';
-                var offset = $this.offset();
+                var offset = $lootInfo.offset();
                 $panel = $(html).appendTo('body');
-                $panel.css('top', offset.top - $panel.height() - 6).css('left', offset.left + $this.width() - $panel.width() - 6);
+                $panel.css('top', offset.top - $panel.height() - 2).css('left', offset.left);
             });
         }
     },
@@ -6998,7 +7008,7 @@ var Loot = {
 
                 var lootInfo = Loot.getNextLootAwardTime();
                 if (lootInfo.time > 0) {
-                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}，攻击阙值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
+                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}，攻击阈值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
                         .replace('{0}', life)
                         .replace('{1}', minLife)
                         .replace('{2}', maxCheckAttackLifeNum)
@@ -7081,7 +7091,7 @@ var Loot = {
                     }
                     else {
                         if (index === 0 && realLife <= maxCheckAttackLifeNum) {
-                            attemptAttack(realLife, prevMonsterAttackLog, '当前生命值未超过阙值，继续进行试探攻击');
+                            attemptAttack(realLife, prevMonsterAttackLog, '当前生命值未超过阈值，继续进行试探攻击');
                         }
                         else {
                             if (realLife > maxCheckAttackLifeNum) {
@@ -7090,7 +7100,7 @@ var Loot = {
                                 else msg = '共损失{0}KFB'.replace('{0}', loss);
                                 writeNextCheckLifeCookie(realLife,
                                     Const.defCheckLifeInterval,
-                                    '自上次检查生命值以来，{0}，生命值高于阙值，暂无试探攻击的必要'.replace('{0}', msg)
+                                    '自上次检查生命值以来，{0}，生命值高于阈值，暂无试探攻击的必要'.replace('{0}', msg)
                                 );
                                 Tools.setCookie(Const.prevAttemptAttackLogCookieName,
                                     realLife + '/' + recentMonsterAttackLog,
@@ -7100,7 +7110,7 @@ var Loot = {
                             else {
                                 attemptAttack(realLife,
                                     recentMonsterAttackLog,
-                                    '自上次检查生命值以来，共损失{0}KFB，生命值未超过阙值，需要进行试探攻击'.replace('{0}', loss)
+                                    '自上次检查生命值以来，共损失{0}KFB，生命值未超过阈值，需要进行试探攻击'.replace('{0}', loss)
                                 );
                             }
                         }
@@ -7385,44 +7395,39 @@ var Loot = {
                     var $this = $(this);
                     var html = $this.html();
                     if (index === 0) {
-                        var matches = /(\d+)生命值\s*\|\s*(\d+)闪避/.exec(html);
+                        var matches = /(\d+)生命值\s*\|\s*(\d+)闪避\s*\|\s*\((\d+)x(\d+)\)%防御/.exec(html);
                         if (!matches) return;
-                        var life = parseInt(matches[1]), avoid = parseInt(matches[2]);
-                        var lifeTips = '', avoidTips = '';
+                        var life = parseInt(matches[1]), avoid = parseInt(matches[2]), defense = parseInt(matches[3]) * parseInt(matches[4]) / 100;
+                        $this.css('position', 'relative');
 
-                        var attackTypeName = '', tipsClassName = '';
-                        var totalAttack = 0;
-                        if (life <= (totalAttack = lootPropertyList['争夺攻击'] + lootPropertyList['争夺燃烧'])) {
-                            attackTypeName = '普通攻击';
+                        var clearLife = false;
+                        var tipsClassName = '';
+                        if (life <= Math.round(lootPropertyList['争夺攻击'] * (1 - defense)) + lootPropertyList['争夺燃烧']) {
+                            clearLife = true;
                             tipsClassName = 'pd_verify_tips_ok';
                         }
                         else {
-                            if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * 1.5) + lootPropertyList['争夺燃烧']))
-                                attackTypeName = '致命一击';
-                            else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100) + lootPropertyList['争夺燃烧']))
-                                attackTypeName = '暴击';
-                            else if (life <= (totalAttack = Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) + lootPropertyList['争夺燃烧']))
-                                attackTypeName = '致命一击+暴击';
-                            if (attackTypeName) tipsClassName = 'pd_verify_tips_conditional';
+                            if (life <= Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent) * (1 - defense)) + lootPropertyList['争夺燃烧'])
+                                clearLife = true;
+                            else if (life <= Math.round(Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense))
+                                + lootPropertyList['争夺燃烧']
+                            )
+                                clearLife = true;
+                            else if (life <= Math.round(Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent)
+                                        * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense)) + lootPropertyList['争夺燃烧']
+                            )
+                                clearLife = true;
+                            if (clearLife) tipsClassName = 'pd_verify_tips_conditional';
+                            else tipsClassName = 'pd_verify_tips_unable';
                         }
-                        if (attackTypeName) {
-                            var kfbOverflow = totalAttack - lootPropertyList['争夺燃烧'] - life;
-                            if (kfbOverflow < 0) kfbOverflow = 0;
-                            var expOverflow = totalAttack - life;
-                            if (expOverflow < 0) expOverflow = 0;
-                            if (expOverflow > lootPropertyList['争夺燃烧']) expOverflow = lootPropertyList['争夺燃烧'];
-                            var overflowTips = '争夺攻击溢出{0}点，争夺燃烧溢出{1}点'.replace('{0}', kfbOverflow).replace('{1}', expOverflow);
-                            lifeTips = '<span class="pd_verify_tips" title="{0}即可清空生命值（{1}）">[<b class="{2}">&#10003;</b>]</span>'
-                                .replace('{0}', attackTypeName)
-                                .replace('{1}', overflowTips)
-                                .replace('{2}', tipsClassName);
-                        }
-                        else {
-                            lifeTips = '<span class="pd_verify_tips" title="无法清空生命值（还差{0}点可用致命一击+暴击清空生命值）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
-                                .replace('{0}', life - Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100 * 1.5) - lootPropertyList['争夺燃烧']);
-                        }
+                        var lifeTips = '<span class="pd_verify_tips pd_verify_tips_details" data-life="{0}" data-defense="{1}">[<b class="{2}">{3}</b>]</span>'
+                            .replace('{0}', life)
+                            .replace('{1}', defense)
+                            .replace('{2}', tipsClassName)
+                            .replace('{3}', clearLife ? '&#10003;' : '&times;');
                         html = html.replace('生命值', '生命值' + lifeTips);
 
+                        var avoidTips = '';
                         if (avoid <= lootPropertyList['命中']) {
                             avoidTips = '<span class="pd_verify_tips" title="攻击此怪物可100%命中">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
                         }
@@ -7435,9 +7440,22 @@ var Loot = {
                         $this.html(html);
                     }
                     else if (index === 1) {
-                        matches = /(\d+)命中/.exec(html);
+                        matches = /(\d+)攻击\s*\|\s*(\d+)燃烧\s*\|\s*(\d+)命中.+?(\((\d+)%\+(\d+)x(\d+)%\)暴击伤害)/.exec(html);
                         if (!matches) return;
-                        var hit = parseInt(matches[1]);
+                        var attack = parseInt(matches[1]), burn = parseInt(matches[2]), hit = parseInt(matches[3]);
+                        var strongAttackText = matches[4];
+                        var strongAttackPercent = parseInt(matches[5]) + Math.round(parseInt(matches[6]) * parseInt(matches[7]));
+
+                        var attackTips = '<span class="pd_custom_tips" title="可实际夺取{0}KFB">{1}攻击</span>'
+                            .replace('{0}', Math.round(attack * (100 - lootPropertyList['防御']) / 100))
+                            .replace('{1}', attack);
+                        html = html.replace(attack + '攻击', attackTips);
+
+                        var burnTips = '<span class="pd_custom_tips" title="实际夺取KFB+燃烧KFB={0}KFB">{1}燃烧</span>'
+                            .replace('{0}', Math.round(attack * (100 - lootPropertyList['防御']) / 100) + burn)
+                            .replace('{1}', burn);
+                        html = html.replace(burn + '燃烧', burnTips);
+
                         var htiTips = '';
                         if (hit < lootPropertyList['闪避']) {
                             htiTips = '<span class="pd_verify_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
@@ -7446,7 +7464,14 @@ var Loot = {
                             htiTips = '<span class="pd_verify_tips" title="无法闪避此怪物的攻击（还差{0}点可全部闪避）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
                                 .replace('{0}', hit - lootPropertyList['闪避'] + 1);
                         }
-                        $this.html(html.replace(matches[0], matches[0] + htiTips));
+                        html = html.replace('命中', '命中' + htiTips);
+
+                        var strongAttackTips = '<span class="pd_custom_tips" title="暴击可实际夺取{0}KFB">{1}</span>'
+                            .replace('{0}', Math.round(Math.round(attack * strongAttackPercent / 100) * (100 - lootPropertyList['防御']) / 100))
+                            .replace('{1}', strongAttackText);
+                        html = html.replace(strongAttackText, strongAttackTips);
+
+                        $this.html(html);
                     }
                     else if (index === 2) {
                         var itemDropPercent = parseInt($.trim($this.text()));
@@ -7454,6 +7479,86 @@ var Loot = {
                         $this.addClass('pd_custom_tips').attr('title', '在20次攻击中预计可掉落{0}个道具'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
                     }
                 });
+            });
+
+            $(document).on('click', '.pd_verify_tips_details[data-life]', function () {
+                var $this = $(this);
+                var life = parseInt($this.data('life'));
+                if (isNaN(life)) return;
+                var defense = parseFloat($this.data('defense'));
+                if (isNaN(defense)) return;
+                var $panel = $('#pd_monster_loot_info_panel');
+                if ($panel.length > 0) $panel.remove();
+
+                var tipsList = new Array(4);
+                for (var i = 0; i < tipsList.length; i++) {
+                    var attack = 0, burn = lootPropertyList['争夺燃烧'], totalAttack = 0;
+                    switch (i) {
+                        case 0:
+                            attack = Math.round(lootPropertyList['争夺攻击'] * (1 - defense));
+                            break;
+                        case 1:
+                            attack = Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent) * (1 - defense));
+                            break;
+                        case 2:
+                            attack = Math.round(Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense));
+                            break;
+                        case 3:
+                            attack = Math.round(Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent)
+                                    * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense));
+                            break;
+                    }
+                    totalAttack = attack + burn;
+
+                    var attackOverflow = attack - life;
+                    if (attackOverflow < 0) attackOverflow = 0;
+                    var burnOverflow = totalAttack - life;
+                    if (burnOverflow < 0) burnOverflow = 0;
+                    else if (burnOverflow > lootPropertyList['争夺燃烧']) burnOverflow = lootPropertyList['争夺燃烧'];
+                    var totalAttackDiff = life - totalAttack;
+                    if (totalAttackDiff < 0) totalAttackDiff = 0;
+
+                    tipsList[i] = '<em title="夺取KFB">{0}</em>{1} | <em style="font-weight:bold" title="夺取KFB+燃烧KFB">{2}</em>{3}'
+                        .replace('{0}', attack)
+                        .replace('{1}', attackOverflow > 0 || burnOverflow > 0 ?
+                            ' (<em style="color:#0099CC" title="夺取KFB溢出">+{0}</em>'.replace('{0}', attackOverflow) +
+                            ' <em style="color:#FF0033" title="燃烧KFB溢出">+{0}</em>)'.replace('{0}', burnOverflow)
+                                : ''
+                        )
+                        .replace('{2}', totalAttack)
+                        .replace('{3}', totalAttackDiff > 0 ? ' (<em style="color:#339933" title="距清空生命值的差额">-{0}</em>)'.replace('{0}', totalAttackDiff) : '');
+                }
+
+                var html =
+                    '<table class="pd_panel" id="pd_monster_loot_info_panel" style="text-align:center;opacity:0.9;padding:0 5px">' +
+                    '  <tbody>' +
+                    '    <tr>' +
+                    '      <th style="width:87px;text-align:left"></th>' +
+                    '      <th style="width:175px">正常</th>' +
+                    '      <th style="width:175px">致命一击(如果有)</th>' +
+                    '    </tr>' +
+                    '    <tr>' +
+                    '      <th style="text-align:left">普通攻击</th>' +
+                    '      <td>{0}</td>'.replace('{0}', tipsList[0]) +
+                    '      <td>{0}</td>'.replace('{0}', tipsList[1]) +
+                    '    </tr>' +
+                    '    <tr>' +
+                    '      <th style="text-align:left">暴击(如果有)</th>' +
+                    '      <td>{0}</td>'.replace('{0}', tipsList[2]) +
+                    '      <td>{0}</td>'.replace('{0}', tipsList[3]) +
+                    '    </tr>' +
+                    '  </tbody>' +
+                    '</table>';
+                var offset = $this.closest('tr').offset();
+                $panel = $(html).appendTo('body');
+                $panel.css('top', offset.top - $panel.height() - 2).css('left', offset.left);
+            }).on('click', function (e) {
+                var $target = $(e.target);
+                if (!($target.is('.pd_panel') || $target.closest('.pd_panel').length || $target.is('.pd_verify_tips_details')
+                    || $target.closest('.pd_verify_tips_details').length)
+                ) {
+                    $('#pd_monster_loot_info_panel').remove();
+                }
             });
         }, 'html');
     },
@@ -7709,6 +7814,8 @@ var KFOL = {
             '.pd_verify_tips_ok { color: #99CC66; }' +
             '.pd_verify_tips_conditional { color: #FF9900; }' +
             '.pd_verify_tips_unable { color: #FF0033; }' +
+            '.pd_verify_tips_details { cursor: pointer; }' +
+            '#pd_monster_loot_info_panel em { font-style: normal; cursor: help; }' +
             '#pd_attack_log_content {' +
             '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
             '  line-height: 1.6em; background-color: #FFF;' +
@@ -8131,7 +8238,7 @@ var KFOL = {
                 }
             }
             if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Const.autoAttackingCookieName))
-                autoAttackInterval = 4 * 60 + 1;
+                autoAttackInterval = Const.checkAutoAttackingInterval * 60 + 1;
         }
 
         var drawSmboxInterval = -1;

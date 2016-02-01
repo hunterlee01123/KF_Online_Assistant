@@ -52,7 +52,7 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
             '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label>' +
             '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
-            '<span class="pd_cfg_tips" title="在实际生命值不超过指定阙值时才进行试探攻击，留空表示使用低保值，例：12（不同等级的阙值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在实际生命值不超过指定阈值时才进行试探攻击，留空表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
             '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
@@ -186,7 +186,7 @@ var ConfigDialog = {
             '  <span class="pd_cfg_about">' +
             '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
             '    <i style="color:#666;font-style:normal">(V{0})</i>'.replace('{0}', version) +
-            '    <a target="_blank" href="https://github.com/miaolapd/KF_Online_Assistant#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
+            '    <a target="_blank" href="https://github.com/miaolapd/KF_Online_Assistant/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
             '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';

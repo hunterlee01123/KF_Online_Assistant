@@ -20,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.0.2
+// @version     5.1.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.0.2';
+var version = '5.1.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -134,6 +134,8 @@ var KFOL = {
             '.pd_verify_tips_ok { color: #99CC66; }' +
             '.pd_verify_tips_conditional { color: #FF9900; }' +
             '.pd_verify_tips_unable { color: #FF0033; }' +
+            '.pd_verify_tips_details { cursor: pointer; }' +
+            '#pd_monster_loot_info_panel em { font-style: normal; cursor: help; }' +
             '#pd_attack_log_content {' +
             '  width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191FF; overflow: auto;' +
             '  line-height: 1.6em; background-color: #FFF;' +
@@ -556,7 +558,7 @@ var KFOL = {
                 }
             }
             if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Const.autoAttackingCookieName))
-                autoAttackInterval = 4 * 60 + 1;
+                autoAttackInterval = Const.checkAutoAttackingInterval * 60 + 1;
         }
 
         var drawSmboxInterval = -1;

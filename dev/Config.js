@@ -31,8 +31,8 @@ var Config = {
     attackAfterTime: 0,
     // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
     attemptAttackEnabled: false,
-    // 在实际生命值不超过指定阙值时才进行试探攻击，-1表示使用低保值，例：12（不同等级的阙值可能有所不同，请自行判断，超过低保值无效）
-    maxAttemptAttackLifeNum: -1,
+    // 在实际生命值不超过指定阈值时才进行试探攻击，-1表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）
+    maxAttemptAttackLifeNum: 10,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
@@ -77,7 +77,7 @@ var Config = {
     // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009CFF'},{min:'800',max:'MAX',color:'#FF0000'}]
     customSmColorConfigList: [],
     // 是否将帖子中的绯月其它域名的链接修改为当前域名，true：开启；false：关闭
-    modifyKFOtherDomainEnabled: false,
+    modifyKFOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭

@@ -8,7 +8,7 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9baka.com/*
 // @include     http://*2dkf.com/*
-// @version     5.0.2
+// @version     5.1.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
