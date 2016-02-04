@@ -1311,7 +1311,6 @@ var Loot = {
                         var matches = /(\d+)生命值\s*\|\s*(\d+)闪避\s*\|\s*\((\d+)x(\d+)\)%防御/.exec(html);
                         if (!matches) return;
                         var life = parseInt(matches[1]), avoid = parseInt(matches[2]), defense = parseInt(matches[3]) * parseInt(matches[4]) / 100;
-                        $this.css('position', 'relative');
 
                         var clearLife = false;
                         var tipsClassName = '';

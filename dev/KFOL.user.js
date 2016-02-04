@@ -662,9 +662,9 @@ var KFOL = {
                 },
                 complete: function () {
                     if (interval > 0) {
-                        console.log('获取剩余时间失败（原因：{0}），将在{1}分钟后重试...'.replace('{0}', errorText).replace('{1}', interval));
+                        console.log('定时操作失败（原因：{0}），将在{1}分钟后重试...'.replace('{0}', errorText).replace('{1}', interval));
                         KFOL.removePopTips($('.pd_refresh_notice').parent());
-                        KFOL.showMsg('<span class="pd_refresh_notice">获取剩余时间失败（原因：{0}），将在<em>{1}</em>分钟后重试...</span>'
+                        KFOL.showMsg('<span class="pd_refresh_notice">定时操作失败（原因：{0}），将在<em>{1}</em>分钟后重试...</span>'
                             .replace('{0}', errorText)
                             .replace('{1}', interval)
                             , -1);
@@ -672,9 +672,9 @@ var KFOL = {
                         showRefreshModeTips(interval * 60, true);
                     }
                     else {
-                        if (errorNum > 3) {
+                        if (errorNum > 5) {
                             errorNum = 0;
-                            interval = 30;
+                            interval = 10;
                             window.setTimeout(checkRefreshInterval, interval * 60 * 1000);
                             showRefreshModeTips(interval * 60, true);
                         }
