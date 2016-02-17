@@ -110,9 +110,9 @@ var Config = {
     customCssContent: '',
     // 是否执行自定义的脚本，true：开启；false：关闭
     customScriptEnabled: false,
-    // 在脚本开始后执行的自定义脚本内容
+    // 在脚本开始时执行的自定义脚本内容
     customScriptStartContent: '',
-    // 在脚本结束后执行的自定义脚本内容
+    // 在脚本结束时执行的自定义脚本内容
     customScriptEndContent: '',
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,

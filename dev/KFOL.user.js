@@ -20,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.1.0
+// @version     5.2.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.1.0';
+var version = '5.2.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1117,8 +1117,8 @@ var KFOL = {
             var startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
             var endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
             if (endPage > maxPage) endPage = maxPage;
-            if (endPage - startPage > 150) {
-                alert('需访问的总页数不可超过150');
+            if (endPage - startPage > Const.statReplyersMaxPage) {
+                alert('需访问的总页数不可超过' + Const.statReplyersMaxPage);
                 return;
             }
             var tid = Tools.getUrlParam('tid');
@@ -2166,7 +2166,7 @@ var KFOL = {
 
     /**
      * 执行自定义脚本
-     * @param {number} type 脚本类型，1：脚本开始后执行；2：脚本结束后执行
+     * @param {number} type 脚本类型，1：脚本开始时执行；2：脚本结束时执行
      */
     runCustomScript: function (type) {
         var script = '';

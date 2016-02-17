@@ -86,44 +86,54 @@ var Bank = {
                     ,
                     success: function (html) {
                         KFOL.showFormatLog('批量转账', html);
-                        var statMsg = '';
+                        var msg = '';
                         if (/完成转帐!<\/span>/.test(html)) {
                             successNum++;
                             successMoney += key[1];
-                            statMsg = '<em>+{0}</em>'.replace('{0}', key[1]);
+                            msg = '{0} <em>+{1}</em>'.replace('{0}', key[0]).replace('{1}', key[1]);
                         }
                         else {
                             failNum++;
+                            var errorMsg = '';
                             if (/用户<b>.+?<\/b>不存在<br \/>/.test(html)) {
-                                statMsg = '用户不存在';
+                                errorMsg = '用户不存在';
                             }
                             else if (/您的存款不够支付转帐/.test(html)) {
-                                statMsg = '存款不足';
+                                errorMsg = '存款不足';
                             }
                             else if (/转账额度不足/.test(html)) {
-                                statMsg = '转账额度不足';
+                                errorMsg = '转账额度不足';
                             }
                             else if (/当前等级无法使用该功能/.test(html)) {
-                                statMsg = '当前等级无法使用转账功能';
+                                errorMsg = '当前等级无法使用转账功能';
                             }
                             else if (/转帐数目填写不正确/.test(html)) {
-                                statMsg = '转帐金额不正确';
+                                errorMsg = '转帐金额不正确';
                             }
                             else if (/自己无法给自己转帐/.test(html)) {
-                                statMsg = '无法给自己转帐';
+                                errorMsg = '无法给自己转帐';
                             }
                             else if (/\d+秒内不允许重新交易/.test(html)) {
-                                statMsg = '提交速度过快';
+                                errorMsg = '提交速度过快';
                             }
                             else {
-                                statMsg = '未能获得预期的回应';
+                                errorMsg = '未能获得预期的回应';
                             }
-                            statMsg = '<span class="pd_notice">({0})</span>'.replace('{0}', statMsg);
+                            msg = '{0}:{1} <span class="pd_notice">({2})</span>'
+                                .replace('{0}', key[0])
+                                .replace('{1}', key[1])
+                                .replace('{2}', errorMsg);
                         }
-                        $('.pd_result:last').append('<li>{0} {1}</li>'.replace('{0}', key[0]).replace('{1}', statMsg));
+                        $('.pd_result:last').append('<li>{0}</li>'.replace('{0}', msg));
                     },
                     error: function () {
                         failNum++;
+                        $('.pd_result:last').append(
+                            ('<li>{0}:{1} <span class="pd_notice">(连接超时，转账可能失败，请到' +
+                            '<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span></li>')
+                                .replace('{0}', key[0])
+                                .replace('{1}', key[1])
+                        );
                     },
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');

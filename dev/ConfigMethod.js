@@ -156,7 +156,7 @@ var ConfigMethod = {
         if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
         if (typeof options.maxAttemptAttackLifeNum !== 'undefined') {
             var maxAttemptAttackLifeNum = parseInt(options.maxAttemptAttackLifeNum);
-            if (!isNaN(maxAttemptAttackLifeNum) && maxAttemptAttackLifeNum >= 0)
+            if (!isNaN(maxAttemptAttackLifeNum) && maxAttemptAttackLifeNum >= -1)
                 settings.maxAttemptAttackLifeNum = maxAttemptAttackLifeNum;
             else settings.maxAttemptAttackLifeNum = defConfig.maxAttemptAttackLifeNum;
         }

@@ -292,7 +292,7 @@ var ConfigDialog = {
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
-        $('#pd_cfg_max_attempt_attack_life_num').val(Config.maxAttemptAttackLifeNum > 0 ? Config.maxAttemptAttackLifeNum : '');
+        $('#pd_cfg_max_attempt_attack_life_num').val(Config.maxAttemptAttackLifeNum >= 0 ? Config.maxAttemptAttackLifeNum : '');
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
@@ -367,6 +367,7 @@ var ConfigDialog = {
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
         options.maxAttemptAttackLifeNum = parseInt($.trim($('#pd_cfg_max_attempt_attack_life_num').val()));
+        if (isNaN(options.maxAttemptAttackLifeNum)) options.maxAttemptAttackLifeNum = -1;
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
             var $this = $(this);
@@ -521,7 +522,7 @@ var ConfigDialog = {
         var maxAttemptAttackLifeNum = $.trim($txtMaxAttemptAttackLifeNum.val());
         if (maxAttemptAttackLifeNum) {
             maxAttemptAttackLifeNum = parseInt(maxAttemptAttackLifeNum);
-            if (isNaN(maxAttemptAttackLifeNum) || maxAttemptAttackLifeNum < 0) {
+            if (isNaN(maxAttemptAttackLifeNum) || maxAttemptAttackLifeNum < -1) {
                 alert('进行试探攻击的生命值上限格式不正确');
                 $txtMaxAttemptAttackLifeNum.select();
                 $txtMaxAttemptAttackLifeNum.focus();
@@ -1018,9 +1019,9 @@ var ConfigDialog = {
         if ($('#pd_custom_script').length > 0) return;
         var html =
             '<div class="pd_cfg_main">' +
-            '  <label><strong>在脚本开始后执行的内容：</strong><br />' +
+            '  <label><strong>在脚本开始时执行的内容：</strong><br />' +
             '<textarea wrap="off" id="pd_custom_script_start_content" style="width:750px;height:250px;white-space:pre;margin-bottom:10px"></textarea></label><br />' +
-            '  <label><strong>在脚本结束后执行的内容：</strong><br />' +
+            '  <label><strong>在脚本结束时执行的内容：</strong><br />' +
             '<textarea wrap="off" id="pd_custom_script_end_content" style="width:750px;height:250px;white-space:pre"></textarea></label>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +

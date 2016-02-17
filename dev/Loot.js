@@ -26,7 +26,7 @@ var Loot = {
         var autoAttack = function (safeId, deadlyAttackNum) {
             if (Config.autoAttackEnabled && !$.isEmptyObject(Config.batchAttackList) && safeId) {
                 if (Loot.isAutoAttackNow()) {
-                    Tools.setCookie(Const.autoAttackReadyCookieName, '1|' + safeId);
+                    Tools.setCookie(Const.autoAttackReadyCookieName, '1|' + safeId, Tools.getDate('+' + Const.defLootInterval + 'm'));
                     Loot.autoAttack(safeId, deadlyAttackNum);
                 }
                 else {

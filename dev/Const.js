@@ -47,10 +47,14 @@ var Const = {
     specialAjaxInterval: function () {
         return Math.floor(Math.random() * 150) + 200;
     },
-    // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒）
-    cycleUseItemsFirstAjaxInterval: 2000,
+    // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
+    cycleUseItemsFirstAjaxInterval: function () {
+        return Math.floor(Math.random() * 250) + 2000;
+    },
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
+    // 统计回帖者名单最大能访问的帖子页数
+    statReplyersMaxPage: 300,
     // 道具样品ID列表
     sampleItemIdList: {
         '零时迷子的碎片': 2257935,

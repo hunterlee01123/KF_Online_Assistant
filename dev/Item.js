@@ -646,7 +646,7 @@ var Item = {
                 , true);
             window.setTimeout(function () {
                 Item.useItems(options, cycle);
-            }, cycle.round === 1 ? 500 : Const.cycleUseItemsFirstAjaxInterval);
+            }, cycle.round === 1 ? 500 : typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
         else if (type === 2) {
             KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
@@ -654,7 +654,7 @@ var Item = {
                 , true);
             window.setTimeout(function () {
                 Item.restoreItems(options, cycle);
-            }, Const.cycleUseItemsFirstAjaxInterval);
+            }, typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
         else {
             if (cycle.stat['道具'] === 0) delete cycle.stat['道具'];
