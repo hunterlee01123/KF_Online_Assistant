@@ -358,6 +358,9 @@ var Loot = {
                             attack(id);
                         });
                     }
+                    else if (/(⑧1|⑧3)/.test(msg)) {
+                        failNum++;
+                    }
                     else {
                         isStop = true;
                     }
