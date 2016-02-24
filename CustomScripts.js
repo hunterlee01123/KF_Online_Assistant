@@ -875,13 +875,17 @@
 
 /*==========================================*/
 
-// 道具掉落情况统计格式整理（ft1073833专用版） V1.0
+// 道具掉落情况统计格式整理（ft1073833专用版） V1.1
 (function () {
     if (location.pathname !== '/read.php' || parseInt(Tools.getUrlParam('tid')) !== 537909) return;
 
-    var getItemNum = function (matches) {
-        if (matches) return parseInt(matches[1]) + '\t';
-        else return '0\t';
+    var getItemNumText = function (matches) {
+        var num = 0;
+        for (var i in matches) {
+            var numMatches = /\d+/.exec(matches[i]);
+            if (numMatches) num += parseInt(numMatches[0]);
+        }
+        return num + '\t';
     };
 
     $('<a title="将文本框中的KFOL助手争夺道具收获信息整理成专门的格式" style="margin-left:10px" href="#">整理格式</a>')
@@ -893,32 +897,32 @@
             if (!content) return;
             var stat = '';
 
-            var matches = /零时迷子的碎片\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /被遗弃的告白信\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /学校天台的钥匙\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /TMA最新作压缩包\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /LOLI的钱包\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /棒棒糖\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /蕾米莉亚同人漫画\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /十六夜同人漫画\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /档案室钥匙\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /傲娇LOLI娇蛮音CD\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /整形优惠卷\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /消逝之药\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
-            matches = /道具\+(\d+)/.exec(content);
-            stat += getItemNum(matches);
+            var matches = content.match(/零时迷子的碎片\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/被遗弃的告白信\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/学校天台的钥匙\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/TMA最新作压缩包\+\d+/ig);
+            stat += getItemNumText(matches);
+            matches = content.match(/LOLI的钱包\+\d+/ig);
+            stat += getItemNumText(matches);
+            matches = content.match(/棒棒糖\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/蕾米莉亚同人漫画\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/十六夜同人漫画\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/档案室钥匙\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/傲娇LOLI娇蛮音CD\+\d+/ig);
+            stat += getItemNumText(matches);
+            matches = content.match(/整形优惠卷\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/消逝之药\+\d+/g);
+            stat += getItemNumText(matches);
+            matches = content.match(/道具\+\d+/g);
+            stat += getItemNumText(matches);
 
             $textArea.val('零时迷子的碎片\t被遗弃的告白信\t学校天台的钥匙\tTMA最新作压缩包\tLOLI的钱包\t棒棒糖\t蕾米莉亚同人漫画\t十六夜同人漫画\t档案室钥匙\t傲娇LOLI娇蛮音CD\t' +
                 '整形优惠卷\t消逝之药\t道具掉落总个数\n' + stat);
