@@ -7,8 +7,9 @@
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 // @include     http://*2dgal.com/*
 // @include     http://*9baka.com/*
+// @include     http://*9moe.com/*
 // @include     http://*2dkf.com/*
-// @version     5.1.0
+// @version     5.1.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue

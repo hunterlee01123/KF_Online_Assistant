@@ -9,8 +9,9 @@
 // @downloadURL https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ScriptStorage.user.js
 // @include     http://*2dgal.com/*
 // @include     http://*9baka.com/*
+// @include     http://*9moe.com/*
 // @include     http://*2dkf.com/*
-// @version     5.1.0
+// @version     5.1.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -18,7 +19,7 @@
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.1.0';
+var version = '5.1.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -142,9 +143,9 @@ var Config = {
     customCssContent: '',
     // 是否执行自定义的脚本，true：开启；false：关闭
     customScriptEnabled: false,
-    // 在脚本开始后执行的自定义脚本内容
+    // 在脚本开始时执行的自定义脚本内容
     customScriptStartContent: '',
-    // 在脚本结束后执行的自定义脚本内容
+    // 在脚本结束时执行的自定义脚本内容
     customScriptEndContent: '',
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
@@ -243,10 +244,14 @@ var Const = {
     specialAjaxInterval: function () {
         return Math.floor(Math.random() * 150) + 200;
     },
-    // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒）
-    cycleUseItemsFirstAjaxInterval: 2000,
+    // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
+    cycleUseItemsFirstAjaxInterval: function () {
+        return Math.floor(Math.random() * 250) + 2000;
+    },
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
+    // 统计回帖者名单最大能访问的帖子页数
+    statReplyersMaxPage: 300,
     // 道具样品ID列表
     sampleItemIdList: {
         '零时迷子的碎片': 2257935,
@@ -254,7 +259,7 @@ var Const = {
         '学校天台的钥匙': 2001303,
         'TMA最新作压缩包': 1990834,
         'LOLI的钱包': 1836588,
-        '棒棒糖': 2015243,
+        '棒棒糖': 1942370,
         '蕾米莉亚同人漫画': 2231073,
         '十六夜同人漫画': 2025284,
         '档案室钥匙': 2025904,
@@ -462,7 +467,7 @@ var ConfigMethod = {
         if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
         if (typeof options.maxAttemptAttackLifeNum !== 'undefined') {
             var maxAttemptAttackLifeNum = parseInt(options.maxAttemptAttackLifeNum);
-            if (!isNaN(maxAttemptAttackLifeNum) && maxAttemptAttackLifeNum >= 0)
+            if (!isNaN(maxAttemptAttackLifeNum) && maxAttemptAttackLifeNum >= -1)
                 settings.maxAttemptAttackLifeNum = maxAttemptAttackLifeNum;
             else settings.maxAttemptAttackLifeNum = defConfig.maxAttemptAttackLifeNum;
         }
@@ -1642,7 +1647,7 @@ var ConfigDialog = {
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
-        $('#pd_cfg_max_attempt_attack_life_num').val(Config.maxAttemptAttackLifeNum > 0 ? Config.maxAttemptAttackLifeNum : '');
+        $('#pd_cfg_max_attempt_attack_life_num').val(Config.maxAttemptAttackLifeNum >= 0 ? Config.maxAttemptAttackLifeNum : '');
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
@@ -1717,6 +1722,7 @@ var ConfigDialog = {
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
         options.maxAttemptAttackLifeNum = parseInt($.trim($('#pd_cfg_max_attempt_attack_life_num').val()));
+        if (isNaN(options.maxAttemptAttackLifeNum)) options.maxAttemptAttackLifeNum = -1;
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
             var $this = $(this);
@@ -1871,7 +1877,7 @@ var ConfigDialog = {
         var maxAttemptAttackLifeNum = $.trim($txtMaxAttemptAttackLifeNum.val());
         if (maxAttemptAttackLifeNum) {
             maxAttemptAttackLifeNum = parseInt(maxAttemptAttackLifeNum);
-            if (isNaN(maxAttemptAttackLifeNum) || maxAttemptAttackLifeNum < 0) {
+            if (isNaN(maxAttemptAttackLifeNum) || maxAttemptAttackLifeNum < -1) {
                 alert('进行试探攻击的生命值上限格式不正确');
                 $txtMaxAttemptAttackLifeNum.select();
                 $txtMaxAttemptAttackLifeNum.focus();
@@ -2368,9 +2374,9 @@ var ConfigDialog = {
         if ($('#pd_custom_script').length > 0) return;
         var html =
             '<div class="pd_cfg_main">' +
-            '  <label><strong>在脚本开始后执行的内容：</strong><br />' +
+            '  <label><strong>在脚本开始时执行的内容：</strong><br />' +
             '<textarea wrap="off" id="pd_custom_script_start_content" style="width:750px;height:250px;white-space:pre;margin-bottom:10px"></textarea></label><br />' +
-            '  <label><strong>在脚本结束后执行的内容：</strong><br />' +
+            '  <label><strong>在脚本结束时执行的内容：</strong><br />' +
             '<textarea wrap="off" id="pd_custom_script_end_content" style="width:750px;height:250px;white-space:pre"></textarea></label>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
@@ -4262,7 +4268,7 @@ var Item = {
                 , true);
             window.setTimeout(function () {
                 Item.useItems(options, cycle);
-            }, cycle.round === 1 ? 500 : Const.cycleUseItemsFirstAjaxInterval);
+            }, cycle.round === 1 ? 500 : typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
         else if (type === 2) {
             KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
@@ -4270,7 +4276,7 @@ var Item = {
                 , true);
             window.setTimeout(function () {
                 Item.restoreItems(options, cycle);
-            }, Const.cycleUseItemsFirstAjaxInterval);
+            }, typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
         else {
             if (cycle.stat['道具'] === 0) delete cycle.stat['道具'];
@@ -5749,44 +5755,54 @@ var Bank = {
                     ,
                     success: function (html) {
                         KFOL.showFormatLog('批量转账', html);
-                        var statMsg = '';
+                        var msg = '';
                         if (/完成转帐!<\/span>/.test(html)) {
                             successNum++;
                             successMoney += key[1];
-                            statMsg = '<em>+{0}</em>'.replace('{0}', key[1]);
+                            msg = '{0} <em>+{1}</em>'.replace('{0}', key[0]).replace('{1}', key[1]);
                         }
                         else {
                             failNum++;
+                            var errorMsg = '';
                             if (/用户<b>.+?<\/b>不存在<br \/>/.test(html)) {
-                                statMsg = '用户不存在';
+                                errorMsg = '用户不存在';
                             }
                             else if (/您的存款不够支付转帐/.test(html)) {
-                                statMsg = '存款不足';
+                                errorMsg = '存款不足';
                             }
                             else if (/转账额度不足/.test(html)) {
-                                statMsg = '转账额度不足';
+                                errorMsg = '转账额度不足';
                             }
                             else if (/当前等级无法使用该功能/.test(html)) {
-                                statMsg = '当前等级无法使用转账功能';
+                                errorMsg = '当前等级无法使用转账功能';
                             }
                             else if (/转帐数目填写不正确/.test(html)) {
-                                statMsg = '转帐金额不正确';
+                                errorMsg = '转帐金额不正确';
                             }
                             else if (/自己无法给自己转帐/.test(html)) {
-                                statMsg = '无法给自己转帐';
+                                errorMsg = '无法给自己转帐';
                             }
                             else if (/\d+秒内不允许重新交易/.test(html)) {
-                                statMsg = '提交速度过快';
+                                errorMsg = '提交速度过快';
                             }
                             else {
-                                statMsg = '未能获得预期的回应';
+                                errorMsg = '未能获得预期的回应';
                             }
-                            statMsg = '<span class="pd_notice">({0})</span>'.replace('{0}', statMsg);
+                            msg = '{0}:{1} <span class="pd_notice">({2})</span>'
+                                .replace('{0}', key[0])
+                                .replace('{1}', key[1])
+                                .replace('{2}', errorMsg);
                         }
-                        $('.pd_result:last').append('<li>{0} {1}</li>'.replace('{0}', key[0]).replace('{1}', statMsg));
+                        $('.pd_result:last').append('<li>{0}</li>'.replace('{0}', msg));
                     },
                     error: function () {
                         failNum++;
+                        $('.pd_result:last').append(
+                            ('<li>{0}:{1} <span class="pd_notice">(连接超时，转账可能失败，请到' +
+                            '<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span></li>')
+                                .replace('{0}', key[0])
+                                .replace('{1}', key[1])
+                        );
                     },
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
@@ -6113,7 +6129,7 @@ var Loot = {
         var autoAttack = function (safeId, deadlyAttackNum) {
             if (Config.autoAttackEnabled && !$.isEmptyObject(Config.batchAttackList) && safeId) {
                 if (Loot.isAutoAttackNow()) {
-                    Tools.setCookie(Const.autoAttackReadyCookieName, '1|' + safeId);
+                    Tools.setCookie(Const.autoAttackReadyCookieName, '1|' + safeId, Tools.getDate('+' + Const.defLootInterval + 'm'));
                     Loot.autoAttack(safeId, deadlyAttackNum);
                 }
                 else {
@@ -6444,6 +6460,9 @@ var Loot = {
                         $(document).queue('BatchAttack', function () {
                             attack(id);
                         });
+                    }
+                    else if (/(⑧1|⑧3)/.test(msg)) {
+                        failNum++;
                     }
                     else {
                         isStop = true;
@@ -7398,7 +7417,6 @@ var Loot = {
                         var matches = /(\d+)生命值\s*\|\s*(\d+)闪避\s*\|\s*\((\d+)x(\d+)\)%防御/.exec(html);
                         if (!matches) return;
                         var life = parseInt(matches[1]), avoid = parseInt(matches[2]), defense = parseInt(matches[3]) * parseInt(matches[4]) / 100;
-                        $this.css('position', 'relative');
 
                         var clearLife = false;
                         var tipsClassName = '';
@@ -8342,9 +8360,9 @@ var KFOL = {
                 },
                 complete: function () {
                     if (interval > 0) {
-                        console.log('获取剩余时间失败（原因：{0}），将在{1}分钟后重试...'.replace('{0}', errorText).replace('{1}', interval));
+                        console.log('定时操作失败（原因：{0}），将在{1}分钟后重试...'.replace('{0}', errorText).replace('{1}', interval));
                         KFOL.removePopTips($('.pd_refresh_notice').parent());
-                        KFOL.showMsg('<span class="pd_refresh_notice">获取剩余时间失败（原因：{0}），将在<em>{1}</em>分钟后重试...</span>'
+                        KFOL.showMsg('<span class="pd_refresh_notice">定时操作失败（原因：{0}），将在<em>{1}</em>分钟后重试...</span>'
                             .replace('{0}', errorText)
                             .replace('{1}', interval)
                             , -1);
@@ -8352,9 +8370,9 @@ var KFOL = {
                         showRefreshModeTips(interval * 60, true);
                     }
                     else {
-                        if (errorNum > 3) {
+                        if (errorNum > 5) {
                             errorNum = 0;
-                            interval = 30;
+                            interval = 10;
                             window.setTimeout(checkRefreshInterval, interval * 60 * 1000);
                             showRefreshModeTips(interval * 60, true);
                         }
@@ -8797,8 +8815,8 @@ var KFOL = {
             var startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
             var endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
             if (endPage > maxPage) endPage = maxPage;
-            if (endPage - startPage > 150) {
-                alert('需访问的总页数不可超过150');
+            if (endPage - startPage > Const.statReplyersMaxPage) {
+                alert('需访问的总页数不可超过' + Const.statReplyersMaxPage);
                 return;
             }
             var tid = Tools.getUrlParam('tid');
@@ -9846,7 +9864,7 @@ var KFOL = {
 
     /**
      * 执行自定义脚本
-     * @param {number} type 脚本类型，1：脚本开始后执行；2：脚本结束后执行
+     * @param {number} type 脚本类型，1：脚本开始时执行；2：脚本结束时执行
      */
     runCustomScript: function (type) {
         var script = '';
@@ -10230,6 +10248,22 @@ var KFOL = {
     },
 
     /**
+     * 同步修改帖子每页楼层数量
+     */
+    syncModifyPerPageFloorNum: function () {
+        $('form#creator').submit(function () {
+            ConfigMethod.read();
+            var perPageFloorNum = parseInt($(this).find('select[name="p_num"]').val());
+            if (isNaN(perPageFloorNum)) return;
+            if (perPageFloorNum === 0) perPageFloorNum = 10;
+            if (perPageFloorNum !== Config.perPageFloorNum) {
+                Config.perPageFloorNum = perPageFloorNum;
+                ConfigMethod.write();
+            }
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -10337,6 +10371,9 @@ var KFOL = {
         }
         else if (location.pathname === '/guanjianci.php') {
             KFOL.highlightUnReadAtTipsMsg();
+        }
+        else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
+            KFOL.syncModifyPerPageFloorNum();
         }
         if (Config.blockUserEnabled) KFOL.blockUsers();
         if (Config.blockThreadEnabled) KFOL.blockThread();
