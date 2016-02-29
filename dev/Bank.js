@@ -374,13 +374,23 @@ var Bank = {
             if (fixedDeposit > 0 && interest === 0) {
                 var time = parseInt(TmpLog.getValue(Const.fixedDepositDueTmpLogName));
                 if (!isNaN(time) && time > (new Date()).getTime()) {
-                    $account.html(
-                        fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
-                            '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
-                                .replace('{0}', Tools.getDateString(new Date(time)))
-                                .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
-                        )
+                    fixedDepositHtml = fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
+                        '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
+                            .replace('{0}', Tools.getDateString(new Date(time)))
+                            .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
                     );
+                    $account.html(fixedDepositHtml);
+                }
+
+                matches = /定期利息：([\d\.]+)%/.exec(fixedDepositHtml);
+                if (matches) {
+                    var interestRate = parseFloat(matches[1]) / 100;
+                    var anticipatedInterest = Math.round(fixedDeposit * interestRate * Const.fixedDepositDueTime);
+                    fixedDepositHtml = fixedDepositHtml.replace('取出定期将获得该数额的KFB利息)',
+                        '取出定期将获得该数额的KFB利息)<span style="color:#999">（预期利息：{0}KFB）</span>'
+                            .replace('{0}', anticipatedInterest)
+                    );
+                    $account.html(fixedDepositHtml);
                 }
             }
         }
@@ -391,7 +401,7 @@ var Bank = {
             if ($this.is('[name="form2"]')) money = parseInt($.trim($this.find('input[name="drawmoney"]').val()));
             else money = parseInt($.trim($this.find('input[name="savemoney"]').val()));
             if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
-                TmpLog.setValue(Const.fixedDepositDueTmpLogName, Tools.getDate('+90d').getTime());
+                TmpLog.setValue(Const.fixedDepositDueTmpLogName, Tools.getDate('+' + Const.fixedDepositDueTime + 'd').getTime());
             }
         });
 

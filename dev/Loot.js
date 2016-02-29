@@ -1430,18 +1430,19 @@ var Loot = {
                     var burnOverflow = totalAttack - life;
                     if (burnOverflow < 0) burnOverflow = 0;
                     else if (burnOverflow > lootPropertyList['争夺燃烧']) burnOverflow = lootPropertyList['争夺燃烧'];
-                    var totalAttackDiff = life - totalAttack;
-                    if (totalAttackDiff < 0) totalAttackDiff = 0;
+                    var totalAttackOverflow = totalAttack - life;
 
-                    tipsList[i] = '<em title="夺取KFB">{0}</em>{1} | <em style="font-weight:bold" title="夺取KFB+燃烧KFB">{2}</em>{3}'
-                        .replace('{0}', attack)
+                    tipsList[i] = ('<em title="夺取KFB">{0}</em>{1} | <em style="font-weight:bold" title="夺取KFB+燃烧KFB">{2}</em>' +
+                    ' (<em {3}>{4}</em>)')
+                        .replace('{0}', attack <= life ? attack : life)
                         .replace('{1}', attackOverflow > 0 || burnOverflow > 0 ?
                             ' (<em style="color:#0099CC" title="夺取KFB溢出">+{0}</em>'.replace('{0}', attackOverflow) +
                             ' <em style="color:#FF0033" title="燃烧KFB溢出">+{0}</em>)'.replace('{0}', burnOverflow)
                                 : ''
                         )
-                        .replace('{2}', totalAttack)
-                        .replace('{3}', totalAttackDiff > 0 ? ' (<em style="color:#339933" title="距清空生命值的差额">-{0}</em>)'.replace('{0}', totalAttackDiff) : '');
+                        .replace('{2}', totalAttack <= life ? totalAttack : life)
+                        .replace('{3}', totalAttackOverflow >= 0 ? 'style="color:#CC3399" title="总溢出"' : 'style="color:#339933" title="距清空生命值的差额"')
+                        .replace('{4}', totalAttackOverflow >= 0 ? '+' + totalAttackOverflow : totalAttackOverflow);
                 }
 
                 var html =

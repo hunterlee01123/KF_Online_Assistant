@@ -21,13 +21,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.1.1
+// @version     5.2.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.1.1';
+var version = '5.2.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -652,7 +652,7 @@ var KFOL = {
                 type: 'GET',
                 url: 'index.php',
                 success: function (html) {
-                    if (!/<a href="kf_fw_ig_index.php"/i.test(html)) {
+                    if (!/"kf_fw_ig_index.php"/i.test(html)) {
                         interval = 10;
                         errorText = '论坛维护或其它未知情况';
                     }

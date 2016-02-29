@@ -1348,14 +1348,14 @@ var Item = {
             else if (index === 1) {
                 $this.find('td:first-child').css('width', '75px')
                     .end().find('td:nth-child(2)').css('width', '185px')
-                    .end().find('td:nth-child(3)').css('width', '105px').html('<span class="pd_usable_num">可用数</span> / <span class="pd_used_num">已用数</span>')
+                    .end().find('td:nth-child(3)').css('width', '105px').html('<span class="pd_usable_num">可用数</span> / <span class="pd_used_num pd_custom_tips">已用数</span>')
                     .end().find('td:last-child').css('width', '165px')
                     .before('<td style="width:135px">使用道具</td><td style="width:135px">恢复道具 和 转换能量</td>');
             }
             else {
                 $this.find('td:nth-child(3)')
                     .wrapInner('<span class="pd_usable_num" style="margin-left:5px"></span>')
-                    .append(' / <span class="pd_used_num">?</span>')
+                    .append(' / <span class="pd_used_num pd_custom_tips">?</span>')
                     .after(
                         ('<td><a class="pd_items_batch_use" href="#" title="批量使用指定数量的道具">批量使用</a>' +
                         '<a class="pd_items_cycle_use pd_highlight {0}" href="#" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</a></td>' +
@@ -1394,8 +1394,13 @@ var Item = {
             var $itemUsed = $itemLine.find('td:nth-child(3) > .pd_used_num');
             if ($itemUsed.length > 0) {
                 var num = parseInt($itemUsed.text());
-                if (isNaN(num) || num + usedChangeNum < 0) flag = true;
-                else $itemUsed.text(num + usedChangeNum);
+                if (isNaN(num) || num + usedChangeNum < 0) {
+                    flag = true;
+                }
+                else {
+                    $itemUsed.text(num + usedChangeNum);
+                    Item.showUsedItemEnergyTips();
+                }
             }
             if (usableChangeNum) {
                 var $itemUsable = $itemLine.find('td:nth-child(3) > .pd_usable_num');
@@ -1437,6 +1442,33 @@ var Item = {
     },
 
     /**
+     * 显示已使用道具恢复所需和转换可得的能量的提示
+     */
+    showUsedItemEnergyTips: function () {
+        var totalRestoreEnergy = 0, totalConvertEnergy = 0;
+        $('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(3) > .pd_used_num').each(function () {
+            var $this = $(this);
+            var itemNum = parseInt($this.text());
+            if (isNaN(itemNum) || itemNum < 0) return;
+            var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
+            if (!itemLevel) return;
+            var perRestoreEnergy = Item.getRestoreEnergyNumByItemLevel(itemLevel);
+            var perConvertEnergy = Item.getGainEnergyNumByItemLevel(itemLevel);
+            totalRestoreEnergy += perRestoreEnergy * itemNum;
+            totalConvertEnergy += perConvertEnergy * itemNum;
+            $this.attr('title', '全部恢复需要{0}点能量，全部转换可得{1}点能量'
+                .replace('{0}', perRestoreEnergy * itemNum)
+                .replace('{1}', perConvertEnergy * itemNum)
+            );
+        });
+        $('.kf_fw_ig1:last > tbody > tr:nth-child(2) > td:nth-child(3) > .pd_used_num')
+            .attr('title', '全部恢复需要{0}点能量，全部转换可得{1}点能量'
+                .replace('{0}', totalRestoreEnergy)
+                .replace('{1}', totalConvertEnergy)
+            );
+    },
+
+    /**
      * 在我的道具页面中显示当前各种类已使用道具的数量
      * @param {string} [html] 恢复道具页面的HTML代码（留空表示自动获取HTML代码）
      */
@@ -1473,6 +1505,7 @@ var Item = {
                         $usedNum.each(function (index) {
                             $(this).text(usedItemNumList[index]);
                         });
+                        Item.showUsedItemEnergyTips();
                     }
                 }
             }

@@ -70,6 +70,8 @@ var Const = {
         '整形优惠卷': 2122387,
         '消逝之药': 1587342
     },
+    // 定期存款到期期限（天）
+    fixedDepositDueTime: 90,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
