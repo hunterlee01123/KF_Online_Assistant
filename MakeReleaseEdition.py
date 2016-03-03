@@ -1,6 +1,7 @@
 ﻿# 生成各个Release版本的KF Online助手脚本文件
 import os
 import re
+from jsmin import jsmin
 
 devDirName = 'dev' # 开发版文件夹名
 devKFOLFileName = 'KFOL' # 开发版KFOL主文件名
@@ -11,6 +12,7 @@ scriptStorageFileName = 'ScriptStorage' # ScriptStorage版文件名
 GlobalStorageFileName = 'GlobalStorage' # GlobalStorage版文件名
 forMobileFileName = 'ForMobile' # 移动版文件名
 userScriptExt = '.user.js' # 油猴脚本文件扩展名
+minUserScriptExt = '.min.user.js' # 压缩过的油猴脚本文件扩展名
 metaScriptExt = '.meta.js' # 油猴脚本meta文件扩展名
 encoding = 'utf-8' # 文件编码
 
@@ -88,7 +90,10 @@ def makeDefaultEdition(content):
     '''
     open(releaseDirName + os.sep + defaultFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成标准版脚本文件')
-    open(releaseDirName + os.sep + defaultFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
+    metaContent = getMetaFileContent(content)
+    open(releaseDirName + os.sep + defaultFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + jsmin(content))
+    print('生成压缩过的标准版脚本文件')
+    open(releaseDirName + os.sep + defaultFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
     print('生成标准版meta文件')
 
 def makeScriptStorageEdition(content):
@@ -153,7 +158,10 @@ def makeForMobileEdition(content):
     if num == 0: raise NoFoundReplaceStringError('移动版', 8)
     open(releaseDirName + os.sep + forMobileFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成移动版脚本文件')
-    open(releaseDirName + os.sep + forMobileFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
+    metaContent = getMetaFileContent(content)
+    open(releaseDirName + os.sep + forMobileFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + jsmin(content))
+    print('生成压缩过的移动版脚本文件')
+    open(releaseDirName + os.sep + forMobileFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
     print('生成移动版meta文件')
 
 def main():

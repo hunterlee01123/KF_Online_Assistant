@@ -1,4 +1,5 @@
 .idea/
 wiki/
+__pycache__/
 icon.psd
 KF Online助手文件创建软链接.bat
