@@ -8,10 +8,9 @@
 // @updateURL   https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.meta.js
 // @downloadURL https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.user.js
 // @include     http://*2dgal.com/*
-// @include     http://*9baka.com/*
 // @include     http://*9moe.com/*
-// @include     http://*2dkf.com/*
-// @version     5.1.1
+// @include     http://*kfgal.com/*
+// @version     5.1.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -19,7 +18,7 @@
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.1.1';
+var version = '5.1.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -124,7 +123,7 @@ var Config = {
     // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
     animationEffectOffEnabled: false,
     // 日志保存天数
-    logSaveDays: 10,
+    logSaveDays: 15,
     // 在页面上方显示助手日志的链接，true：开启；false：关闭
     showLogLinkInPageEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
@@ -267,6 +266,8 @@ var Const = {
         '整形优惠卷': 2122387,
         '消逝之药': 1587342
     },
+    // 定期存款到期期限（天）
+    fixedDepositDueTime: 90,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
@@ -1501,7 +1502,7 @@ var ConfigDialog = {
             '      <label style="margin-left:10px"><input id="pd_cfg_animation_effect_off_enabled" type="checkbox" />禁用动画效果 ' +
             '<span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span></label><br />' +
             '      <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +
-            '<span class="pd_cfg_tips" title="默认值：10">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="默认值：{0}">[?]</span></label>'.replace('{0}', ConfigMethod.defConfig.logSaveDays) +
             '      <label style="margin-left:10px"><input id="pd_cfg_show_log_link_in_page_enabled" type="checkbox" />在页面上方显示日志链接 ' +
             '<span class="pd_cfg_tips" title="在论坛页面上方显示助手日志的链接">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox" />为侧边栏添加快捷导航 ' +
@@ -4970,14 +4971,14 @@ var Item = {
             else if (index === 1) {
                 $this.find('td:first-child').css('width', '75px')
                     .end().find('td:nth-child(2)').css('width', '185px')
-                    .end().find('td:nth-child(3)').css('width', '105px').html('<span class="pd_usable_num">可用数</span> / <span class="pd_used_num">已用数</span>')
+                    .end().find('td:nth-child(3)').css('width', '105px').html('<span class="pd_usable_num">可用数</span> / <span class="pd_used_num pd_custom_tips">已用数</span>')
                     .end().find('td:last-child').css('width', '165px')
                     .before('<td style="width:135px">使用道具</td><td style="width:135px">恢复道具 和 转换能量</td>');
             }
             else {
                 $this.find('td:nth-child(3)')
                     .wrapInner('<span class="pd_usable_num" style="margin-left:5px"></span>')
-                    .append(' / <span class="pd_used_num">?</span>')
+                    .append(' / <span class="pd_used_num pd_custom_tips">?</span>')
                     .after(
                         ('<td><a class="pd_items_batch_use" href="#" title="批量使用指定数量的道具">批量使用</a>' +
                         '<a class="pd_items_cycle_use pd_highlight {0}" href="#" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</a></td>' +
@@ -5016,8 +5017,13 @@ var Item = {
             var $itemUsed = $itemLine.find('td:nth-child(3) > .pd_used_num');
             if ($itemUsed.length > 0) {
                 var num = parseInt($itemUsed.text());
-                if (isNaN(num) || num + usedChangeNum < 0) flag = true;
-                else $itemUsed.text(num + usedChangeNum);
+                if (isNaN(num) || num + usedChangeNum < 0) {
+                    flag = true;
+                }
+                else {
+                    $itemUsed.text(num + usedChangeNum);
+                    Item.showUsedItemEnergyTips();
+                }
             }
             if (usableChangeNum) {
                 var $itemUsable = $itemLine.find('td:nth-child(3) > .pd_usable_num');
@@ -5059,6 +5065,33 @@ var Item = {
     },
 
     /**
+     * 显示已使用道具恢复所需和转换可得的能量的提示
+     */
+    showUsedItemEnergyTips: function () {
+        var totalRestoreEnergy = 0, totalConvertEnergy = 0;
+        $('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(3) > .pd_used_num').each(function () {
+            var $this = $(this);
+            var itemNum = parseInt($this.text());
+            if (isNaN(itemNum) || itemNum < 0) return;
+            var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
+            if (!itemLevel) return;
+            var perRestoreEnergy = Item.getRestoreEnergyNumByItemLevel(itemLevel);
+            var perConvertEnergy = Item.getGainEnergyNumByItemLevel(itemLevel);
+            totalRestoreEnergy += perRestoreEnergy * itemNum;
+            totalConvertEnergy += perConvertEnergy * itemNum;
+            $this.attr('title', '全部恢复需要{0}点能量，全部转换可得{1}点能量'
+                .replace('{0}', perRestoreEnergy * itemNum)
+                .replace('{1}', perConvertEnergy * itemNum)
+            );
+        });
+        $('.kf_fw_ig1:last > tbody > tr:nth-child(2) > td:nth-child(3) > .pd_used_num')
+            .attr('title', '全部恢复需要{0}点能量，全部转换可得{1}点能量'
+                .replace('{0}', totalRestoreEnergy)
+                .replace('{1}', totalConvertEnergy)
+            );
+    },
+
+    /**
      * 在我的道具页面中显示当前各种类已使用道具的数量
      * @param {string} [html] 恢复道具页面的HTML代码（留空表示自动获取HTML代码）
      */
@@ -5095,6 +5128,7 @@ var Item = {
                         $usedNum.each(function (index) {
                             $(this).text(usedItemNumList[index]);
                         });
+                        Item.showUsedItemEnergyTips();
                     }
                 }
             }
@@ -6043,13 +6077,23 @@ var Bank = {
             if (fixedDeposit > 0 && interest === 0) {
                 var time = parseInt(TmpLog.getValue(Const.fixedDepositDueTmpLogName));
                 if (!isNaN(time) && time > (new Date()).getTime()) {
-                    $account.html(
-                        fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
-                            '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
-                                .replace('{0}', Tools.getDateString(new Date(time)))
-                                .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
-                        )
+                    fixedDepositHtml = fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
+                        '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
+                            .replace('{0}', Tools.getDateString(new Date(time)))
+                            .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
                     );
+                    $account.html(fixedDepositHtml);
+                }
+
+                matches = /定期利息：([\d\.]+)%/.exec(fixedDepositHtml);
+                if (matches) {
+                    var interestRate = parseFloat(matches[1]) / 100;
+                    var anticipatedInterest = Math.round(fixedDeposit * interestRate * Const.fixedDepositDueTime);
+                    fixedDepositHtml = fixedDepositHtml.replace('取出定期将获得该数额的KFB利息)',
+                        '取出定期将获得该数额的KFB利息)<span style="color:#999">（预期利息：{0}KFB）</span>'
+                            .replace('{0}', anticipatedInterest)
+                    );
+                    $account.html(fixedDepositHtml);
                 }
             }
         }
@@ -6060,7 +6104,7 @@ var Bank = {
             if ($this.is('[name="form2"]')) money = parseInt($.trim($this.find('input[name="drawmoney"]').val()));
             else money = parseInt($.trim($this.find('input[name="savemoney"]').val()));
             if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
-                TmpLog.setValue(Const.fixedDepositDueTmpLogName, Tools.getDate('+90d').getTime());
+                TmpLog.setValue(Const.fixedDepositDueTmpLogName, Tools.getDate('+' + Const.fixedDepositDueTime + 'd').getTime());
             }
         });
 
@@ -6140,9 +6184,11 @@ var Loot = {
 
         console.log('领取争夺奖励Start');
         $.get('kf_fw_ig_index.php', function (html) {
+            if (Loot.getNextLootAwardTime().type) return;
             var matches = /<INPUT name="submit1" type="submit" value="(.+?)"/i.exec(html);
             if (!matches) {
-                Tools.setCookie(Const.getLootAwardCookieName, 1, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
+                Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
                 return;
             }
 
@@ -6162,28 +6208,27 @@ var Loot = {
                 var lootInterval = parseInt(remainingMatches[1]);
                 if (remainingMatches[2] === '小时') lootInterval = lootInterval * 60;
                 lootInterval++;
-                if (!Loot.getNextLootAwardTime().type) {
-                    var nextTime = Tools.getDate('+' + lootInterval + 'm');
-                    Tools.setCookie(Const.getLootAwardCookieName,
-                        '{0}|{1}'.replace('{0}', remainingMatches[2] === '小时' ? 1 : 2).replace('{1}', nextTime.getTime()),
-                        nextTime
-                    );
-                    if (Config.attemptAttackEnabled) {
-                        var nextCheckInterval = Const.firstCheckLifeInterval - (Const.defLootInterval - lootInterval);
-                        if (nextCheckInterval <= 0) nextCheckInterval = 1;
-                        var nextCheckTime = Tools.getDate('+' + nextCheckInterval + 'm');
-                        Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                        Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                    }
-                    var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
-                    if (attackedCountMatches) {
-                        var timeDiff = Const.defLootInterval - lootInterval;
-                        if (timeDiff > 0 && timeDiff <= 3 * 60) {
-                            TmpLog.setValue(Const.attackedCountTmpLogName, {
-                                time: Tools.getDate('-' + timeDiff + 'm').getTime(),
-                                count: parseInt(attackedCountMatches[1])
-                            });
-                        }
+                var nextTime = Tools.getDate('+' + lootInterval + 'm');
+                Tools.setCookie(Const.getLootAwardCookieName,
+                    '{0}|{1}'.replace('{0}', remainingMatches[2] === '小时' ? 1 : 2).replace('{1}', nextTime.getTime()),
+                    nextTime
+                );
+                if (Config.attemptAttackEnabled) {
+                    var nextCheckInterval = Const.firstCheckLifeInterval - (Const.defLootInterval - lootInterval);
+                    if (nextCheckInterval <= 0) nextCheckInterval = 1;
+                    var nextCheckTime = Tools.getDate('+' + nextCheckInterval + 'm');
+                    Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
+                    Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                }
+
+                var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
+                if (attackedCountMatches) {
+                    var timeDiff = Const.defLootInterval - lootInterval;
+                    if (timeDiff > 0 && timeDiff <= 3 * 60) {
+                        TmpLog.setValue(Const.attackedCountTmpLogName, {
+                            time: Tools.getDate('-' + timeDiff + 'm').getTime(),
+                            count: parseInt(attackedCountMatches[1])
+                        });
                     }
                 }
                 var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
@@ -6218,15 +6263,16 @@ var Loot = {
                 $.post('kf_fw_ig_index.php',
                     {submit1: 1, one: 1},
                     function (html) {
-                        var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
-                        Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
-                        if (Config.attemptAttackEnabled) {
-                            var nextCheckTime = Tools.getDate('+' + Const.firstCheckLifeInterval + 'm');
-                            Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                            Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                        }
                         KFOL.showFormatLog('领取争夺奖励', html);
                         if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
+                            var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
+                            Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
+                            if (Config.attemptAttackEnabled) {
+                                var nextCheckTime = Tools.getDate('+' + Const.firstCheckLifeInterval + 'm');
+                                Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
+                                Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                            }
+
                             var attackedCountDiff = 0;
                             if (attackedCount > -1) {
                                 var now = (new Date()).getTime();
@@ -6270,7 +6316,8 @@ var Loot = {
                     }, 'html');
             }
             else {
-                Tools.setCookie(Const.getLootAwardCookieName, 1, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
+                Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
                 if (isAutoDonation) KFOL.donation();
             }
         }, 'html');
@@ -6880,7 +6927,7 @@ var Loot = {
                 if (matches) strongAttackPercent = parseInt(matches[1]) / 100;
 
                 var html =
-                    '<table class="pd_panel" id="pd_attack_sum_panel" style="text-align:center;opacity:0.9;padding:0 5px">' +
+                    '<table class="pd_panel" id="pd_attack_sum_panel" style="text-align:center;padding:0 5px">' +
                     '  <tbody>' +
                     '    <tr>' +
                     '      <th style="width:95px;text-align:left">攻击|攻击+燃烧</th>' +
@@ -6942,9 +6989,9 @@ var Loot = {
         var timeLog = Loot.getNextLootAwardTime();
         if (timeLog.type > 0) {
             var end = timeLog.time - Config.attackAfterTime * 60 * 1000;
-            if (end > (new Date()).getTime()) return false;
+            return end <= (new Date()).getTime();
         }
-        return true;
+        else return false;
     },
 
     /**
@@ -7533,22 +7580,23 @@ var Loot = {
                     var burnOverflow = totalAttack - life;
                     if (burnOverflow < 0) burnOverflow = 0;
                     else if (burnOverflow > lootPropertyList['争夺燃烧']) burnOverflow = lootPropertyList['争夺燃烧'];
-                    var totalAttackDiff = life - totalAttack;
-                    if (totalAttackDiff < 0) totalAttackDiff = 0;
+                    var totalAttackOverflow = totalAttack - life;
 
-                    tipsList[i] = '<em title="夺取KFB">{0}</em>{1} | <em style="font-weight:bold" title="夺取KFB+燃烧KFB">{2}</em>{3}'
-                        .replace('{0}', attack)
+                    tipsList[i] = ('<em title="夺取KFB">{0}</em>{1} | <em style="font-weight:bold" title="夺取KFB+燃烧KFB">{2}</em>' +
+                    ' (<em {3}>{4}</em>)')
+                        .replace('{0}', attack <= life ? attack : life)
                         .replace('{1}', attackOverflow > 0 || burnOverflow > 0 ?
                             ' (<em style="color:#0099CC" title="夺取KFB溢出">+{0}</em>'.replace('{0}', attackOverflow) +
                             ' <em style="color:#FF0033" title="燃烧KFB溢出">+{0}</em>)'.replace('{0}', burnOverflow)
                                 : ''
                         )
-                        .replace('{2}', totalAttack)
-                        .replace('{3}', totalAttackDiff > 0 ? ' (<em style="color:#339933" title="距清空生命值的差额">-{0}</em>)'.replace('{0}', totalAttackDiff) : '');
+                        .replace('{2}', totalAttack <= life ? totalAttack : life)
+                        .replace('{3}', totalAttackOverflow >= 0 ? 'style="color:#CC3399" title="总溢出"' : 'style="color:#339933" title="距清空生命值的差额"')
+                        .replace('{4}', totalAttackOverflow >= 0 ? '+' + totalAttackOverflow : totalAttackOverflow);
                 }
 
                 var html =
-                    '<table class="pd_panel" id="pd_monster_loot_info_panel" style="text-align:center;opacity:0.9;padding:0 5px">' +
+                    '<table class="pd_panel" id="pd_monster_loot_info_panel" style="text-align:center;padding:0 5px">' +
                     '  <tbody>' +
                     '    <tr>' +
                     '      <th style="width:87px;text-align:left"></th>' +
@@ -7826,7 +7874,7 @@ var KFOL = {
             '.pd_sm_color_select > td { position: relative; cursor: pointer; }' +
             '.pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }' +
             '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
-            '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; }' +
+            '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; opacity: 0.9; }' +
             '#pd_smile_panel img { margin: 3px; cursor: pointer; }' +
             '.pd_verify_tips { cursor: help; color: #999; }' +
             '.pd_verify_tips_ok { color: #99CC66; }' +
@@ -8349,7 +8397,7 @@ var KFOL = {
                 type: 'GET',
                 url: 'index.php',
                 success: function (html) {
-                    if (!/<a href="kf_fw_ig_index.php"/i.test(html)) {
+                    if (!/"kf_fw_ig_index.php"/i.test(html)) {
                         interval = 10;
                         errorText = '论坛维护或其它未知情况';
                     }
@@ -9070,10 +9118,8 @@ var KFOL = {
         $('.readtext a, .thread2 a').each(function () {
             var $this = $(this);
             var url = $this.attr('href');
-            var regex = /^http:\/\/(.+?\.)?(2dgal|9gal|9baka|9moe|2dkf)\.com\//i;
-            if (regex.test(url)) {
-                $this.attr('href', url.replace(regex, Tools.getHostNameUrl()));
-            }
+            var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|9gal|9baka|9moe|kfgal|2dkf)\.com\/).+/i.exec(url);
+            if (matches) $this.attr('href', url.replace(matches[1], Tools.getHostNameUrl()));
         });
     },
 
@@ -10202,7 +10248,7 @@ var KFOL = {
                         .replace('{1}', smileImageIdList[i])
                         .replace('{2}', smileCodeIdList[i]);
                 }
-                html = '<div class="pd_panel" id="pd_smile_panel" style="width:308px;height:185px;opacity:0.9;">' + html + '</div>';
+                html = '<div class="pd_panel" id="pd_smile_panel" style="width:308px;height:185px">' + html + '</div>';
 
                 var offset = $parent.offset();
                 $panel = $(html).appendTo('body');

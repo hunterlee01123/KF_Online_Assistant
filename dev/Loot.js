@@ -37,9 +37,11 @@ var Loot = {
 
         console.log('领取争夺奖励Start');
         $.get('kf_fw_ig_index.php', function (html) {
+            if (Loot.getNextLootAwardTime().type) return;
             var matches = /<INPUT name="submit1" type="submit" value="(.+?)"/i.exec(html);
             if (!matches) {
-                Tools.setCookie(Const.getLootAwardCookieName, 1, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
+                Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
                 return;
             }
 
@@ -59,28 +61,27 @@ var Loot = {
                 var lootInterval = parseInt(remainingMatches[1]);
                 if (remainingMatches[2] === '小时') lootInterval = lootInterval * 60;
                 lootInterval++;
-                if (!Loot.getNextLootAwardTime().type) {
-                    var nextTime = Tools.getDate('+' + lootInterval + 'm');
-                    Tools.setCookie(Const.getLootAwardCookieName,
-                        '{0}|{1}'.replace('{0}', remainingMatches[2] === '小时' ? 1 : 2).replace('{1}', nextTime.getTime()),
-                        nextTime
-                    );
-                    if (Config.attemptAttackEnabled) {
-                        var nextCheckInterval = Const.firstCheckLifeInterval - (Const.defLootInterval - lootInterval);
-                        if (nextCheckInterval <= 0) nextCheckInterval = 1;
-                        var nextCheckTime = Tools.getDate('+' + nextCheckInterval + 'm');
-                        Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                        Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                    }
-                    var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
-                    if (attackedCountMatches) {
-                        var timeDiff = Const.defLootInterval - lootInterval;
-                        if (timeDiff > 0 && timeDiff <= 3 * 60) {
-                            TmpLog.setValue(Const.attackedCountTmpLogName, {
-                                time: Tools.getDate('-' + timeDiff + 'm').getTime(),
-                                count: parseInt(attackedCountMatches[1])
-                            });
-                        }
+                var nextTime = Tools.getDate('+' + lootInterval + 'm');
+                Tools.setCookie(Const.getLootAwardCookieName,
+                    '{0}|{1}'.replace('{0}', remainingMatches[2] === '小时' ? 1 : 2).replace('{1}', nextTime.getTime()),
+                    nextTime
+                );
+                if (Config.attemptAttackEnabled) {
+                    var nextCheckInterval = Const.firstCheckLifeInterval - (Const.defLootInterval - lootInterval);
+                    if (nextCheckInterval <= 0) nextCheckInterval = 1;
+                    var nextCheckTime = Tools.getDate('+' + nextCheckInterval + 'm');
+                    Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
+                    Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                }
+
+                var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
+                if (attackedCountMatches) {
+                    var timeDiff = Const.defLootInterval - lootInterval;
+                    if (timeDiff > 0 && timeDiff <= 3 * 60) {
+                        TmpLog.setValue(Const.attackedCountTmpLogName, {
+                            time: Tools.getDate('-' + timeDiff + 'm').getTime(),
+                            count: parseInt(attackedCountMatches[1])
+                        });
                     }
                 }
                 var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
@@ -115,15 +116,16 @@ var Loot = {
                 $.post('kf_fw_ig_index.php',
                     {submit1: 1, one: 1},
                     function (html) {
-                        var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
-                        Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
-                        if (Config.attemptAttackEnabled) {
-                            var nextCheckTime = Tools.getDate('+' + Const.firstCheckLifeInterval + 'm');
-                            Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                            Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                        }
                         KFOL.showFormatLog('领取争夺奖励', html);
                         if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
+                            var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
+                            Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
+                            if (Config.attemptAttackEnabled) {
+                                var nextCheckTime = Tools.getDate('+' + Const.firstCheckLifeInterval + 'm');
+                                Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
+                                Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                            }
+
                             var attackedCountDiff = 0;
                             if (attackedCount > -1) {
                                 var now = (new Date()).getTime();
@@ -167,7 +169,8 @@ var Loot = {
                     }, 'html');
             }
             else {
-                Tools.setCookie(Const.getLootAwardCookieName, 1, Tools.getDate('+' + Const.defLootInterval + 'm'));
+                var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
+                Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
                 if (isAutoDonation) KFOL.donation();
             }
         }, 'html');
@@ -777,7 +780,7 @@ var Loot = {
                 if (matches) strongAttackPercent = parseInt(matches[1]) / 100;
 
                 var html =
-                    '<table class="pd_panel" id="pd_attack_sum_panel" style="text-align:center;opacity:0.9;padding:0 5px">' +
+                    '<table class="pd_panel" id="pd_attack_sum_panel" style="text-align:center;padding:0 5px">' +
                     '  <tbody>' +
                     '    <tr>' +
                     '      <th style="width:95px;text-align:left">攻击|攻击+燃烧</th>' +
@@ -839,9 +842,9 @@ var Loot = {
         var timeLog = Loot.getNextLootAwardTime();
         if (timeLog.type > 0) {
             var end = timeLog.time - Config.attackAfterTime * 60 * 1000;
-            if (end > (new Date()).getTime()) return false;
+            return end <= (new Date()).getTime();
         }
-        return true;
+        else return false;
     },
 
     /**
@@ -1446,7 +1449,7 @@ var Loot = {
                 }
 
                 var html =
-                    '<table class="pd_panel" id="pd_monster_loot_info_panel" style="text-align:center;opacity:0.9;padding:0 5px">' +
+                    '<table class="pd_panel" id="pd_monster_loot_info_panel" style="text-align:center;padding:0 5px">' +
                     '  <tbody>' +
                     '    <tr>' +
                     '      <th style="width:87px;text-align:left"></th>' +

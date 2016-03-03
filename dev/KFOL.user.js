@@ -6,9 +6,8 @@
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 // @include     http://*2dgal.com/*
-// @include     http://*9baka.com/*
 // @include     http://*9moe.com/*
-// @include     http://*2dkf.com/*
+// @include     http://*kfgal.com/*
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Config.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Const.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/ConfigMethod.js
@@ -21,13 +20,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.0-dev
+// @version     5.1.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.0';
+var version = '5.1.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -129,7 +128,7 @@ var KFOL = {
             '.pd_sm_color_select > td { position: relative; cursor: pointer; }' +
             '.pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }' +
             '.pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }' +
-            '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; }' +
+            '.pd_panel { position: absolute; overflow-y: auto; background-color: #FFF; border: 1px solid #9191FF; opacity: 0.9; }' +
             '#pd_smile_panel img { margin: 3px; cursor: pointer; }' +
             '.pd_verify_tips { cursor: help; color: #999; }' +
             '.pd_verify_tips_ok { color: #99CC66; }' +
@@ -1373,10 +1372,8 @@ var KFOL = {
         $('.readtext a, .thread2 a').each(function () {
             var $this = $(this);
             var url = $this.attr('href');
-            var regex = /^http:\/\/(.+?\.)?(2dgal|9gal|9baka|9moe|2dkf)\.com\//i;
-            if (regex.test(url)) {
-                $this.attr('href', url.replace(regex, Tools.getHostNameUrl()));
-            }
+            var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|9gal|9baka|9moe|kfgal|2dkf)\.com\/).+/i.exec(url);
+            if (matches) $this.attr('href', url.replace(matches[1], Tools.getHostNameUrl()));
         });
     },
 
@@ -2505,7 +2502,7 @@ var KFOL = {
                         .replace('{1}', smileImageIdList[i])
                         .replace('{2}', smileCodeIdList[i]);
                 }
-                html = '<div class="pd_panel" id="pd_smile_panel" style="width:308px;height:185px;opacity:0.9;">' + html + '</div>';
+                html = '<div class="pd_panel" id="pd_smile_panel" style="width:308px;height:185px">' + html + '</div>';
 
                 var offset = $parent.offset();
                 $panel = $(html).appendTo('body');
