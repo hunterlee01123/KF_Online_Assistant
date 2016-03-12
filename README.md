@@ -19,6 +19,7 @@ _（各种采用了Chrome内核的国产浏览器也可到各自的应用市场�
 3. __Opera：__安装[Violent monkey](https://addons.opera.com/zh-cn/extensions/details/violent-monkey/?display=zh)扩展，然后打开脚本下载地址安装脚本即可
 4. __傲游浏览器：__安装[暴力猴](http://extension.maxthon.cn/detail/index.php?view_id=1680)扩展，然后打开脚本下载地址安装脚本即可
 5. __IE及手机等不支持油猴脚本的浏览器：__[详情请见此贴](http://bbs.2dgal.com/read.php?tid=509273)
+6. __自带脚本的反向代理服务器：__无需安装任何插件即可使用KFOL助手，[详情请见此贴](http://bbs.2dgal.com/read.php?tid=540148)
 
 ## 使用说明
 安装完脚本后请点击KF页面上方的助手设置链接，打开设置界面进行相应设置，如不清楚各选项的意思可将鼠标停留在其之后的问号上即可获得相应提示 __（自动捐款、争夺、抽取神秘盒子等功能默认关闭，请自行开启）__  
