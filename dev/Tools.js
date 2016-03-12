@@ -330,6 +330,14 @@ var Tools = {
     },
 
     /**
+     * 检测浏览器是否为Edge
+     * @returns {boolean} 是否为Edge
+     */
+    isEdge: function () {
+        return navigator.userAgent && navigator.userAgent.indexOf('Edge') > 0;
+    },
+
+    /**
      * 比较神秘等级高低
      * @param {string} a
      * @param {string} b

@@ -288,7 +288,7 @@ var Item = {
                     success: function (html) {
                         KFOL.showFormatLog('使用道具', html);
                         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
-                        if (matches && !/错误的物品编号/i.test(html) && !/无法再使用/i.test(html)) {
+                        if (matches && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(html)) {
                             successNum++;
                             responseMsg += matches[1] + '\n';
                             nextRoundItemIdList.push(itemId);
@@ -383,6 +383,7 @@ var Item = {
                                 Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
                                 Item.showItemUsedInfo(settings.$itemLine.closest('tbody').find('tr:gt(1) > td:nth-child(2) > a'));
                             }
+                            if (settings.itemName === '零时迷子的碎片') Item.showCurrentUsedItemNum();
 
                             if (cycle) {
                                 settings.itemIdList = nextRoundItemIdList;
@@ -958,7 +959,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 var value = window.prompt(
-                    '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
+                    '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
                     , itemIdList.length);
                 if (value === null) return;
                 value = $.trim(value);
@@ -1127,14 +1128,14 @@ var Item = {
             }
             else if (index === 1) {
                 $this.find('td:nth-child(2)').attr('width', 200)
-                    .next('td').attr('width', 100)
+                    .next('td').attr('width', 100).wrapInner('<span class="pd_used_num pd_custom_tips" style="color:#000"></span>')
                     .next('td').attr('width', 130).text('批量恢复')
                     .next('td').attr('width', 160)
                     .before('<td width="160">批量转换</td>');
             }
             else {
                 $this.find('td:nth-child(3)')
-                    .wrapInner('<span class="pd_used_num" style="color:#000"></span>')
+                    .wrapInner('<span class="pd_used_num pd_custom_tips"></span>')
                     .end()
                     .find('td:nth-child(4)')
                     .html('<a class="pd_items_batch_restore {0}" href="#" title="批量恢复指定数量的道具">批量恢复道具</a>'
@@ -1152,6 +1153,7 @@ var Item = {
         var $itemName = $myItems.find('tbody > tr:gt(1) > td:nth-child(2)');
         Item.addSampleItemsLink($itemName);
         Item.showItemUsedInfo($itemName.find('a'));
+        Item.showUsedItemEnergyTips();
     },
 
     /**
@@ -1210,7 +1212,8 @@ var Item = {
             }
             else if ($this.is('.pd_items_cycle_use')) {
                 var value = window.prompt(
-                    '你要循环使用多少个【Lv.{0}：{1}】道具？\n（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
+                    ('你要循环使用多少个【Lv.{0}：{1}】道具？\n' +
+                    '（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）')
                         .replace('{0}', itemLevel)
                         .replace('{1}', itemName)
                     , itemUsableNum ? itemUsableNum : 0);
@@ -1392,7 +1395,8 @@ var Item = {
         var flag = false;
         if ($itemLine) {
             var $itemUsed = $itemLine.find('td:nth-child(3) > .pd_used_num');
-            if ($itemUsed.length > 0) {
+            var itemName = $itemLine.find('td:nth-child(2) > a').text();
+            if ($itemUsed.length > 0 && itemName !== '零时迷子的碎片') {
                 var num = parseInt($itemUsed.text());
                 if (isNaN(num) || num + usedChangeNum < 0) {
                     flag = true;

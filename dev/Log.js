@@ -106,7 +106,7 @@ var Log = {
             '  <div class="pd_log_nav">' +
             '    <a class="pd_disabled_link" href="#">&lt;&lt;</a>' +
             '    <a style="padding:0 7px" class="pd_disabled_link" href="#">&lt;</a>' +
-            '    <h2>暂无日志</h2>' +
+            '    <h2 class="pd_custom_tips">暂无日志</h2>' +
             '    <a style="padding:0 7px" class="pd_disabled_link" href="#">&gt;</a>' +
             '    <a class="pd_disabled_link" href="#">&gt;&gt;</a>' +
             '  </div>' +

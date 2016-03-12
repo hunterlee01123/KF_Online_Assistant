@@ -36,10 +36,15 @@ var Loot = {
         };
 
         console.log('领取争夺奖励Start');
+        var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候……</strong>', true);
         $.get('kf_fw_ig_index.php', function (html) {
-            if (Loot.getNextLootAwardTime().type) return;
+            if (Loot.getNextLootAwardTime().type) {
+                KFOL.removePopTips($tips);
+                return;
+            }
             var matches = /<INPUT name="submit1" type="submit" value="(.+?)"/i.exec(html);
             if (!matches) {
+                KFOL.removePopTips($tips);
                 var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
                 Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
                 return;
@@ -58,6 +63,7 @@ var Loot = {
 
             var remainingMatches = /还有(\d+)(分钟|小时)领取/i.exec(matches[1]);
             if (remainingMatches) {
+                KFOL.removePopTips($tips);
                 var lootInterval = parseInt(remainingMatches[1]);
                 if (remainingMatches[2] === '小时') lootInterval = lootInterval * 60;
                 lootInterval++;
@@ -96,6 +102,7 @@ var Loot = {
                     var remainAttackNum = 0;
                     if (remainAttackNumMatches) remainAttackNum = parseInt(remainAttackNumMatches[1]);
                     if (remainAttackNum >= Config.deferLootTimeWhenRemainAttackNum && !Tools.getCookie(Const.drawSmboxCookieName)) {
+                        KFOL.removePopTips($tips);
                         console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
                         KFOL.drawSmbox();
                         if (isAutoDonation) KFOL.donation();
@@ -116,6 +123,7 @@ var Loot = {
                 $.post('kf_fw_ig_index.php',
                     {submit1: 1, one: 1},
                     function (html) {
+                        KFOL.removePopTips($tips);
                         KFOL.showFormatLog('领取争夺奖励', html);
                         if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
                             var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
@@ -169,6 +177,7 @@ var Loot = {
                     }, 'html');
             }
             else {
+                KFOL.removePopTips($tips);
                 var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
                 Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
                 if (isAutoDonation) KFOL.donation();

@@ -32,7 +32,7 @@ var Dialog = {
         }).end().find('legend input[type="checkbox"]').click(function () {
             var $this = $(this);
             var checked = $this.prop('checked');
-            if (Tools.isOpera())
+            if (Tools.isOpera() || Tools.isEdge())
                 $this.closest('fieldset').find('input, select, textarea, button').not('legend input').prop('disabled', !checked);
             else
                 $this.closest('fieldset').prop('disabled', !checked);
