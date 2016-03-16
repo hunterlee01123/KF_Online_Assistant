@@ -37,7 +37,7 @@ var Loot = {
 
         console.log('领取争夺奖励Start');
         var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候……</strong>', true);
-        $.get('kf_fw_ig_index.php', function (html) {
+        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             if (Loot.getNextLootAwardTime().type) {
                 KFOL.removePopTips($tips);
                 return;
@@ -136,7 +136,7 @@ var Loot = {
 
                             var attackedCountDiff = 0;
                             if (attackedCount > -1) {
-                                var now = (new Date()).getTime();
+                                var now = new Date().getTime();
                                 var attackedCountInfo = TmpLog.getValue(Const.attackedCountTmpLogName);
                                 if (attackedCountInfo && $.type(attackedCountInfo) === 'object' && $.type(attackedCountInfo.time) === 'number' &&
                                     $.type(attackedCountInfo.count) === 'number' && attackedCountInfo.time > 0 && attackedCountInfo.count >= 0) {
@@ -260,7 +260,7 @@ var Loot = {
         if (Config.deadlyAttackId > 0) {
             if (deadlyAttackNum === -1) {
                 console.log('检查致命一击剩余攻击次数Start');
-                $.get('kf_fw_ig_index.php', function (html) {
+                $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
                     var deadlyAttackNum = 0;
                     var matches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
                     if (matches) deadlyAttackNum = parseInt(matches[1]);
@@ -545,7 +545,7 @@ var Loot = {
                         if (isRetakeSafeId) {
                             isRetakeSafeId = false;
                             console.log('重新获取SafeID Start');
-                            $.get('kf_fw_ig_index.php', function (html) {
+                            $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
                                 var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
                                 var safeId = '';
                                 if (safeIdMatches) safeId = safeIdMatches[1];
@@ -851,7 +851,7 @@ var Loot = {
         var timeLog = Loot.getNextLootAwardTime();
         if (timeLog.type > 0) {
             var end = timeLog.time - Config.attackAfterTime * 60 * 1000;
-            return end <= (new Date()).getTime();
+            return end <= new Date().getTime();
         }
         else return false;
     },
@@ -885,7 +885,7 @@ var Loot = {
      */
     checkLife: function () {
         console.log('检查生命值Start');
-        $.get('kf_fw_ig_index.php', function (html) {
+        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             if (Tools.getCookie(Const.checkLifeCookieName)) return;
             if (/本回合剩余攻击次数\s*0\s*次/.test(html)) {
                 Tools.setCookie(Const.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
@@ -940,7 +940,7 @@ var Loot = {
                         .replace('{0}', life)
                         .replace('{1}', minLife)
                         .replace('{2}', maxCheckAttackLifeNum)
-                        .replace('{3}', Const.defLootInterval - Math.floor((lootInfo.time - (new Date()).getTime()) / 60 / 1000))
+                        .replace('{3}', Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000))
                         .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
                         .replace('{5}', interval)
                         .replace('{6}', msg)
@@ -1305,7 +1305,7 @@ var Loot = {
      * 添加怪物争夺信息的提示
      */
     addMonsterLootInfoTips: function () {
-        $.get('kf_fw_ig_index.php', function (html) {
+        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             var lootPropertyList = Loot.getLootPropertyList(html);
             $('.kf_fw_ig1 > tbody > tr').each(function (index) {
                 var $this = $(this);
@@ -1523,7 +1523,7 @@ var Loot = {
             var itemTypeId = Item.getItemTypeIdByItemName(itemName);
             if (!itemTypeId) return;
             $(document).queue('GetItemList', function () {
-                $.get('kf_fw_ig_my.php?lv=' + itemTypeId, function (html) {
+                $.get('kf_fw_ig_my.php?lv={0}&t={1}'.replace('{0}', itemTypeId).replace('{1}', new Date().getTime()), function (html) {
                     count++;
                     var matches = html.match(/<tr><td>.+?<\/td><td>\d+级道具<\/td><td>.+?<\/td><td><a href="kf_fw_ig_my\.php\?pro=\d+">查看详细<\/a><\/td><\/tr>/gi);
                     if (matches) {
@@ -1569,7 +1569,7 @@ var Loot = {
                 $(document).queue('UseItemList', function () {
                     $.ajax({
                         type: 'GET',
-                        url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', (new Date()).getTime()),
+                        url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', new Date().getTime()),
                         success: function (html) {
                             var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
                             if (msgMatches) {

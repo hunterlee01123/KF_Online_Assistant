@@ -282,7 +282,7 @@ var Bank = {
                 ) return;
 
                 var $tips = KFOL.showWaitMsg('正在获取存款信息中...', true);
-                $.get('hack.php?H_name=bank', function (html) {
+                $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
                     KFOL.removePopTips($tips);
                     var cash = 0, currentDeposit = 0;
                     var matches = /当前所持：(-?\d+)KFB<br/i.exec(html);
@@ -373,7 +373,7 @@ var Bank = {
             var fixedDeposit = parseInt(matches[1]);
             if (fixedDeposit > 0 && interest === 0) {
                 var time = parseInt(TmpLog.getValue(Const.fixedDepositDueTmpLogName));
-                if (!isNaN(time) && time > (new Date()).getTime()) {
+                if (!isNaN(time) && time > new Date().getTime()) {
                     fixedDepositHtml = fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
                         '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
                             .replace('{0}', Tools.getDateString(new Date(time)))
@@ -427,7 +427,7 @@ var Bank = {
      */
     fixedDepositDueAlert: function () {
         console.log('定期存款到期提醒Start');
-        $.get('hack.php?H_name=bank', function (html) {
+        $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
             Tools.setCookie(Const.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(1));
             var matches = /可获利息：(\d+)\(/.exec(html);
             if (!matches) return;

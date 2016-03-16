@@ -95,7 +95,7 @@
             var floorList = [];
             $.each(new Array(maxPage), function (index) {
                 $(document).queue('StatLottery', function () {
-                    var url = 'read.php?tid={0}&page={1}'.replace('{0}', tid).replace('{1}', index + 1);
+                    var url = 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime());
                     $.get(url, function (html) {
                         var matches = html.match(/<a name=\d+><\/a>(.|\n|\r\n)+?<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<\/td><\/tr><\/table>\r\n<\/div>/gi);
                         for (var i in matches) {
@@ -321,7 +321,7 @@
     var recordMonsterAttackLog = function () {
         if (!parseInt(recordInterval)) return;
         console.log('记录被怪物攻击日志Start(间隔：{0}分钟)'.replace('{0}', recordInterval));
-        $.get('kf_fw_ig_index.php', function (html) {
+        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             var attackLogMatches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?)<br \/><\/td><\/tr>/i.exec(html);
             if (!attackLogMatches || !/发起争夺/.test(attackLogMatches[1])) {
                 console.log('未发现日志');
@@ -575,7 +575,7 @@
             $(document).queue('StatFloor', function () {
                 $.ajax({
                     type: 'GET',
-                    url: 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', (new Date()).getTime()),
+                    url: 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime()),
                     success: function (html) {
                         var matches = html.match(/<a name=\d+><\/a>(.|\n|\r\n)+?(?=\r\n<\/div><div class="c"><\/div><\/div>\r\n)/gi);
                         if (index + 1 > 1 && index + 1 < maxPage && matches.length % 10 !== 0) {
@@ -699,7 +699,7 @@
         var index = 0;
         $.each(winnerUserList, function (uid, data) {
             $(document).queue('StatWinnerUser', function () {
-                var url = 'profile.php?action=show&uid={0}&t={1}'.replace('{0}', uid).replace('{1}', (new Date()).getTime());
+                var url = 'profile.php?action=show&uid={0}&t={1}'.replace('{0}', uid).replace('{1}', new Date().getTime());
                 $.get(url, function (html) {
                     var matches = /神秘系数：(\d+)\s*<br/i.exec(html);
                     if (matches) {

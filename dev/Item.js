@@ -284,7 +284,7 @@ var Item = {
             $(document).queue('UseItems', function () {
                 $.ajax({
                     type: 'GET',
-                    url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime()),
+                    url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
                     success: function (html) {
                         KFOL.showFormatLog('使用道具', html);
                         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
@@ -458,7 +458,7 @@ var Item = {
             $(document).queue('RestoreItems', function () {
                 $.ajax({
                     type: 'GET',
-                    url: 'kf_fw_ig_doit.php?renew={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', (new Date()).getTime()),
+                    url: 'kf_fw_ig_doit.php?renew={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', new Date().getTime()),
                     success: function (html) {
                         KFOL.showFormatLog('恢复道具', html);
                         var msg = '';
@@ -738,7 +738,7 @@ var Item = {
             $(document).queue('ConvertItemsToEnergy', function () {
                 $.ajax({
                     type: 'GET',
-                    url: 'kf_fw_ig_doit.php?tomp={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', (new Date()).getTime()),
+                    url: 'kf_fw_ig_doit.php?tomp={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', new Date().getTime()),
                     success: function (html) {
                         KFOL.showFormatLog('将道具转换为能量', html);
                         if (/转换为了\s*\d+\s*点能量/i.test(html)) {
@@ -826,7 +826,7 @@ var Item = {
             $(document).queue('SellItems', function () {
                 $.ajax({
                     type: 'GET',
-                    url: 'kf_fw_ig_shop.php?sell=yes&id={0}&t={1}'.replace('{0}', itemId).replace('{1}', (new Date()).getTime()),
+                    url: 'kf_fw_ig_shop.php?sell=yes&id={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
                     success: function (html) {
                         KFOL.showFormatLog('出售道具', html);
                         if (/出售成功/.test(html)) {
@@ -982,7 +982,7 @@ var Item = {
                 }
                 itemIdList = tmpItemIdList;
                 KFOL.showWaitMsg('正在获取当前道具相关信息，请稍后...', true);
-                $.get('kf_fw_ig_renew.php', function (html) {
+                $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var totalEnergyNum = Item.getCurrentEnergyNum(html);
                     Item.showCurrentUsedItemNum(html);
@@ -1187,7 +1187,7 @@ var Item = {
                 KFOL.removePopTips($('.pd_pop_tips'));
 
                 KFOL.showWaitMsg('正在获取本种类可用道具列表，请稍后...', true);
-                itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href');
+                itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var itemIdList = Item.getItemIdList(html, num);
@@ -1232,7 +1232,7 @@ var Item = {
                 KFOL.removePopTips($('.pd_pop_tips'));
 
                 KFOL.showWaitMsg('正在获取本种类可用道具列表，请稍后...', true);
-                itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href');
+                itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var itemIdList = Item.getItemIdList(html, num);
@@ -1241,9 +1241,9 @@ var Item = {
                         return;
                     }
                     KFOL.showWaitMsg('正在获取当前道具相关信息，请稍后...', true);
-                    $.get('kf_fw_ig_my.php', function (html) {
+                    $.get('kf_fw_ig_my.php?t=' + new Date().getTime(), function (html) {
                         Item.showCurrentUsableItemNum(html);
-                        $.get('kf_fw_ig_renew.php', function (html) {
+                        $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
                             KFOL.removePopTips($('.pd_pop_tips'));
                             var totalEnergyNum = Item.getCurrentEnergyNum(html);
                             Item.showCurrentUsedItemNum(html);
@@ -1278,7 +1278,7 @@ var Item = {
                 if (isNaN(num) || num <= 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
 
-                itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href');
+                itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href') + '&t=' + new Date().getTime();
                 KFOL.showWaitMsg('正在获取本种类已使用道具列表，请稍后...', true);
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
@@ -1312,7 +1312,7 @@ var Item = {
                 if (isNaN(num) || num <= 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
 
-                itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href');
+                itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href') + '&t=' + new Date().getTime();
                 KFOL.showWaitMsg('正在获取本种类已使用道具列表，请稍后...', true);
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
@@ -1519,7 +1519,7 @@ var Item = {
             show(html);
         }
         else {
-            $.get('kf_fw_ig_renew.php', function (html) {
+            $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
                 show(html);
             }, 'html');
         }
@@ -1551,7 +1551,7 @@ var Item = {
             show(html);
         }
         else {
-            $.get('kf_fw_ig_my.php', function (html) {
+            $.get('kf_fw_ig_my.php?t=' + new Date().getTime(), function (html) {
                 show(html);
             }, 'html');
         }
@@ -1562,7 +1562,7 @@ var Item = {
      * @param {jQuery} $links 道具名称的链接列表
      */
     showItemUsedInfo: function ($links) {
-        $.get('kf_fw_ig_index.php', function (html) {
+        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
             $links.next('.pd_used_item_info').remove();
             $links.each(function () {
@@ -1659,7 +1659,7 @@ var Item = {
                     url: 'kf_fw_ig_shop.php?lvid={0}&safeid={1}&t={2}'
                         .replace('{0}', settings.itemTypeId)
                         .replace('{1}', settings.safeId)
-                        .replace('{2}', (new Date()).getTime()),
+                        .replace('{2}', new Date().getTime()),
                     success: function (html) {
                         KFOL.showFormatLog('购买道具', html);
                         var msg = '';
@@ -1747,7 +1747,7 @@ var Item = {
             var itemId = $this.data('id');
             if (!itemId) return;
             $(document).queue('StatBuyItemsPrice', function () {
-                $.get('kf_fw_ig_my.php?pro=' + itemId, function (html) {
+                $.get('kf_fw_ig_my.php?pro={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()), function (html) {
                     var $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(parseInt($remainingNum.text()) - 1);
                     var matches = /从商店购买，购买价(\d+)KFB。<br>/i.exec(html);
@@ -1877,7 +1877,7 @@ var Item = {
      * 显示道具商店可购买情况
      */
     showItemShopBuyInfo: function () {
-        $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
+        $.get('profile.php?action=show&uid={0}&t={1}'.replace('{0}', KFOL.uid).replace('{1}', new Date().getTime()), function (html) {
             var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
             if (!matches) return;
             var cash = parseInt(matches[1]);

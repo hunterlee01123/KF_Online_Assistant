@@ -152,7 +152,7 @@ var Tools = {
      * @returns {{hours: number, minutes: number, seconds: number}} 剩余时间的描述，hours：剩余的小时数；minutes：剩余的分钟数；seconds：剩余的秒数
      */
     getTimeDiffInfo: function (timestamp) {
-        var diff = timestamp - (new Date()).getTime();
+        var diff = timestamp - new Date().getTime();
         if (diff > 0) {
             diff = Math.floor(diff / 1000);
             var hours = Math.floor(diff / 60 / 60);

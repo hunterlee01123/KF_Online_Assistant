@@ -15,6 +15,8 @@ var Const = {
     maxAttackNum: 20,
     // 致命一击比例
     deadlyAttackPercent: 1.5,
+    // 抽取神秘盒子头奖的奖金（KFB）
+    smboxFirstPrizeBonus: 2000,
     // 在批量攻击中每次攻击的时间间隔（毫秒），可设置为函数来返回值
     perAttackInterval: function () {
         return Math.floor(Math.random() * 1000) + 2000;

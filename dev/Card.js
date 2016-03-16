@@ -17,7 +17,7 @@ var Card = {
                     url: 'kf_fw_card_doit.php?do=recard&id={0}&safeid={1}&t={2}'
                         .replace('{0}', cardId)
                         .replace('{1}', safeId)
-                        .replace('{2}', (new Date()).getTime()),
+                        .replace('{2}', new Date().getTime()),
                     success: function (html) {
                         KFOL.showFormatLog('将卡片转换为VIP时间', html);
                         var matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/i.exec(html);

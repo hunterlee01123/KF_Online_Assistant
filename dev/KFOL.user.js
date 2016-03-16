@@ -379,7 +379,7 @@ var KFOL = {
         };
 
         if (/%$/.test(Config.donationKfb)) {
-            $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
+            $.get('profile.php?action=show&uid={0}&t={1}'.replace('{0}', KFOL.uid).replace('{1}', new Date().getTime()), function (html) {
                 var matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
                 var income = 1;
                 if (matches) income = parseInt(matches[1]);
@@ -420,7 +420,7 @@ var KFOL = {
      */
     drawSmbox: function () {
         console.log('抽取神秘盒子Start');
-        $.get('kf_smbox.php', function (html) {
+        $.get('kf_smbox.php?t=' + new Date().getTime(), function (html) {
             if (KFOL.getNextDrawSmboxTime().type) return;
             if (!/kf_smbox\.php\?box=\d+&safeid=\w+/i.test(html)) {
                 KFOL.showFormatLog('抽取神秘盒子', html);
@@ -444,7 +444,7 @@ var KFOL = {
                 var numberMatches = /box=(\d+)/i.exec(url);
                 smboxNumber = numberMatches ? numberMatches[1] : 0;
             }
-            $.get(url, function (html) {
+            $.get(url + '&t=' + new Date().getTime(), function (html) {
                 var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm');
                 Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
                 KFOL.showFormatLog('抽取神秘盒子', html);
@@ -462,8 +462,9 @@ var KFOL = {
                     action += ' ' + matches[2];
                 }
                 else if (smRegex.test(html)) {
-                    msg += '<i class="pd_highlight" style="font-weight:bold">KFB<em>+2000</em></i><a target="_blank" href="kf_smbox.php">查看头奖</a>';
-                    gain['KFB'] = 2000;
+                    msg += '<i class="pd_highlight" style="font-weight:bold">KFB<em>+{0}</em></i><a target="_blank" href="kf_smbox.php">查看头奖</a>'
+                        .replace('{0}', Const.smboxFirstPrizeBonus);
+                    gain['KFB'] = Const.smboxFirstPrizeBonus;
                 }
                 else {
                     nextTime = Tools.getDate('+1h');
@@ -512,7 +513,7 @@ var KFOL = {
         if (Config.autoLootEnabled) {
             var lootTimeLog = Loot.getNextLootAwardTime();
             if (lootTimeLog.type > 0) {
-                getLootAwardInterval = Math.floor((lootTimeLog.time - (new Date()).getTime()) / 1000);
+                getLootAwardInterval = Math.floor((lootTimeLog.time - new Date().getTime()) / 1000);
                 if (getLootAwardInterval < 0) getLootAwardInterval = 0;
             }
             else getLootAwardInterval = 0;
@@ -544,7 +545,7 @@ var KFOL = {
                         else if (diff > 30) diff = 30;
                         attackAfterTime -= diff;
                     }
-                    autoAttackInterval = Math.floor((lootTimeLog.time - attackAfterTime * 60 * 1000 - (new Date()).getTime()) / 1000);
+                    autoAttackInterval = Math.floor((lootTimeLog.time - attackAfterTime * 60 * 1000 - new Date().getTime()) / 1000);
                     if (autoAttackInterval < 0) autoAttackInterval = 0;
                 }
                 else autoAttackInterval = 0;
@@ -565,7 +566,7 @@ var KFOL = {
         if (Config.autoDrawSmbox2Enabled) {
             var smboxTimeLog = KFOL.getNextDrawSmboxTime();
             if (smboxTimeLog.type > 0) {
-                drawSmboxInterval = Math.floor((smboxTimeLog.time - (new Date()).getTime()) / 1000);
+                drawSmboxInterval = Math.floor((smboxTimeLog.time - new Date().getTime()) / 1000);
                 if (drawSmboxInterval < 0) drawSmboxInterval = 0;
             }
             else drawSmboxInterval = 0;
@@ -575,7 +576,7 @@ var KFOL = {
         if (Config.autoChangeSMColorEnabled) {
             var nextTime = parseInt(Tools.getCookie(Const.autoChangeSMColorCookieName));
             if (!isNaN(nextTime) && nextTime > 0) {
-                autoChangeSMColorInterval = Math.floor((nextTime - (new Date()).getTime()) / 1000);
+                autoChangeSMColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
                 if (autoChangeSMColorInterval < 0) autoChangeSMColorInterval = 0;
                 if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1)
                     autoChangeSMColorInterval = -1;
@@ -649,7 +650,7 @@ var KFOL = {
             var interval = 0, errorText = '';
             $.ajax({
                 type: 'GET',
-                url: 'index.php',
+                url: 'index.php?t=' + new Date().getTime(),
                 success: function (html) {
                     if (!/"kf_fw_ig_index.php"/i.test(html)) {
                         interval = 10;
@@ -672,7 +673,7 @@ var KFOL = {
                         showRefreshModeTips(interval * 60, true);
                     }
                     else {
-                        if (errorNum > 5) {
+                        if (errorNum > 6) {
                             errorNum = 0;
                             interval = 10;
                             window.setTimeout(checkRefreshInterval, interval * 60 * 1000);
@@ -1131,7 +1132,7 @@ var KFOL = {
             $.each(new Array(endPage), function (index) {
                 if (index + 1 < startPage) return;
                 $(document).queue('StatReplyers', function () {
-                    var url = 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', (new Date()).getTime());
+                    var url = 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime());
                     $.get(url, function (html) {
                         var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
                         var isStop = false;
@@ -1285,11 +1286,12 @@ var KFOL = {
             if ($.inArray(quote.userName, keyword) === -1) keyword.push(quote.userName);
             if (type === 2) {
                 $(document).queue('MultiQuote', function () {
-                    var url = 'post.php?action=quote&fid={0}&tid={1}&pid={2}&article={3}'
+                    var url = 'post.php?action=quote&fid={0}&tid={1}&pid={2}&article={3}&t={4}'
                         .replace('{0}', fid)
                         .replace('{1}', tid)
                         .replace('{2}', quote.spid)
-                        .replace('{3}', quote.floor);
+                        .replace('{3}', quote.floor)
+                        .replace('{4}', new Date().getTime());
                     $.get(url, function (html) {
                         var matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                         if (matches) content += Tools.htmlDecode(matches[1]).replace(/\n\n/g, '\n') + '\n';
@@ -1348,7 +1350,7 @@ var KFOL = {
                 e.preventDefault();
                 KFOL.removePopTips($('.pd_pop_tips'));
                 KFOL.showWaitMsg('正在获取当前活期存款金额...', true);
-                $.get('hack.php?H_name=bank', function (html) {
+                $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var matches = /活期存款：(\d+)KFB<br \/>/i.exec(html);
                     if (!matches) {
@@ -1483,7 +1485,7 @@ var KFOL = {
         $(document).clearQueue('BuyThreads');
         $.each(threadList, function (index, thread) {
             $(document).queue('BuyThreads', function () {
-                $.get(thread.url + '&t=' + (new Date()).getTime(), function (html) {
+                $.get(thread.url + '&t=' + new Date().getTime(), function (html) {
                     KFOL.showFormatLog('购买帖子', html);
                     if (/操作完成/.test(html)) {
                         successNum++;
@@ -1949,7 +1951,7 @@ var KFOL = {
                 }, 'html');
         };
         if (isRead) {
-            $.get('profile.php?action=show&uid=' + KFOL.uid, function (html) {
+            $.get('profile.php?action=show&uid={0}&t={1}'.replace('{0}', KFOL.uid).replace('{1}', new Date().getTime()), function (html) {
                 var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
                 if (matches) saveCurrentDeposit(parseInt(matches[1]));
             });
@@ -1973,7 +1975,7 @@ var KFOL = {
          * @param {number} smLevel 神秘等级
          */
         var writeData = function (smLevel) {
-            TmpLog.setValue(Const.smLevelUpTmpLogName, {time: (new Date()).getTime(), smLevel: smLevel});
+            TmpLog.setValue(Const.smLevelUpTmpLogName, {time: new Date().getTime(), smLevel: smLevel});
         };
 
         var data = TmpLog.getValue(Const.smLevelUpTmpLogName);
@@ -2012,7 +2014,7 @@ var KFOL = {
          * @param {number} smRank 神秘系数排名
          */
         var writeData = function (smRank) {
-            TmpLog.setValue(Const.smRankChangeTmpLogName, {time: (new Date()).getTime(), smRank: smRank});
+            TmpLog.setValue(Const.smRankChangeTmpLogName, {time: new Date().getTime(), smRank: smRank});
         };
 
         var data = TmpLog.getValue(Const.smRankChangeTmpLogName);
@@ -2020,7 +2022,7 @@ var KFOL = {
             writeData(smRank);
         }
         else if (smRank !== data.smRank) {
-            var diff = Math.floor(((new Date()).getTime() - data.time) / 60 / 60 / 1000);
+            var diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
             if (diff >= Const.smRankChangeAlertInterval) {
                 var date = new Date(data.time);
                 var isUp = smRank < data.smRank;
@@ -2370,7 +2372,7 @@ var KFOL = {
             Tools.setCookie(Const.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
         };
         console.log('自动更换神秘颜色Start');
-        $.get('kf_growup.php', function (html) {
+        $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
             if (Tools.getCookie(Const.autoChangeSMColorCookieName)) return;
             var matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/gi);
             if (matches) {
@@ -2425,7 +2427,11 @@ var KFOL = {
                     nextId = idList[Math.floor(Math.random() * idList.length)];
                 }
 
-                $.get('kf_growup.php?ok=2&safeid={0}&color={1}'.replace('{0}', safeId).replace('{1}', nextId), function (html) {
+                var url = 'kf_growup.php?ok=2&safeid={0}&color={1}&t={2}'
+                    .replace('{0}', safeId)
+                    .replace('{1}', nextId)
+                    .replace('{2}', new Date().getTime());
+                $.get(url, function (html) {
                     setCookie();
                     KFOL.showFormatLog('自动更换神秘颜色', html);
                     if (/等级颜色修改完毕/.test(html)) {
@@ -2534,7 +2540,7 @@ var KFOL = {
         var vipHours = parseInt(Tools.getCookie(Const.vipSurplusTimeCookieName));
         if (isNaN(vipHours) || vipHours < 0) {
             console.log('检查VIP剩余时间Start');
-            $.get('kf_vmember.php', function (html) {
+            $.get('kf_vmember.php?t=' + new Date().getTime(), function (html) {
                 var hours = 0;
                 var matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
                 if (matches) hours = parseInt(matches[1]);
