@@ -82,8 +82,8 @@ var Const = {
     smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
-    // 上一次领取争夺奖励时被怪物攻击的总次数信息的临时日志名称
-    attackedCountTmpLogName: 'AttackedCount',
+    // 上一次领取争夺奖励时记录的争夺信息的临时日志名称
+    prevLootInfoTmpLogName: 'PrevLootInfo',
     // 上一次自动更换神秘颜色的ID的临时日志名称
     prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
     // 标记已KFB捐款的Cookie名称

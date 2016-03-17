@@ -359,7 +359,7 @@ var Log = {
                 if (key.notStat || typeof key.type === 'undefined') return;
                 if ($.type(key.gain) === 'object') {
                     for (var k in key.gain) {
-                        if (k === 'item' || k === '夺取KFB') continue;
+                        if (k === 'item') continue;
                         if (typeof income[k] === 'undefined') income[k] = key.gain[k];
                         else income[k] += key.gain[k];
                     }
@@ -379,7 +379,7 @@ var Log = {
                 }
                 if ($.type(key.pay) === 'object') {
                     for (var k in key.pay) {
-                        if (k === 'item' || k === '夺取KFB') continue;
+                        if (k === 'item') continue;
                         if (typeof expense[k] === 'undefined') expense[k] = key.pay[k];
                         else expense[k] += key.pay[k];
                     }
@@ -393,7 +393,7 @@ var Log = {
          * @returns {string[]} 经过排序项目列表
          */
         var sortStatItemList = function (obj) {
-            var sortTypeList = ['KFB', '经验值', '能量', 'VIP小时', '贡献', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率',
+            var sortTypeList = ['KFB', '夺取KFB', '经验值', '能量', 'VIP小时', '贡献', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率',
                 '防御', '道具', '已使用道具', '有效道具', '无效道具', '卡片'];
             var list = Tools.getObjectKeyList(obj, 0);
             list.sort(function (a, b) {

@@ -80,13 +80,16 @@ var Loot = {
                     Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
                 }
 
-                var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
-                if (attackedCountMatches) {
+                var lootCountMatches = /总计获得\(实际\)KFB\s*(\d+)\s*次<br/i.exec(html),
+                    attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html),
+                    attackedKfbMatches = /总计被争夺\s*(\d+)\s*KFB<br/i.exec(html);
+                if (lootCountMatches && attackedCountMatches && attackedKfbMatches) {
                     var timeDiff = Const.defLootInterval - lootInterval;
                     if (timeDiff > 0 && timeDiff <= 3 * 60) {
-                        TmpLog.setValue(Const.attackedCountTmpLogName, {
-                            time: Tools.getDate('-' + timeDiff + 'm').getTime(),
-                            count: parseInt(attackedCountMatches[1])
+                        TmpLog.setValue(Const.prevLootInfoTmpLogName, {
+                            lootCount: parseInt(lootCountMatches[1]),
+                            attackedCount: parseInt(attackedCountMatches[1]),
+                            attackedKfb: parseInt(attackedKfbMatches[1])
                         });
                     }
                 }
@@ -116,9 +119,15 @@ var Loot = {
 
                 var attackLogList = Loot.getMonsterAttackLogList(html);
 
-                var attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html);
-                var attackedCount = -1;
-                if (attackedCountMatches) attackedCount = parseInt(attackedCountMatches[1]);
+                var lootCountMatches = /总计获得\(实际\)KFB\s*(\d+)\s*次<br/i.exec(html),
+                    attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html),
+                    attackedKfbMatches = /总计被争夺\s*(\d+)\s*KFB<br/i.exec(html);
+                var lootCount = -1, attackedCount = -1, attackedKfb = -1;
+                if (lootCountMatches && attackedCountMatches && attackedKfbMatches) {
+                    lootCount = parseInt(lootCountMatches[1]);
+                    attackedCount = parseInt(attackedCountMatches[1]);
+                    attackedKfb = parseInt(attackedKfbMatches[1]);
+                }
 
                 $.post('kf_fw_ig_index.php',
                     {submit1: 1, one: 1},
@@ -134,37 +143,48 @@ var Loot = {
                                 Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
                             }
 
-                            var attackedCountDiff = 0;
-                            if (attackedCount > -1) {
+                            var lootCountDiff = 0, attackedCountDiff = 0, attackedKfbDiff = 0;
+                            if (lootCount > -1) {
                                 var now = new Date().getTime();
-                                var attackedCountInfo = TmpLog.getValue(Const.attackedCountTmpLogName);
-                                if (attackedCountInfo && $.type(attackedCountInfo) === 'object' && $.type(attackedCountInfo.time) === 'number' &&
-                                    $.type(attackedCountInfo.count) === 'number' && attackedCountInfo.time > 0 && attackedCountInfo.count >= 0) {
-                                    attackedCountDiff = attackedCount - attackedCountInfo.count;
-                                    if (now - attackedCountInfo.time <= 0) attackedCountDiff = 0;
-                                    else if (now - attackedCountInfo.time >= Const.defLootInterval * 60 * 1000 * 2 && attackedCountDiff >= 20)
-                                        attackedCountDiff = 0;
+                                var prevLootInfo = TmpLog.getValue(Const.prevLootInfoTmpLogName);
+                                if (prevLootInfo && $.type(prevLootInfo) === 'object' && $.type(prevLootInfo.lootCount) === 'number' &&
+                                    $.type(prevLootInfo.attackedCount) === 'number' && $.type(prevLootInfo.attackedKfb) === 'number') {
+                                    lootCountDiff = lootCount - prevLootInfo.attackedCount;
+                                    if (lootCountDiff === 1) {
+                                        attackedCountDiff = attackedCount - prevLootInfo.attackedCount;
+                                        attackedKfbDiff = attackedKfb - prevLootInfo.attackedKfb;
+                                    }
+                                    else {
+                                        lootCountDiff = 0;
+                                    }
                                 }
-                                TmpLog.setValue(Const.attackedCountTmpLogName, {time: now, count: attackedCount});
+                                TmpLog.setValue(Const.prevLootInfoTmpLogName, {
+                                    lootCount: lootCount,
+                                    attackedCount: attackedCount,
+                                    attackedKfb: attackedKfb
+                                });
                             }
                             if (/已经预领\d+KFB/i.test(html)) {
                                 gain = 0;
                             }
                             else {
+                                var options = {gain: {'KFB': gain}};
+                                if (attackedKfbDiff > 0) options['pay'] = {'夺取KFB': -attackedKfbDiff};
                                 Log.push('领取争夺奖励',
-                                    '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''),
-                                    {gain: {'KFB': gain}}
+                                    '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''), options
                                 );
                             }
-                            console.log('领取争夺奖励{0}，KFB+{1}'
+                            console.log('领取争夺奖励{0}，KFB+{1}{2}'
                                 .replace('{0}', attackedCountDiff > 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
                                 .replace('{1}', gain)
+                                .replace('{2}', attackedKfbDiff > 0 ? '，夺取KFB-' + attackedKfbDiff : '')
                             );
-                            var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}'
+                            var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}{4}'
                                 .replace('{0}', attackedCountDiff > 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
                                 .replace('{1}', gain)
-                                .replace('{2}', attackLogList.length > 0 ? '<a href="#">查看日志</a>' : '')
-                                .replace('{3}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
+                                .replace('{2}', attackedKfbDiff > 0 ? '<i>夺取KFB<em>-{0}</em></i>'.replace('{0}', attackedKfbDiff) : '')
+                                .replace('{3}', attackLogList.length > 0 ? '<a href="#">查看日志</a>' : '')
+                                .replace('{4}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
                             );
                             $msg.find('a[href="#"]:first').click(function (e) {
                                 e.preventDefault();
