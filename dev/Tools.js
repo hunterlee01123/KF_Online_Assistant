@@ -334,7 +334,7 @@ var Tools = {
      * @returns {boolean} 是否为Edge
      */
     isEdge: function () {
-        return navigator.userAgent && navigator.userAgent.indexOf('Edge') > 0;
+        return navigator.appVersion && navigator.appVersion.indexOf('Edge') > 0;
     },
 
     /**
@@ -371,5 +371,20 @@ var Tools = {
     getCurrentThreadPage: function () {
         var matches = /- (\d+) -/.exec($('.pages:first > li > a[href="javascript:;"]').text());
         return matches ? parseInt(matches[1]) : 1;
+    },
+
+    /**
+     * 获取指定小数位的本地字符串
+     * @param {number} num 数字
+     * @param {number} [digit=0] 指定小数位
+     * @returns {string} 指定小数位的本地字符串
+     */
+    getFixedNumberLocaleString: function (num, digit) {
+        if (!digit || digit < 0) digit = 0;
+        var arr = num.toFixed(digit).split('.');
+        var integerStr = parseInt(arr[0]).toLocaleString();
+        var decimalStr = '';
+        if (typeof arr[1] !== 'undefined') decimalStr = '.' + arr[1];
+        return integerStr + decimalStr;
     }
 };

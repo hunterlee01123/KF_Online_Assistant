@@ -1771,7 +1771,7 @@ var Item = {
                                 .replace('{0}', successNum)
                                 .replace('{1}', failNum > 0 ? '（共有`{0}`个道具未能统计成功）'.replace('{0}', failNum) : '')
                                 .replace('{2}', totalPrice.toLocaleString())
-                                .replace('{3}', successNum > 0 ? (totalPrice / successNum).toFixed(2).toLocaleString() : 0)
+                                .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
                                 .replace('{4}', minPrice.toLocaleString())
                                 .replace('{5}', maxPrice.toLocaleString())
                                 , {pay: {'KFB': -totalPrice}}
@@ -1781,7 +1781,7 @@ var Item = {
                             .replace('{0}', failNum)
                             .replace('{1}', successNum)
                             .replace('{2}', totalPrice.toLocaleString())
-                            .replace('{3}', successNum > 0 ? (totalPrice / successNum).toFixed(2).toLocaleString() : 0)
+                            .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
                             .replace('{4}', minPrice.toLocaleString())
                             .replace('{5}', maxPrice.toLocaleString())
                         );
@@ -1791,7 +1791,7 @@ var Item = {
                                 .replace('{0}', failNum > 0 ? '<span class="pd_notice">（共有{0}个道具未能统计成功）</span>'.replace('{0}', failNum) : '')
                                 .replace('{1}', successNum)
                                 .replace('{2}', totalPrice.toLocaleString())
-                                .replace('{3}', successNum > 0 ? (totalPrice / successNum).toFixed(2).toLocaleString() : 0)
+                                .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
                                 .replace('{4}', minPrice.toLocaleString())
                                 .replace('{5}', maxPrice.toLocaleString())
                         );

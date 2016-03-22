@@ -91,7 +91,7 @@ var Config = {
     // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
     animationEffectOffEnabled: false,
     // 日志保存天数
-    logSaveDays: 15,
+    logSaveDays: 30,
     // 在页面上方显示助手日志的链接，true：开启；false：关闭
     showLogLinkInPageEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序

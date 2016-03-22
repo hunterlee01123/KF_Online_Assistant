@@ -80,19 +80,6 @@ var Loot = {
                     Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
                 }
 
-                var lootCountMatches = /总计获得\(实际\)KFB\s*(\d+)\s*次<br/i.exec(html),
-                    attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html),
-                    attackedKfbMatches = /总计被争夺\s*(\d+)\s*KFB<br/i.exec(html);
-                if (lootCountMatches && attackedCountMatches && attackedKfbMatches) {
-                    var timeDiff = Const.defLootInterval - lootInterval;
-                    if (timeDiff > 0 && timeDiff <= 3 * 60) {
-                        TmpLog.setValue(Const.prevLootInfoTmpLogName, {
-                            lootCount: parseInt(lootCountMatches[1]),
-                            attackedCount: parseInt(attackedCountMatches[1]),
-                            attackedKfb: parseInt(attackedKfbMatches[1])
-                        });
-                    }
-                }
                 var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
                 if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
                     autoAttack(safeId, deadlyAttackNum);
@@ -118,16 +105,7 @@ var Loot = {
                 if (gainMatches) gain = parseInt(gainMatches[1]);
 
                 var attackLogList = Loot.getMonsterAttackLogList(html);
-
-                var lootCountMatches = /总计获得\(实际\)KFB\s*(\d+)\s*次<br/i.exec(html),
-                    attackedCountMatches = /总计被争夺\s*(\d+)\s*次<br/i.exec(html),
-                    attackedKfbMatches = /总计被争夺\s*(\d+)\s*KFB<br/i.exec(html);
-                var lootCount = -1, attackedCount = -1, attackedKfb = -1;
-                if (lootCountMatches && attackedCountMatches && attackedKfbMatches) {
-                    lootCount = parseInt(lootCountMatches[1]);
-                    attackedCount = parseInt(attackedCountMatches[1]);
-                    attackedKfb = parseInt(attackedKfbMatches[1]);
-                }
+                var lootInfo = Loot.getLootInfo(html);
 
                 $.post('kf_fw_ig_index.php',
                     {submit1: 1, one: 1},
@@ -143,48 +121,46 @@ var Loot = {
                                 Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
                             }
 
-                            var lootCountDiff = 0, attackedCountDiff = 0, attackedKfbDiff = 0;
-                            if (lootCount > -1) {
-                                var now = new Date().getTime();
-                                var prevLootInfo = TmpLog.getValue(Const.prevLootInfoTmpLogName);
-                                if (prevLootInfo && $.type(prevLootInfo) === 'object' && $.type(prevLootInfo.lootCount) === 'number' &&
-                                    $.type(prevLootInfo.attackedCount) === 'number' && $.type(prevLootInfo.attackedKfb) === 'number') {
-                                    lootCountDiff = lootCount - prevLootInfo.attackedCount;
+                            var lootCountDiff = -1, attackKfbDiff = -1, attackedCountDiff = -1, attackedKfbDiff = -1;
+                            if (lootInfo) {
+                                var prevLootInfo = Loot.getPrevLootInfo();
+                                if (prevLootInfo) {
+                                    lootCountDiff = lootInfo.lootCount - prevLootInfo.lootCount;
                                     if (lootCountDiff === 1) {
-                                        attackedCountDiff = attackedCount - prevLootInfo.attackedCount;
-                                        attackedKfbDiff = attackedKfb - prevLootInfo.attackedKfb;
-                                    }
-                                    else {
-                                        lootCountDiff = 0;
+                                        attackKfbDiff = lootInfo.attackKfb - prevLootInfo.attackKfb;
+                                        attackedCountDiff = lootInfo.attackedCount - prevLootInfo.attackedCount;
                                     }
                                 }
-                                TmpLog.setValue(Const.prevLootInfoTmpLogName, {
-                                    lootCount: lootCount,
-                                    attackedCount: attackedCount,
-                                    attackedKfb: attackedKfb
-                                });
+                                TmpLog.setValue(Const.prevLootInfoTmpLogName, lootInfo);
                             }
+
                             if (/已经预领\d+KFB/i.test(html)) {
                                 gain = 0;
                             }
                             else {
                                 var options = {gain: {'KFB': gain}};
-                                if (attackedKfbDiff > 0) options['pay'] = {'夺取KFB': -attackedKfbDiff};
+                                if (attackKfbDiff >= 0) attackedKfbDiff = attackKfbDiff + Const.lootInitialBonus - gain;
+                                if (attackKfbDiff >= 0 && attackedKfbDiff >= 0) {
+                                    options['gain']['夺取KFB'] = attackKfbDiff;
+                                    options['pay'] = {'夺取KFB': -attackedKfbDiff};
+                                }
                                 Log.push('领取争夺奖励',
                                     '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''), options
                                 );
                             }
-                            console.log('领取争夺奖励{0}，KFB+{1}{2}'
-                                .replace('{0}', attackedCountDiff > 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
+                            console.log('领取争夺奖励{0}，KFB+{1}{2}{3}'
+                                .replace('{0}', attackedCountDiff >= 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
                                 .replace('{1}', gain)
-                                .replace('{2}', attackedKfbDiff > 0 ? '，夺取KFB-' + attackedKfbDiff : '')
+                                .replace('{2}', attackKfbDiff >= 0 ? '，夺取KFB+{0}' + attackKfbDiff : '')
+                                .replace('{3}', attackedKfbDiff >= 0 ? '，夺取KFB-{1}' + attackedKfbDiff : '')
                             );
-                            var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}{4}'
-                                .replace('{0}', attackedCountDiff > 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
+                            var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}{4}{5}'
+                                .replace('{0}', attackedCountDiff >= 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
                                 .replace('{1}', gain)
-                                .replace('{2}', attackedKfbDiff > 0 ? '<i>夺取KFB<em>-{0}</em></i>'.replace('{0}', attackedKfbDiff) : '')
-                                .replace('{3}', attackLogList.length > 0 ? '<a href="#">查看日志</a>' : '')
-                                .replace('{4}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
+                                .replace('{2}', attackKfbDiff >= 0 ? '<i>夺取KFB<em>+{0}</em></i>'.replace('{0}', attackKfbDiff) : '')
+                                .replace('{3}', attackedKfbDiff >= 0 ? '<i>夺取KFB<ins>-{0}</ins></i>'.replace('{0}', attackedKfbDiff) : '')
+                                .replace('{4}', attackLogList.length > 0 ? '<a href="#">查看日志</a>' : '')
+                                .replace('{5}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
                             );
                             $msg.find('a[href="#"]:first').click(function (e) {
                                 e.preventDefault();
@@ -472,10 +448,6 @@ var Loot = {
                         }
                         console.log((settings.type === 3 ? '成功进行了{0}次试探攻击'.replace('{0}', successNum) : '共有{0}次攻击成功'.replace('{0}', successNum)) + logStat);
 
-                        var duration = Config.defShowMsgDuration;
-                        if (settings.type === 1 || duration === -1) duration = -1;
-                        else if (settings.type === 3 && duration > 0 && duration < 30) duration = 30;
-                        else if (settings.type === 2 && duration > 0 && duration < 480) duration = 480;
                         var extraMsg = '';
                         if (strongAttackNum > 0) extraMsg += '暴击<em>+{0}</em>'.replace('{0}', strongAttackNum);
                         if (criticalStrikeNum > 0) extraMsg += (extraMsg ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
@@ -487,7 +459,7 @@ var Loot = {
                             .replace('{1}', extraMsg)
                             .replace('{2}', msgStat)
                             .replace('{3}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
-                            , duration
+                            , Config.defShowMsgDuration
                         );
 
                         if (isStop || settings.type === 2 || count >= Const.maxAttackNum) {
@@ -764,9 +736,9 @@ var Loot = {
             }
         }
 
-        var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');
-        if ($lootInfo.length > 0) {
-            var html = $lootInfo.html();
+        var $lootPropertyInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');
+        if ($lootPropertyInfo.length > 0) {
+            var html = $lootPropertyInfo.html();
             var lootInfoMatches = html.match(/>.+?\s*\d+\(\+\d+(\+\d+)?\)\s*(点|%)<\/span>/gi);
             if (lootInfoMatches) {
                 for (var i in lootInfoMatches) {
@@ -783,12 +755,12 @@ var Loot = {
                         html = html.replace(lootInfoMatches[i], replace);
                     }
                 }
-                $lootInfo.html(html);
+                $lootPropertyInfo.html(html);
             }
-            $lootInfo.find('span[title]').addClass('pd_custom_tips');
+            $lootPropertyInfo.find('span[title]').addClass('pd_custom_tips');
 
-            $lootInfo.css('position', 'relative');
-            $('<a style="position:absolute;top:4px;right:5px;" href="#">[合计]</a>').appendTo($lootInfo).click(function (e) {
+            $lootPropertyInfo.css('position', 'relative');
+            $('<a style="position:absolute;top:4px;right:5px;" href="#">[合计]</a>').appendTo($lootPropertyInfo).click(function (e) {
                 e.preventDefault();
                 var $this = $(this);
                 var $panel = $('#pd_attack_sum_panel');
@@ -800,7 +772,7 @@ var Loot = {
                 $this.text('[关闭]');
 
                 var attackNum = 0, attackBurnNum = 0, strongAttackPercent = 0;
-                var content = $lootInfo.html();
+                var content = $lootPropertyInfo.html();
                 var matches = /争夺攻击\s*\d+\(\+\d+\)=(\d+)\s*点/.exec(content);
                 if (matches) attackNum = parseInt(matches[1]);
                 matches = /争夺燃烧\s*\d+\(\+\d+\)=(\d+)\s*点/.exec(content);
@@ -836,10 +808,34 @@ var Loot = {
                     '    </tr>' +
                     '  </tbody>' +
                     '</table>';
-                var offset = $lootInfo.offset();
+                var offset = $lootPropertyInfo.offset();
                 $panel = $(html).appendTo('body');
                 $panel.css('top', offset.top - $panel.height() - 2).css('left', offset.left);
             });
+        }
+
+        var prevLootInfo = Loot.getPrevLootInfo();
+        if (prevLootInfo) {
+            var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(3)');
+            var html = $lootInfo.html();
+            var lootInfo = Loot.getLootInfo(html);
+            if (lootInfo) {
+                var lootCountDiff = lootInfo.lootCount - prevLootInfo.lootCount;
+                if (lootCountDiff === 1) {
+                    var attackCountDiff = lootInfo.attackCount - prevLootInfo.attackCount,
+                        attackKfbDiff = lootInfo.attackKfb - prevLootInfo.attackKfb,
+                        attackedCountDiff = lootInfo.attackedCount - prevLootInfo.attackedCount,
+                        attackedKfbDiff = lootInfo.attackedKfb - prevLootInfo.attackedKfb;
+                    if (attackCountDiff >= 0 && attackKfbDiff >= 0 && attackedCountDiff >= 0 && attackedKfbDiff >= 0) {
+                        $lootInfo.html(
+                            html.replace(/(总计争夺\s*\d+\s*次)/i, '$1 <span class="pd_custom_tips" title="本回合目前攻击的次数">({0} 次)</span>'.replace('{0}', attackCountDiff))
+                                .replace(/(总计争夺\s*\d+\s*KFB)/i, '$1 <span class="pd_custom_tips" title="本回合目前夺取的KFB">({0} KFB)</span>'.replace('{0}', attackKfbDiff))
+                                .replace(/(总计被争夺\s*\d+\s*次)/i, '$1 <span class="pd_custom_tips" title="本回合目前被攻击的次数">({0} 次)</span>'.replace('{0}', attackedCountDiff))
+                                .replace(/(总计被争夺\s*\d+\s*KFB)/i, '$1 <span class="pd_custom_tips" title="本回合目前被夺取的KFB（不包括被燃烧的KFB）">({0} KFB)</span>'.replace('{0}', attackedKfbDiff))
+                        ).find('.pd_custom_tips').css('color', '#339933');
+                    }
+                }
+            }
         }
     },
 
@@ -1221,29 +1217,26 @@ var Loot = {
                 });
                 $this.html(html);
             });
-            $('a.kfigpk_hit').each(function () {
+            $('a.kfigpk_hit').off('click').click(function () {
+                var $this = $(this);
+                $.post('kf_fw_ig_pkhit.php',
+                    {uid: $this.attr('hitid'), safeid: $this.attr('safeid')},
+                    function (msg) {
+                        $.each(Config.customMonsterNameList, function (id, name) {
+                            msg = msg.replace(
+                                '对[{0}]'.replace('{0}', Loot.getMonsterNameById(parseInt(id))),
+                                '对[{0}]'.replace('{0}', name)
+                            );
+                        });
+                        $this.html(msg);
+                    }, 'html');
+            }).each(function () {
                 var $this = $(this);
                 var html = $this.html();
                 $.each(Config.customMonsterNameList, function (id, name) {
                     html = html.replace(Loot.getMonsterNameById(parseInt(id)), name);
                 });
                 $this.html(html);
-            });
-            $(function () {
-                $('a.kfigpk_hit').off('click').click(function () {
-                    var $this = $(this);
-                    $.post('kf_fw_ig_pkhit.php',
-                        {uid: $this.attr('hitid'), safeid: $this.attr('safeid')},
-                        function (msg) {
-                            $.each(Config.customMonsterNameList, function (id, name) {
-                                msg = msg.replace(
-                                    '对[{0}]'.replace('{0}', Loot.getMonsterNameById(parseInt(id))),
-                                    '对[{0}]'.replace('{0}', name)
-                                );
-                            });
-                            $this.html(msg);
-                        }, 'html');
-                });
             });
         }
     },
@@ -1638,7 +1631,7 @@ var Loot = {
                                     .replace('{1}', item.itemName)
                                     .replace('{2}', msgStat)
                                     .replace('{3}', msgMatches[1])
-                                    , -1);
+                                    , Config.defShowMsgDuration);
                             }
                         },
                         complete: function () {
@@ -1663,5 +1656,54 @@ var Loot = {
             $(document).dequeue('UseItemList');
         };
         $(document).dequeue('GetItemList');
+    },
+
+    /**
+     * 获取当前争夺数据信息
+     * @param {string} html 争夺首页的HTML代码
+     * @returns {?{lootCount: number, lootKfb: number, attackCount: number, attackKfb: number, attackedCount: number, attackedKfb: number}}
+     * 当前争夺数据信息
+     * lootCount：争夺次数；lootKfb：争夺实际获得的KFB；attackCount：攻击次数；attackKfb：夺取KFB；attackedCount：被攻击次数；attackedKfb：被夺取KFB；
+     */
+    getLootInfo: function (html) {
+        var lootCountMatches = /总计获得\(实际\)KFB\s*(\d+)\s*次/.exec(html),
+            lootKfbMatches = /总计获得\(实际\)\s*(\d+)\s*KFB/i.exec(html),
+            attackCountMatches = /总计争夺\s*(\d+)\s*次/.exec(html),
+            attackKfbMatches = /总计争夺\s*(\d+)\s*KFB/i.exec(html),
+            attackedCountMatches = /总计被争夺\s*(\d+)\s*次/.exec(html),
+            attackedKfbMatches = /总计被争夺\s*(\d+)\s*KFB/i.exec(html);
+        if (lootCountMatches && lootKfbMatches && attackCountMatches && attackKfbMatches && attackedCountMatches && attackedKfbMatches) {
+            return {
+                lootCount: parseInt(lootCountMatches[1]),
+                lootKfb: parseInt(lootKfbMatches[1]),
+                attackCount: parseInt(attackCountMatches[1]),
+                attackKfb: parseInt(attackKfbMatches[1]),
+                attackedCount: parseInt(attackedCountMatches[1]),
+                attackedKfb: parseInt(attackedKfbMatches[1])
+            };
+        }
+        else return null;
+    },
+
+    /**
+     * 获取上一次领取争夺奖励时记录的争夺信息
+     * @returns {?{lootCount: number, lootKfb: number, attackCount: number, attackKfb: number, attackedCount: number, attackedKfb: number}}
+     * 上一次领取争夺奖励时记录的争夺信息
+     * lootCount：争夺次数；lootKfb：争夺实际获得的KFB；attackCount：攻击次数；attackKfb：夺取KFB；attackedCount：被攻击次数；attackedKfb：被夺取KFB；
+     */
+    getPrevLootInfo: function () {
+        var info = TmpLog.getValue(Const.prevLootInfoTmpLogName);
+        if (info && $.type(info) === 'object' && $.type(info.lootCount) === 'number' && $.type(info.lootKfb) === 'number' && $.type(info.attackCount) === 'number' &&
+            $.type(info.attackKfb) === 'number' && $.type(info.attackedCount) === 'number' && $.type(info.attackedKfb) === 'number') {
+            return {
+                lootCount: parseInt(info.lootCount),
+                lootKfb: parseInt(info.lootKfb),
+                attackCount: parseInt(info.attackCount),
+                attackKfb: parseInt(info.attackKfb),
+                attackedCount: parseInt(info.attackedCount),
+                attackedKfb: parseInt(info.attackedKfb)
+            };
+        }
+        else return null;
     }
 };

@@ -93,11 +93,12 @@ var KFOL = {
             '}' +
             '.pd_pop_tips strong { margin-right: 5px; }' +
             '.pd_pop_tips i { font-style: normal; padding-left: 10px; }' +
-            '.pd_pop_tips em, .pd_stat em, .pd_pop_tips ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#FF6600; padding: 0 5px; }' +
+            '.pd_pop_tips em, .pd_stat em, .pd_pop_tips ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#FF6600; padding: 0 3px; }' +
             '.pd_pop_tips ins, .pd_stat ins { text-decoration: none; color: #339933; }' +
             '.pd_pop_tips a { font-weight: bold; margin-left: 15px; }' +
             '.pd_stat i { font-style: normal; margin-right: 3px; }' +
             '.pd_stat .pd_notice { margin-left: 5px; }' +
+            '.pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }' +
             '.pd_highlight { color: #FF0000 !important; }' +
             '.pd_notice, .pd_pop_tips .pd_notice { font-style: italic; color: #666; }' +
             '.pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: inherit; margin-right: 0; line-height: 22px; font-size: 12px; }' +
@@ -156,7 +157,7 @@ var KFOL = {
             '.pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }' +
             '.pd_cfg_nav a { margin-left: 10px; }' +
             '.pd_cfg_main { background-color: #FCFCFC; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 180px; overflow: auto; }' +
-            '.pd_cfg_main fieldset { border: 1px solid #CCCCFF; padding: 2px 6px 8px; }' +
+            '.pd_cfg_main fieldset { border: 1px solid #CCCCFF; padding: 0 6px 6px; }' +
             '.pd_cfg_main legend { font-weight: bold; }' +
             '.pd_cfg_main label input, .pd_cfg_main legend input, .pd_cfg_main label select { margin: 0 5px; }' +
             '.pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }' +
@@ -174,7 +175,7 @@ var KFOL = {
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
                 /* 日志对话框 */
-            '#pd_log { width: 680px; }' +
+            '#pd_log { width: 700px; }' +
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
             '.pd_log_nav a { display: inline-block; }' +
             '.pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }' +
@@ -1440,8 +1441,8 @@ var KFOL = {
                 }
                 if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
                         .replace('{0}', threadList.length)
-                        .replace('{1}', totalSell)
-                        .replace('{2}', (totalSell / threadList.length).toFixed(2))
+                        .replace('{1}', totalSell.toLocaleString())
+                        .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
                     )
                 ) {
                     KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
@@ -2721,4 +2722,7 @@ var KFOL = {
     }
 };
 
-KFOL.init();
+if (document.addEventListener)
+    document.addEventListener('DOMContentLoaded', KFOL.init);
+else if (window.attachEvent)
+    window.attachEvent('onload', KFOL.init);

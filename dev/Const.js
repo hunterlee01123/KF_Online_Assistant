@@ -9,6 +9,8 @@ var Const = {
     maxDonationKfb: 5000,
     // 争夺的默认领取间隔（分钟）
     defLootInterval: 660,
+    // 争夺初始的预领KFB
+    lootInitialBonus: 100,
     // 所允许的在距本回合结束前指定时间后才进行自动批量攻击的最小时间（分钟）
     minAttackAfterTime: 63,
     // 每回合攻击的最大次数
