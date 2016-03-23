@@ -144,6 +144,10 @@ var KFOL = {
             '.pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }' +
             '.pd_usable_num { color: #669933; }' +
             '.pd_used_num { color: #FF0033; }' +
+            '.pd_title_tips {' +
+            '  position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;' +
+            '  padding: 2px 5px; background-color: #FCFCFC; border: 1px solid #767676; z-index: 9999;' +
+            '}' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -175,7 +179,7 @@ var KFOL = {
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
                 /* 日志对话框 */
-            '#pd_log { width: 700px; }' +
+            '#pd_log { width: 880px; }' +
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
             '.pd_log_nav a { display: inline-block; }' +
             '.pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }' +
@@ -2571,6 +2575,38 @@ var KFOL = {
     },
 
     /**
+     * 显示元素的title属性提示（用于手机浏览器）
+     * @param {{}} e 点击事件
+     * @param {string} title title属性
+     */
+    showElementTitleTips: function (e, title) {
+        $('.pd_title_tips').remove();
+        if (!title || !e.originalEvent) return;
+        $('<div class="pd_title_tips">{0}</div>'.replace('{0}', title))
+            .appendTo('body')
+            .css('left', e.originalEvent.pageX - 20)
+            .css('top', e.originalEvent.pageY + 15);
+    },
+
+    /**
+     * 绑定包含title属性元素的点击事件（用于手机浏览器）
+     */
+    bindElementTitleClick: function () {
+        var excludeNodeNameList = ['A', 'IMG', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT'];
+        $(document).click(function (e) {
+            var target = e.target;
+            if (!target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && target.parentNode && target.parentNode.title)
+                target = target.parentNode;
+            if (target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && (!target.id || target.id.indexOf('wy_') !== 0)) {
+                KFOL.showElementTitleTips(e, target.title);
+            }
+            else {
+                $('.pd_title_tips').remove();
+            }
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -2685,6 +2721,7 @@ var KFOL = {
         if (Config.blockUserEnabled) KFOL.blockUsers();
         if (Config.blockThreadEnabled) KFOL.blockThread();
         if (Config.followUserEnabled) KFOL.followUsers();
+        if (Const.showElementTitleTipsEnabled) KFOL.bindElementTitleClick();
 
         var isGetLootAwardStarted = false;
         var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
@@ -2722,7 +2759,4 @@ var KFOL = {
     }
 };
 
-if (document.addEventListener)
-    document.addEventListener('DOMContentLoaded', KFOL.init);
-else if (window.attachEvent)
-    window.attachEvent('onload', KFOL.init);
+KFOL.init();

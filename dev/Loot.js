@@ -1120,13 +1120,13 @@ var Loot = {
                     if (type === 2) {
                         customLog = customLog.replace(
                             new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
-                            '[{0}]对'.replace('{0}', name)
+                            '<span class="pd_custom_tips" title="{0}">[{1}]</span>对'.replace('{0}', oriName).replace('{1}', name)
                         );
                     }
                     else {
                         customLog = customLog.replace(
                             new RegExp('对\\[{0}\\]'.replace('{0}', oriName), 'g'),
-                            '对[{0}]'.replace('{0}', name)
+                            '对<span class="pd_custom_tips" title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
                         );
                     }
                 });
@@ -1217,26 +1217,29 @@ var Loot = {
                 });
                 $this.html(html);
             });
-            $('a.kfigpk_hit').off('click').click(function () {
-                var $this = $(this);
-                $.post('kf_fw_ig_pkhit.php',
-                    {uid: $this.attr('hitid'), safeid: $this.attr('safeid')},
-                    function (msg) {
-                        $.each(Config.customMonsterNameList, function (id, name) {
-                            msg = msg.replace(
-                                '对[{0}]'.replace('{0}', Loot.getMonsterNameById(parseInt(id))),
-                                '对[{0}]'.replace('{0}', name)
-                            );
-                        });
-                        $this.html(msg);
-                    }, 'html');
-            }).each(function () {
+            $('a.kfigpk_hit').each(function () {
                 var $this = $(this);
                 var html = $this.html();
                 $.each(Config.customMonsterNameList, function (id, name) {
                     html = html.replace(Loot.getMonsterNameById(parseInt(id)), name);
                 });
                 $this.html(html);
+            });
+            $(function () {
+                $('a.kfigpk_hit').off('click').click(function () {
+                    var $this = $(this);
+                    $.post('kf_fw_ig_pkhit.php',
+                        {uid: $this.attr('hitid'), safeid: $this.attr('safeid')},
+                        function (msg) {
+                            $.each(Config.customMonsterNameList, function (id, name) {
+                                msg = msg.replace(
+                                    '对[{0}]'.replace('{0}', Loot.getMonsterNameById(parseInt(id))),
+                                    '对[{0}]'.replace('{0}', name)
+                                );
+                            });
+                            $this.html(msg);
+                        }, 'html');
+                });
             });
         }
     },

@@ -54,6 +54,17 @@ def getMetaFileContent(content):
         raise Exception('未找到meta信息')
     return metaContent
 
+def getMinFileContent(content):
+    '''获取压缩过的文件内容
+
+    Args:
+        content: 脚本文件内容
+
+    Returns:
+        压缩过的文件内容
+    '''
+    return '(function(){\n' + jsmin(content) + '\n}());'
+
 def getDefaultEditionContent():
     '''获取标准版文件内容
 
@@ -91,7 +102,7 @@ def makeDefaultEdition(content):
     open(releaseDirName + os.sep + defaultFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成标准版脚本文件')
     metaContent = getMetaFileContent(content)
-    open(releaseDirName + os.sep + defaultFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + jsmin(content))
+    open(releaseDirName + os.sep + defaultFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + getMinFileContent(content))
     print('生成压缩过的标准版脚本文件')
     open(releaseDirName + os.sep + defaultFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
     print('生成标准版meta文件')
@@ -156,10 +167,12 @@ def makeForMobileEdition(content):
     if num == 0: raise NoFoundReplaceStringError('移动版', 7)
     content, num = re.subn(r'(else\s*\{\n\s*textArea\.value\s*\+\=\s*code;\n\s*\})\n\s*textArea\.focus\(\);', r'\g<1>', content, count=1, flags=re.I)
     if num == 0: raise NoFoundReplaceStringError('移动版', 8)
+    content, num = re.subn(r'(showElementTitleTipsEnabled:\s*)false,', r'\g<1>true,', content, count=1, flags=re.I)
+    if num == 0: raise NoFoundReplaceStringError('移动版', 9)
     open(releaseDirName + os.sep + forMobileFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成移动版脚本文件')
     metaContent = getMetaFileContent(content)
-    open(releaseDirName + os.sep + forMobileFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + jsmin(content))
+    open(releaseDirName + os.sep + forMobileFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + getMinFileContent(content))
     print('生成压缩过的移动版脚本文件')
     open(releaseDirName + os.sep + forMobileFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
     print('生成移动版meta文件')

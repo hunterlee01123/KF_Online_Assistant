@@ -227,6 +227,7 @@ var Log = {
         Log.showLogContent(dateList[curIndex]);
         Log.showLogStat(dateList[curIndex]);
 
+        if ($(window).height() <= 720) $dialog.find('#pd_log_content').css('height', '216px');
         Dialog.show('pd_log');
         $dialog.find('input:first').focus();
     },
@@ -355,10 +356,11 @@ var Log = {
 
         var income = {}, expense = {}, profit = {};
         var smBoxGain = [], lootGain = [], lootItemGain = {};
-        var lootCount = 0, lootAttackedCount = 0, minLootAttackedCount = 0, maxLootAttackedCount = 0,
-            lootAttackKfb = 0, minLootAttackKfb = 0, maxLootAttackKfb = 0,
-            lootAttackedKfb = 0, minLootAttackedKfb = 0, maxLootAttackedKfb = 0;
-        var attackCount = 0, attemptAttackCount = 0, strongAttackCount = 0, minStrongAttackCount = 0, maxStrongAttackCount = 0, deadlyAttackCount = 0;
+        var lootCount = 0, lootAttackedCount = 0, minLootAttackedCount = -1, maxLootAttackedCount = -1,
+            lootAttackKfb = 0, minLootAttackKfb = -1, maxLootAttackKfb = -1,
+            lootAttackedKfb = 0, minLootAttackedKfb = -1, maxLootAttackedKfb = -1;
+        var attackCount = 0, attemptAttackCount = 0, attackKfb = 0, attackExp = 0,
+            strongAttackCount = 0, minStrongAttackCount = -1, maxStrongAttackCount = -1, deadlyAttackCount = 0;
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
@@ -370,28 +372,50 @@ var Log = {
                     }
                     if (key.type === '领取争夺奖励') {
                         if (typeof key.gain['KFB'] !== 'undefined')lootGain.push(key.gain['KFB']);
-                        var actionMatches = /`(\d+)`次攻击/.exec(key.action);
-                        if (actionMatches && $.type(key.pay) === 'object' && $.type(key.gain['夺取KFB']) === 'number' && $.type(key.pay['夺取KFB']) === 'number') {
+
+                        var matches = /`(\d+)`次攻击/.exec(key.action);
+                        if (matches && $.type(key.pay) === 'object' && typeof key.gain['夺取KFB'] !== 'undefined' && typeof key.pay['夺取KFB'] !== 'undefined') {
                             lootCount++;
-                            var attackedCount = parseInt(actionMatches[1]);
-                            lootAttackedCount += attackedCount;
-                            if (minLootAttackedCount === 0 || attackedCount < minLootAttackedCount) minLootAttackedCount = attackedCount;
-                            if (maxLootAttackedCount === 0 || attackedCount > maxLootAttackedCount) maxLootAttackedCount = attackedCount;
-                            var attackKfb = parseInt(key.gain['夺取KFB']);
-                            lootAttackKfb += attackKfb;
-                            if (minLootAttackKfb === 0 || attackKfb < minLootAttackKfb) minLootAttackKfb = attackKfb;
-                            if (maxLootAttackKfb === 0 || attackKfb > maxLootAttackKfb) maxLootAttackKfb = attackKfb;
-                            var attackedKfb = Math.abs(parseInt(key.pay['夺取KFB']));
-                            lootAttackedKfb += attackedKfb;
-                            if (minLootAttackedKfb === 0 || attackedKfb < minLootAttackedKfb) minLootAttackedKfb = attackedKfb;
-                            if (maxLootAttackedKfb === 0 || attackedKfb > maxLootAttackedKfb) maxLootAttackedKfb = attackedKfb;
+                            var count = parseInt(matches[1]);
+                            lootAttackedCount += count;
+                            if (minLootAttackedCount < 0 || count < minLootAttackedCount) minLootAttackedCount = count;
+                            if (count > maxLootAttackedCount) maxLootAttackedCount = count;
+                            var kfb = parseInt(key.gain['夺取KFB']);
+                            lootAttackKfb += kfb;
+                            if (minLootAttackKfb < 0 || kfb < minLootAttackKfb) minLootAttackKfb = kfb;
+                            if (kfb > maxLootAttackKfb) maxLootAttackKfb = kfb;
+                            var kfb = Math.abs(parseInt(key.pay['夺取KFB']));
+                            lootAttackedKfb += kfb;
+                            if (minLootAttackedKfb < 0 || kfb < minLootAttackedKfb) minLootAttackedKfb = kfb;
+                            if (kfb > maxLootAttackedKfb) maxLootAttackedKfb = kfb;
                         }
                     }
-                    else if ((key.type === '批量攻击' || key.type === '试探攻击') && $.type(key.gain['item']) === 'object') {
-                        for (var itemName in key.gain['item']) {
-                            var num = parseInt(key.gain['item'][itemName]);
-                            if (typeof lootItemGain[itemName] === 'undefined') lootItemGain[itemName] = num;
-                            else lootItemGain[itemName] += num;
+                    else if ((key.type === '批量攻击' || key.type === '试探攻击')) {
+                        var matches = /`(\d+)`次/.exec(key.action);
+                        if (matches) {
+                            if (key.type === '试探攻击') attemptAttackCount++;
+                            if (typeof key.gain['夺取KFB'] !== 'undefined') attackKfb += parseInt(key.gain['夺取KFB']);
+                            if (typeof key.gain['经验值'] !== 'undefined') attackExp += parseInt(key.gain['经验值']);
+                            attackCount += parseInt(matches[1]);
+                            matches = /暴击`\+(\d+)`/.exec(key.action);
+                            if (matches) {
+                                var count = parseInt(matches[1]);
+                                strongAttackCount += count;
+                                if (key.type === '批量攻击') {
+                                    if (minStrongAttackCount < 0 || count < minStrongAttackCount) minStrongAttackCount = count;
+                                    if (count > maxStrongAttackCount) maxStrongAttackCount = count;
+                                }
+                            }
+                            matches = /致命一击`\+(\d+)`/.exec(key.action);
+                            if (matches) deadlyAttackCount += parseInt(matches[1]);
+                        }
+
+                        if ($.type(key.gain['item']) === 'object') {
+                            for (var itemName in key.gain['item']) {
+                                var num = parseInt(key.gain['item'][itemName]);
+                                if (typeof lootItemGain[itemName] === 'undefined') lootItemGain[itemName] = num;
+                                else lootItemGain[itemName] += num;
+                            }
                         }
                     }
                     else if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
@@ -403,23 +427,6 @@ var Log = {
                         if (k === 'item' || k === '夺取KFB') continue;
                         if (typeof expense[k] === 'undefined') expense[k] = key.pay[k];
                         else expense[k] += key.pay[k];
-                    }
-                }
-
-                if (key.type === '批量攻击' || key.type === '试探攻击') {
-                    var actionMatches = /`(\d+)`次/.exec(key.action);
-                    if (actionMatches) {
-                        if (key.type === '试探攻击') attemptAttackCount++;
-                        attackCount += parseInt(actionMatches[1]);
-                        actionMatches = /暴击`\+(\d+)`/.exec(key.action);
-                        if (actionMatches) {
-                            var count = parseInt(actionMatches[1]);
-                            strongAttackCount += count;
-                            if (minStrongAttackCount === 0 || count < minStrongAttackCount) minStrongAttackCount = count;
-                            if (maxStrongAttackCount === 0 || count > maxStrongAttackCount) maxStrongAttackCount = count;
-                        }
-                        actionMatches = /致命一击`\+(\d+)`/.exec(key.action);
-                        if (actionMatches) deadlyAttackCount += parseInt(actionMatches[1]);
                     }
                 }
             });
@@ -498,28 +505,31 @@ var Log = {
                     .replace('{0}', lootCount.toLocaleString())
                     .replace('{1}', lootAttackedCount.toLocaleString())
                     .replace('{2}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackedCount / lootCount, 2) : 0)
-                    .replace('{3}', minLootAttackedCount.toLocaleString())
-                    .replace('{4}', maxLootAttackedCount.toLocaleString())
+                    .replace('{3}', minLootAttackedCount > 0 ? minLootAttackedCount.toLocaleString() : 0)
+                    .replace('{4}', maxLootAttackedCount > 0 ? maxLootAttackedCount.toLocaleString() : 0)
                     .replace('{5}', lootAttackKfb.toLocaleString())
                     .replace('{6}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackKfb / lootCount, 2) : 0)
-                    .replace('{7}', minLootAttackKfb.toLocaleString())
-                    .replace('{8}', maxLootAttackKfb.toLocaleString())
+                    .replace('{7}', minLootAttackKfb > 0 ? minLootAttackKfb.toLocaleString() : 0)
+                    .replace('{8}', maxLootAttackKfb > 0 ? maxLootAttackKfb.toLocaleString() : 0)
                     .replace('{9}', lootAttackedKfb.toLocaleString())
                     .replace('{10}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackedKfb / lootCount, 2) : 0)
-                    .replace('{11}', minLootAttackedKfb.toLocaleString())
-                    .replace('{12}', maxLootAttackedKfb.toLocaleString());
+                    .replace('{11}', minLootAttackedKfb > 0 ? minLootAttackedKfb.toLocaleString() : 0)
+                    .replace('{12}', maxLootAttackedKfb > 0 ? maxLootAttackedKfb.toLocaleString() : 0);
             }
 
-            content += ('<br /><strong>攻击详情统计：</strong><i>攻击次数<em>+{0}</em></i> <i>试探攻击次数<em>+{1}</em></i> ' +
-            '<i>暴击次数<em>+{2}</em><span class="pd_stat_extra">(<em title="暴击几率">{3}%</em>|<em title="最小值">+{4}</em>|<em title="最大值">+{5}</em>)</span></i> ' +
-            '<i>致命一击次数<em>+{6}</em></i>')
+            content += ('<br /><strong>攻击详情统计：</strong>' +
+            '<i>攻击次数<em>+{0}</em><span class="pd_stat_extra">(<em title="试探攻击次数">+{1}</em>)</span></i> <i>夺取KFB<em>+{2}</em></i> <i>经验值<em>+{3}</em></i> ' +
+            '<i>暴击次数<em>+{4}</em><span class="pd_stat_extra">(<em title="暴击几率">{5}%</em>|<em title="最小值（批量攻击）">+{6}</em>|' +
+            '<em title="最大值（批量攻击）">+{7}</em>)</span></i> <i>致命一击次数<em>+{8}</em></i>')
                 .replace('{0}', attackCount.toLocaleString())
                 .replace('{1}', attemptAttackCount.toLocaleString())
-                .replace('{2}', strongAttackCount.toLocaleString())
-                .replace('{3}', attackCount > 0 ? (strongAttackCount / attackCount * 100).toFixed(2) : 0)
-                .replace('{4}', minStrongAttackCount.toLocaleString())
-                .replace('{5}', maxStrongAttackCount.toLocaleString())
-                .replace('{6}', deadlyAttackCount.toLocaleString());
+                .replace('{2}', attackKfb.toLocaleString())
+                .replace('{3}', attackExp.toLocaleString())
+                .replace('{4}', strongAttackCount.toLocaleString())
+                .replace('{5}', attackCount > 0 ? (strongAttackCount / attackCount * 100).toFixed(2) : 0)
+                .replace('{6}', minStrongAttackCount > 0 ? minStrongAttackCount.toLocaleString() : 0)
+                .replace('{7}', maxStrongAttackCount > 0 ? maxStrongAttackCount.toLocaleString() : 0)
+                .replace('{8}', deadlyAttackCount.toLocaleString());
 
             var lootItemGainContent = '';
             var lootItemGainKeyList = Tools.getObjectKeyList(lootItemGain, 0);

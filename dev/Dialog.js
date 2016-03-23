@@ -19,7 +19,8 @@ var Dialog = {
             '</div>' +
             '</form>';
         var $dialog = $(html).appendTo('body');
-        $dialog.on('click', '.pd_cfg_tips', function () {
+        $dialog.on('click', '.pd_cfg_tips', function (e) {
+            if (Const.showElementTitleTipsEnabled) KFOL.showElementTitleTips(e, this.title);
             return false;
         }).on('click', 'a.pd_disabled_link', function () {
             return false;
