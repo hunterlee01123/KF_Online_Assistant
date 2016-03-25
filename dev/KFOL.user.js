@@ -148,6 +148,14 @@ var KFOL = {
             '  position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;' +
             '  padding: 2px 5px; background-color: #FCFCFC; border: 1px solid #767676; z-index: 9999;' +
             '}' +
+            '.pd_search_type {' +
+            '  float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #CCC; border-left: none; cursor: pointer;' +
+            '}' +
+            '.pd_search_type i { font-style: normal; margin-left: 5px; font-family: "Microsoft YaHei"; }' +
+            '.pd_search_type_list {' +
+            '  position: absolute; width: 63px; background-color: #FFF; border: 1px solid #CCC; border-top: none; line-height: 26px; text-indent: 13px; cursor: pointer;' +
+            '}' +
+            '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -302,6 +310,21 @@ var KFOL = {
         }
         else if ($('#pd_remaining_num').length === 0) {
             $('.pd_mask').remove();
+        }
+    },
+
+    /**
+     * 在操作进行时阻止关闭窗口
+     */
+    preventCloseWindowWhenActioning: function () {
+        if (window.addEventListener) {
+            window.addEventListener("beforeunload", function (e) {
+                if ($('.pd_mask').length > 0) {
+                    var msg = '操作正在进行中，确定要关闭窗口吗？';
+                    e.returnValue = msg;
+                    return msg;
+                }
+            });
         }
     },
 
@@ -670,7 +693,7 @@ var KFOL = {
                     if (interval > 0) {
                         console.log('定时操作失败（原因：{0}），将在{1}分钟后重试...'.replace('{0}', errorText).replace('{1}', interval));
                         KFOL.removePopTips($('.pd_refresh_notice').parent());
-                        KFOL.showMsg('<span class="pd_refresh_notice">定时操作失败（原因：{0}），将在<em>{1}</em>分钟后重试...</span>'
+                        KFOL.showMsg('<strong class="pd_refresh_notice">定时操作失败（原因：{0}），将在<em>{1}</em>分钟后重试...</strong>'
                             .replace('{0}', errorText)
                             .replace('{1}', interval)
                             , -1);
@@ -680,7 +703,7 @@ var KFOL = {
                     else {
                         if (errorNum > 6) {
                             errorNum = 0;
-                            interval = 10;
+                            interval = 15;
                             window.setTimeout(checkRefreshInterval, interval * 60 * 1000);
                             showRefreshModeTips(interval * 60, true);
                         }
@@ -1299,7 +1322,7 @@ var KFOL = {
                         .replace('{4}', new Date().getTime());
                     $.get(url, function (html) {
                         var matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
-                        if (matches) content += Tools.htmlDecode(matches[1]).replace(/\n\n/g, '\n') + '\n';
+                        if (matches) content += Tools.getRemoveUnpairedBBCodeQuoteContent(Tools.htmlDecode(matches[1]).replace(/\n\n/g, '\n')) + '\n';
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         if (index === list.length - 1) {
@@ -1326,6 +1349,18 @@ var KFOL = {
         });
         if (type === 2) $(document).dequeue('MultiQuote');
         else $('textarea[name="atc_content"]').val(content).focus();
+    },
+
+    /**
+     * 去除引用内容中不配对的BBCode
+     */
+    removeUnpairedBBCodeInQuoteContent: function () {
+        var $content = $('#textarea');
+        var content = $content.val();
+        var matches = /\[quote\](.|\r|\n)+?\[\/quote\]/.exec(content);
+        if (matches) {
+            $content.val(content.replace(matches[0], Tools.getRemoveUnpairedBBCodeQuoteContent(matches[0])));
+        }
     },
 
     /**
@@ -2562,16 +2597,20 @@ var KFOL = {
      * 同步修改帖子每页楼层数量
      */
     syncModifyPerPageFloorNum: function () {
-        $('form#creator').submit(function () {
-            ConfigMethod.read();
-            var perPageFloorNum = parseInt($(this).find('select[name="p_num"]').val());
+        var syncConfig = function () {
+            var perPageFloorNum = parseInt($('select[name="p_num"]').val());
             if (isNaN(perPageFloorNum)) return;
             if (perPageFloorNum === 0) perPageFloorNum = 10;
             if (perPageFloorNum !== Config.perPageFloorNum) {
                 Config.perPageFloorNum = perPageFloorNum;
                 ConfigMethod.write();
             }
+        };
+        $('form#creator').submit(function () {
+            ConfigMethod.read();
+            syncConfig();
         });
+        syncConfig();
     },
 
     /**
@@ -2607,6 +2646,38 @@ var KFOL = {
     },
 
     /**
+     * 在首页上添加搜索类型选择框
+     */
+    addSearchTypeSelectBox: function () {
+        var $keyWord = $('input[type="text"][name="keyword"]');
+        $keyWord.css('width', '116px');
+        var $searchType = $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
+        $searchType.click(function () {
+            var $searchTypeList = $('.pd_search_type_list');
+            if ($searchTypeList.length > 0) {
+                $searchTypeList.remove();
+                return;
+            }
+            $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>用户名</li><li>关键词</li></ul>').appendTo('body');
+            var offset = $searchType.offset();
+            $searchTypeList.css('top', offset.top + $searchType.height() + 2).css('left', offset.left + 1);
+            $searchTypeList.on('click', 'li', function () {
+                var $this = $(this);
+                var type = $.trim($this.text());
+                $searchType.find('span').text(type);
+                var $form = $keyWord.closest('form');
+                if (type === '关键词') $form.attr('action', 'guanjianci.php?');
+                else $form.attr('action', 'search.php?');
+                if (type === '用户名') $keyWord.attr('name', 'pwuser');
+                else if (type === '关键词') $keyWord.attr('name', 'gjc');
+                else $keyWord.attr('name', 'keyword');
+                $searchTypeList.remove();
+                $keyWord.focus();
+            });
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -2621,12 +2692,14 @@ var KFOL = {
         if (Config.animationEffectOffEnabled) jQuery.fx.off = true;
 
         if (Config.customScriptEnabled) KFOL.runCustomScript(1);
+        KFOL.preventCloseWindowWhenActioning();
         if (Config.modifySideBarEnabled) KFOL.modifySideBar();
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
+            KFOL.addSearchTypeSelectBox();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
             if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
@@ -2680,6 +2753,9 @@ var KFOL = {
         }
         else if (/\/post\.php\?action=reply&fid=\d+&tid=\d+&multiquote=true/i.test(location.href)) {
             if (Config.multiQuoteEnabled) KFOL.handleMultiQuote(2);
+        }
+        else if (/\/post\.php\?action=quote/i.test(location.href)) {
+            KFOL.removeUnpairedBBCodeInQuoteContent();
         }
         else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
             KFOL.addFastDrawMoneyLink();

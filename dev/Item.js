@@ -1811,7 +1811,7 @@ var Item = {
      * 在道具商店页面上添加批量购买道具的链接
      */
     addBatchBuyItemsLink: function () {
-        var $shop = $('.kf_fw_ig1');
+        var $shop = $('.kf_fw_ig1:first');
 
         $shop.find('tbody > tr:nth-child(2)')
             .find('td:nth-child(2)').css('width', '243px')
@@ -1871,6 +1871,10 @@ var Item = {
         Item.addSampleItemsLink($itemName);
         Item.showItemUsedInfo($itemName.find('a'));
         Item.showItemShopBuyInfo();
+        $shop.find('tbody > tr:first-child > td').append(
+            '<br /><span class="pd_highlight">想买道具却害怕使用失败？快来试试' +
+            '<a href="read.php?tid=526110" target="_blank" title="喵拉布丁：我绝对没收广告费~">道具使用险</a>吧！</span>'
+        );
     },
 
     /**

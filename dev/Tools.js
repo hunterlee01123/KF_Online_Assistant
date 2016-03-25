@@ -386,5 +386,25 @@ var Tools = {
         var decimalStr = '';
         if (typeof arr[1] !== 'undefined') decimalStr = '.' + arr[1];
         return integerStr + decimalStr;
+    },
+
+    /**
+     * 获取去除了不配对BBCode的引用内容
+     * @param {string} content 引用内容
+     * @returns {string} 去除了不配对BBCode的引用内容
+     */
+    getRemoveUnpairedBBCodeQuoteContent: function (content) {
+        var startCodeList = [/\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g, /\[strike\]/g];
+        var endCodeList = [/\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g, /\[\/strike\]/g];
+        for (var i = 0; i < startCodeList.length; i++) {
+            var startMatches = content.match(startCodeList[i]);
+            var endMatches = content.match(endCodeList[i]);
+            var startMatchesNum = startMatches ? startMatches.length : 0;
+            var endMatchesNum = endMatches ? endMatches.length : 0;
+            if (startMatchesNum !== endMatchesNum) {
+                content = content.replace(startCodeList[i], '').replace(endCodeList[i], '');
+            }
+        }
+        return content;
     }
 };

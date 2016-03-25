@@ -187,6 +187,7 @@ var ConfigDialog = {
             '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
             '    <i style="color:#666;font-style:normal">(V{0})</i>'.replace('{0}', version) +
             '    <a target="_blank" href="https://github.com/miaolapd/KF_Online_Assistant/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
+            '    <a target="_blank" href="read.php?tid=508450">[讨论帖]</a>' +
             '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
