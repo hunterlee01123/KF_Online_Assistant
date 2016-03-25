@@ -2678,6 +2678,27 @@ var KFOL = {
     },
 
     /**
+     * 在帖子页面解析多媒体标签
+     */
+    parseMediaTag: function () {
+        $('.readtext > table > tbody > tr > td').each(function () {
+            var $this = $(this);
+            var html = $this.html();
+            if (/\[(audio|video)\](http|ftp).+\[\/(audio|video)\]/.test(html)) {
+                $this.html(
+                    html.replace(/\[audio\]((?:http|ftp).+?)\[\/audio\](?!<\/fieldset>)/g,
+                        '<audio src="$1" controls="controls" preload="none"><a href="$1" target="_blank">$1</a></audio>'
+                        )
+                        .replace(/\[video\]((?:http|ftp).+?)\[\/video\](?!<\/fieldset>)/g,
+                            '<video src="$1" controls="controls" preload="none" style="max-width:{0}px"><a href="$1" target="_blank">$1</a></video>'
+                                .replace('{0}', Config.adjustThreadContentWidthEnabled ? 627 : 820)
+                        )
+                );
+            }
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -2711,6 +2732,7 @@ var KFOL = {
             KFOL.fastGotoFloor();
             if (Config.adjustThreadContentWidthEnabled) KFOL.adjustThreadContentWidth();
             KFOL.adjustThreadContentFontSize();
+            if (Config.parseMediaTagEnabled) KFOL.parseMediaTag();
             if (Config.customSmColorEnabled) KFOL.modifySmColor();
             if (Config.customMySmColor) KFOL.modifyMySmColor();
             if (Config.multiQuoteEnabled) KFOL.addMultiQuoteButton();

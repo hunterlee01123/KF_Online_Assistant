@@ -138,6 +138,8 @@ var ConfigDialog = {
             '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" data-disabled="#pd_cfg_user_memo_dialog" />显示用户备注 ' +
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
+            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -318,6 +320,7 @@ var ConfigDialog = {
 
         $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked', Config.adjustThreadContentWidthEnabled);
         $('#pd_cfg_thread_content_font_size').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
+        $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked', Config.autoChangeSMColorEnabled);
         $('#pd_cfg_custom_my_sm_color').val(Config.customMySmColor);
         if (Config.customMySmColor) $('#pd_cfg_custom_my_sm_color_select').val(Config.customMySmColor);
         $('#pd_cfg_custom_sm_color_enabled').prop('checked', Config.customSmColorEnabled);
@@ -325,7 +328,7 @@ var ConfigDialog = {
         $('#pd_cfg_multi_quote_enabled').prop('checked', Config.multiQuoteEnabled);
         $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
-        $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked', Config.autoChangeSMColorEnabled);
+        $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
@@ -401,13 +404,14 @@ var ConfigDialog = {
 
         options.adjustThreadContentWidthEnabled = $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked');
         options.threadContentFontSize = parseInt($.trim($('#pd_cfg_thread_content_font_size').val()));
+        options.autoChangeSMColorEnabled = $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked');
         options.customMySmColor = $.trim($('#pd_cfg_custom_my_sm_color').val()).toUpperCase();
         options.customSmColorEnabled = $('#pd_cfg_custom_sm_color_enabled').prop('checked');
         options.modifyKFOtherDomainEnabled = $('#pd_cfg_modify_kf_other_domain_enabled').prop('checked');
         options.multiQuoteEnabled = $('#pd_cfg_multi_quote_enabled').prop('checked');
         options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
-        options.autoChangeSMColorEnabled = $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked');
+        options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');

@@ -325,6 +325,10 @@ var ConfigMethod = {
             }
             else settings.userMemoList = defConfig.userMemoList;
         }
+        if (typeof options.parseMediaTagEnabled !== 'undefined') {
+            settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ?
+                options.parseMediaTagEnabled : defConfig.parseMediaTagEnabled;
+        }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);

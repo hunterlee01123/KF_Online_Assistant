@@ -86,6 +86,8 @@ var Config = {
     userMemoEnabled: false,
     // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
     userMemoList: {},
+    // 是否在帖子页面解析多媒体标签，true：开启；false：关闭
+    parseMediaTagEnabled: true,
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
     // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
