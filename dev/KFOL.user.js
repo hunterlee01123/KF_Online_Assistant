@@ -12,6 +12,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Const.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/ConfigMethod.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Tools.js
+// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Func.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Dialog.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/ConfigDialog.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Log.js
@@ -314,13 +315,13 @@ var KFOL = {
     },
 
     /**
-     * 在操作进行时阻止关闭窗口
+     * 在操作进行时阻止关闭页面
      */
     preventCloseWindowWhenActioning: function () {
         if (window.addEventListener) {
             window.addEventListener("beforeunload", function (e) {
                 if ($('.pd_mask').length > 0) {
-                    var msg = '操作正在进行中，确定要关闭窗口吗？';
+                    var msg = '操作正在进行中，确定要关闭页面吗？';
                     e.returnValue = msg;
                     return msg;
                 }
@@ -403,6 +404,7 @@ var KFOL = {
                 }
                 KFOL.showMsg(msg);
                 if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
+                Func.run('KFOL.donation_after_', html);
             }, 'html');
         };
 
@@ -504,6 +506,7 @@ var KFOL = {
                 if (KFOL.isInHomePage) {
                     $('a[href="kf_smbox.php"].indbox5').removeClass('indbox5').addClass('indbox6');
                 }
+                Func.run('KFOL.drawSmbox_after_', html);
             }, 'html');
         }, 'html');
     },
@@ -1359,7 +1362,10 @@ var KFOL = {
         var content = $content.val();
         var matches = /\[quote\](.|\r|\n)+?\[\/quote\]/.exec(content);
         if (matches) {
-            $content.val(content.replace(matches[0], Tools.getRemoveUnpairedBBCodeQuoteContent(matches[0])));
+            var workedContent = Tools.getRemoveUnpairedBBCodeQuoteContent(matches[0]);
+            if (matches[0] !== workedContent) {
+                $content.val(content.replace(matches[0], workedContent));
+            }
         }
     },
 

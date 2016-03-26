@@ -109,10 +109,10 @@ var Loot = {
 
                 $.post('kf_fw_ig_index.php',
                     {submit1: 1, one: 1},
-                    function (html) {
+                    function (msg) {
                         KFOL.removePopTips($tips);
-                        KFOL.showFormatLog('领取争夺奖励', html);
-                        if (/(领取成功！|已经预领\d+KFB)/i.test(html)) {
+                        KFOL.showFormatLog('领取争夺奖励', msg);
+                        if (/(领取成功！|已经预领\d+KFB)/i.test(msg)) {
                             var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
                             Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
                             if (Config.attemptAttackEnabled) {
@@ -134,7 +134,7 @@ var Loot = {
                                 TmpLog.setValue(Const.prevLootInfoTmpLogName, lootInfo);
                             }
 
-                            if (/已经预领\d+KFB/i.test(html)) {
+                            if (/已经预领\d+KFB/i.test(msg)) {
                                 gain = 0;
                             }
                             else {
@@ -151,8 +151,8 @@ var Loot = {
                             console.log('领取争夺奖励{0}，KFB+{1}{2}{3}'
                                 .replace('{0}', attackedCountDiff >= 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
                                 .replace('{1}', gain)
-                                .replace('{2}', attackKfbDiff >= 0 ? '，夺取KFB+{0}' + attackKfbDiff : '')
-                                .replace('{3}', attackedKfbDiff >= 0 ? '，夺取KFB-{1}' + attackedKfbDiff : '')
+                                .replace('{2}', attackKfbDiff >= 0 ? '，夺取KFB+' + attackKfbDiff : '')
+                                .replace('{3}', attackedKfbDiff >= 0 ? '，夺取KFB-' + attackedKfbDiff : '')
                             );
                             var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}{4}{5}'
                                 .replace('{0}', attackedCountDiff >= 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
@@ -169,6 +169,7 @@ var Loot = {
                             autoAttack(safeId, deadlyAttackNum);
                             if (isAutoDonation) KFOL.donation();
                             if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
+                            Func.run('Loot.getLootAward_after_', html);
                         }
                     }, 'html');
             }

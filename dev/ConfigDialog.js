@@ -139,7 +139,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
