@@ -21,7 +21,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.0-dev
+// @version     5.2.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -361,6 +361,7 @@ var KFOL = {
             if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
             return;
         }
+        Func.run('KFOL.donation_before_');
         console.log('KFB捐款Start');
         var $tips = KFOL.showWaitMsg('<strong>正在进行捐款，请稍候……</strong>', true);
 
@@ -449,6 +450,7 @@ var KFOL = {
      * 抽取神秘盒子
      */
     drawSmbox: function () {
+        Func.run('KFOL.drawSmbox_before_');
         console.log('抽取神秘盒子Start');
         $.get('kf_smbox.php?t=' + new Date().getTime(), function (html) {
             if (KFOL.getNextDrawSmboxTime().type) return;

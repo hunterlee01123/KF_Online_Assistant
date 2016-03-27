@@ -35,6 +35,7 @@ var Loot = {
             }
         };
 
+        Func.run('Loot.getLootAward_before_');
         console.log('领取争夺奖励Start');
         var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候……</strong>', true);
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
@@ -194,6 +195,7 @@ var Loot = {
             $remainingTips.data('retry', 1);
             return;
         }
+        Func.run('Loot.autoAttack_before_');
         KFOL.removePopTips($remainingTips);
 
         /**
@@ -316,6 +318,7 @@ var Loot = {
             recentMonsterAttackLog: ''
         };
         $.extend(settings, options);
+        Func.run('Loot.batchAttack_before_');
         if (settings.type === 1)
             $('.kf_fw_ig1').parent().append('<div class="pd_result"><strong>攻击结果：</strong><ul></ul></div>');
         var count = 0, successNum = 0, failNum = 0, strongAttackNum = 0, criticalStrikeNum = 0;
@@ -533,6 +536,7 @@ var Loot = {
                             }
                             if (!$.isEmptyObject(itemNameList)) Loot.useItemsAfterBatchAttack(itemNameList);
                         }
+                        Func.run('Loot.batchAttack_after_', gain);
                     }
                     else {
                         if (isRetakeSafeId) {
@@ -901,6 +905,7 @@ var Loot = {
      * 检查当前生命值
      */
     checkLife: function () {
+        Func.run('Loot.checkLife_before_');
         console.log('检查生命值Start');
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             if (Tools.getCookie(Const.checkLifeCookieName)) return;
@@ -1068,6 +1073,7 @@ var Loot = {
             else {
                 attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值的记录，需要进行试探攻击');
             }
+            Func.run('Loot.checkLife_after_', html);
         }, 'html');
     },
 

@@ -498,7 +498,7 @@ var Log = {
                 .replace('{4}', maxLoot.toLocaleString());
 
             if (Config.autoLootEnabled) {
-                content += ('<br /><strong>争夺详情统计：</strong><i class="pd_custom_tips" title="只有至少连续两次记录的争夺才会被统计">回合数<em>+{0}</em></i> ' +
+                content += ('<br /><strong>争夺详情统计：</strong><i class="pd_custom_tips" title="只有连续记录的争夺回合才会被统计">回合数<em>+{0}</em></i> ' +
                 '<i>被攻击次数<em>+{1}</em><span class="pd_stat_extra">(<em title="平均值">+{2}</em>|<em title="最小值">+{3}</em>|<em title="最大值">+{4}</em>)</span></i> ' +
                 '<i>夺取KFB<em>+{5}</em><span class="pd_stat_extra">(<em title="平均值">+{6}</em>|<em title="最小值">+{7}</em>|<em title="最大值">+{8}</em>)</span></i> ' +
                 '<i>夺取KFB<ins>-{9}</ins><span class="pd_stat_extra">(<ins title="平均值">-{10}</ins>|<ins title="最小值">-{11}</ins>|<ins title="最大值">-{12}</ins>)</span></i> ')
