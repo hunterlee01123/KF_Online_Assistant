@@ -25,7 +25,7 @@ function netease_song($music_id) {
     $response = netease_http($url);
     if ($response["code"] == 200 && $response["songs"]) {
         //print_r($response["songs"]);
-        return $response["songs"][0]["mp3Url"];
+        return str_replace("http://m", "http://p", $response["songs"][0]["mp3Url"]);
     }
     return false;
 }
