@@ -293,7 +293,10 @@ var Item = {
                             responseMsg += matches[1] + '\n';
                             nextRoundItemIdList.push(itemId);
                         }
-                        else failNum++;
+                        else {
+                            failNum++;
+                            if (/无法再使用/.test(html)) nextRoundItemIdList = [];
+                        }
                         $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'
                             .replace('{0}', index + 1)
                             .replace('{1}', matches ? matches[1] : '未能获得预期的回应')

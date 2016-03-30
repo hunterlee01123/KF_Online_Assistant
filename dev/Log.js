@@ -227,7 +227,7 @@ var Log = {
         Log.showLogContent(dateList[curIndex]);
         Log.showLogStat(dateList[curIndex]);
 
-        if ($(window).height() <= 720) $dialog.find('#pd_log_content').css('height', '216px');
+        if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
         Dialog.show('pd_log');
         $dialog.find('input:first').focus();
     },

@@ -406,5 +406,16 @@ var Tools = {
             }
         }
         return content;
+    },
+
+    /**
+     * 转换为可外链的音频URL
+     * @param {string} url 音频原URL
+     * @returns {string} 音频外链URL
+     */
+    convertToAudioExternalLinkUrl: function (url) {
+        var matches = /https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(url);
+        if (matches) url = 'http://music.miaola.info/163/{0}.mp3'.replace('{0}', matches[1]);
+        return url;
     }
 };

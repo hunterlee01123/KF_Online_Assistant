@@ -21,13 +21,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.0
+// @version     5.2.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.0';
+var version = '5.2.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -50,6 +50,8 @@ var KFOL = {
     userName: '',
     // 是否位于首页
     isInHomePage: false,
+    // 当前窗口
+    window: typeof unsafeWindow !== 'undefined' ? unsafeWindow : window,
 
     /**
      * 获取Uid和用户名
@@ -157,6 +159,7 @@ var KFOL = {
             '  position: absolute; width: 63px; background-color: #FFF; border: 1px solid #CCC; border-top: none; line-height: 26px; text-indent: 13px; cursor: pointer;' +
             '}' +
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
+            '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
 
                 /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -1377,10 +1380,13 @@ var KFOL = {
     addFastDrawMoneyLink: function () {
         if ($('td:contains("SYSTEM")').length === 0 || $('td:contains("收到了他人转账的KFB")').length === 0) return;
         var $msg = $('.thread2 > tbody > tr:eq(-2) > td:last');
-        $msg.html($msg.html()
-            .replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
-            .replace(/给你转帐(\d+)KFB/i, '给你转帐<span class="pd_stat"><em>$1</em></span>KFB')
-        );
+        var html = $msg.html();
+        var matches = /给你转帐(\d+)KFB/i.exec(html);
+        if (matches) {
+            $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
+                .replace(matches[0], '给你转帐<span class="pd_stat"><em>{0}</em></span>KFB'.replace('{0}', parseInt(matches[1]).toLocaleString()))
+            );
+        }
         $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>')
             .appendTo($msg)
             .filter('a:eq(0)')
@@ -2552,7 +2558,7 @@ var KFOL = {
                 var html = '';
                 for (var i = 0; i < smileImageIdList.length; i++) {
                     html += '<img src="{0}/post/smile/em/em{1}.gif" alt="[表情]" data-id="{2}" />'
-                        .replace('{0}', imgpath)
+                        .replace('{0}', KFOL.window.imgpath)
                         .replace('{1}', smileImageIdList[i])
                         .replace('{2}', smileCodeIdList[i]);
                 }
@@ -2644,7 +2650,7 @@ var KFOL = {
             var target = e.target;
             if (!target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && target.parentNode && target.parentNode.title)
                 target = target.parentNode;
-            if (target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && (!target.id || target.id.indexOf('wy_') !== 0)) {
+            if (target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && (!target.id || target.id.indexOf('wy_') !== 0) && !$(target).is('.pd_editor_btn')) {
                 KFOL.showElementTitleTips(e, target.title);
             }
             else {
@@ -2692,18 +2698,144 @@ var KFOL = {
         $('.readtext > table > tbody > tr > td').each(function () {
             var $this = $(this);
             var html = $this.html();
-            if (/\[(audio|video)\](http|ftp).+\[\/(audio|video)\]/.test(html)) {
+            if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
                 $this.html(
-                    html.replace(/\[audio\]((?:http|ftp).+?)\[\/audio\](?!<\/fieldset>)/g,
-                        '<audio src="$1" controls="controls" preload="none"><a href="$1" target="_blank">$1</a></audio>'
+                    html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g,
+                        '<audio src="$1" controls="controls" preload="none" style="margin:3px 0"><a href="$1" target="_blank">$1</a></audio>'
                         )
-                        .replace(/\[video\]((?:http|ftp).+?)\[\/video\](?!<\/fieldset>)/g,
-                            '<video src="$1" controls="controls" preload="none" style="max-width:{0}px"><a href="$1" target="_blank">$1</a></video>'
+                        .replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g,
+                            '<video src="$1" controls="controls" preload="none" style="max-width:{0}px;margin:3px 0"><a href="$1" target="_blank">$1</a></video>'
                                 .replace('{0}', Config.adjustThreadContentWidthEnabled ? 627 : 820)
                         )
                 );
             }
         });
+    },
+
+    /**
+     * 在发帖页面的发帖框上添加额外的按钮
+     */
+    addExtraPostEditorButton: function () {
+        var textArea = $('textarea[name="atc_content"]').get(0);
+        if (!textArea) return;
+
+        /**
+         * 添加BBCode
+         * @param {string} code BBCode
+         * @param {string} selText 选择文本
+         */
+        var addCode = function (code, selText) {
+            var startPos = selText == '' ? code.indexOf(']') + 1 : code.indexOf(selText);
+            if (typeof textArea.selectionStart !== 'undefined') {
+                var prePos = textArea.selectionStart;
+                textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(textArea.selectionEnd);
+                textArea.selectionStart = prePos + startPos;
+                textArea.selectionEnd = prePos + startPos + selText.length;
+            }
+            else {
+                textArea.value += code;
+            }
+        };
+
+        /**
+         * 获取选择文本
+         * @returns {string} 选择文本
+         */
+        var getSelText = function () {
+            return textArea.value.substr(textArea.selectionStart, textArea.selectionEnd - textArea.selectionStart);
+        };
+
+        $('<span id="wy_post" title="插入隐藏内容" data-type="hide" style="background-position:0 -280px">插入隐藏内容</span>' +
+            '<span id="wy_justifyleft" title="左对齐" data-type="left" style="background-position:0 -360px">左对齐</span>' +
+            '<span id="wy_justifycenter" title="居中" data-type="center" style="background-position:0 -380px">居中</span>' +
+            '<span id="wy_justifyright" title="右对齐" data-type="right" style="background-position:0 -400px">右对齐</span>' +
+            '<span id="wy_subscript" title="下标" data-type="sub" style="background-position:0 -80px">下标</span>' +
+            '<span id="wy_superscript" title="上标" data-type="sup" style="background-position:0 -100px">上标</span>' +
+            '<span class="pd_editor_btn" title="插入飞行文字" data-type="fly">F</span>' +
+            '<span class="pd_editor_btn" title="插入HTML5音频" data-type="audio">A</span>' +
+            '<span class="pd_editor_btn" title="插入HTML5视频" data-type="video">V</span>'
+        ).appendTo('#editor-button .editor-button').click(function () {
+            var $this = $(this);
+            var type = $this.data('type');
+            var text = '';
+            switch (type) {
+                case 'hide':
+                    text = window.prompt('请输入神秘等级：', 5);
+                    break;
+                case 'audio':
+                    text = Tools.convertToAudioExternalLinkUrl(window.prompt('请输入HTML5音频URL：\n（可直接输入网易云音乐单曲URL，将自动转换为外链URL）', 'http://'));
+                    break;
+                case 'video':
+                    text = window.prompt('请输入HTML5视频URL：', 'http://');
+                    break;
+            }
+            if (text === null) return;
+
+            var selText = '';
+            var code = '';
+            switch (type) {
+                case 'hide':
+                    selText = getSelText();
+                    code = '[hide={0}]{1}[/hide]'.replace('{0}', text).replace('{1}', selText);
+                    break;
+                case 'left':
+                    selText = getSelText();
+                    code = '[align=left]{0}[/align]'.replace('{0}', selText);
+                    break;
+                case 'center':
+                    selText = getSelText();
+                    code = '[align=center]{0}[/align]'.replace('{0}', selText);
+                    break;
+                case 'right':
+                    selText = getSelText();
+                    code = '[align=right]{0}[/align]'.replace('{0}', selText);
+                    break;
+                case 'fly':
+                    selText = getSelText();
+                    code = '[fly]{0}[/fly]'.replace('{0}', selText);
+                    break;
+                case 'sub':
+                    selText = getSelText();
+                    code = '[sub]{0}[/sub]'.replace('{0}', selText);
+                    break;
+                case 'sup':
+                    selText = getSelText();
+                    code = '[sup]{0}[/sup]'.replace('{0}', selText);
+                    break;
+                case 'audio':
+                    code = '[audio]{0}[/audio]'.replace('{0}', text);
+                    break;
+                case 'video':
+                    code = '[video]{0}[/video]'.replace('{0}', text);
+                    break;
+            }
+            if (!code) return;
+            addCode(code, selText);
+            textArea.focus();
+        }).mouseenter(function () {
+            $(this).addClass('buttonHover');
+        }).mouseleave(function () {
+            $(this).removeClass('buttonHover');
+        });
+    },
+
+    /**
+     * 修复论坛错误代码
+     */
+    repairBbsErrorCode: function () {
+        KFOL.window.is_ie = typeof KFOL.window.is_ie !== 'undefined' ? KFOL.window.is_ie : false;
+
+        if (location.pathname === '/read.php') {
+            KFOL.window.strlen = function (str) {
+                var len = 0;
+                var s_len = str.length = (KFOL.window.is_ie && str.indexOf('\n') != -1) ? str.replace(/\r?\n/g, '_').length : str.length;
+                var c_len = 2;
+                for (var i = 0; i < s_len; i++) {
+                    len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
+                }
+                return len;
+            };
+        }
     },
 
     /**
@@ -2721,6 +2853,7 @@ var KFOL = {
         if (Config.animationEffectOffEnabled) jQuery.fx.off = true;
 
         if (Config.customScriptEnabled) KFOL.runCustomScript(1);
+        KFOL.repairBbsErrorCode();
         KFOL.preventCloseWindowWhenActioning();
         if (Config.modifySideBarEnabled) KFOL.modifySideBar();
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
@@ -2823,6 +2956,9 @@ var KFOL = {
         }
         else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
             KFOL.syncModifyPerPageFloorNum();
+        }
+        if (location.pathname === '/post.php') {
+            KFOL.addExtraPostEditorButton();
         }
         if (Config.blockUserEnabled) KFOL.blockUsers();
         if (Config.blockThreadEnabled) KFOL.blockThread();
