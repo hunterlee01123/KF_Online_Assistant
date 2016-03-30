@@ -213,7 +213,7 @@
 
 /*==========================================*/
 
-// 发帖时自动附加额外内容 V1.3
+// 发帖时自动附加额外内容 V1.4
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
     var options = {
@@ -236,6 +236,13 @@
     else if (options.attachType === 1 && (location.pathname === '/read.php' || action === 'reply' || action === 'quote')) return;
     else if (options.attachType === 2 && location.pathname === '/post.php' && !action) return;
 
+    var _strlen = KFOL.window.strlen;
+    KFOL.window.strlen = function (str) {
+        var length = typeof _strlen !== 'undefined' ? _strlen(str) : str.length;
+        if (length > 0 && length < 12) length = 12;
+        return length;
+    };
+
     var $form = $('form[name="FORM"][action="post.php?"]');
     var switchHtml = '<label style="margin-left:7px"><input type="checkbox" id="pd_no_attach" class="pd_input" /> 不附加额外内容</label>';
     if (location.pathname === '/post.php') $form.find('input[name="diy_guanjianci"]').after(switchHtml);
@@ -257,7 +264,7 @@
         if (options.attachWhenLteWordNum > -1 && content.length > options.attachWhenLteWordNum) return;
 
         var handleText = function (text) {
-            text = text.substr(0, 250).replace(/\[(img|url|sell).+?\/(img|url|sell)\]/gi, '[代码已屏蔽]');
+            text = text.substr(0, 250).replace(/\[(img|url|sell|audio|video).+?\/(img|url|sell|audio|video)\]/gi, '[代码已屏蔽]');
             var matches = text.match(/\[size=\d+\]/gi);
             for (var i in matches) {
                 var size = parseInt(/\d+/.exec(matches[i])[0]);
