@@ -7,7 +7,7 @@ KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及
 * __ScriptStorage版：__[点击此处安装](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ScriptStorage.user.js)  
 设置和日志存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况） __【Firefox下可能无法使用】__
 * __GlobalStorage版：__[点击此处安装](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.user.js)  
-设置和日志存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况） __【Firefox下可能无法使用】__  
+设置和日志存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况） __【Firefox下可能无法使用】__
 * __For Mobile版：__[点击此处安装](https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ForMobile.user.js)  
 适用于手机浏览器，其它与标准版相同，[详见此贴](http://bbs.2dgal.com/read.php?tid=509273)  
 __注：如需要改用其它版本，可先将设置及日志导出来，在安装后再导入即可__
