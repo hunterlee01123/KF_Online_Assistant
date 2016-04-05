@@ -116,6 +116,8 @@ var Config = {
     customScriptStartContent: '',
     // 在脚本结束时执行的自定义脚本内容
     customScriptEndContent: '',
+    // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
+    browseType: 'auto',
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
     // 关注用户列表，格式：[{name:'用户名'}]，例：[{name:'张三'}, {name:'李四'}]

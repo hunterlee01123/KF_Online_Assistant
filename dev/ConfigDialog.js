@@ -50,7 +50,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
                 .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
             '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
-            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
             '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
             '<span class="pd_cfg_tips" title="在实际生命值不超过指定阈值时才进行试探攻击，留空表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
             '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
@@ -160,7 +160,11 @@ var ConfigDialog = {
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" data-disabled="#pd_cfg_custom_script_dialog" />执行自定义脚本 ' +
             '<span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a><br />' +
+            '      <label>浏览器类型<select id="pd_cfg_browse_type"><option value="auto">自动检测</option>' +
+            '<option value="desktop">桌面版</option><option value="mobile">移动版</option></select>' +
+            '<span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），' +
+            '请手动设置为正确的类型">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>关注和屏蔽</legend>' +
@@ -193,7 +197,7 @@ var ConfigDialog = {
             '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
-        var $dialog = Dialog.create('pd_config', 'KF Online助手设置', html);
+        var $dialog = Dialog.create('pd_config', 'KF Online助手设置' + (KFOL.isMobile ? ' (For Mobile)' : ''), html);
 
         $dialog.find('.pd_cfg_btns > button:eq(1)').click(function () {
             return Dialog.close('pd_config');
@@ -338,6 +342,7 @@ var ConfigDialog = {
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
         $('#pd_cfg_custom_script_enabled').prop('checked', Config.customScriptEnabled);
+        $('#pd_cfg_browse_type').val(Config.browseType);
 
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         $('#pd_cfg_block_user_enabled').prop('checked', Config.blockUserEnabled);
@@ -421,6 +426,7 @@ var ConfigDialog = {
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
         options.customScriptEnabled = $('#pd_cfg_custom_script_enabled').prop('checked');
+        options.browseType = $('#pd_cfg_browse_type').val();
 
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');

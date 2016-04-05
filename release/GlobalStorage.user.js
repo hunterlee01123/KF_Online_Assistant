@@ -5,12 +5,12 @@
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
-// @updateURL   https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.meta.js
-// @downloadURL https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.user.js
+// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.meta.js
+// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.user.js
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.1
+// @version     5.2.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -18,7 +18,7 @@
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.1';
+var version = '5.2.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -148,6 +148,8 @@ var Config = {
     customScriptStartContent: '',
     // 在脚本结束时执行的自定义脚本内容
     customScriptEndContent: '',
+    // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
+    browseType: 'auto',
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
     // 关注用户列表，格式：[{name:'用户名'}]，例：[{name:'张三'}, {name:'李四'}]
@@ -203,8 +205,6 @@ var Config = {
 var Const = {
     // 开启调试模式，true：开启；false：关闭
     debug: false,
-    // 是否显示元素的title属性提示（用于手机浏览器），true：开启；false：关闭
-    showElementTitleTipsEnabled: false,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
     // 争夺的默认领取间隔（分钟）
@@ -720,6 +720,11 @@ var ConfigMethod = {
                 settings.customScriptEndContent = options.customScriptEndContent;
             else
                 settings.customScriptEndContent = defConfig.customScriptEndContent;
+        }
+        if (typeof options.browseType !== 'undefined') {
+            if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1)
+                settings.browseType = options.browseType.toLowerCase();
+            else settings.browseType = defConfig.options.browseType;
         }
 
         if (typeof options.followUserEnabled !== 'undefined') {
@@ -1389,7 +1394,7 @@ var Dialog = {
             '</form>';
         var $dialog = $(html).appendTo('body');
         $dialog.on('click', '.pd_cfg_tips', function (e) {
-            if (Const.showElementTitleTipsEnabled) KFOL.showElementTitleTips(e, this.title);
+            if (KFOL.isMobile) KFOL.showElementTitleTips(e, this.title);
             return false;
         }).on('click', 'a.pd_disabled_link', function () {
             return false;
@@ -1420,9 +1425,11 @@ var Dialog = {
                 }
             });
         });
-        $(window).on('resize.' + id, function () {
-            Dialog.show(id);
-        });
+        if (!KFOL.isMobile) {
+            $(window).on('resize.' + id, function () {
+                Dialog.show(id);
+            });
+        }
         return $dialog;
     },
 
@@ -1439,8 +1446,12 @@ var Dialog = {
         }).end().find('input[data-disabled]').each(function () {
             $(this).triggerHandler('click');
         });
-        $box.css('top', $(window).height() / 2 - $box.height() / 2)
-            .css('left', $(window).width() / 2 - $box.width() / 2)
+        var boxWidth = $box.width();
+        var windowWidth = $(window).width();
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - boxWidth / 2;
+        if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
+        $box.css('top', $(window).height() / 2 + (KFOL.isMobile ? $(window).scrollTop() : 0) - $box.height() / 2)
+            .css('left', left)
             .fadeIn('fast');
     },
 
@@ -1453,7 +1464,9 @@ var Dialog = {
         $('#' + id).fadeOut('fast', function () {
             $(this).parent('form').remove();
         });
-        $(window).off('resize.' + id);
+        if (!KFOL.isMobile) {
+            $(window).off('resize.' + id);
+        }
         return false;
     }
 };
@@ -1510,7 +1523,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
                 .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
             '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
-            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
             '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
             '<span class="pd_cfg_tips" title="在实际生命值不超过指定阈值时才进行试探攻击，留空表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
             '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
@@ -1620,7 +1633,11 @@ var ConfigDialog = {
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" data-disabled="#pd_cfg_custom_script_dialog" />执行自定义脚本 ' +
             '<span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a><br />' +
+            '      <label>浏览器类型<select id="pd_cfg_browse_type"><option value="auto">自动检测</option>' +
+            '<option value="desktop">桌面版</option><option value="mobile">移动版</option></select>' +
+            '<span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），' +
+            '请手动设置为正确的类型">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>关注和屏蔽</legend>' +
@@ -1653,7 +1670,7 @@ var ConfigDialog = {
             '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
-        var $dialog = Dialog.create('pd_config', 'KF Online助手设置', html);
+        var $dialog = Dialog.create('pd_config', 'KF Online助手设置' + (KFOL.isMobile ? ' (For Mobile)' : ''), html);
 
         $dialog.find('.pd_cfg_btns > button:eq(1)').click(function () {
             return Dialog.close('pd_config');
@@ -1798,6 +1815,7 @@ var ConfigDialog = {
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
         $('#pd_cfg_custom_script_enabled').prop('checked', Config.customScriptEnabled);
+        $('#pd_cfg_browse_type').val(Config.browseType);
 
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         $('#pd_cfg_block_user_enabled').prop('checked', Config.blockUserEnabled);
@@ -1881,6 +1899,7 @@ var ConfigDialog = {
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
         options.customScriptEnabled = $('#pd_cfg_custom_script_enabled').prop('checked');
+        options.browseType = $('#pd_cfg_browse_type').val();
 
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
@@ -5001,13 +5020,13 @@ var Item = {
                 if (isNaN(num) || num <= 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
 
-                KFOL.showWaitMsg('正在获取本种类可用道具列表，请稍后...', true);
+                KFOL.showWaitMsg('正在获取本种类未使用道具列表，请稍后...', true);
                 itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var itemIdList = Item.getItemIdList(html, num);
                     if (itemIdList.length === 0) {
-                        alert('本种类没有可用的道具');
+                        alert('本种类没有未使用的道具');
                         return;
                     }
                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
@@ -5046,13 +5065,13 @@ var Item = {
                 if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
                 KFOL.removePopTips($('.pd_pop_tips'));
 
-                KFOL.showWaitMsg('正在获取本种类可用道具列表，请稍后...', true);
+                KFOL.showWaitMsg('正在获取本种类未使用道具列表，请稍后...', true);
                 itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var itemIdList = Item.getItemIdList(html, num);
                     if (itemIdList.length === 0) {
-                        alert('本种类没有可用的道具');
+                        alert('本种类没有未使用的道具');
                         return;
                     }
                     KFOL.showWaitMsg('正在获取当前道具相关信息，请稍后...', true);
@@ -8099,6 +8118,8 @@ var KFOL = {
     userName: '',
     // 是否位于首页
     isInHomePage: false,
+    // 是否为移动版
+    isMobile: false,
     // 当前窗口
     window: typeof unsafeWindow !== 'undefined' ? unsafeWindow : window,
 
@@ -8127,13 +8148,25 @@ var KFOL = {
     },
 
     /**
+     * 检查浏览器类型
+     */
+    checkBrowserType: function () {
+        if (Config.browseType === 'auto') {
+            KFOL.isMobile = /(Mobile|MIDP)/i.test(navigator.userAgent);
+        }
+        else {
+            KFOL.isMobile = Config.browseType === 'mobile';
+        }
+    },
+
+    /**
      * 添加CSS样式
      */
     appendCss: function () {
         $('head').append(
             '<style type="text/css">' +
             '.pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
-            '.pd_pop_box { position: fixed; width: 100%; z-index: 1001; }' +
+            '.pd_pop_box { position: {0}; width: 100%; z-index: 1001; }'.replace('{0}', KFOL.isMobile ? 'absolute' : 'fixed') +
             '.pd_pop_tips {' +
             '  border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0,0,0,0.1); border-radius: 3px; padding: 12px 40px; text-align: center;' +
             '  font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;' +
@@ -8210,9 +8243,9 @@ var KFOL = {
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
             '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
 
-                /* 设置对话框 */
+            /* 设置对话框 */
             '.pd_cfg_box {' +
-            '  position: fixed; border: 1px solid #9191FF; display: none; z-index: 1002;' +
+            '  position: {0}; border: 1px solid #9191FF; display: none; z-index: 1002;'.replace('{0}', KFOL.isMobile ? 'absolute' : 'fixed') +
             '  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '  -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '}' +
@@ -8239,7 +8272,7 @@ var KFOL = {
             '#pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }' +
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
-                /* 日志对话框 */
+            /* 日志对话框 */
             '#pd_log { width: 880px; }' +
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
             '.pd_log_nav a { display: inline-block; }' +
@@ -8322,15 +8355,18 @@ var KFOL = {
         }
         var popTipsHeight = $popTips.outerHeight();
         var popTipsWidth = $popTips.outerWidth();
+        var windowWidth = $(window).width();
         if (isFirst) {
-            $popBox.css('top', $(window).height() / 2 - popTipsHeight / 2);
+            $popBox.css('top', $(window).height() / 2 + (KFOL.isMobile ? $(window).scrollTop() : 0) - popTipsHeight / 2);
         }
         else {
             $popBox.stop(false, true).animate({'top': '-=' + popTipsHeight / 1.75});
         }
         var $prev = $popTips.prev('.pd_pop_tips');
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - popTipsWidth / 2;
+        if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
         $popTips.css('top', $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0)
-            .css('left', $(window).width() / 2 - popTipsWidth / 2)
+            .css('left', left)
             .fadeIn('slow');
         if (settings.duration !== -1) {
             $popTips.delay(settings.duration * 1000).fadeOut('slow', function () {
@@ -10570,7 +10606,7 @@ var KFOL = {
             else {
                 textArea.value += code;
             }
-            textArea.focus();
+            if (!KFOL.isMobile) textArea.focus();
         };
 
         var $parent = $('input[name="diy_guanjianci"]').parent();
@@ -10677,7 +10713,7 @@ var KFOL = {
     },
 
     /**
-     * 显示元素的title属性提示（用于手机浏览器）
+     * 显示元素的title属性提示（用于移动版浏览器）
      * @param {{}} e 点击事件
      * @param {string} title title属性
      */
@@ -10691,7 +10727,7 @@ var KFOL = {
     },
 
     /**
-     * 绑定包含title属性元素的点击事件（用于手机浏览器）
+     * 绑定包含title属性元素的点击事件（用于移动版浏览器）
      */
     bindElementTitleClick: function () {
         var excludeNodeNameList = ['A', 'IMG', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT'];
@@ -10897,6 +10933,7 @@ var KFOL = {
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
         ConfigMethod.init();
+        KFOL.checkBrowserType();
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();
         if (Config.animationEffectOffEnabled) jQuery.fx.off = true;
@@ -11012,7 +11049,7 @@ var KFOL = {
         if (Config.blockUserEnabled) KFOL.blockUsers();
         if (Config.blockThreadEnabled) KFOL.blockThread();
         if (Config.followUserEnabled) KFOL.followUsers();
-        if (Const.showElementTitleTipsEnabled) KFOL.bindElementTitleClick();
+        if (KFOL.isMobile) KFOL.bindElementTitleClick();
 
         var isGetLootAwardStarted = false;
         var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);

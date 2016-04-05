@@ -1189,13 +1189,13 @@ var Item = {
                 if (isNaN(num) || num <= 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
 
-                KFOL.showWaitMsg('正在获取本种类可用道具列表，请稍后...', true);
+                KFOL.showWaitMsg('正在获取本种类未使用道具列表，请稍后...', true);
                 itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var itemIdList = Item.getItemIdList(html, num);
                     if (itemIdList.length === 0) {
-                        alert('本种类没有可用的道具');
+                        alert('本种类没有未使用的道具');
                         return;
                     }
                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
@@ -1234,13 +1234,13 @@ var Item = {
                 if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
                 KFOL.removePopTips($('.pd_pop_tips'));
 
-                KFOL.showWaitMsg('正在获取本种类可用道具列表，请稍后...', true);
+                KFOL.showWaitMsg('正在获取本种类未使用道具列表，请稍后...', true);
                 itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
                 $.get(itemListUrl, function (html) {
                     KFOL.removePopTips($('.pd_pop_tips'));
                     var itemIdList = Item.getItemIdList(html, num);
                     if (itemIdList.length === 0) {
-                        alert('本种类没有可用的道具');
+                        alert('本种类没有未使用的道具');
                         return;
                     }
                     KFOL.showWaitMsg('正在获取当前道具相关信息，请稍后...', true);

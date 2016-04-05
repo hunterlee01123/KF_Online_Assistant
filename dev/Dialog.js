@@ -20,7 +20,7 @@ var Dialog = {
             '</form>';
         var $dialog = $(html).appendTo('body');
         $dialog.on('click', '.pd_cfg_tips', function (e) {
-            if (Const.showElementTitleTipsEnabled) KFOL.showElementTitleTips(e, this.title);
+            if (KFOL.isMobile) KFOL.showElementTitleTips(e, this.title);
             return false;
         }).on('click', 'a.pd_disabled_link', function () {
             return false;
@@ -51,9 +51,11 @@ var Dialog = {
                 }
             });
         });
-        $(window).on('resize.' + id, function () {
-            Dialog.show(id);
-        });
+        if (!KFOL.isMobile) {
+            $(window).on('resize.' + id, function () {
+                Dialog.show(id);
+            });
+        }
         return $dialog;
     },
 
@@ -70,8 +72,12 @@ var Dialog = {
         }).end().find('input[data-disabled]').each(function () {
             $(this).triggerHandler('click');
         });
-        $box.css('top', $(window).height() / 2 - $box.height() / 2)
-            .css('left', $(window).width() / 2 - $box.width() / 2)
+        var boxWidth = $box.width();
+        var windowWidth = $(window).width();
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - boxWidth / 2;
+        if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
+        $box.css('top', $(window).height() / 2 + (KFOL.isMobile ? $(window).scrollTop() : 0) - $box.height() / 2)
+            .css('left', left)
             .fadeIn('fast');
     },
 
@@ -84,7 +90,9 @@ var Dialog = {
         $('#' + id).fadeOut('fast', function () {
             $(this).parent('form').remove();
         });
-        $(window).off('resize.' + id);
+        if (!KFOL.isMobile) {
+            $(window).off('resize.' + id);
+        }
         return false;
     }
 };

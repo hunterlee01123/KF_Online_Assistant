@@ -401,6 +401,11 @@ var ConfigMethod = {
             else
                 settings.customScriptEndContent = defConfig.customScriptEndContent;
         }
+        if (typeof options.browseType !== 'undefined') {
+            if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1)
+                settings.browseType = options.browseType.toLowerCase();
+            else settings.browseType = defConfig.options.browseType;
+        }
 
         if (typeof options.followUserEnabled !== 'undefined') {
             settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ?

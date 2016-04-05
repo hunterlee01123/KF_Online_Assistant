@@ -21,13 +21,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.1
+// @version     5.2.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.1';
+var version = '5.2.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -50,6 +50,8 @@ var KFOL = {
     userName: '',
     // 是否位于首页
     isInHomePage: false,
+    // 是否为移动版
+    isMobile: false,
     // 当前窗口
     window: typeof unsafeWindow !== 'undefined' ? unsafeWindow : window,
 
@@ -78,13 +80,25 @@ var KFOL = {
     },
 
     /**
+     * 检查浏览器类型
+     */
+    checkBrowserType: function () {
+        if (Config.browseType === 'auto') {
+            KFOL.isMobile = /(Mobile|MIDP)/i.test(navigator.userAgent);
+        }
+        else {
+            KFOL.isMobile = Config.browseType === 'mobile';
+        }
+    },
+
+    /**
      * 添加CSS样式
      */
     appendCss: function () {
         $('head').append(
             '<style type="text/css">' +
             '.pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }' +
-            '.pd_pop_box { position: fixed; width: 100%; z-index: 1001; }' +
+            '.pd_pop_box { position: {0}; width: 100%; z-index: 1001; }'.replace('{0}', KFOL.isMobile ? 'absolute' : 'fixed') +
             '.pd_pop_tips {' +
             '  border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0,0,0,0.1); border-radius: 3px; padding: 12px 40px; text-align: center;' +
             '  font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;' +
@@ -161,9 +175,9 @@ var KFOL = {
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
             '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
 
-                /* 设置对话框 */
+            /* 设置对话框 */
             '.pd_cfg_box {' +
-            '  position: fixed; border: 1px solid #9191FF; display: none; z-index: 1002;' +
+            '  position: {0}; border: 1px solid #9191FF; display: none; z-index: 1002;'.replace('{0}', KFOL.isMobile ? 'absolute' : 'fixed') +
             '  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '  -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);' +
             '}' +
@@ -190,7 +204,7 @@ var KFOL = {
             '#pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }' +
             '#pd_auto_change_sm_color_btns label { margin-right: 10px; }' +
 
-                /* 日志对话框 */
+            /* 日志对话框 */
             '#pd_log { width: 880px; }' +
             '.pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }' +
             '.pd_log_nav a { display: inline-block; }' +
@@ -273,15 +287,18 @@ var KFOL = {
         }
         var popTipsHeight = $popTips.outerHeight();
         var popTipsWidth = $popTips.outerWidth();
+        var windowWidth = $(window).width();
         if (isFirst) {
-            $popBox.css('top', $(window).height() / 2 - popTipsHeight / 2);
+            $popBox.css('top', $(window).height() / 2 + (KFOL.isMobile ? $(window).scrollTop() : 0) - popTipsHeight / 2);
         }
         else {
             $popBox.stop(false, true).animate({'top': '-=' + popTipsHeight / 1.75});
         }
         var $prev = $popTips.prev('.pd_pop_tips');
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - popTipsWidth / 2;
+        if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
         $popTips.css('top', $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0)
-            .css('left', $(window).width() / 2 - popTipsWidth / 2)
+            .css('left', left)
             .fadeIn('slow');
         if (settings.duration !== -1) {
             $popTips.delay(settings.duration * 1000).fadeOut('slow', function () {
@@ -2521,7 +2538,7 @@ var KFOL = {
             else {
                 textArea.value += code;
             }
-            textArea.focus();
+            if (!KFOL.isMobile) textArea.focus();
         };
 
         var $parent = $('input[name="diy_guanjianci"]').parent();
@@ -2628,7 +2645,7 @@ var KFOL = {
     },
 
     /**
-     * 显示元素的title属性提示（用于手机浏览器）
+     * 显示元素的title属性提示（用于移动版浏览器）
      * @param {{}} e 点击事件
      * @param {string} title title属性
      */
@@ -2642,7 +2659,7 @@ var KFOL = {
     },
 
     /**
-     * 绑定包含title属性元素的点击事件（用于手机浏览器）
+     * 绑定包含title属性元素的点击事件（用于移动版浏览器）
      */
     bindElementTitleClick: function () {
         var excludeNodeNameList = ['A', 'IMG', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT'];
@@ -2848,6 +2865,7 @@ var KFOL = {
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
         ConfigMethod.init();
+        KFOL.checkBrowserType();
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();
         if (Config.animationEffectOffEnabled) jQuery.fx.off = true;
@@ -2963,7 +2981,7 @@ var KFOL = {
         if (Config.blockUserEnabled) KFOL.blockUsers();
         if (Config.blockThreadEnabled) KFOL.blockThread();
         if (Config.followUserEnabled) KFOL.followUsers();
-        if (Const.showElementTitleTipsEnabled) KFOL.bindElementTitleClick();
+        if (KFOL.isMobile) KFOL.bindElementTitleClick();
 
         var isGetLootAwardStarted = false;
         var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);

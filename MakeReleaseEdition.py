@@ -8,9 +8,9 @@ devKFOLFileName = 'KFOL' # 开发版KFOL主文件名
 devPartFileNameList = ['Config', 'Const', 'ConfigMethod', 'Tools', 'Func', 'Dialog', 'ConfigDialog', 'Log', 'TmpLog', 'Item', 'Card', 'Bank', 'Loot'] # 开发版各部分文件名
 releaseDirName = 'release' # 正式版文件夹名
 defaultFileName = 'KFOLAssistant' # 标准版文件名
+greasyForkFileName = 'GreasyFork' # GreasyFork版文件名
 scriptStorageFileName = 'ScriptStorage' # ScriptStorage版文件名
 GlobalStorageFileName = 'GlobalStorage' # GlobalStorage版文件名
-forMobileFileName = 'ForMobile' # 移动版文件名
 userScriptExt = '.user.js' # 油猴脚本文件扩展名
 minUserScriptExt = '.min.user.js' # 压缩过的油猴脚本文件扩展名
 metaScriptExt = '.meta.js' # 油猴脚本meta文件扩展名
@@ -82,8 +82,8 @@ def getDefaultEditionContent():
         raise Exception('未找到{PartFileContent}占位符')
     content, num  = re.subn(r'(// @description.+?)(// @include)',
                      r'\g<1>'
-                     '// @updateURL   https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.meta.js\n'
-                     '// @downloadURL https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.user.js\n'
+                     '// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/KFOLAssistant.meta.js\n'
+                     '// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/KFOLAssistant.user.js\n'
                      r'\g<2>',
                      content,
                      count=1,
@@ -107,15 +107,28 @@ def makeDefaultEdition(content):
     open(releaseDirName + os.sep + defaultFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
     print('生成标准版meta文件')
 
+def makeGreasyForkEdition(content):
+    '''生成GreasyFork版文件
+
+    Args:
+        content: 脚本文件内容
+    '''
+    content, num = re.subn(r'(// @updateURL\s+).+', r'\g<1>https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.meta.js', content, count=1, flags=re.I)
+    if num == 0: raise NoFoundReplaceStringError('GreasyFork版', 1)
+    content, num = re.subn(r'(// @downloadURL\s+).+', r'\g<1>https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.user.js', content, count=1, flags=re.I)
+    if num == 0: raise NoFoundReplaceStringError('GreasyFork版', 2)
+    open(releaseDirName + os.sep + greasyForkFileName + userScriptExt, 'w', encoding = encoding).write(content)
+    print('生成GreasyFork版脚本文件')
+
 def makeScriptStorageEdition(content):
     '''生成ScriptStorage版文件
 
     Args:
         content: 脚本文件内容
     '''
-    content, num = re.subn(r'(// @updateURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ScriptStorage.meta.js', content, count=1, flags=re.I)
+    content, num = re.subn(r'(// @updateURL\s+).+', r'\g<1>https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/ScriptStorage.meta.js', content, count=1, flags=re.I)
     if num == 0: raise NoFoundReplaceStringError('ScriptStorage版', 1)
-    content, num = re.subn(r'(// @downloadURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ScriptStorage.user.js', content, count=1, flags=re.I)
+    content, num = re.subn(r'(// @downloadURL\s+).+', r'\g<1>https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/ScriptStorage.user.js', content, count=1, flags=re.I)
     if num == 0: raise NoFoundReplaceStringError('ScriptStorage版', 2)
     content, num = re.subn(r'(// @grant\s+)none\n', r'\g<1>GM_getValue\n\g<1>GM_setValue\n\g<1>GM_deleteValue\n', content, count=1, flags=re.S | re.I)
     if num == 0: raise NoFoundReplaceStringError('ScriptStorage版', 3)
@@ -132,9 +145,9 @@ def makeGlobalStorageEdition(content):
     Args:
         content: 脚本文件内容
     '''
-    content, num = re.subn(r'(// @updateURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.meta.js', content, count=1, flags=re.I)
+    content, num = re.subn(r'(// @updateURL\s+).+', r'\g<1>https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.meta.js', content, count=1, flags=re.I)
     if num == 0: raise NoFoundReplaceStringError('GlobalStorage版', 1)
-    content, num = re.subn(r'(// @downloadURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/GlobalStorage.user.js', content, count=1, flags=re.I)
+    content, num = re.subn(r'(// @downloadURL\s+).+', r'\g<1>https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.user.js', content, count=1, flags=re.I)
     if num == 0: raise NoFoundReplaceStringError('GlobalStorage版', 2)
     content, num = re.subn(r'(// @grant\s+)none\n', r'\g<1>GM_getValue\n\g<1>GM_setValue\n\g<1>GM_deleteValue\n', content, count=1, flags=re.S | re.I)
     if num == 0: raise NoFoundReplaceStringError('GlobalStorage版', 3)
@@ -145,38 +158,6 @@ def makeGlobalStorageEdition(content):
     open(releaseDirName + os.sep + GlobalStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
     print('生成GlobalStorage版meta文件')
 
-def makeForMobileEdition(content):
-    '''生成移动版文件
-
-    Args:
-        content: 脚本文件内容
-    '''
-    content, num = re.subn(r'(// @name\s+KF Online助手)', r'\g<1> for Mobile', content, count=1, flags=re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 1)
-    content, num = re.subn(r'(// @updateURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ForMobile.meta.js', content, count=1, flags=re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 2)
-    content, num = re.subn(r'(// @downloadURL\s+).+', r'\g<1>https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/release/ForMobile.user.js', content, count=1, flags=re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 3)
-    content, num = re.subn(r"\s*\$\(window\)\.on\('resize\.'\s*\+\s*id,\s*function\s*\(\)\s*\{\n\s*Dialog\.show\(id\);\n\s*\}\);", "", content, count=1, flags=re.S | re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 4)
-    content, num = re.subn(r"\s*\$\(window\)\.off\('resize\.'\s*\+\s*id\);", "", content, count=1, flags=re.S | re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 5)
-    content, num = re.subn(r'(\.pd_pop_box\s*\{\s*position:\s*)fixed;', r'\g<1>absolute;', content, count=1, flags=re.S | re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 6)
-    content, num = re.subn(r"('\.pd_cfg_box\s*\{'\s*\+\n\s*'\s*position:\s*)fixed;", r"\g<1>absolute;", content, count=1, flags=re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 7)
-    content, num = re.subn(r'(else\s*\{\n\s*textArea\.value\s*\+\=\s*code;\n\s*\})\n\s*textArea\.focus\(\);', r'\g<1>', content, count=1, flags=re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 8)
-    content, num = re.subn(r'(showElementTitleTipsEnabled:\s*)false,', r'\g<1>true,', content, count=1, flags=re.I)
-    if num == 0: raise NoFoundReplaceStringError('移动版', 9)
-    open(releaseDirName + os.sep + forMobileFileName + userScriptExt, 'w', encoding = encoding).write(content)
-    print('生成移动版脚本文件')
-    metaContent = getMetaFileContent(content)
-    open(releaseDirName + os.sep + forMobileFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + getMinFileContent(content))
-    print('生成压缩过的移动版脚本文件')
-    open(releaseDirName + os.sep + forMobileFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
-    print('生成移动版meta文件')
-
 def main():
     '''主函数'''
     print('开发版文件夹：' + devDirName)
@@ -185,22 +166,21 @@ def main():
     print('-------------------------------------------')
     print('正式版文件夹：' + releaseDirName)
     print('标准版脚本文件：' + defaultFileName + userScriptExt)
+    print('GreasyFork版脚本文件：' + greasyForkFileName + userScriptExt)
     print('ScriptStorage版脚本文件：' + scriptStorageFileName + userScriptExt)
     print('ScriptStorage版meta文件：' + scriptStorageFileName + metaScriptExt)
     print('GlobalStorage版脚本文件：' + GlobalStorageFileName + userScriptExt)
     print('GlobalStorage版meta文件：' + GlobalStorageFileName + metaScriptExt)
-    print('移动版脚本文件：' + forMobileFileName + userScriptExt)
-    print('移动版meta文件：' + forMobileFileName + metaScriptExt)
     print('-------------------------------------------')
 
     content = getDefaultEditionContent()
     makeDefaultEdition(content)
     print()
+    makeGreasyForkEdition(content)
+    print()
     makeScriptStorageEdition(content)
     print()
     makeGlobalStorageEdition(content)
-    print()
-    makeForMobileEdition(content)
 
     print('\n已生成所有文件')
 

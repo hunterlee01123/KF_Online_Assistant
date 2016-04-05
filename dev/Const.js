@@ -5,8 +5,6 @@
 var Const = {
     // 开启调试模式，true：开启；false：关闭
     debug: false,
-    // 是否显示元素的title属性提示（用于手机浏览器），true：开启；false：关闭
-    showElementTitleTipsEnabled: false,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
     // 争夺的默认领取间隔（分钟）
