@@ -37,7 +37,7 @@ var Loot = {
 
         Func.run('Loot.getLootAward_before_');
         console.log('领取争夺奖励Start');
-        var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候……</strong>', true);
+        var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候...</strong>', true);
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             if (Loot.getNextLootAwardTime().type) {
                 KFOL.removePopTips($tips);

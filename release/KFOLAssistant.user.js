@@ -10,13 +10,13 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.2
+// @version     5.2.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.2';
+var version = '5.2.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -6424,7 +6424,7 @@ var Loot = {
 
         Func.run('Loot.getLootAward_before_');
         console.log('领取争夺奖励Start');
-        var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候……</strong>', true);
+        var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候...</strong>', true);
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             if (Loot.getNextLootAwardTime().type) {
                 KFOL.removePopTips($tips);
@@ -8240,6 +8240,7 @@ var KFOL = {
             '}' +
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
             '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
+            '.readtext img[onclick] { max-width: 550px; }' +
 
             /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -8449,7 +8450,7 @@ var KFOL = {
         }
         Func.run('KFOL.donation_before_');
         console.log('KFB捐款Start');
-        var $tips = KFOL.showWaitMsg('<strong>正在进行捐款，请稍候……</strong>', true);
+        var $tips = KFOL.showWaitMsg('<strong>正在进行捐款，请稍候...</strong>', true);
 
         /**
          * 使用指定的KFB捐款
@@ -8463,10 +8464,11 @@ var KFOL = {
                 Tools.setCookie(Const.donationCookieName, 1, date);
                 KFOL.showFormatLog('捐款{0}KFB'.replace('{0}', kfb), html);
                 KFOL.removePopTips($tips);
+
                 var msg = '<strong>捐款<em>{0}</em>KFB</strong>'.replace('{0}', kfb);
                 var matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(html);
                 if (!matches) {
-                    if (/KFB不足。<br \/>/.test(html)) {
+                    if (/KFB不足。<br/i.test(html)) {
                         msg += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
                     }
                     else return;
@@ -8509,7 +8511,15 @@ var KFOL = {
             }, 'html');
         }
         else {
-            donationSubmit(parseInt(Config.donationKfb));
+            $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+                if (/>今天已经捐款</.test(html)) {
+                    KFOL.removePopTips($tips);
+                    Tools.setCookie(Const.donationCookieName, 1, Tools.getMidnightHourDate(1));
+                }
+                else {
+                    donationSubmit(parseInt(Config.donationKfb));
+                }
+            }, 'html');
         }
     },
 
@@ -10922,6 +10932,27 @@ var KFOL = {
     },
 
     /**
+     * 显示在购买框之外的附件图片
+     */
+    showAttachImageOutsideSellBox: function () {
+        $('.readtext > table > tbody > tr > td').each(function () {
+            var $this = $(this);
+            var html = $this.html();
+            if (/\[attachment=\d+\]/.test(html)) {
+                var pid = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
+                var tid = Tools.getUrlParam('tid');
+                $this.html(
+                    html.replace(/\[attachment=(\d+)\]/g,
+                        ('<img src="job.php?action=download&pid={0}&tid={1}&aid=$1" alt="附件图片" style="max-width:550px" ' +
+                        'onclick="if(this.width>=550) window.open(\'job.php?action=download&pid={0}&tid={1}&aid=$1\');" />')
+                            .replace(/\{0\}/g, pid).replace(/\{1\}/g, tid)
+                    )
+                );
+            }
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -10957,7 +10988,9 @@ var KFOL = {
             KFOL.fastGotoFloor();
             if (Config.adjustThreadContentWidthEnabled) KFOL.adjustThreadContentWidth();
             KFOL.adjustThreadContentFontSize();
+            KFOL.showAttachImageOutsideSellBox();
             if (Config.parseMediaTagEnabled) KFOL.parseMediaTag();
+            if (Config.modifyKFOtherDomainEnabled) KFOL.modifyKFOtherDomainLink();
             if (Config.customSmColorEnabled) KFOL.modifySmColor();
             if (Config.customMySmColor) KFOL.modifyMySmColor();
             if (Config.multiQuoteEnabled) KFOL.addMultiQuoteButton();
@@ -10965,7 +10998,6 @@ var KFOL = {
             KFOL.addFloorGotoLink();
             KFOL.addCopyBuyersListLink();
             KFOL.addStatReplyersLink();
-            if (Config.modifyKFOtherDomainEnabled) KFOL.modifyKFOtherDomainLink();
             KFOL.addBuyThreadWarning();
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
