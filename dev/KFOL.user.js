@@ -21,13 +21,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.3
+// @version     5.2.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.3';
+var version = '5.2.4';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -170,7 +170,7 @@ var KFOL = {
             '}' +
             '.pd_search_type i { font-style: normal; margin-left: 5px; font-family: "Microsoft YaHei"; }' +
             '.pd_search_type_list {' +
-            '  position: absolute; width: 63px; background-color: #FFF; border: 1px solid #CCC; border-top: none; line-height: 26px; text-indent: 13px; cursor: pointer;' +
+            '  position: absolute; width: 63px; background-color: #FCFCFC; border: 1px solid #CCC; border-top: none; line-height: 26px; text-indent: 13px; cursor: pointer;' +
             '}' +
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
             '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
@@ -253,6 +253,7 @@ var KFOL = {
             settings.duration = typeof duration === 'undefined' ? Config.defShowMsgDuration : duration;
         }
         if ($('.pd_pop_tips').length > 20) KFOL.removePopTips($('.pd_pop_tips'));
+        var windowHeight = $(window).height(), windowWidth = $(window).width();
         var $popBox = $('.pd_pop_box');
         var isFirst = $popBox.length === 0;
         if (!isFirst && $('.pd_mask').length === 0) {
@@ -260,7 +261,7 @@ var KFOL = {
             if ($lastTips.length > 0) {
                 var top = $lastTips.offset().top;
                 var winScrollTop = $(window).scrollTop();
-                if (top < winScrollTop || top >= winScrollTop + $(window).height() - $lastTips.outerHeight() - 10) {
+                if (top < winScrollTop || top >= winScrollTop + windowHeight - $lastTips.outerHeight() - 10) {
                     $popBox.remove();
                     isFirst = true;
                 }
@@ -286,18 +287,18 @@ var KFOL = {
                 e.stopPropagation();
             });
         }
-        var popTipsHeight = $popTips.outerHeight();
-        var popTipsWidth = $popTips.outerWidth();
-        var windowWidth = $(window).width();
+        var popTipsHeight = $popTips.outerHeight(), popTipsWidth = $popTips.outerWidth();
+        var scrollTop = $(window).scrollTop();
+        if (scrollTop < windowHeight / 2) scrollTop = 0;
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - popTipsWidth / 2;
+        if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
         if (isFirst) {
-            $popBox.css('top', $(window).height() / 2 + (KFOL.isMobile ? $(window).scrollTop() : 0) - popTipsHeight / 2);
+            $popBox.css('top', $(window).height() / 2 + (KFOL.isMobile ? scrollTop : 0) - popTipsHeight / 2);
         }
         else {
             $popBox.stop(false, true).animate({'top': '-=' + popTipsHeight / 1.75});
         }
         var $prev = $popTips.prev('.pd_pop_tips');
-        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - popTipsWidth / 2;
-        if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
         $popTips.css('top', $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0)
             .css('left', left)
             .fadeIn('slow');
@@ -387,15 +388,25 @@ var KFOL = {
         var $tips = KFOL.showWaitMsg('<strong>正在进行捐款，请稍候...</strong>', true);
 
         /**
+         * 获取捐款Cookies有效期
+         * @returns {*|Date}
+         */
+        var getDonationCookieDate = function () {
+            var date = Tools.getTimezoneDateByTime('02:00:00');
+            if (new Date() > date) {
+                date = Tools.getTimezoneDateByTime('00:00:00');
+                date.setDate(date.getDate() + 1);
+            }
+            return date;
+        };
+
+        /**
          * 使用指定的KFB捐款
          * @param {number} kfb 指定的KFB
          */
         var donationSubmit = function (kfb) {
             $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
-                var date = Tools.getDateByTime('02:00:00');
-                if (new Date() > date) date = Tools.getDateByTime('14:00:00');
-                if (new Date() > date) date = Tools.getMidnightHourDate(1);
-                Tools.setCookie(Const.donationCookieName, 1, date);
+                Tools.setCookie(Const.donationCookieName, 1, getDonationCookieDate());
                 KFOL.showFormatLog('捐款{0}KFB'.replace('{0}', kfb), html);
                 KFOL.removePopTips($tips);
 
@@ -438,7 +449,7 @@ var KFOL = {
                 if (matches) income = parseInt(matches[1]);
                 else console.log('当前持有KFB获取失败');
                 var donationKfb = parseInt(Config.donationKfb);
-                donationKfb = parseInt(income * donationKfb / 100);
+                donationKfb = Math.floor(income * donationKfb / 100);
                 donationKfb = donationKfb > 0 ? donationKfb : 1;
                 donationKfb = donationKfb <= Const.maxDonationKfb ? donationKfb : Const.maxDonationKfb;
                 donationSubmit(donationKfb);
@@ -448,7 +459,7 @@ var KFOL = {
             $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
                 if (/>今天已经捐款</.test(html)) {
                     KFOL.removePopTips($tips);
-                    Tools.setCookie(Const.donationCookieName, 1, Tools.getMidnightHourDate(1));
+                    Tools.setCookie(Const.donationCookieName, 1, getDonationCookieDate());
                 }
                 else {
                     donationSubmit(parseInt(Config.donationKfb));
@@ -1413,39 +1424,45 @@ var KFOL = {
             $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
                 .replace(matches[0], '给你转帐<span class="pd_stat"><em>{0}</em></span>KFB'.replace('{0}', parseInt(matches[1]).toLocaleString()))
             );
-        }
-        $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>')
-            .appendTo($msg)
-            .filter('a:eq(0)')
-            .click(function (e) {
-                e.preventDefault();
-                KFOL.removePopTips($('.pd_pop_tips'));
-                var matches = /给你转帐(\d+)KFB/i.exec($msg.text());
-                if (!matches) return;
-                var money = parseInt(matches[1]);
-                Bank.drawCurrentDeposit(money);
-            })
-            .end()
-            .filter('a:eq(1)')
-            .click(function (e) {
-                e.preventDefault();
-                KFOL.removePopTips($('.pd_pop_tips'));
-                KFOL.showWaitMsg('正在获取当前活期存款金额...', true);
-                $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+
+            $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>')
+                .appendTo($msg)
+                .filter('a:eq(0)')
+                .click(function (e) {
+                    e.preventDefault();
                     KFOL.removePopTips($('.pd_pop_tips'));
-                    var matches = /活期存款：(\d+)KFB<br \/>/i.exec(html);
-                    if (!matches) {
-                        alert('获取当前活期存款金额失败');
-                        return;
-                    }
+                    var matches = /给你转帐(\d+)KFB/i.exec($msg.text());
+                    if (!matches) return;
                     var money = parseInt(matches[1]);
-                    if (money <= 0) {
-                        KFOL.showMsg('当前活期存款余额为零', -1);
-                        return;
-                    }
                     Bank.drawCurrentDeposit(money);
-                }, 'html');
+                })
+                .end()
+                .filter('a:eq(1)')
+                .click(function (e) {
+                    e.preventDefault();
+                    KFOL.removePopTips($('.pd_pop_tips'));
+                    KFOL.showWaitMsg('正在获取当前活期存款金额...', true);
+                    $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+                        KFOL.removePopTips($('.pd_pop_tips'));
+                        var matches = /活期存款：(\d+)KFB<br \/>/i.exec(html);
+                        if (!matches) {
+                            alert('获取当前活期存款金额失败');
+                            return;
+                        }
+                        var money = parseInt(matches[1]);
+                        if (money <= 0) {
+                            KFOL.showMsg('当前活期存款余额为零', -1);
+                            return;
+                        }
+                        Bank.drawCurrentDeposit(money);
+                    }, 'html');
+                });
+
+            $('a[href^="message.php?action=write&remid="]').click(function (e) {
+                e.preventDefault();
+                alert('本短消息由系统发送，请勿直接回复；如需回复，请点击给你转账的用户链接，向其发送短消息');
             });
+        }
     },
 
     /**
@@ -2877,7 +2894,7 @@ var KFOL = {
                 var tid = Tools.getUrlParam('tid');
                 $this.html(
                     html.replace(/\[attachment=(\d+)\]/g,
-                        ('<img src="job.php?action=download&pid={0}&tid={1}&aid=$1" alt="附件图片" style="max-width:550px" ' +
+                        ('<img src="job.php?action=download&pid={0}&tid={1}&aid=$1" alt="[附件图片]" style="max-width:550px" ' +
                         'onclick="if(this.width>=550) window.open(\'job.php?action=download&pid={0}&tid={1}&aid=$1\');" />')
                             .replace(/\{0\}/g, pid).replace(/\{1\}/g, tid)
                     )

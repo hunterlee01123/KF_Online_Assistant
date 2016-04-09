@@ -5,6 +5,8 @@
 var Const = {
     // 开启调试模式，true：开启；false：关闭
     debug: false,
+    // UTC时间与论坛时间之间的时差（小时）
+    forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
     // 争夺的默认领取间隔（分钟）

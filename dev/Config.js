@@ -103,7 +103,7 @@ var Config = {
     // 显示距该日N天内的统计结果（用于日志统计范围）
     logStatDays: 7,
     // 是否为侧边栏添加快捷导航的链接，true：开启；false：关闭
-    addSideBarFastNavEnabled: false,
+    addSideBarFastNavEnabled: true,
     // 是否将侧边栏修改为和手机相同的平铺样式，true：开启；false：关闭
     modifySideBarEnabled: false,
     // 是否为页面添加自定义的CSS内容，true：开启；false：关闭

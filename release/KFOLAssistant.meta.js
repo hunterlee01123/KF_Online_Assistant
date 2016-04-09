@@ -8,7 +8,7 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.3
+// @version     5.2.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT

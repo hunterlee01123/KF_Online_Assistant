@@ -34,19 +34,9 @@ var Tools = {
     },
 
     /**
-     * 获取距今N天的零时整点的Date对象
-     * @param {number} days 距今的天数
-     * @returns {Date} 距今N天的零时整点的Date对象
-     */
-    getMidnightHourDate: function (days) {
-        var date = Tools.getDateByTime('00:00:00');
-        date.setDate(date.getDate() + days);
-        return date;
-    },
-    /**
-     * 返回当天指定的时间的Date对象
+     * 返回当天指定时间的Date对象
      * @param {string} time 指定的时间（例：22:30:00）
-     * @returns {Date} 修改后的Date对象
+     * @returns {Date} 指定时间的Date对象
      */
     getDateByTime: function (time) {
         var date = new Date();
@@ -55,6 +45,34 @@ var Tools = {
         if (timeArr[1]) date.setMinutes(parseInt(timeArr[1]));
         if (timeArr[2]) date.setSeconds(parseInt(timeArr[2]));
         date.setMilliseconds(0);
+        return date;
+    },
+
+    /**
+     * 返回当天根据指定时区指定时间的Date对象
+     * @param {string} time 指定的时间（例：22:30:00）
+     * @param {number} [timezoneOffset={@link Const.forumTimezoneOffset}] UTC时间与本地时间之间的时间差（例：东8区为-8）
+     * @returns {Date} 指定时间的Date对象
+     */
+    getTimezoneDateByTime: function (time, timezoneOffset) {
+        if (typeof timezoneOffset === 'undefined') timezoneOffset = Const.forumTimezoneOffset;
+        var date = new Date();
+        var timeArr = time.split(':');
+        if (timeArr[0]) date.setUTCHours(parseInt(timeArr[0]) + timezoneOffset);
+        if (timeArr[1]) date.setUTCMinutes(parseInt(timeArr[1]));
+        if (timeArr[2]) date.setUTCSeconds(parseInt(timeArr[2]));
+        date.setUTCMilliseconds(0);
+        return date;
+    },
+
+    /**
+     * 获取距今N天的零时整点的Date对象
+     * @param {number} days 距今的天数
+     * @returns {Date} 距今N天的零时整点的Date对象
+     */
+    getMidnightHourDate: function (days) {
+        var date = Tools.getDateByTime('00:00:00');
+        date.setDate(date.getDate() + days);
         return date;
     },
 
