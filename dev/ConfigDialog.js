@@ -49,11 +49,9 @@ var ConfigDialog = {
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
             '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
                 .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
-            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
-            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
-            '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
-            '<span class="pd_cfg_tips" title="在实际生命值不超过指定阈值时才进行试探攻击，留空表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
-            '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
+            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" />在生命值不超过{0}时进行试探攻击 '.replace('{0}', Const.maxAttemptAttackLifeNum) +
+            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
+            '        <table id="pd_cfg_batch_attack_list">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
             '</label></td><td style="width:62px">Lv.2：笨蛋</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="2" />次</label></td></tr>' +
@@ -299,7 +297,6 @@ var ConfigDialog = {
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
-        $('#pd_cfg_max_attempt_attack_life_num').val(Config.maxAttemptAttackLifeNum >= 0 ? Config.maxAttemptAttackLifeNum : '');
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
@@ -375,8 +372,6 @@ var ConfigDialog = {
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
-        options.maxAttemptAttackLifeNum = parseInt($.trim($('#pd_cfg_max_attempt_attack_life_num').val()));
-        if (isNaN(options.maxAttemptAttackLifeNum)) options.maxAttemptAttackLifeNum = -1;
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
             var $this = $(this);
@@ -525,18 +520,6 @@ var ConfigDialog = {
                 alert('开启“试探攻击”必须同时设置“在指定时间之内才完成攻击”');
                 $txtAttackAfterTime.select();
                 $txtAttackAfterTime.focus();
-                return false;
-            }
-        }
-
-        var $txtMaxAttemptAttackLifeNum = $('#pd_cfg_max_attempt_attack_life_num');
-        var maxAttemptAttackLifeNum = $.trim($txtMaxAttemptAttackLifeNum.val());
-        if (maxAttemptAttackLifeNum) {
-            maxAttemptAttackLifeNum = parseInt(maxAttemptAttackLifeNum);
-            if (isNaN(maxAttemptAttackLifeNum) || maxAttemptAttackLifeNum < -1) {
-                alert('进行试探攻击的生命值上限格式不正确');
-                $txtMaxAttemptAttackLifeNum.select();
-                $txtMaxAttemptAttackLifeNum.focus();
                 return false;
             }
         }

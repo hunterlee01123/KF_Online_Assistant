@@ -10,13 +10,13 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.4
+// @version     5.2.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.4';
+var version = '5.2.5';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -61,8 +61,6 @@ var Config = {
     attackAfterTime: 0,
     // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
     attemptAttackEnabled: false,
-    // 在实际生命值不超过指定阈值时才进行试探攻击，-1表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）
-    maxAttemptAttackLifeNum: 10,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
@@ -213,6 +211,8 @@ var Const = {
     lootInitialBonus: 100,
     // 所允许的在距本回合结束前指定时间后才进行自动批量攻击的最小时间（分钟）
     minAttackAfterTime: 63,
+    // 在实际生命值不超过指定值时才进行试探攻击，-1表示使用低保值
+    maxAttemptAttackLifeNum: 10,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
     // 致命一击比例
@@ -242,7 +242,7 @@ var Const = {
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘系数排名变化的提醒间隔（小时）
-    smRankChangeAlertInterval: 12,
+    smRankChangeAlertInterval: 22,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
     // ajax请求的默认时间间隔（毫秒）
@@ -474,12 +474,6 @@ var ConfigMethod = {
                 options.attemptAttackEnabled : defConfig.attemptAttackEnabled;
         }
         if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
-        if (typeof options.maxAttemptAttackLifeNum !== 'undefined') {
-            var maxAttemptAttackLifeNum = parseInt(options.maxAttemptAttackLifeNum);
-            if (!isNaN(maxAttemptAttackLifeNum) && maxAttemptAttackLifeNum >= -1)
-                settings.maxAttemptAttackLifeNum = maxAttemptAttackLifeNum;
-            else settings.maxAttemptAttackLifeNum = defConfig.maxAttemptAttackLifeNum;
-        }
         if (typeof options.batchAttackList !== 'undefined') {
             if ($.type(options.batchAttackList) === 'object') {
                 settings.batchAttackList = {};
@@ -1464,10 +1458,11 @@ var Dialog = {
         }).end().find('input[data-disabled]').each(function () {
             $(this).triggerHandler('click');
         });
-        var boxWidth = $box.width(), windowHeight = $(window).height(), windowWidth = $(window).width();
+        var boxWidth = $box.width(), windowWidth = $(window).width(), windowHeight = $(window).height();
+        if (KFOL.isMobile && windowHeight > 1000) windowHeight /= 2;
         var scrollTop = $(window).scrollTop();
         if (scrollTop < windowHeight / 2) scrollTop = 0;
-        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - boxWidth / 2;
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - boxWidth / 2;
         if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
         $box.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - $box.height() / 2)
             .css('left', left)
@@ -1541,11 +1536,9 @@ var ConfigDialog = {
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
             '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
                 .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
-            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_max_attempt_attack_life_num" />试探攻击 ' +
-            '<span class="pd_cfg_tips" title="当生命值不超过低保线时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
-            '      <label style="margin-left:10px">在生命值不超过<input id="pd_cfg_max_attempt_attack_life_num" maxlength="3" style="width:23px" type="text" />时才试探攻击 ' +
-            '<span class="pd_cfg_tips" title="在实际生命值不超过指定阈值时才进行试探攻击，留空表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）">[?]</span></label>' +
-            '        <table id="pd_cfg_batch_attack_list" style="margin-top:5px">' +
+            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" />在生命值不超过{0}时进行试探攻击 '.replace('{0}', Const.maxAttemptAttackLifeNum) +
+            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
+            '        <table id="pd_cfg_batch_attack_list">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
             '</label></td><td style="width:62px">Lv.2：笨蛋</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="2" />次</label></td></tr>' +
@@ -1791,7 +1784,6 @@ var ConfigDialog = {
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
-        $('#pd_cfg_max_attempt_attack_life_num').val(Config.maxAttemptAttackLifeNum >= 0 ? Config.maxAttemptAttackLifeNum : '');
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
@@ -1867,8 +1859,6 @@ var ConfigDialog = {
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
-        options.maxAttemptAttackLifeNum = parseInt($.trim($('#pd_cfg_max_attempt_attack_life_num').val()));
-        if (isNaN(options.maxAttemptAttackLifeNum)) options.maxAttemptAttackLifeNum = -1;
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
             var $this = $(this);
@@ -2017,18 +2007,6 @@ var ConfigDialog = {
                 alert('开启“试探攻击”必须同时设置“在指定时间之内才完成攻击”');
                 $txtAttackAfterTime.select();
                 $txtAttackAfterTime.focus();
-                return false;
-            }
-        }
-
-        var $txtMaxAttemptAttackLifeNum = $('#pd_cfg_max_attempt_attack_life_num');
-        var maxAttemptAttackLifeNum = $.trim($txtMaxAttemptAttackLifeNum.val());
-        if (maxAttemptAttackLifeNum) {
-            maxAttemptAttackLifeNum = parseInt(maxAttemptAttackLifeNum);
-            if (isNaN(maxAttemptAttackLifeNum) || maxAttemptAttackLifeNum < -1) {
-                alert('进行试探攻击的生命值上限格式不正确');
-                $txtMaxAttemptAttackLifeNum.select();
-                $txtMaxAttemptAttackLifeNum.focus();
                 return false;
             }
         }
@@ -7341,7 +7319,7 @@ var Loot = {
                     isLteMinLife = true;
                 }
             }
-            var maxCheckAttackLifeNum = Config.maxAttemptAttackLifeNum;
+            var maxCheckAttackLifeNum = Const.maxAttemptAttackLifeNum;
             if (maxCheckAttackLifeNum > minLife || maxCheckAttackLifeNum < 0) maxCheckAttackLifeNum = minLife;
             var recentMonsterAttackLog = '';
             var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
@@ -7366,7 +7344,7 @@ var Loot = {
 
                 var lootInfo = Loot.getNextLootAwardTime();
                 if (lootInfo.time > 0) {
-                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}，攻击阈值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
+                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
                         .replace('{0}', life)
                         .replace('{1}', minLife)
                         .replace('{2}', maxCheckAttackLifeNum)
@@ -8340,7 +8318,6 @@ var KFOL = {
             settings.duration = typeof duration === 'undefined' ? Config.defShowMsgDuration : duration;
         }
         if ($('.pd_pop_tips').length > 20) KFOL.removePopTips($('.pd_pop_tips'));
-        var windowHeight = $(window).height(), windowWidth = $(window).width();
         var $popBox = $('.pd_pop_box');
         var isFirst = $popBox.length === 0;
         if (!isFirst && $('.pd_mask').length === 0) {
@@ -8348,7 +8325,7 @@ var KFOL = {
             if ($lastTips.length > 0) {
                 var top = $lastTips.offset().top;
                 var winScrollTop = $(window).scrollTop();
-                if (top < winScrollTop || top >= winScrollTop + windowHeight - $lastTips.outerHeight() - 10) {
+                if (top < winScrollTop || top >= winScrollTop + $(window).height() - $lastTips.outerHeight() - 10) {
                     $popBox.remove();
                     isFirst = true;
                 }
@@ -8374,13 +8351,15 @@ var KFOL = {
                 e.stopPropagation();
             });
         }
-        var popTipsHeight = $popTips.outerHeight(), popTipsWidth = $popTips.outerWidth();
+        var windowWidth = $(window).width(), windowHeight = $(window).height();
+        var popTipsWidth = $popTips.outerWidth(), popTipsHeight = $popTips.outerHeight();
+        if (KFOL.isMobile && windowHeight > 1000) windowHeight /= 2;
         var scrollTop = $(window).scrollTop();
         if (scrollTop < windowHeight / 2) scrollTop = 0;
-        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - popTipsWidth / 2;
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - popTipsWidth / 2;
         if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
         if (isFirst) {
-            $popBox.css('top', $(window).height() / 2 + (KFOL.isMobile ? scrollTop : 0) - popTipsHeight / 2);
+            $popBox.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - popTipsHeight / 2);
         }
         else {
             $popBox.stop(false, true).animate({'top': '-=' + popTipsHeight / 1.75});
@@ -8476,7 +8455,7 @@ var KFOL = {
 
         /**
          * 获取捐款Cookies有效期
-         * @returns {*|Date}
+         * @returns {Date} Cookies有效期的Date对象
          */
         var getDonationCookieDate = function () {
             var date = Tools.getTimezoneDateByTime('02:00:00');
@@ -8484,6 +8463,7 @@ var KFOL = {
                 date = Tools.getTimezoneDateByTime('00:00:00');
                 date.setDate(date.getDate() + 1);
             }
+            if (new Date() > date) date.setDate(date.getDate() + 1);
             return date;
         };
 
@@ -9545,7 +9525,7 @@ var KFOL = {
                     }, 'html');
                 });
 
-            $('a[href^="message.php?action=write&remid="]').click(function (e) {
+            $('a[href^="message.php?action=write&remid="]').attr('href', '#').addClass('pd_disabled_link').click(function (e) {
                 e.preventDefault();
                 alert('本短消息由系统发送，请勿直接回复；如需回复，请点击给你转账的用户链接，向其发送短消息');
             });

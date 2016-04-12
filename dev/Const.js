@@ -15,6 +15,8 @@ var Const = {
     lootInitialBonus: 100,
     // 所允许的在距本回合结束前指定时间后才进行自动批量攻击的最小时间（分钟）
     minAttackAfterTime: 63,
+    // 在实际生命值不超过指定值时才进行试探攻击，-1表示使用低保值
+    maxAttemptAttackLifeNum: 10,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
     // 致命一击比例
@@ -44,7 +46,7 @@ var Const = {
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘系数排名变化的提醒间隔（小时）
-    smRankChangeAlertInterval: 12,
+    smRankChangeAlertInterval: 22,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
     // ajax请求的默认时间间隔（毫秒）

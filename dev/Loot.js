@@ -933,7 +933,7 @@ var Loot = {
                     isLteMinLife = true;
                 }
             }
-            var maxCheckAttackLifeNum = Config.maxAttemptAttackLifeNum;
+            var maxCheckAttackLifeNum = Const.maxAttemptAttackLifeNum;
             if (maxCheckAttackLifeNum > minLife || maxCheckAttackLifeNum < 0) maxCheckAttackLifeNum = minLife;
             var recentMonsterAttackLog = '';
             var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
@@ -958,7 +958,7 @@ var Loot = {
 
                 var lootInfo = Loot.getNextLootAwardTime();
                 if (lootInfo.time > 0) {
-                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}，攻击阈值：{2}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
+                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
                         .replace('{0}', life)
                         .replace('{1}', minLife)
                         .replace('{2}', maxCheckAttackLifeNum)

@@ -31,8 +31,6 @@ var Config = {
     attackAfterTime: 0,
     // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
     attemptAttackEnabled: false,
-    // 在实际生命值不超过指定阈值时才进行试探攻击，-1表示使用低保值，例：10（不同等级的阈值可能有所不同，请自行判断，超过低保值无效）
-    maxAttemptAttackLifeNum: 10,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认

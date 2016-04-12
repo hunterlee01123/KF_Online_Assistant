@@ -21,13 +21,13 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.4
+// @version     5.2.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // ==/UserScript==
 // 版本号
-var version = '5.2.4';
+var version = '5.2.5';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -253,7 +253,6 @@ var KFOL = {
             settings.duration = typeof duration === 'undefined' ? Config.defShowMsgDuration : duration;
         }
         if ($('.pd_pop_tips').length > 20) KFOL.removePopTips($('.pd_pop_tips'));
-        var windowHeight = $(window).height(), windowWidth = $(window).width();
         var $popBox = $('.pd_pop_box');
         var isFirst = $popBox.length === 0;
         if (!isFirst && $('.pd_mask').length === 0) {
@@ -261,7 +260,7 @@ var KFOL = {
             if ($lastTips.length > 0) {
                 var top = $lastTips.offset().top;
                 var winScrollTop = $(window).scrollTop();
-                if (top < winScrollTop || top >= winScrollTop + windowHeight - $lastTips.outerHeight() - 10) {
+                if (top < winScrollTop || top >= winScrollTop + $(window).height() - $lastTips.outerHeight() - 10) {
                     $popBox.remove();
                     isFirst = true;
                 }
@@ -287,13 +286,15 @@ var KFOL = {
                 e.stopPropagation();
             });
         }
-        var popTipsHeight = $popTips.outerHeight(), popTipsWidth = $popTips.outerWidth();
+        var windowWidth = $(window).width(), windowHeight = $(window).height();
+        var popTipsWidth = $popTips.outerWidth(), popTipsHeight = $popTips.outerHeight();
+        if (KFOL.isMobile && windowHeight > 1000) windowHeight /= 2;
         var scrollTop = $(window).scrollTop();
         if (scrollTop < windowHeight / 2) scrollTop = 0;
-        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - popTipsWidth / 2;
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - popTipsWidth / 2;
         if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
         if (isFirst) {
-            $popBox.css('top', $(window).height() / 2 + (KFOL.isMobile ? scrollTop : 0) - popTipsHeight / 2);
+            $popBox.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - popTipsHeight / 2);
         }
         else {
             $popBox.stop(false, true).animate({'top': '-=' + popTipsHeight / 1.75});
@@ -389,7 +390,7 @@ var KFOL = {
 
         /**
          * 获取捐款Cookies有效期
-         * @returns {*|Date}
+         * @returns {Date} Cookies有效期的Date对象
          */
         var getDonationCookieDate = function () {
             var date = Tools.getTimezoneDateByTime('02:00:00');
@@ -397,6 +398,7 @@ var KFOL = {
                 date = Tools.getTimezoneDateByTime('00:00:00');
                 date.setDate(date.getDate() + 1);
             }
+            if (new Date() > date) date.setDate(date.getDate() + 1);
             return date;
         };
 
@@ -1458,7 +1460,7 @@ var KFOL = {
                     }, 'html');
                 });
 
-            $('a[href^="message.php?action=write&remid="]').click(function (e) {
+            $('a[href^="message.php?action=write&remid="]').attr('href', '#').addClass('pd_disabled_link').click(function (e) {
                 e.preventDefault();
                 alert('本短消息由系统发送，请勿直接回复；如需回复，请点击给你转账的用户链接，向其发送短消息');
             });

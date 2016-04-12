@@ -72,10 +72,11 @@ var Dialog = {
         }).end().find('input[data-disabled]').each(function () {
             $(this).triggerHandler('click');
         });
-        var boxWidth = $box.width(), windowHeight = $(window).height(), windowWidth = $(window).width();
+        var boxWidth = $box.width(), windowWidth = $(window).width(), windowHeight = $(window).height();
+        if (KFOL.isMobile && windowHeight > 1000) windowHeight /= 2;
         var scrollTop = $(window).scrollTop();
         if (scrollTop < windowHeight / 2) scrollTop = 0;
-        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 2 : 0) - boxWidth / 2;
+        var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - boxWidth / 2;
         if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
         $box.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - $box.height() / 2)
             .css('left', left)

@@ -154,12 +154,6 @@ var ConfigMethod = {
                 options.attemptAttackEnabled : defConfig.attemptAttackEnabled;
         }
         if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
-        if (typeof options.maxAttemptAttackLifeNum !== 'undefined') {
-            var maxAttemptAttackLifeNum = parseInt(options.maxAttemptAttackLifeNum);
-            if (!isNaN(maxAttemptAttackLifeNum) && maxAttemptAttackLifeNum >= -1)
-                settings.maxAttemptAttackLifeNum = maxAttemptAttackLifeNum;
-            else settings.maxAttemptAttackLifeNum = defConfig.maxAttemptAttackLifeNum;
-        }
         if (typeof options.batchAttackList !== 'undefined') {
             if ($.type(options.batchAttackList) === 'object') {
                 settings.batchAttackList = {};
