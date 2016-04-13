@@ -62,6 +62,10 @@ var Tools = {
         if (timeArr[1]) date.setUTCMinutes(parseInt(timeArr[1]));
         if (timeArr[2]) date.setUTCSeconds(parseInt(timeArr[2]));
         date.setUTCMilliseconds(0);
+        var now = new Date();
+        if (now.getDate() > date.getDate() || now.getMonth() > date.getMonth() || now.getFullYear() > date.getFullYear()) {
+            date.setDate(date.getDate() + 1);
+        }
         return date;
     },
 

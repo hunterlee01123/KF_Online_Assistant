@@ -8,10 +8,12 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.5
+// @version     5.2.6
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
 // @run-at      document-end
 // @license     MIT
+// @include-jquery   true
+// @use-greasemonkey true
 // ==/UserScript==

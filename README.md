@@ -18,7 +18,7 @@ __（注意：安装脚本的时候请点击“安装”按钮，不要点“安
 _（各种采用了Chrome内核的国产浏览器也可到各自的应用市场里搜索Tampermonkey扩展）_
 3. __Opera：__安装[Violent monkey](https://addons.opera.com/zh-cn/extensions/details/violent-monkey/?display=zh)扩展，然后打开脚本下载地址安装脚本即可
 4. __傲游浏览器：__安装[暴力猴](http://extension.maxthon.cn/detail/index.php?view_id=1680)扩展，然后打开脚本下载地址安装脚本即可
-5. __IE及手机等不支持油猴脚本的浏览器：__[详情请见此贴](http://bbs.2dgal.com/read.php?tid=509273)
+5. __手机浏览器及其它不支持油猴脚本的浏览器：__[详情请见此贴](http://bbs.2dgal.com/read.php?tid=509273)
 6. __自带脚本的反向代理服务器：__无需安装任何插件即可使用KFOL助手，[详情请见此贴](http://bbs.2dgal.com/read.php?tid=540148)
 
 ## 使用说明

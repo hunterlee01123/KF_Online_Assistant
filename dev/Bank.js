@@ -375,7 +375,7 @@ var Bank = {
                 var time = parseInt(TmpLog.getValue(Const.fixedDepositDueTmpLogName));
                 if (!isNaN(time) && time > new Date().getTime()) {
                     fixedDepositHtml = fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
-                        '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
+                        '期间不存取定期，才可以获得利息）<span style="color:#339933"> (到期时间：{0} {1})</span>'
                             .replace('{0}', Tools.getDateString(new Date(time)))
                             .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
                     );
@@ -387,7 +387,7 @@ var Bank = {
                     var interestRate = parseFloat(matches[1]) / 100;
                     var anticipatedInterest = Math.round(fixedDeposit * interestRate * Const.fixedDepositDueTime);
                     fixedDepositHtml = fixedDepositHtml.replace('取出定期将获得该数额的KFB利息)',
-                        '取出定期将获得该数额的KFB利息)<span style="color:#999">（预期利息：{0}KFB）</span>'
+                        '取出定期将获得该数额的KFB利息)<span style="color:#339933"> (预期利息：{0} KFB)</span>'
                             .replace('{0}', anticipatedInterest)
                     );
                     $account.html(fixedDepositHtml);

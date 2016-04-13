@@ -1425,8 +1425,9 @@ var KFOL = {
         var html = $msg.html();
         var matches = /给你转帐(\d+)KFB/i.exec(html);
         if (matches) {
+            var money = parseInt(matches[1]);
             $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
-                .replace(matches[0], '给你转帐<span class="pd_stat"><em>{0}</em></span>KFB'.replace('{0}', parseInt(matches[1]).toLocaleString()))
+                .replace(matches[0], '给你转帐<span class="pd_stat"><em>{0}</em></span>KFB'.replace('{0}', money.toLocaleString()))
             );
 
             $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>')
@@ -1435,9 +1436,6 @@ var KFOL = {
                 .click(function (e) {
                     e.preventDefault();
                     KFOL.removePopTips($('.pd_pop_tips'));
-                    var matches = /给你转帐(\d+)KFB/i.exec($msg.text());
-                    if (!matches) return;
-                    var money = parseInt(matches[1]);
                     Bank.drawCurrentDeposit(money);
                 })
                 .end()
@@ -1445,7 +1443,7 @@ var KFOL = {
                 .click(function (e) {
                     e.preventDefault();
                     KFOL.removePopTips($('.pd_pop_tips'));
-                    KFOL.showWaitMsg('正在获取当前活期存款金额...', true);
+                    KFOL.showWaitMsg('<strong>正在获取当前活期存款金额...</strong>', true);
                     $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
                         KFOL.removePopTips($('.pd_pop_tips'));
                         var matches = /活期存款：(\d+)KFB<br \/>/i.exec(html);

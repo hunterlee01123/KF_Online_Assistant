@@ -10,15 +10,17 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.5
+// @version     5.2.6
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
 // @run-at      document-end
 // @license     MIT
+// @include-jquery   true
+// @use-greasemonkey true
 // ==/UserScript==
 // 版本号
-var version = '5.2.5';
+var version = '5.2.6';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -973,6 +975,10 @@ var Tools = {
         if (timeArr[1]) date.setUTCMinutes(parseInt(timeArr[1]));
         if (timeArr[2]) date.setUTCSeconds(parseInt(timeArr[2]));
         date.setUTCMilliseconds(0);
+        var now = new Date();
+        if (now.getDate() > date.getDate() || now.getMonth() > date.getMonth() || now.getFullYear() > date.getFullYear()) {
+            date.setDate(date.getDate() + 1);
+        }
         return date;
     },
 
@@ -6319,7 +6325,7 @@ var Bank = {
                 var time = parseInt(TmpLog.getValue(Const.fixedDepositDueTmpLogName));
                 if (!isNaN(time) && time > new Date().getTime()) {
                     fixedDepositHtml = fixedDepositHtml.replace('期间不存取定期，才可以获得利息）',
-                        '期间不存取定期，才可以获得利息）<span style="color:#999">（到期时间：{0} {1}）</span>'
+                        '期间不存取定期，才可以获得利息）<span style="color:#339933"> (到期时间：{0} {1})</span>'
                             .replace('{0}', Tools.getDateString(new Date(time)))
                             .replace('{1}', Tools.getTimeString(new Date(time), ':', false))
                     );
@@ -6331,7 +6337,7 @@ var Bank = {
                     var interestRate = parseFloat(matches[1]) / 100;
                     var anticipatedInterest = Math.round(fixedDeposit * interestRate * Const.fixedDepositDueTime);
                     fixedDepositHtml = fixedDepositHtml.replace('取出定期将获得该数额的KFB利息)',
-                        '取出定期将获得该数额的KFB利息)<span style="color:#999">（预期利息：{0}KFB）</span>'
+                        '取出定期将获得该数额的KFB利息)<span style="color:#339933"> (预期利息：{0} KFB)</span>'
                             .replace('{0}', anticipatedInterest)
                     );
                     $account.html(fixedDepositHtml);
@@ -8460,12 +8466,13 @@ var KFOL = {
          * @returns {Date} Cookies有效期的Date对象
          */
         var getDonationCookieDate = function () {
+            var now = new Date();
             var date = Tools.getTimezoneDateByTime('02:00:00');
-            if (new Date() > date) {
+            if (now > date) {
                 date = Tools.getTimezoneDateByTime('00:00:00');
                 date.setDate(date.getDate() + 1);
             }
-            if (new Date() > date) date.setDate(date.getDate() + 1);
+            if (now > date) date.setDate(date.getDate() + 1);
             return date;
         };
 
@@ -9490,8 +9497,9 @@ var KFOL = {
         var html = $msg.html();
         var matches = /给你转帐(\d+)KFB/i.exec(html);
         if (matches) {
+            var money = parseInt(matches[1]);
             $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
-                .replace(matches[0], '给你转帐<span class="pd_stat"><em>{0}</em></span>KFB'.replace('{0}', parseInt(matches[1]).toLocaleString()))
+                .replace(matches[0], '给你转帐<span class="pd_stat"><em>{0}</em></span>KFB'.replace('{0}', money.toLocaleString()))
             );
 
             $('<br /><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>')
@@ -9500,9 +9508,6 @@ var KFOL = {
                 .click(function (e) {
                     e.preventDefault();
                     KFOL.removePopTips($('.pd_pop_tips'));
-                    var matches = /给你转帐(\d+)KFB/i.exec($msg.text());
-                    if (!matches) return;
-                    var money = parseInt(matches[1]);
                     Bank.drawCurrentDeposit(money);
                 })
                 .end()
@@ -9510,7 +9515,7 @@ var KFOL = {
                 .click(function (e) {
                     e.preventDefault();
                     KFOL.removePopTips($('.pd_pop_tips'));
-                    KFOL.showWaitMsg('正在获取当前活期存款金额...', true);
+                    KFOL.showWaitMsg('<strong>正在获取当前活期存款金额...</strong>', true);
                     $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
                         KFOL.removePopTips($('.pd_pop_tips'));
                         var matches = /活期存款：(\d+)KFB<br \/>/i.exec(html);

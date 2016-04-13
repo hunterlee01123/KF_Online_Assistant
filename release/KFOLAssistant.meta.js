@@ -8,8 +8,9 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.5
+// @version     5.2.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
+// @include-jquery   true
 // ==/UserScript==
