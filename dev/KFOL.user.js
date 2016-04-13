@@ -21,13 +21,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.5
+// @version     5.2.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
+// @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.2.5';
+var version = '5.2.6';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -393,12 +394,13 @@ var KFOL = {
          * @returns {Date} Cookies有效期的Date对象
          */
         var getDonationCookieDate = function () {
+            var now = new Date();
             var date = Tools.getTimezoneDateByTime('02:00:00');
-            if (new Date() > date) {
+            if (now > date) {
                 date = Tools.getTimezoneDateByTime('00:00:00');
                 date.setDate(date.getDate() + 1);
             }
-            if (new Date() > date) date.setDate(date.getDate() + 1);
+            if (now > date) date.setDate(date.getDate() + 1);
             return date;
         };
 
