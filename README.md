@@ -5,9 +5,9 @@ KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及
 * __标准版：__[点击此处安装](https://greasyfork.org/zh-CN/scripts/8615) ([备用安装地址](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/KFOLAssistant.user.js))  
 设置和日志存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分
 * __ScriptStorage版：__[点击此处安装](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/ScriptStorage.user.js)  
-设置和日志存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况） __【Firefox下可能无法使用】__
+设置和日志存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况） __【Firefox桌面版可能无法使用】__
 * __GlobalStorage版：__[点击此处安装](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.user.js)  
-设置和日志存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况） __【Firefox下可能无法使用】__  
+设置和日志存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况） __【Firefox桌面版可能无法使用】__  
 __注：如需要改用其它版本，可先将设置及日志导出来，在安装后再导入即可__
 
 ## 安装方法
