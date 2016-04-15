@@ -213,7 +213,7 @@
 
 /*==========================================*/
 
-// 发帖时自动附加额外内容 V1.4
+// 发帖时自动附加额外内容 V1.5
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
     var options = {
@@ -228,7 +228,9 @@
         // 附加内容的类型，0：任何时候都附加；1：只在发表新主题时附加；2：只在发表新回复时附加
         attachType: 0,
         // 在原文本框内容的字数不超过指定字数时才附加，-1表示不限制
-        attachWhenLteWordNum: -1
+        attachWhenLteWordNum: -1,
+        // 在发帖框旁显示“不附加额外内容”的选项，true：开启；false：关闭
+        showNoAttachOptionEnabled: false
     };
 
     var action = Tools.getUrlParam('action');
@@ -244,15 +246,17 @@
     };
 
     var $form = $('form[name="FORM"][action="post.php?"]');
-    var switchHtml = '<label style="margin-left:7px"><input type="checkbox" id="pd_no_attach" class="pd_input" /> 不附加额外内容</label>';
-    if (location.pathname === '/post.php') $form.find('input[name="diy_guanjianci"]').after(switchHtml);
-    else $form.find('input[name="Submit"]').after(switchHtml);
+    if (options.showNoAttachOptionEnabled) {
+        var switchHtml = '<label style="margin-left:7px"><input type="checkbox" id="pd_no_attach" class="pd_input" /> 不附加额外内容</label>';
+        if (location.pathname === '/post.php') $form.find('input[name="diy_guanjianci"]').after(switchHtml);
+        else $form.find('input[name="Submit"]').after(switchHtml);
+    }
     $form.submit(function () {
         var $this = $(this);
         var $textArea = $this.find('#textarea, textarea[name="atc_content"]').eq(0);
         var content = $textArea.val();
         if (!content) return;
-        if ($this.find('#pd_no_attach').prop('checked')) return;
+        if (options.showNoAttachOptionEnabled && $this.find('#pd_no_attach').prop('checked')) return;
         if (options.excludeText) {
             if ($.type(options.excludeText) === 'regexp') {
                 if (options.excludeText.test(content)) return;
@@ -938,21 +942,21 @@
 
 /*==========================================*/
 
-// 发帖常用文本 V1.0
+// 发帖常用文本 V1.1
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
 
-    /*
-     常用文本列表
-     可在此增删自定义的常用文本，有三种定义方式：
-     1. 只在option标签内包含文本的项目：
-     常用文本列表框和发帖框里最终显示均为option标签内的文本，例：'<option>常用文本1</option>'
-     2. 在value属性里定义了文本的项目：
-     option标签内的文本会显示在常用文本列表框内，而发帖框里最终显示的将是value属性里的文本
-     例：'<option value="这里是常用文本2！">常用文本2</option>'
-     3. 定义了data-action的项目：
-     option标签内的文本会显示在常用文本列表框内，而发帖框里最终显示的将是经过（动作列表中与data-action相匹配的）自定义函数所处理过的文本
-     例：'<option data-action="动作标签">常用文本3...</option>'
+    /**
+     * 常用文本列表
+     * 可在此增删自定义的常用文本，有三种定义方式：
+     * 1. 只在option标签内定义了文本的项目：
+     *    常用文本列表框和发帖框里最终显示的均为option标签内的文本，例：'<option>常用文本1</option>'
+     * 2. 定义了value属性的项目：
+     *    option标签内的文本会显示在常用文本列表框内，而发帖框里最终显示的将是value属性里的文本
+     *    例：'<option value="这里是常用文本2！">常用文本2</option>'
+     * 3. 定义了data-action属性的项目：
+     *    option标签内的文本会显示在常用文本列表框内，而发帖框里最终显示的将是经过（动作列表中与data-action相匹配的）自定义函数所处理过的文本
+     *    例：'<option data-action="动作标签">常用文本3...</option>'
      */
     var textList = [
         '<option data-action="红包">快捷红包...</option>',
@@ -986,7 +990,10 @@
             if (text) {
                 var $textArea = $(location.pathname === '/read.php' ? 'textArea[name="atc_content"]' : '#textarea');
                 var content = $textArea.val();
-                $textArea.val(content ? content + '\n' + text : text).focus();
+                content += (content && !/\n$/.test(content) ? '\n' : '') + text;
+                $textArea.val(content).focus();
+                $textArea.get(0).selectionEnd = content.length;
+                this.selectedIndex = 0;
             }
         }).find('option[data-action]').not(':first-child').css('color', '#F00');
 }());
