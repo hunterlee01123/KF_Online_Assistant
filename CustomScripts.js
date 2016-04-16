@@ -942,7 +942,7 @@
 
 /*==========================================*/
 
-// 发帖常用文本 V1.1
+// 发帖常用文本 V1.2
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
 
@@ -992,10 +992,273 @@
                 var content = $textArea.val();
                 content += (content && !/\n$/.test(content) ? '\n' : '') + text;
                 $textArea.val(content).focus();
+                $textArea.get(0).selectionStart = content.length;
                 $textArea.get(0).selectionEnd = content.length;
                 this.selectedIndex = 0;
             }
         }).find('option[data-action]').not(':first-child').css('color', '#F00');
+}());
+
+/*==========================================*/
+
+// 其实整个KF只有我一个人 V1.0
+var kfOnlyYou = function () {
+    // 排除用户列表，例：['SYSTEM','信仰风']
+    var excludeUserList = ['SYSTEM'];
+    Const.excludeUsersCookieName = 'pd_exclude_users'; // 自定义排除用户列表的Cookie名称
+
+    var commonReplace = function ($elem) {
+        var user = $elem.text();
+        if ($.inArray(user, excludeUserList) === -1) {
+            $elem.text(KFOL.userName).attr('title', user);
+            if (!$elem.is('a')) $elem.addClass('pd_custom_tips');
+        }
+    };
+
+    excludeUserList.push(KFOL.userName);
+    var value = Tools.getCookie(Const.excludeUsersCookieName);
+    if (value) {
+        $.each(value.split(','), function (i, user) {
+            user = $.trim(user);
+            if (user) excludeUserList.push(user);
+        });
+    }
+
+    if (KFOL.isInHomePage) {
+        var $node = $('div > a[href="kf_fw_1wkfb.php"]').parent();
+
+        $('<div class="line"></div><div style="width:300px;"><a href="#" title="退出【其实整个KF只有我一个人】模式" class="indbox5">妈妈，我再也不想一个人玩了</a>' +
+            '<div class="c"></div></div>')
+            .insertAfter($node)
+            .click(function (e) {
+                e.preventDefault();
+                if (window.confirm('是否退出【其实整个KF只有我一个人】模式？')) {
+                    Tools.setCookie(Const.kfOnlyYouCookieName, '', Tools.getDate('-1d'));
+                    alert('你的精神分裂症治好了，KF再次恢复了正常');
+                    location.reload();
+                }
+            });
+
+        $('<div class="line"></div><div style="width:300px;"><a href="#" title="添加想从替换中被排除的用户" class="indbox5">邀请想在KF一起玩的朋友</a>' +
+            '<div class="c"></div></div>')
+            .insertAfter($node)
+            .click(function (e) {
+                e.preventDefault();
+                var value = Tools.getCookie(Const.excludeUsersCookieName);
+                value = window.prompt('添加想从替换中被排除的用户名单（多个用户名请用英文逗号分隔）：', value ? value : '');
+                if (value) {
+                    Tools.setCookie(Const.excludeUsersCookieName, value, Tools.getDate('+3M'));
+                    alert('有几位朋友来和你一起玩了，你的孤独症减轻了一些');
+                }
+                else if (value !== null) {
+                    Tools.setCookie(Const.excludeUsersCookieName, '', Tools.getDate('-1d'));
+                }
+            });
+
+        $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
+            var $this = $(this);
+            var matches = /》by：(.+)/.exec($this.attr('title'));
+            if (matches) {
+                if ($.inArray(matches[1], excludeUserList) === -1) {
+                    $this.attr('title', $this.attr('title').replace('》by：' + matches[1], '》by：' + KFOL.userName));
+                }
+            }
+        });
+    }
+    else if (location.pathname === '/thread.php') {
+        $('.thread1 > tbody > tr > td:last-child').each(function () {
+            var $this = $(this);
+            commonReplace($this.find('a.bl'));
+
+            var html = $this.html();
+            var matches = /<br>\n\s*(.+?)\s*\|\s*\d+[:\-]\d+$/.exec(html);
+            if (matches) {
+                if ($.inArray(matches[1], excludeUserList) === -1) {
+                    $this.html(
+                        html.replace(matches[0],
+                            matches[0].replace(
+                                matches[1] + ' |',
+                                '<span class="pd_custom_tips" title="{0}">{1}</span> |'.replace('{0}', matches[1]).replace('{1}', KFOL.userName)
+                            )
+                        )
+                    );
+                }
+            }
+        });
+    }
+    else if (location.pathname === '/search.php') {
+        $('.thread1 > tbody > tr > td:last-child > a[href^="profile.php?action=show&uid="]').each(function () {
+            commonReplace($(this));
+        });
+    }
+    else if (location.pathname === '/read.php') {
+        $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a[href^="profile.php?action=show&uid="]').each(function () {
+            commonReplace($(this));
+        });
+
+        $('.readtext fieldset > legend:contains("Quote:")').each(function () {
+            var $quote = $(this).parent();
+            var html = $quote.html();
+            var matches = /<\/legend>引用<a.+?>第\d+楼<\/a>(.+?)于\d+-\d+-\d+\s*\d+:\d+发表的/.exec(html);
+            if (matches) {
+                if ($.inArray(matches[1], excludeUserList) === -1) {
+                    $quote.html(
+                        html.replace(matches[0],
+                            matches[0].replace(
+                                '</a>' + matches[1],
+                                '</a><span class="pd_custom_tips" title="{0}">{1}</span>'.replace('{0}', matches[1]).replace('{1}', KFOL.userName)
+                            )
+                        )
+                    );
+                }
+            }
+            else {
+                matches = /<\/legend>回\s*\d+楼\((.+?)\)\s*的帖子/.exec(html);
+                if (matches) {
+                    if ($.inArray(matches[1], excludeUserList) === -1) {
+                        $quote.html(
+                            html.replace(matches[0],
+                                matches[0].replace(
+                                    '楼(' + matches[1],
+                                    '楼(<span class="pd_custom_tips" title="{0}">{1}</span>'.replace('{0}', matches[1]).replace('{1}', KFOL.userName)
+                                )
+                            )
+                        );
+                    }
+                }
+            }
+        });
+    }
+    else if (location.pathname === '/guanjianci.php') {
+        $('.kf_share1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+            commonReplace($(this));
+        });
+    }
+    else if (/\/profile\.php\?action=show/i.test(location.href)) {
+        var $user1 = $('.log1 > tbody > tr:first-child > td:first-child');
+        var matches = /(.+) 详细信息/.exec($user1.text());
+        if (matches) {
+            if ($.inArray(matches[1], excludeUserList) === -1) {
+                $user1.html(KFOL.userName + ' 详细信息').attr('title', matches[1]).addClass('pd_custom_tips');
+            }
+        }
+
+        var $user2 = $('.log1 > tbody > tr:nth-child(2) > td:nth-child(2)');
+        var html = $user2.html();
+        matches = /用户名称：(.+?)\s*\(/.exec($user2.text());
+        if (matches) {
+            if ($.inArray(matches[1], excludeUserList) === -1) {
+                $user2.html(
+                    html.replace(matches[0],
+                        matches[0].replace(
+                            '用户名称：' + matches[1],
+                            '用户名称：<span class="pd_custom_tips" title="{0}">{1}</span>'.replace('{0}', matches[1]).replace('{1}', KFOL.userName)
+                        )
+                    )
+                );
+            }
+        }
+    }
+    else if (/\/profile\.php\?action=favor/i.test(location.href)) {
+        $('td > a[href^="profile.php?action=show&uid="]').each(function () {
+            commonReplace($(this));
+        });
+    }
+    else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
+        commonReplace($('.thread2 > tbody > tr:nth-child(2) > td:last-child'));
+        commonReplace($('td > a[href^="profile.php?action=show&username="]'));
+    }
+    else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
+        $('.thread1 > tbody > tr > td:nth-child(3) > a').each(function () {
+            commonReplace($(this));
+        });
+    }
+    else if (location.pathname === '/kf_no1.php') {
+        $('.kf_no11:last > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
+            commonReplace($(this));
+        });
+    }
+    else if (location.pathname === '/kf_share.php') {
+        $('.kf_share1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+            commonReplace($(this));
+        });
+    }
+    else if (/\/hack\.php\?H_name=bank/i.test(location.href)) {
+        if (Tools.getUrlParam('action') === 'log') {
+            $('.bank1 > tbody > tr:gt(1) > td:nth-child(3) > div > b').each(function () {
+                commonReplace($(this));
+            });
+        }
+        else {
+            $('td > table > tbody > tr:first-child > td:contains("活期存款排行")').closest('tbody').find('tr:gt(0) > td:nth-child(2)').each(function () {
+                commonReplace($(this));
+            });
+        }
+    }
+    else if (/\/personal\.php\?action=post/i.test(location.href)) {
+        $('td > a[href^="profile.php?action=show&uid="]').each(function () {
+            commonReplace($(this));
+        });
+    }
+    else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
+        var $owner = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child > span:contains("现持有者：")');
+        var matches = /现持有者：(.+)/.exec($owner.text());
+        if (matches) {
+            if ($.inArray(matches[1], excludeUserList) === -1) {
+                $owner.text('现持有者：' + KFOL.userName).attr('title', matches[1]).addClass('pd_custom_tips');
+            }
+        }
+
+        var $itemLog = $('.kf_fw_ig1 > tbody > tr:last-child > td');
+        var html = $itemLog.html();
+        var oriHtml = html;
+
+        matches = html.match(/被[^<>]+?(取|于)/g);
+        for (var i in matches) {
+            var userMatches = /被([^<>]+?)(取|于)/.exec(matches[i]);
+            if (userMatches) {
+                if ($.inArray(userMatches[1], excludeUserList) === -1) {
+                    html = html.replace(userMatches[0],
+                        '被<span class="pd_custom_tips" title="{0}">{1}</span>{2}'
+                            .replace('{0}', userMatches[1]).replace('{1}', KFOL.userName).replace('{2}', userMatches[2])
+                    );
+                }
+            }
+        }
+        if (html !== oriHtml) $itemLog.html(html);
+    }
+};
+
+(function () {
+    Const.kfOnlyYouCookieName = 'pd_kf_only_you'; // 标记是否进入【其实整个KF只有我一个人】模式的Cookie名称
+
+    var value = parseInt(Tools.getCookie(Const.kfOnlyYouCookieName));
+    if (value === 1) {
+        kfOnlyYou();
+    }
+    else if (isNaN(value) && KFOL.isInHomePage) {
+        if (Math.floor(Math.random() * 15) % 15 !== 9) return;
+
+        var $tips = KFOL.showWaitMsg('<strong>少年（少女），其实整个KF只有你一个人，你相信吗？</strong><br />' +
+            '<a data-action="yes" href="#">我相信</a><a data-action="no" href="#">我不相信</a><a data-action="hide" style="color:#F00" href="#">不再提示</a>',
+            true);
+        $tips.on('click', 'a', function (e) {
+            e.preventDefault();
+            var action = $(this).data('action');
+            if (action === 'yes') {
+                Tools.setCookie(Const.kfOnlyYouCookieName, 1, Tools.getDate('+1M'));
+                kfOnlyYou();
+            }
+            else if (action === 'hide') {
+                Tools.setCookie(Const.kfOnlyYouCookieName, -1, Tools.getDate('+1M'));
+            }
+            else {
+                Tools.setCookie(Const.kfOnlyYouCookieName, -1, Tools.getDate('+1d'));
+                alert('啧，算你走运，居然没被骗到~~');
+            }
+            KFOL.removePopTips($tips);
+        })
+    }
 }());
 
 /*==========================================*/
