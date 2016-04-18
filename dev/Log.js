@@ -555,53 +555,68 @@ var Log = {
         Log.read();
         var html =
             '<div class="pd_cfg_main">' +
-            '  <div>' +
-            '    <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击保存按钮即可<br />' +
-            '    <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
+            '  <div style="margin-top:5px">' +
+            '    <label style="color:#F00"><input type="radio" name="pd_im_or_ex_log_type" value="setting" checked="checked" /> 导入/导出日志</label>' +
+            '    <label style="color:#00F"><input type="radio" name="pd_im_or_ex_log_type" value="text" /> 导出日志文本</label>' +
             '  </div>' +
-            '  <textarea id="pd_log_setting" style="width:600px;height:200px;word-break:break-all"></textarea>' +
-            '  <div style="margin-top:10px">' +
-            '    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可<br />' +
+            '  <div id="pd_im_or_ex_log_setting">' +
+            '    <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击合并或覆盖按钮即可<br />' +
+            '    <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可<br />' +
+            '    <textarea id="pd_log_setting" style="width:600px;height:400px;word-break:break-all"></textarea>' +
+            '  </div>' +
+            '  <div id="pd_im_or_ex_log_text" style="display:none">' +
+            '    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可' +
             '    <div>' +
             '      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type_2" value="time" checked="checked" />按时间</label>' +
             '      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type_2" value="type" />按类别</label>' +
             '      <label title="在日志文本里显示每日以及全部数据的统计结果"><input type="checkbox" id="pd_log_show_stat" checked="checked" />显示统计</label>' +
             '    </div>' +
+            '    <textarea id="pd_log_text" style="width:600px;height:400px" readonly="readonly"></textarea>' +
             '  </div>' +
-            '  <textarea id="pd_log_text" style="width:600px;height:270px" readonly="readonly"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
-            '  <button>保存</button><button>取消</button>' +
+            '  <button data-action="merge">合并</button><button data-action="overwrite" style="color:#F00">覆盖</button><button>关闭</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
         $dialog.find('input[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
             Log.showLogText();
-        }).end().find('.pd_cfg_btns > button:first').click(function (e) {
+            $('#pd_log_text').select();
+        }).end().find('input[name="pd_im_or_ex_log_type"]').click(function () {
+            var type = $(this).val();
+            $('#pd_im_or_ex_log_' + (type === 'text' ? 'setting' : 'text')).hide();
+            $('#pd_im_or_ex_log_' + (type === 'text' ? 'text' : 'setting')).show();
+            $('#pd_log_' + (type === 'text' ? 'text' : 'setting')).select();
+        }).end().find('.pd_cfg_btns > button').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的日志？')) return;
-            var log = $.trim($('#pd_log_setting').val());
-            if (!log) return;
-            try {
-                log = JSON.parse(log);
+            var action = $(this).data('action');
+            if (action === 'merge' || action === 'overwrite') {
+                if (!window.confirm('是否将文本框中的日志{0}到本地日志？'.replace('{0}', action === 'overwrite' ? '覆盖' : '合并'))) return;
+                var log = $.trim($('#pd_log_setting').val());
+                if (!log) return;
+                try {
+                    log = JSON.parse(log);
+                }
+                catch (ex) {
+                    alert('日志有错误');
+                    return;
+                }
+                if (!log || $.type(log) !== 'object') {
+                    alert('日志有错误');
+                    return;
+                }
+                if (action === 'merge') log = Log.getMergeLog(Log.log, log);
+                Log.log = log;
+                Log.write();
+                alert('日志已导入');
+                location.reload();
             }
-            catch (ex) {
-                alert('日志有错误');
-                return;
+            else {
+                return Dialog.close('pd_im_or_ex_log');
             }
-            if (!log || $.type(log) !== 'object') {
-                alert('日志有错误');
-                return;
-            }
-            Log.log = log;
-            Log.write();
-            alert('日志已导入');
-            location.reload();
-        }).next('button').click(function () {
-            return Dialog.close('pd_im_or_ex_log');
         });
         Dialog.show('pd_im_or_ex_log');
         $('#pd_log_setting').val(JSON.stringify(Log.log)).select();
-        $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).prop('checked', true).click();
+        $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).prop('checked', true).triggerHandler('click');
     },
 
     /**
@@ -644,5 +659,44 @@ var Log = {
                     .replace(/(<.+?>|<\/.+?>)/g, '');
         }
         $('#pd_log_text').val(content);
+    },
+
+    /**
+     * 获取合并后的日志
+     * @param {{}} log 当前日志
+     * @param {{}} newLog 新日志
+     * @returns {{}} 合并后的日志
+     */
+    getMergeLog: function (log, newLog) {
+        /**
+         * 获取指定日志项目在指定日志项目列表中的索引号
+         * @param {{}} item 指定日志项目
+         * @param {[]} list 指定日志项目列表
+         * @returns {number} 指定日志项目在列表中的索引号，-1表示不在该列表中
+         */
+        var inArray = function (item, list) {
+            for (var i = 0; i < list.length; i++) {
+                if (item['time'] === list[i]['time'] && item['type'] === list[i]['type']) return i;
+            }
+            return -1;
+        };
+
+        for (var date in newLog) {
+            if ($.type(log[date]) !== 'array') {
+                log[date] = newLog[date];
+            }
+            else {
+                for (var i = 0; i < newLog[date].length; i++) {
+                    if ($.type(newLog[date][i].time) !== 'number' || $.type(newLog[date][i].type) !== 'string') continue;
+                    var index = inArray(newLog[date][i], log[date]);
+                    if (index > -1) log[date][index] = newLog[date][i];
+                    else log[date].push(newLog[date][i]);
+                }
+                log[date].sort(function (a, b) {
+                    return a.time > b.time;
+                });
+            }
+        }
+        return log;
     }
 };

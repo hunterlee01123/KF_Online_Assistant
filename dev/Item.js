@@ -1577,11 +1577,12 @@ var Item = {
                 var nextSuccessPercent = 0;
                 if (usedNum > maxUsedNum) nextSuccessPercent = 0;
                 else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
-                $this.after('<span class="pd_used_item_info" title="下个道具使用成功几率：{0}">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
-                    .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
-                    .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
-                    .replace('{2}', usedNum)
-                    .replace('{3}', maxUsedNum)
+                $this.after(
+                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}（仅供参考）">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
+                        .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
+                        .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
+                        .replace('{2}', usedNum)
+                        .replace('{3}', maxUsedNum)
                 );
             });
         });

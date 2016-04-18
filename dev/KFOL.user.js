@@ -2993,6 +2993,9 @@ var KFOL = {
             KFOL.addFastDrawMoneyLink();
             if (Config.modifyKFOtherDomainEnabled) KFOL.modifyKFOtherDomainLink();
         }
+        else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
+            KFOL.addMsgSelectButton();
+        }
         else if (/\/profile\.php\?action=show/i.test(location.href)) {
             KFOL.addFollowAndBlockAndMemoUserLink();
         }
@@ -3001,9 +3004,6 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_growup.php') {
             KFOL.addAutoChangeSmColorButton();
-        }
-        else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
-            KFOL.addMsgSelectButton();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Item.addBatchBuyItemsLink();

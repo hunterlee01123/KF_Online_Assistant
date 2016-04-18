@@ -19,7 +19,8 @@ var ConfigDialog = {
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
-            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子，需开启相关功能），只在论坛首页生效">[?]</span></label></legend>' +
+            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子、自动更换神秘颜色，需开启相关功能），只在论坛首页生效' +
+            '（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span></label></legend>' +
             '      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
             '<span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span></label>' +
@@ -1013,10 +1014,12 @@ var ConfigDialog = {
         if ($('#pd_custom_script').length > 0) return;
         var html =
             '<div class="pd_cfg_main">' +
-            '  <label><strong>在脚本开始时执行的内容：</strong><br />' +
-            '<textarea wrap="off" id="pd_custom_script_start_content" style="width:750px;height:250px;white-space:pre;margin-bottom:10px"></textarea></label><br />' +
-            '  <label><strong>在脚本结束时执行的内容：</strong><br />' +
-            '<textarea wrap="off" id="pd_custom_script_end_content" style="width:750px;height:250px;white-space:pre"></textarea></label>' +
+            '  <div style="margin:5px 0">' +
+            '    <label style="color:#F00"><input type="radio" name="pd_custom_script_type" value="start" checked="checked" /> 在脚本开始时执行的内容</label>' +
+            '    <label style="color:#00F"><input type="radio" name="pd_custom_script_type" value="end" /> 在脚本结束时执行的内容</label>' +
+            '  </div>' +
+            '  <textarea wrap="off" id="pd_custom_script_start_content" style="width:750px;height:500px;white-space:pre"></textarea>' +
+            '  <textarea wrap="off" id="pd_custom_script_end_content" style="width:750px;height:500px;white-space:pre;display:none"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
             '  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500968">其他人分享的自定义脚本</a></span>' +
@@ -1033,7 +1036,12 @@ var ConfigDialog = {
             return Dialog.close('pd_custom_script');
         });
         $dialog.find('#pd_custom_script_start_content').val(Config.customScriptStartContent)
-            .end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent);
+            .end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent)
+            .end().find('input[name="pd_custom_script_type"]').click(function () {
+            var type = $(this).val();
+            $('#pd_custom_script_' + (type === 'end' ? 'start' : 'end') + '_content').hide();
+            $('#pd_custom_script_' + (type === 'end' ? 'end' : 'start') + '_content').show();
+        });
         Dialog.show('pd_custom_script');
         $dialog.find('#pd_custom_script_start_content').focus();
     },
