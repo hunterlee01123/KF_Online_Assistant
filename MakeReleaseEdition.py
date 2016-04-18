@@ -1,9 +1,11 @@
 ﻿# 生成各个Release版本的KF Online助手脚本文件
 import os
 import re
+import time
 from jsmin import jsmin
 
 devDirName = 'dev' # 开发版文件夹名
+vpsDirName = 'vps' # VPS文件夹名
 devKFOLFileName = 'KFOL' # 开发版KFOL主文件名
 devPartFileNameList = ['Config', 'Const', 'ConfigMethod', 'Tools', 'Func', 'Dialog', 'ConfigDialog', 'Log', 'TmpLog', 'Item', 'Card', 'Bank', 'Loot'] # 开发版各部分文件名
 releaseDirName = 'release' # 正式版文件夹名
@@ -11,6 +13,7 @@ defaultFileName = 'KFOLAssistant' # 标准版文件名
 greasyForkFileName = 'GreasyFork' # GreasyFork版文件名
 scriptStorageFileName = 'ScriptStorage' # ScriptStorage版文件名
 GlobalStorageFileName = 'GlobalStorage' # GlobalStorage版文件名
+vpsConfFileName = 'kf.miaola.info.conf' # VPS配置文件名
 userScriptExt = '.user.js' # 油猴脚本文件扩展名
 minUserScriptExt = '.min.user.js' # 压缩过的油猴脚本文件扩展名
 metaScriptExt = '.meta.js' # 油猴脚本meta文件扩展名
@@ -54,17 +57,6 @@ def getMetaFileContent(content):
         raise Exception('未找到meta信息')
     return metaContent
 
-def getMinFileContent(content):
-    '''获取压缩过的文件内容
-
-    Args:
-        content: 脚本文件内容
-
-    Returns:
-        压缩过的文件内容
-    '''
-    return '(function(){\n' + jsmin(content) + '\n}());'
-
 def getDefaultEditionContent():
     '''获取标准版文件内容
 
@@ -102,7 +94,7 @@ def makeDefaultEdition(content):
     open(releaseDirName + os.sep + defaultFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成标准版脚本文件')
     metaContent = getMetaFileContent(content)
-    open(releaseDirName + os.sep + defaultFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + getMinFileContent(content))
+    open(releaseDirName + os.sep + defaultFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + jsmin(content))
     print('生成压缩过的标准版脚本文件')
     open(releaseDirName + os.sep + defaultFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
     print('生成标准版meta文件')
@@ -162,6 +154,14 @@ def makeGlobalStorageEdition(content):
     open(releaseDirName + os.sep + GlobalStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
     print('生成GlobalStorage版meta文件')
 
+def replaceScriptTimestampInVpsConf():
+    '''替换VPS配置文件中的脚本时间戳'''
+    content = open(vpsDirName + os.sep + vpsConfFileName, 'r', encoding = encoding).read()
+    content, num = re.subn(r'(\.min\.user\.js\?)\d+', r'\g<1>' + str(int(time.time())), content)
+    if num == 0: raise NoFoundReplaceStringError('VPS配置文件', 1)
+    open(vpsDirName + os.sep + vpsConfFileName, 'w', encoding = encoding, newline = '\n').write(content)
+    print('替换VPS配置文件中的脚本时间戳')
+
 def main():
     '''主函数'''
     print('开发版文件夹：' + devDirName)
@@ -185,6 +185,9 @@ def main():
     makeScriptStorageEdition(content)
     print()
     makeGlobalStorageEdition(content)
+    if os.path.isfile(vpsDirName + os.sep + vpsConfFileName):
+        print()
+        replaceScriptTimestampInVpsConf()
 
     print('\n已生成所有文件')
 
