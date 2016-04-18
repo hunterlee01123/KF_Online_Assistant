@@ -975,7 +975,7 @@
         },
     };
 
-    $('<select id="a" style="width:110px;margin-left:10px"><option data-action="默认" selected="selected">发帖常用文本</option>' + textList.join('') + '</select>')
+    $('<select style="width:110px;margin-left:10px"><option data-action="默认" selected="selected">发帖常用文本</option>' + textList.join('') + '</select>')
         .insertAfter(location.pathname === '/read.php' ? 'input[name="Submit"]' : 'input[name="diy_guanjianci"]')
         .change(function () {
             var $selectItem = $(this.selectedOptions[0]);
@@ -1259,6 +1259,17 @@ var kfOnlyYou = function () {
             KFOL.removePopTips($tips);
         })
     }
+}());
+
+/*==========================================*/
+
+// 去除帖子列表页面的帖子链接里的fpage参数 V1.0
+(function () {
+    if (location.pathname !== '/thread.php') return;
+    $('.threadtit1 > a[href*="fpage="]').each(function () {
+        var $this = $(this);
+        $this.attr('href', $this.attr('href').replace(/&fpage=\d+/i, ''));
+    });
 }());
 
 /*==========================================*/
