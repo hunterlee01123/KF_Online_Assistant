@@ -970,7 +970,7 @@
             return '';
         },
         '红包': function () {
-            var kfb = parseInt(window.prompt('请输入价格：', 100));
+            var kfb = parseInt(window.prompt('请输入价格：', 100)); // 此处可以修改购买框的预设价格
             return !isNaN(kfb) ? '[sell={0}]感谢楼主的红包！[/sell]'.replace('{0}', kfb) : '';
         },
     };
