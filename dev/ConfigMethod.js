@@ -504,29 +504,11 @@ var ConfigMethod = {
                     var obj = options.blockThreadList[i];
                     if ($.type(obj) === 'object' && $.type(obj.keyWord) === 'string' && $.trim(obj.keyWord) !== '') {
                         var newObj = {keyWord: obj.keyWord};
-                        var userNameList = [];
-                        if ($.isArray(obj.userName)) {
-                            for (var j in obj.userName) {
-                                var userName = $.trim(obj.userName[j]);
-                                if (userName) userNameList.push(userName);
-                            }
-                        }
-                        if (userNameList.length > 0) newObj.userName = userNameList;
-                        var includeFid = [], excludeFid = [];
-                        if ($.isArray(obj.includeFid)) {
-                            for (var j in obj.includeFid) {
-                                var fid = parseInt(obj.includeFid[j]);
-                                if (!isNaN(fid) && fid > 0) includeFid.push(fid);
-                            }
-                        }
-                        else if ($.isArray(obj.excludeFid)) {
-                            for (var j in obj.excludeFid) {
-                                var fid = parseInt(obj.excludeFid[j]);
-                                if (!isNaN(fid) && fid > 0) excludeFid.push(fid);
-                            }
-                        }
-                        if (includeFid.length > 0) newObj.includeFid = includeFid;
-                        else if (excludeFid.length > 0) newObj.excludeFid = excludeFid;
+                        if ($.isArray(obj.includeUser) && obj.includeUser.length > 0) newObj.includeUser = obj.includeUser;
+                        else if ($.isArray(obj.excludeUser) && obj.excludeUser.length > 0) newObj.excludeUser = obj.excludeUser;
+                        else if ($.isArray(obj.userName) && obj.userName.length > 0) newObj.includeUser = obj.userName;
+                        if ($.isArray(obj.includeFid) && obj.includeFid.length > 0) newObj.includeFid = obj.includeFid;
+                        else if ($.isArray(obj.excludeFid) && obj.excludeFid.length > 0) newObj.excludeFid = obj.excludeFid;
                         settings.blockThreadList.push(newObj);
                     }
                 }

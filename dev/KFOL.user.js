@@ -21,14 +21,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.2.6
+// @version     5.3.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.2.6';
+var version = '5.3.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1887,8 +1887,13 @@ var KFOL = {
                         continue;
                     }
                 }
-                if (userName && Config.blockThreadList[i].userName) {
-                    if ($.inArray(userName, Config.blockThreadList[i].userName) === -1) continue;
+                if (userName) {
+                    if (Config.blockThreadList[i].includeUser) {
+                        if ($.inArray(userName, Config.blockThreadList[i].includeUser) === -1) continue;
+                    }
+                    else if (Config.blockThreadList[i].excludeUser) {
+                        if ($.inArray(userName, Config.blockThreadList[i].excludeUser) > -1) continue;
+                    }
                 }
                 if (fid) {
                     if (Config.blockThreadList[i].includeFid) {

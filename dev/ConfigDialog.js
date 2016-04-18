@@ -1392,9 +1392,10 @@ var ConfigDialog = {
             '  <table id="pd_cfg_block_thread_list" style="line-height:22px;text-align:center">' +
             '    <tbody>' +
             '      <tr>' +
-            '        <th style="width:187px">标题关键字(必填)</th>' +
-            '        <th style="width:132px">用户名 <span class="pd_cfg_tips" title="多个用户名请用英文逗号分隔">[?]</span></th>' +
-            '        <th style="width:105px">屏蔽范围</th>' +
+            '        <th style="width:220px">标题关键字(必填)</th>' +
+            '        <th style="width:62px">屏蔽用户</th>' +
+            '        <th style="width:200px">用户名 <span class="pd_cfg_tips" title="多个用户名请用英文逗号分隔">[?]</span></th>' +
+            '        <th style="width:62px">屏蔽范围</th>' +
             '        <th style="width:132px">版块ID <span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span></th>' +
             '        <th style="width:35px"></th>' +
             '      </tr>' +
@@ -1407,7 +1408,7 @@ var ConfigDialog = {
             '  <span class="pd_cfg_about"><a href="#">导入/导出屏蔽帖子</a></span>' +
             '  <button>确定</button><button>取消</button>' +
             '</div>';
-        var $dialog = Dialog.create('pd_block_thread', '屏蔽帖子', html, 'width:648px');
+        var $dialog = Dialog.create('pd_block_thread', '屏蔽帖子', html, 'width:768px');
         var $blockThreadList = $dialog.find('#pd_cfg_block_thread_list');
 
         /**
@@ -1456,21 +1457,24 @@ var ConfigDialog = {
                 if ($.trim(keyWord) === '') return;
                 var newObj = {keyWord: keyWord};
 
-                var userNameList = [];
-                $.each($.trim($this.find('td:nth-child(2) > input').val()).split(','), function (i, userName) {
-                    userName = $.trim(userName);
-                    if (userName) userNameList.push(userName);
-                });
-                if (userNameList.length > 0) newObj.userName = userNameList;
+                var userType = parseInt($this.find('td:nth-child(2) > select').val());
+                if (userType > 0) {
+                    var userList = [];
+                    $.each($.trim($this.find('td:nth-child(3) > input').val()).split(','), function (i, user) {
+                        user = $.trim(user);
+                        if (user) userList.push(user);
+                    });
+                    if (userList.length > 0) newObj[userType === 2 ? 'excludeUser' : 'includeUser'] = userList;
+                }
 
-                var type = parseInt($this.find('td:nth-child(3) > select').val());
-                if (type > 0) {
+                var fidType = parseInt($this.find('td:nth-child(4) > select').val());
+                if (fidType > 0) {
                     var fidList = [];
-                    $.each($.trim($this.find('td:nth-child(4) > input').val()).split(','), function (i, fid) {
+                    $.each($.trim($this.find('td:nth-child(5) > input').val()).split(','), function (i, fid) {
                         fid = parseInt($.trim(fid));
                         if (!isNaN(fid) && fid > 0) fidList.push(fid);
                     });
-                    if (fidList.length > 0) newObj[type === 2 ? 'excludeFid' : 'includeFid'] = fidList;
+                    if (fidList.length > 0) newObj[fidType === 2 ? 'excludeFid' : 'includeFid'] = fidList;
                 }
                 Config.blockThreadList.push(newObj);
             });
@@ -1491,41 +1495,54 @@ var ConfigDialog = {
         /**
          * 添加屏蔽帖子
          * @param {string} keyWord 标题关键字
-         * @param {string[]} userNameList 用户名
-         * @param {number} type 屏蔽范围，0：所有版块；1：包括指定版块；2：排除指定版块
+         * @param {number} userType 屏蔽用户，0：所有；1：包括；2：排除
+         * @param {string[]} userList 用户名
+         * @param {number} fidType 屏蔽范围，0：所有；1：包括；2：排除
          * @param {number[]} fidList 版块ID列表
          */
-        var addBlockThread = function (keyWord, userNameList, type, fidList) {
+        var addBlockThread = function (keyWord, userType, userList, fidType, fidList) {
             $(
                 ('<tr>' +
-                '  <td><input type="text" style="width:175px" value="{0}" /></td>' +
-                '  <td><input type="text" style="width:120px" value="{1}" /></td>' +
-                '  <td><select style="margin-left:5px"><option value="0">所有版块</option><option value="1">包括指定版块</option>' +
-                '<option value="2">排除指定版块</option></select></td>' +
-                '  <td><input type="text" style="width:120px" value="{2}" {3} /></td>' +
+                '  <td><input type="text" style="width:208px" value="{0}" /></td>' +
+                '  <td><select><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>' +
+                '  <td><input type="text" style="width:188px" value="{1}" {2} /></td>' +
+                '  <td><select><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>' +
+                '  <td><input type="text" style="width:120px" value="{3}" {4} /></td>' +
                 '  <td><a href="#">删除</a></td>' +
                 '</tr>')
                     .replace('{0}', keyWord)
-                    .replace('{1}', userNameList.join(','))
-                    .replace('{2}', fidList.join(','))
-                    .replace('{3}', type === 0 ? 'disabled="disabled"' : '')
+                    .replace('{1}', userList.join(','))
+                    .replace('{2}', userType === 0 ? 'disabled="disabled"' : '')
+                    .replace('{3}', fidList.join(','))
+                    .replace('{4}', fidType === 0 ? 'disabled="disabled"' : '')
             ).appendTo($blockThreadList)
-                .find('select').val(type);
+                .find('td:nth-child(2) > select').val(userType)
+                .end().find('td:nth-child(4) > select').val(fidType);
         };
 
         for (var i in Config.blockThreadList) {
-            var userName = Config.blockThreadList[i].userName;
-            var type = 0;
+            var userType = 0;
+            var userList = [];
+            if (typeof Config.blockThreadList[i].includeUser !== 'undefined') {
+                userType = 1;
+                userList = Config.blockThreadList[i].includeUser;
+            }
+            else if (typeof Config.blockThreadList[i].excludeUser !== 'undefined') {
+                userType = 2;
+                userList = Config.blockThreadList[i].excludeUser;
+            }
+
+            var fidType = 0;
             var fidList = [];
             if (typeof Config.blockThreadList[i].includeFid !== 'undefined') {
-                type = 1;
+                fidType = 1;
                 fidList = Config.blockThreadList[i].includeFid;
             }
             else if (typeof Config.blockThreadList[i].excludeFid !== 'undefined') {
-                type = 2;
+                fidType = 2;
                 fidList = Config.blockThreadList[i].excludeFid;
             }
-            addBlockThread(Config.blockThreadList[i].keyWord, userName ? userName : [], type, fidList);
+            addBlockThread(Config.blockThreadList[i].keyWord, userType, userList, fidType, fidList);
         }
 
         $('#pd_cfg_block_thread_add_btns').find('a:lt(2)').click(function (e) {
@@ -1533,7 +1550,7 @@ var ConfigDialog = {
             var num = 1;
             if ($(this).is('#pd_cfg_block_thread_add_btns > a:eq(1)')) num = 5;
             for (var i = 1; i <= num; i++) {
-                addBlockThread('', [], parseInt($('#pd_cfg_block_thread_def_forum_type').val()), $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','));
+                addBlockThread('', 0, [], parseInt($('#pd_cfg_block_thread_def_forum_type').val()), $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','));
             }
             Dialog.show('pd_block_thread');
         }).end().find('a:last').click(function (e) {
