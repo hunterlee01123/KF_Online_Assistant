@@ -50,8 +50,14 @@ var ConfigDialog = {
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
             '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
                 .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
-            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" />在生命值不超过{0}时进行试探攻击 '.replace('{0}', Const.maxAttemptAttackLifeNum) +
-            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
+            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_attempt_attack_after_time_enabled" />在生命值不超过{0}时进行试探攻击 '
+                .replace('{0}', Const.maxAttemptAttackLifeNum) +
+            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置攻击时限，详见【常见问题10】">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_attempt_attack_after_time_enabled" type="checkbox" />在攻击时限之前的{0}分钟内才进行试探攻击 '
+                .replace('{0}', Const.attemptAttackAfterTime) +
+            '<span class="pd_cfg_tips" title="在自动攻击时限之前的指定时间内才进行试探攻击（适合有时间挂机的用户）；例：攻击时限设为90分钟，则在距本回合结束前{0}分钟内才进行试探攻击">' +
+            '[?]</span></label>'
+                .replace('{0}', 90 + Const.attemptAttackAfterTime) +
             '        <table id="pd_cfg_batch_attack_list">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
@@ -298,6 +304,7 @@ var ConfigDialog = {
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
+        $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked', Config.attemptAttackAfterTimeEnabled);
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
@@ -373,6 +380,7 @@ var ConfigDialog = {
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
+        options.attemptAttackAfterTimeEnabled = $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked');
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
             var $this = $(this);

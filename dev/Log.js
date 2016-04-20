@@ -575,7 +575,7 @@ var Log = {
             '  </div>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
-            '  <button data-action="merge">合并</button><button data-action="overwrite" style="color:#F00">覆盖</button><button>关闭</button>' +
+            '  <button data-action="merge">合并日志</button><button data-action="overwrite" style="color:#F00">覆盖日志</button><button>关闭</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
         $dialog.find('input[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {

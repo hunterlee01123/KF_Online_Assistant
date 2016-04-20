@@ -29,8 +29,11 @@ var Config = {
     autoAttackEnabled: false,
     // 在距本回合结束前指定时间内才自动完成（剩余）批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
     attackAfterTime: 0,
-    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
+    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置{@link Config.attackAfterTime}），true：开启；false：关闭
     attemptAttackEnabled: false,
+    // 是否在自动攻击时限之前的指定时间（{@link Const.attemptAttackAfterTime}）内才进行试探攻击（适合有时间挂机的用户），true：开启；false：关闭
+    // 例：设置{@link Config.attackAfterTime}为90分钟，设置{@link Const.attemptAttackAfterTime}为40分钟，则在距本回合结束前130分钟内才进行试探攻击
+    attemptAttackAfterTimeEnabled: false,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认

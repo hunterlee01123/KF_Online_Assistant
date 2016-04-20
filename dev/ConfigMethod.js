@@ -154,6 +154,10 @@ var ConfigMethod = {
                 options.attemptAttackEnabled : defConfig.attemptAttackEnabled;
         }
         if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
+        if (typeof options.attemptAttackAfterTimeEnabled !== 'undefined') {
+            settings.attemptAttackAfterTimeEnabled = typeof options.attemptAttackAfterTimeEnabled === 'boolean' ?
+                options.attemptAttackAfterTimeEnabled : defConfig.attemptAttackAfterTimeEnabled;
+        }
         if (typeof options.batchAttackList !== 'undefined') {
             if ($.type(options.batchAttackList) === 'object') {
                 settings.batchAttackList = {};

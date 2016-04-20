@@ -17,6 +17,8 @@ var Const = {
     minAttackAfterTime: 63,
     // 在实际生命值不超过指定值时才进行试探攻击，-1表示使用低保值
     maxAttemptAttackLifeNum: 10,
+    // 在完成剩余攻击时限之前的指定时间（分钟）内才进行试探攻击
+    attemptAttackAfterTime: 40,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
     // 致命一击比例
@@ -31,10 +33,14 @@ var Const = {
     checkAutoAttackingInterval: 4,
     // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
     firstCheckLifeInterval: 145,
-    // 检查生命值的默认时间间隔（分钟）
-    defCheckLifeInterval: 20,
-    // 在进行试探攻击后检查生命值的时间间隔（分钟）
-    checkLifeAfterAttemptAttackInterval: 2,
+    // 检查生命值的默认时间间隔（分钟），可设置为函数来返回值
+    defCheckLifeInterval: function () {
+        return Config.attemptAttackAfterTimeEnabled ? 3 : 20; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
+    },
+    // 在进行试探攻击后检查生命值的时间间隔（分钟），可设置为函数来返回值
+    checkLifeAfterAttemptAttackInterval: function () {
+        return Config.attemptAttackAfterTimeEnabled ? 1 : 2; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
+    },
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断

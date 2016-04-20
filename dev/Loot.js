@@ -714,6 +714,7 @@ var Loot = {
         }
 
         if (Tools.getCookie(Const.checkLifeCookieName)) {
+            var $lifeNode = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child');
             var value = Tools.getCookie(Const.prevAttemptAttackLogCookieName);
             if (value) {
                 var arr = value.split('/');
@@ -724,7 +725,6 @@ var Loot = {
                     var attackLogMatches = />(\d+:\d+:\d+)\s*\|/.exec($('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html());
                     if (attackLogMatches) recentMonsterAttackLogTime = attackLogMatches[1];
 
-                    var $lifeNode = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child');
                     var text = $lifeNode.text();
                     var life = 0, minLife = 0;
                     var lifeMatches = /当前拥有\s*(\d+)\s*预领KFB/i.exec(text);
@@ -738,6 +738,16 @@ var Loot = {
                         );
                     }
                 }
+            }
+
+            if (Config.attemptAttackEnabled) {
+                $('<span class="pd_custom_tips" style="color:#339933;margin-left:7px;cursor:pointer" title="立即检查生命值">&#10010;</span>')
+                    .insertBefore($lifeNode.find('br:first'))
+                    .click(function () {
+                        Tools.setCookie(Const.checkLifeCookieName, '', Tools.getDate('-1d'));
+                        Loot.checkLife();
+                        alert('已重新检查生命值');
+                    });
             }
         }
 
@@ -920,7 +930,12 @@ var Loot = {
             if (safeIdMatches) safeId = safeIdMatches[1];
             if (!safeId) return;
 
-            var checkLifeInterval = Const.defCheckLifeInterval;
+            var lootInfo = Loot.getNextLootAwardTime();
+            if (!lootInfo.type || lootInfo.time <= 0) return;
+            var curLootMinutes = Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000);
+
+            var checkLifeInterval = typeof Const.defCheckLifeInterval === 'function' ? Const.defCheckLifeInterval() : Const.defCheckLifeInterval;
+            if (curLootMinutes < Const.firstCheckLifeInterval) checkLifeInterval = Const.firstCheckLifeInterval - lootInfo.time;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
             var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
             var life = 0, minLife = 0;
@@ -929,7 +944,8 @@ var Loot = {
                 life = parseInt(lifeMatches[1]);
                 minLife = parseInt(minLifeMatches[1]);
                 if (life <= minLife) {
-                    checkLifeInterval = Const.checkLifeAfterAttemptAttackInterval;
+                    checkLifeInterval = typeof Const.checkLifeAfterAttemptAttackInterval === 'function' ?
+                        Const.checkLifeAfterAttemptAttackInterval() : Const.checkLifeAfterAttemptAttackInterval;
                     isLteMinLife = true;
                 }
             }
@@ -955,19 +971,15 @@ var Loot = {
             var writeNextCheckLifeCookie = function (life, interval, msg) {
                 var nextTime = Tools.getDate('+' + interval + 'm');
                 Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
-
-                var lootInfo = Loot.getNextLootAwardTime();
-                if (lootInfo.time > 0) {
-                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
-                        .replace('{0}', life)
-                        .replace('{1}', minLife)
-                        .replace('{2}', maxCheckAttackLifeNum)
-                        .replace('{3}', Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000))
-                        .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
-                        .replace('{5}', interval)
-                        .replace('{6}', msg)
-                    );
-                }
+                console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
+                    .replace('{0}', life)
+                    .replace('{1}', minLife)
+                    .replace('{2}', maxCheckAttackLifeNum)
+                    .replace('{3}', curLootMinutes)
+                    .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
+                    .replace('{5}', interval)
+                    .replace('{6}', msg)
+                );
             };
 
             /**
@@ -1007,10 +1019,23 @@ var Loot = {
                 });
             };
 
+            if (Config.attemptAttackAfterTimeEnabled) {
+                var firstCheckLifeInterval = Const.defLootInterval - Config.attackAfterTime - Const.attemptAttackAfterTime;
+                if (firstCheckLifeInterval < Const.firstCheckLifeInterval) firstCheckLifeInterval = Const.firstCheckLifeInterval;
+                if (curLootMinutes < firstCheckLifeInterval) {
+                    checkLifeInterval = firstCheckLifeInterval - curLootMinutes;
+                    if (curLootMinutes < 185) checkLifeInterval = 185 - curLootMinutes;
+                    writeNextCheckLifeCookie(isLteMinLife ? 0 : life, checkLifeInterval, '试探攻击时限尚未到达，不进行试探攻击');
+                    if (recentMonsterAttackLog && !isLteMinLife)
+                        Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(lootInfo.time));
+                    return;
+                }
+            }
+
             if (!isLteMinLife) {
                 writeNextCheckLifeCookie(life, checkLifeInterval, '当前生命值大于低保线，不进行试探攻击');
                 if (recentMonsterAttackLog)
-                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(Loot.getNextLootAwardTime().time));
+                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(lootInfo.time));
                 else
                     Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
                 return;
@@ -1054,7 +1079,7 @@ var Loot = {
                                 );
                                 Tools.setCookie(Const.prevAttemptAttackLogCookieName,
                                     realLife + '/' + recentMonsterAttackLog,
-                                    new Date(Loot.getNextLootAwardTime().time)
+                                    new Date(lootInfo.time)
                                 );
                             }
                             else {
@@ -1156,6 +1181,7 @@ var Loot = {
         }
         Dialog.show('pd_attack_log');
         $dialog.find('input:first').focus();
+        Func.run('Loot.showAttackLogDialog_after_', log);
     },
 
     /**
@@ -1249,6 +1275,7 @@ var Loot = {
                 });
             });
         }
+        Func.run('Loot.customMonsterName_after_');
     },
 
     /**
