@@ -969,6 +969,7 @@ var Loot = {
              * @param {string} msg 提示消息
              */
             var writeNextCheckLifeCookie = function (life, interval, msg) {
+                console.log(interval);
                 var nextTime = Tools.getDate('+' + interval + 'm');
                 Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
                 console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
@@ -1074,7 +1075,7 @@ var Loot = {
                                 if (recentMonsterAttackLog === prevMonsterAttackLog) msg = '未遭到新的攻击';
                                 else msg = '共损失{0}KFB'.replace('{0}', loss);
                                 writeNextCheckLifeCookie(realLife,
-                                    Const.defCheckLifeInterval,
+                                    typeof Const.defCheckLifeInterval === 'function' ? Const.defCheckLifeInterval() : Const.defCheckLifeInterval,
                                     '自上次检查生命值以来，{0}，生命值高于阈值，暂无试探攻击的必要'.replace('{0}', msg)
                                 );
                                 Tools.setCookie(Const.prevAttemptAttackLogCookieName,
