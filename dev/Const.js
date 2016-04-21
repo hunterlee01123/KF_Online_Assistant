@@ -17,7 +17,7 @@ var Const = {
     minAttackAfterTime: 63,
     // 在实际生命值不超过指定值时才进行试探攻击，-1表示使用低保值
     maxAttemptAttackLifeNum: 10,
-    // 在完成剩余攻击时限之前的指定时间（分钟）内才进行试探攻击
+    // 在自动攻击时限之前的指定时间（分钟）内才进行试探攻击
     attemptAttackAfterTime: 40,
     // 每回合攻击的最大次数
     maxAttackNum: 20,

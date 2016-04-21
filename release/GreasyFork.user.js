@@ -10,14 +10,14 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.2.6
+// @version     5.3.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.2.6';
+var version = '5.3.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -60,8 +60,11 @@ var Config = {
     autoAttackEnabled: false,
     // 在距本回合结束前指定时间内才自动完成（剩余）批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
     attackAfterTime: 0,
-    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置在距本回合结束前指定时间内才自动完成批量攻击），true：开启；false：关闭
+    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置{@link Config.attackAfterTime}），true：开启；false：关闭
     attemptAttackEnabled: false,
+    // 是否在自动攻击时限之前的指定时间（{@link Const.attemptAttackAfterTime}）内才进行试探攻击（适合有时间挂机的用户），true：开启；false：关闭
+    // 例：设置{@link Config.attackAfterTime}为90分钟，设置{@link Const.attemptAttackAfterTime}为40分钟，则在距本回合结束前130分钟内才进行试探攻击
+    attemptAttackAfterTimeEnabled: false,
     // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
     batchAttackList: {},
     // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
@@ -173,9 +176,9 @@ var Config = {
     blockThreadDefForumType: 0,
     // 屏蔽帖子的默认版块ID列表，例：[16, 41, 67, 57, 84, 92, 127, 68, 163, 182, 9]
     blockThreadDefFidList: [],
-    // 屏蔽帖子的关键字列表，格式：[{keyWord:'关键字', userName: ['用户名'], includeFid:[包括指定的版块ID], excludeFid:[排除指定的版块ID]}]
-    // 关键字可使用普通字符串或正则表达式（正则表达式请使用'/abc/'的格式），userName、includeFid和excludeFid这三项为可选
-    // 例：[{keyWord: '标题1'}, {keyWord: '标题2', userName:['用户名1', '用户名2'], includeFid: [5, 56]}, {keyWord: '/关键字A.*关键字B/i', excludeFid: [92, 127, 68]}]
+    // 屏蔽帖子的关键字列表，格式：[{keyWord:'关键字', includeUser:['包括的用户名'], excludeUser:['排除的用户名'], includeFid:[包括指定的版块ID], excludeFid:[排除指定的版块ID]}]
+    // 关键字可使用普通字符串或正则表达式（正则表达式请使用'/abc/'的格式），includeUser、excludeUser、includeFid和excludeFid这三项为可选
+    // 例：[{keyWord: '标题1'}, {keyWord: '标题2', includeUser:['用户名1', '用户名2'], includeFid: [5, 56]}, {keyWord: '/关键字A.*关键字B/i', excludeFid: [92, 127, 68]}]
     blockThreadList: [],
     // 是否在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发，true：开启；false：关闭
     autoSaveCurrentDepositEnabled: false,
@@ -214,6 +217,8 @@ var Const = {
     minAttackAfterTime: 63,
     // 在实际生命值不超过指定值时才进行试探攻击，-1表示使用低保值
     maxAttemptAttackLifeNum: 10,
+    // 在自动攻击时限之前的指定时间（分钟）内才进行试探攻击
+    attemptAttackAfterTime: 40,
     // 每回合攻击的最大次数
     maxAttackNum: 20,
     // 致命一击比例
@@ -228,10 +233,14 @@ var Const = {
     checkAutoAttackingInterval: 4,
     // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
     firstCheckLifeInterval: 145,
-    // 检查生命值的默认时间间隔（分钟）
-    defCheckLifeInterval: 20,
-    // 在进行试探攻击后检查生命值的时间间隔（分钟）
-    checkLifeAfterAttemptAttackInterval: 2,
+    // 检查生命值的默认时间间隔（分钟），可设置为函数来返回值
+    defCheckLifeInterval: function () {
+        return Config.attemptAttackAfterTimeEnabled ? 3 : 20; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
+    },
+    // 在进行试探攻击后检查生命值的时间间隔（分钟），可设置为函数来返回值
+    checkLifeAfterAttemptAttackInterval: function () {
+        return Config.attemptAttackAfterTimeEnabled ? 1 : 2; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
+    },
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
@@ -475,6 +484,10 @@ var ConfigMethod = {
                 options.attemptAttackEnabled : defConfig.attemptAttackEnabled;
         }
         if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
+        if (typeof options.attemptAttackAfterTimeEnabled !== 'undefined') {
+            settings.attemptAttackAfterTimeEnabled = typeof options.attemptAttackAfterTimeEnabled === 'boolean' ?
+                options.attemptAttackAfterTimeEnabled : defConfig.attemptAttackAfterTimeEnabled;
+        }
         if (typeof options.batchAttackList !== 'undefined') {
             if ($.type(options.batchAttackList) === 'object') {
                 settings.batchAttackList = {};
@@ -825,29 +838,11 @@ var ConfigMethod = {
                     var obj = options.blockThreadList[i];
                     if ($.type(obj) === 'object' && $.type(obj.keyWord) === 'string' && $.trim(obj.keyWord) !== '') {
                         var newObj = {keyWord: obj.keyWord};
-                        var userNameList = [];
-                        if ($.isArray(obj.userName)) {
-                            for (var j in obj.userName) {
-                                var userName = $.trim(obj.userName[j]);
-                                if (userName) userNameList.push(userName);
-                            }
-                        }
-                        if (userNameList.length > 0) newObj.userName = userNameList;
-                        var includeFid = [], excludeFid = [];
-                        if ($.isArray(obj.includeFid)) {
-                            for (var j in obj.includeFid) {
-                                var fid = parseInt(obj.includeFid[j]);
-                                if (!isNaN(fid) && fid > 0) includeFid.push(fid);
-                            }
-                        }
-                        else if ($.isArray(obj.excludeFid)) {
-                            for (var j in obj.excludeFid) {
-                                var fid = parseInt(obj.excludeFid[j]);
-                                if (!isNaN(fid) && fid > 0) excludeFid.push(fid);
-                            }
-                        }
-                        if (includeFid.length > 0) newObj.includeFid = includeFid;
-                        else if (excludeFid.length > 0) newObj.excludeFid = excludeFid;
+                        if ($.isArray(obj.includeUser) && obj.includeUser.length > 0) newObj.includeUser = obj.includeUser;
+                        else if ($.isArray(obj.excludeUser) && obj.excludeUser.length > 0) newObj.excludeUser = obj.excludeUser;
+                        else if ($.isArray(obj.userName) && obj.userName.length > 0) newObj.includeUser = obj.userName;
+                        if ($.isArray(obj.includeFid) && obj.includeFid.length > 0) newObj.includeFid = obj.includeFid;
+                        else if ($.isArray(obj.excludeFid) && obj.excludeFid.length > 0) newObj.excludeFid = obj.excludeFid;
                         settings.blockThreadList.push(newObj);
                     }
                 }
@@ -1511,7 +1506,8 @@ var ConfigDialog = {
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
-            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子，需开启相关功能），只在论坛首页生效">[?]</span></label></legend>' +
+            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子、自动更换神秘颜色，需开启相关功能），只在论坛首页生效' +
+            '（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span></label></legend>' +
             '      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
             '<span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span></label>' +
@@ -1541,8 +1537,13 @@ var ConfigDialog = {
             '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
             '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
                 .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
-            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" />在生命值不超过{0}时进行试探攻击 '.replace('{0}', Const.maxAttemptAttackLifeNum) +
-            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置在距本回合结束前指定分钟内才完成(剩余)攻击，详见【常见问题10】">[?]</span></label>' +
+            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_attempt_attack_after_time_enabled" />在生命值不超过{0}时进行试探攻击 '
+                .replace('{0}', Const.maxAttemptAttackLifeNum) +
+            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置攻击时限，详见【常见问题10】">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_attempt_attack_after_time_enabled" type="checkbox" />在攻击时限之前的{0}分钟内才进行试探攻击 '
+                .replace('{0}', Const.attemptAttackAfterTime) +
+            '<span class="pd_cfg_tips" title="在自动攻击时限之前的指定时间内才进行试探攻击，可有效减少被怪物攻击次数（适合有时间挂机的较低等级玩家），' +
+            '例：攻击时限设为80分钟，则在距本回合结束前{0}分钟内才进行试探攻击">[?]</span></label>'.replace('{0}', 80 + Const.attemptAttackAfterTime) +
             '        <table id="pd_cfg_batch_attack_list">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
@@ -1789,6 +1790,7 @@ var ConfigDialog = {
         $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
         if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
         $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
+        $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked', Config.attemptAttackAfterTimeEnabled);
         $.each(Config.batchAttackList, function (id, num) {
             $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
         });
@@ -1864,6 +1866,7 @@ var ConfigDialog = {
         options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
         options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
         options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
+        options.attemptAttackAfterTimeEnabled = $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked');
         options.batchAttackList = {};
         $('#pd_cfg_batch_attack_list input').each(function () {
             var $this = $(this);
@@ -2505,10 +2508,12 @@ var ConfigDialog = {
         if ($('#pd_custom_script').length > 0) return;
         var html =
             '<div class="pd_cfg_main">' +
-            '  <label><strong>在脚本开始时执行的内容：</strong><br />' +
-            '<textarea wrap="off" id="pd_custom_script_start_content" style="width:750px;height:250px;white-space:pre;margin-bottom:10px"></textarea></label><br />' +
-            '  <label><strong>在脚本结束时执行的内容：</strong><br />' +
-            '<textarea wrap="off" id="pd_custom_script_end_content" style="width:750px;height:250px;white-space:pre"></textarea></label>' +
+            '  <div style="margin:5px 0">' +
+            '    <label style="color:#F00"><input type="radio" name="pd_custom_script_type" value="start" checked="checked" /> 在脚本开始时执行的内容</label>' +
+            '    <label style="color:#00F"><input type="radio" name="pd_custom_script_type" value="end" /> 在脚本结束时执行的内容</label>' +
+            '  </div>' +
+            '  <textarea wrap="off" id="pd_custom_script_start_content" style="width:750px;height:500px;white-space:pre"></textarea>' +
+            '  <textarea wrap="off" id="pd_custom_script_end_content" style="width:750px;height:500px;white-space:pre;display:none"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
             '  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500968">其他人分享的自定义脚本</a></span>' +
@@ -2525,7 +2530,12 @@ var ConfigDialog = {
             return Dialog.close('pd_custom_script');
         });
         $dialog.find('#pd_custom_script_start_content').val(Config.customScriptStartContent)
-            .end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent);
+            .end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent)
+            .end().find('input[name="pd_custom_script_type"]').click(function () {
+            var type = $(this).val();
+            $('#pd_custom_script_' + (type === 'end' ? 'start' : 'end') + '_content').hide();
+            $('#pd_custom_script_' + (type === 'end' ? 'end' : 'start') + '_content').show();
+        });
         Dialog.show('pd_custom_script');
         $dialog.find('#pd_custom_script_start_content').focus();
     },
@@ -2876,9 +2886,10 @@ var ConfigDialog = {
             '  <table id="pd_cfg_block_thread_list" style="line-height:22px;text-align:center">' +
             '    <tbody>' +
             '      <tr>' +
-            '        <th style="width:187px">标题关键字(必填)</th>' +
-            '        <th style="width:132px">用户名 <span class="pd_cfg_tips" title="多个用户名请用英文逗号分隔">[?]</span></th>' +
-            '        <th style="width:105px">屏蔽范围</th>' +
+            '        <th style="width:220px">标题关键字(必填)</th>' +
+            '        <th style="width:62px">屏蔽用户</th>' +
+            '        <th style="width:200px">用户名 <span class="pd_cfg_tips" title="多个用户名请用英文逗号分隔">[?]</span></th>' +
+            '        <th style="width:62px">屏蔽范围</th>' +
             '        <th style="width:132px">版块ID <span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span></th>' +
             '        <th style="width:35px"></th>' +
             '      </tr>' +
@@ -2891,7 +2902,7 @@ var ConfigDialog = {
             '  <span class="pd_cfg_about"><a href="#">导入/导出屏蔽帖子</a></span>' +
             '  <button>确定</button><button>取消</button>' +
             '</div>';
-        var $dialog = Dialog.create('pd_block_thread', '屏蔽帖子', html, 'width:648px');
+        var $dialog = Dialog.create('pd_block_thread', '屏蔽帖子', html, 'width:768px');
         var $blockThreadList = $dialog.find('#pd_cfg_block_thread_list');
 
         /**
@@ -2940,21 +2951,24 @@ var ConfigDialog = {
                 if ($.trim(keyWord) === '') return;
                 var newObj = {keyWord: keyWord};
 
-                var userNameList = [];
-                $.each($.trim($this.find('td:nth-child(2) > input').val()).split(','), function (i, userName) {
-                    userName = $.trim(userName);
-                    if (userName) userNameList.push(userName);
-                });
-                if (userNameList.length > 0) newObj.userName = userNameList;
+                var userType = parseInt($this.find('td:nth-child(2) > select').val());
+                if (userType > 0) {
+                    var userList = [];
+                    $.each($.trim($this.find('td:nth-child(3) > input').val()).split(','), function (i, user) {
+                        user = $.trim(user);
+                        if (user) userList.push(user);
+                    });
+                    if (userList.length > 0) newObj[userType === 2 ? 'excludeUser' : 'includeUser'] = userList;
+                }
 
-                var type = parseInt($this.find('td:nth-child(3) > select').val());
-                if (type > 0) {
+                var fidType = parseInt($this.find('td:nth-child(4) > select').val());
+                if (fidType > 0) {
                     var fidList = [];
-                    $.each($.trim($this.find('td:nth-child(4) > input').val()).split(','), function (i, fid) {
+                    $.each($.trim($this.find('td:nth-child(5) > input').val()).split(','), function (i, fid) {
                         fid = parseInt($.trim(fid));
                         if (!isNaN(fid) && fid > 0) fidList.push(fid);
                     });
-                    if (fidList.length > 0) newObj[type === 2 ? 'excludeFid' : 'includeFid'] = fidList;
+                    if (fidList.length > 0) newObj[fidType === 2 ? 'excludeFid' : 'includeFid'] = fidList;
                 }
                 Config.blockThreadList.push(newObj);
             });
@@ -2975,41 +2989,54 @@ var ConfigDialog = {
         /**
          * 添加屏蔽帖子
          * @param {string} keyWord 标题关键字
-         * @param {string[]} userNameList 用户名
-         * @param {number} type 屏蔽范围，0：所有版块；1：包括指定版块；2：排除指定版块
+         * @param {number} userType 屏蔽用户，0：所有；1：包括；2：排除
+         * @param {string[]} userList 用户名
+         * @param {number} fidType 屏蔽范围，0：所有；1：包括；2：排除
          * @param {number[]} fidList 版块ID列表
          */
-        var addBlockThread = function (keyWord, userNameList, type, fidList) {
+        var addBlockThread = function (keyWord, userType, userList, fidType, fidList) {
             $(
                 ('<tr>' +
-                '  <td><input type="text" style="width:175px" value="{0}" /></td>' +
-                '  <td><input type="text" style="width:120px" value="{1}" /></td>' +
-                '  <td><select style="margin-left:5px"><option value="0">所有版块</option><option value="1">包括指定版块</option>' +
-                '<option value="2">排除指定版块</option></select></td>' +
-                '  <td><input type="text" style="width:120px" value="{2}" {3} /></td>' +
+                '  <td><input type="text" style="width:208px" value="{0}" /></td>' +
+                '  <td><select><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>' +
+                '  <td><input type="text" style="width:188px" value="{1}" {2} /></td>' +
+                '  <td><select><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>' +
+                '  <td><input type="text" style="width:120px" value="{3}" {4} /></td>' +
                 '  <td><a href="#">删除</a></td>' +
                 '</tr>')
                     .replace('{0}', keyWord)
-                    .replace('{1}', userNameList.join(','))
-                    .replace('{2}', fidList.join(','))
-                    .replace('{3}', type === 0 ? 'disabled="disabled"' : '')
+                    .replace('{1}', userList.join(','))
+                    .replace('{2}', userType === 0 ? 'disabled="disabled"' : '')
+                    .replace('{3}', fidList.join(','))
+                    .replace('{4}', fidType === 0 ? 'disabled="disabled"' : '')
             ).appendTo($blockThreadList)
-                .find('select').val(type);
+                .find('td:nth-child(2) > select').val(userType)
+                .end().find('td:nth-child(4) > select').val(fidType);
         };
 
         for (var i in Config.blockThreadList) {
-            var userName = Config.blockThreadList[i].userName;
-            var type = 0;
+            var userType = 0;
+            var userList = [];
+            if (typeof Config.blockThreadList[i].includeUser !== 'undefined') {
+                userType = 1;
+                userList = Config.blockThreadList[i].includeUser;
+            }
+            else if (typeof Config.blockThreadList[i].excludeUser !== 'undefined') {
+                userType = 2;
+                userList = Config.blockThreadList[i].excludeUser;
+            }
+
+            var fidType = 0;
             var fidList = [];
             if (typeof Config.blockThreadList[i].includeFid !== 'undefined') {
-                type = 1;
+                fidType = 1;
                 fidList = Config.blockThreadList[i].includeFid;
             }
             else if (typeof Config.blockThreadList[i].excludeFid !== 'undefined') {
-                type = 2;
+                fidType = 2;
                 fidList = Config.blockThreadList[i].excludeFid;
             }
-            addBlockThread(Config.blockThreadList[i].keyWord, userName ? userName : [], type, fidList);
+            addBlockThread(Config.blockThreadList[i].keyWord, userType, userList, fidType, fidList);
         }
 
         $('#pd_cfg_block_thread_add_btns').find('a:lt(2)').click(function (e) {
@@ -3017,7 +3044,7 @@ var ConfigDialog = {
             var num = 1;
             if ($(this).is('#pd_cfg_block_thread_add_btns > a:eq(1)')) num = 5;
             for (var i = 1; i <= num; i++) {
-                addBlockThread('', [], parseInt($('#pd_cfg_block_thread_def_forum_type').val()), $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','));
+                addBlockThread('', 0, [], parseInt($('#pd_cfg_block_thread_def_forum_type').val()), $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','));
             }
             Dialog.show('pd_block_thread');
         }).end().find('a:last').click(function (e) {
@@ -3653,53 +3680,68 @@ var Log = {
         Log.read();
         var html =
             '<div class="pd_cfg_main">' +
-            '  <div>' +
-            '    <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击保存按钮即可<br />' +
-            '    <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可' +
+            '  <div style="margin-top:5px">' +
+            '    <label style="color:#F00"><input type="radio" name="pd_im_or_ex_log_type" value="setting" checked="checked" /> 导入/导出日志</label>' +
+            '    <label style="color:#00F"><input type="radio" name="pd_im_or_ex_log_type" value="text" /> 导出日志文本</label>' +
             '  </div>' +
-            '  <textarea id="pd_log_setting" style="width:600px;height:200px;word-break:break-all"></textarea>' +
-            '  <div style="margin-top:10px">' +
-            '    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可<br />' +
+            '  <div id="pd_im_or_ex_log_setting">' +
+            '    <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击合并或覆盖按钮即可<br />' +
+            '    <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可<br />' +
+            '    <textarea id="pd_log_setting" style="width:600px;height:400px;word-break:break-all"></textarea>' +
+            '  </div>' +
+            '  <div id="pd_im_or_ex_log_text" style="display:none">' +
+            '    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可' +
             '    <div>' +
             '      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type_2" value="time" checked="checked" />按时间</label>' +
             '      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type_2" value="type" />按类别</label>' +
             '      <label title="在日志文本里显示每日以及全部数据的统计结果"><input type="checkbox" id="pd_log_show_stat" checked="checked" />显示统计</label>' +
             '    </div>' +
+            '    <textarea id="pd_log_text" style="width:600px;height:400px" readonly="readonly"></textarea>' +
             '  </div>' +
-            '  <textarea id="pd_log_text" style="width:600px;height:270px" readonly="readonly"></textarea>' +
             '</div>' +
             '<div class="pd_cfg_btns">' +
-            '  <button>保存</button><button>取消</button>' +
+            '  <button data-action="merge">合并日志</button><button data-action="overwrite" style="color:#F00">覆盖日志</button><button>关闭</button>' +
             '</div>';
         var $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
         $dialog.find('input[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
             Log.showLogText();
-        }).end().find('.pd_cfg_btns > button:first').click(function (e) {
+            $('#pd_log_text').select();
+        }).end().find('input[name="pd_im_or_ex_log_type"]').click(function () {
+            var type = $(this).val();
+            $('#pd_im_or_ex_log_' + (type === 'text' ? 'setting' : 'text')).hide();
+            $('#pd_im_or_ex_log_' + (type === 'text' ? 'text' : 'setting')).show();
+            $('#pd_log_' + (type === 'text' ? 'text' : 'setting')).select();
+        }).end().find('.pd_cfg_btns > button').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的日志？')) return;
-            var log = $.trim($('#pd_log_setting').val());
-            if (!log) return;
-            try {
-                log = JSON.parse(log);
+            var action = $(this).data('action');
+            if (action === 'merge' || action === 'overwrite') {
+                if (!window.confirm('是否将文本框中的日志{0}到本地日志？'.replace('{0}', action === 'overwrite' ? '覆盖' : '合并'))) return;
+                var log = $.trim($('#pd_log_setting').val());
+                if (!log) return;
+                try {
+                    log = JSON.parse(log);
+                }
+                catch (ex) {
+                    alert('日志有错误');
+                    return;
+                }
+                if (!log || $.type(log) !== 'object') {
+                    alert('日志有错误');
+                    return;
+                }
+                if (action === 'merge') log = Log.getMergeLog(Log.log, log);
+                Log.log = log;
+                Log.write();
+                alert('日志已导入');
+                location.reload();
             }
-            catch (ex) {
-                alert('日志有错误');
-                return;
+            else {
+                return Dialog.close('pd_im_or_ex_log');
             }
-            if (!log || $.type(log) !== 'object') {
-                alert('日志有错误');
-                return;
-            }
-            Log.log = log;
-            Log.write();
-            alert('日志已导入');
-            location.reload();
-        }).next('button').click(function () {
-            return Dialog.close('pd_im_or_ex_log');
         });
         Dialog.show('pd_im_or_ex_log');
         $('#pd_log_setting').val(JSON.stringify(Log.log)).select();
-        $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).prop('checked', true).click();
+        $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).prop('checked', true).triggerHandler('click');
     },
 
     /**
@@ -3742,6 +3784,45 @@ var Log = {
                     .replace(/(<.+?>|<\/.+?>)/g, '');
         }
         $('#pd_log_text').val(content);
+    },
+
+    /**
+     * 获取合并后的日志
+     * @param {{}} log 当前日志
+     * @param {{}} newLog 新日志
+     * @returns {{}} 合并后的日志
+     */
+    getMergeLog: function (log, newLog) {
+        /**
+         * 获取指定日志项目在指定日志项目列表中的索引号
+         * @param {{}} item 指定日志项目
+         * @param {[]} list 指定日志项目列表
+         * @returns {number} 指定日志项目在列表中的索引号，-1表示不在该列表中
+         */
+        var inArray = function (item, list) {
+            for (var i = 0; i < list.length; i++) {
+                if (item['time'] === list[i]['time'] && item['type'] === list[i]['type']) return i;
+            }
+            return -1;
+        };
+
+        for (var date in newLog) {
+            if ($.type(log[date]) !== 'array') {
+                log[date] = newLog[date];
+            }
+            else {
+                for (var i = 0; i < newLog[date].length; i++) {
+                    if ($.type(newLog[date][i].time) !== 'number' || $.type(newLog[date][i].type) !== 'string') continue;
+                    var index = inArray(newLog[date][i], log[date]);
+                    if (index > -1) log[date][index] = newLog[date][i];
+                    else log[date].push(newLog[date][i]);
+                }
+                log[date].sort(function (a, b) {
+                    return a.time > b.time;
+                });
+            }
+        }
+        return log;
     }
 };
 
@@ -5410,11 +5491,12 @@ var Item = {
                 var nextSuccessPercent = 0;
                 if (usedNum > maxUsedNum) nextSuccessPercent = 0;
                 else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
-                $this.after('<span class="pd_used_item_info" title="下个道具使用成功几率：{0}">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
-                    .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
-                    .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
-                    .replace('{2}', usedNum)
-                    .replace('{3}', maxUsedNum)
+                $this.after(
+                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}（仅供参考）">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
+                        .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
+                        .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
+                        .replace('{2}', usedNum)
+                        .replace('{3}', maxUsedNum)
                 );
             });
         });
@@ -7105,6 +7187,7 @@ var Loot = {
         }
 
         if (Tools.getCookie(Const.checkLifeCookieName)) {
+            var $lifeNode = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child');
             var value = Tools.getCookie(Const.prevAttemptAttackLogCookieName);
             if (value) {
                 var arr = value.split('/');
@@ -7115,7 +7198,6 @@ var Loot = {
                     var attackLogMatches = />(\d+:\d+:\d+)\s*\|/.exec($('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html());
                     if (attackLogMatches) recentMonsterAttackLogTime = attackLogMatches[1];
 
-                    var $lifeNode = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child');
                     var text = $lifeNode.text();
                     var life = 0, minLife = 0;
                     var lifeMatches = /当前拥有\s*(\d+)\s*预领KFB/i.exec(text);
@@ -7129,6 +7211,16 @@ var Loot = {
                         );
                     }
                 }
+            }
+
+            if (Config.attemptAttackEnabled) {
+                $('<span class="pd_custom_tips" style="color:#339933;margin-left:7px;cursor:pointer" title="立即检查生命值">&#10010;</span>')
+                    .insertBefore($lifeNode.find('br:first'))
+                    .click(function () {
+                        Tools.setCookie(Const.checkLifeCookieName, '', Tools.getDate('-1d'));
+                        Loot.checkLife();
+                        alert('已重新检查生命值');
+                    });
             }
         }
 
@@ -7311,7 +7403,12 @@ var Loot = {
             if (safeIdMatches) safeId = safeIdMatches[1];
             if (!safeId) return;
 
-            var checkLifeInterval = Const.defCheckLifeInterval;
+            var lootInfo = Loot.getNextLootAwardTime();
+            if (!lootInfo.type || lootInfo.time <= 0) return;
+            var curLootMinutes = Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000);
+
+            var checkLifeInterval = typeof Const.defCheckLifeInterval === 'function' ? Const.defCheckLifeInterval() : Const.defCheckLifeInterval;
+            if (curLootMinutes < Const.firstCheckLifeInterval) checkLifeInterval = Const.firstCheckLifeInterval - lootInfo.time;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
             var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
             var life = 0, minLife = 0;
@@ -7320,7 +7417,8 @@ var Loot = {
                 life = parseInt(lifeMatches[1]);
                 minLife = parseInt(minLifeMatches[1]);
                 if (life <= minLife) {
-                    checkLifeInterval = Const.checkLifeAfterAttemptAttackInterval;
+                    checkLifeInterval = typeof Const.checkLifeAfterAttemptAttackInterval === 'function' ?
+                        Const.checkLifeAfterAttemptAttackInterval() : Const.checkLifeAfterAttemptAttackInterval;
                     isLteMinLife = true;
                 }
             }
@@ -7346,19 +7444,15 @@ var Loot = {
             var writeNextCheckLifeCookie = function (life, interval, msg) {
                 var nextTime = Tools.getDate('+' + interval + 'm');
                 Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
-
-                var lootInfo = Loot.getNextLootAwardTime();
-                if (lootInfo.time > 0) {
-                    console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
-                        .replace('{0}', life)
-                        .replace('{1}', minLife)
-                        .replace('{2}', maxCheckAttackLifeNum)
-                        .replace('{3}', Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000))
-                        .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
-                        .replace('{5}', interval)
-                        .replace('{6}', msg)
-                    );
-                }
+                console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
+                    .replace('{0}', life)
+                    .replace('{1}', minLife)
+                    .replace('{2}', maxCheckAttackLifeNum)
+                    .replace('{3}', curLootMinutes)
+                    .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
+                    .replace('{5}', interval)
+                    .replace('{6}', msg)
+                );
             };
 
             /**
@@ -7398,10 +7492,23 @@ var Loot = {
                 });
             };
 
+            if (Config.attemptAttackAfterTimeEnabled) {
+                var firstCheckLifeInterval = Const.defLootInterval - Config.attackAfterTime - Const.attemptAttackAfterTime;
+                if (firstCheckLifeInterval < Const.firstCheckLifeInterval) firstCheckLifeInterval = Const.firstCheckLifeInterval;
+                if (curLootMinutes < firstCheckLifeInterval) {
+                    checkLifeInterval = firstCheckLifeInterval - curLootMinutes;
+                    if (curLootMinutes < 185) checkLifeInterval = 185 - curLootMinutes;
+                    writeNextCheckLifeCookie(isLteMinLife ? 0 : life, checkLifeInterval, '试探攻击时限尚未到达，不进行试探攻击');
+                    if (recentMonsterAttackLog && !isLteMinLife)
+                        Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(lootInfo.time));
+                    return;
+                }
+            }
+
             if (!isLteMinLife) {
                 writeNextCheckLifeCookie(life, checkLifeInterval, '当前生命值大于低保线，不进行试探攻击');
                 if (recentMonsterAttackLog)
-                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(Loot.getNextLootAwardTime().time));
+                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(lootInfo.time));
                 else
                     Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
                 return;
@@ -7445,7 +7552,7 @@ var Loot = {
                                 );
                                 Tools.setCookie(Const.prevAttemptAttackLogCookieName,
                                     realLife + '/' + recentMonsterAttackLog,
-                                    new Date(Loot.getNextLootAwardTime().time)
+                                    new Date(lootInfo.time)
                                 );
                             }
                             else {
@@ -7547,6 +7654,7 @@ var Loot = {
         }
         Dialog.show('pd_attack_log');
         $dialog.find('input:first').focus();
+        Func.run('Loot.showAttackLogDialog_after_', log);
     },
 
     /**
@@ -7640,6 +7748,7 @@ var Loot = {
                 });
             });
         }
+        Func.run('Loot.customMonsterName_after_');
     },
 
     /**
@@ -9956,8 +10065,13 @@ var KFOL = {
                         continue;
                     }
                 }
-                if (userName && Config.blockThreadList[i].userName) {
-                    if ($.inArray(userName, Config.blockThreadList[i].userName) === -1) continue;
+                if (userName) {
+                    if (Config.blockThreadList[i].includeUser) {
+                        if ($.inArray(userName, Config.blockThreadList[i].includeUser) === -1) continue;
+                    }
+                    else if (Config.blockThreadList[i].excludeUser) {
+                        if ($.inArray(userName, Config.blockThreadList[i].excludeUser) > -1) continue;
+                    }
                 }
                 if (fid) {
                     if (Config.blockThreadList[i].includeFid) {
@@ -11062,6 +11176,9 @@ var KFOL = {
             KFOL.addFastDrawMoneyLink();
             if (Config.modifyKFOtherDomainEnabled) KFOL.modifyKFOtherDomainLink();
         }
+        else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
+            KFOL.addMsgSelectButton();
+        }
         else if (/\/profile\.php\?action=show/i.test(location.href)) {
             KFOL.addFollowAndBlockAndMemoUserLink();
         }
@@ -11070,9 +11187,6 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_growup.php') {
             KFOL.addAutoChangeSmColorButton();
-        }
-        else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
-            KFOL.addMsgSelectButton();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Item.addBatchBuyItemsLink();

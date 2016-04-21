@@ -1237,7 +1237,7 @@ var kfOnlyYou = function () {
         kfOnlyYou();
     }
     else if (isNaN(value) && KFOL.isInHomePage) {
-        if (Math.floor(Math.random() * 15) % 15 !== 9) return;
+        if (Math.floor(Math.random() * 15) !== 9) return;
 
         var $tips = KFOL.showWaitMsg('<strong>少年（少女），其实整个KF只有你一个人，你相信吗？</strong><br />' +
             '<a data-action="yes" href="#">我相信</a><a data-action="no" href="#">我不相信</a><a data-action="hide" style="color:#F00" href="#">不再提示</a>',

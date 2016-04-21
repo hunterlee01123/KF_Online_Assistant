@@ -55,9 +55,8 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置攻击时限，详见【常见问题10】">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_attempt_attack_after_time_enabled" type="checkbox" />在攻击时限之前的{0}分钟内才进行试探攻击 '
                 .replace('{0}', Const.attemptAttackAfterTime) +
-            '<span class="pd_cfg_tips" title="在自动攻击时限之前的指定时间内才进行试探攻击（适合有时间挂机的用户）；例：攻击时限设为90分钟，则在距本回合结束前{0}分钟内才进行试探攻击">' +
-            '[?]</span></label>'
-                .replace('{0}', 90 + Const.attemptAttackAfterTime) +
+            '<span class="pd_cfg_tips" title="在自动攻击时限之前的指定时间内才进行试探攻击，可有效减少被怪物攻击次数（适合有时间挂机的较低等级玩家），' +
+            '例：攻击时限设为80分钟，则在距本回合结束前{0}分钟内才进行试探攻击">[?]</span></label>'.replace('{0}', 80 + Const.attemptAttackAfterTime) +
             '        <table id="pd_cfg_batch_attack_list">' +
             '          <tbody>' +
             '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
