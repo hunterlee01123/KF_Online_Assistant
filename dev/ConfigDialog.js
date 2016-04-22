@@ -8,6 +8,7 @@ var ConfigDialog = {
     show: function () {
         if ($('#pd_config').length > 0) return;
         ConfigMethod.read();
+        Func.run('ConfigDialog.show_before_');
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_cfg_nav">' +
@@ -282,6 +283,7 @@ var ConfigDialog = {
 
         Dialog.show('pd_config');
         $dialog.find('a:first').focus();
+        Func.run('ConfigDialog.show_after_');
     },
 
     /**

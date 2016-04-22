@@ -10,14 +10,14 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.3.1
+// @version     5.3.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.1';
+var version = '5.3.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1495,6 +1495,7 @@ var ConfigDialog = {
     show: function () {
         if ($('#pd_config').length > 0) return;
         ConfigMethod.read();
+        Func.run('ConfigDialog.show_before_');
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_cfg_nav">' +
@@ -1769,6 +1770,7 @@ var ConfigDialog = {
 
         Dialog.show('pd_config');
         $dialog.find('a:first').focus();
+        Func.run('ConfigDialog.show_after_');
     },
 
     /**
@@ -3226,6 +3228,7 @@ var Log = {
         if ($('#pd_log').length > 0) return;
         Dialog.close('pd_config');
         ConfigMethod.read();
+        Func.run('Log.show_before_');
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_log_nav">' +
@@ -3355,6 +3358,7 @@ var Log = {
         if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
         Dialog.show('pd_log');
         $dialog.find('input:first').focus();
+        Func.run('Log.show_after_');
     },
 
     /**
@@ -7408,7 +7412,7 @@ var Loot = {
             var curLootMinutes = Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000);
 
             var checkLifeInterval = typeof Const.defCheckLifeInterval === 'function' ? Const.defCheckLifeInterval() : Const.defCheckLifeInterval;
-            if (curLootMinutes < Const.firstCheckLifeInterval) checkLifeInterval = Const.firstCheckLifeInterval - lootInfo.time;
+            if (curLootMinutes < Const.firstCheckLifeInterval) checkLifeInterval = Const.firstCheckLifeInterval - curLootMinutes;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
             var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
             var life = 0, minLife = 0;
@@ -7442,7 +7446,6 @@ var Loot = {
              * @param {string} msg 提示消息
              */
             var writeNextCheckLifeCookie = function (life, interval, msg) {
-                console.log(interval);
                 var nextTime = Tools.getDate('+' + interval + 'm');
                 Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
                 console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
@@ -9495,6 +9498,7 @@ var KFOL = {
      * @param {number} type 处理类型，1：多重回复；2：多重引用
      */
     handleMultiQuote: function (type) {
+        Func.run('KFOL.handleMultiQuote_before_', type);
         if ($('#pd_clear_multi_quote_data').length === 0) {
             $('<a id="pd_clear_multi_quote_data" style="margin-left:7px" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
                 .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
@@ -9578,6 +9582,7 @@ var KFOL = {
         });
         if (type === 2) $(document).dequeue('MultiQuote');
         else $('textarea[name="atc_content"]').val(content).focus();
+        Func.run('KFOL.handleMultiQuote_after_', type);
     },
 
     /**
@@ -9794,6 +9799,7 @@ var KFOL = {
                                 .replace('{2}', totalSell)
                             , duration: -1
                         });
+                        Func.run('KFOL.buyThreads_after_', threadList);
                     }
                     else {
                         window.setTimeout(function () {

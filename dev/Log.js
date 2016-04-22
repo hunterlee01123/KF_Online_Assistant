@@ -101,6 +101,7 @@ var Log = {
         if ($('#pd_log').length > 0) return;
         Dialog.close('pd_config');
         ConfigMethod.read();
+        Func.run('Log.show_before_');
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_log_nav">' +
@@ -230,6 +231,7 @@ var Log = {
         if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
         Dialog.show('pd_log');
         $dialog.find('input:first').focus();
+        Func.run('Log.show_after_');
     },
 
     /**

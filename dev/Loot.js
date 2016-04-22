@@ -935,7 +935,7 @@ var Loot = {
             var curLootMinutes = Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000);
 
             var checkLifeInterval = typeof Const.defCheckLifeInterval === 'function' ? Const.defCheckLifeInterval() : Const.defCheckLifeInterval;
-            if (curLootMinutes < Const.firstCheckLifeInterval) checkLifeInterval = Const.firstCheckLifeInterval - lootInfo.time;
+            if (curLootMinutes < Const.firstCheckLifeInterval) checkLifeInterval = Const.firstCheckLifeInterval - curLootMinutes;
             var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
             var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
             var life = 0, minLife = 0;
@@ -969,7 +969,6 @@ var Loot = {
              * @param {string} msg 提示消息
              */
             var writeNextCheckLifeCookie = function (life, interval, msg) {
-                console.log(interval);
                 var nextTime = Tools.getDate('+' + interval + 'm');
                 Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
                 console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'

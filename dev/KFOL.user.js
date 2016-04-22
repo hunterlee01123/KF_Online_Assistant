@@ -21,14 +21,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.3.1
+// @version     5.3.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.1';
+var version = '5.3.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1316,6 +1316,7 @@ var KFOL = {
      * @param {number} type 处理类型，1：多重回复；2：多重引用
      */
     handleMultiQuote: function (type) {
+        Func.run('KFOL.handleMultiQuote_before_', type);
         if ($('#pd_clear_multi_quote_data').length === 0) {
             $('<a id="pd_clear_multi_quote_data" style="margin-left:7px" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
                 .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
@@ -1399,6 +1400,7 @@ var KFOL = {
         });
         if (type === 2) $(document).dequeue('MultiQuote');
         else $('textarea[name="atc_content"]').val(content).focus();
+        Func.run('KFOL.handleMultiQuote_after_', type);
     },
 
     /**
@@ -1615,6 +1617,7 @@ var KFOL = {
                                 .replace('{2}', totalSell)
                             , duration: -1
                         });
+                        Func.run('KFOL.buyThreads_after_', threadList);
                     }
                     else {
                         window.setTimeout(function () {
