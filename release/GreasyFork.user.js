@@ -10,14 +10,14 @@
 // @include     http://*2dgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.3.2
+// @version     5.3.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.2';
+var version = '5.3.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -255,6 +255,8 @@ var Const = {
     smRankChangeAlertInterval: 22,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
+    // ajax请求的默认超时时间（毫秒）
+    defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用、恢复、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
@@ -277,12 +279,12 @@ var Const = {
         'TMA最新作压缩包': 1990834,
         'LOLI的钱包': 1836588,
         '棒棒糖': 1942370,
-        '蕾米莉亚同人漫画': 2231073,
-        '十六夜同人漫画': 2025284,
-        '档案室钥匙': 2025904,
-        '傲娇LOLI娇蛮音CD': 2003056,
-        '整形优惠卷': 2122387,
-        '消逝之药': 1587342
+        '蕾米莉亚同人漫画': 1000888,
+        '十六夜同人漫画': 1002668,
+        '档案室钥匙': 1013984,
+        '傲娇LOLI娇蛮音CD': 4621,
+        '整形优惠卷': 1003993,
+        '消逝之药': 1000306
     },
     // 定期存款到期期限（天）
     fixedDepositDueTime: 90,
@@ -3746,6 +3748,7 @@ var Log = {
         Dialog.show('pd_im_or_ex_log');
         $('#pd_log_setting').val(JSON.stringify(Log.log)).select();
         $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).prop('checked', true).triggerHandler('click');
+        Func.run('Log.showImportOrExportLogDialog_after_');
     },
 
     /**
@@ -4203,6 +4206,7 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('使用道具', html);
                         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
@@ -4380,6 +4384,7 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_doit.php?renew={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('恢复道具', html);
                         var msg = '';
@@ -4652,7 +4657,7 @@ var Item = {
                 .replace('{1}', settings.itemName)
         );
 
-        var successNum = 0;
+        var successNum = 0, failNum = 0;
         var energyNum = Item.getGainEnergyNumByItemLevel(settings.itemLevel);
         $(document).clearQueue('ConvertItemsToEnergy');
         $.each(settings.itemIdList, function (index, itemId) {
@@ -4660,11 +4665,16 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_doit.php?tomp={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('将道具转换为能量', html);
                         if (/转换为了\s*\d+\s*点能量/i.test(html)) {
                             successNum++;
                         }
+                        else failNum++;
+                    },
+                    error: function () {
+                        failNum++;
                     },
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
@@ -4684,18 +4694,21 @@ var Item = {
                                     {gain: {'能量': successEnergyNum}, pay: {'已使用道具': -successNum}}
                                 );
                             }
-                            console.log('共有{0}个道具成功转换为能量，能量+{1}'
+                            console.log('共有{0}个道具成功转换为能量{1}，能量+{2}'
                                 .replace('{0}', successNum)
-                                .replace('{1}', successEnergyNum)
+                                .replace('{1}', failNum > 0 ? '，共有{0}个道具转换失败'.replace('{0}', failNum) : '')
+                                .replace('{2}', successEnergyNum)
                             );
-                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具成功转换为能量</strong><i>能量<em>+{1}</em></i>'
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具成功转换为能量{1}</strong><i>能量<em>+{2}</em></i>'
                                 .replace('{0}', successNum)
-                                .replace('{1}', successEnergyNum)
+                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具转换失败'.replace('{0}', failNum) : '')
+                                .replace('{2}', successEnergyNum)
                                 , -1);
                             $('.pd_result:last').append(
-                                '<li class="pd_stat">共有<em>{0}</em>个道具成功转换为能量，<i>能量<em>+{1}</em></i></li>'
+                                '<li class="pd_stat">共有<em>{0}</em>个道具成功转换为能量{1}，<i>能量<em>+{2}</em></i></li>'
                                     .replace('{0}', successNum)
-                                    .replace('{1}', successEnergyNum)
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具转换失败'.replace('{0}', failNum) : '')
+                                    .replace('{2}', successEnergyNum)
                             );
 
                             if (settings.type === 2) {
@@ -4748,6 +4761,7 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_shop.php?sell=yes&id={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('出售道具', html);
                         if (/出售成功/.test(html)) {
@@ -5571,7 +5585,7 @@ var Item = {
             .replace('{1}', settings.itemName)
         );
 
-        var successNum = 0;
+        var successNum = 0, failNum = 0;
         var isStop = false;
         $(document).clearQueue('BatchBuyItems');
         $.each(new Array(settings.num), function (index) {
@@ -5582,6 +5596,7 @@ var Item = {
                         .replace('{0}', settings.itemTypeId)
                         .replace('{1}', settings.safeId)
                         .replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('购买道具', html);
                         var msg = '';
@@ -5598,6 +5613,9 @@ var Item = {
                             msg = '未能获得预期的回应';
                         }
                         $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'.replace('{0}', index + 1).replace('{1}', msg));
+                    },
+                    error: function () {
+                        failNum++;
                     },
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
@@ -5616,15 +5634,17 @@ var Item = {
                                     {gain: {'道具': successNum}}
                                 );
                             }
-                            console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
+                            console.log('共有{0}个【Lv.{1}：{2}】道具购买成功{3}'
                                 .replace('{0}', successNum)
                                 .replace('{1}', settings.itemLevel)
                                 .replace('{2}', settings.itemName)
+                                .replace('{3}', failNum > 0 ? '，共有{0}个道具购买失败'.replace('{0}', failNum) : '')
                             );
-                            KFOL.showMsg('<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功{3}</strong>'
                                 .replace('{0}', successNum)
                                 .replace('{1}', settings.itemLevel)
                                 .replace('{2}', settings.itemName)
+                                .replace('{3}', failNum > 0 ? '，共有<em>{0}</em>个道具购买失败'.replace('{0}', failNum) : '')
                                 , -1);
 
                             if (successNum > 0) {
@@ -5679,57 +5699,54 @@ var Item = {
             var itemId = $this.data('id');
             if (!itemId) return;
             $(document).queue('StatBuyItemsPrice', function () {
-                $.get('kf_fw_ig_my.php?pro={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()), function (html) {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var matches = /从商店购买，购买价(\d+)KFB。<br>/i.exec(html);
-                    if (matches) {
-                        successNum++;
-                        var price = parseInt(matches[1]);
-                        totalPrice += price;
-                        if (minPrice === 0) minPrice = price;
-                        else if (price < minPrice) minPrice = price;
-                        if (price > maxPrice) maxPrice = price;
-                        $this.after('（购买价：<b class="pd_highlight">{0}</b>KFB）'.replace('{0}', price));
-                    }
-                    else {
-                        failNum++;
-                        $this.after('<span class="pd_notice">（未能获得预期的回应）</span>');
-                    }
-                    if (index === totalNum - 1) {
-                        KFOL.removePopTips($('.pd_pop_tips'));
-                        if (successNum > 0) {
-                            Log.push('统计道具购买价格',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具统计成功{3}，总计价格：`{4}`，平均价格：`{5}`(`{6}%`)，最低价格：`{7}`(`{8}%`)，最高价格：`{9}`(`{10}%`)'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', itemLevel)
-                                    .replace('{2}', itemName)
-                                    .replace('{3}', failNum > 0 ? '（共有`{0}`个道具未能统计成功）'.replace('{0}', failNum) : '')
-                                    .replace('{4}', totalPrice.toLocaleString())
-                                    .replace('{5}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
-                                    .replace('{6}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
-                                    .replace('{7}', minPrice.toLocaleString())
-                                    .replace('{8}', Math.round(minPrice / marketPrice * 100))
-                                    .replace('{9}', maxPrice.toLocaleString())
-                                    .replace('{10}', Math.round(maxPrice / marketPrice * 100))
-                                , {pay: {'KFB': -totalPrice}}
-                            );
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_ig_my.php?pro={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
+                    success: function (html) {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var matches = /从商店购买，购买价(\d+)KFB。<br>/i.exec(html);
+                        if (matches) {
+                            successNum++;
+                            var price = parseInt(matches[1]);
+                            totalPrice += price;
+                            if (minPrice === 0) minPrice = price;
+                            else if (price < minPrice) minPrice = price;
+                            if (price > maxPrice) maxPrice = price;
+                            $this.after('（购买价：<b class="pd_highlight">{0}</b>KFB）'.replace('{0}', price));
                         }
-                        console.log('统计道具购买价格（KFB）（共有{0}个道具未能统计成功），统计成功数量：{1}，总计价格：{2}，平均价格：{3} ({4}%)，最低价格：{5} ({6}%)，最高价格：{7} ({8}%)'
-                            .replace('{0}', failNum)
-                            .replace('{1}', successNum)
-                            .replace('{2}', totalPrice.toLocaleString())
-                            .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
-                            .replace('{4}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
-                            .replace('{5}', minPrice.toLocaleString())
-                            .replace('{6}', Math.round(minPrice / marketPrice * 100))
-                            .replace('{7}', maxPrice.toLocaleString())
-                            .replace('{8}', Math.round(maxPrice / marketPrice * 100))
-                        );
-                        $result.append(
-                            ('<li class="pd_stat"><b>统计结果{0}：</b><br /><i>统计成功数量：<em>{1}</em></i> <i>总计价格：<em>{2}</em></i> ' +
-                            '<i>平均价格：<em>{3} ({4}%)</em></i> <i>最低价格：<em>{5} ({6}%)</em></i> <i>最高价格：<em>{7} ({8}%)</em></i></li>')
-                                .replace('{0}', failNum > 0 ? '<span class="pd_notice">（共有{0}个道具未能统计成功）</span>'.replace('{0}', failNum) : '')
+                        else {
+                            failNum++;
+                            $this.after('<span class="pd_notice">（未能获得预期的回应）</span>');
+                        }
+                    },
+                    error: function () {
+                        failNum++;
+                        $this.after('<span class="pd_notice">（连接超时）</span>');
+                    },
+                    complete: function () {
+                        if (index === totalNum - 1) {
+                            KFOL.removePopTips($('.pd_pop_tips'));
+                            if (successNum > 0) {
+                                Log.push('统计道具购买价格',
+                                    '共有`{0}`个【`Lv.{1}：{2}`】道具统计成功{3}，总计价格：`{4}`，平均价格：`{5}`(`{6}%`)，最低价格：`{7}`(`{8}%`)，最高价格：`{9}`(`{10}%`)'
+                                        .replace('{0}', successNum)
+                                        .replace('{1}', itemLevel)
+                                        .replace('{2}', itemName)
+                                        .replace('{3}', failNum > 0 ? '（共有`{0}`个道具未能统计成功）'.replace('{0}', failNum) : '')
+                                        .replace('{4}', totalPrice.toLocaleString())
+                                        .replace('{5}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
+                                        .replace('{6}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
+                                        .replace('{7}', minPrice.toLocaleString())
+                                        .replace('{8}', Math.round(minPrice / marketPrice * 100))
+                                        .replace('{9}', maxPrice.toLocaleString())
+                                        .replace('{10}', Math.round(maxPrice / marketPrice * 100))
+                                    , {pay: {'KFB': -totalPrice}}
+                                );
+                            }
+                            console.log('统计道具购买价格（KFB）（共有{0}个道具未能统计成功），统计成功数量：{1}，总计价格：{2}，平均价格：{3} ({4}%)，最低价格：{5} ({6}%)，最高价格：{7} ({8}%)'
+                                .replace('{0}', failNum)
                                 .replace('{1}', successNum)
                                 .replace('{2}', totalPrice.toLocaleString())
                                 .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
@@ -5738,14 +5755,29 @@ var Item = {
                                 .replace('{6}', Math.round(minPrice / marketPrice * 100))
                                 .replace('{7}', maxPrice.toLocaleString())
                                 .replace('{8}', Math.round(maxPrice / marketPrice * 100))
-                        );
-                    }
-                    else {
-                        window.setTimeout(function () {
-                            $(document).dequeue('StatBuyItemsPrice');
-                        }, Const.defAjaxInterval);
-                    }
-                }, 'html');
+                            );
+                            $result.append(
+                                ('<li class="pd_stat"><b>统计结果{0}：</b><br /><i>统计成功数量：<em>{1}</em></i> <i>总计价格：<em>{2}</em></i> ' +
+                                '<i>平均价格：<em>{3} ({4}%)</em></i> <i>最低价格：<em>{5} ({6}%)</em></i> <i>最高价格：<em>{7} ({8}%)</em></i></li>')
+                                    .replace('{0}', failNum > 0 ? '<span class="pd_notice">（共有{0}个道具未能统计成功）</span>'.replace('{0}', failNum) : '')
+                                    .replace('{1}', successNum)
+                                    .replace('{2}', totalPrice.toLocaleString())
+                                    .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
+                                    .replace('{4}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
+                                    .replace('{5}', minPrice.toLocaleString())
+                                    .replace('{6}', Math.round(minPrice / marketPrice * 100))
+                                    .replace('{7}', maxPrice.toLocaleString())
+                                    .replace('{8}', Math.round(maxPrice / marketPrice * 100))
+                            );
+                        }
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('StatBuyItemsPrice');
+                            }, Const.defAjaxInterval);
+                        }
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('StatBuyItemsPrice');
@@ -5872,6 +5904,7 @@ var Card = {
                         .replace('{0}', cardId)
                         .replace('{1}', safeId)
                         .replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('将卡片转换为VIP时间', html);
                         var matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/i.exec(html);
@@ -6110,8 +6143,9 @@ var Bank = {
         $.each(users, function (index, key) {
             $(document).queue('Bank', function () {
                 $.ajax({
-                    url: 'hack.php?H_name=bank',
                     type: 'POST',
+                    url: 'hack.php?H_name=bank',
+                    timeout: Const.defAjaxTimeout,
                     data: '&action=virement&pwuser={0}&to_money={1}&memo={2}'
                         .replace('{0}', Tools.getGBKEncodeString(key[0]))
                         .replace('{1}', key[1])
@@ -6732,18 +6766,36 @@ var Loot = {
             });
         };
 
-        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
-        if (Config.deadlyAttackId > 0) {
-            if (deadlyAttackNum === -1) {
-                console.log('检查致命一击剩余攻击次数Start');
-                $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
+        /**
+         * 检查致命一击剩余攻击次数
+         */
+        var checkDeadlyAttackNum = function () {
+            console.log('检查致命一击剩余攻击次数Start');
+            $.ajax({
+                type: 'GET',
+                url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+                timeout: Const.defAjaxTimeout,
+                success: function (html) {
                     var deadlyAttackNum = 0;
                     var matches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
                     if (matches) deadlyAttackNum = parseInt(matches[1]);
                     if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
                     if (deadlyAttackNum > 0) attack(Config.deadlyAttackId, deadlyAttackNum);
                     else attack();
-                }, 'html');
+                },
+                error: function (jqXHR, textStatus) {
+                    if (textStatus === 'timeout') {
+                        window.setTimeout(checkDeadlyAttackNum, 2000);
+                    }
+                },
+                dataType: 'html'
+            });
+        };
+
+        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
+        if (Config.deadlyAttackId > 0) {
+            if (deadlyAttackNum === -1) {
+                checkDeadlyAttackNum();
             }
             else {
                 attack(Config.deadlyAttackId, deadlyAttackNum);
@@ -6814,6 +6866,7 @@ var Loot = {
                 type: 'POST',
                 url: 'kf_fw_ig_pkhit.php',
                 data: {uid: id, safeid: settings.safeId},
+                timeout: Const.defAjaxTimeout,
                 success: function (msg) {
                     if (/发起争夺/.test(msg)) {
                         successNum++;
@@ -7019,16 +7072,26 @@ var Loot = {
                         if (isRetakeSafeId) {
                             isRetakeSafeId = false;
                             console.log('重新获取SafeID Start');
-                            $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-                                var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
-                                var safeId = '';
-                                if (safeIdMatches) safeId = safeIdMatches[1];
-                                if (!safeId) return;
-                                settings.safeId = safeId;
-                                if (Tools.getCookie(Const.autoAttackReadyCookieName))
-                                    Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
-                                $(document).dequeue('BatchAttack');
-                            }, 'html');
+                            $.ajax({
+                                type: 'GET',
+                                url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+                                timeout: Const.defAjaxTimeout,
+                                success: function (html) {
+                                    var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
+                                    var safeId = '';
+                                    if (safeIdMatches) safeId = safeIdMatches[1];
+                                    if (!safeId) return;
+                                    settings.safeId = safeId;
+                                    if (Tools.getCookie(Const.autoAttackReadyCookieName))
+                                        Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
+                                },
+                                complete: function () {
+                                    window.setTimeout(function () {
+                                        $(document).dequeue('BatchAttack');
+                                    }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
+                                },
+                                dataType: 'html'
+                            });
                         }
                         else {
                             window.setTimeout(function () {
@@ -8097,6 +8160,7 @@ var Loot = {
                     $.ajax({
                         type: 'GET',
                         url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', new Date().getTime()),
+                        timeout: Const.defAjaxTimeout,
                         success: function (html) {
                             var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
                             if (msgMatches) {
@@ -8703,6 +8767,7 @@ var KFOL = {
                 var numberMatches = /box=(\d+)/i.exec(url);
                 smboxNumber = numberMatches ? numberMatches[1] : 0;
             }
+
             $.get(url + '&t=' + new Date().getTime(), function (html) {
                 var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm');
                 Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
@@ -8911,6 +8976,7 @@ var KFOL = {
             $.ajax({
                 type: 'GET',
                 url: 'index.php?t=' + new Date().getTime(),
+                timeout: Const.defAjaxTimeout,
                 success: function (html) {
                     if (!/"kf_fw_ig_index.php"/i.test(html)) {
                         interval = 10;
@@ -9119,7 +9185,7 @@ var KFOL = {
     addFastGotoFloorInput: function () {
         $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8" /> ' +
             '<span>楼</span></li></form>')
-            .prependTo('.readlou:eq(0) > div:first-child > ul')
+            .prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul'))
             .submit(function (e) {
                 e.preventDefault();
                 var floor = parseInt($.trim($(this).find('input').val()));
@@ -9323,7 +9389,7 @@ var KFOL = {
                 }
             }
             if (isRemoveTopFloor) {
-                var topFloor = $('.readtext:eq(0)').find('.readidmsbottom, .readidmleft').find('a').text();
+                var topFloor = $('.readtext:first').find('.readidmsbottom, .readidmleft').find('a').text();
                 for (var i in list) {
                     if (list[i] === topFloor)
                         list[i] = null;
@@ -9350,10 +9416,13 @@ var KFOL = {
      */
     addStatReplyersLink: function () {
         if (Tools.getCurrentThreadPage() !== 1) return;
-        $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readlou:eq(1) > div > .pages')
+        $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages')
             .find('a').click(function (e) {
             e.preventDefault();
             if ($('#pd_replyer_list').length > 0) return;
+
+            var tid = Tools.getUrlParam('tid');
+            if (!tid) return;
             var value = $.trim(window.prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
             if (value === '') return;
             if (!/^\d+(-\d+)?$/.test(value)) {
@@ -9382,47 +9451,57 @@ var KFOL = {
                 alert('需访问的总页数不可超过' + Const.statReplyersMaxPage);
                 return;
             }
-            var tid = Tools.getUrlParam('tid');
-            if (!tid) return;
+
             KFOL.showWaitMsg('<strong>正在统计回帖名单中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                 .replace('{0}', endPage - startPage + 1)
                 , true);
+            var isStop = false;
             $(document).clearQueue('StatReplyers');
             var replyerList = [];
             $.each(new Array(endPage), function (index) {
                 if (index + 1 < startPage) return;
                 $(document).queue('StatReplyers', function () {
                     var url = 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime());
-                    $.get(url, function (html) {
-                        var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        var isStop = false;
-                        for (var i in matches) {
-                            var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
-                            if (!floorMatches) continue;
-                            var floor = parseInt(floorMatches[1]);
-                            if (floor < startFloor) continue;
-                            if (floor > endFloor) {
-                                isStop = true;
-                                break;
+                    $.ajax({
+                        type: 'GET',
+                        url: url,
+                        timeout: Const.defAjaxTimeout,
+                        success: function (html) {
+                            var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
+                            for (var i in matches) {
+                                var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
+                                if (!floorMatches) continue;
+                                var floor = parseInt(floorMatches[1]);
+                                if (floor < startFloor) continue;
+                                if (floor > endFloor) {
+                                    isStop = true;
+                                    break;
+                                }
+                                replyerList[floor] = floorMatches[2];
                             }
-                            replyerList[floor] = floorMatches[2];
-                        }
+                        },
+                        error: function () {
+                            isStop = true;
+                            alert('因连接超时，统计回帖名单操作中止');
+                        },
+                        complete: function () {
+                            var $remainingNum = $('#pd_remaining_num');
+                            $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                            isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                            if (isStop) $(document).clearQueue('StatReplyers');
 
-                        var $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).clearQueue('StatReplyers');
-
-                        if (isStop || index === endPage - 1) {
-                            KFOL.removePopTips($('.pd_pop_tips'));
-                            KFOL.showStatReplyersDialog(replyerList);
-                        }
-                        else {
-                            window.setTimeout(function () {
-                                $(document).dequeue('StatReplyers');
-                            }, Const.defAjaxInterval);
-                        }
-                    }, 'html');
+                            if (isStop || index === endPage - 1) {
+                                KFOL.removePopTips($('.pd_pop_tips'));
+                                KFOL.showStatReplyersDialog(replyerList);
+                            }
+                            else {
+                                window.setTimeout(function () {
+                                    $(document).dequeue('StatReplyers');
+                                }, Const.defAjaxInterval);
+                            }
+                        },
+                        dataType: 'html'
+                    });
                 });
             });
             $(document).dequeue('StatReplyers');
@@ -9769,44 +9848,54 @@ var KFOL = {
         $(document).clearQueue('BuyThreads');
         $.each(threadList, function (index, thread) {
             $(document).queue('BuyThreads', function () {
-                $.get(thread.url + '&t=' + new Date().getTime(), function (html) {
-                    KFOL.showFormatLog('购买帖子', html);
-                    if (/操作完成/.test(html)) {
-                        successNum++;
-                        totalSell += thread.sell;
-                    }
-                    else failNum++;
-
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                    if (isStop) $(document).clearQueue('BuyThreads');
-
-                    if (isStop || index === threadList.length - 1) {
-                        KFOL.removePopTips($('.pd_pop_tips'));
-                        if (successNum > 0) {
-                            Log.push('购买帖子', '共有`{0}`个帖子购买成功'.replace('{0}', successNum), {pay: {'KFB': -totalSell}});
+                $.ajax({
+                    type: 'GET',
+                    url: thread.url + '&t=' + new Date().getTime(),
+                    timeout: Const.defAjaxTimeout,
+                    success: function (html) {
+                        KFOL.showFormatLog('购买帖子', html);
+                        if (/操作完成/.test(html)) {
+                            successNum++;
+                            totalSell += thread.sell;
                         }
-                        console.log('共有{0}个帖子购买成功，共有{1}个帖子购买失败，KFB-{2}'
-                            .replace('{0}', successNum)
-                            .replace('{1}', failNum)
-                            .replace('{2}', totalSell)
-                        );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个帖子购买成功{1}</strong><i>KFB<ins>-{2}</ins></i>'
+                        else failNum++;
+                    },
+                    error: function () {
+                        failNum++;
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).clearQueue('BuyThreads');
+
+                        if (isStop || index === threadList.length - 1) {
+                            KFOL.removePopTips($('.pd_pop_tips'));
+                            if (successNum > 0) {
+                                Log.push('购买帖子', '共有`{0}`个帖子购买成功'.replace('{0}', successNum), {pay: {'KFB': -totalSell}});
+                            }
+                            console.log('共有{0}个帖子购买成功，共有{1}个帖子购买失败，KFB-{2}'
                                 .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个帖子购买失败'.replace('{0}', failNum) : '')
+                                .replace('{1}', failNum)
                                 .replace('{2}', totalSell)
-                            , duration: -1
-                        });
-                        Func.run('KFOL.buyThreads_after_', threadList);
-                    }
-                    else {
-                        window.setTimeout(function () {
-                            $(document).dequeue('BuyThreads');
-                        }, Const.defAjaxInterval);
-                    }
-                }, 'html');
+                            );
+                            KFOL.showMsg({
+                                msg: '<strong>共有<em>{0}</em>个帖子购买成功{1}</strong><i>KFB<ins>-{2}</ins></i>'
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个帖子购买失败'.replace('{0}', failNum) : '')
+                                    .replace('{2}', totalSell)
+                                , duration: -1
+                            });
+                            Func.run('KFOL.buyThreads_after_', threadList);
+                        }
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('BuyThreads');
+                            }, Const.defAjaxInterval);
+                        }
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('BuyThreads');

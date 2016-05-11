@@ -255,18 +255,36 @@ var Loot = {
             });
         };
 
-        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
-        if (Config.deadlyAttackId > 0) {
-            if (deadlyAttackNum === -1) {
-                console.log('检查致命一击剩余攻击次数Start');
-                $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
+        /**
+         * 检查致命一击剩余攻击次数
+         */
+        var checkDeadlyAttackNum = function () {
+            console.log('检查致命一击剩余攻击次数Start');
+            $.ajax({
+                type: 'GET',
+                url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+                timeout: Const.defAjaxTimeout,
+                success: function (html) {
                     var deadlyAttackNum = 0;
                     var matches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
                     if (matches) deadlyAttackNum = parseInt(matches[1]);
                     if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
                     if (deadlyAttackNum > 0) attack(Config.deadlyAttackId, deadlyAttackNum);
                     else attack();
-                }, 'html');
+                },
+                error: function (jqXHR, textStatus) {
+                    if (textStatus === 'timeout') {
+                        window.setTimeout(checkDeadlyAttackNum, 2000);
+                    }
+                },
+                dataType: 'html'
+            });
+        };
+
+        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
+        if (Config.deadlyAttackId > 0) {
+            if (deadlyAttackNum === -1) {
+                checkDeadlyAttackNum();
             }
             else {
                 attack(Config.deadlyAttackId, deadlyAttackNum);
@@ -337,6 +355,7 @@ var Loot = {
                 type: 'POST',
                 url: 'kf_fw_ig_pkhit.php',
                 data: {uid: id, safeid: settings.safeId},
+                timeout: Const.defAjaxTimeout,
                 success: function (msg) {
                     if (/发起争夺/.test(msg)) {
                         successNum++;
@@ -542,16 +561,26 @@ var Loot = {
                         if (isRetakeSafeId) {
                             isRetakeSafeId = false;
                             console.log('重新获取SafeID Start');
-                            $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-                                var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
-                                var safeId = '';
-                                if (safeIdMatches) safeId = safeIdMatches[1];
-                                if (!safeId) return;
-                                settings.safeId = safeId;
-                                if (Tools.getCookie(Const.autoAttackReadyCookieName))
-                                    Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
-                                $(document).dequeue('BatchAttack');
-                            }, 'html');
+                            $.ajax({
+                                type: 'GET',
+                                url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+                                timeout: Const.defAjaxTimeout,
+                                success: function (html) {
+                                    var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
+                                    var safeId = '';
+                                    if (safeIdMatches) safeId = safeIdMatches[1];
+                                    if (!safeId) return;
+                                    settings.safeId = safeId;
+                                    if (Tools.getCookie(Const.autoAttackReadyCookieName))
+                                        Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
+                                },
+                                complete: function () {
+                                    window.setTimeout(function () {
+                                        $(document).dequeue('BatchAttack');
+                                    }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
+                                },
+                                dataType: 'html'
+                            });
                         }
                         else {
                             window.setTimeout(function () {
@@ -1620,6 +1649,7 @@ var Loot = {
                     $.ajax({
                         type: 'GET',
                         url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', new Date().getTime()),
+                        timeout: Const.defAjaxTimeout,
                         success: function (html) {
                             var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
                             if (msgMatches) {

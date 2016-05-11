@@ -619,6 +619,7 @@ var Log = {
         Dialog.show('pd_im_or_ex_log');
         $('#pd_log_setting').val(JSON.stringify(Log.log)).select();
         $('input[name="pd_log_sort_type_2"][value="{0}"]'.replace('{0}', Config.logSortType)).prop('checked', true).triggerHandler('click');
+        Func.run('Log.showImportOrExportLogDialog_after_');
     },
 
     /**

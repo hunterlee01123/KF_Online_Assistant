@@ -285,6 +285,7 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('使用道具', html);
                         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
@@ -462,6 +463,7 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_doit.php?renew={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('恢复道具', html);
                         var msg = '';
@@ -734,7 +736,7 @@ var Item = {
                 .replace('{1}', settings.itemName)
         );
 
-        var successNum = 0;
+        var successNum = 0, failNum = 0;
         var energyNum = Item.getGainEnergyNumByItemLevel(settings.itemLevel);
         $(document).clearQueue('ConvertItemsToEnergy');
         $.each(settings.itemIdList, function (index, itemId) {
@@ -742,11 +744,16 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_doit.php?tomp={0}&id={1}&t={2}'.replace('{0}', settings.safeId).replace('{1}', itemId).replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('将道具转换为能量', html);
                         if (/转换为了\s*\d+\s*点能量/i.test(html)) {
                             successNum++;
                         }
+                        else failNum++;
+                    },
+                    error: function () {
+                        failNum++;
                     },
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
@@ -766,18 +773,21 @@ var Item = {
                                     {gain: {'能量': successEnergyNum}, pay: {'已使用道具': -successNum}}
                                 );
                             }
-                            console.log('共有{0}个道具成功转换为能量，能量+{1}'
+                            console.log('共有{0}个道具成功转换为能量{1}，能量+{2}'
                                 .replace('{0}', successNum)
-                                .replace('{1}', successEnergyNum)
+                                .replace('{1}', failNum > 0 ? '，共有{0}个道具转换失败'.replace('{0}', failNum) : '')
+                                .replace('{2}', successEnergyNum)
                             );
-                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具成功转换为能量</strong><i>能量<em>+{1}</em></i>'
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个道具成功转换为能量{1}</strong><i>能量<em>+{2}</em></i>'
                                 .replace('{0}', successNum)
-                                .replace('{1}', successEnergyNum)
+                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具转换失败'.replace('{0}', failNum) : '')
+                                .replace('{2}', successEnergyNum)
                                 , -1);
                             $('.pd_result:last').append(
-                                '<li class="pd_stat">共有<em>{0}</em>个道具成功转换为能量，<i>能量<em>+{1}</em></i></li>'
+                                '<li class="pd_stat">共有<em>{0}</em>个道具成功转换为能量{1}，<i>能量<em>+{2}</em></i></li>'
                                     .replace('{0}', successNum)
-                                    .replace('{1}', successEnergyNum)
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具转换失败'.replace('{0}', failNum) : '')
+                                    .replace('{2}', successEnergyNum)
                             );
 
                             if (settings.type === 2) {
@@ -830,6 +840,7 @@ var Item = {
                 $.ajax({
                     type: 'GET',
                     url: 'kf_fw_ig_shop.php?sell=yes&id={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('出售道具', html);
                         if (/出售成功/.test(html)) {
@@ -1653,7 +1664,7 @@ var Item = {
             .replace('{1}', settings.itemName)
         );
 
-        var successNum = 0;
+        var successNum = 0, failNum = 0;
         var isStop = false;
         $(document).clearQueue('BatchBuyItems');
         $.each(new Array(settings.num), function (index) {
@@ -1664,6 +1675,7 @@ var Item = {
                         .replace('{0}', settings.itemTypeId)
                         .replace('{1}', settings.safeId)
                         .replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         KFOL.showFormatLog('购买道具', html);
                         var msg = '';
@@ -1680,6 +1692,9 @@ var Item = {
                             msg = '未能获得预期的回应';
                         }
                         $('.pd_result:last').append('<li><b>第{0}次：</b>{1}</li>'.replace('{0}', index + 1).replace('{1}', msg));
+                    },
+                    error: function () {
+                        failNum++;
                     },
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
@@ -1698,15 +1713,17 @@ var Item = {
                                     {gain: {'道具': successNum}}
                                 );
                             }
-                            console.log('共有{0}个【Lv.{1}：{2}】道具购买成功'
+                            console.log('共有{0}个【Lv.{1}：{2}】道具购买成功{3}'
                                 .replace('{0}', successNum)
                                 .replace('{1}', settings.itemLevel)
                                 .replace('{2}', settings.itemName)
+                                .replace('{3}', failNum > 0 ? '，共有{0}个道具购买失败'.replace('{0}', failNum) : '')
                             );
-                            KFOL.showMsg('<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功</strong>'
+                            KFOL.showMsg('<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功{3}</strong>'
                                 .replace('{0}', successNum)
                                 .replace('{1}', settings.itemLevel)
                                 .replace('{2}', settings.itemName)
+                                .replace('{3}', failNum > 0 ? '，共有<em>{0}</em>个道具购买失败'.replace('{0}', failNum) : '')
                                 , -1);
 
                             if (successNum > 0) {
@@ -1761,57 +1778,54 @@ var Item = {
             var itemId = $this.data('id');
             if (!itemId) return;
             $(document).queue('StatBuyItemsPrice', function () {
-                $.get('kf_fw_ig_my.php?pro={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()), function (html) {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var matches = /从商店购买，购买价(\d+)KFB。<br>/i.exec(html);
-                    if (matches) {
-                        successNum++;
-                        var price = parseInt(matches[1]);
-                        totalPrice += price;
-                        if (minPrice === 0) minPrice = price;
-                        else if (price < minPrice) minPrice = price;
-                        if (price > maxPrice) maxPrice = price;
-                        $this.after('（购买价：<b class="pd_highlight">{0}</b>KFB）'.replace('{0}', price));
-                    }
-                    else {
-                        failNum++;
-                        $this.after('<span class="pd_notice">（未能获得预期的回应）</span>');
-                    }
-                    if (index === totalNum - 1) {
-                        KFOL.removePopTips($('.pd_pop_tips'));
-                        if (successNum > 0) {
-                            Log.push('统计道具购买价格',
-                                '共有`{0}`个【`Lv.{1}：{2}`】道具统计成功{3}，总计价格：`{4}`，平均价格：`{5}`(`{6}%`)，最低价格：`{7}`(`{8}%`)，最高价格：`{9}`(`{10}%`)'
-                                    .replace('{0}', successNum)
-                                    .replace('{1}', itemLevel)
-                                    .replace('{2}', itemName)
-                                    .replace('{3}', failNum > 0 ? '（共有`{0}`个道具未能统计成功）'.replace('{0}', failNum) : '')
-                                    .replace('{4}', totalPrice.toLocaleString())
-                                    .replace('{5}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
-                                    .replace('{6}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
-                                    .replace('{7}', minPrice.toLocaleString())
-                                    .replace('{8}', Math.round(minPrice / marketPrice * 100))
-                                    .replace('{9}', maxPrice.toLocaleString())
-                                    .replace('{10}', Math.round(maxPrice / marketPrice * 100))
-                                , {pay: {'KFB': -totalPrice}}
-                            );
+                $.ajax({
+                    type: 'GET',
+                    url: 'kf_fw_ig_my.php?pro={0}&t={1}'.replace('{0}', itemId).replace('{1}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
+                    success: function (html) {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var matches = /从商店购买，购买价(\d+)KFB。<br>/i.exec(html);
+                        if (matches) {
+                            successNum++;
+                            var price = parseInt(matches[1]);
+                            totalPrice += price;
+                            if (minPrice === 0) minPrice = price;
+                            else if (price < minPrice) minPrice = price;
+                            if (price > maxPrice) maxPrice = price;
+                            $this.after('（购买价：<b class="pd_highlight">{0}</b>KFB）'.replace('{0}', price));
                         }
-                        console.log('统计道具购买价格（KFB）（共有{0}个道具未能统计成功），统计成功数量：{1}，总计价格：{2}，平均价格：{3} ({4}%)，最低价格：{5} ({6}%)，最高价格：{7} ({8}%)'
-                            .replace('{0}', failNum)
-                            .replace('{1}', successNum)
-                            .replace('{2}', totalPrice.toLocaleString())
-                            .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
-                            .replace('{4}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
-                            .replace('{5}', minPrice.toLocaleString())
-                            .replace('{6}', Math.round(minPrice / marketPrice * 100))
-                            .replace('{7}', maxPrice.toLocaleString())
-                            .replace('{8}', Math.round(maxPrice / marketPrice * 100))
-                        );
-                        $result.append(
-                            ('<li class="pd_stat"><b>统计结果{0}：</b><br /><i>统计成功数量：<em>{1}</em></i> <i>总计价格：<em>{2}</em></i> ' +
-                            '<i>平均价格：<em>{3} ({4}%)</em></i> <i>最低价格：<em>{5} ({6}%)</em></i> <i>最高价格：<em>{7} ({8}%)</em></i></li>')
-                                .replace('{0}', failNum > 0 ? '<span class="pd_notice">（共有{0}个道具未能统计成功）</span>'.replace('{0}', failNum) : '')
+                        else {
+                            failNum++;
+                            $this.after('<span class="pd_notice">（未能获得预期的回应）</span>');
+                        }
+                    },
+                    error: function () {
+                        failNum++;
+                        $this.after('<span class="pd_notice">（连接超时）</span>');
+                    },
+                    complete: function () {
+                        if (index === totalNum - 1) {
+                            KFOL.removePopTips($('.pd_pop_tips'));
+                            if (successNum > 0) {
+                                Log.push('统计道具购买价格',
+                                    '共有`{0}`个【`Lv.{1}：{2}`】道具统计成功{3}，总计价格：`{4}`，平均价格：`{5}`(`{6}%`)，最低价格：`{7}`(`{8}%`)，最高价格：`{9}`(`{10}%`)'
+                                        .replace('{0}', successNum)
+                                        .replace('{1}', itemLevel)
+                                        .replace('{2}', itemName)
+                                        .replace('{3}', failNum > 0 ? '（共有`{0}`个道具未能统计成功）'.replace('{0}', failNum) : '')
+                                        .replace('{4}', totalPrice.toLocaleString())
+                                        .replace('{5}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
+                                        .replace('{6}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
+                                        .replace('{7}', minPrice.toLocaleString())
+                                        .replace('{8}', Math.round(minPrice / marketPrice * 100))
+                                        .replace('{9}', maxPrice.toLocaleString())
+                                        .replace('{10}', Math.round(maxPrice / marketPrice * 100))
+                                    , {pay: {'KFB': -totalPrice}}
+                                );
+                            }
+                            console.log('统计道具购买价格（KFB）（共有{0}个道具未能统计成功），统计成功数量：{1}，总计价格：{2}，平均价格：{3} ({4}%)，最低价格：{5} ({6}%)，最高价格：{7} ({8}%)'
+                                .replace('{0}', failNum)
                                 .replace('{1}', successNum)
                                 .replace('{2}', totalPrice.toLocaleString())
                                 .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
@@ -1820,14 +1834,29 @@ var Item = {
                                 .replace('{6}', Math.round(minPrice / marketPrice * 100))
                                 .replace('{7}', maxPrice.toLocaleString())
                                 .replace('{8}', Math.round(maxPrice / marketPrice * 100))
-                        );
-                    }
-                    else {
-                        window.setTimeout(function () {
-                            $(document).dequeue('StatBuyItemsPrice');
-                        }, Const.defAjaxInterval);
-                    }
-                }, 'html');
+                            );
+                            $result.append(
+                                ('<li class="pd_stat"><b>统计结果{0}：</b><br /><i>统计成功数量：<em>{1}</em></i> <i>总计价格：<em>{2}</em></i> ' +
+                                '<i>平均价格：<em>{3} ({4}%)</em></i> <i>最低价格：<em>{5} ({6}%)</em></i> <i>最高价格：<em>{7} ({8}%)</em></i></li>')
+                                    .replace('{0}', failNum > 0 ? '<span class="pd_notice">（共有{0}个道具未能统计成功）</span>'.replace('{0}', failNum) : '')
+                                    .replace('{1}', successNum)
+                                    .replace('{2}', totalPrice.toLocaleString())
+                                    .replace('{3}', successNum > 0 ? Tools.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0)
+                                    .replace('{4}', successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0)
+                                    .replace('{5}', minPrice.toLocaleString())
+                                    .replace('{6}', Math.round(minPrice / marketPrice * 100))
+                                    .replace('{7}', maxPrice.toLocaleString())
+                                    .replace('{8}', Math.round(maxPrice / marketPrice * 100))
+                            );
+                        }
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('StatBuyItemsPrice');
+                            }, Const.defAjaxInterval);
+                        }
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('StatBuyItemsPrice');

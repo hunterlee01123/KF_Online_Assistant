@@ -77,8 +77,9 @@ var Bank = {
         $.each(users, function (index, key) {
             $(document).queue('Bank', function () {
                 $.ajax({
-                    url: 'hack.php?H_name=bank',
                     type: 'POST',
+                    url: 'hack.php?H_name=bank',
+                    timeout: Const.defAjaxTimeout,
                     data: '&action=virement&pwuser={0}&to_money={1}&memo={2}'
                         .replace('{0}', Tools.getGBKEncodeString(key[0]))
                         .replace('{1}', key[1])

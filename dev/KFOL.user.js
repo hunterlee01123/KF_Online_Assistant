@@ -21,14 +21,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.3.2
+// @version     5.3.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.2';
+var version = '5.3.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -521,6 +521,7 @@ var KFOL = {
                 var numberMatches = /box=(\d+)/i.exec(url);
                 smboxNumber = numberMatches ? numberMatches[1] : 0;
             }
+
             $.get(url + '&t=' + new Date().getTime(), function (html) {
                 var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm');
                 Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
@@ -729,6 +730,7 @@ var KFOL = {
             $.ajax({
                 type: 'GET',
                 url: 'index.php?t=' + new Date().getTime(),
+                timeout: Const.defAjaxTimeout,
                 success: function (html) {
                     if (!/"kf_fw_ig_index.php"/i.test(html)) {
                         interval = 10;
@@ -937,7 +939,7 @@ var KFOL = {
     addFastGotoFloorInput: function () {
         $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8" /> ' +
             '<span>楼</span></li></form>')
-            .prependTo('.readlou:eq(0) > div:first-child > ul')
+            .prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul'))
             .submit(function (e) {
                 e.preventDefault();
                 var floor = parseInt($.trim($(this).find('input').val()));
@@ -1141,7 +1143,7 @@ var KFOL = {
                 }
             }
             if (isRemoveTopFloor) {
-                var topFloor = $('.readtext:eq(0)').find('.readidmsbottom, .readidmleft').find('a').text();
+                var topFloor = $('.readtext:first').find('.readidmsbottom, .readidmleft').find('a').text();
                 for (var i in list) {
                     if (list[i] === topFloor)
                         list[i] = null;
@@ -1168,10 +1170,13 @@ var KFOL = {
      */
     addStatReplyersLink: function () {
         if (Tools.getCurrentThreadPage() !== 1) return;
-        $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readlou:eq(1) > div > .pages')
+        $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages')
             .find('a').click(function (e) {
             e.preventDefault();
             if ($('#pd_replyer_list').length > 0) return;
+
+            var tid = Tools.getUrlParam('tid');
+            if (!tid) return;
             var value = $.trim(window.prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
             if (value === '') return;
             if (!/^\d+(-\d+)?$/.test(value)) {
@@ -1200,47 +1205,57 @@ var KFOL = {
                 alert('需访问的总页数不可超过' + Const.statReplyersMaxPage);
                 return;
             }
-            var tid = Tools.getUrlParam('tid');
-            if (!tid) return;
+
             KFOL.showWaitMsg('<strong>正在统计回帖名单中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                 .replace('{0}', endPage - startPage + 1)
                 , true);
+            var isStop = false;
             $(document).clearQueue('StatReplyers');
             var replyerList = [];
             $.each(new Array(endPage), function (index) {
                 if (index + 1 < startPage) return;
                 $(document).queue('StatReplyers', function () {
                     var url = 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime());
-                    $.get(url, function (html) {
-                        var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        var isStop = false;
-                        for (var i in matches) {
-                            var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
-                            if (!floorMatches) continue;
-                            var floor = parseInt(floorMatches[1]);
-                            if (floor < startFloor) continue;
-                            if (floor > endFloor) {
-                                isStop = true;
-                                break;
+                    $.ajax({
+                        type: 'GET',
+                        url: url,
+                        timeout: Const.defAjaxTimeout,
+                        success: function (html) {
+                            var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
+                            for (var i in matches) {
+                                var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
+                                if (!floorMatches) continue;
+                                var floor = parseInt(floorMatches[1]);
+                                if (floor < startFloor) continue;
+                                if (floor > endFloor) {
+                                    isStop = true;
+                                    break;
+                                }
+                                replyerList[floor] = floorMatches[2];
                             }
-                            replyerList[floor] = floorMatches[2];
-                        }
+                        },
+                        error: function () {
+                            isStop = true;
+                            alert('因连接超时，统计回帖名单操作中止');
+                        },
+                        complete: function () {
+                            var $remainingNum = $('#pd_remaining_num');
+                            $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                            isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                            if (isStop) $(document).clearQueue('StatReplyers');
 
-                        var $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).clearQueue('StatReplyers');
-
-                        if (isStop || index === endPage - 1) {
-                            KFOL.removePopTips($('.pd_pop_tips'));
-                            KFOL.showStatReplyersDialog(replyerList);
-                        }
-                        else {
-                            window.setTimeout(function () {
-                                $(document).dequeue('StatReplyers');
-                            }, Const.defAjaxInterval);
-                        }
-                    }, 'html');
+                            if (isStop || index === endPage - 1) {
+                                KFOL.removePopTips($('.pd_pop_tips'));
+                                KFOL.showStatReplyersDialog(replyerList);
+                            }
+                            else {
+                                window.setTimeout(function () {
+                                    $(document).dequeue('StatReplyers');
+                                }, Const.defAjaxInterval);
+                            }
+                        },
+                        dataType: 'html'
+                    });
                 });
             });
             $(document).dequeue('StatReplyers');
@@ -1587,44 +1602,54 @@ var KFOL = {
         $(document).clearQueue('BuyThreads');
         $.each(threadList, function (index, thread) {
             $(document).queue('BuyThreads', function () {
-                $.get(thread.url + '&t=' + new Date().getTime(), function (html) {
-                    KFOL.showFormatLog('购买帖子', html);
-                    if (/操作完成/.test(html)) {
-                        successNum++;
-                        totalSell += thread.sell;
-                    }
-                    else failNum++;
-
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                    if (isStop) $(document).clearQueue('BuyThreads');
-
-                    if (isStop || index === threadList.length - 1) {
-                        KFOL.removePopTips($('.pd_pop_tips'));
-                        if (successNum > 0) {
-                            Log.push('购买帖子', '共有`{0}`个帖子购买成功'.replace('{0}', successNum), {pay: {'KFB': -totalSell}});
+                $.ajax({
+                    type: 'GET',
+                    url: thread.url + '&t=' + new Date().getTime(),
+                    timeout: Const.defAjaxTimeout,
+                    success: function (html) {
+                        KFOL.showFormatLog('购买帖子', html);
+                        if (/操作完成/.test(html)) {
+                            successNum++;
+                            totalSell += thread.sell;
                         }
-                        console.log('共有{0}个帖子购买成功，共有{1}个帖子购买失败，KFB-{2}'
-                            .replace('{0}', successNum)
-                            .replace('{1}', failNum)
-                            .replace('{2}', totalSell)
-                        );
-                        KFOL.showMsg({
-                            msg: '<strong>共有<em>{0}</em>个帖子购买成功{1}</strong><i>KFB<ins>-{2}</ins></i>'
+                        else failNum++;
+                    },
+                    error: function () {
+                        failNum++;
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).clearQueue('BuyThreads');
+
+                        if (isStop || index === threadList.length - 1) {
+                            KFOL.removePopTips($('.pd_pop_tips'));
+                            if (successNum > 0) {
+                                Log.push('购买帖子', '共有`{0}`个帖子购买成功'.replace('{0}', successNum), {pay: {'KFB': -totalSell}});
+                            }
+                            console.log('共有{0}个帖子购买成功，共有{1}个帖子购买失败，KFB-{2}'
                                 .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个帖子购买失败'.replace('{0}', failNum) : '')
+                                .replace('{1}', failNum)
                                 .replace('{2}', totalSell)
-                            , duration: -1
-                        });
-                        Func.run('KFOL.buyThreads_after_', threadList);
-                    }
-                    else {
-                        window.setTimeout(function () {
-                            $(document).dequeue('BuyThreads');
-                        }, Const.defAjaxInterval);
-                    }
-                }, 'html');
+                            );
+                            KFOL.showMsg({
+                                msg: '<strong>共有<em>{0}</em>个帖子购买成功{1}</strong><i>KFB<ins>-{2}</ins></i>'
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个帖子购买失败'.replace('{0}', failNum) : '')
+                                    .replace('{2}', totalSell)
+                                , duration: -1
+                            });
+                            Func.run('KFOL.buyThreads_after_', threadList);
+                        }
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('BuyThreads');
+                            }, Const.defAjaxInterval);
+                        }
+                    },
+                    dataType: 'html'
+                });
             });
         });
         $(document).dequeue('BuyThreads');
