@@ -64,7 +64,7 @@
 
 /*==========================================*/
 
-// 统计各楼层的彩票数字（ft1073833专用版） V1.3
+// 统计各楼层的彩票数字（ft1073833专用版） V1.4
 (function () {
     var numberRegex = /【\s*(\d+)\s*】/; // 匹配彩票数字的正则表达式
     var levelRangeList = [0, 5, 50]; // 各等奖中与中奖数字相差的范围
@@ -73,7 +73,7 @@
     if (location.pathname !== '/read.php' || Tools.getCurrentThreadPage() !== 1) return;
     if (threadTitle && $('form[name="delatc"] > div:first > table > tbody > tr > td > span:contains("{0}")'.replace('{0}', threadTitle)).length === 0) return;
     $('<li><a href="#" title="统计各楼层的彩票数字">[彩票统计]</a></li>')
-        .insertBefore('.readlou:eq(1) > div > .pages > li:first-child')
+        .insertBefore('.readtext:first + .readlou > div > .pages > li:first-child')
         .click(function (e) {
             e.preventDefault();
             var tid = Tools.getUrlParam('tid');
@@ -91,120 +91,133 @@
             KFOL.showWaitMsg('<strong>正在统计数字中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                 .replace('{0}', maxPage)
                 , true);
+            var isStop = false;
             $(document).clearQueue('StatLottery');
             var floorList = [];
             $.each(new Array(maxPage), function (index) {
                 $(document).queue('StatLottery', function () {
                     var url = 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime());
-                    $.get(url, function (html) {
-                        var matches = html.match(/<a name=\d+><\/a>(.|\n|\r\n)+?<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<\/td><\/tr><\/table>\r\n<\/div>/gi);
-                        for (var i in matches) {
-                            var floorMatches = /<a name=(\d+)><\/a>(?:.|\n|\r\n)+?<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>((?:.|\n|\r\n)+)$/i.exec(matches[i]);
-                            if (!floorMatches) continue;
-                            var pid = parseInt(floorMatches[1]);
-                            var floor = parseInt(floorMatches[2]);
-                            var name = floorMatches[3];
-                            var content = floorMatches[4].replace(/<fieldset><legend>Quote:(.|\n|\r\n)+?<\/fieldset>/gi, '');
-                            var numberMatches = numberRegex.exec(content);
-                            floorList[floor] = {
-                                pid: pid,
-                                name: name,
-                                number: numberMatches ? parseInt(numberMatches[1]) : -1
-                            };
-                        }
-                        var $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).clearQueue('StatLottery');
-
-                        if (isStop || index === maxPage - 1) {
-                            KFOL.removePopTips($('.pd_pop_tips'));
-                            //console.log(floorList);
-                            var numberList = {};
-                            for (var i = 1; i < floorList.length; i++) {
-                                var obj = floorList[i];
-                                if (obj && obj.number >= 0) {
-                                    if (typeof numberList[obj.name] === 'undefined') {
-                                        numberList[obj.name] = {floor: i, pid: obj.pid, number: obj.number};
-                                    }
-                                    else {
-                                        floorList[i].number = -2;
-                                    }
-                                }
+                    $.ajax({
+                        type: 'GET',
+                        url: url,
+                        timeout: Const.defAjaxTimeout,
+                        success: function (html) {
+                            var matches = html.match(/<a name=\d+><\/a>(.|\n|\r\n)+?<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<\/td><\/tr><\/table>\r\n<\/div>/gi);
+                            for (var i in matches) {
+                                var floorMatches = /<a name=(\d+)><\/a>(?:.|\n|\r\n)+?<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>((?:.|\n|\r\n)+)$/i.exec(matches[i]);
+                                if (!floorMatches) continue;
+                                var pid = parseInt(floorMatches[1]);
+                                var floor = parseInt(floorMatches[2]);
+                                var name = floorMatches[3];
+                                var content = floorMatches[4].replace(/<fieldset><legend>Quote:(.|\n|\r\n)+?<\/fieldset>/gi, '');
+                                var numberMatches = numberRegex.exec(content);
+                                floorList[floor] = {
+                                    pid: pid,
+                                    name: name,
+                                    number: numberMatches ? parseInt(numberMatches[1]) : -1
+                                };
                             }
-                            //console.log(numberList);
+                        },
+                        error: function () {
+                            isStop = true;
+                            alert('因连接超时，统计彩票数字操作中止');
+                        },
+                        complete: function () {
+                            var $remainingNum = $('#pd_remaining_num');
+                            $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                            isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                            if (isStop) $(document).clearQueue('StatLottery');
 
-                            var dialogHtml =
-                                '<div class="pd_cfg_main">' +
-                                '  <div style="width:400px;max-height:550px;overflow:auto;background-color:#FFF;margin:5px 0;line-height:20px;" id="pd_stat_lottery_list"></div>' +
-                                '</div>';
-                            var $dialog = Dialog.create('pd_stat_lottery', '彩票统计', dialogHtml);
-
-                            var floorContent = '';
-                            var normalNum = 0, errorNum = 0, repeatNum = 0;
-                            for (var i = 1; i < floorList.length; i++) {
-                                var obj = floorList[i];
-                                if (obj) {
-                                    floorContent += '<li>【<a target="_blank" href="read.php?tid={0}&spid={1}">{2}楼</a>】{3}：{4}</li>'
-                                        .replace('{0}', tid)
-                                        .replace('{1}', obj.pid)
-                                        .replace('{2}', i)
-                                        .replace('{3}', obj.name)
-                                        .replace('{4}', obj.number > 0 ?
-                                            '<span class="pd_highlight">{0}</span>'.replace('{0}', obj.number) :
-                                            '<span class="pd_notice">{0}</span>'.replace('{0}', obj.number === -2 ? '重复回贴' : '格式不正确'));
-                                    if (obj.number === -1) errorNum++;
-                                    else if (obj.number === -2) repeatNum++;
-                                    else if (obj.number >= 0) normalNum++;
-                                }
-                                else {
-                                    floorContent += '<li>【{0}楼】<span class="pd_notice">未找到该楼层</span></li>'.replace('{0}', i);
-                                }
-                            }
-                            floorContent = ('<ul style="margin-top:10px"><li><strong>楼层统计情况：</strong></li><li>（正常统计：<b class="pd_highlight">{0}</b>个；' +
-                            '格式不正确：<b class="pd_highlight">{1}</b>个；重复回贴：<b class="pd_highlight">{2}</b>个）</li>{3}</ul>')
-                                .replace('{0}', normalNum)
-                                .replace('{1}', errorNum)
-                                .replace('{2}', repeatNum)
-                                .replace('{3}', floorContent ? floorContent : '<li class="pd_notice">无</li>');
-
-                            var levelContentList = new Array(levelRangeList.length);
-                            for (var name in numberList) {
-                                var obj = numberList[name];
-                                if (obj.number >= 0) {
-                                    for (var i = 0; i < levelContentList.length; i++) {
-                                        if (obj.number >= targetNumber - levelRangeList[i] && obj.number <= targetNumber + levelRangeList[i]) {
-                                            if (typeof levelContentList[i] === 'undefined') levelContentList[i] = '';
-                                            levelContentList[i] +=
-                                                '<li>【<a target="_blank" href="read.php?tid={0}&spid={1}">{2}楼</a>】{3}：<span class="pd_highlight">{4}</span></li>'
-                                                    .replace('{0}', tid)
-                                                    .replace('{1}', obj.pid)
-                                                    .replace('{2}', obj.floor)
-                                                    .replace('{3}', name)
-                                                    .replace('{4}', obj.number);
-                                            break;
+                            if (isStop || index === maxPage - 1) {
+                                KFOL.removePopTips($('.pd_pop_tips'));
+                                //console.log(floorList);
+                                var numberList = {};
+                                for (var i = 1; i < floorList.length; i++) {
+                                    var obj = floorList[i];
+                                    if (obj && obj.number >= 0) {
+                                        if (typeof numberList[obj.name] === 'undefined') {
+                                            numberList[obj.name] = {floor: i, pid: obj.pid, number: obj.number};
+                                        }
+                                        else {
+                                            floorList[i].number = -2;
                                         }
                                     }
                                 }
-                            }
-                            var resultContent = '<div><strong>中奖情况 (中奖数字【<span class="pd_highlight">{0}</span>】)：</strong></div>'
-                                .replace('{0}', targetNumber);
-                            for (var i = 0; i < levelContentList.length; i++) {
-                                resultContent += '<ul><li><b class="pd_highlight">{0}等奖(±{1})：</b></li>'.replace('{0}', i + 1).replace('{1}', levelRangeList[i]);
-                                if (levelContentList[i]) resultContent += levelContentList[i];
-                                else resultContent += '<li class="pd_notice">空缺</li>';
-                                resultContent += '</ul>';
-                            }
+                                //console.log(numberList);
 
-                            $dialog.find('#pd_stat_lottery_list').html(resultContent + floorContent);
-                            Dialog.show('pd_stat_lottery');
-                        }
-                        else {
-                            window.setTimeout(function () {
-                                $(document).dequeue('StatLottery');
-                            }, Const.defAjaxInterval);
-                        }
-                    }, 'html');
+                                var dialogHtml =
+                                    '<div class="pd_cfg_main">' +
+                                    '  <div style="width:400px;max-height:550px;overflow:auto;background-color:#FFF;margin:5px 0;line-height:20px;" id="pd_stat_lottery_list"></div>' +
+                                    '</div>';
+                                var $dialog = Dialog.create('pd_stat_lottery', '彩票统计', dialogHtml);
+
+                                var floorContent = '';
+                                var normalNum = 0, errorNum = 0, repeatNum = 0;
+                                for (var i = 1; i < floorList.length; i++) {
+                                    var obj = floorList[i];
+                                    if (obj) {
+                                        floorContent += '<li>【<a target="_blank" href="read.php?tid={0}&spid={1}">{2}楼</a>】{3}：{4}</li>'
+                                            .replace('{0}', tid)
+                                            .replace('{1}', obj.pid)
+                                            .replace('{2}', i)
+                                            .replace('{3}', obj.name)
+                                            .replace('{4}', obj.number > 0 ?
+                                                '<span class="pd_highlight">{0}</span>'.replace('{0}', obj.number) :
+                                                '<span class="pd_notice">{0}</span>'.replace('{0}', obj.number === -2 ? '重复回贴' : '格式不正确'));
+                                        if (obj.number === -1) errorNum++;
+                                        else if (obj.number === -2) repeatNum++;
+                                        else if (obj.number >= 0) normalNum++;
+                                    }
+                                    else {
+                                        floorContent += '<li>【{0}楼】<span class="pd_notice">未找到该楼层</span></li>'.replace('{0}', i);
+                                    }
+                                }
+                                floorContent = ('<ul style="margin-top:10px"><li><strong>楼层统计情况：</strong></li><li>（正常统计：<b class="pd_highlight">{0}</b>个；' +
+                                '格式不正确：<b class="pd_highlight">{1}</b>个；重复回贴：<b class="pd_highlight">{2}</b>个）</li>{3}</ul>')
+                                    .replace('{0}', normalNum)
+                                    .replace('{1}', errorNum)
+                                    .replace('{2}', repeatNum)
+                                    .replace('{3}', floorContent ? floorContent : '<li class="pd_notice">无</li>');
+
+                                var levelContentList = new Array(levelRangeList.length);
+                                for (var name in numberList) {
+                                    var obj = numberList[name];
+                                    if (obj.number >= 0) {
+                                        for (var i = 0; i < levelContentList.length; i++) {
+                                            if (obj.number >= targetNumber - levelRangeList[i] && obj.number <= targetNumber + levelRangeList[i]) {
+                                                if (typeof levelContentList[i] === 'undefined') levelContentList[i] = '';
+                                                levelContentList[i] +=
+                                                    '<li>【<a target="_blank" href="read.php?tid={0}&spid={1}">{2}楼</a>】{3}：<span class="pd_highlight">{4}</span></li>'
+                                                        .replace('{0}', tid)
+                                                        .replace('{1}', obj.pid)
+                                                        .replace('{2}', obj.floor)
+                                                        .replace('{3}', name)
+                                                        .replace('{4}', obj.number);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                var resultContent = '<div><strong>中奖情况 (中奖数字【<span class="pd_highlight">{0}</span>】)：</strong></div>'
+                                    .replace('{0}', targetNumber);
+                                for (var i = 0; i < levelContentList.length; i++) {
+                                    resultContent += '<ul><li><b class="pd_highlight">{0}等奖(±{1})：</b></li>'.replace('{0}', i + 1).replace('{1}', levelRangeList[i]);
+                                    if (levelContentList[i]) resultContent += levelContentList[i];
+                                    else resultContent += '<li class="pd_notice">空缺</li>';
+                                    resultContent += '</ul>';
+                                }
+
+                                $dialog.find('#pd_stat_lottery_list').html(resultContent + floorContent);
+                                Dialog.show('pd_stat_lottery');
+                            }
+                            else {
+                                window.setTimeout(function () {
+                                    $(document).dequeue('StatLottery');
+                                }, Const.defAjaxInterval);
+                            }
+                        },
+                        dataType: 'html'
+                    });
                 });
             });
             $(document).dequeue('StatLottery');
@@ -519,7 +532,7 @@
 
 /*==========================================*/
 
-// 按pid顺序统计楼层名单（conans1009专用版） V1.4
+// 按pid顺序统计楼层名单（conans1009专用版） V1.5
 (function () {
     if (location.pathname !== '/read.php' || Tools.getCurrentThreadPage() !== 1) return;
 
@@ -554,7 +567,7 @@
         else return 0;
     };
 
-    $('<li><a href="#" title="按pid顺序统计楼层名单">[统计楼层]</a></li>').prependTo('.readlou:eq(1) > div > .pages')
+    $('<li><a href="#" title="按pid顺序统计楼层名单">[统计楼层]</a></li>').prependTo('.readtext:first + .readlou > div > .pages')
         .find('a').click(function (e) {
         e.preventDefault();
         if ($('#pd_stat_floor_list').length > 0) return;
@@ -587,6 +600,7 @@
                 $.ajax({
                     type: 'GET',
                     url: 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
                     success: function (html) {
                         var matches = html.match(/<a name=\d+><\/a>(.|\n|\r\n)+?(?=\r\n<\/div><div class="c"><\/div><\/div>\r\n)/gi);
                         if (index + 1 > 1 && index + 1 < maxPage && matches.length % 10 !== 0) {
@@ -1269,6 +1283,88 @@ var kfOnlyYou = function () {
     $('.threadtit1 > a[href*="fpage="]').each(function () {
         var $this = $(this);
         $this.attr('href', $this.attr('href').replace(/&fpage=\d+/i, ''));
+    });
+}());
+
+/*==========================================*/
+
+// 统计可用道具样品 V1.0
+var statSampleItem = function (totalNum, startId) {
+    if (!startId) startId = 1;
+    KFOL.showWaitMsg('<strong>正在统计道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+        .replace('{0}', totalNum)
+        , true);
+    var sampleItemList = {};
+    $(document).clearQueue('StatSampleItem');
+    $.each(new Array(totalNum), function (index) {
+        $(document).queue('StatSampleItem', function () {
+            var itemId = index + startId;
+            $.ajax({
+                type: 'GET',
+                url: 'kf_fw_ig_my.php?pro=' + itemId,
+                timeout: 10000,
+                success: function (html) {
+                    if (!/现持有者：苍雪道具商店</.test(html)) return;
+                    var itemLevelMatches = /道具等级：(\d+)级道具</.exec(html);
+                    if (!itemLevelMatches) return;
+                    var itemLevel = parseInt(itemLevelMatches[1]);
+                    var itemNameMatches = /道具名称：(.+?)</.exec(html);
+                    if (!itemNameMatches) return;
+                    var key = 'Lv.' + itemLevel + '：' + itemNameMatches[1];
+                    if (typeof sampleItemList[key] === 'undefined') sampleItemList[key] = [];
+                    sampleItemList[key].push(itemId);
+                    console.log('【{0}】：{1}'.replace('{0}', key).replace('{1}', Tools.getHostNameUrl() + 'kf_fw_ig_my.php?pro=' + itemId));
+                },
+                complete: function () {
+                    var $remainingNum = $('#pd_remaining_num');
+                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                    if (isStop) $(document).clearQueue('StatSampleItem');
+
+                    if (isStop || index === totalNum - 1) {
+                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
+                        var result = '<span class="pd_notice">最后统计的道具ID：{0}</span><br />'.replace('{0}', itemId);
+                        $.each(sampleItemList, function (key, list) {
+                            result += '<b>{0}</b><br />'.replace('{0}', key);
+                            for (var i in list) {
+                                result += '<a target="_blank" href="kf_fw_ig_my.php?pro={0}">{0}</a><br />'.replace(/\{0\}/g, list[i]);
+                            }
+                        });
+
+                        var dialogHtml =
+                            '<div class="pd_cfg_main">' +
+                            '  <div style="width:300px;background-color:#FFF;margin:5px 0;line-height:20px;">{0}</div>'.replace('{0}', result) +
+                            '</div>';
+                        Dialog.create('pd_stat_sample_item', '统计可用道具样品', dialogHtml);
+                        Dialog.show('pd_stat_sample_item');
+                    }
+                    else {
+                        window.setTimeout(function () {
+                            $(document).dequeue('StatSampleItem');
+                        }, Const.defAjaxInterval);
+                    }
+                },
+                dataType: 'html'
+            });
+        });
+    });
+    $(document).dequeue('StatSampleItem');
+};
+
+(function () {
+    if (!/\/kf_fw_ig_my\.php$/i.test(location.href)) return;
+    $('<span> | </span><a title="统计可用的道具样品" href="#">统计道具样品</a>').insertAfter('a[href^="kf_fw_card_pk.php?safeid="]')
+        .filter('a').click(function (e) {
+        e.preventDefault();
+        var value = window.prompt('请输入准备统计的道具总数以及统计的起始ID：', '100|1');
+        if (!value) return;
+        if (!/^\d+(\|\d+)?$/.test(value)) return;
+        var arr = value.split('|');
+        var totalNum = parseInt(arr[0]);
+        if (totalNum <= 0) totalNum = 1;
+        var startId = 1;
+        if (typeof arr[1] !== 'undefined') startId = parseInt(arr[1]);
+        statSampleItem(totalNum, startId);
     });
 }());
 
