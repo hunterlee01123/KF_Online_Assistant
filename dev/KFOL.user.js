@@ -2780,10 +2780,10 @@ var KFOL = {
             if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
                 $this.html(
                     html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g,
-                        '<audio src="$1" controls="controls" preload="none" style="margin:3px 0"><a href="$1" target="_blank">$1</a></audio>'
+                        '<audio src="$1" controls="controls" preload="none" style="margin:3px 0">[你的浏览器不支持audio标签]</audio>'
                         )
                         .replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g,
-                            '<video src="$1" controls="controls" preload="none" style="max-width:{0}px;margin:3px 0"><a href="$1" target="_blank">$1</a></video>'
+                            '<video src="$1" controls="controls" preload="none" style="max-width:{0}px;margin:3px 0">[你的浏览器不支持video标签]</video>'
                                 .replace('{0}', Config.adjustThreadContentWidthEnabled ? 627 : 820)
                         )
                 );
@@ -2842,7 +2842,7 @@ var KFOL = {
                     text = window.prompt('请输入神秘等级：', 5);
                     break;
                 case 'audio':
-                    text = Tools.convertToAudioExternalLinkUrl(window.prompt('请输入HTML5音频URL：\n（可直接输入网易云音乐单曲URL，将自动转换为外链URL）', 'http://'));
+                    text = Tools.convertToAudioExternalLinkUrl(window.prompt('请输入HTML5音频URL：\n（可直接输入网易云音乐或虾米的单曲URL，将自动转换为外链URL）', 'http://'));
                     break;
                 case 'video':
                     text = window.prompt('请输入HTML5视频URL：', 'http://');
