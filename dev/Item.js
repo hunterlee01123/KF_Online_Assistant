@@ -1882,7 +1882,7 @@ var Item = {
             var $this = $(this);
             var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
             if (!itemLevel) return;
-            var itemName = $this.closest('tr').find('td:nth-child(2)').text();
+            var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
             if (!itemName) return;
             if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', itemLevel).replace('{1}', itemName))) {
                 return false;

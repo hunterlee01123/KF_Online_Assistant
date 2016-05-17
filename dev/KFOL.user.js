@@ -6,6 +6,7 @@
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 // @include     http://*2dgal.com/*
+// @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Config.js
@@ -21,14 +22,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
-// @version     5.3.3
+// @version     5.3.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.3';
+var version = '5.3.4';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -746,8 +747,8 @@ var KFOL = {
                         console.log('定时操作失败（原因：{0}），将在{1}分钟后重试...'.replace('{0}', errorText).replace('{1}', interval));
                         KFOL.removePopTips($('.pd_refresh_notice').parent());
                         KFOL.showMsg('<strong class="pd_refresh_notice">定时操作失败（原因：{0}），将在<em>{1}</em>分钟后重试...</strong>'
-                            .replace('{0}', errorText)
-                            .replace('{1}', interval)
+                                .replace('{0}', errorText)
+                                .replace('{1}', interval)
                             , -1);
                         window.setTimeout(handleError, interval * 60 * 1000);
                         showRefreshModeTips(interval * 60, true);
@@ -1207,7 +1208,7 @@ var KFOL = {
             }
 
             KFOL.showWaitMsg('<strong>正在统计回帖名单中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                .replace('{0}', endPage - startPage + 1)
+                    .replace('{0}', endPage - startPage + 1)
                 , true);
             var isStop = false;
             $(document).clearQueue('StatReplyers');
@@ -1371,7 +1372,7 @@ var KFOL = {
         var content = '';
         if (type === 2) {
             KFOL.showWaitMsg('<strong>正在获取引用内容中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
-                .replace('{0}', list.length)
+                    .replace('{0}', list.length)
                 , true);
             $(document).clearQueue('MultiQuote');
         }
@@ -1491,7 +1492,7 @@ var KFOL = {
         $('.readtext a, .thread2 a').each(function () {
             var $this = $(this);
             var url = $this.attr('href');
-            var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|9gal|9baka|9moe|kfgal|2dkf|miaola)\.[\w\.]+?\/).+/i.exec(url);
+            var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola)\.[\w\.]+?\/).+/i.exec(url);
             if (matches) $this.attr('href', url.replace(matches[1], Tools.getHostNameUrl()));
         });
     },
@@ -1538,37 +1539,35 @@ var KFOL = {
         });
         $('<span style="margin:0 5px">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
             .filter('a').click(function (e) {
-                e.preventDefault();
-                KFOL.removePopTips($('.pd_pop_tips'));
-                var threadList = [];
-                var totalSell = 0;
-                $('.pd_buy_thread:checked').each(function () {
-                    var $this = $(this);
-                    var url = $this.data('url');
-                    var sell = parseInt($this.data('sell'));
-                    if (url && !isNaN(sell)) {
-                        threadList.push({url: url, sell: sell});
-                        totalSell += sell;
-                    }
-                });
-                if (threadList.length === 0) {
-                    alert('请选择要购买的帖子');
-                    return;
+            e.preventDefault();
+            KFOL.removePopTips($('.pd_pop_tips'));
+            var threadList = [];
+            var totalSell = 0;
+            $('.pd_buy_thread:checked').each(function () {
+                var $this = $(this);
+                var url = $this.data('url');
+                var sell = parseInt($this.data('sell'));
+                if (url && !isNaN(sell)) {
+                    threadList.push({url: url, sell: sell});
+                    totalSell += sell;
                 }
-                if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
+            });
+            if (threadList.length === 0) {
+                alert('请选择要购买的帖子');
+                return;
+            }
+            if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
+                    .replace('{0}', threadList.length)
+                    .replace('{1}', totalSell.toLocaleString())
+                    .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
+                )
+            ) {
+                KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', threadList.length)
-                        .replace('{1}', totalSell.toLocaleString())
-                        .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
-                    )
-                ) {
-                    KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                        .replace('{0}', threadList.length)
-                        , true);
-                    KFOL.buyThreads(threadList);
-                }
-            })
-            .parent()
-            .mouseenter(function () {
+                    , true);
+                KFOL.buyThreads(threadList);
+            }
+        }).parent().mouseenter(function () {
                 $('<span style="margin-left:5px">[<a href="#">全选</a><a style="margin-left:5px" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn'))
                     .find('a:first')
                     .click(function (e) {
@@ -2382,74 +2381,68 @@ var KFOL = {
                         '<label>每隔 <input id="pd_cfg_auto_change_sm_color_interval" class="pd_input" style="width:25px" type="text" maxlength="5" /> 小时</label>' +
                         '<button>保存</button><button style="margin-left:3px">重置</button><br />' +
                         '<a href="#">全选</a><a style="margin-left:7px;margin-right:10px" href="#">反选</a>' +
-                        '<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox" /> 选择当前所有可用的神秘颜色</label>')
-                        .insertAfter($this.parent())
-                        .filter('button:first').click(function (e) {
-                            e.preventDefault();
-                            var $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
-                            var interval = parseInt($.trim($autoChangeSMColorInterval.val()));
-                            if (isNaN(interval) || interval <= 0) {
-                                alert('神秘颜色更换时间间隔格式不正确');
-                                $autoChangeSMColorInterval.select();
-                                $autoChangeSMColorInterval.focus();
-                                return;
-                            }
-                            var changeAllAvailableSMColorEnabled = $('#pd_cfg_change_all_available_sm_color_enabled').prop('checked');
-                            var customChangeSMColorList = [];
-                            $smColors.find('input[type="checkbox"]:checked').each(function () {
-                                customChangeSMColorList.push(parseInt($(this).val()));
-                            });
-                            if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
-                                alert('必须选择2种或以上的神秘颜色');
-                                return;
-                            }
-                            if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
-
-                            var oriInterval = Config.autoChangeSMColorInterval;
-                            ConfigMethod.read();
-                            Config.autoChangeSMColorType = $('#pd_cfg_auto_change_sm_color_type').val().toLowerCase();
-                            Config.autoChangeSMColorInterval = interval;
-                            Config.changeAllAvailableSMColorEnabled = changeAllAvailableSMColorEnabled;
-                            Config.customAutoChangeSMColorList = customChangeSMColorList;
-                            ConfigMethod.write();
-                            if (oriInterval !== Config.autoChangeSMColorInterval)
-                                Tools.setCookie(Const.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
-                            alert('设置保存成功');
-                        })
-                        .end()
-                        .filter('button:eq(1)').click(function (e) {
-                            e.preventDefault();
-                            ConfigMethod.read();
-                            var defConfig = ConfigMethod.defConfig;
-                            Config.autoChangeSMColorEnabled = defConfig.autoChangeSMColorEnabled;
-                            Config.autoChangeSMColorType = defConfig.autoChangeSMColorType;
-                            Config.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
-                            Config.changeAllAvailableSMColorEnabled = defConfig.changeAllAvailableSMColorEnabled;
-                            Config.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
-                            ConfigMethod.write();
-                            Tools.setCookie(Const.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
-                            TmpLog.deleteValue(Const.prevAutoChangeSMColorIdTmpLogName);
-                            alert('设置已重置');
-                            location.reload();
-                        })
-                        .end()
-                        .filter('a')
-                        .click(function (e) {
-                            e.preventDefault();
-                            if ($smColors.find('input[disabled]').length > 0) {
-                                alert('请先取消勾选“选择当前所有可用的神秘颜色”复选框');
-                                $('#pd_cfg_change_all_available_sm_color_enabled').focus();
-                                return;
-                            }
-                            if ($(this).is('#pd_auto_change_sm_color_btns > a:first')) {
-                                $smColors.find('input[type="checkbox"]').prop('checked', true);
-                            }
-                            else {
-                                $smColors.find('input[type="checkbox"]').each(function () {
-                                    $(this).prop('checked', !$(this).prop('checked'));
-                                });
-                            }
+                        '<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox" /> 选择当前所有可用的神秘颜色</label>'
+                    ).insertAfter($this.parent()).filter('button:first').click(function (e) {
+                        e.preventDefault();
+                        var $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
+                        var interval = parseInt($.trim($autoChangeSMColorInterval.val()));
+                        if (isNaN(interval) || interval <= 0) {
+                            alert('神秘颜色更换时间间隔格式不正确');
+                            $autoChangeSMColorInterval.select();
+                            $autoChangeSMColorInterval.focus();
+                            return;
+                        }
+                        var changeAllAvailableSMColorEnabled = $('#pd_cfg_change_all_available_sm_color_enabled').prop('checked');
+                        var customChangeSMColorList = [];
+                        $smColors.find('input[type="checkbox"]:checked').each(function () {
+                            customChangeSMColorList.push(parseInt($(this).val()));
                         });
+                        if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
+                            alert('必须选择2种或以上的神秘颜色');
+                            return;
+                        }
+                        if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
+
+                        var oriInterval = Config.autoChangeSMColorInterval;
+                        ConfigMethod.read();
+                        Config.autoChangeSMColorType = $('#pd_cfg_auto_change_sm_color_type').val().toLowerCase();
+                        Config.autoChangeSMColorInterval = interval;
+                        Config.changeAllAvailableSMColorEnabled = changeAllAvailableSMColorEnabled;
+                        Config.customAutoChangeSMColorList = customChangeSMColorList;
+                        ConfigMethod.write();
+                        if (oriInterval !== Config.autoChangeSMColorInterval)
+                            Tools.setCookie(Const.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
+                        alert('设置保存成功');
+                    }).end().filter('button:eq(1)').click(function (e) {
+                        e.preventDefault();
+                        ConfigMethod.read();
+                        var defConfig = ConfigMethod.defConfig;
+                        Config.autoChangeSMColorEnabled = defConfig.autoChangeSMColorEnabled;
+                        Config.autoChangeSMColorType = defConfig.autoChangeSMColorType;
+                        Config.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
+                        Config.changeAllAvailableSMColorEnabled = defConfig.changeAllAvailableSMColorEnabled;
+                        Config.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
+                        ConfigMethod.write();
+                        Tools.setCookie(Const.autoChangeSMColorCookieName, 0, Tools.getDate('-1d'));
+                        TmpLog.deleteValue(Const.prevAutoChangeSMColorIdTmpLogName);
+                        alert('设置已重置');
+                        location.reload();
+                    }).end().filter('a').click(function (e) {
+                        e.preventDefault();
+                        if ($smColors.find('input[disabled]').length > 0) {
+                            alert('请先取消勾选“选择当前所有可用的神秘颜色”复选框');
+                            $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                            return;
+                        }
+                        if ($(this).is('#pd_auto_change_sm_color_btns > a:first')) {
+                            $smColors.find('input[type="checkbox"]').prop('checked', true);
+                        }
+                        else {
+                            $smColors.find('input[type="checkbox"]').each(function () {
+                                $(this).prop('checked', !$(this).prop('checked'));
+                            });
+                        }
+                    });
 
                     $smColors.find('td:has(a)').each(function () {
                         var $this = $(this);
@@ -2781,7 +2774,7 @@ var KFOL = {
                 $this.html(
                     html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g,
                         '<audio src="$1" controls="controls" preload="none" style="margin:3px 0">[你的浏览器不支持audio标签]</audio>'
-                        )
+                    )
                         .replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g,
                             '<video src="$1" controls="controls" preload="none" style="max-width:{0}px;margin:3px 0">[你的浏览器不支持video标签]</video>'
                                 .replace('{0}', Config.adjustThreadContentWidthEnabled ? 627 : 820)
@@ -2939,6 +2932,26 @@ var KFOL = {
     },
 
     /**
+     * 暴露接口给window对象
+     */
+    exposeInterface: function () {
+        KFOL.window.Config = Config;
+        KFOL.window.Const = Const;
+        KFOL.window.ConfigMethod = ConfigMethod;
+        KFOL.window.Tools = Tools;
+        KFOL.window.Func = Func;
+        KFOL.window.Dialog = Dialog;
+        KFOL.window.ConfigDialog = ConfigDialog;
+        KFOL.window.Log = Log;
+        KFOL.window.TmpLog = TmpLog;
+        KFOL.window.Item = Item;
+        KFOL.window.Card = Card;
+        KFOL.window.Bank = Bank;
+        KFOL.window.Loot = Loot;
+        KFOL.window.KFOL = KFOL;
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -2947,6 +2960,7 @@ var KFOL = {
         //console.log('KF Online助手启动');
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
+        KFOL.exposeInterface();
         ConfigMethod.init();
         KFOL.checkBrowserType();
         KFOL.appendCss();
