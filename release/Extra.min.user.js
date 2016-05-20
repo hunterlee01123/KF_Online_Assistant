@@ -9,13 +9,13 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     1.0.0
+// @version     1.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
-var Extra={isInMiaolaDomain:location.host.indexOf('miaola.info')>-1,imgResHostUrl:'https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/img/',defJieCao:50000,minItemPricePercent:0,maxItemPricePercent:200,setConst:function(){Const.jieCaoTmpLogName='JieCao';Const.myCustomItemTmpLogName='MyCustomItem';Const.rainbowSmColorCookieName=Extra.customItemList[1].cookieName;Const.nekoMiMiAvatarCookieName=Extra.customItemList[2].cookieName;Const.kfOnlyYouCookieName=Extra.customItemList[3].cookieName;Const.excludeUsersCookieName='pd_exclude_users';},appendCss:function(){$('head').append('<style type="text/css">'+
+var Extra={isInMiaolaDomain:location.host.indexOf('miaola.info')>-1,imgResHostUrl:location.host.indexOf('miaola.info')>-1?'pd/img/':'https://kf.miaola.info/pd/img/',defJieCao:50000,minItemPricePercent:0,maxItemPricePercent:200,setConst:function(){Const.jieCaoTmpLogName='JieCao';Const.myCustomItemTmpLogName='MyCustomItem';Const.rainbowSmColorCookieName=Extra.customItemList[1].cookieName;Const.nekoMiMiAvatarCookieName=Extra.customItemList[2].cookieName;Const.kfOnlyYouCookieName=Extra.customItemList[3].cookieName;Const.excludeUsersCookieName='pd_exclude_users';},appendCss:function(){$('head').append('<style type="text/css">'+
 '.pd_custom_item_shop { width: 860px; border-top: 1px solid #9999FF; border-right: 1px solid #9999FF; }'+
 '.pd_custom_item_shop th, .pd_custom_item_shop td {'+
 '  text-align: left; font-weight: normal; height: 30px; border-bottom: 1px solid #9999FF; border-left: 1px solid #9999FF; line-height: 24px; padding: 5px;'+
@@ -83,8 +83,9 @@ else if(location.pathname==='/kf_share.php'){$('.kf_share1:last > tbody > tr:gt(
 else if(/\/hack\.php\?H_name=bank/i.test(location.href)){if(Tools.getUrlParam('action')==='log'){$('.bank1 > tbody > tr:gt(1) > td:nth-child(3) > div > b').each(function(){commonReplace($(this));});}
 else{$('td > table > tbody > tr:first-child > td:contains("活期存款排行")').closest('tbody').find('tr:gt(0) > td:nth-child(2)').each(function(){commonReplace($(this));});}}
 else if(/\/personal\.php\?action=post/i.test(location.href)){$('td > a[href^="profile.php?action=show&uid="]').each(function(){commonReplace($(this));});}
-else if(/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)){var $owner=$('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child > span:contains("现持有者：")');var matches=/现持有者：(.+)/.exec($owner.text());if(matches){if($.inArray(matches[1],excludeUserList)===-1){$owner.text('现持有者：'+KFOL.userName).attr('title',matches[1]).addClass('pd_custom_tips');}}
+else if(/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)){if(Tools.getCookie(Const.kfOnlyYouCookieName)===Extra.customItemList[3].cookieValue)return;var $owner=$('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child > span:contains("现持有者：")');var matches=/现持有者：(.+)/.exec($owner.text());if(matches){if($.inArray(matches[1],excludeUserList)===-1){$owner.text('现持有者：'+KFOL.userName).attr('title',matches[1]).addClass('pd_custom_tips');}}
 var $itemLog=$('.kf_fw_ig1 > tbody > tr:last-child > td');var html=$itemLog.html();var oriHtml=html;matches=html.match(/被[^<>]+?(取|于)/g);for(var i in matches){var userMatches=/被([^<>]+?)(取|于)/.exec(matches[i]);if(userMatches){if($.inArray(userMatches[1],excludeUserList)===-1){html=html.replace(userMatches[0],'被<span class="pd_custom_tips" title="{0}">{1}</span>{2}'.replace('{0}',userMatches[1]).replace('{1}',KFOL.userName).replace('{2}',userMatches[2]));}}}
-if(html!==oriHtml)$itemLog.html(html);}},init:function(){if(typeof jQuery==='undefined'||!KFOL.uid)return;KFOL.window.Extra=Extra;Extra.setConst();Extra.appendCss();if(Tools.getCookie(Const.kfOnlyYouCookieName)===Extra.customItemList[3].cookieValue)Extra.kfOnlyYou();if(location.pathname==='/read.php'){Extra.modifyRainbowSmColor();if(Tools.getCookie(Const.nekoMiMiAvatarCookieName)===Extra.customItemList[2].cookieValue)Extra.addNekoMiMiAboveAvatar();}
+if(html!==oriHtml)$itemLog.html(html);}},init:function(){if(typeof jQuery==='undefined'||!KFOL.uid)return;KFOL.window.Extra=Extra;Extra.setConst();Extra.appendCss();if(location.pathname==='/read.php'){Extra.modifyRainbowSmColor();if(Tools.getCookie(Const.nekoMiMiAvatarCookieName)===Extra.customItemList[2].cookieValue)Extra.addNekoMiMiAboveAvatar();}
 else if(location.pathname==='/kf_fw_ig_shop.php'){Extra.addCustomItemShop();}
-else if(/\/kf_fw_ig_my\.php\?pro=\d+&pd_typeid=\d+/i.exec(location.href)){Extra.showCustomItemInfo();}}};document.addEventListener('DOMContentLoaded',function(){if(typeof KFOL!=='undefined')Extra.init();});
+else if(/\/kf_fw_ig_my\.php\?pro=\d+&pd_typeid=\d+/i.exec(location.href)){Extra.showCustomItemInfo();}
+if(Tools.getCookie(Const.kfOnlyYouCookieName)===Extra.customItemList[3].cookieValue)Extra.kfOnlyYou();}};document.addEventListener('DOMContentLoaded',function(){if(typeof KFOL!=='undefined')Extra.init();});

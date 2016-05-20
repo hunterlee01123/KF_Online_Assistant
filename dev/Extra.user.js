@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     1.0.0
+// @version     1.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -25,7 +25,7 @@ var Extra = {
     // 当前域名是否在miaola.info下
     isInMiaolaDomain: location.host.indexOf('miaola.info') > -1,
     // 存放图片资源的URL
-    imgResHostUrl: 'https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/img/',
+    imgResHostUrl: location.host.indexOf('miaola.info') > -1 ? 'pd/img/' : 'https://kf.miaola.info/pd/img/',
     // 初始的节操值
     defJieCao: 50000,
     // 道具价格浮动的最低百分比
@@ -587,6 +587,7 @@ var Extra = {
             });
         }
         else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
+            if (Tools.getCookie(Const.kfOnlyYouCookieName) === Extra.customItemList[3].cookieValue) return;
             var $owner = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child > span:contains("现持有者：")');
             var matches = /现持有者：(.+)/.exec($owner.text());
             if (matches) {
@@ -624,7 +625,6 @@ var Extra = {
         Extra.setConst();
         Extra.appendCss();
 
-        if (Tools.getCookie(Const.kfOnlyYouCookieName) === Extra.customItemList[3].cookieValue) Extra.kfOnlyYou();
         if (location.pathname === '/read.php') {
             Extra.modifyRainbowSmColor();
             if (Tools.getCookie(Const.nekoMiMiAvatarCookieName) === Extra.customItemList[2].cookieValue) Extra.addNekoMiMiAboveAvatar();
@@ -635,6 +635,7 @@ var Extra = {
         else if (/\/kf_fw_ig_my\.php\?pro=\d+&pd_typeid=\d+/i.exec(location.href)) {
             Extra.showCustomItemInfo();
         }
+        if (Tools.getCookie(Const.kfOnlyYouCookieName) === Extra.customItemList[3].cookieValue) Extra.kfOnlyYou();
     }
 };
 
