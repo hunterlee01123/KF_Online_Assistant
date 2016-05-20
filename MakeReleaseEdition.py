@@ -11,7 +11,8 @@ releaseDirName = 'release' # 正式版文件夹名
 defaultFileName = 'KFOLAssistant' # 标准版文件名
 greasyForkFileName = 'GreasyFork' # GreasyFork版文件名
 scriptStorageFileName = 'ScriptStorage' # ScriptStorage版文件名
-GlobalStorageFileName = 'GlobalStorage' # GlobalStorage版文件名
+globalStorageFileName = 'GlobalStorage' # GlobalStorage版文件名
+extraFileName = 'Extra' # Extra脚本文件名
 userScriptExt = '.user.js' # 油猴脚本文件扩展名
 minUserScriptExt = '.min.user.js' # 压缩过的油猴脚本文件扩展名
 metaScriptExt = '.meta.js' # 油猴脚本meta文件扩展名
@@ -147,10 +148,21 @@ def makeGlobalStorageEdition(content):
     if num == 0: raise NoFoundReplaceStringError('GlobalStorage版', 4)
     content, num = re.subn("var storageType = 'Default';", "var storageType = 'Global';", content, count=1, flags=re.S | re.I)
     if num == 0: raise NoFoundReplaceStringError('GlobalStorage版', 5)
-    open(releaseDirName + os.sep + GlobalStorageFileName + userScriptExt, 'w', encoding = encoding).write(content)
+    open(releaseDirName + os.sep + globalStorageFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成GlobalStorage版脚本文件')
-    open(releaseDirName + os.sep + GlobalStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
+    open(releaseDirName + os.sep + globalStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
     print('生成GlobalStorage版meta文件')
+
+def makeExtraFile():
+    '''生成Extra脚本文件'''
+    content = open(devDirName + os.sep + extraFileName + userScriptExt, 'r', encoding = encoding).read()
+    open(releaseDirName + os.sep + extraFileName + userScriptExt, 'w', encoding = encoding).write(content)
+    print('生成Extra脚本文件')
+    metaContent = getMetaFileContent(content)
+    open(releaseDirName + os.sep + extraFileName + minUserScriptExt, 'w', encoding = encoding).write(metaContent + jsmin(content))
+    print('生成压缩过的Extra脚本文件')
+    open(releaseDirName + os.sep + extraFileName + metaScriptExt, 'w', encoding = encoding).write(metaContent)
+    print('生成Extra脚本meta文件')
 
 def main():
     '''主函数'''
@@ -163,8 +175,10 @@ def main():
     print('GreasyFork版脚本文件：' + greasyForkFileName + userScriptExt)
     print('ScriptStorage版脚本文件：' + scriptStorageFileName + userScriptExt)
     print('ScriptStorage版meta文件：' + scriptStorageFileName + metaScriptExt)
-    print('GlobalStorage版脚本文件：' + GlobalStorageFileName + userScriptExt)
-    print('GlobalStorage版meta文件：' + GlobalStorageFileName + metaScriptExt)
+    print('GlobalStorage版脚本文件：' + globalStorageFileName + userScriptExt)
+    print('GlobalStorage版meta文件：' + globalStorageFileName + metaScriptExt)
+    print('Extra脚本文件：' + extraFileName + userScriptExt)
+    print('Extra脚本meta文件：' + extraFileName + metaScriptExt)
     print('-------------------------------------------')
 
     content = getDefaultEditionContent()
@@ -175,6 +189,8 @@ def main():
     makeScriptStorageEdition(content)
     print()
     makeGlobalStorageEdition(content)
+    print()
+    makeExtraFile()
 
     print('\n已生成所有文件')
 
