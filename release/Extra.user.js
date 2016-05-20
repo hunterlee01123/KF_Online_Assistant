@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     1.0.1
+// @version     1.0.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -43,7 +43,7 @@ var Extra = {
         Const.myCustomItemTmpLogName = 'MyCustomItem';
         // 标记是否开启多彩神秘颜色的Cookie名称
         Const.rainbowSmColorCookieName = Extra.customItemList[1].cookieName;
-        // 标记是否为自己的头像加上猫耳的Cookie名称
+        // 标记是否为头像加上猫耳的Cookie名称
         Const.nekoMiMiAvatarCookieName = Extra.customItemList[2].cookieName;
         // 标记是否进入【其实整个KF只有我一个人】模式的Cookie名称
         Const.kfOnlyYouCookieName = Extra.customItemList[3].cookieName;
@@ -364,23 +364,27 @@ var Extra = {
     },
 
     /**
-     * 为自己的头像加上猫耳
+     * 为头像加上猫耳
      */
     addNekoMiMiAboveAvatar: function () {
-        $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmleft > a[href="profile.php?action=show&uid={0}"]'
-            .replace(/\{0\}/g, KFOL.uid)
-        ).each(function () {
-            var $parent = $(this).parent();
-            var type = 1;
-            if ($parent.is('.readidmleft')) type = 2;
-            var $avatar = null;
-            if (type === 2) $avatar = $parent.closest('.readidm');
-            else $avatar = $parent.prev('.readidmstop').find('img.pic');
-            if (!$avatar || !$avatar.length || /none\.gif$/.test($avatar.attr('src'))) return;
-            var offset = $avatar.offset();
-            var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', Extra.imgResHostUrl + 'nekomimi_' + type + '.png')).appendTo('body');
-            if (type === 2) $nekoMiMi.css('top', offset.top - 29).css('left', offset.left - 1);
-            else $nekoMiMi.css('top', offset.top - 32).css('left', offset.left - 4);
+        var userList = ['信仰风', '喵拉布丁'];
+        if (Tools.getCookie(Const.nekoMiMiAvatarCookieName) === Extra.customItemList[2].cookieValue) userList.push(KFOL.userName);
+        $(function () {
+            $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
+                var $this = $(this);
+                if ($.inArray($this.text(), userList) === -1) return;
+                var $parent = $this.parent();
+                var type = 1;
+                if ($parent.is('.readidmleft')) type = 2;
+                var $avatar = null;
+                if (type === 2) $avatar = $parent.closest('.readidm');
+                else $avatar = $parent.prev('.readidmstop').find('img.pic');
+                if (!$avatar || !$avatar.length || /none\.gif$/.test($avatar.attr('src'))) return;
+                var offset = $avatar.offset();
+                var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', Extra.imgResHostUrl + 'nekomimi_' + type + '.png')).appendTo('body');
+                if (type === 2) $nekoMiMi.css('top', offset.top - 29).css('left', offset.left - 1);
+                else $nekoMiMi.css('top', offset.top - 32).css('left', offset.left - 4);
+            });
         });
     },
 
@@ -621,13 +625,14 @@ var Extra = {
      */
     init: function () {
         if (typeof jQuery === 'undefined' || !KFOL.uid) return;
+        var startDate = new Date();
         KFOL.window.Extra = Extra;
         Extra.setConst();
         Extra.appendCss();
 
         if (location.pathname === '/read.php') {
             Extra.modifyRainbowSmColor();
-            if (Tools.getCookie(Const.nekoMiMiAvatarCookieName) === Extra.customItemList[2].cookieValue) Extra.addNekoMiMiAboveAvatar();
+            Extra.addNekoMiMiAboveAvatar();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Extra.addCustomItemShop();
@@ -636,9 +641,10 @@ var Extra = {
             Extra.showCustomItemInfo();
         }
         if (Tools.getCookie(Const.kfOnlyYouCookieName) === Extra.customItemList[3].cookieValue) Extra.kfOnlyYou();
+
+        var endDate = new Date();
+        console.log('【KF Online助手 Extra】加载完毕，加载耗时：{0}ms'.replace('{0}', endDate - startDate));
     }
 };
 
-document.addEventListener('DOMContentLoaded', function () {
-    if (typeof KFOL !== 'undefined') Extra.init();
-});
+if (typeof KFOL !== 'undefined') Extra.init();
