@@ -89,7 +89,7 @@
             var matches = /(\d+)页/.exec($('.pages:eq(0) > li:last-child > a').text());
             var maxPage = matches ? parseInt(matches[1]) : 1;
             KFOL.showWaitMsg('<strong>正在统计数字中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                .replace('{0}', maxPage)
+                    .replace('{0}', maxPage)
                 , true);
             var isStop = false;
             $(document).clearQueue('StatLottery');
@@ -587,7 +587,7 @@
             return;
         }
         KFOL.showWaitMsg('<strong>正在统计楼层中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-            .replace('{0}', endPage - startPage + 1)
+                .replace('{0}', endPage - startPage + 1)
             , true);
 
         $(document).clearQueue('StatFloor');
@@ -718,7 +718,7 @@
         });
 
         KFOL.showWaitMsg('<strong>正在统计中奖用户中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-            .replace('{0}', winnerUserNum)
+                .replace('{0}', winnerUserNum)
             , true);
         $(document).clearQueue('StatWinnerUser');
         var index = 0;
@@ -1292,7 +1292,7 @@ var kfOnlyYou = function () {
 var statSampleItem = function (totalNum, startId) {
     if (!startId) startId = 1;
     KFOL.showWaitMsg('<strong>正在统计道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-        .replace('{0}', totalNum)
+            .replace('{0}', totalNum)
         , true);
     var sampleItemList = {};
     $(document).clearQueue('StatSampleItem');
@@ -1365,6 +1365,21 @@ var statSampleItem = function (totalNum, startId) {
         var startId = 1;
         if (typeof arr[1] !== 'undefined') startId = parseInt(arr[1]);
         statSampleItem(totalNum, startId);
+    });
+}());
+
+/*==========================================*/
+
+// 多彩神秘颜色 V1.0
+(function () {
+    if (location.pathname !== '/read.php') return;
+    var imgResUrl = 'https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/img/';
+    $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmsbottom > a[href="profile.php?action=show&uid={0}"]'
+        .replace(/\{0\}/g, KFOL.uid)
+    ).each(function () {
+        $(this).closest('.readtext').css('border-image', 'url("' + imgResUrl + 'border_rainbow_middle.png") 1 stretch')
+            .prev('.readlou').css('border-image', 'url("' + imgResUrl + 'border_rainbow_top.png") 1 stretch')
+            .next().next('.readlou').css('border-image', 'url("' + imgResUrl + 'border_rainbow_bottom.png") 1 stretch');
     });
 }());
 
