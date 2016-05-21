@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     1.0.2
+// @version     1.0.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -62,6 +62,7 @@ var Extra = {
             '.pd_custom_item_shop td:nth-child(4), .pd_custom_item_shop td:nth-child(5) { font-size: 14px; }' +
 
             '.pd_nekomimi { position: absolute; opacity: 0.95; }' +
+            '#r_menu { z-index: 1; }' +
             '</style>'
         );
     },
@@ -92,7 +93,7 @@ var Extra = {
                 KFOL.showMsg('<strong>雨过天晴，彩虹小马们欢快的飞过天空，架起一道神秘的彩虹，哦卖力头破你~~</strong>', -1);
             },
             cancel: function () {
-                KFOL.showMsg('<strong>虚幻的彩虹总是短暂的，天空中已不见彩虹小马们玩乐的身影，那道神秘的彩虹也再无踪迹...</strong>', -1);
+                KFOL.showMsg('<strong>虚幻的彩虹总是短暂的，天空中已不见彩虹小马们玩乐的身影，那道神秘的彩虹也再无踪迹……</strong>', -1);
             }
         },
         2: {
@@ -105,10 +106,10 @@ var Extra = {
             cookieName: 'pd_nekomimi_avatar',
             cookieValue: '1',
             use: function () {
-                KFOL.showMsg('<strong>咦？地上放着一对猫耳，戴上去试试看？</strong><br />...喵？喵喵喵~~~', -1);
+                KFOL.showMsg('<strong>咦？地上放着一对猫耳，戴上去试试看？</strong><br />……喵？喵喵喵~~~', -1);
             },
             cancel: function () {
-                KFOL.showMsg('<strong>你依依不舍地摘下了猫耳，重新变回了人类...</strong>', -1);
+                KFOL.showMsg('<strong>你依依不舍地摘下了猫耳，重新变回了人类……</strong>', -1);
             }
         },
         3: {
@@ -123,12 +124,12 @@ var Extra = {
             use: function () {
                 KFOL.showMsg(
                     '<strong>少年（少女），告诉你个秘密：</strong><br />其实整个KF只有你一个人，我们都是你臆想出来的人格，KF上所有的会员其实都是你<br />' +
-                    '我们已经骗了你好久，是时候向你展现真相了'
+                    '我们已经骗了你好久，是时候向你展现真相了……'
                     , -1
                 );
             },
             cancel: function () {
-                KFOL.showMsg('<strong>你：“妈妈，我再也不想一个人玩了”</strong><br />你的精神分裂症治好了，KF再次恢复为平日的模样', -1);
+                KFOL.showMsg('<strong>“妈妈，我再也不想一个人玩了！”</strong><br />你的精神分裂症治好了，KF再次恢复为平日的模样', -1);
             }
         },
     },
@@ -369,22 +370,25 @@ var Extra = {
     addNekoMiMiAboveAvatar: function () {
         var userList = ['信仰风', '喵拉布丁'];
         if (Tools.getCookie(Const.nekoMiMiAvatarCookieName) === Extra.customItemList[2].cookieValue) userList.push(KFOL.userName);
-        $(function () {
-            $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
-                var $this = $(this);
-                if ($.inArray($this.text(), userList) === -1) return;
-                var $parent = $this.parent();
-                var type = 1;
-                if ($parent.is('.readidmleft')) type = 2;
-                var $avatar = null;
-                if (type === 2) $avatar = $parent.closest('.readidm');
-                else $avatar = $parent.prev('.readidmstop').find('img.pic');
-                if (!$avatar || !$avatar.length || /none\.gif$/.test($avatar.attr('src'))) return;
-                var offset = $avatar.offset();
-                var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', Extra.imgResHostUrl + 'nekomimi_' + type + '.png')).appendTo('body');
-                if (type === 2) $nekoMiMi.css('top', offset.top - 29).css('left', offset.left - 1);
-                else $nekoMiMi.css('top', offset.top - 32).css('left', offset.left - 4);
-            });
+        $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
+            var $this = $(this);
+            if ($.inArray($this.text(), userList) === -1) return;
+            var $parent = $this.parent();
+            var type = 1;
+            if ($parent.is('.readidmleft')) type = 2;
+            var $avatar = null;
+            if (type === 2) $avatar = $parent.closest('.readidm');
+            else $avatar = $parent.prev('.readidmstop').find('img.pic');
+            if (!$avatar || !$avatar.length || /none\.gif$/.test($avatar.attr('src'))) return;
+            var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', Extra.imgResHostUrl + 'nekomimi_' + type + '.png'));
+            if (type === 2) {
+                $nekoMiMi.prependTo($avatar).css('top', -29).css('left', -1);
+                $avatar.css('position', 'relative').css('overflow', 'visible').closest('.readtext').css('overflow-x', 'visible');
+            }
+            else {
+                $nekoMiMi.insertBefore($avatar).css('top', -22).css('left', 16);
+                $avatar.parent('.readidmstop').css('position', 'relative').closest('.readtext').css('overflow-x', 'visible');
+            }
         });
     },
 
