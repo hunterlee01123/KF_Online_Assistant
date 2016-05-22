@@ -1385,7 +1385,7 @@ var statSampleItem = function (totalNum, startId) {
 
 /*==========================================*/
 
-// 为自己的头像加上猫耳 V1.0
+// 为自己的头像加上猫耳 V1.1
 (function () {
     if (location.pathname !== '/read.php') return;
     $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmsbottom > a[href="profile.php?action=show&uid={0}"]'
@@ -1399,7 +1399,7 @@ var statSampleItem = function (totalNum, startId) {
         if (type === 2) $avatar = $parent.closest('.readidm');
         else $avatar = $parent.prev('.readidmstop').find('img.pic');
         if (!$avatar || !$avatar.length || /none\.gif$/.test($avatar.attr('src'))) return;
-        var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', Extra.imgResHostUrl + 'nekomimi_' + type + '.png'));
+        var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', 'https://kf.miaola.info/pd/img/nekomimi_' + type + '.png'));
         if (type === 2) {
             $nekoMiMi.prependTo($avatar).css('top', -29).css('left', -1);
             $avatar.css('position', 'relative').css('overflow', 'visible').closest('.readtext').css('overflow-x', 'visible');
