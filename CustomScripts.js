@@ -1373,7 +1373,7 @@ var statSampleItem = function (totalNum, startId) {
 // 多彩神秘颜色 V1.0
 (function () {
     if (location.pathname !== '/read.php') return;
-    var imgResUrl = 'https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/img/';
+    var imgResUrl = 'https://kf.miaola.info/pd/img/';
     $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmsbottom > a[href="profile.php?action=show&uid={0}"]'
         .replace(/\{0\}/g, KFOL.uid)
     ).each(function () {
@@ -1381,6 +1381,45 @@ var statSampleItem = function (totalNum, startId) {
             .prev('.readlou').css('border-image', 'url("' + imgResUrl + 'border_rainbow_top.png") 1 stretch')
             .next().next('.readlou').css('border-image', 'url("' + imgResUrl + 'border_rainbow_bottom.png") 1 stretch');
     });
+}());
+
+/*==========================================*/
+
+// 为自己的头像加上猫耳 V1.0
+(function () {
+    if (location.pathname !== '/read.php') return;
+    $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmsbottom > a[href="profile.php?action=show&uid={0}"]'
+        .replace(/\{0\}/g, KFOL.uid)
+    ).each(function () {
+        var $this = $(this);
+        var $parent = $this.parent();
+        var type = 1;
+        if ($parent.is('.readidmleft')) type = 2;
+        var $avatar = null;
+        if (type === 2) $avatar = $parent.closest('.readidm');
+        else $avatar = $parent.prev('.readidmstop').find('img.pic');
+        if (!$avatar || !$avatar.length || /none\.gif$/.test($avatar.attr('src'))) return;
+        var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', Extra.imgResHostUrl + 'nekomimi_' + type + '.png'));
+        if (type === 2) {
+            $nekoMiMi.prependTo($avatar).css('top', -29).css('left', -1);
+            $avatar.css('position', 'relative').css('overflow', 'visible').closest('.readtext').css('overflow-x', 'visible');
+        }
+        else {
+            $nekoMiMi.insertBefore($avatar).css('top', -22).css('left', 16);
+            $avatar.parent('.readidmstop').css('position', 'relative').closest('.readtext').css('overflow-x', 'visible');
+        }
+    });
+    if ($('.pd_nekomimi').length > 0) {
+        $(document).on('click', '.pd_nekomimi', function () {
+            var $nekoMiMiVoice = $('#pd_nekomimi_voice');
+            if ($nekoMiMiVoice.length > 0) {
+                $nekoMiMiVoice.get(0).play();
+            }
+            else {
+                $('body').append('<audio id="pd_nekomimi_voice" src="https://kf.miaola.info/pd/nyanpass.mp3" autoplay="autoplay" style="display:none"></audio>');
+            }
+        });
+    }
 }());
 
 /*==========================================*/
