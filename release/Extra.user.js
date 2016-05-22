@@ -4,14 +4,14 @@
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
-// @description KF Online助手的额外脚本，可提供更丰富的玩法（需配合KFOL助手使用）
+// @description KF Online助手的额外脚本，可提供更丰富的玩法（需配合KFOL助手使用，请先安装KFOL助手再安装此脚本）
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.user.js
 // @include     http://*2dgal.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     1.0.3
+// @version     1.0.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -61,7 +61,7 @@ var Extra = {
             '}' +
             '.pd_custom_item_shop td:nth-child(4), .pd_custom_item_shop td:nth-child(5) { font-size: 14px; }' +
 
-            '.pd_nekomimi { position: absolute; opacity: 0.95; }' +
+            '.pd_nekomimi { position: absolute; opacity: 0.95; cursor: pointer; }' +
             '#r_menu { z-index: 1; }' +
             '</style>'
         );
@@ -101,7 +101,8 @@ var Extra = {
             name: '猫耳',
             price: 233,
             canSell: true,
-            intro: '这里有一对猫耳，戴上去就能变成一只猫，喵~~~<br />给你自己的头像戴上一对猫耳（适合140px宽度的图像）<br /><span class="pd_highlight">（效果仅限自己可见）</span>',
+            intro: '这里有一对猫耳，戴上去就能变成一只猫，喵~~~<br />给你自己的头像戴上一对猫耳<span class="pd_highlight">（仅限卡片或140px宽度的图像）</span><br />' +
+            '<span class="pd_highlight">（效果仅限自己可见）</span>',
             image: 'custom_item_2.jpg',
             cookieName: 'pd_nekomimi_avatar',
             cookieValue: '1',
@@ -172,7 +173,7 @@ var Extra = {
 
         var $customItemShop = $(
             '<div style="color:#FFF;background-color:#9999FF;padding:5px;margin-top:10px;"><b>良心</b>道具商店 ' +
-            '(当前持有 <b title="一种并没有什么卵用、随时可以抛弃的的东西" class="pd_jiecao_num pd_custom_tips" style="font-size:14px">{0}</b> 节操)</div>'
+            '(当前持有 <b title="一种并没有什么卵用、随时可以丢掉的的东西" class="pd_jiecao_num" style="font-size:14px;cursor:pointer">{0}</b> 节操)</div>'
                 .replace('{0}', Extra.getJieCao()) +
             '<table class="pd_custom_item_shop" cellpadding="0" cellspacing="0">' +
             '  <tbody>' +
@@ -204,10 +205,9 @@ var Extra = {
                     alert('你尚未购买此道具');
                     return;
                 }
-                if (window.confirm('是否出售【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) {
-                    Extra.sellCustomItem(itemTypeId, item);
-                    $this.closest('tr').find('td:nth-child(3)').css('color', '#FF0033').text('否');
-                }
+                //if (!window.confirm('是否出售【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
+                Extra.sellCustomItem(itemTypeId, item);
+                $this.closest('tr').find('td:nth-child(3)').css('color', '#FF0033').text('否');
             }
             else {
                 if ($.type(myItemList[itemTypeId]) === 'object') {
@@ -219,7 +219,7 @@ var Extra = {
                     alert('你当前的节操值不足此道具市场价的两倍');
                     return;
                 }
-                if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
+                //if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
 
                 var buyPrice = Math.round(item.price * (Math.random() * (Extra.maxItemPricePercent - Extra.minItemPricePercent) + Extra.minItemPricePercent) / 100);
                 jieCao -= buyPrice;
@@ -241,6 +241,21 @@ var Extra = {
                         .replace('{2}', buyPrice)
                         .replace('{3}', Math.round(buyPrice / item.price * 100))
                     , -1);
+            }
+        }).on('click', '.pd_jiecao_num', function () {
+            var $this = $(this);
+            var clickCount = parseInt($this.data('click_count'));
+            if (!clickCount) clickCount = 1;
+            if (clickCount >= 5) {
+                $this.removeData('click_count');
+                if (window.confirm('是否将节操值重置为{0}？'.replace('{0}', Extra.defJieCao))) {
+                    TmpLog.deleteValue(Const.jieCaoTmpLogName);
+                    $('.pd_jiecao_num').text(Extra.defJieCao);
+                    alert('你的节操值已重置');
+                }
+            }
+            else {
+                $this.data('click_count', clickCount + 1);
             }
         });
     },
@@ -365,6 +380,22 @@ var Extra = {
     },
 
     /**
+     * 多彩神秘颜色
+     */
+    modifyRainbowSmColor: function () {
+        var userList = ['信仰风', '喵拉布丁'];
+        if (Tools.getCookie(Const.rainbowSmColorCookieName) === Extra.customItemList[1].cookieValue) userList.push(KFOL.userName);
+        $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
+            var $this = $(this);
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 75) !== 23) return;
+            var css = 'url("{0}{filename}") 1 stretch'.replace('{0}', Extra.imgResHostUrl);
+            $this.closest('.readtext').css('border-image', css.replace('{filename}', 'border_rainbow_middle.png'))
+                .prev('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_top.png'))
+                .next().next('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_bottom.png'));
+        });
+    },
+
+    /**
      * 为头像加上猫耳
      */
     addNekoMiMiAboveAvatar: function () {
@@ -372,7 +403,7 @@ var Extra = {
         if (Tools.getCookie(Const.nekoMiMiAvatarCookieName) === Extra.customItemList[2].cookieValue) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 75) !== 53) return;
             var $parent = $this.parent();
             var type = 1;
             if ($parent.is('.readidmleft')) type = 2;
@@ -380,6 +411,7 @@ var Extra = {
             if (type === 2) $avatar = $parent.closest('.readidm');
             else $avatar = $parent.prev('.readidmstop').find('img.pic');
             if (!$avatar || !$avatar.length || /none\.gif$/.test($avatar.attr('src'))) return;
+            if (type === 1 && parseInt($avatar.attr('width')) !== 140) return;
             var $nekoMiMi = $('<img class="pd_nekomimi" src="{0}" />'.replace('{0}', Extra.imgResHostUrl + 'nekomimi_' + type + '.png'));
             if (type === 2) {
                 $nekoMiMi.prependTo($avatar).css('top', -29).css('left', -1);
@@ -390,22 +422,17 @@ var Extra = {
                 $avatar.parent('.readidmstop').css('position', 'relative').closest('.readtext').css('overflow-x', 'visible');
             }
         });
-    },
-
-    /**
-     * 多彩神秘颜色
-     */
-    modifyRainbowSmColor: function () {
-        var userList = ['信仰风', '喵拉布丁'];
-        if (Tools.getCookie(Const.rainbowSmColorCookieName) === Extra.customItemList[1].cookieValue) userList.push(KFOL.userName);
-        $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
-            var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1) return;
-            var css = 'url("{0}{filename}") 1 stretch'.replace('{0}', Extra.imgResHostUrl);
-            $this.closest('.readtext').css('border-image', css.replace('{filename}', 'border_rainbow_middle.png'))
-                .prev('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_top.png'))
-                .next().next('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_bottom.png'));
-        });
+        if ($('.pd_nekomimi').length > 0) {
+            $(document).on('click', '.pd_nekomimi', function () {
+                var $nekoMiMiVoice = $('#pd_nekomimi_voice');
+                if ($nekoMiMiVoice.length > 0) {
+                    $nekoMiMiVoice.get(0).play();
+                }
+                else {
+                    $('body').append('<audio id="pd_nekomimi_voice" src="https://kf.miaola.info/pd/nyanpass.mp3" autoplay="autoplay" style="display:none"></audio>');
+                }
+            });
+        }
     },
 
     /**
