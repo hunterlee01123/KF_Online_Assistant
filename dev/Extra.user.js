@@ -11,13 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     1.0.4
+// @version     1.1.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
-
+// 版本号
+var extraVersion = '1.1.0';
 /**
  * 额外脚本类
  */
@@ -32,6 +33,8 @@ var Extra = {
     minItemPricePercent: 0,
     // 道具价格浮动的最高百分比
     maxItemPricePercent: 200,
+    // 自定义道具效果持续的默认时间（天）
+    defItemEffectInterval: 30,
 
     /**
      * 设置常量
@@ -47,6 +50,8 @@ var Extra = {
         Const.nekoMiMiAvatarCookieName = Extra.customItemList[2].cookieName;
         // 标记是否进入【其实整个KF只有我一个人】模式的Cookie名称
         Const.kfOnlyYouCookieName = Extra.customItemList[3].cookieName;
+        // 标记是否自定义自己的神秘等级的Cookie名称
+        Const.customSmLevelCookieName = Extra.customItemList[4].cookieName;
         // 自定义排除用户列表的Cookie名称
         Const.excludeUsersCookieName = 'pd_exclude_users';
     },
@@ -65,6 +70,19 @@ var Extra = {
             '#r_menu { z-index: 1; }' +
             '</style>'
         );
+    },
+
+    /**
+     * 在设置界面上添加Extra版本的信息
+     */
+    addVersionInfoInConfigDialog: function () {
+        Func.add('ConfigDialog.show_after_', function () {
+            if (Extra.version) {
+                $('#pd_config .pd_cfg_about').append(
+                    '<span style="color:#666"> | <a target="_blank" href="read.php?tid=553895">Extra</a> (V{0})</span>'.replace('{0}', Extra.version)
+                );
+            }
+        });
     },
 
     /**
@@ -90,6 +108,7 @@ var Extra = {
             cookieName: 'pd_rainbow_sm_color',
             cookieValue: '1',
             use: function () {
+                Tools.setCookie(this.cookieName, this.cookieValue, Tools.getDate('+' + Extra.defItemEffectInterval + 'd'));
                 KFOL.showMsg('<strong>雨过天晴，彩虹小马们欢快的飞过天空，架起一道神秘的彩虹，哦卖力头破你~~</strong>', -1);
             },
             cancel: function () {
@@ -107,6 +126,7 @@ var Extra = {
             cookieName: 'pd_nekomimi_avatar',
             cookieValue: '1',
             use: function () {
+                Tools.setCookie(this.cookieName, this.cookieValue, Tools.getDate('+' + Extra.defItemEffectInterval + 'd'));
                 KFOL.showMsg('<strong>咦？地上放着一对猫耳，戴上去试试看？</strong><br />……喵？喵喵喵~~~', -1);
             },
             cancel: function () {
@@ -123,6 +143,7 @@ var Extra = {
             cookieName: 'pd_kf_only_you',
             cookieValue: '1',
             use: function () {
+                Tools.setCookie(this.cookieName, this.cookieValue, Tools.getDate('+' + Extra.defItemEffectInterval + 'd'));
                 KFOL.showMsg(
                     '<strong>少年（少女），告诉你个秘密：</strong><br />其实整个KF只有你一个人，我们都是你臆想出来的人格，KF上所有的会员其实都是你<br />' +
                     '我们已经骗了你好久，是时候向你展现真相了……'
@@ -131,6 +152,28 @@ var Extra = {
             },
             cancel: function () {
                 KFOL.showMsg('<strong>“妈妈，我再也不想一个人玩了！”</strong><br />你的精神分裂症治好了，KF再次恢复为平日的模样', -1);
+            }
+        },
+        4: {
+            level: 4,
+            name: '逆天改命符',
+            price: 998,
+            canSell: true,
+            intro: '对自己如此low的神秘等级感到不甘心？觉得MAX等级无法体现自己的逼格？<br />快来试试逆天改命符吧！可将自己的神秘等级改成任意字符！<br />' +
+            '<span class="pd_highlight">（效果仅限自己可见）</span>',
+            image: 'custom_item_4.jpg',
+            cookieName: 'pd_custom_sm_level',
+            cookieValue: '*',
+            use: function () {
+                var smLevel = $.trim(window.prompt('请输入你想自定义的神秘等级（普通头像最多限8个字符，卡片头像最多限5个字符）：'));
+                if (!smLevel) return false;
+                var type = window.confirm('是否只在帖子页面里修改神秘等级？') ? 1 : 0;
+                smLevel = smLevel.substr(0, 8);
+                Tools.setCookie(this.cookieName, smLevel + '||' + type, Tools.getDate('+' + Extra.defItemEffectInterval + 'd'));
+                KFOL.showMsg('<strong>凡人，汝还妄图逆天改命？</strong><br />……嗯，看汝还算心诚，改改命也无不可……', -1);
+            },
+            cancel: function () {
+                KFOL.showMsg('<strong>逆天改命终违天道，你被打回了原型……</strong>', -1);
             }
         },
     },
@@ -172,8 +215,8 @@ var Extra = {
         });
 
         var $customItemShop = $(
-            '<div style="color:#FFF;background-color:#9999FF;padding:5px;margin-top:10px;"><b>良心</b>道具商店 ' +
-            '(当前持有 <b title="一种并没有什么卵用、随时可以丢掉的的东西" class="pd_jiecao_num" style="font-size:14px;cursor:pointer">{0}</b> 节操)</div>'
+            '<div style="color:#FFF;background-color:#9999FF;padding:5px;margin-top:10px;">布丁道具商店 ' +
+            '(当前持有 <b title="一种并没有什么卵用、随时可以丢掉的的东西（不Click试试么？）" class="pd_jiecao_num" style="font-size:14px;cursor:pointer">{0}</b> 节操)</div>'
                 .replace('{0}', Extra.getJieCao()) +
             '<table class="pd_custom_item_shop" cellpadding="0" cellspacing="0">' +
             '  <tbody>' +
@@ -205,7 +248,10 @@ var Extra = {
                     alert('你尚未购买此道具');
                     return;
                 }
-                //if (!window.confirm('是否出售【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
+                var isAlerted = $this.data('sell_alerted');
+                if (!isAlerted && !window.confirm('是否出售【Lv.{0}：{1}】道具？\n（出售道具后使用道具的效果也将一并还原）'.replace('{0}', item.level).replace('{1}', item.name)))
+                    return;
+                $this.data('sell_alerted', true);
                 Extra.sellCustomItem(itemTypeId, item);
                 $this.closest('tr').find('td:nth-child(3)').css('color', '#FF0033').text('否');
             }
@@ -219,7 +265,9 @@ var Extra = {
                     alert('你当前的节操值不足此道具市场价的两倍');
                     return;
                 }
-                //if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
+                var isAlerted = $this.data('buy_alerted');
+                if (!isAlerted && !window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
+                $this.data('buy_alerted', true);
 
                 var buyPrice = Math.round(item.price * (Math.random() * (Extra.maxItemPricePercent - Extra.minItemPricePercent) + Extra.minItemPricePercent) / 100);
                 jieCao -= buyPrice;
@@ -258,6 +306,70 @@ var Extra = {
                 $this.data('click_count', clickCount + 1);
             }
         });
+    },
+
+    /**
+     * 显示指定的自定义道具的详细信息
+     */
+    showCustomItemInfo: function () {
+        var itemTypeId = parseInt(Tools.getUrlParam('pd_typeid'));
+        if (!itemTypeId) return;
+        var item = Extra.customItemList[itemTypeId];
+        if (!item) return;
+        var cookieValue = Tools.getCookie(item.cookieName);
+        var isUsed = (cookieValue && item.cookieValue === '*') || cookieValue === item.cookieValue;
+        var myItem = Extra.getMyCustomItem(itemTypeId);
+        var $node = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').html(
+            '<span style="color:#00F">道具名称：{0}</span><br />'.replace('{0}', item.name) +
+            '道具等级：{0}级道具<br />'.replace('{0}', item.level) +
+            item.intro +
+            '<br /><br />' +
+            '<span style="color:#00F">现持有者：{0}</span><br />'.replace('{0}', myItem ? KFOL.userName : '布丁道具商店') +
+            '使用状态：<span class="pd_custom_item_is_used" style="color:{0}">{1}</span><br />'
+                .replace('{0}', isUsed ? '#999' : '#090')
+                .replace('{1}', isUsed ? '已使用' : '未使用') +
+            '交易类型：' + (item.canSell ? '<span style="color:#090">可以交易</span>' : '<span style="color:#999">无法交易</span>') + '<br />' +
+            '当前市场价：{0} 节操<br />'.replace('{0}', item.price)
+        );
+        if (myItem) {
+            $('<span>购入价格：{0} 节操</span><br />'.replace('{0}', myItem.buyPrice) +
+                '<div>' +
+                (isUsed ? '[<a class="pd_highlight" href="#">还原此道具使用效果</a>]' : '[<a href="#">使用此道具</a>]') +
+                (item.canSell ? ' | [<a href="#">出售此道具</a>]' : '') +
+                '</div>'
+            ).appendTo($node)
+                .find('a')
+                .click(function (e) {
+                    e.preventDefault();
+                    var myItem = Extra.getMyCustomItem(itemTypeId);
+                    if (!myItem) {
+                        alert('你尚未购买此道具');
+                        return;
+                    }
+                    var $this = $(this);
+                    var text = $this.text();
+                    if (text.indexOf('出售') > -1) {
+                        if (window.confirm('是否出售此道具？\n（出售道具后使用道具的效果也将一并还原）')) {
+                            Extra.sellCustomItem(itemTypeId, item);
+                        }
+                    }
+                    else if (text.indexOf('还原') > -1) {
+                        if (item.cancel() === false) return;
+                        Tools.setCookie(item.cookieName, '', Tools.getDate('-1d'));
+                        $this.text('使用此道具').removeClass('pd_highlight');
+                        $('.pd_custom_item_is_used').text('未使用').css('color', '#090');
+                    }
+                    else {
+                        if (item.use() === false) return;
+                        $this.text('还原此道具使用效果').addClass('pd_highlight');
+                        $('.pd_custom_item_is_used').text('已使用').css('color', '#999');
+                    }
+                });
+        }
+        $node.prev('td').find('img').attr('src', Extra.imgResHostUrl + item.image);
+        $node.parent('tr').next('tr').find('td').html(
+            myItem ? '[历史记载]<br />本道具于{0}被{1}取得。'.replace('{0}', Tools.getDateString(new Date(myItem.buyTime))).replace('{1}', KFOL.userName) : ''
+        );
     },
 
     /**
@@ -316,70 +428,6 @@ var Extra = {
     },
 
     /**
-     * 显示指定的自定义道具的详细信息
-     */
-    showCustomItemInfo: function () {
-        var itemTypeId = parseInt(Tools.getUrlParam('pd_typeid'));
-        if (!itemTypeId) return;
-        var item = Extra.customItemList[itemTypeId];
-        if (!item) return;
-        var cookieValue = Tools.getCookie(item.cookieName);
-        var myItem = Extra.getMyCustomItem(itemTypeId);
-        var $node = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').html(
-            '<span style="color:#00F">道具名称：{0}</span><br />'.replace('{0}', item.name) +
-            '道具等级：{0}级道具<br />'.replace('{0}', item.level) +
-            item.intro +
-            '<br /><br />' +
-            '<span style="color:#00F">现持有者：{0}</span><br />'.replace('{0}', myItem ? KFOL.userName : '良心道具商店') +
-            '使用状态：<span class="pd_custom_item_is_used" style="color:{0}">{1}</span><br />'
-                .replace('{0}', cookieValue === item.cookieValue ? '#999' : '#090')
-                .replace('{1}', cookieValue === item.cookieValue ? '已使用' : '未使用') +
-            '交易类型：' + (item.canSell ? '<span style="color:#090">可以交易</span>' : '<span style="color:#999">无法交易</span>') + '<br />' +
-            '当前市场价：{0} 节操<br />'.replace('{0}', item.price)
-        );
-        if (myItem) {
-            $('<span>购入价格：{0} 节操</span><br />'.replace('{0}', myItem.buyPrice) +
-                '<div>' +
-                (cookieValue === item.cookieValue ? '[<a class="pd_highlight" href="#">还原此道具使用效果</a>]' : '[<a href="#">使用此道具</a>]') +
-                (item.canSell ? ' | [<a href="#">出售此道具</a>]' : '') +
-                '</div>'
-            ).appendTo($node)
-                .find('a')
-                .click(function (e) {
-                    e.preventDefault();
-                    var myItem = Extra.getMyCustomItem(itemTypeId);
-                    if (!myItem) {
-                        alert('你尚未购买此道具');
-                        return;
-                    }
-                    var $this = $(this);
-                    var text = $this.text();
-                    if (text.indexOf('出售') > -1) {
-                        if (window.confirm('是否出售此道具？')) {
-                            Extra.sellCustomItem(itemTypeId, item);
-                        }
-                    }
-                    else if (text.indexOf('还原') > -1) {
-                        if (item.cancel() === false) return;
-                        Tools.setCookie(item.cookieName, '', Tools.getDate('-1d'));
-                        $this.text('使用此道具').removeClass('pd_highlight');
-                        $('.pd_custom_item_is_used').text('未使用').css('color', '#090');
-                    }
-                    else {
-                        if (item.use() === false) return;
-                        Tools.setCookie(item.cookieName, item.cookieValue, Tools.getDate('+1M'));
-                        $this.text('还原此道具使用效果').addClass('pd_highlight');
-                        $('.pd_custom_item_is_used').text('已使用').css('color', '#999');
-                    }
-                });
-        }
-        $node.prev('td').find('img').attr('src', Extra.imgResHostUrl + item.image);
-        $node.parent('tr').next('tr').find('td').html(
-            myItem ? '[历史记载]<br />本道具于{0}被{1}取得。'.replace('{0}', Tools.getDateString(new Date(myItem.buyTime))).replace('{1}', KFOL.userName) : ''
-        );
-    },
-
-    /**
      * 多彩神秘颜色
      */
     modifyRainbowSmColor: function () {
@@ -387,7 +435,7 @@ var Extra = {
         if (Tools.getCookie(Const.rainbowSmColorCookieName) === Extra.customItemList[1].cookieValue) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 75) !== 23) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 100) !== 39) return;
             var css = 'url("{0}{filename}") 1 stretch'.replace('{0}', Extra.imgResHostUrl);
             $this.closest('.readtext').css('border-image', css.replace('{filename}', 'border_rainbow_middle.png'))
                 .prev('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_top.png'))
@@ -403,7 +451,7 @@ var Extra = {
         if (Tools.getCookie(Const.nekoMiMiAvatarCookieName) === Extra.customItemList[2].cookieValue) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 75) !== 53) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 100) !== 67) return;
             var $parent = $this.parent();
             var type = 1;
             if ($parent.is('.readidmleft')) type = 2;
@@ -468,7 +516,7 @@ var Extra = {
                     var value = Tools.getCookie(Const.excludeUsersCookieName);
                     value = window.prompt('添加想从替换中被排除的用户名单（多个用户名请用英文逗号分隔）：', value ? value : '');
                     if (value) {
-                        Tools.setCookie(Const.excludeUsersCookieName, value, Tools.getDate('+1M'));
+                        Tools.setCookie(Const.excludeUsersCookieName, value, Tools.getDate('+' + Extra.defItemEffectInterval + 'd'));
                         alert('有几位朋友来和你一起玩了，你的孤独症减轻了一些');
                     }
                     else if (value !== null) {
@@ -652,14 +700,69 @@ var Extra = {
     },
 
     /**
+     * 自定义自己的神秘等级
+     * @param {string} smLevel 自定义的神秘等级
+     */
+    customSmLevel: function (smLevel) {
+        var arr = smLevel.split('||', 2);
+        smLevel = arr[0];
+        var type = 0;
+        if (typeof arr[1] !== 'undefined') type = parseInt(arr[1]);
+        if (KFOL.isInHomePage) {
+            if (type) return;
+            var $smLevel = $('a[href="kf_growup.php"][title="用户等级和权限"]');
+            $smLevel.html($smLevel.html().replace(/神秘(.+?)级/, '<span title="$1级神秘">神秘' + smLevel + '级</span>'));
+        }
+        else if (location.pathname === '/read.php') {
+            $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmleft > a[href="profile.php?action=show&uid={0}"]'
+                .replace(/\{0\}/g, KFOL.uid)
+            ).each(function () {
+                var $this = $(this);
+                var $parent = $this.parent();
+                if ($parent.is('.readidmleft')) {
+                    var smLevelText = smLevel.substr(0, 5);
+                    var $smLevel = $parent.next('.readidmright');
+                    var oriSmLevel = $smLevel.text();
+                    $smLevel.css('font-size', smLevelText.length === 4 ? '14px' : '13px')
+                        .text(smLevelText)
+                        .attr('title', oriSmLevel + '级神秘')
+                        .addClass('pd_custom_tips');
+                }
+                else {
+                    var smLevelText = smLevel.substr(0, 8);
+                    var $smLevel = $parent.contents().last();
+                    var matches = /(\d+)级神秘/.exec($smLevel.text());
+                    if (matches) {
+                        $smLevel.get(0).textContent = smLevelText + '级神秘';
+                        $smLevel.wrap('<span title="' + matches[1] + '级神秘" class="pd_custom_tips"></span>');
+                    }
+                }
+            });
+        }
+        else if (/\/profile\.php\?action=show&uid=\d+/i.test(location.href)) {
+            if (type || Tools.getUrlParam('uid') !== KFOL.uid.toString()) return;
+            var $userInfo = $('.log1 > tbody > tr:nth-child(2) > td:nth-child(2)');
+            $userInfo.html($userInfo.html().replace(/神秘等级：(\d+)\s*级/i, '神秘等级：<span title="$1级神秘" class="pd_custom_tips">' + smLevel + ' 级</span>'));
+        }
+        else if (location.pathname === '/kf_growup.php') {
+            if (type) return;
+            var $smLevel = $('#alldiv > table:first > tbody > tr:first-child > td:nth-child(2) > div:first > div:first-child > b:first');
+            var oriSmLevel = $smLevel.text();
+            $smLevel.text(smLevel).attr('title', oriSmLevel + '级神秘').addClass('pd_custom_tips');
+        }
+    },
+
+    /**
      * 初始化
      */
     init: function () {
         if (typeof jQuery === 'undefined' || !KFOL.uid) return;
         var startDate = new Date();
+        Extra.version = extraVersion;
         KFOL.window.Extra = Extra;
         Extra.setConst();
         Extra.appendCss();
+        Extra.addVersionInfoInConfigDialog();
 
         if (location.pathname === '/read.php') {
             Extra.modifyRainbowSmColor();
@@ -671,6 +774,8 @@ var Extra = {
         else if (/\/kf_fw_ig_my\.php\?pro=\d+&pd_typeid=\d+/i.exec(location.href)) {
             Extra.showCustomItemInfo();
         }
+        var smLevel = Tools.getCookie(Const.customSmLevelCookieName);
+        if (smLevel) Extra.customSmLevel(smLevel);
         if (Tools.getCookie(Const.kfOnlyYouCookieName) === Extra.customItemList[3].cookieValue) Extra.kfOnlyYou();
 
         var endDate = new Date();
