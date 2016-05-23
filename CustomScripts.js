@@ -1374,7 +1374,7 @@ var statSampleItem = function (totalNum, startId) {
 (function () {
     if (location.pathname !== '/read.php') return;
     var imgResUrl = 'https://kf.miaola.info/pd/img/';
-    $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmsbottom > a[href="profile.php?action=show&uid={0}"]'
+    $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmleft > a[href="profile.php?action=show&uid={0}"]'
         .replace(/\{0\}/g, KFOL.uid)
     ).each(function () {
         $(this).closest('.readtext').css('border-image', 'url("' + imgResUrl + 'border_rainbow_middle.png") 1 stretch')
@@ -1388,7 +1388,7 @@ var statSampleItem = function (totalNum, startId) {
 // 为自己的头像加上猫耳 V1.1
 (function () {
     if (location.pathname !== '/read.php') return;
-    $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmsbottom > a[href="profile.php?action=show&uid={0}"]'
+    $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmleft > a[href="profile.php?action=show&uid={0}"]'
         .replace(/\{0\}/g, KFOL.uid)
     ).each(function () {
         var $this = $(this);
@@ -1419,6 +1419,59 @@ var statSampleItem = function (totalNum, startId) {
                 $('body').append('<audio id="pd_nekomimi_voice" src="https://kf.miaola.info/pd/nyanpass.mp3" autoplay="autoplay" style="display:none"></audio>');
             }
         });
+    }
+}());
+
+/*==========================================*/
+
+// 自定义自己的神秘等级 V1.0
+(function () {
+    var smLevel = ''; //自定义的神秘等级（普通头像最多限8个字符，卡片头像最多限5个字符）
+    var type = 0; //设为1表示只在帖子页面里修改神秘等级
+
+    if (!smLevel) return;
+    smLevel = smLevel.substr(0, 8);
+    if (KFOL.isInHomePage) {
+        if (type) return;
+        var $smLevel = $('a[href="kf_growup.php"][title="用户等级和权限"]');
+        $smLevel.html($smLevel.html().replace(/神秘(.+?)级/, '<span title="$1级神秘">神秘' + smLevel + '级</span>'));
+    }
+    else if (location.pathname === '/read.php') {
+        $('.readidmsbottom > a[href="profile.php?action=show&uid={0}"], .readidmleft > a[href="profile.php?action=show&uid={0}"]'
+            .replace(/\{0\}/g, KFOL.uid)
+        ).each(function () {
+            var $this = $(this);
+            var $parent = $this.parent();
+            if ($parent.is('.readidmleft')) {
+                var smLevelText = smLevel.substr(0, 5);
+                var $smLevel = $parent.next('.readidmright');
+                var oriSmLevel = $smLevel.text();
+                $smLevel.css('font-size', smLevelText.length === 4 ? '14px' : '13px')
+                    .text(smLevelText)
+                    .attr('title', oriSmLevel + '级神秘')
+                    .addClass('pd_custom_tips');
+            }
+            else {
+                var smLevelText = smLevel;
+                var $smLevel = $parent.contents().last();
+                var matches = /(\d+)级神秘/.exec($smLevel.text());
+                if (matches) {
+                    $smLevel.get(0).textContent = smLevelText + '级神秘';
+                    $smLevel.wrap('<span title="' + matches[1] + '级神秘" class="pd_custom_tips"></span>');
+                }
+            }
+        });
+    }
+    else if (/\/profile\.php\?action=show&uid=\d+/i.test(location.href)) {
+        if (type || Tools.getUrlParam('uid') !== KFOL.uid.toString()) return;
+        var $userInfo = $('.log1 > tbody > tr:nth-child(2) > td:nth-child(2)');
+        $userInfo.html($userInfo.html().replace(/神秘等级：(\d+)\s*级/i, '神秘等级：<span title="$1级神秘" class="pd_custom_tips">' + smLevel + ' 级</span>'));
+    }
+    else if (location.pathname === '/kf_growup.php') {
+        if (type) return;
+        var $smLevel = $('#alldiv > table:first > tbody > tr:first-child > td:nth-child(2) > div:first > div:first-child > b:first');
+        var oriSmLevel = $smLevel.text();
+        $smLevel.text(smLevel).attr('title', oriSmLevel + '级神秘').addClass('pd_custom_tips');
     }
 }());
 
