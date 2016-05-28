@@ -26,8 +26,14 @@ var Func = {
         name = name.replace(/\./g, '_');
         if (typeof Func.funcList[name] !== 'undefined') {
             for (var i in Func.funcList[name]) {
-                if (typeof Func.funcList[name][i] === 'function')
-                    Func.funcList[name][i](data);
+                if (typeof Func.funcList[name][i] === 'function') {
+                    try {
+                        Func.funcList[name][i](data);
+                    }
+                    catch (ex) {
+                        console.log(ex);
+                    }
+                }
             }
             return true;
         }

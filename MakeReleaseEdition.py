@@ -7,6 +7,8 @@ from jsmin import jsmin
 devDirName = 'dev' # 开发版文件夹名
 devKFOLFileName = 'KFOL' # 开发版KFOL主文件名
 devPartFileNameList = ['Config', 'Const', 'ConfigMethod', 'Tools', 'Func', 'Dialog', 'ConfigDialog', 'Log', 'TmpLog', 'Item', 'Card', 'Bank', 'Loot'] # 开发版各部分文件名
+extraDevFileName = 'Extra' # Extra开发版主文件名
+extraDevPartFileNameList = ['CustomItem'] # Extra开发版各部分文件名
 releaseDirName = 'release' # 正式版文件夹名
 defaultFileName = 'KFOLAssistant' # 标准版文件名
 greasyForkFileName = 'GreasyFork' # GreasyFork版文件名
@@ -71,16 +73,14 @@ def getDefaultEditionContent():
         content = content.replace(match.group(0), partContent)
     else:
         raise Exception('未找到{PartFileContent}占位符')
-    content, num  = re.subn(r'(// @description.+?)(// @include)',
-                     r'\g<1>'
+    content, num  = re.subn(r'// @pd-update-url-placeholder',
                      '// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/KFOLAssistant.meta.js\n'
-                     '// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/KFOLAssistant.user.js\n'
-                     r'\g<2>',
+                     '// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/KFOLAssistant.user.js',
                      content,
                      count=1,
-                     flags=re.S | re.I)
+                     flags=re.I)
     if num == 0: raise NoFoundReplaceStringError('标准版', 1)
-    content, num  = re.subn(r'// @require.+?(// @version)', '\g<1>', content, count=1, flags=re.S | re.I)
+    content, num  = re.subn(r'// @pd-require-start.+?// @pd-require-end\n', '', content, count=1, flags=re.S | re.I)
     if num == 0: raise NoFoundReplaceStringError('标准版', 2)
     return content
 
@@ -153,9 +153,38 @@ def makeGlobalStorageEdition(content):
     open(releaseDirName + os.sep + globalStorageFileName + metaScriptExt, 'w', encoding = encoding).write(getMetaFileContent(content))
     print('生成GlobalStorage版meta文件')
 
-def makeExtraFile():
-    '''生成Extra脚本文件'''
-    content = open(devDirName + os.sep + extraFileName + userScriptExt, 'r', encoding = encoding).read()
+def getExtraContent():
+    '''获取Extra脚本文件内容
+
+    Returns:
+        Extra脚本文件内容
+    '''
+    partContent = ''
+    for fileName in extraDevPartFileNameList:
+        partContent += open(devDirName + os.sep + fileName + '.js', 'r', encoding = encoding).read() + '\n\n'
+    content = open(devDirName + os.sep + extraDevFileName + userScriptExt, 'r', encoding = encoding).read()
+    match = re.search('/\*\s*\{PartFileContent\}\s*\*/', content, flags=re.S | re.I)
+    if match:
+        content = content.replace(match.group(0), partContent)
+    else:
+        raise Exception('未找到{PartFileContent}占位符')
+    content, num  = re.subn(r'// @pd-update-url-placeholder',
+                     '// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.meta.js\n'
+                     '// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.user.js',
+                     content,
+                     count=1,
+                     flags=re.I)
+    if num == 0: raise NoFoundReplaceStringError('Extra脚本', 1)
+    content, num  = re.subn(r'// @pd-require-start.+?// @pd-require-end\n', '', content, count=1, flags=re.S | re.I)
+    if num == 0: raise NoFoundReplaceStringError('Extra脚本', 2)
+    return content
+
+def makeExtraFile(content):
+    '''生成Extra脚本文件
+
+    Args:
+        content: 脚本文件内容
+    '''
     open(releaseDirName + os.sep + extraFileName + userScriptExt, 'w', encoding = encoding).write(content)
     print('生成Extra脚本文件')
     metaContent = getMetaFileContent(content)
@@ -169,15 +198,22 @@ def main():
     print('开发版文件夹：' + devDirName)
     print('开发版KFOL主文件名：' + devKFOLFileName + userScriptExt)
     print('开发版各部分文件名：' + str(devPartFileNameList))
+    print()
+    print('Extra开发版主文件名：' + extraDevFileName + userScriptExt)
+    print('Extra开发版各部分文件名：' + str(extraDevPartFileNameList))
     print('-------------------------------------------')
     print('正式版文件夹：' + releaseDirName)
     print('标准版脚本文件：' + defaultFileName + userScriptExt)
+    print('压缩过的标准版脚本文件：' + defaultFileName + minUserScriptExt)
+    print('标准版meta文件：' + defaultFileName + metaScriptExt)
     print('GreasyFork版脚本文件：' + greasyForkFileName + userScriptExt)
     print('ScriptStorage版脚本文件：' + scriptStorageFileName + userScriptExt)
     print('ScriptStorage版meta文件：' + scriptStorageFileName + metaScriptExt)
     print('GlobalStorage版脚本文件：' + globalStorageFileName + userScriptExt)
     print('GlobalStorage版meta文件：' + globalStorageFileName + metaScriptExt)
+    print()
     print('Extra脚本文件：' + extraFileName + userScriptExt)
+    print('压缩过的Extra脚本文件：' + extraFileName + minUserScriptExt)
     print('Extra脚本meta文件：' + extraFileName + metaScriptExt)
     print('-------------------------------------------')
 
@@ -189,8 +225,10 @@ def main():
     makeScriptStorageEdition(content)
     print()
     makeGlobalStorageEdition(content)
+
     print()
-    makeExtraFile()
+    extraContent = getExtraContent()
+    makeExtraFile(extraContent)
 
     print('\n已生成所有文件')
 

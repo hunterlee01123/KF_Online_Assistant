@@ -210,6 +210,9 @@ var ConfigDialog = {
             e.preventDefault();
             if (window.confirm('是否重置所有设置？')) {
                 ConfigMethod.clear();
+                if (typeof Extra !== 'undefined' && typeof Extra.clearConfig !== 'undefined') {
+                    Extra.clearConfig();
+                }
                 alert('设置已重置');
                 location.reload();
             }

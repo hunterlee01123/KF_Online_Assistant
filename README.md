@@ -10,6 +10,9 @@ KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及
 设置和日志存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况） __【Firefox桌面版可能无法使用】__  
 __注：如需要改用其它版本，可先将设置及日志导出来，在安装后再导入即可__
 
+## KF Online助手 Extra
+KF Online助手的额外脚本，可提供更丰富有趣的玩法，[详情请见此贴](http://bbs.ddgal.com/read.php?tid=554795)
+
 ## 安装方法
 1. __Firefox：__安装[Greasemonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/)扩展，重启浏览器后打开脚本下载地址安装脚本即可
 2. __Chrome（及各种采用Chrome内核的浏览器，如360、搜狗、QQ浏览器等）：__  

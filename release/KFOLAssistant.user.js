@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.3.4
+// @version     5.3.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.4';
+var version = '5.3.5';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1349,6 +1349,17 @@ var Tools = {
         matches = /https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(url);
         if (matches) url = 'http://music.miaola.info/xiami/{0}.mp3'.replace('{0}', matches[1]);
         return url;
+    },
+
+    /**
+     * 转换为可外链的视频URL
+     * @param {string} url 视频原URL
+     * @returns {string} 视频外链URL
+     */
+    convertToVideoExternalLinkUrl: function (url) {
+        var matches = /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(url);
+        if (matches) url = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
+        return url;
     }
 };
 
@@ -1380,8 +1391,14 @@ var Func = {
         name = name.replace(/\./g, '_');
         if (typeof Func.funcList[name] !== 'undefined') {
             for (var i in Func.funcList[name]) {
-                if (typeof Func.funcList[name][i] === 'function')
-                    Func.funcList[name][i](data);
+                if (typeof Func.funcList[name][i] === 'function') {
+                    try {
+                        Func.funcList[name][i](data);
+                    }
+                    catch (ex) {
+                        console.log(ex);
+                    }
+                }
             }
             return true;
         }
@@ -1702,6 +1719,9 @@ var ConfigDialog = {
             e.preventDefault();
             if (window.confirm('是否重置所有设置？')) {
                 ConfigMethod.clear();
+                if (typeof Extra !== 'undefined' && typeof Extra.clearConfig !== 'undefined') {
+                    Extra.clearConfig();
+                }
                 alert('设置已重置');
                 location.reload();
             }
@@ -3861,15 +3881,13 @@ var TmpLog = {
             return;
         }
         if (!log || $.type(log) !== 'object') return;
-        /*
-         var allowKey = [];
-         for (var k in Const) {
-         if (k.indexOf('TmpLogName') > -1) allowKey.push(Const[k]);
-         }
-         for (var k in log) {
-         if ($.inArray(k, allowKey) === -1) delete log[k];
-         }
-         */
+        var allowKey = [];
+        for (var k in Const) {
+            if (k.indexOf('TmpLogName') > -1) allowKey.push(Const[k]);
+        }
+        for (var k in log) {
+            if ($.inArray(k, allowKey) === -1) delete log[k];
+        }
         TmpLog.log = log;
     },
 
@@ -8318,7 +8336,7 @@ var KFOL = {
         if (!KFOL.userName) return false;
         var matches = /&uid=(\d+)/.exec($user.attr('href'));
         if (!matches) return false;
-        KFOL.uid = matches[1];
+        KFOL.uid = parseInt(matches[1]);
         return true;
     },
 
@@ -9818,26 +9836,26 @@ var KFOL = {
                 KFOL.buyThreads(threadList);
             }
         }).parent().mouseenter(function () {
-                $('<span style="margin-left:5px">[<a href="#">全选</a><a style="margin-left:5px" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn'))
-                    .find('a:first')
-                    .click(function (e) {
-                        e.preventDefault();
-                        var $buyThread = $('.pd_buy_thread');
-                        $buyThread.prop('checked', true);
-                        alert('共选择了{0}项'.replace('{0}', $buyThread.length));
-                    })
-                    .next('a')
-                    .click(function (e) {
-                        e.preventDefault();
-                        var totalNum = 0;
-                        $('.pd_buy_thread').each(function () {
-                            var $this = $(this);
-                            $this.prop('checked', !$this.prop('checked'));
-                            if ($this.prop('checked')) totalNum++;
-                        });
-                        alert('共选择了{0}项'.replace('{0}', totalNum));
+            $('<span style="margin-left:5px">[<a href="#">全选</a><a style="margin-left:5px" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn'))
+                .find('a:first')
+                .click(function (e) {
+                    e.preventDefault();
+                    var $buyThread = $('.pd_buy_thread');
+                    $buyThread.prop('checked', true);
+                    alert('共选择了{0}项'.replace('{0}', $buyThread.length));
+                })
+                .next('a')
+                .click(function (e) {
+                    e.preventDefault();
+                    var totalNum = 0;
+                    $('.pd_buy_thread').each(function () {
+                        var $this = $(this);
+                        $this.prop('checked', !$this.prop('checked'));
+                        if ($this.prop('checked')) totalNum++;
                     });
-            }).mouseleave(function () {
+                    alert('共选择了{0}项'.replace('{0}', totalNum));
+                });
+        }).mouseleave(function () {
             $(this).find('.pd_buy_thread_btn').next('span').remove();
         });
     },
@@ -10284,12 +10302,13 @@ var KFOL = {
         }
         else {
             $('#r_menu > ul > li:last-child').before(
-                '<li class="r_cmenuho"><a href="JavaScript:;">快捷导航</a>' +
+                '<li class="r_cmenuho"><a href="javascript:;">快捷导航</a>' +
                 '  <ul class="r_cmenu2">' +
                 '    <li><a href="guanjianci.php?gjc={0}">@提醒</a></li>'.replace('{0}', KFOL.userName) +
                 '    <li><a href="kf_growup.php">神秘等级</a></li>' +
                 '    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>' +
                 '    <li><a href="kf_fw_ig_my.php">我的道具</a></li>' +
+                '    <li><a href="kf_fw_ig_shop.php">道具商店</a></li>' +
                 '    <li><a href="kf_smbox.php">神秘盒子</a></li>' +
                 '    <li><a href="profile.php?action=modify">设置</a></li>' +
                 '    <li><a href="hack.php?H_name=bank">银行</a></li>' +
@@ -10894,6 +10913,7 @@ var KFOL = {
                         var id = $(this).data('id');
                         if (id) addSmileCode(id);
                     });
+                Func.run('KFOL.addMoreSmileLink_after_click_');
             });
     },
 
@@ -11085,10 +11105,10 @@ var KFOL = {
                     text = window.prompt('请输入神秘等级：', 5);
                     break;
                 case 'audio':
-                    text = Tools.convertToAudioExternalLinkUrl(window.prompt('请输入HTML5音频URL：\n（可直接输入网易云音乐或虾米的单曲URL，将自动转换为外链URL）', 'http://'));
+                    text = Tools.convertToAudioExternalLinkUrl(window.prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://'));
                     break;
                 case 'video':
-                    text = window.prompt('请输入HTML5视频URL：', 'http://');
+                    text = Tools.convertToVideoExternalLinkUrl(window.prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://'));
                     break;
             }
             if (text === null) return;
@@ -11207,7 +11227,7 @@ var KFOL = {
     init: function () {
         if (typeof jQuery === 'undefined') return;
         var startDate = new Date();
-        //console.log('KF Online助手启动');
+        //console.log('【KF Online助手】启动');
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
         KFOL.exposeInterface();
@@ -11363,7 +11383,7 @@ var KFOL = {
         if (Config.customScriptEnabled) KFOL.runCustomScript(2);
 
         var endDate = new Date();
-        console.log('KF Online助手加载完毕，加载耗时：{0}ms'.replace('{0}', endDate - startDate));
+        console.log('【KF Online助手】加载完毕，加载耗时：{0}ms'.replace('{0}', endDate - startDate));
     }
 };
 

@@ -23,15 +23,13 @@ var TmpLog = {
             return;
         }
         if (!log || $.type(log) !== 'object') return;
-        /*
-         var allowKey = [];
-         for (var k in Const) {
-         if (k.indexOf('TmpLogName') > -1) allowKey.push(Const[k]);
-         }
-         for (var k in log) {
-         if ($.inArray(k, allowKey) === -1) delete log[k];
-         }
-         */
+        var allowKey = [];
+        for (var k in Const) {
+            if (k.indexOf('TmpLogName') > -1) allowKey.push(Const[k]);
+        }
+        for (var k in log) {
+            if ($.inArray(k, allowKey) === -1) delete log[k];
+        }
         TmpLog.log = log;
     },
 
