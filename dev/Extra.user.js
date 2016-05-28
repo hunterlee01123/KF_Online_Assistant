@@ -4,15 +4,17 @@
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
-// @description KF Online助手的额外脚本，可提供更丰富的玩法（需配合KFOL助手使用，请先安装KFOL助手再安装此脚本）
-// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.meta.js
-// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.user.js
+// @description KF Online助手的额外脚本，可提供更丰富有趣的玩法（需配合最新版的KFOL助手使用，请先安装KFOL助手再安装此脚本）
+// @pd-update-url-placeholder
 // @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/jquery-ui.custom.min.js
+// @pd-require-start
+// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/CustomItem.js
+// @pd-require-end
 // @include     http://*2dgal.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.0.0-dev
+// @version     2.0.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -20,397 +22,8 @@
 // ==/UserScript==
 // Extra版本号
 var extraVersion = '2.0.0';
-/**
- * 自定义道具类
- */
-var CustomItem = {
-    // 道具价格浮动的最低百分比
-    minItemPricePercent: 0,
-    // 道具价格浮动的最高百分比
-    maxItemPricePercent: 200,
 
-    // 自定义道具列表
-    itemList: {
-        1: {
-            level: 3,
-            name: '神秘彩虹',
-            price: 233,
-            canSell: true,
-            intro: '可将自己的神秘颜色变换成彩虹色，让你拥有超越一般玩家的尊贵身份！<br /><span class="pd_highlight">（效果仅限自己可见）</span>',
-            image: 'custom_item_1.jpg',
-            configName: 'rainbowSmColorEnabled',
-            configValue: true,
-            use: function () {
-                Extra.Config[this.configName] = this.configValue;
-                KFOL.showMsg('<strong>雨过天晴，彩虹小马们欢快的飞过天空，架起一道神秘的彩虹，哦卖力头破你~~</strong>', -1);
-            },
-            cancel: function () {
-                KFOL.showMsg('<strong>虚幻的彩虹总是短暂的，天空中已不见彩虹小马们玩乐的身影，那道神秘的彩虹也再无踪迹……</strong>', -1);
-            }
-        },
-        2: {
-            level: 3,
-            name: '猫耳',
-            price: 233,
-            canSell: true,
-            intro: '这里有一对猫耳，戴上去就能变成一只猫，喵~~~<br />给你自己的头像戴上一对猫耳<span class="pd_highlight">（仅限卡片或140px宽度的图像）</span><br />' +
-            '<span class="pd_highlight">（效果仅限自己可见）</span>',
-            image: 'custom_item_2.jpg',
-            configName: 'nekoMiMiAvatarEnabled',
-            configValue: true,
-            use: function () {
-                Extra.Config[this.configName] = this.configValue;
-                KFOL.showMsg('<strong>咦？地上放着一对猫耳，戴上去试试看？</strong><br />……喵？喵喵喵~~~', -1);
-            },
-            cancel: function () {
-                KFOL.showMsg('<strong>你依依不舍地摘下了猫耳，重新变回了人类……</strong>', -1);
-            }
-        },
-        3: {
-            level: 5,
-            name: '其实整个KF只有我一个人',
-            price: 6666,
-            canSell: true,
-            intro: '少年（少女），其实整个KF只有你一个人，你相信吗？<br />纳尼？你不信？那就试试吧，到时候别哭喊着“妈妈，我再也不想一个人玩了”就好了~~',
-            image: 'custom_item_3.jpg',
-            configName: 'kfOnlyYouEnabled',
-            configValue: true,
-            use: function () {
-                Extra.Config[this.configName] = this.configValue;
-                KFOL.showMsg(
-                    '<strong>少年（少女），告诉你个秘密：</strong><br />其实整个KF只有你一个人，我们都是你臆想出来的人格，KF上所有的会员其实都是你<br />' +
-                    '我们已经骗了你好久，是时候向你展现真相了……'
-                    , -1
-                );
-            },
-            cancel: function () {
-                KFOL.showMsg('<strong>“妈妈，我再也不想一个人玩了！”</strong><br />你的精神分裂症治好了，KF再次恢复为平日的模样', -1);
-            }
-        },
-        4: {
-            level: 3,
-            name: '逆天改命符',
-            price: 233,
-            canSell: true,
-            intro: '对自己如此low的神秘等级感到不甘心？觉得MAX等级无法体现自己的逼格？<br />快来试试逆天改命符吧！可将自己的神秘等级改成任意字符！<br />' +
-            '<span class="pd_highlight">（效果仅限自己可见）</span>',
-            image: 'custom_item_4.jpg',
-            configName: 'customSmLevel',
-            configValue: '*',
-            use: function () {
-                var smLevel = $.trim(window.prompt('请输入你想自定义的神秘等级（普通头像最多限8个字符，卡片头像最多限5个字符）：'));
-                if (!smLevel) return false;
-                var type = window.confirm('是否只在帖子页面里修改神秘等级？否则将在所有可能的页面里修改') ? 1 : 0;
-                smLevel = smLevel.substr(0, 8);
-                Extra.Config[this.configName] = smLevel;
-                Extra.Config.customSmLevelType = type;
-                KFOL.showMsg('<strong>凡人，汝还妄图逆天改命？</strong><br />……嗯，看汝还算心诚，改改命也无不可……', -1);
-            },
-            cancel: function () {
-                KFOL.showMsg('<strong>逆天改命终违天道，你被打回了原型……</strong>', -1);
-            }
-        },
-    },
-
-    /**
-     * 获取我的自定义道具列表
-     * @returns {{}} 我的自定义道具列表
-     */
-    getMyItemList: function () {
-        var myItemList = TmpLog.getValue(Const.myCustomItemTmpLogName);
-        if ($.type(myItemList) !== 'object') myItemList = {};
-        return myItemList;
-    },
-
-    /**
-     * 获取我的自定义道具列表中指定的道具种类ID的道具信息
-     * @param {number} itemTypeId 指定的道具种类ID
-     * @returns {?{}} 指定的道具种类ID的自定义道具信息
-     */
-    getMyItem: function (itemTypeId) {
-        var myItemList = CustomItem.getMyItemList();
-        var myItem = null;
-        if ($.type(myItemList[itemTypeId]) === 'object') myItem = myItemList[itemTypeId];
-        return myItem;
-    },
-
-    /**
-     * 将指定的道具种类ID的道具信息写入我的自定义道具列表中
-     * @param {number} itemTypeId 指定的道具种类ID
-     * @param {{}} myItem 我的自定义道具信息
-     */
-    setMyItem: function (itemTypeId, myItem) {
-        var myItemList = CustomItem.getMyItemList();
-        myItemList[itemTypeId] = myItem;
-        TmpLog.setValue(Const.myCustomItemTmpLogName, myItemList);
-    },
-
-    /**
-     * 购买指定的道具种类ID的自定义道具
-     * @param {number} itemTypeId 指定的道具种类ID
-     * @param {{}} item 指定的自定义道具类
-     * @param {number} jieCao 当前节操值
-     */
-    buyItem: function (itemTypeId, item, jieCao) {
-        var buyPrice = Math.round(item.price * (Math.random() * (CustomItem.maxItemPricePercent - CustomItem.minItemPricePercent) +
-            CustomItem.minItemPricePercent) / 100);
-        jieCao -= buyPrice;
-        Extra.setJieCao(jieCao);
-        CustomItem.setMyItem(itemTypeId, {buyTime: new Date().getTime(), buyPrice: buyPrice});
-        if (location.pathname === '/kf_fw_ig_my.php') CustomItem.showItemInfo(itemTypeId);
-        else $('.pd_jiecao_num').text(jieCao);
-        console.log('【Lv.{0}：{1}】道具购买成功，节操-{2} ({3}%)'
-            .replace('{0}', item.level)
-            .replace('{1}', item.name)
-            .replace('{2}', buyPrice)
-            .replace('{3}', Math.round(buyPrice / item.price * 100))
-        );
-        KFOL.showMsg(
-            '<strong>【<em>Lv.{0}</em>{1}】道具购买成功</strong><i>节操<ins>-{2} ({3}%)</ins></i>'
-                .replace('{0}', item.level)
-                .replace('{1}', item.name)
-                .replace('{2}', buyPrice)
-                .replace('{3}', Math.round(buyPrice / item.price * 100))
-            , -1);
-    },
-
-    /**
-     * 出售指定的道具种类ID的自定义道具
-     * @param {number} itemTypeId 指定的道具种类ID
-     * @param {{}} item 指定的自定义道具类
-     */
-    sellItem: function (itemTypeId, item) {
-        Extra.readConfig();
-        if (Extra.Config[item.configName] !== Extra.defConfig[item.configName]) {
-            Extra.Config[item.configName] = Extra.defConfig[item.configName];
-            Extra.writeConfig();
-        }
-        var myItemList = CustomItem.getMyItemList();
-        delete myItemList[itemTypeId];
-        if ($.isEmptyObject(myItemList))
-            TmpLog.deleteValue(Const.myCustomItemTmpLogName);
-        else
-            TmpLog.setValue(Const.myCustomItemTmpLogName, myItemList);
-        var sellPrice = Math.round(item.price * (Math.random() * (CustomItem.maxItemPricePercent - CustomItem.minItemPricePercent) +
-            CustomItem.minItemPricePercent) / 100);
-        var jieCao = Extra.getJieCao() + sellPrice;
-        Extra.setJieCao(jieCao);
-        if (location.pathname === '/kf_fw_ig_my.php') CustomItem.showItemInfo(itemTypeId);
-        else $('.pd_jiecao_num').text(jieCao);
-        console.log('【Lv.{0}：{1}】道具出售成功，节操+{2} ({3}%)'
-            .replace('{0}', item.level)
-            .replace('{1}', item.name)
-            .replace('{2}', sellPrice)
-            .replace('{3}', Math.round(sellPrice / item.price * 100))
-        );
-        KFOL.showMsg('<strong>【<em>Lv.{0}</em>{1}】道具出售成功</strong><i>节操<em>+{2} ({3}%)</em></i>'
-                .replace('{0}', item.level)
-                .replace('{1}', item.name)
-                .replace('{2}', sellPrice)
-                .replace('{3}', Math.round(sellPrice / item.price * 100))
-            , -1);
-    },
-
-    /**
-     * 显示指定的自定义道具的详细信息
-     * @param {number} itemTypeId 指定的道具种类ID
-     */
-    showItemInfo: function (itemTypeId) {
-        if (!itemTypeId) return;
-        var item = CustomItem.itemList[itemTypeId];
-        if (!item) return;
-        var configValue = Extra.Config[item.configName];
-        var isUsed = (configValue && item.configValue === '*') || configValue === item.configValue;
-        var myItem = CustomItem.getMyItem(itemTypeId);
-        var $node = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').html(
-            '<span style="color:#00F">道具名称：{0}</span><br />'.replace('{0}', item.name) +
-            '道具等级：{0}级道具<br />'.replace('{0}', item.level) +
-            item.intro +
-            '<br /><br />' +
-            '<span style="color:#00F">现持有者：{0}</span><br />'.replace('{0}', myItem ? KFOL.userName : '布丁道具商店') +
-            '使用状态：<span class="pd_custom_item_is_used" style="color:{0}">{1}</span><br />'
-                .replace('{0}', isUsed ? '#999' : '#090')
-                .replace('{1}', isUsed ? '已使用' : '未使用') +
-            '交易类型：' + (item.canSell ? '<span style="color:#090">可以交易</span>' : '<span style="color:#999">无法交易</span>') + '<br />' +
-            '当前市场价：{0} 节操<br />'.replace('{0}', item.price)
-        );
-        if (myItem) {
-            $('<span>购入价格：{0} 节操</span><br />'.replace('{0}', myItem.buyPrice) +
-                '<div>' +
-                (isUsed ? '[<a class="pd_highlight" href="#">还原此道具使用效果</a>]' : '[<a href="#">使用此道具</a>]') +
-                (item.canSell ? ' | [<a href="#">出售此道具</a>]' : '') +
-                '</div>'
-            ).appendTo($node)
-                .find('a')
-                .click(function (e) {
-                    e.preventDefault();
-                    if (!CustomItem.getMyItem(itemTypeId)) {
-                        alert('你尚未购买此道具');
-                        return;
-                    }
-                    var $this = $(this);
-                    var text = $this.text();
-                    if (text.indexOf('出售') > -1) {
-                        if (window.confirm('是否出售此道具？\n（出售道具后使用道具的效果也将一并还原）')) {
-                            CustomItem.sellItem(itemTypeId, item);
-                        }
-                    }
-                    else if (text.indexOf('还原') > -1) {
-                        Extra.readConfig();
-                        if (item.cancel() === false) return;
-                        Extra.Config[item.configName] = Extra.defConfig[item.configName];
-                        $this.text('使用此道具').removeClass('pd_highlight');
-                        $('.pd_custom_item_is_used').text('未使用').css('color', '#090');
-                        Extra.writeConfig();
-                    }
-                    else {
-                        Extra.readConfig();
-                        if (item.use() === false) return;
-                        $this.text('还原此道具使用效果').addClass('pd_highlight');
-                        $('.pd_custom_item_is_used').text('已使用').css('color', '#999');
-                        Extra.writeConfig();
-                    }
-                });
-        }
-        else {
-            $('<div>[<a href="#">购买此道具</a>]</div>')
-                .appendTo($node)
-                .find('a')
-                .click(function (e) {
-                    e.preventDefault();
-                    if (myItem) {
-                        alert('你已购买过此道具');
-                        return;
-                    }
-                    var jieCao = Extra.getJieCao();
-                    if (jieCao < item.price * 2) {
-                        alert('你当前的节操值不足此道具市场价的两倍');
-                        return;
-                    }
-                    if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
-                    CustomItem.buyItem(itemTypeId, item, jieCao);
-                });
-        }
-        $node.prev('td').find('img').attr('src', Extra.resHostUrl + 'img/' + item.image);
-        $node.parent('tr').next('tr').find('td').html(
-            myItem ? '[历史记载]<br />本道具于{0}被{1}取得。'.replace('{0}', Tools.getDateString(new Date(myItem.buyTime))).replace('{1}', KFOL.userName) : ''
-        );
-    },
-
-    /**
-     * 添加自定义道具商店
-     */
-    addItemShop: function () {
-        var itemList = [];
-        for (var itemTypeId in CustomItem.itemList) {
-            var obj = CustomItem.itemList[itemTypeId];
-            obj.itemTypeId = itemTypeId;
-            itemList.push(obj);
-        }
-        itemList.sort(function (a, b) {
-            return a.level > b.level;
-        });
-        var myItemList = CustomItem.getMyItemList();
-        var itemListHtml = '';
-        $.each(itemList, function (index, item) {
-            var isOwn = $.type(myItemList[item.itemTypeId]) === 'object';
-            itemListHtml +=
-                '<tr data-item_type_id="{0}">'.replace('{0}', item.itemTypeId) +
-                ('  <td>{0}</td><td><a href="kf_fw_ig_my.php?pro=1000888&pd_typeid={1}">{2}</a></td><td style="color:{3}">{4}</td><td>{5} 节操</td>' +
-                '<td class="pd_custom_tips" title="{6}~{7}（均价：{8}）">{9}%~{10}%</td><td><a href="#">购买</a><a class="{11}" style="margin-left:15px" href="#">出售</a></td>')
-                    .replace('{0}', item.level)
-                    .replace('{1}', item.itemTypeId)
-                    .replace('{2}', item.name)
-                    .replace('{3}', isOwn ? '#669933' : '#FF0033')
-                    .replace('{4}', isOwn ? '是' : '否')
-                    .replace('{5}', item.price)
-                    .replace('{6}', Math.round(item.price * CustomItem.minItemPricePercent / 100))
-                    .replace('{7}', Math.round(item.price * CustomItem.maxItemPricePercent / 100))
-                    .replace('{8}', Math.round(item.price * (CustomItem.maxItemPricePercent - CustomItem.minItemPricePercent) / 2 / 100))
-                    .replace('{9}', CustomItem.minItemPricePercent)
-                    .replace('{10}', CustomItem.maxItemPricePercent)
-                    .replace('{11}', item.canSell ? '' : 'pd_disabled_link') +
-                '</tr>';
-        });
-
-        var $itemShop = $(
-            '<div>' +
-            '<div class="pd_custom_item_shop_title">布丁道具商店 ' +
-            '(当前持有 <b title="一种并没有什么卵用、随时可以丢掉的的东西（不Click试试么？）" class="pd_jiecao_num" style="font-size:14px;cursor:pointer">{0}</b> 节操)</div>'
-                .replace('{0}', Extra.getJieCao()) +
-            '<table class="pd_custom_item_shop" cellpadding="0" cellspacing="0">' +
-            '  <tbody>' +
-            '    <tr>' +
-            '      <td colspan="6">由喵拉布丁开设的<b>良心</b>道具商店，<strike>与↑上面的那家黑店截然不同</strike>，宗旨是为各位KFer服务，只需付出少许节操即可获得强力的氪金道具。<br />' +
-            '由于新店刚开张，道具种类暂时较少，以后将推出更多新品，敬请期待！<br />' +
-            '<strike>（友情提醒：↑上面那家是黑店，切勿听信该店老板XX风的花言巧语，否则必将付出惨痛的代价！）</strike></td>' +
-            '    </tr>' +
-            '    <tr>' +
-            '      <th style="width:100px">道具等级</th><th style="width:220px">道具名称</th><th style="width:90px">是否持有</th>' +
-            '<th style="width:150px">当前市场价</th><th style="width:150px">价格浮动</th><th style="width:150px">详细</th>' +
-            '    </tr>' +
-            itemListHtml +
-            '  </tbody>' +
-            '</table>' +
-            '</div>'
-        ).insertAfter($('.kf_fw_ig1:last').parent());
-
-        $itemShop.on('click', 'td:last-child > a', function (e) {
-            e.preventDefault();
-            var $this = $(this);
-            var itemTypeId = parseInt($this.closest('tr').data('item_type_id'));
-            if (!itemTypeId) return;
-            var item = CustomItem.itemList[itemTypeId];
-            if (!item) return;
-            var myItem = CustomItem.getMyItem(itemTypeId);
-            if ($this.text() === '出售') {
-                if (!item.canSell) return;
-                if (!myItem) {
-                    alert('你尚未购买此道具');
-                    return;
-                }
-                var isAlerted = $this.data('sell_alerted');
-                if (!isAlerted && !window.confirm('是否出售【Lv.{0}：{1}】道具？\n（出售道具后使用道具的效果也将一并还原）'.replace('{0}', item.level).replace('{1}', item.name)))
-                    return;
-                $this.data('sell_alerted', true);
-                CustomItem.sellItem(itemTypeId, item);
-                $this.closest('tr').find('td:nth-child(3)').css('color', '#FF0033').text('否');
-            }
-            else {
-                if (myItem) {
-                    alert('你已购买过此道具');
-                    return;
-                }
-                var jieCao = Extra.getJieCao();
-                if (jieCao < item.price * 2) {
-                    alert('你当前的节操值不足此道具市场价的两倍');
-                    return;
-                }
-                var isAlerted = $this.data('buy_alerted');
-                if (!isAlerted && !window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
-                $this.data('buy_alerted', true);
-                CustomItem.buyItem(itemTypeId, item, jieCao);
-                $this.closest('tr').find('td:nth-child(3)').css('color', '#669933').text('是');
-            }
-        }).on('click', '.pd_jiecao_num', function () {
-            var $this = $(this);
-            var clickCount = parseInt($this.data('click_count'));
-            if (!clickCount) clickCount = 1;
-            if (clickCount >= 5) {
-                $this.removeData('click_count');
-                if (window.confirm('是否将节操值重置为{0}？'.replace('{0}', Extra.defJieCao))) {
-                    TmpLog.deleteValue(Const.jieCaoTmpLogName);
-                    $('.pd_jiecao_num').text(Extra.defJieCao);
-                    alert('你的节操值已重置');
-                }
-            }
-            else {
-                $this.data('click_count', clickCount + 1);
-            }
-        });
-    },
-};
-
+/* {PartFileContent} */
 /**
  * 额外脚本类
  */
@@ -419,6 +32,10 @@ var Extra = {
      * Extra配置类
      */
     Config: {
+        // 节操值
+        jieCao: 50000,
+        // 我的自定义道具列表
+        myItemList: {},
         // 是否开启多彩神秘颜色，true：开启；false：关闭
         rainbowSmColorEnabled: false,
         // 是否为头像加上猫耳，true：开启；false：关闭
@@ -431,6 +48,8 @@ var Extra = {
         customSmLevel: '',
         // 在哪些页面自定义自己的神秘等级的类型，0：在所有可能的页面；1：只在帖子页面
         customSmLevelType: 0,
+        // 是否成为灰企鹅之友，true：开启；false：关闭
+        grayPenguinFriendEnabled: false
     },
 
     // 保存设置的键值名称
@@ -441,8 +60,7 @@ var Extra = {
     isInMiaolaDomain: location.host.indexOf('miaola.info') > -1,
     // 存放资源的URL，备选：https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/res/
     resHostUrl: 'https://kf.miaola.info/res/',
-    // 初始的节操值
-    defJieCao: 50000,
+    //resHostUrl: 'http://127.0.0.1/res/',
     // 多彩神秘颜色的默认用户列表
     defRainbowSmColorUseList: ['信仰风', '喵拉布丁'],
     // 为头像加上猫耳的默认用户列表
@@ -500,6 +118,24 @@ var Extra = {
         var defConfig = Extra.defConfig;
         if ($.type(options) !== 'object') return settings;
 
+        if (typeof options.jieCao !== 'undefined') {
+            if ($.type(options.jieCao) === 'number' && options.jieCao >= 0) settings.jieCao = parseInt(options.jieCao);
+            else settings.jieCao = defConfig.options.jieCao;
+        }
+        if (typeof options.myItemList !== 'undefined') {
+            if ($.type(options.myItemList) === 'object') {
+                var myItemList = {};
+                for (var i in options.myItemList) {
+                    if ($.type(options.myItemList[i]) === 'object' && $.type(options.myItemList[i].buyPrice) === 'number' &&
+                        $.type(options.myItemList[i].buyTime) === 'number') {
+                        myItemList[i] = options.myItemList[i];
+                    }
+                }
+                settings.myItemList = myItemList;
+            }
+            else settings.myItemList = defConfig.options.myItemList;
+        }
+
         if (typeof options.rainbowSmColorEnabled !== 'undefined') {
             settings.rainbowSmColorEnabled = typeof options.rainbowSmColorEnabled === 'boolean' ?
                 options.rainbowSmColorEnabled : defConfig.rainbowSmColorEnabled;
@@ -525,6 +161,10 @@ var Extra = {
             if (options.customSmLevelType && $.type(options.customSmLevelType) === 'number') settings.customSmLevelType = parseInt(options.customSmLevelType);
             else settings.customSmLevelType = defConfig.options.customSmLevelType;
         }
+        if (typeof options.grayPenguinFriendEnabled !== 'undefined') {
+            settings.grayPenguinFriendEnabled = typeof options.grayPenguinFriendEnabled === 'boolean' ?
+                options.grayPenguinFriendEnabled : defConfig.grayPenguinFriendEnabled;
+        }
 
         return settings;
     },
@@ -536,10 +176,6 @@ var Extra = {
         Extra.version = extraVersion;
         KFOL.window.Extra = Extra;
         KFOL.window.CustomItem = CustomItem;
-        // 我的节操值的临时日志名称
-        Const.jieCaoTmpLogName = 'JieCao';
-        // 我的自定义道具的临时日志名称
-        Const.myCustomItemTmpLogName = 'MyCustomItem';
     },
 
     /**
@@ -550,7 +186,11 @@ var Extra = {
             '<style type="text/css">' +
             '.pd_nekomimi { position: absolute; opacity: 0.95; cursor: pointer; }' +
             '#r_menu { z-index: 1; }' +
-            '.readtext { overflow-x: visible; }' +
+            '#pd_gray_penguin_menu { z-index: 3; }' +
+            '#pd_gray_penguin_menu th+th, #pd_gray_penguin_menu td+td { border-left: 1px solid #9191FF; }' +
+            '#pd_gray_penguin_menu th, #pd_gray_penguin_menu td { padding: 0 5px; line-height: 2em; cursor: pointer; min-width: 60px; }' +
+            '#pd_gray_penguin_menu td:hover { color: #FFF; background-color: #9191FF; }' +
+            '#pd_gray_penguin_menu th { border-bottom: 1px solid #9191FF; cursor: default; }' +
 
             /* 自定义道具商店 */
             '.pd_custom_item_shop_title { color: #FFF; background-color: #9999FF; padding: 5px; margin-top: 10px; }' +
@@ -570,47 +210,10 @@ var Extra = {
         Func.add('ConfigDialog.show_after_', function () {
             if (Extra.version) {
                 $('#pd_config .pd_cfg_about').append(
-                    '<span style="color:#666"> | <a target="_blank" href="read.php?tid=553895">Extra</a> (V{0})</span>'.replace('{0}', Extra.version)
+                    '<span style="color:#666"> | <a target="_blank" href="read.php?tid=554795">Extra</a> (V{0})</span>'.replace('{0}', Extra.version)
                 );
             }
         });
-    },
-
-    /**
-     * 执行Extra自定义脚本
-     * @param {number} type 脚本类型，1：脚本开始时执行；2：脚本结束时执行
-     */
-    runCustomScript: function (type) {
-        var script = '';
-        if (type === 2) script = KFOL.window.extraCustomScriptStartFunc;
-        else script = KFOL.window.extraCustomScriptEndFunc;
-        if (typeof script === 'function') {
-            try {
-                script();
-            }
-            catch (ex) {
-                console.log(ex);
-            }
-        }
-    },
-
-    /**
-     * 获取当前持有的节操值
-     * @returns {number} 节操值
-     */
-    getJieCao: function () {
-        var jieCao = parseInt(TmpLog.getValue(Const.jieCaoTmpLogName));
-        if (isNaN(jieCao)) jieCao = Extra.defJieCao;
-        if (jieCao < 0) jieCao = 0;
-        return jieCao;
-    },
-
-    /**
-     * 写入当前持有的节操值
-     * @param {number} jieCao
-     */
-    setJieCao: function (jieCao) {
-        TmpLog.setValue(Const.jieCaoTmpLogName, jieCao);
     },
 
     /**
@@ -934,22 +537,219 @@ var Extra = {
     },
 
     /**
+     * 操纵灰企鹅表情
+     */
+    controlGrayPenguinFace: function () {
+        /**
+         * 添加CSS样式
+         */
+        var appendCss = function () {
+            $('head').append(
+                '<style id="pd_gray_penguin_style" type="text/css">' +
+                '.readtext { overflow-x: visible; }' +
+                '.readtext img[src*="/post/smile/em/"] { z-index: 2; }' +
+                '</style>'
+            );
+        };
+
+        $('.readtext img[src*="/post/smile/em/"]').dblclick(function () {
+            if (!$('#pd_gray_penguin_style').length) appendCss();
+            $(this).addClass('pd_draggable_move');
+        }).draggable({
+            scroll: true,
+            cursor: 'move',
+            start: function () {
+                if (!$('#pd_gray_penguin_style').length) appendCss();
+                $(this).addClass('pd_draggable_move');
+            }
+        });
+
+        Func.add('KFOL.addMoreSmileLink_after_click_', function () {
+            $('#pd_smile_panel img[src*="/post/smile/em/"]').draggable({
+                scroll: true,
+                cursor: 'move',
+                start: function () {
+                    if (!$('#pd_gray_penguin_style').length) appendCss();
+                    $(this).addClass('pd_draggable_move');
+                    var $this = $(this);
+                    var offset = $this.offset();
+                    $this.clone().appendTo('body').css({
+                        'position': 'absolute',
+                        'top': offset.top,
+                        'left': offset.left
+                    }).draggable({
+                        scroll: true,
+                        cursor: 'move',
+                        start: function () {
+                            $(this).addClass('pd_draggable_move');
+                        }
+                    });
+                    $this.css('visibility', 'hidden').draggable('disable');
+                }
+            });
+        });
+
+        var documentWidth = $(window).width(), documentHeight = $(document).height();
+        $(document).on('dblclick', 'img.pd_draggable_move', function () {
+            var $this = $(this);
+            $('.pd_draggable_move').removeClass('pd_draggable_move_selected');
+            $this.addClass('pd_draggable_move_selected');
+            var $menu = $('#pd_gray_penguin_menu');
+            if ($menu.length > 0) $menu.remove();
+            var offset = $this.offset();
+            $menu = $(
+                '<table id="pd_gray_penguin_menu" class="pd_panel" cellpadding="0" cellspacing="0">' +
+                '  <tbody>' +
+                '    <tr><td colspan="2" style="text-align:center;border-bottom:1px solid #9191FF;">关闭菜单</td></tr>' +
+                '    <tr><th>全体</th><th>个体</th></tr>' +
+                '    <tr data-action="停止"><td>停止</td><td>停止</td></tr>' +
+                '    <tr data-action="移动"><td>移动</td><td>移动</td></tr>' +
+                '    <tr data-action="布朗运动"><td>布朗运动</td><td>布朗运动</td></tr>' +
+                '    <tr data-action="自杀"><td>自杀</td><td>自杀</td></tr>' +
+                '    <tr data-action="自定义"><td>自定义</td><td>自定义</td></tr>' +
+                '  </tbody>' +
+                '</table>'
+            ).appendTo('body').css('top', offset.top + 45).css('left', offset.left - 45);
+
+            $menu.on('click', 'td', function () {
+                var $this = $(this);
+                var action = $this.parent('tr').data('action');
+                var type = $this.is('td:nth-child(2)') ? 1 : 0;
+                $menu.remove();
+                if (action === '停止') {
+                    $(type ? '.pd_draggable_move_selected' : '.pd_draggable_move').stop(true);
+                }
+                else if (action === '移动') {
+                    var value = $.trim(window.prompt('移动多少像素？（格式：上下,左右；例：200,-100）', '0,0'));
+                    if (!value) return;
+                    if (!/^-?\d+,-?\d+$/.test(value)) {
+                        alert('格式错误');
+                        return;
+                    }
+                    var moveArr = value.split(',');
+                    var topMove = moveArr[0];
+                    var leftMove = moveArr[1];
+                    var maxMove = Math.abs(topMove) > Math.abs(leftMove) ? Math.abs(topMove) : Math.abs(leftMove);
+                    $(type ? '.pd_draggable_move_selected' : '.pd_draggable_move').stop(true).animate({
+                        'top': '+=' + topMove + 'px',
+                        'left': '+=' + leftMove + 'px'
+                    }, maxMove * 3, 'easeInOutCubic');
+                }
+                else if (action === '布朗运动') {
+                    var func = function () {
+                        $(type ? '.pd_draggable_move_selected' : '.pd_draggable_move').stop(true).each(function () {
+                            var topMove = (Math.floor(Math.random() * 2) ? 1 : -1) * Math.floor(Math.random() * 300 + 1);
+                            var leftMove = (Math.floor(Math.random() * 2) ? 1 : -1) * Math.floor(Math.random() * 300 + 1);
+                            var offset = $(this).offset();
+                            if (offset.top + topMove > documentHeight || offset.top + topMove < 0) topMove *= -1;
+                            if (offset.left + leftMove > documentWidth || offset.left + leftMove < 0) leftMove *= -1;
+                            $(this).animate({
+                                'top': '+=' + topMove + 'px',
+                                'left': '+=' + leftMove + 'px'
+                            }, 1500, 'easeInOutCubic', function () {
+                                func();
+                            });
+                        });
+                    };
+                    func();
+                }
+                else if (action === '自杀') {
+                    var windowHeight = $(window).height();
+                    $(document).clearQueue('suicide');
+                    $(type ? '.pd_draggable_move_selected' : '.pd_draggable_move').stop(true).each(function () {
+                        var $this = $(this);
+                        $(document).queue('suicide', function () {
+                            var topMove = -Math.floor(Math.random() * 250 + 100);
+                            var leftMove = (Math.floor(Math.random() * 2) ? 1 : -1) * Math.floor(Math.random() * 300 + 100);
+                            if ($this.offset().left + leftMove > documentWidth) leftMove *= -1;
+                            $this.animate({
+                                'top': '+=' + topMove + 'px',
+                                'left': '+=' + leftMove + 'px'
+                            }, 1000, 'easeInOutCubic').animate({
+                                'top': '+=' + windowHeight + 'px',
+                                'left': '+=' + (leftMove > 0 ? 1 : -1) * 300 + 'px'
+                            }, 1000, 'easeInOutCubic', function () {
+                                $(this).removeClass('pd_draggable_move')
+                                    .removeClass('pd_draggable_move_selected')
+                                    .css('visibility', 'hidden')
+                                    .draggable('disable');
+                                $(document).dequeue('suicide');
+                            });
+                        });
+                    });
+                    $(document).dequeue('suicide');
+                }
+                else if (action === '自定义') {
+                    if ($('#pd_control_gray_penguin_face_custom').length > 0) return;
+                    var content =
+                        "/* 动作范例 */\n" +
+                        "$('{0}')\n".replace('{0}', type ? '.pd_draggable_move_selected' : '.pd_draggable_move') +
+                        "    .stop(true)\n" +
+                        "    // 第一个动画\n" +
+                        "    .animate({\n" +
+                        "            'top': '+=200px', // 往下移动200像素\n" +
+                        "            'left': '-=150px' // 往左移动150像素\n" +
+                        "        },\n" +
+                        "        1000, // 动画持续时间（毫秒）\n" +
+                        "        'linear' // easing效果名称\n" +
+                        "    )\n" +
+                        "    // 第二个动画\n" +
+                        "    .animate({\n" +
+                        "            'top': '+=' + Math.floor(Math.random() * 250 + 200) + 'px', // 往下移动200-450像素\n" +
+                        "            'left': '+=' + Math.floor(Math.random() * 250 + 50) + 'px' // 往右移动50-300像素\n" +
+                        "        },\n" +
+                        "        1000, // 动画持续时间（毫秒）\n" +
+                        "        'swing', // easing效果名称\n" +
+                        "        function () {\n" +
+                        "            // 动画完成后所执行的方法\n" +
+                        "        });";
+                    var html =
+                        '<div class="pd_cfg_main">' +
+                        '  <textarea wrap="off" style="width:600px;height:400px;white-space:pre">{0}</textarea>'.replace('{0}', content) +
+                        '</div>' +
+                        '<div class="pd_cfg_btns">' +
+                        '  <button>运行</button><button>关闭</button>' +
+                        '</div>';
+                    var $dialog = Dialog.create('pd_control_gray_penguin_face_custom', '自定义动作', html);
+                    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+                        e.preventDefault();
+                        var content = $dialog.find('textarea').val();
+                        if (!$.trim(content)) return;
+                        try {
+                            eval(content);
+                            Dialog.close('pd_control_gray_penguin_face_custom');
+                        }
+                        catch (ex) {
+                            alert('自定义动作出错');
+                        }
+                    }).next('button').click(function () {
+                        return Dialog.close('pd_control_gray_penguin_face_custom');
+                    });
+                    Dialog.show('pd_control_gray_penguin_face_custom');
+                    $dialog.find('textarea').focus();
+                }
+            });
+            Func.run('Extra.controlGrayPenguinFace_after_menu_');
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
-        if (typeof jQuery === 'undefined' || !KFOL.uid) return;
+        if (typeof jQuery === 'undefined' || typeof jQuery.ui === 'undefined' || !KFOL.uid) return;
         var startDate = new Date();
         Extra.prepare();
         Extra.initConfig();
         Extra.appendCss();
         Extra.addVersionInfoInConfigDialog();
 
-        Extra.runCustomScript(1);
+        Func.run('Extra.init_before_');
 
         if (location.pathname === '/read.php') {
             Extra.modifyRainbowSmColor();
             Extra.addNekoMiMiAboveAvatar();
-            $('img[src*="/post/smile/em/"]').draggable({scroll: true, cursor: "move"});
+            if (Extra.Config.grayPenguinFriendEnabled) Extra.controlGrayPenguinFace();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             CustomItem.addItemShop();
@@ -960,7 +760,7 @@ var Extra = {
         if (Extra.Config.customSmLevel) Extra.modifyCustomSmLevel();
         if (Extra.Config.kfOnlyYouEnabled) Extra.kfOnlyYou();
 
-        Extra.runCustomScript(2);
+        Func.run('Extra.init_after_');
 
         var endDate = new Date();
         console.log('【KF Online助手 Extra】加载完毕，加载耗时：{0}ms'.replace('{0}', endDate - startDate));
