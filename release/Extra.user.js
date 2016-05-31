@@ -12,14 +12,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.0.0
+// @version     2.1.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.0.0';
+var extraVersion = '2.1.0';
 
 /**
  * 自定义道具类
@@ -32,11 +32,33 @@ var CustomItem = {
 
     // 自定义道具列表
     itemList: {
+        /*
+         * 自定义道具范例
+         * id: { // 道具ID号
+         *     level: 3, // 道具等级
+         *     name: '测试道具', // 道具名称
+         *     price: 233, // 道具价格
+         *     intro: '这是一个自定义道具', // 道具介绍
+         *     image: 'custom_item_1.jpg', // 道具图片
+         *     notSell: true, // 是否禁止出售道具
+         *     configName: 'rainbowSmColorEnabled', // 与Extra.Config相关联的、标识道具是否使用的配置项的名称
+         *     configValue: true, // 标识道具已使用的配置项的值，设为*表示可以为任意值
+         *     resAlert: true, // 是否对图片资源可用性进行提示
+         *     // 使用道具时所执行的方法
+         *     use: function () {
+         *         Extra.Config[this.configName] = this.configValue;
+         *         KFOL.showMsg('<strong>使用自定义道具时所显示的消息</strong>', -1);
+         *     },
+         *     // 还原道具使用效果时所执行的方法
+         *     cancel: function () {
+         *         KFOL.showMsg('<strong>还原道具使用效果时所显示的消息</strong>', -1);
+         *     }
+         * },
+         */
         1: {
             level: 3,
             name: '神秘彩虹',
             price: 233,
-            canSell: true,
             intro: '可将自己的神秘颜色变换成彩虹色，让你拥有超越一般玩家的尊贵身份！<br /><span class="pd_highlight">（效果仅限自己可见）</span>',
             image: 'custom_item_1.jpg',
             configName: 'rainbowSmColorEnabled',
@@ -54,7 +76,6 @@ var CustomItem = {
             level: 3,
             name: '猫耳',
             price: 233,
-            canSell: true,
             intro: '这里有一对猫耳，戴上去就能变成一只猫，喵~~~<br />给你自己的头像戴上一对猫耳<span class="pd_highlight">（仅限卡片或140px宽度的图像）</span><br />' +
             '<span class="pd_highlight">（效果仅限自己可见）</span>',
             image: 'custom_item_2.jpg',
@@ -73,7 +94,6 @@ var CustomItem = {
             level: 5,
             name: '其实整个KF只有我一个人',
             price: 6666,
-            canSell: true,
             intro: '少年（少女），其实整个KF只有你一个人，你相信吗？<br />纳尼？你不信？那就试试吧，到时候别哭喊着“妈妈，我再也不想一个人玩了”就好了~~',
             image: 'custom_item_3.jpg',
             configName: 'kfOnlyYouEnabled',
@@ -94,7 +114,6 @@ var CustomItem = {
             level: 3,
             name: '逆天改命符',
             price: 233,
-            canSell: true,
             intro: '对自己如此low的神秘等级感到不甘心？觉得MAX等级无法体现自己的逼格？<br />快来试试逆天改命符吧！可将自己的神秘等级改成任意字符！<br />' +
             '<span class="pd_highlight">（效果仅限自己可见）</span>',
             image: 'custom_item_4.jpg',
@@ -117,8 +136,8 @@ var CustomItem = {
             level: 5,
             name: '灰企鹅之友',
             price: 6666,
-            canSell: true,
-            intro: '你将获得灰企鹅的友谊，能够与灰企鹅进行沟通，并可对灰企鹅们进行指挥。<br />可在帖子页面任意操纵灰企鹅表情，请尽情发挥你的想象力吧！<br />注：双击被移动过的图片可以弹出菜单',
+            intro: '你将获得灰企鹅的友谊，能够与灰企鹅进行沟通，并可对灰企鹅们进行指挥。<br />可在帖子页面任意操纵灰企鹅表情，请尽情发挥你的想象力吧！<br />' +
+            '注：双击灰企鹅表情可弹出菜单<br /><span class="pd_highlight">（移动浏览器可能不适用）</span>',
             image: 'custom_item_5.jpg',
             configName: 'grayPenguinFriendEnabled',
             configValue: true,
@@ -128,6 +147,24 @@ var CustomItem = {
             },
             cancel: function () {
                 KFOL.showMsg('<strong>友谊的小船说翻就翻，你和灰企鹅从此友尽了……</strong>', -1);
+            }
+        },
+        6: {
+            level: 4,
+            name: 'KF表情增强插件',
+            price: 998,
+            onlyInMiaolaDomain: true,
+            intro: '看腻了单调的表情？想在论坛上使用更多更有趣的表情？快来试试KF表情增强插件吧！<br />' +
+            '<span class="pd_highlight">（由<a target="_blank" href="profile.php?action=show&uid=116467">eddie32</a>开发）</span>',
+            image: 'custom_item_6.jpg',
+            configName: 'kfSmileEnhanceExtensionEnabled',
+            configValue: true,
+            use: function () {
+                Extra.Config[this.configName] = this.configValue;
+                KFOL.showMsg('<strong>一大堆表情从天而降，你开始日日夜夜地磨练表情技能……</strong>', -1);
+            },
+            cancel: function () {
+                KFOL.showMsg('<strong>表情技能的修炼暂告一段落，你暂时休息去了……</strong>', -1);
             }
         },
     },
@@ -195,7 +232,7 @@ var CustomItem = {
     showItemInfo: function (itemTypeId) {
         if (!itemTypeId) return;
         var item = CustomItem.itemList[itemTypeId];
-        if (!item) return;
+        if (!item || item.onlyInMiaolaDomain && !Extra.isInMiaolaDomain) return;
         var configValue = Extra.Config[item.configName];
         var isUsed = (configValue && item.configValue === '*') || configValue === item.configValue;
         var myItem = Extra.Config.myItemList[itemTypeId];
@@ -211,14 +248,14 @@ var CustomItem = {
             '使用状态：<span class="pd_custom_item_is_used" style="color:{0}">{1}</span><br />'
                 .replace('{0}', isUsed ? '#999' : '#090')
                 .replace('{1}', isUsed ? '已使用' : '未使用') +
-            '交易类型：' + (item.canSell ? '<span style="color:#090">可以交易</span>' : '<span style="color:#999">无法交易</span>') + '<br />' +
+            '交易类型：' + (item.notSell ? '<span style="color:#999">无法交易</span>' : '<span style="color:#090">可以交易</span>') + '<br />' +
             '当前市场价：{0} 节操<br />'.replace('{0}', item.price)
         );
         if (myItem) {
             $('<span>购入价格：{0} 节操</span><br />'.replace('{0}', myItem.buyPrice) +
                 '<div>' +
                 (isUsed ? '[<a class="pd_highlight" href="#">还原此道具使用效果</a>]' : '[<a href="#">使用此道具</a>]') +
-                (item.canSell ? ' | [<a href="#">出售此道具</a>]' : '') +
+                (item.notSell ? '' : ' | [<a href="#">出售此道具</a>]') +
                 '</div>'
             ).appendTo($node)
                 .find('a')
@@ -292,6 +329,7 @@ var CustomItem = {
         var myItemList = Extra.Config.myItemList;
         var itemListHtml = '';
         $.each(itemList, function (index, item) {
+            if (item.onlyInMiaolaDomain && !Extra.isInMiaolaDomain) return;
             var isOwn = $.type(myItemList[item.itemTypeId]) === 'object';
             itemListHtml +=
                 '<tr data-item_type_id="{0}">'.replace('{0}', item.itemTypeId) +
@@ -308,7 +346,7 @@ var CustomItem = {
                     .replace('{8}', Math.round(item.price * (CustomItem.maxItemPricePercent - CustomItem.minItemPricePercent) / 2 / 100))
                     .replace('{9}', CustomItem.minItemPricePercent)
                     .replace('{10}', CustomItem.maxItemPricePercent)
-                    .replace('{11}', item.canSell ? '' : 'pd_disabled_link') +
+                    .replace('{11}', item.notSell ? 'pd_disabled_link' : '') +
                 '</tr>';
         });
 
@@ -344,7 +382,7 @@ var CustomItem = {
             Extra.readConfig();
             var myItem = Extra.Config.myItemList[itemTypeId];
             if ($this.text() === '出售') {
-                if (!item.canSell) return;
+                if (item.notSell) return;
                 if (!myItem) {
                     alert('你尚未购买此道具');
                     return;
@@ -418,7 +456,9 @@ var Extra = {
         // 在哪些页面自定义自己的神秘等级的类型，0：在所有可能的页面；1：只在帖子页面
         customSmLevelType: 0,
         // 是否成为灰企鹅之友，true：开启；false：关闭
-        grayPenguinFriendEnabled: false
+        grayPenguinFriendEnabled: false,
+        // 是否开启KF表情增强插件，true：开启；false：关闭
+        kfSmileEnhanceExtensionEnabled: false
     },
 
     // 保存设置的键值名称
@@ -534,6 +574,10 @@ var Extra = {
             settings.grayPenguinFriendEnabled = typeof options.grayPenguinFriendEnabled === 'boolean' ?
                 options.grayPenguinFriendEnabled : defConfig.grayPenguinFriendEnabled;
         }
+        if (typeof options.kfSmileEnhanceExtensionEnabled !== 'undefined') {
+            settings.kfSmileEnhanceExtensionEnabled = typeof options.kfSmileEnhanceExtensionEnabled === 'boolean' ?
+                options.kfSmileEnhanceExtensionEnabled : defConfig.kfSmileEnhanceExtensionEnabled;
+        }
 
         return settings;
     },
@@ -593,7 +637,7 @@ var Extra = {
         if (Extra.Config.rainbowSmColorEnabled) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 100) !== 39) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 200) !== 139) return;
             var css = 'url("{0}img/{filename}") 1 stretch'.replace('{0}', Extra.resHostUrl);
             $this.closest('.readtext').css('border-image', css.replace('{filename}', 'border_rainbow_middle.png'))
                 .prev('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_top.png'))
@@ -609,7 +653,7 @@ var Extra = {
         if (Extra.Config.nekoMiMiAvatarEnabled) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 100) !== 67) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 200) !== 79) return;
             var $parent = $this.parent();
             var type = 1;
             if ($parent.is('.readidmleft')) type = 2;
@@ -908,7 +952,7 @@ var Extra = {
     /**
      * 操纵灰企鹅表情
      */
-    controlGrayPenguinFace: function () {
+    controlGrayPenguinSmile: function () {
         /**
          * 添加CSS样式
          */
@@ -1103,13 +1147,25 @@ var Extra = {
     },
 
     /**
+     * 引入KF表情增强插件
+     */
+    importKfSmileEnhanceExtension: function () {
+        if (location.pathname !== '/read.php' && location.pathname !== '/post.php' && location.pathname !== '/message.php') return;
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.charset = 'utf-8';
+        script.src = 'https://kf.miaola.info/kfe.min.user.js';
+        document.body.appendChild(script);
+    },
+
+    /**
      * 初始化
      */
     init: function () {
         if (typeof jQuery === 'undefined' || typeof jQuery.ui === 'undefined' || !KFOL.uid) return;
         var startDate = new Date();
-        Extra.prepare();
         Extra.initConfig();
+        Extra.prepare();
         Extra.appendCss();
         Extra.addVersionInfoInConfigDialog();
 
@@ -1118,7 +1174,7 @@ var Extra = {
         if (location.pathname === '/read.php') {
             Extra.modifyRainbowSmColor();
             Extra.addNekoMiMiAboveAvatar();
-            if (Extra.Config.grayPenguinFriendEnabled) Extra.controlGrayPenguinFace();
+            if (Extra.Config.grayPenguinFriendEnabled) Extra.controlGrayPenguinSmile();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             CustomItem.addItemShop();
@@ -1128,6 +1184,7 @@ var Extra = {
         }
         if (Extra.Config.customSmLevel) Extra.modifyCustomSmLevel();
         if (Extra.Config.kfOnlyYouEnabled) Extra.kfOnlyYou();
+        if (Extra.isInMiaolaDomain && Extra.Config.kfSmileEnhanceExtensionEnabled) Extra.importKfSmileEnhanceExtension();
 
         Func.run('Extra.init_after_');
 

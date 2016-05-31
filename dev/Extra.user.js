@@ -14,14 +14,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.0.0
+// @version     2.1.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.0.0';
+var extraVersion = '2.1.0';
 
 /* {PartFileContent} */
 /**
@@ -49,7 +49,9 @@ var Extra = {
         // 在哪些页面自定义自己的神秘等级的类型，0：在所有可能的页面；1：只在帖子页面
         customSmLevelType: 0,
         // 是否成为灰企鹅之友，true：开启；false：关闭
-        grayPenguinFriendEnabled: false
+        grayPenguinFriendEnabled: false,
+        // 是否开启KF表情增强插件，true：开启；false：关闭
+        kfSmileEnhanceExtensionEnabled: false
     },
 
     // 保存设置的键值名称
@@ -165,6 +167,10 @@ var Extra = {
             settings.grayPenguinFriendEnabled = typeof options.grayPenguinFriendEnabled === 'boolean' ?
                 options.grayPenguinFriendEnabled : defConfig.grayPenguinFriendEnabled;
         }
+        if (typeof options.kfSmileEnhanceExtensionEnabled !== 'undefined') {
+            settings.kfSmileEnhanceExtensionEnabled = typeof options.kfSmileEnhanceExtensionEnabled === 'boolean' ?
+                options.kfSmileEnhanceExtensionEnabled : defConfig.kfSmileEnhanceExtensionEnabled;
+        }
 
         return settings;
     },
@@ -224,7 +230,7 @@ var Extra = {
         if (Extra.Config.rainbowSmColorEnabled) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 100) !== 39) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 200) !== 139) return;
             var css = 'url("{0}img/{filename}") 1 stretch'.replace('{0}', Extra.resHostUrl);
             $this.closest('.readtext').css('border-image', css.replace('{filename}', 'border_rainbow_middle.png'))
                 .prev('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_top.png'))
@@ -240,7 +246,7 @@ var Extra = {
         if (Extra.Config.nekoMiMiAvatarEnabled) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 100) !== 67) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 200) !== 79) return;
             var $parent = $this.parent();
             var type = 1;
             if ($parent.is('.readidmleft')) type = 2;
@@ -539,7 +545,7 @@ var Extra = {
     /**
      * 操纵灰企鹅表情
      */
-    controlGrayPenguinFace: function () {
+    controlGrayPenguinSmile: function () {
         /**
          * 添加CSS样式
          */
@@ -734,13 +740,25 @@ var Extra = {
     },
 
     /**
+     * 引入KF表情增强插件
+     */
+    importKfSmileEnhanceExtension: function () {
+        if (location.pathname !== '/read.php' && location.pathname !== '/post.php' && location.pathname !== '/message.php') return;
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.charset = 'utf-8';
+        script.src = 'https://kf.miaola.info/kfe.min.user.js';
+        document.body.appendChild(script);
+    },
+
+    /**
      * 初始化
      */
     init: function () {
         if (typeof jQuery === 'undefined' || typeof jQuery.ui === 'undefined' || !KFOL.uid) return;
         var startDate = new Date();
-        Extra.prepare();
         Extra.initConfig();
+        Extra.prepare();
         Extra.appendCss();
         Extra.addVersionInfoInConfigDialog();
 
@@ -749,7 +767,7 @@ var Extra = {
         if (location.pathname === '/read.php') {
             Extra.modifyRainbowSmColor();
             Extra.addNekoMiMiAboveAvatar();
-            if (Extra.Config.grayPenguinFriendEnabled) Extra.controlGrayPenguinFace();
+            if (Extra.Config.grayPenguinFriendEnabled) Extra.controlGrayPenguinSmile();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             CustomItem.addItemShop();
@@ -759,6 +777,7 @@ var Extra = {
         }
         if (Extra.Config.customSmLevel) Extra.modifyCustomSmLevel();
         if (Extra.Config.kfOnlyYouEnabled) Extra.kfOnlyYou();
+        if (Extra.isInMiaolaDomain && Extra.Config.kfSmileEnhanceExtensionEnabled) Extra.importKfSmileEnhanceExtension();
 
         Func.run('Extra.init_after_');
 
