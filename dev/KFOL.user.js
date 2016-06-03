@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.3.5
+// @version     5.3.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.5';
+var version = '5.3.6';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -298,6 +298,7 @@ var KFOL = {
         if (scrollTop < windowHeight / 2) scrollTop = 0;
         var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - popTipsWidth / 2;
         if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
+        if (left < 0) left = 0;
         if (isFirst) {
             $popBox.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - popTipsHeight / 2);
         }
@@ -2965,8 +2966,8 @@ var KFOL = {
         //console.log('【KF Online助手】启动');
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
-        KFOL.exposeInterface();
         ConfigMethod.init();
+        KFOL.exposeInterface();
         KFOL.checkBrowserType();
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();

@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.3.5
+// @version     5.3.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.5';
+var version = '5.3.6';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1486,9 +1486,10 @@ var Dialog = {
         if (scrollTop < windowHeight / 2) scrollTop = 0;
         var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - boxWidth / 2;
         if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
-        $box.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - $box.height() / 2)
-            .css('left', left)
-            .fadeIn('fast');
+        if (left < 0) left = 0;
+        var top = windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - $box.height() / 2;
+        if (top < 0) top = 0;
+        $box.css('top', top).css('left', left).fadeIn('fast');
     },
 
     /**
@@ -7010,12 +7011,12 @@ var Loot = {
                         if (criticalStrikeNum > 0) extraMsg += (extraMsg ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
                         if (extraMsg) extraMsg = '（' + extraMsg + '）';
                         var $msg = KFOL.showMsg('<strong>{0}{1}</strong>{2}{3}'
-                            .replace('{0}', settings.type === 3 ?
-                                '成功进行了<em>{0}</em>次试探攻击'.replace('{0}', successNum)
-                                : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
-                            .replace('{1}', extraMsg)
-                            .replace('{2}', msgStat)
-                            .replace('{3}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
+                                .replace('{0}', settings.type === 3 ?
+                                    '成功进行了<em>{0}</em>次试探攻击'.replace('{0}', successNum)
+                                    : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
+                                .replace('{1}', extraMsg)
+                                .replace('{2}', msgStat)
+                                .replace('{3}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
                             , Config.defShowMsgDuration
                         );
 
@@ -7151,8 +7152,8 @@ var Loot = {
             $this.parent().attr('colspan', '3')
                 .after(('<td class="pd_batch_attack" style="text-align:center"><label>' +
                     '<input style="width:15px" class="pd_input" type="text" maxlength="2" data-id="{0}" value="{1}" /> 次</label></td>')
-                    .replace('{0}', hitId)
-                    .replace('{1}', Config.batchAttackList[hitId] ? Config.batchAttackList[hitId] : '')
+                        .replace('{0}', hitId)
+                        .replace('{1}', Config.batchAttackList[hitId] ? Config.batchAttackList[hitId] : '')
                 );
         });
         $('.pd_batch_attack .pd_input').keydown(function (e) {
@@ -7267,11 +7268,18 @@ var Loot = {
                     }
                     var end1 = new Date(timeLog.time);
                     var end2 = new Date(timeLog.time + 60 * 60 * 1000);
-                    $submit.prev().prev().before('<span class="pd_highlight">可领取时间：{0} {1}{2}</span>'
+                    var getLootAwardHtml = '<span class="pd_highlight">可领取时间：{0} {1}{2}</span>'
                         .replace('{0}', Tools.getDateString(end1))
                         .replace('{1}', Tools.getTimeString(end1, ':', false))
-                        .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '')
-                    );
+                        .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '');
+                    if (Config.attackAfterTime && Tools.getCookie(Const.autoAttackReadyCookieName)) {
+                        var attackTime = new Date(timeLog.time - Config.attackAfterTime * 60 * 1000);
+                        if (attackTime < new Date()) attackTime = new Date();
+                        getLootAwardHtml += '<br /><span style="color:#00F">自动攻击时间：{0} {1}</span>'
+                            .replace('{0}', Tools.getDateString(attackTime))
+                            .replace('{1}', Tools.getTimeString(attackTime, ':', false));
+                    }
+                    $submit.prev().prev().before(getLootAwardHtml);
                 }
             }());
         }
@@ -8001,7 +8009,7 @@ var Loot = {
                             htiTips = '<span class="pd_verify_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
                         }
                         else {
-                            htiTips = '<span class="pd_verify_tips" title="无法闪避此怪物的攻击（还差{0}点可全部闪避）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
+                            htiTips = '<span class="pd_verify_tips" title="无法闪避此怪物的攻击（还差{0}点有几率可闪避）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
                                 .replace('{0}', hit - lootPropertyList['闪避'] + 1);
                         }
                         html = html.replace('命中', '命中' + htiTips);
@@ -8158,7 +8166,7 @@ var Loot = {
                         KFOL.removePopTips($getItemListMsg);
                         if (itemList.length > 0) {
                             KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                                .replace('{0}', itemList.length)
+                                    .replace('{0}', itemList.length)
                                 , true);
                             useItemList(itemList);
                         }
@@ -8228,10 +8236,10 @@ var Loot = {
                                     .replace('{3}', msgMatches[1])
                                 );
                                 KFOL.showMsg('道具【<b><em>Lv.{0}</em>{1}</b>】被使用{2}<br /><span style="font-style:italic">{3}</span>'
-                                    .replace('{0}', item.itemLevel)
-                                    .replace('{1}', item.itemName)
-                                    .replace('{2}', msgStat)
-                                    .replace('{3}', msgMatches[1])
+                                        .replace('{0}', item.itemLevel)
+                                        .replace('{1}', item.itemName)
+                                        .replace('{2}', msgStat)
+                                        .replace('{3}', msgMatches[1])
                                     , Config.defShowMsgDuration);
                             }
                         },
@@ -8563,6 +8571,7 @@ var KFOL = {
         if (scrollTop < windowHeight / 2) scrollTop = 0;
         var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - popTipsWidth / 2;
         if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
+        if (left < 0) left = 0;
         if (isFirst) {
             $popBox.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - popTipsHeight / 2);
         }
@@ -11230,8 +11239,8 @@ var KFOL = {
         //console.log('【KF Online助手】启动');
         if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
-        KFOL.exposeInterface();
         ConfigMethod.init();
+        KFOL.exposeInterface();
         KFOL.checkBrowserType();
         KFOL.appendCss();
         KFOL.addConfigAndLogDialogLink();

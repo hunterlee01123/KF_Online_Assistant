@@ -78,9 +78,10 @@ var Dialog = {
         if (scrollTop < windowHeight / 2) scrollTop = 0;
         var left = windowWidth / 2 + (KFOL.isMobile ? $(window).scrollLeft() / 3 : 0) - boxWidth / 2;
         if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
-        $box.css('top', windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - $box.height() / 2)
-            .css('left', left)
-            .fadeIn('fast');
+        if (left < 0) left = 0;
+        var top = windowHeight / 2 + (KFOL.isMobile ? scrollTop : 0) - $box.height() / 2;
+        if (top < 0) top = 0;
+        $box.css('top', top).css('left', left).fadeIn('fast');
     },
 
     /**
