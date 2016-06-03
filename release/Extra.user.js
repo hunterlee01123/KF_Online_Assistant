@@ -12,14 +12,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.1.0
+// @version     2.1.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.1.0';
+var extraVersion = '2.1.1';
 
 /**
  * 自定义道具类
@@ -331,22 +331,24 @@ var CustomItem = {
         $.each(itemList, function (index, item) {
             if (item.onlyInMiaolaDomain && !Extra.isInMiaolaDomain) return;
             var isOwn = $.type(myItemList[item.itemTypeId]) === 'object';
+            var isUsed = (Extra.Config[item.configName] && item.configValue === '*') || Extra.Config[item.configName] === item.configValue;
             itemListHtml +=
                 '<tr data-item_type_id="{0}">'.replace('{0}', item.itemTypeId) +
-                ('  <td>{0}</td><td><a href="kf_fw_ig_my.php?pro=1000888&pd_typeid={1}">{2}</a></td><td style="color:{3}">{4}</td><td>{5} 节操</td>' +
-                '<td class="pd_custom_tips" title="{6}~{7}（均价：{8}）">{9}%~{10}%</td><td><a href="#">购买</a><a class="{11}" style="margin-left:15px" href="#">出售</a></td>')
+                ('  <td>{0}</td><td><a href="kf_fw_ig_my.php?pro=1000888&pd_typeid={1}">{2}</a></td><td style="color:{3}">{4}{5}</td><td>{6} 节操</td>' +
+                '<td class="pd_custom_tips" title="{7}~{8}（均价：{9}）">{10}%~{11}%</td><td><a href="#">购买</a><a class="{12}" style="margin-left:15px" href="#">出售</a></td>')
                     .replace('{0}', item.level)
                     .replace('{1}', item.itemTypeId)
                     .replace('{2}', item.name)
                     .replace('{3}', isOwn ? '#669933' : '#FF0033')
                     .replace('{4}', isOwn ? '是' : '否')
-                    .replace('{5}', item.price)
-                    .replace('{6}', Math.round(item.price * CustomItem.minItemPricePercent / 100))
-                    .replace('{7}', Math.round(item.price * CustomItem.maxItemPricePercent / 100))
-                    .replace('{8}', Math.round(item.price * (CustomItem.maxItemPricePercent - CustomItem.minItemPricePercent) / 2 / 100))
-                    .replace('{9}', CustomItem.minItemPricePercent)
-                    .replace('{10}', CustomItem.maxItemPricePercent)
-                    .replace('{11}', item.notSell ? 'pd_disabled_link' : '') +
+                    .replace('{5}', isUsed ? ' <span style="color:#FF0033">(已使用)</span>' : '')
+                    .replace('{6}', item.price)
+                    .replace('{7}', Math.round(item.price * CustomItem.minItemPricePercent / 100))
+                    .replace('{8}', Math.round(item.price * CustomItem.maxItemPricePercent / 100))
+                    .replace('{9}', Math.round(item.price * (CustomItem.maxItemPricePercent - CustomItem.minItemPricePercent) / 2 / 100))
+                    .replace('{10}', CustomItem.minItemPricePercent)
+                    .replace('{11}', CustomItem.maxItemPricePercent)
+                    .replace('{12}', item.notSell ? 'pd_disabled_link' : '') +
                 '</tr>';
         });
 
@@ -363,7 +365,7 @@ var CustomItem = {
             '<strike>（友情提醒：↑上面那家是黑店，切勿听信该店老板XX风的花言巧语，否则必将付出惨痛的代价！）</strike></td>' +
             '    </tr>' +
             '    <tr>' +
-            '      <th style="width:100px">道具等级</th><th style="width:220px">道具名称</th><th style="width:90px">是否持有</th>' +
+            '      <th style="width:90px">道具等级</th><th style="width:220px">道具名称</th><th style="width:100px">是否持有</th>' +
             '<th style="width:150px">当前市场价</th><th style="width:150px">价格浮动</th><th style="width:150px">详细</th>' +
             '    </tr>' +
             itemListHtml +

@@ -10,13 +10,13 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.1.0
+// @version     2.1.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
-var extraVersion='2.1.0';var CustomItem={minItemPricePercent:0,maxItemPricePercent:200,itemList:{1:{level:3,name:'神秘彩虹',price:233,intro:'可将自己的神秘颜色变换成彩虹色，让你拥有超越一般玩家的尊贵身份！<br /><span class="pd_highlight">（效果仅限自己可见）</span>',image:'custom_item_1.jpg',configName:'rainbowSmColorEnabled',configValue:true,resAlert:true,use:function(){Extra.Config[this.configName]=this.configValue;KFOL.showMsg('<strong>雨过天晴，彩虹小马们欢快的飞过天空，架起一道神秘的彩虹，哦卖力头破你~~</strong>',-1);},cancel:function(){KFOL.showMsg('<strong>虚幻的彩虹总是短暂的，天空中已不见彩虹小马们玩乐的身影，那道神秘的彩虹也再无踪迹……</strong>',-1);}},2:{level:3,name:'猫耳',price:233,intro:'这里有一对猫耳，戴上去就能变成一只猫，喵~~~<br />给你自己的头像戴上一对猫耳<span class="pd_highlight">（仅限卡片或140px宽度的图像）</span><br />'+
+var extraVersion='2.1.1';var CustomItem={minItemPricePercent:0,maxItemPricePercent:200,itemList:{1:{level:3,name:'神秘彩虹',price:233,intro:'可将自己的神秘颜色变换成彩虹色，让你拥有超越一般玩家的尊贵身份！<br /><span class="pd_highlight">（效果仅限自己可见）</span>',image:'custom_item_1.jpg',configName:'rainbowSmColorEnabled',configValue:true,resAlert:true,use:function(){Extra.Config[this.configName]=this.configValue;KFOL.showMsg('<strong>雨过天晴，彩虹小马们欢快的飞过天空，架起一道神秘的彩虹，哦卖力头破你~~</strong>',-1);},cancel:function(){KFOL.showMsg('<strong>虚幻的彩虹总是短暂的，天空中已不见彩虹小马们玩乐的身影，那道神秘的彩虹也再无踪迹……</strong>',-1);}},2:{level:3,name:'猫耳',price:233,intro:'这里有一对猫耳，戴上去就能变成一只猫，喵~~~<br />给你自己的头像戴上一对猫耳<span class="pd_highlight">（仅限卡片或140px宽度的图像）</span><br />'+
 '<span class="pd_highlight">（效果仅限自己可见）</span>',image:'custom_item_2.jpg',configName:'nekoMiMiAvatarEnabled',configValue:true,resAlert:true,use:function(){Extra.Config[this.configName]=this.configValue;KFOL.showMsg('<strong>咦？地上放着一对猫耳，戴上去试试看？</strong><br />……喵？喵喵喵~~~',-1);},cancel:function(){KFOL.showMsg('<strong>你依依不舍地摘下了猫耳，重新变回了人类……</strong>',-1);}},3:{level:5,name:'其实整个KF只有我一个人',price:6666,intro:'少年（少女），其实整个KF只有你一个人，你相信吗？<br />纳尼？你不信？那就试试吧，到时候别哭喊着“妈妈，我再也不想一个人玩了”就好了~~',image:'custom_item_3.jpg',configName:'kfOnlyYouEnabled',configValue:true,use:function(){Extra.Config[this.configName]=this.configValue;KFOL.showMsg('<strong>少年（少女），告诉你个秘密：</strong><br />其实整个KF只有你一个人，我们都是你臆想出来的人格，KF上所有的会员其实都是你<br />'+
 '我们已经骗了你好久，是时候向你展现真相了……',-1);},cancel:function(){KFOL.showMsg('<strong>“妈妈，我再也不想一个人玩了！”</strong><br />你的精神分裂症治好了，KF再次恢复为平日的模样',-1);}},4:{level:3,name:'逆天改命符',price:233,intro:'对自己如此low的神秘等级感到不甘心？觉得MAX等级无法体现自己的逼格？<br />快来试试逆天改命符吧！可将自己的神秘等级改成任意字符！<br />'+
 '<span class="pd_highlight">（效果仅限自己可见）</span>',image:'custom_item_4.jpg',configName:'customSmLevel',configValue:'*',use:function(){var smLevel=$.trim(window.prompt('请输入你想自定义的神秘等级（普通头像最多限8个字符，卡片头像最多限5个字符）：'));if(!smLevel)return false;var type=window.confirm('是否只在帖子页面里修改神秘等级？否则将在所有可能的页面里修改')?1:0;smLevel=smLevel.substr(0,8);Extra.Config[this.configName]=smLevel;Extra.Config.customSmLevelType=type;KFOL.showMsg('<strong>凡人，汝还妄图逆天改命？</strong><br />……嗯，看汝还算心诚，改改命也无不可……',-1);},cancel:function(){KFOL.showMsg('<strong>逆天改命终违天道，你被打回了原型……</strong>',-1);}},5:{level:5,name:'灰企鹅之友',price:6666,intro:'你将获得灰企鹅的友谊，能够与灰企鹅进行沟通，并可对灰企鹅们进行指挥。<br />可在帖子页面任意操纵灰企鹅表情，请尽情发挥你的想象力吧！<br />'+
@@ -45,9 +45,9 @@ else{$('<div>[<a href="#">购买此道具</a>]</div>').appendTo($node).find('a')
 if(Extra.Config.jieCao<item.price*2){alert('你当前的节操值不足此道具市场价的两倍');return;}
 if(!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}',item.level).replace('{1}',item.name)))return;CustomItem.buyItem(itemTypeId,item);});}
 $node.prev('td').find('img').attr('src',Extra.resHostUrl+'img/'+item.image);$node.parent('tr').next('tr').find('td').html(myItem?'[历史记载]<br />本道具于{0}被{1}取得。'.replace('{0}',Tools.getDateString(new Date(myItem.buyTime))).replace('{1}',KFOL.userName):'');},addItemShop:function(){var itemList=[];for(var itemTypeId in CustomItem.itemList){var obj=CustomItem.itemList[itemTypeId];obj.itemTypeId=itemTypeId;itemList.push(obj);}
-itemList.sort(function(a,b){return a.level>b.level;});var myItemList=Extra.Config.myItemList;var itemListHtml='';$.each(itemList,function(index,item){if(item.onlyInMiaolaDomain&&!Extra.isInMiaolaDomain)return;var isOwn=$.type(myItemList[item.itemTypeId])==='object';itemListHtml+='<tr data-item_type_id="{0}">'.replace('{0}',item.itemTypeId)+
-('  <td>{0}</td><td><a href="kf_fw_ig_my.php?pro=1000888&pd_typeid={1}">{2}</a></td><td style="color:{3}">{4}</td><td>{5} 节操</td>'+
-'<td class="pd_custom_tips" title="{6}~{7}（均价：{8}）">{9}%~{10}%</td><td><a href="#">购买</a><a class="{11}" style="margin-left:15px" href="#">出售</a></td>').replace('{0}',item.level).replace('{1}',item.itemTypeId).replace('{2}',item.name).replace('{3}',isOwn?'#669933':'#FF0033').replace('{4}',isOwn?'是':'否').replace('{5}',item.price).replace('{6}',Math.round(item.price*CustomItem.minItemPricePercent/100)).replace('{7}',Math.round(item.price*CustomItem.maxItemPricePercent/100)).replace('{8}',Math.round(item.price*(CustomItem.maxItemPricePercent-CustomItem.minItemPricePercent)/2/100)).replace('{9}',CustomItem.minItemPricePercent).replace('{10}',CustomItem.maxItemPricePercent).replace('{11}',item.notSell?'pd_disabled_link':'')+
+itemList.sort(function(a,b){return a.level>b.level;});var myItemList=Extra.Config.myItemList;var itemListHtml='';$.each(itemList,function(index,item){if(item.onlyInMiaolaDomain&&!Extra.isInMiaolaDomain)return;var isOwn=$.type(myItemList[item.itemTypeId])==='object';var isUsed=(Extra.Config[item.configName]&&item.configValue==='*')||Extra.Config[item.configName]===item.configValue;itemListHtml+='<tr data-item_type_id="{0}">'.replace('{0}',item.itemTypeId)+
+('  <td>{0}</td><td><a href="kf_fw_ig_my.php?pro=1000888&pd_typeid={1}">{2}</a></td><td style="color:{3}">{4}{5}</td><td>{6} 节操</td>'+
+'<td class="pd_custom_tips" title="{7}~{8}（均价：{9}）">{10}%~{11}%</td><td><a href="#">购买</a><a class="{12}" style="margin-left:15px" href="#">出售</a></td>').replace('{0}',item.level).replace('{1}',item.itemTypeId).replace('{2}',item.name).replace('{3}',isOwn?'#669933':'#FF0033').replace('{4}',isOwn?'是':'否').replace('{5}',isUsed?' <span style="color:#FF0033">(已使用)</span>':'').replace('{6}',item.price).replace('{7}',Math.round(item.price*CustomItem.minItemPricePercent/100)).replace('{8}',Math.round(item.price*CustomItem.maxItemPricePercent/100)).replace('{9}',Math.round(item.price*(CustomItem.maxItemPricePercent-CustomItem.minItemPricePercent)/2/100)).replace('{10}',CustomItem.minItemPricePercent).replace('{11}',CustomItem.maxItemPricePercent).replace('{12}',item.notSell?'pd_disabled_link':'')+
 '</tr>';});var $itemShop=$('<div>'+
 '<div class="pd_custom_item_shop_title">布丁道具商店 '+
 '(当前持有 <b title="一种并没有什么卵用、随时可以丢掉的的东西（不Click试试么？）" class="pd_jiecao_num" style="font-size:14px;cursor:pointer">{0}</b> 节操)</div>'.replace('{0}',Extra.Config.jieCao)+
@@ -59,7 +59,7 @@ itemList.sort(function(a,b){return a.level>b.level;});var myItemList=Extra.Confi
 '<strike>（友情提醒：↑上面那家是黑店，切勿听信该店老板XX风的花言巧语，否则必将付出惨痛的代价！）</strike></td>'+
 '    </tr>'+
 '    <tr>'+
-'      <th style="width:100px">道具等级</th><th style="width:220px">道具名称</th><th style="width:90px">是否持有</th>'+
+'      <th style="width:90px">道具等级</th><th style="width:220px">道具名称</th><th style="width:100px">是否持有</th>'+
 '<th style="width:150px">当前市场价</th><th style="width:150px">价格浮动</th><th style="width:150px">详细</th>'+
 '    </tr>'+
 itemListHtml+

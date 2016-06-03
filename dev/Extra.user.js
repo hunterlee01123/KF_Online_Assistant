@@ -14,14 +14,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.1.0
+// @version     2.1.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.1.0';
+var extraVersion = '2.1.1';
 
 /* {PartFileContent} */
 /**
