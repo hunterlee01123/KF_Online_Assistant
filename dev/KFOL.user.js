@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.3.6
+// @version     5.3.7
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.6';
+var version = '5.3.7';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -180,6 +180,8 @@ var KFOL = {
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
             '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
             '.readtext img[onclick] { max-width: 550px; }' +
+            '.pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }' +
+            '.pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }' +
 
             /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -692,6 +694,7 @@ var KFOL = {
         var oriTitle = document.title;
         var titleItvFunc = null;
         var prevInterval = -1, errorNum = 0;
+
         /**
          * 获取经过格式化的倒计时标题
          * @param {number} type 倒计时显示类型，1：[小时:][分钟:]秒钟；2：[小时:]分钟
@@ -708,6 +711,7 @@ var KFOL = {
                 textInterval += diff.minutes + '分';
             return textInterval;
         };
+
         /**
          * 显示定时模式标题提示
          * @param {number} interval 倒计时的时间间隔（秒）
@@ -730,6 +734,10 @@ var KFOL = {
                 titleItvFunc = window.setInterval(showIntervalTitle, Const.showRefreshModeTipsInterval * 60 * 1000);
             }
         };
+
+        /**
+         * 处理错误
+         */
         var handleError = function () {
             var interval = 0, errorText = '';
             $.ajax({
@@ -773,6 +781,10 @@ var KFOL = {
                 dataType: 'html'
             });
         };
+
+        /**
+         * 检查刷新间隔
+         */
         var checkRefreshInterval = function () {
             KFOL.removePopTips($('.pd_refresh_notice').parent());
             var isGetLootAwardStarted = false;
@@ -809,6 +821,7 @@ var KFOL = {
             window.setTimeout(checkRefreshInterval, interval * 1000);
             showRefreshModeTips(interval, true);
         };
+
         window.setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
         showRefreshModeTips(interval < 60 ? 60 : interval);
     },
@@ -2898,6 +2911,28 @@ var KFOL = {
     },
 
     /**
+     * 在发帖页面上添加额外的选项
+     */
+    addExtraOptionInPostPage: function () {
+        $('form[name="FORM"]').find('input[name="atc_autourl"], input[name="atc_convert"]').remove();
+        $('#menu_show').closest('td').append(
+            '<div class="pd_post_extra_option">' +
+            '  <label><input type="checkbox" name="atc_autourl" value="1" checked="checked" /> 自动分析url</label><br />' +
+            '  <label><input type="checkbox" name="atc_convert" value="1" checked="checked" /> Wind Code自动转换</label>' +
+            '</div>'
+        );
+
+        $('<input type="button" value="预览帖子" style="margin-left:7px" />')
+            .insertAfter('input[type="submit"][name="Submit"]')
+            .click(function (e) {
+                e.preventDefault();
+                var $form = $('form[name="preview"]');
+                $form.find('input[name="atc_content"]').val($('#textarea').val());
+                $form.submit();
+            });
+    },
+
+    /**
      * 修复论坛错误代码
      */
     repairBbsErrorCode: function () {
@@ -2955,6 +2990,18 @@ var KFOL = {
         KFOL.window.Bank = Bank;
         KFOL.window.Loot = Loot;
         KFOL.window.KFOL = KFOL;
+    },
+
+    /**
+     * 修正发帖预览页面
+     */
+    modifyPostPreviewPage: function () {
+        $('table > tbody > tr.tr1 > th').css({
+            'text-align': 'left',
+            'font-weight': 'normal',
+            'border': '1px solid #9191FF',
+            'padding': '10px'
+        });
     },
 
     /**
@@ -3079,8 +3126,12 @@ var KFOL = {
         else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
             KFOL.syncModifyPerPageFloorNum();
         }
+        else if (/\/job\.php\?action=preview$/i.test(location.href)) {
+            KFOL.modifyPostPreviewPage();
+        }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();
+            KFOL.addExtraOptionInPostPage();
         }
         if (Config.blockUserEnabled) KFOL.blockUsers();
         if (Config.blockThreadEnabled) KFOL.blockThread();

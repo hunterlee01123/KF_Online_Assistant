@@ -9,7 +9,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.3.6
+// @version     5.3.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue

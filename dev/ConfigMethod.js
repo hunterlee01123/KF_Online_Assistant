@@ -11,6 +11,10 @@ var ConfigMethod = {
      * 初始化
      */
     init: function () {
+        if (storageType === 'Script' || storageType === 'Global') {
+            var storageName = storageType === 'Script' ? 'ByUid' : 'Global';
+            if (GM_getValue('StorageType') !== storageName) GM_setValue('StorageType', storageName);
+        }
         $.extend(true, ConfigMethod.defConfig, Config);
         if (myConfig && $.type(myConfig) === 'object' && !$.isEmptyObject(myConfig)) {
             var options = ConfigMethod.normalize(myConfig);

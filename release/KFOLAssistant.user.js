@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.3.6
+// @version     5.3.7
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.6';
+var version = '5.3.7';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -344,6 +344,10 @@ var ConfigMethod = {
      * 初始化
      */
     init: function () {
+        if (storageType === 'Script' || storageType === 'Global') {
+            var storageName = storageType === 'Script' ? 'ByUid' : 'Global';
+            if (GM_getValue('StorageType') !== storageName) GM_setValue('StorageType', storageName);
+        }
         $.extend(true, ConfigMethod.defConfig, Config);
         if (myConfig && $.type(myConfig) === 'object' && !$.isEmptyObject(myConfig)) {
             var options = ConfigMethod.normalize(myConfig);
@@ -1563,7 +1567,7 @@ var ConfigDialog = {
                 .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
             '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_attempt_attack_after_time_enabled" />在生命值不超过{0}时进行试探攻击 '
                 .replace('{0}', Const.maxAttemptAttackLifeNum) +
-            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置攻击时限，详见【常见问题10】">[?]</span></label><br />' +
+            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置攻击时限，适用于较低等级玩家，详见【常见问题10】">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_attempt_attack_after_time_enabled" type="checkbox" />在攻击时限之前的{0}分钟内才进行试探攻击 '
                 .replace('{0}', Const.attemptAttackAfterTime) +
             '<span class="pd_cfg_tips" title="在自动攻击时限之前的指定时间内才进行试探攻击，可有效减少被怪物攻击次数（适合有时间挂机的较低等级玩家），' +
@@ -7540,16 +7544,15 @@ var Loot = {
              * @param {string} msg 提示消息
              */
             var writeNextCheckLifeCookie = function (life, interval, msg) {
-                var nextTime = Tools.getDate('+' + interval + 'm');
+                var nextTime = Tools.getDate('+' + Math.floor(interval * 60) + 's');
                 Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
-                console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{3}分钟{4}，下一次检查生命值的时间间隔为{5}分钟\n{6}'
+                console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{2}分钟{3}，下一次检查生命值的时间间隔为{4}分钟\n{5}'
                     .replace('{0}', life)
                     .replace('{1}', minLife)
-                    .replace('{2}', maxCheckAttackLifeNum)
-                    .replace('{3}', curLootMinutes)
-                    .replace('{4}', lootInfo.type === 1 ? '(估计时间)' : '')
-                    .replace('{5}', interval)
-                    .replace('{6}', msg)
+                    .replace('{2}', curLootMinutes)
+                    .replace('{3}', lootInfo.type === 1 ? '(估计时间)' : '')
+                    .replace('{4}', interval)
+                    .replace('{5}', msg)
                 );
             };
 
@@ -8453,6 +8456,8 @@ var KFOL = {
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
             '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
             '.readtext img[onclick] { max-width: 550px; }' +
+            '.pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }' +
+            '.pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }' +
 
             /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -8965,6 +8970,7 @@ var KFOL = {
         var oriTitle = document.title;
         var titleItvFunc = null;
         var prevInterval = -1, errorNum = 0;
+
         /**
          * 获取经过格式化的倒计时标题
          * @param {number} type 倒计时显示类型，1：[小时:][分钟:]秒钟；2：[小时:]分钟
@@ -8981,6 +8987,7 @@ var KFOL = {
                 textInterval += diff.minutes + '分';
             return textInterval;
         };
+
         /**
          * 显示定时模式标题提示
          * @param {number} interval 倒计时的时间间隔（秒）
@@ -9003,6 +9010,10 @@ var KFOL = {
                 titleItvFunc = window.setInterval(showIntervalTitle, Const.showRefreshModeTipsInterval * 60 * 1000);
             }
         };
+
+        /**
+         * 处理错误
+         */
         var handleError = function () {
             var interval = 0, errorText = '';
             $.ajax({
@@ -9046,6 +9057,10 @@ var KFOL = {
                 dataType: 'html'
             });
         };
+
+        /**
+         * 检查刷新间隔
+         */
         var checkRefreshInterval = function () {
             KFOL.removePopTips($('.pd_refresh_notice').parent());
             var isGetLootAwardStarted = false;
@@ -9082,6 +9097,7 @@ var KFOL = {
             window.setTimeout(checkRefreshInterval, interval * 1000);
             showRefreshModeTips(interval, true);
         };
+
         window.setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
         showRefreshModeTips(interval < 60 ? 60 : interval);
     },
@@ -11171,6 +11187,28 @@ var KFOL = {
     },
 
     /**
+     * 在发帖页面上添加额外的选项
+     */
+    addExtraOptionInPostPage: function () {
+        $('form[name="FORM"]').find('input[name="atc_autourl"], input[name="atc_convert"]').remove();
+        $('#menu_show').closest('td').append(
+            '<div class="pd_post_extra_option">' +
+            '  <label><input type="checkbox" name="atc_autourl" value="1" checked="checked" /> 自动分析url</label><br />' +
+            '  <label><input type="checkbox" name="atc_convert" value="1" checked="checked" /> Wind Code自动转换</label>' +
+            '</div>'
+        );
+
+        $('<input type="button" value="预览帖子" style="margin-left:7px" />')
+            .insertAfter('input[type="submit"][name="Submit"]')
+            .click(function (e) {
+                e.preventDefault();
+                var $form = $('form[name="preview"]');
+                $form.find('input[name="atc_content"]').val($('#textarea').val());
+                $form.submit();
+            });
+    },
+
+    /**
      * 修复论坛错误代码
      */
     repairBbsErrorCode: function () {
@@ -11228,6 +11266,18 @@ var KFOL = {
         KFOL.window.Bank = Bank;
         KFOL.window.Loot = Loot;
         KFOL.window.KFOL = KFOL;
+    },
+
+    /**
+     * 修正发帖预览页面
+     */
+    modifyPostPreviewPage: function () {
+        $('table > tbody > tr.tr1 > th').css({
+            'text-align': 'left',
+            'font-weight': 'normal',
+            'border': '1px solid #9191FF',
+            'padding': '10px'
+        });
     },
 
     /**
@@ -11352,8 +11402,12 @@ var KFOL = {
         else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
             KFOL.syncModifyPerPageFloorNum();
         }
+        else if (/\/job\.php\?action=preview$/i.test(location.href)) {
+            KFOL.modifyPostPreviewPage();
+        }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();
+            KFOL.addExtraOptionInPostPage();
         }
         if (Config.blockUserEnabled) KFOL.blockUsers();
         if (Config.blockThreadEnabled) KFOL.blockThread();
