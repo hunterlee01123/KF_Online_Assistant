@@ -226,7 +226,7 @@
 
 /*==========================================*/
 
-// 发帖时自动附加额外内容 V1.5
+// 发帖时自动附加额外内容 V1.6
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
     var options = {
@@ -260,9 +260,9 @@
 
     var $form = $('form[name="FORM"][action="post.php?"]');
     if (options.showNoAttachOptionEnabled) {
-        var switchHtml = '<label style="margin-left:7px"><input type="checkbox" id="pd_no_attach" class="pd_input" /> 不附加额外内容</label>';
-        if (location.pathname === '/post.php') $form.find('input[name="diy_guanjianci"]').after(switchHtml);
-        else $form.find('input[name="Submit"]').after(switchHtml);
+        var switchHtml = '<input type="checkbox" id="pd_no_attach" class="pd_input" /> 不附加额外内容';
+        if (location.pathname === '/post.php') $form.find('.pd_post_extra_option').append('<br /><label>' + switchHtml + '</label>');
+        else $form.find('input[name="Submit"]').after('<label style="margin-left:7px">' + switchHtml + '</label>');
     }
     $form.submit(function () {
         var $this = $(this);
