@@ -12,14 +12,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.1.1
+// @version     2.1.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.1.1';
+var extraVersion = '2.1.2';
 
 /**
  * 自定义道具类
@@ -1156,7 +1156,7 @@ var Extra = {
         var script = document.createElement('script');
         script.type = 'text/javascript';
         script.charset = 'utf-8';
-        script.src = 'https://kf.miaola.info/kfe.min.user.js';
+        script.src = (Extra.isInMiaolaDomain ? '' : 'https://kf.miaola.info/') + 'kfe.min.user.js?' + Tools.getDateString(new Date(), '');
         document.body.appendChild(script);
     },
 
