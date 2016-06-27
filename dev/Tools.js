@@ -452,5 +452,20 @@ var Tools = {
         var matches = /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(url);
         if (matches) url = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
         return url;
+    },
+
+    /**
+     * 获取指定字符串的长度（1个GBK字符按2个字符来算）
+     * @param {string} str 指定字符串
+     * @returns {number} 字符串的长度
+     */
+    getStrLen: function (str) {
+        var len = 0;
+        var s_len = str.length = (KFOL.window.is_ie && str.indexOf('\n') !== -1) ? str.replace(/\r?\n/g, '_').length : str.length;
+        var c_len = 2;
+        for (var i = 0; i < s_len; i++) {
+            len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
+        }
+        return len;
     }
 };

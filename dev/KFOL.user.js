@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.3.7
+// @version     5.4.0-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.3.7';
+var version = '5.4.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -2939,15 +2939,7 @@ var KFOL = {
         KFOL.window.is_ie = typeof KFOL.window.is_ie !== 'undefined' ? KFOL.window.is_ie : false;
 
         if (location.pathname === '/read.php') {
-            KFOL.window.strlen = function (str) {
-                var len = 0;
-                var s_len = str.length = (KFOL.window.is_ie && str.indexOf('\n') != -1) ? str.replace(/\r?\n/g, '_').length : str.length;
-                var c_len = 2;
-                for (var i = 0; i < s_len; i++) {
-                    len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
-                }
-                return len;
-            };
+            KFOL.window.strlen = Tools.getStrLen;
         }
     },
 
@@ -3005,6 +2997,26 @@ var KFOL = {
     },
 
     /**
+     * 可使用2个字以下的关键字进行搜索
+     */
+    makeSearchByBelowTwoKeyWordAvailable: function () {
+        $('form[action="search.php?"]').submit(function () {
+            var $this = $(this);
+            var $keyWord = $this.find('input[name="keyword"]');
+            var $method = $this.find('input[name="method"]');
+            if (!$keyWord.length || !$method.length) return;
+            var keyWord = $.trim($keyWord.val());
+            if (!keyWord || Tools.getStrLen(keyWord) > 2) return;
+            $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
+            $method.val('OR');
+            window.setTimeout(function () {
+                $keyWord.val(keyWord);
+                $method.val('AND');
+            }, 500);
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -3030,6 +3042,7 @@ var KFOL = {
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
             KFOL.addSearchTypeSelectBox();
+            KFOL.makeSearchByBelowTwoKeyWordAvailable();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
             if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
@@ -3058,6 +3071,7 @@ var KFOL = {
             KFOL.addMoreSmileLink();
         }
         else if (location.pathname === '/thread.php') {
+            KFOL.makeSearchByBelowTwoKeyWordAvailable();
             if (Config.highlightNewPostEnabled) KFOL.highlightNewPost();
             if (Config.showFastGotoThreadPageEnabled) KFOL.addFastGotoThreadPageLink();
         }
