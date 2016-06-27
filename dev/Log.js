@@ -363,6 +363,8 @@ var Log = {
             lootAttackedKfb = 0, minLootAttackedKfb = -1, maxLootAttackedKfb = -1;
         var attackCount = 0, attemptAttackCount = 0, attackKfb = 0, attackExp = 0,
             strongAttackCount = 0, minStrongAttackCount = -1, maxStrongAttackCount = -1, deadlyAttackCount = 0;
+        var buyItemTotalNum = 0, buyItemTotalPrice = 0, totalBuyItemPricePercent = 0, minBuyItemPricePercent = 0,
+            maxBuyItemPricePercent = 0, buyItemStat = {};
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
@@ -392,7 +394,7 @@ var Log = {
                             if (kfb > maxLootAttackedKfb) maxLootAttackedKfb = kfb;
                         }
                     }
-                    else if ((key.type === '批量攻击' || key.type === '试探攻击')) {
+                    else if (key.type === '批量攻击' || key.type === '试探攻击') {
                         var matches = /`(\d+)`次/.exec(key.action);
                         if (matches) {
                             if (key.type === '试探攻击') attemptAttackCount++;
@@ -429,6 +431,33 @@ var Log = {
                         if (k === 'item' || k === '夺取KFB') continue;
                         if (typeof expense[k] === 'undefined') expense[k] = key.pay[k];
                         else expense[k] += key.pay[k];
+                    }
+                }
+                if (key.type === '统计道具购买价格' && $.type(key.pay) === 'object' && typeof key.pay['KFB'] !== 'undefined') {
+                    var matches = /共有`(\d+)`个【`Lv.\d+：(.+?)`】道具统计成功，总计价格：`[^`]+?`，平均价格：`[^`]+?`\(`(\d+)%`\)，最低价格：`[^`]+?`\(`(\d+)%`\)，最高价格：`[^`]+?`\(`(\d+)%`\)/.exec(key.action);
+                    if (matches) {
+                        var itemNum = parseInt(matches[1]);
+                        var itemName = matches[2];
+                        if (typeof buyItemStat[itemName] === 'undefined') {
+                            buyItemStat[itemName] = {
+                                '道具数量': 0,
+                                '总计价格': 0,
+                                '总计价格比例': 0,
+                                '最低价格比例': 0,
+                                '最高价格比例': 0
+                            };
+                        }
+                        buyItemTotalNum += itemNum;
+                        buyItemStat[itemName]['道具数量'] += itemNum;
+                        buyItemTotalPrice += Math.abs(key.pay['KFB']);
+                        buyItemStat[itemName]['总计价格'] += Math.abs(key.pay['KFB']);
+                        totalBuyItemPricePercent += parseInt(matches[3]) * itemNum;
+                        buyItemStat[itemName]['总计价格比例'] += parseInt(matches[3]) * itemNum;
+                        if (minBuyItemPricePercent <= 0 || parseInt(matches[4]) < minBuyItemPricePercent) minBuyItemPricePercent = parseInt(matches[4]);
+                        if (parseInt(matches[5]) > maxBuyItemPricePercent) maxBuyItemPricePercent = parseInt(matches[5]);
+                        if (buyItemStat[itemName]['最低价格比例'] <= 0 || parseInt(matches[4]) < buyItemStat[itemName]['最低价格比例'])
+                            buyItemStat[itemName]['最低价格比例'] = parseInt(matches[4]);
+                        if (parseInt(matches[5]) > buyItemStat[itemName]['最高价格比例']) buyItemStat[itemName]['最高价格比例'] = parseInt(matches[5]);
                     }
                 }
             });
@@ -544,6 +573,30 @@ var Log = {
                 lootItemGainContent += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', lootItemGain[key]);
             });
             content += '<br /><strong>争夺道具收获：</strong><i>道具<em>+{0}</em></i> {1}'.replace('{0}', lootItemGainTotalNum).replace('{1}', lootItemGainContent);
+
+            var buyItemStatContent = '';
+            var buyItemStatKeyList = Tools.getObjectKeyList(buyItemStat, 0);
+            buyItemStatKeyList.sort(function (a, b) {
+                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
+            });
+            $.each(buyItemStatKeyList, function (index, key) {
+                var item = buyItemStat[key];
+                buyItemStatContent += '<i class="pd_custom_tips" title="总价：{0}，平均价格比例：{1}%，最低价格比例：{2}%，最高价格比例：{3}%">{4}<em>+{5}</em></i> '
+                    .replace('{0}', item['总计价格'].toLocaleString())
+                    .replace('{1}', item['道具数量'] > 0 ? Tools.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0)
+                    .replace('{2}', item['最低价格比例'])
+                    .replace('{3}', item['最高价格比例'])
+                    .replace('{4}', key)
+                    .replace('{5}', item['道具数量']);
+            });
+            content += ('<br /><strong>购买道具统计：</strong><i>道具<em>+{0}</em></i> <i>道具价格<span class="pd_stat_extra"><em title="道具总价">+{1}</em>' +
+            '(<em title="平均价格比例">{2}%</em>|<em title="最低价格比例">{3}%</em>|<em title="最高价格比例">{4}%</em>)</span></i> {5}')
+                .replace('{0}', buyItemTotalNum)
+                .replace('{1}', buyItemTotalPrice.toLocaleString())
+                .replace('{2}', buyItemTotalNum > 0 ? Tools.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0)
+                .replace('{3}', minBuyItemPricePercent)
+                .replace('{4}', maxBuyItemPricePercent)
+                .replace('{5}', buyItemStatContent);
         }
 
         return content;

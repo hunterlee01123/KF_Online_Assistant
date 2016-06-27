@@ -888,6 +888,9 @@ var Loot = {
                 }
             }
         }
+
+        $('.kf_fw_ig1 > tbody > tr:first-child > td:first-child > br:last')
+            .before('<span style="color:#FF3333">争夺攻略可<a target="_blank" href="read.php?tid=551121">参见此贴</a>。</span>');
     },
 
     /**
