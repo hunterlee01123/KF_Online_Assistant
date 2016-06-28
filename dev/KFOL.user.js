@@ -25,7 +25,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.4.0-dev
+// @version     5.4.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT

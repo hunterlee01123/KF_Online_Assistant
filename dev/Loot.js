@@ -389,7 +389,7 @@ var Loot = {
                             attack(id);
                         });
                     }
-                    else if (/(⑧1|⑧3)/.test(msg)) {
+                    else if (/(⑧1|⑧3|<a href="javascript:history.go\(-1\);">返回上一步操作<\/a>)/i.test(msg)) {
                         failNum++;
                     }
                     else {

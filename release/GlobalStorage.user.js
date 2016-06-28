@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.3.7
+// @version     5.4.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -21,7 +21,7 @@
 // @use-greasemonkey true
 // ==/UserScript==
 // 版本号
-var version = '5.3.7';
+var version = '5.4.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1367,6 +1367,21 @@ var Tools = {
         var matches = /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(url);
         if (matches) url = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
         return url;
+    },
+
+    /**
+     * 获取指定字符串的长度（1个GBK字符按2个字符来算）
+     * @param {string} str 指定字符串
+     * @returns {number} 字符串的长度
+     */
+    getStrLen: function (str) {
+        var len = 0;
+        var s_len = str.length = (KFOL.window.is_ie && str.indexOf('\n') !== -1) ? str.replace(/\r?\n/g, '_').length : str.length;
+        var c_len = 2;
+        for (var i = 0; i < s_len; i++) {
+            len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
+        }
+        return len;
     }
 };
 
@@ -3523,6 +3538,8 @@ var Log = {
             lootAttackedKfb = 0, minLootAttackedKfb = -1, maxLootAttackedKfb = -1;
         var attackCount = 0, attemptAttackCount = 0, attackKfb = 0, attackExp = 0,
             strongAttackCount = 0, minStrongAttackCount = -1, maxStrongAttackCount = -1, deadlyAttackCount = 0;
+        var buyItemTotalNum = 0, buyItemTotalPrice = 0, totalBuyItemPricePercent = 0, minBuyItemPricePercent = 0,
+            maxBuyItemPricePercent = 0, buyItemStat = {};
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
@@ -3552,7 +3569,7 @@ var Log = {
                             if (kfb > maxLootAttackedKfb) maxLootAttackedKfb = kfb;
                         }
                     }
-                    else if ((key.type === '批量攻击' || key.type === '试探攻击')) {
+                    else if (key.type === '批量攻击' || key.type === '试探攻击') {
                         var matches = /`(\d+)`次/.exec(key.action);
                         if (matches) {
                             if (key.type === '试探攻击') attemptAttackCount++;
@@ -3589,6 +3606,33 @@ var Log = {
                         if (k === 'item' || k === '夺取KFB') continue;
                         if (typeof expense[k] === 'undefined') expense[k] = key.pay[k];
                         else expense[k] += key.pay[k];
+                    }
+                }
+                if (key.type === '统计道具购买价格' && $.type(key.pay) === 'object' && typeof key.pay['KFB'] !== 'undefined') {
+                    var matches = /共有`(\d+)`个【`Lv.\d+：(.+?)`】道具统计成功，总计价格：`[^`]+?`，平均价格：`[^`]+?`\(`(\d+)%`\)，最低价格：`[^`]+?`\(`(\d+)%`\)，最高价格：`[^`]+?`\(`(\d+)%`\)/.exec(key.action);
+                    if (matches) {
+                        var itemNum = parseInt(matches[1]);
+                        var itemName = matches[2];
+                        if (typeof buyItemStat[itemName] === 'undefined') {
+                            buyItemStat[itemName] = {
+                                '道具数量': 0,
+                                '总计价格': 0,
+                                '总计价格比例': 0,
+                                '最低价格比例': 0,
+                                '最高价格比例': 0
+                            };
+                        }
+                        buyItemTotalNum += itemNum;
+                        buyItemStat[itemName]['道具数量'] += itemNum;
+                        buyItemTotalPrice += Math.abs(key.pay['KFB']);
+                        buyItemStat[itemName]['总计价格'] += Math.abs(key.pay['KFB']);
+                        totalBuyItemPricePercent += parseInt(matches[3]) * itemNum;
+                        buyItemStat[itemName]['总计价格比例'] += parseInt(matches[3]) * itemNum;
+                        if (minBuyItemPricePercent <= 0 || parseInt(matches[4]) < minBuyItemPricePercent) minBuyItemPricePercent = parseInt(matches[4]);
+                        if (parseInt(matches[5]) > maxBuyItemPricePercent) maxBuyItemPricePercent = parseInt(matches[5]);
+                        if (buyItemStat[itemName]['最低价格比例'] <= 0 || parseInt(matches[4]) < buyItemStat[itemName]['最低价格比例'])
+                            buyItemStat[itemName]['最低价格比例'] = parseInt(matches[4]);
+                        if (parseInt(matches[5]) > buyItemStat[itemName]['最高价格比例']) buyItemStat[itemName]['最高价格比例'] = parseInt(matches[5]);
                     }
                 }
             });
@@ -3704,6 +3748,30 @@ var Log = {
                 lootItemGainContent += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', lootItemGain[key]);
             });
             content += '<br /><strong>争夺道具收获：</strong><i>道具<em>+{0}</em></i> {1}'.replace('{0}', lootItemGainTotalNum).replace('{1}', lootItemGainContent);
+
+            var buyItemStatContent = '';
+            var buyItemStatKeyList = Tools.getObjectKeyList(buyItemStat, 0);
+            buyItemStatKeyList.sort(function (a, b) {
+                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
+            });
+            $.each(buyItemStatKeyList, function (index, key) {
+                var item = buyItemStat[key];
+                buyItemStatContent += '<i class="pd_custom_tips" title="总价：{0}，平均价格比例：{1}%，最低价格比例：{2}%，最高价格比例：{3}%">{4}<em>+{5}</em></i> '
+                    .replace('{0}', item['总计价格'].toLocaleString())
+                    .replace('{1}', item['道具数量'] > 0 ? Tools.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0)
+                    .replace('{2}', item['最低价格比例'])
+                    .replace('{3}', item['最高价格比例'])
+                    .replace('{4}', key)
+                    .replace('{5}', item['道具数量']);
+            });
+            content += ('<br /><strong>购买道具统计：</strong><i>道具<em>+{0}</em></i> <i>道具价格<span class="pd_stat_extra"><em title="道具总价">+{1}</em>' +
+            '(<em title="平均价格比例">{2}%</em>|<em title="最低价格比例">{3}%</em>|<em title="最高价格比例">{4}%</em>)</span></i> {5}')
+                .replace('{0}', buyItemTotalNum)
+                .replace('{1}', buyItemTotalPrice.toLocaleString())
+                .replace('{2}', buyItemTotalNum > 0 ? Tools.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0)
+                .replace('{3}', minBuyItemPricePercent)
+                .replace('{4}', maxBuyItemPricePercent)
+                .replace('{5}', buyItemStatContent);
         }
 
         return content;
@@ -6931,7 +6999,7 @@ var Loot = {
                             attack(id);
                         });
                     }
-                    else if (/(⑧1|⑧3)/.test(msg)) {
+                    else if (/(⑧1|⑧3|<a href="javascript:history.go\(-1\);">返回上一步操作<\/a>)/i.test(msg)) {
                         failNum++;
                     }
                     else {
@@ -7430,6 +7498,9 @@ var Loot = {
                 }
             }
         }
+
+        $('.kf_fw_ig1 > tbody > tr:first-child > td:first-child > br:last')
+            .before('<span style="color:#FF3333">争夺攻略可<a target="_blank" href="read.php?tid=551121">参见此贴</a>。</span>');
     },
 
     /**
@@ -11218,15 +11289,7 @@ var KFOL = {
         KFOL.window.is_ie = typeof KFOL.window.is_ie !== 'undefined' ? KFOL.window.is_ie : false;
 
         if (location.pathname === '/read.php') {
-            KFOL.window.strlen = function (str) {
-                var len = 0;
-                var s_len = str.length = (KFOL.window.is_ie && str.indexOf('\n') != -1) ? str.replace(/\r?\n/g, '_').length : str.length;
-                var c_len = 2;
-                for (var i = 0; i < s_len; i++) {
-                    len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
-                }
-                return len;
-            };
+            KFOL.window.strlen = Tools.getStrLen;
         }
     },
 
@@ -11284,6 +11347,26 @@ var KFOL = {
     },
 
     /**
+     * 可使用2个字以下的关键字进行搜索
+     */
+    makeSearchByBelowTwoKeyWordAvailable: function () {
+        $('form[action="search.php?"]').submit(function () {
+            var $this = $(this);
+            var $keyWord = $this.find('input[name="keyword"]');
+            var $method = $this.find('input[name="method"]');
+            if (!$keyWord.length || !$method.length) return;
+            var keyWord = $.trim($keyWord.val());
+            if (!keyWord || Tools.getStrLen(keyWord) > 2) return;
+            $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
+            $method.val('OR');
+            window.setTimeout(function () {
+                $keyWord.val(keyWord);
+                $method.val('AND');
+            }, 500);
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -11309,6 +11392,7 @@ var KFOL = {
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
             KFOL.addSearchTypeSelectBox();
+            KFOL.makeSearchByBelowTwoKeyWordAvailable();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
             if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
@@ -11337,6 +11421,7 @@ var KFOL = {
             KFOL.addMoreSmileLink();
         }
         else if (location.pathname === '/thread.php') {
+            KFOL.makeSearchByBelowTwoKeyWordAvailable();
             if (Config.highlightNewPostEnabled) KFOL.highlightNewPost();
             if (Config.showFastGotoThreadPageEnabled) KFOL.addFastGotoThreadPageLink();
         }
