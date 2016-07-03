@@ -331,6 +331,10 @@ var ConfigMethod = {
             settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ?
                 options.parseMediaTagEnabled : defConfig.parseMediaTagEnabled;
         }
+        if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
+            settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ?
+                options.turnPageViaKeyboardEnabled : defConfig.turnPageViaKeyboardEnabled;
+        }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);

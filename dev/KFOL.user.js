@@ -3032,6 +3032,37 @@ var KFOL = {
     },
 
     /**
+     * 通过左右键进行翻页
+     */
+    turnPageViaKeyboard: function () {
+        $(document).keydown(function (e) {
+            if (e.keyCode !== 37 && e.keyCode !== 39) return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            var $page = $('.pages:first');
+            var $curPage = $page.find('li > a[href="javascript:;"]');
+            if (!$curPage.length) return;
+            var curPage = Tools.getCurrentThreadPage();
+            var url = '';
+            if (e.keyCode === 37) {
+                if (curPage <= 1) return;
+                url = $page.find('li > a:contains("上一页")').attr('href');
+            }
+            else {
+                var matches = /&page=(\d+)/.exec($page.find('li:last-child > a').attr('href'));
+                if (!matches) return;
+                if (curPage >= parseInt(matches[1])) return;
+                url = $page.find('li > a:contains("下一页")').attr('href');
+            }
+            if (location.pathname === '/read.php') {
+                if ($.trim($('textarea[name="atc_content"]').val())) {
+                    if (!window.confirm('发帖框尚有文字，是否继续翻页？')) return;
+                }
+            }
+            location.href = url;
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -3066,6 +3097,7 @@ var KFOL = {
                 Bank.fixedDepositDueAlert();
         }
         else if (location.pathname === '/read.php') {
+            if (Config.turnPageViaKeyboardEnabled) KFOL.turnPageViaKeyboard();
             KFOL.fastGotoFloor();
             if (Config.adjustThreadContentWidthEnabled) KFOL.adjustThreadContentWidth();
             KFOL.adjustThreadContentFontSize();
@@ -3157,6 +3189,9 @@ var KFOL = {
         }
         else if (/\/job\.php\?action=preview$/i.test(location.href)) {
             KFOL.modifyPostPreviewPage();
+        }
+        else if (location.pathname === '/search.php') {
+            if (Config.turnPageViaKeyboardEnabled) KFOL.turnPageViaKeyboard();
         }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();
