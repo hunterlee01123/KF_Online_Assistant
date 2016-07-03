@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.4.0
+// @version     5.4.1-dev
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.4.0';
+var version = '5.4.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -2076,7 +2076,8 @@ var KFOL = {
     autoSaveCurrentDeposit: function (isRead) {
         if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb))
             return;
-        var $kfb = $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]');
+        var $kfb = $('a[href="kf_givemekfb.php"]');
+
         /**
          * 活期存款
          * @param {number} income 当前拥有的KFB
@@ -2100,6 +2101,7 @@ var KFOL = {
                     }
                 }, 'html');
         };
+
         if (isRead) {
             $.get('profile.php?action=show&uid={0}&t={1}'.replace('{0}', KFOL.uid).replace('{1}', new Date().getTime()), function (html) {
                 var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
@@ -2763,7 +2765,7 @@ var KFOL = {
                 $searchTypeList.remove();
                 return;
             }
-            $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>用户名</li><li>关键词</li></ul>').appendTo('body');
+            $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>作者</li><li>关键词</li><li>用户名</li></ul>').appendTo('body');
             var offset = $searchType.offset();
             $searchTypeList.css('top', offset.top + $searchType.height() + 2).css('left', offset.left + 1);
             $searchTypeList.on('click', 'li', function () {
@@ -2772,13 +2774,26 @@ var KFOL = {
                 $searchType.find('span').text(type);
                 var $form = $keyWord.closest('form');
                 if (type === '关键词') $form.attr('action', 'guanjianci.php?');
+                else if (type === '用户名') $form.attr('action', 'profile.php?action=show');
                 else $form.attr('action', 'search.php?');
-                if (type === '用户名') $keyWord.attr('name', 'pwuser');
+                if (type === '作者') $keyWord.attr('name', 'pwuser');
                 else if (type === '关键词') $keyWord.attr('name', 'gjc');
+                else if (type === '用户名') $keyWord.attr('name', 'username');
                 else $keyWord.attr('name', 'keyword');
                 $searchTypeList.remove();
                 $keyWord.focus();
             });
+        });
+
+        $('form[action="search.php?"]').submit(function () {
+            var $this = $(this);
+            var type = $.trim($searchType.find('span').text());
+            if (type === '关键词') {
+                $this.attr('action', 'guanjianci.php?gjc=' + $this.find('input[name="gjc"]').val());
+            }
+            else if (type === '用户名') {
+                $this.attr('action', 'profile.php?action=show&username=' + $this.find('input[name="username"]').val());
+            }
         });
     },
 
