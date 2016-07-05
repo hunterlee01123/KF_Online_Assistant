@@ -8,18 +8,17 @@
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.user.js
 // @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/jquery-ui.custom.min.js
-// @include     http://*2dgal.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.1.2
+// @version     2.1.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.1.2';
+var extraVersion = '2.1.3';
 
 /**
  * 自定义道具类
@@ -952,6 +951,30 @@ var Extra = {
     },
 
     /**
+     * 阻止持续刷新页面
+     */
+    preventContinueRefreshPage: function () {
+        Const.continueRefreshCookieName = 'pd_continue_refresh';
+        var value = Tools.getCookie(Const.continueRefreshCookieName);
+        var count = 0;
+        if (value && /^\d+$/.test(value)) {
+            count = parseInt(value);
+            if (KFOL.isInHomePage) {
+                if (count >= 20) {
+                    Tools.setCookie(Const.continueRefreshCookieName, '', Tools.getDate('-1d'));
+                    location.href = 'https://www.baidu.com/';
+                    return;
+                }
+            }
+            else {
+                Tools.setCookie(Const.continueRefreshCookieName, '', Tools.getDate('-1d'));
+                return;
+            }
+        }
+        if (KFOL.isInHomePage) Tools.setCookie(Const.continueRefreshCookieName, ++count, Tools.getDate('+1m'));
+    },
+
+    /**
      * 操纵灰企鹅表情
      */
     controlGrayPenguinSmile: function () {
@@ -1186,7 +1209,10 @@ var Extra = {
         }
         if (Extra.Config.customSmLevel) Extra.modifyCustomSmLevel();
         if (Extra.Config.kfOnlyYouEnabled) Extra.kfOnlyYou();
-        if (Extra.isInMiaolaDomain && Extra.Config.kfSmileEnhanceExtensionEnabled) Extra.importKfSmileEnhanceExtension();
+        if (Extra.isInMiaolaDomain) {
+            if (Extra.Config.kfSmileEnhanceExtensionEnabled) Extra.importKfSmileEnhanceExtension();
+            Extra.preventContinueRefreshPage();
+        }
 
         Func.run('Extra.init_after_');
 
