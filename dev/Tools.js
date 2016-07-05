@@ -436,9 +436,9 @@ var Tools = {
      * @returns {string} 音频外链URL
      */
     convertToAudioExternalLinkUrl: function (url) {
-        var matches = /https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(url);
+        var matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(url);
         if (matches) url = 'http://music.miaola.info/163/{0}.mp3'.replace('{0}', matches[1]);
-        matches = /https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(url);
+        matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(url);
         if (matches) url = 'http://music.miaola.info/xiami/{0}.mp3'.replace('{0}', matches[1]);
         return url;
     },
@@ -449,7 +449,9 @@ var Tools = {
      * @returns {string} 视频外链URL
      */
     convertToVideoExternalLinkUrl: function (url) {
-        var matches = /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(url);
+        var matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(url);
+        if (matches) url = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
+        matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(url);
         if (matches) url = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
         return url;
     },

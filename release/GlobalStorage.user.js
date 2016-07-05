@@ -7,11 +7,10 @@
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.user.js
-// @include     http://*2dgal.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.4.0
+// @version     5.4.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -21,7 +20,7 @@
 // @use-greasemonkey true
 // ==/UserScript==
 // 版本号
-var version = '5.4.0';
+var version = '5.4.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -42,12 +41,14 @@ var Config = {
     autoRefreshEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
     showRefreshModeTipsType: 'auto',
+
     // 是否自动KFB捐款，true：开启；false：关闭
     autoDonationEnabled: false,
     // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     donationAfterTime: '00:05:00',
+
     // 是否自动争夺，可自动领取争夺奖励，并可自动进行批量攻击（可选），true：开启；false：关闭
     autoLootEnabled: false,
     // 在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：['07:00-08:15','17:00-18:15']，留空表示不启用
@@ -77,10 +78,12 @@ var Config = {
     autoUseItemEnabled: false,
     // 自动使用批量攻击后刚掉落的道具的名称，例：['被遗弃的告白信','学校天台的钥匙','LOLI的钱包']
     autoUseItemNames: [],
+
     // 是否自动抽取神秘盒子，true：开启；false：关闭
     autoDrawSmbox2Enabled: false,
     // 偏好的神秘盒子数字，例：[52,1,28,400]（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空
     favorSmboxNumbers: [],
+
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',
@@ -94,6 +97,7 @@ var Config = {
     homePageThreadFastGotoLinkEnabled: true,
     // 是否在首页显示VIP剩余时间，true：开启；false：关闭
     showVipSurplusTimeEnabled: false,
+
     // 是否在帖子列表页面中显示帖子页数快捷链接，true：开启；false：关闭
     showFastGotoThreadPageEnabled: false,
     // 在帖子页数快捷链接中显示页数链接的最大数量
@@ -102,6 +106,7 @@ var Config = {
     perPageFloorNum: 10,
     // 是否在帖子列表中高亮今日新发表帖子的发表时间，true：开启；false：关闭
     highlightNewPostEnabled: true,
+
     // 是否调整帖子内容宽度，使其保持一致，true：开启；false：关闭
     adjustThreadContentWidthEnabled: false,
     // 帖子内容字体大小，留空表示使用默认大小，推荐值：14
@@ -124,6 +129,9 @@ var Config = {
     userMemoList: {},
     // 是否在帖子页面解析多媒体标签，true：开启；false：关闭
     parseMediaTagEnabled: true,
+    // 是否在帖子和搜索页面通过左右键进行翻页，true：开启；false：关闭
+    turnPageViaKeyboardEnabled: false,
+
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
     // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
@@ -154,6 +162,7 @@ var Config = {
     customScriptEndContent: '',
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',
+
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
     // 关注用户列表，格式：[{name:'用户名'}]，例：[{name:'张三'}, {name:'李四'}]
@@ -184,12 +193,14 @@ var Config = {
     // 关键字可使用普通字符串或正则表达式（正则表达式请使用'/abc/'的格式），includeUser、excludeUser、includeFid和excludeFid这三项为可选
     // 例：[{keyWord: '标题1'}, {keyWord: '标题2', includeUser:['用户名1', '用户名2'], includeFid: [5, 56]}, {keyWord: '/关键字A.*关键字B/i', excludeFid: [92, 127, 68]}]
     blockThreadList: [],
+
     // 是否在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发，true：开启；false：关闭
     autoSaveCurrentDepositEnabled: false,
     // 在当前收入已满指定KFB额度之后自动进行活期存款，例：1000
     saveCurrentDepositAfterKfb: 0,
     // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
     saveCurrentDepositKfb: 0,
+
     // 是否自动更换神秘颜色，true：开启；false：关闭
     autoChangeSMColorEnabled: false,
     // 自动更换神秘颜色的更换顺序类型，random：随机；sequence：顺序
@@ -666,6 +677,10 @@ var ConfigMethod = {
         if (typeof options.parseMediaTagEnabled !== 'undefined') {
             settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ?
                 options.parseMediaTagEnabled : defConfig.parseMediaTagEnabled;
+        }
+        if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
+            settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ?
+                options.turnPageViaKeyboardEnabled : defConfig.turnPageViaKeyboardEnabled;
         }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
@@ -1351,9 +1366,9 @@ var Tools = {
      * @returns {string} 音频外链URL
      */
     convertToAudioExternalLinkUrl: function (url) {
-        var matches = /https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(url);
+        var matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(url);
         if (matches) url = 'http://music.miaola.info/163/{0}.mp3'.replace('{0}', matches[1]);
-        matches = /https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(url);
+        matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(url);
         if (matches) url = 'http://music.miaola.info/xiami/{0}.mp3'.replace('{0}', matches[1]);
         return url;
     },
@@ -1364,7 +1379,9 @@ var Tools = {
      * @returns {string} 视频外链URL
      */
     convertToVideoExternalLinkUrl: function (url) {
-        var matches = /https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(url);
+        var matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(url);
+        if (matches) url = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
+        matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(url);
         if (matches) url = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
         return url;
     },
@@ -1676,7 +1693,9 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_turn_page_via_keyboard_enabled" type="checkbox" />通过左右键翻页 ' +
+            '<span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -1874,6 +1893,7 @@ var ConfigDialog = {
         $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
         $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
+        $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked', Config.turnPageViaKeyboardEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
@@ -1957,6 +1977,7 @@ var ConfigDialog = {
         options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
         options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
+        options.turnPageViaKeyboardEnabled = $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
@@ -6622,7 +6643,8 @@ var Loot = {
             var now = new Date();
             for (var i in Config.noAutoLootWhen) {
                 if (Tools.isBetweenInTimeRange(now, Config.noAutoLootWhen[i])) {
-                    if (isAutoDonation) KFOL.donation();
+                    if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                    else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
                     return;
                 }
             }
@@ -6695,7 +6717,8 @@ var Loot = {
                 if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
                     autoAttack(safeId, deadlyAttackNum);
                 }
-                if (isAutoDonation) KFOL.donation();
+                if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
             }
             else if (/(点击这里预领KFB|已经可以领取KFB)/i.test(matches[1])) {
                 if (Config.deferLootTimeWhenRemainAttackNumEnabled) {
@@ -6706,7 +6729,8 @@ var Loot = {
                         KFOL.removePopTips($tips);
                         console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
                         KFOL.drawSmbox();
-                        if (isAutoDonation) KFOL.donation();
+                        if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                        else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
                         return;
                     }
                 }
@@ -6778,8 +6802,8 @@ var Loot = {
                                 Loot.showAttackLogDialog(2, attackLogList);
                             });
                             autoAttack(safeId, deadlyAttackNum);
-                            if (isAutoDonation) KFOL.donation();
-                            if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
+                            if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                            else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
                             Func.run('Loot.getLootAward_after_', html);
                         }
                     }, 'html');
@@ -6788,7 +6812,8 @@ var Loot = {
                 KFOL.removePopTips($tips);
                 var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
                 Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
-                if (isAutoDonation) KFOL.donation();
+                if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
             }
         }, 'html');
     },
@@ -8716,19 +8741,17 @@ var KFOL = {
      * @param {string} html 回应的HTML源码
      */
     showFormatLog: function (msgType, html) {
-        var msg = '【{0}】回应：'.replace('{0}', msgType);
+        var msg = '';
         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href="(.+?)">/i.exec(html);
         if (matches) {
-            msg += '{0}；跳转地址：{1}{2}'
-                .replace('{0}', matches[1])
-                .replace('{1}', Tools.getHostNameUrl())
-                .replace('{2}', matches[2]);
+            msg = '{0}；跳转地址：{1}{2}'.replace('{0}', matches[1]).replace('{1}', Tools.getHostNameUrl()).replace('{2}', matches[2]);
         }
         else {
-            msg += '未能获得预期的回应';
-            //msg += '\n' + html;
+            matches = /操作提示<br \/>\r\n(.+?)<br \/>\r\n<a href="javascript:history\.go\(-1\);">返回上一步操作<\/a>/i.exec(html);
+            if (matches) msg = matches[1];
         }
-        console.log(msg);
+        if (!msg) msg = '未能获得预期的回应';
+        console.log('【{0}】回应：{1}'.replace('{0}', msgType).replace('{1}', msg));
     },
 
     /**
@@ -8798,7 +8821,7 @@ var KFOL = {
                     Log.push('捐款', '捐款`{0}`KFB'.replace('{0}', kfb), {gain: gain, pay: {'KFB': -kfb}});
                 }
                 KFOL.showMsg(msg);
-                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
+                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
                 Func.run('KFOL.donation_after_', html);
             }, 'html');
         };
@@ -8821,6 +8844,7 @@ var KFOL = {
                 if (/>今天已经捐款</.test(html)) {
                     KFOL.removePopTips($tips);
                     Tools.setCookie(Const.donationCookieName, 1, getDonationCookieDate());
+                    if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
                 }
                 else {
                     donationSubmit(parseInt(Config.donationKfb));
@@ -10426,7 +10450,8 @@ var KFOL = {
     autoSaveCurrentDeposit: function (isRead) {
         if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb))
             return;
-        var $kfb = $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]');
+        var $kfb = $('a[href="kf_givemekfb.php"]');
+
         /**
          * 活期存款
          * @param {number} income 当前拥有的KFB
@@ -10438,19 +10463,22 @@ var KFOL = {
                 multiple++;
             var money = Config.saveCurrentDepositKfb * multiple;
             if (money <= 0 || money > income) return;
+            console.log('自动活期存款Start');
             $.post('hack.php?H_name=bank',
                 {action: 'save', btype: 1, savemoney: money},
                 function (html) {
+                    KFOL.showFormatLog('自动存款', html);
                     if (/完成存款/.test(html)) {
                         Log.push('自动存款', '共有`{0}`KFB已自动存入活期存款'.replace('{0}', money));
-                        KFOL.showFormatLog('自动存款', html);
                         console.log('共有{0}KFB已自动存入活期存款'.replace('{0}', money));
                         KFOL.showMsg('共有<em>{0}</em>KFB已自动存入活期存款'.replace('{0}', money));
                         if (KFOL.isInHomePage) $kfb.text('拥有{0}KFB'.replace('{0}', income - money));
                     }
                 }, 'html');
         };
+
         if (isRead) {
+            console.log('获取当前持有KFB Start');
             $.get('profile.php?action=show&uid={0}&t={1}'.replace('{0}', KFOL.uid).replace('{1}', new Date().getTime()), function (html) {
                 var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
                 if (matches) saveCurrentDeposit(parseInt(matches[1]));
@@ -11113,7 +11141,7 @@ var KFOL = {
                 $searchTypeList.remove();
                 return;
             }
-            $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>用户名</li><li>关键词</li></ul>').appendTo('body');
+            $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>作者</li><li>关键词</li><li>用户名</li></ul>').appendTo('body');
             var offset = $searchType.offset();
             $searchTypeList.css('top', offset.top + $searchType.height() + 2).css('left', offset.left + 1);
             $searchTypeList.on('click', 'li', function () {
@@ -11122,13 +11150,26 @@ var KFOL = {
                 $searchType.find('span').text(type);
                 var $form = $keyWord.closest('form');
                 if (type === '关键词') $form.attr('action', 'guanjianci.php?');
+                else if (type === '用户名') $form.attr('action', 'profile.php?action=show');
                 else $form.attr('action', 'search.php?');
-                if (type === '用户名') $keyWord.attr('name', 'pwuser');
+                if (type === '作者') $keyWord.attr('name', 'pwuser');
                 else if (type === '关键词') $keyWord.attr('name', 'gjc');
+                else if (type === '用户名') $keyWord.attr('name', 'username');
                 else $keyWord.attr('name', 'keyword');
                 $searchTypeList.remove();
                 $keyWord.focus();
             });
+        });
+
+        $('form[action="search.php?"]').submit(function () {
+            var $this = $(this);
+            var type = $.trim($searchType.find('span').text());
+            if (type === '关键词') {
+                $this.attr('action', 'guanjianci.php?gjc=' + $this.find('input[name="gjc"]').val());
+            }
+            else if (type === '用户名') {
+                $this.attr('action', 'profile.php?action=show&username=' + $this.find('input[name="username"]').val());
+            }
         });
     },
 
@@ -11367,6 +11408,37 @@ var KFOL = {
     },
 
     /**
+     * 通过左右键进行翻页
+     */
+    turnPageViaKeyboard: function () {
+        $(document).keydown(function (e) {
+            if (e.keyCode !== 37 && e.keyCode !== 39) return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            var $page = $('.pages:first');
+            var $curPage = $page.find('li > a[href="javascript:;"]');
+            if (!$curPage.length) return;
+            var curPage = Tools.getCurrentThreadPage();
+            var url = '';
+            if (e.keyCode === 37) {
+                if (curPage <= 1) return;
+                url = $page.find('li > a:contains("上一页")').attr('href');
+            }
+            else {
+                var matches = /&page=(\d+)/.exec($page.find('li:last-child > a').attr('href'));
+                if (!matches) return;
+                if (curPage >= parseInt(matches[1])) return;
+                url = $page.find('li > a:contains("下一页")').attr('href');
+            }
+            if (location.pathname === '/read.php') {
+                if ($.trim($('textarea[name="atc_content"]').val())) {
+                    if (!window.confirm('发帖框尚有文字，是否继续翻页？')) return;
+                }
+            }
+            location.href = url;
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -11401,6 +11473,7 @@ var KFOL = {
                 Bank.fixedDepositDueAlert();
         }
         else if (location.pathname === '/read.php') {
+            if (Config.turnPageViaKeyboardEnabled) KFOL.turnPageViaKeyboard();
             KFOL.fastGotoFloor();
             if (Config.adjustThreadContentWidthEnabled) KFOL.adjustThreadContentWidth();
             KFOL.adjustThreadContentFontSize();
@@ -11493,6 +11566,9 @@ var KFOL = {
         else if (/\/job\.php\?action=preview$/i.test(location.href)) {
             KFOL.modifyPostPreviewPage();
         }
+        else if (location.pathname === '/search.php') {
+            if (Config.turnPageViaKeyboardEnabled) KFOL.turnPageViaKeyboard();
+        }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();
             KFOL.addExtraOptionInPostPage();
@@ -11504,9 +11580,10 @@ var KFOL = {
 
         var isGetLootAwardStarted = false;
         var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
+        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
             isGetLootAwardStarted = true;
-            Loot.getLootAward(autoDonationAvailable);
+            Loot.getLootAward(autoDonationAvailable, autoSaveCurrentDepositAvailable);
         }
 
         if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
@@ -11514,13 +11591,12 @@ var KFOL = {
         }
 
         var isDonationStarted = false;
-        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         if (autoDonationAvailable && !isGetLootAwardStarted) {
             isDonationStarted = true;
             KFOL.donation(autoSaveCurrentDepositAvailable);
         }
 
-        if (autoSaveCurrentDepositAvailable && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
+        if (autoSaveCurrentDepositAvailable && !isGetLootAwardStarted && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
 
         if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
             && !Tools.getCookie(Const.autoAttackingCookieName)) {

@@ -6,7 +6,6 @@
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 // @pd-update-url-placeholder
-// @include     http://*2dgal.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
@@ -25,7 +24,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.4.1-dev
+// @version     5.4.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -366,19 +365,17 @@ var KFOL = {
      * @param {string} html 回应的HTML源码
      */
     showFormatLog: function (msgType, html) {
-        var msg = '【{0}】回应：'.replace('{0}', msgType);
+        var msg = '';
         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href="(.+?)">/i.exec(html);
         if (matches) {
-            msg += '{0}；跳转地址：{1}{2}'
-                .replace('{0}', matches[1])
-                .replace('{1}', Tools.getHostNameUrl())
-                .replace('{2}', matches[2]);
+            msg = '{0}；跳转地址：{1}{2}'.replace('{0}', matches[1]).replace('{1}', Tools.getHostNameUrl()).replace('{2}', matches[2]);
         }
         else {
-            msg += '未能获得预期的回应';
-            //msg += '\n' + html;
+            matches = /操作提示<br \/>\r\n(.+?)<br \/>\r\n<a href="javascript:history\.go\(-1\);">返回上一步操作<\/a>/i.exec(html);
+            if (matches) msg = matches[1];
         }
-        console.log(msg);
+        if (!msg) msg = '未能获得预期的回应';
+        console.log('【{0}】回应：{1}'.replace('{0}', msgType).replace('{1}', msg));
     },
 
     /**
@@ -448,7 +445,7 @@ var KFOL = {
                     Log.push('捐款', '捐款`{0}`KFB'.replace('{0}', kfb), {gain: gain, pay: {'KFB': -kfb}});
                 }
                 KFOL.showMsg(msg);
-                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
+                if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
                 Func.run('KFOL.donation_after_', html);
             }, 'html');
         };
@@ -471,6 +468,7 @@ var KFOL = {
                 if (/>今天已经捐款</.test(html)) {
                     KFOL.removePopTips($tips);
                     Tools.setCookie(Const.donationCookieName, 1, getDonationCookieDate());
+                    if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
                 }
                 else {
                     donationSubmit(parseInt(Config.donationKfb));
@@ -2089,12 +2087,13 @@ var KFOL = {
                 multiple++;
             var money = Config.saveCurrentDepositKfb * multiple;
             if (money <= 0 || money > income) return;
+            console.log('自动活期存款Start');
             $.post('hack.php?H_name=bank',
                 {action: 'save', btype: 1, savemoney: money},
                 function (html) {
+                    KFOL.showFormatLog('自动存款', html);
                     if (/完成存款/.test(html)) {
                         Log.push('自动存款', '共有`{0}`KFB已自动存入活期存款'.replace('{0}', money));
-                        KFOL.showFormatLog('自动存款', html);
                         console.log('共有{0}KFB已自动存入活期存款'.replace('{0}', money));
                         KFOL.showMsg('共有<em>{0}</em>KFB已自动存入活期存款'.replace('{0}', money));
                         if (KFOL.isInHomePage) $kfb.text('拥有{0}KFB'.replace('{0}', income - money));
@@ -2103,6 +2102,7 @@ var KFOL = {
         };
 
         if (isRead) {
+            console.log('获取当前持有KFB Start');
             $.get('profile.php?action=show&uid={0}&t={1}'.replace('{0}', KFOL.uid).replace('{1}', new Date().getTime()), function (html) {
                 var matches = /论坛货币：(\d+)\s*KFB<br \/>/i.exec(html);
                 if (matches) saveCurrentDeposit(parseInt(matches[1]));
@@ -3204,9 +3204,10 @@ var KFOL = {
 
         var isGetLootAwardStarted = false;
         var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
+        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
             isGetLootAwardStarted = true;
-            Loot.getLootAward(autoDonationAvailable);
+            Loot.getLootAward(autoDonationAvailable, autoSaveCurrentDepositAvailable);
         }
 
         if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
@@ -3214,13 +3215,12 @@ var KFOL = {
         }
 
         var isDonationStarted = false;
-        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         if (autoDonationAvailable && !isGetLootAwardStarted) {
             isDonationStarted = true;
             KFOL.donation(autoSaveCurrentDepositAvailable);
         }
 
-        if (autoSaveCurrentDepositAvailable && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
+        if (autoSaveCurrentDepositAvailable && !isGetLootAwardStarted && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
 
         if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
             && !Tools.getCookie(Const.autoAttackingCookieName)) {

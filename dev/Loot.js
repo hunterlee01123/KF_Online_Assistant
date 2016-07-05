@@ -12,7 +12,8 @@ var Loot = {
             var now = new Date();
             for (var i in Config.noAutoLootWhen) {
                 if (Tools.isBetweenInTimeRange(now, Config.noAutoLootWhen[i])) {
-                    if (isAutoDonation) KFOL.donation();
+                    if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                    else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
                     return;
                 }
             }
@@ -85,7 +86,8 @@ var Loot = {
                 if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
                     autoAttack(safeId, deadlyAttackNum);
                 }
-                if (isAutoDonation) KFOL.donation();
+                if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
             }
             else if (/(点击这里预领KFB|已经可以领取KFB)/i.test(matches[1])) {
                 if (Config.deferLootTimeWhenRemainAttackNumEnabled) {
@@ -96,7 +98,8 @@ var Loot = {
                         KFOL.removePopTips($tips);
                         console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
                         KFOL.drawSmbox();
-                        if (isAutoDonation) KFOL.donation();
+                        if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                        else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
                         return;
                     }
                 }
@@ -168,8 +171,8 @@ var Loot = {
                                 Loot.showAttackLogDialog(2, attackLogList);
                             });
                             autoAttack(safeId, deadlyAttackNum);
-                            if (isAutoDonation) KFOL.donation();
-                            if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
+                            if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                            else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
                             Func.run('Loot.getLootAward_after_', html);
                         }
                     }, 'html');
@@ -178,7 +181,8 @@ var Loot = {
                 KFOL.removePopTips($tips);
                 var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
                 Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
-                if (isAutoDonation) KFOL.donation();
+                if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
+                else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
             }
         }, 'html');
     },
@@ -617,8 +621,8 @@ var Loot = {
             $this.parent().attr('colspan', '3')
                 .after(('<td class="pd_batch_attack" style="text-align:center"><label>' +
                     '<input style="width:15px" class="pd_input" type="text" maxlength="2" data-id="{0}" value="{1}" /> 次</label></td>')
-                    .replace('{0}', hitId)
-                    .replace('{1}', Config.batchAttackList[hitId] ? Config.batchAttackList[hitId] : '')
+                        .replace('{0}', hitId)
+                        .replace('{1}', Config.batchAttackList[hitId] ? Config.batchAttackList[hitId] : '')
                 );
         });
         $('.pd_batch_attack .pd_input').keydown(function (e) {
