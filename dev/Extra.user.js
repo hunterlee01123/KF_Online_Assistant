@@ -10,17 +10,18 @@
 // @pd-require-start
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/CustomItem.js
 // @pd-require-end
+// @include     http://*2dkf.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.1.3
+// @version     2.1.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.1.3';
+var extraVersion = '2.1.4';
 
 /* {PartFileContent} */
 /**
@@ -229,7 +230,7 @@ var Extra = {
         if (Extra.Config.rainbowSmColorEnabled) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 200) !== 139) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 400) !== 139) return;
             var css = 'url("{0}img/{filename}") 1 stretch'.replace('{0}', Extra.resHostUrl);
             $this.closest('.readtext').css('border-image', css.replace('{filename}', 'border_rainbow_middle.png'))
                 .prev('.readlou').css('border-image', css.replace('{filename}', 'border_rainbow_top.png'))
@@ -245,7 +246,7 @@ var Extra = {
         if (Extra.Config.nekoMiMiAvatarEnabled) userList.push(KFOL.userName);
         $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
             var $this = $(this);
-            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 200) !== 79) return;
+            if ($.inArray($this.text(), userList) === -1 && Math.floor(Math.random() * 400) !== 79) return;
             var $parent = $this.parent();
             var type = 1;
             if ($parent.is('.readidmleft')) type = 2;
