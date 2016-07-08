@@ -11,18 +11,18 @@ KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及
 __注：如需要改用其它版本，可先将设置及日志导出来，在安装后再导入即可__
 
 ## KF Online助手 Extra
-KF Online助手的额外脚本，可提供更丰富有趣的玩法，[详情请见此贴](http://bbs.ddgal.com/read.php?tid=554795)
+KF Online助手的额外脚本，可提供更丰富有趣的玩法，[详情请见此贴](http://bbs.2dkf.com/read.php?tid=554795)
 
 ## 安装方法
 1. __Firefox：__安装[Greasemonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/)扩展，重启浏览器后打开脚本下载地址安装脚本即可
 2. __Chrome（及各种采用Chrome内核的浏览器，如360、搜狗、QQ浏览器等）：__  
 安装[Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)扩展，然后打开脚本下载地址安装脚本即可  
-__（注意：安装脚本的时候请点击“安装”按钮，不要点“安装在Chrome”的按钮【[见251楼](http://bbs.ddgal.com/read.php?tid=508450&spid=12484531)】）__  
+__（注意：安装脚本的时候请点击“安装”按钮，不要点“安装在Chrome”的按钮【[见251楼](http://bbs.2dkf.com/read.php?tid=508450&spid=12484531)】）__  
 _（各种采用了Chrome内核的国产浏览器也可到各自的应用市场里搜索Tampermonkey扩展）_
 3. __Opera：__安装[Violent monkey](https://addons.opera.com/zh-cn/extensions/details/violent-monkey/?display=zh)扩展，然后打开脚本下载地址安装脚本即可
 4. __傲游浏览器：__安装[暴力猴](http://extension.maxthon.cn/detail/index.php?view_id=1680)扩展，然后打开脚本下载地址安装脚本即可
-5. __手机浏览器及其它不支持油猴脚本的浏览器：__[详情请见此贴](http://bbs.ddgal.com/read.php?tid=509273)
-6. __自带脚本的反向代理服务器：__无需安装任何插件即可使用KFOL助手，[详情请见此贴](http://bbs.ddgal.com/read.php?tid=540148)
+5. __手机浏览器及其它不支持油猴脚本的浏览器：__[详情请见此贴](http://bbs.2dkf.com/read.php?tid=509273)
+6. __自带脚本的反向代理服务器：__无需安装任何插件即可使用KFOL助手，[详情请见此贴](http://bbs.2dkf.com/read.php?tid=540148)
 
 ## 使用说明
 安装完脚本后请点击KF页面上方的助手设置链接，打开设置界面进行相应设置，如不清楚各选项的意思可将鼠标停留在其之后的问号上即可获得相应提示 __（自动捐款、争夺、抽取神秘盒子等功能默认关闭，请自行开启）__  
@@ -39,7 +39,7 @@ __如安装之后发现脚本没有起效，请参见【[常见问题1](https://
 * 暂无
 
 ## 讨论帖
-http://bbs.ddgal.com/read.php?tid=508450
+http://bbs.2dkf.com/read.php?tid=508450
 
 ## License
 [MIT](http://opensource.org/licenses/MIT)

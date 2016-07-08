@@ -1,7 +1,6 @@
 ﻿# 生成各个Release版本的KF Online助手脚本文件
 import os
 import re
-import time
 from jsmin import jsmin
 
 devDirName = 'dev' # 开发版文件夹名

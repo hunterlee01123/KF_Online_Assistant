@@ -7,10 +7,11 @@
 // @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.user.js
+// @include     http://*2dkf.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.4.1
+// @version     5.4.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -20,7 +21,7 @@
 // @use-greasemonkey true
 // ==/UserScript==
 // 版本号
-var version = '5.4.1';
+var version = '5.4.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1346,8 +1347,8 @@ var Tools = {
      * @returns {string} 去除了不配对BBCode的引用内容
      */
     getRemoveUnpairedBBCodeQuoteContent: function (content) {
-        var startCodeList = [/\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g, /\[strike\]/g];
-        var endCodeList = [/\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g, /\[\/strike\]/g];
+        var startCodeList = [/\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g, /\[strike\]/g];
+        var endCodeList = [/\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/align\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g, /\[\/strike\]/g];
         for (var i = 0; i < startCodeList.length; i++) {
             var startMatches = content.match(startCodeList[i]);
             var endMatches = content.match(endCodeList[i]);
@@ -11305,13 +11306,18 @@ var KFOL = {
      * 在发帖页面上添加额外的选项
      */
     addExtraOptionInPostPage: function () {
-        $('form[name="FORM"]').find('input[name="atc_autourl"], input[name="atc_convert"]').remove();
-        $('#menu_show').closest('td').append(
+        $(
             '<div class="pd_post_extra_option">' +
-            '  <label><input type="checkbox" name="atc_autourl" value="1" checked="checked" /> 自动分析url</label><br />' +
-            '  <label><input type="checkbox" name="atc_convert" value="1" checked="checked" /> Wind Code自动转换</label>' +
+            '  <label><input type="checkbox" id="pd_auto_analyze_url" checked="checked" /> 自动分析url</label><br />' +
+            '  <label><input type="checkbox" name="pd_wind_code_auto_convert" checked="checked" /> Wind Code自动转换</label>' +
             '</div>'
-        );
+        ).appendTo($('#menu_show')
+            .closest('td'))
+            .on('click', 'input[type="checkbox"]', function () {
+                var $this = $(this);
+                var inputName = $this.is('#pd_auto_analyze_url') ? 'atc_autourl' : 'atc_convert';
+                $('form[name="FORM"]').find('input[name="{0}"]'.replace('{0}', inputName)).val($this.prop('checked') ? 1 : 0);
+            });
 
         $('<input type="button" value="预览帖子" style="margin-left:7px" />')
             .insertAfter('input[type="submit"][name="Submit"]')
