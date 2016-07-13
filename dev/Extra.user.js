@@ -6,7 +6,7 @@
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KF Online助手的额外脚本，可提供更丰富有趣的玩法（需配合最新版的KFOL助手使用，请先安装KFOL助手再安装此脚本）
 // @pd-update-url-placeholder
-// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/jquery-ui.custom.min.js
+// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/jquery-ui.custom.min.js?V2
 // @pd-require-start
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/CustomItem.js
 // @pd-require-end
@@ -14,14 +14,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.1.4
+// @version     2.2.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.1.4';
+var extraVersion = '2.2.0';
 
 /* {PartFileContent} */
 /**
@@ -549,21 +549,22 @@ var Extra = {
         Const.continueRefreshCookieName = 'pd_continue_refresh';
         var value = Tools.getCookie(Const.continueRefreshCookieName);
         var count = 0;
-        if (value && /^\d+$/.test(value)) {
-            count = parseInt(value);
-            if (KFOL.isInHomePage) {
-                if (count >= 20) {
+        if (value && /^\d+|.+$/.test(value) && !/page=e/.test(value)) {
+            var arr = value.split('|');
+            count = parseInt(arr[0]);
+            var url = arr[1];
+            if (url === location.pathname + location.search) {
+                if (count >= 40 || KFOL.isInHomePage && count >= 20) {
                     Tools.setCookie(Const.continueRefreshCookieName, '', Tools.getDate('-1d'));
                     location.href = 'https://www.baidu.com/';
                     return;
                 }
             }
             else {
-                Tools.setCookie(Const.continueRefreshCookieName, '', Tools.getDate('-1d'));
-                return;
+                count = 0;
             }
         }
-        if (KFOL.isInHomePage) Tools.setCookie(Const.continueRefreshCookieName, ++count, Tools.getDate('+1m'));
+        Tools.setCookie(Const.continueRefreshCookieName, ++count + '|' + location.pathname + location.search, Tools.getDate('+1m'));
     },
 
     /**
@@ -776,6 +777,50 @@ var Extra = {
     },
 
     /**
+     * 旋转顶部LOGO
+     */
+    rotateTopLogo: function () {
+        var $logo = $('img[src^="res/img/top_logo.png"]');
+
+        /**
+         * 旋转
+         */
+        var rotate = function () {
+            $logo.animate(
+                {endVal: $logo.data('direction') ? 0 : 180},
+                {
+                    step: function (now) {
+                        $(this).css('transform', 'rotateY(' + now + 'deg)');
+                    },
+                    complete: function () {
+                        var $this = $(this);
+                        $this.data('direction', !$this.data('direction'));
+                        if ($this.data('rotate')) rotate();
+                    },
+                    duration: 1000
+                }
+            );
+        };
+
+        $logo.parent('div').mouseenter(function () {
+            $logo.stop(false, true).data('rotate', true);
+            rotate();
+        }).mouseleave(function () {
+            $logo.removeData('rotate');
+        });
+    },
+
+    /**
+     * 旋转头像
+     */
+    rotateAvatar: function () {
+        $('.readidms, .readidm').each(function () {
+            if (Math.floor(Math.random() * 1200) !== 637) return;
+            $(this).css('transform', 'rotateY(180deg)');
+        });
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -792,6 +837,7 @@ var Extra = {
             Extra.modifyRainbowSmColor();
             Extra.addNekoMiMiAboveAvatar();
             if (Extra.Config.grayPenguinFriendEnabled) Extra.controlGrayPenguinSmile();
+            Extra.rotateAvatar();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             CustomItem.addItemShop();
@@ -804,6 +850,7 @@ var Extra = {
         if (Extra.isInMiaolaDomain) {
             if (Extra.Config.kfSmileEnhanceExtensionEnabled) Extra.importKfSmileEnhanceExtension();
             Extra.preventContinueRefreshPage();
+            Extra.rotateTopLogo();
         }
 
         Func.run('Extra.init_after_');
