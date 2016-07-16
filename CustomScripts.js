@@ -956,7 +956,7 @@
 
 /*==========================================*/
 
-// 发帖常用文本 V1.2
+// 发帖常用文本 V1.3
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
 
@@ -973,7 +973,7 @@
      *    例：'<option data-action="动作标签">常用文本3...</option>'
      */
     var textList = [
-        '<option data-action="红包">快捷红包...</option>',
+        '<option style="color:#F00" data-action="红包">快捷红包...</option>',
         '<option>感谢楼主的分享！</option>',
         '<option value="恭喜楼主！[s:44]">恭喜楼主！</option>',
     ];
@@ -1010,7 +1010,7 @@
                 $textArea.get(0).selectionEnd = content.length;
                 this.selectedIndex = 0;
             }
-        }).find('option[data-action]').not(':first-child').css('color', '#F00');
+        });
 }());
 
 /*==========================================*/
@@ -1103,6 +1103,486 @@ var statSampleItem = function (totalNum, startId) {
         var startId = 1;
         if (typeof arr[1] !== 'undefined') startId = parseInt(arr[1]);
         statSampleItem(totalNum, startId);
+    });
+}());
+
+/*==========================================*/
+
+// 按pid顺序统计楼层名单（ksugano专用版） V1.0
+(function () {
+    if (location.pathname !== '/read.php' || Tools.getCurrentThreadPage() !== 1) return;
+
+    /**
+     * 判断中奖楼层
+     * @param {number} floor 楼层号
+     * @returns {boolean} 是否中奖
+     */
+    var isWinner = function (floor) {
+        return floor >= 10 && floor <= 500 && floor % 10 === 0;
+    };
+
+    /**
+     * 获取KFB奖励
+     * @param {number} smLevel 神秘系数
+     * @param {number} floor 楼层号
+     * @returns {number} KFB奖励
+     */
+    var getPrize = function (smLevel, floor) {
+        if (smLevel < 0) return 0;
+        if (floor % 100 === 0) {
+            return 5000;
+        }
+        else if (floor % 50 === 0) {
+            return 2000;
+        }
+        else if (floor % 10 === 0) {
+            return 500;
+        }
+        else return 0;
+    };
+
+    $('<li><a href="#" title="按pid顺序统计楼层名单">[统计楼层]</a></li>').prependTo('.readtext:first + .readlou > div > .pages')
+        .find('a').click(function (e) {
+        e.preventDefault();
+        if ($('#pd_stat_floor_list').length > 0) return;
+        if (!window.confirm('是否开始按pid顺序统计楼层名单？')) return;
+        var tid = parseInt(Tools.getUrlParam('tid'));
+        if (!tid) return;
+        var startFloor = 1, endFloor = 0;
+        var matches = /(\d+)页/.exec($('.pages:eq(0) > li:last-child > a').text());
+        var maxPage = matches ? parseInt(matches[1]) : 1;
+        endFloor = maxPage * Config.perPageFloorNum - 1;
+        if (tid === 535683) endFloor = 5099;
+        var startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
+        var endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
+        if (endPage > maxPage) endPage = maxPage;
+        if (endPage - startPage > 600) {
+            alert('需访问的总页数不可超过600');
+            return;
+        }
+        KFOL.showWaitMsg('<strong>正在统计楼层中...</strong><i>剩余页数：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                .replace('{0}', endPage - startPage + 1)
+            , true);
+
+        $(document).clearQueue('StatFloor');
+        var floorList = {};
+        var errorMsg = '';
+        var isStop = false;
+        $.each(new Array(endPage), function (index) {
+            if (index + 1 < startPage) return;
+            $(document).queue('StatFloor', function () {
+                $.ajax({
+                    type: 'GET',
+                    url: 'read.php?tid={0}&page={1}&t={2}'.replace('{0}', tid).replace('{1}', index + 1).replace('{2}', new Date().getTime()),
+                    timeout: Const.defAjaxTimeout,
+                    success: function (html) {
+                        var matches = html.match(/<a name=\d+><\/a>(.|\n|\r\n)+?(?=\r\n<\/div><div class="c"><\/div><\/div>\r\n)/gi);
+                        if (index + 1 > 1 && index + 1 < maxPage && matches.length % 10 !== 0) {
+                            errorMsg += '错误：第{0}页只统计了{1}层楼<br />'.replace('{0}', index + 1).replace('{1}', matches.length);
+                            console.log('错误：第{0}页只统计了{1}层楼'.replace('{0}', index + 1).replace('{1}', matches.length));
+                        }
+                        for (var i in matches) {
+                            var floorMatches = /<a name=(\d+)><\/a>(?:.|\n|\r\n)+?<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=(\d+)".+?>(.+?)<\/a>(?:<\/div>|<br \/>)\r\n(?:<div class="readidmright".+?>(.+?)<\/div>|(.+?)级神秘)\r\n/i.exec(matches[i]);
+                            if (!floorMatches) {
+                                errorMsg += '错误：第{0}页有楼层统计失败<br />'.replace('{0}', index + 1);
+                                console.log(matches[i]);
+                                continue;
+                            }
+                            var pid = parseInt(floorMatches[1]),
+                                floor = parseInt(floorMatches[2]),
+                                uid = parseInt(floorMatches[3]),
+                                userName = floorMatches[4],
+                                smLevel = floorMatches[5] ? floorMatches[5] : floorMatches[6];
+                            if (floor < startFloor) continue;
+                            if (floor > endFloor) {
+                                isStop = true;
+                                break;
+                            }
+                            if (typeof floorList[pid] !== 'undefined') {
+                                errorMsg += '错误：【pid：{0}，floor：{1}，用户名：{2}】重复统计<br />'.replace('{0}', pid).replace('{1}', floor).replace('{2}', userName);
+                                console.log('错误：【pid：{0}，floor：{1}，用户名：{2}】重复统计'.replace('{0}', pid).replace('{1}', floor).replace('{2}', userName));
+                                continue;
+                            }
+                            floorList[pid] = {floor: floor, uid: uid, userName: userName, smLevel: smLevel};
+                        }
+                    },
+                    error: function () {
+                        errorMsg += '错误：第{0}页统计超时<br />'.replace('{0}', index + 1);
+                        isStop = true;
+                    },
+                    complete: function () {
+                        var $remainingNum = $('#pd_remaining_num');
+                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) $(document).clearQueue('StatFloor');
+
+                        if (isStop || index === endPage - 1) {
+                            KFOL.removePopTips($('.pd_pop_tips'));
+                            getStatFloorContent(floorList, errorMsg);
+                        }
+                        else {
+                            window.setTimeout(function () {
+                                $(document).dequeue('StatFloor');
+                            }, Const.defAjaxInterval);
+                        }
+                    },
+                    dataType: 'html'
+                });
+            });
+        });
+        $(document).dequeue('StatFloor');
+    });
+
+    /**
+     * 获取楼层统计结果内容
+     * @param {{}} floorList 楼层统计列表
+     * @param {string} errorMsg 错误消息
+     */
+    var getStatFloorContent = function (floorList, errorMsg) {
+        var tid = parseInt(Tools.getUrlParam('tid'));
+        var allFloorStatContent =
+            '<tr>' +
+            '  <th style="width:75px;text-align:left">实际楼层号</th>' +
+            '  <th style="width:75px;text-align:left">显示楼层号</th>' +
+            '  <th style="width:100px;text-align:left">pid</th>' +
+            '  <th style="width:150px;text-align:left">用户名</th>' +
+            '  <th style="width:75px;text-align:left">神秘等级</th>' +
+            '</tr>';
+        var index = 1, prevPid = 0, allDifferentNum = 0, winnerUserNum = 0;
+        var pidWinnerList = [], displayWinnerList = [];
+        var winnerUserList = {};
+        $.each(floorList, function (pid, data) {
+            if (pid < prevPid) {
+                errorMsg += '错误：pid（{0}）小于前一位pid（{1}）<br />'.replace('{0}', pid).replace('{1}', prevPid);
+                return false;
+            }
+            var isDifferent = index !== data.floor;
+            allFloorStatContent +=
+                '<tr>' +
+                '  <td style="background-color:{0}">{1}</td>'
+                    .replace('{0}', isDifferent ? '#99CC33' : 'inherit').replace('{1}', index) +
+                '  <td style="background-color:{0}">{1}</td>'
+                    .replace('{0}', isDifferent ? '#FF9999' : 'inherit')
+                    .replace('{1}', data.floor) +
+                '  <td><a target="_blank" href="read.php?tid={0}&spid={1}">{1}</a></td>'
+                    .replace('{0}', tid)
+                    .replace(/\{1\}/g, pid) +
+                '  <td><a target="_blank" href="profile.php?action=show&uid={0}">{1}</a></td>'
+                    .replace('{0}', data.uid)
+                    .replace('{1}', data.userName) +
+                '  <td>{0}</td>'.replace('{0}', data.smLevel) +
+                '</tr>';
+            if (isDifferent) allDifferentNum++;
+            if (isWinner(index)) {
+                pidWinnerList.push($.extend({pid: pid, index: index}, data));
+                if (typeof winnerUserList[data.uid] === 'undefined') {
+                    winnerUserList[data.uid] = {userName: data.userName};
+                    winnerUserNum++;
+                }
+            }
+            if (isWinner(data.floor)) {
+                displayWinnerList.push($.extend({pid: pid, index: index}, data));
+                if (typeof winnerUserList[data.uid] === 'undefined') {
+                    winnerUserList[data.uid] = {userName: data.userName};
+                    winnerUserNum++;
+                }
+            }
+            prevPid = pid;
+            index++;
+        });
+
+        KFOL.showWaitMsg('<strong>正在统计中奖用户中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                .replace('{0}', winnerUserNum)
+            , true);
+        $(document).clearQueue('StatWinnerUser');
+        var index = 0;
+        $.each(winnerUserList, function (uid, data) {
+            $(document).queue('StatWinnerUser', function () {
+                var url = 'profile.php?action=show&uid={0}&t={1}'.replace('{0}', uid).replace('{1}', new Date().getTime());
+                $.get(url, function (html) {
+                    var matches = /神秘等级：(\d+)\s*级<br/i.exec(html);
+                    if (matches) {
+                        data.smLevel = parseInt(matches[1]);
+                    }
+                    else {
+                        errorMsg += '错误：用户【{0}】统计失败<br />'.replace('{0}', data.userName);
+                        console.log('错误：用户【{0}】统计失败'.replace('{0}', data.userName));
+                    }
+
+                    var $remainingNum = $('#pd_remaining_num');
+                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                    if (isStop) $(document).clearQueue('StatWinnerUser');
+
+                    if (isStop || index === winnerUserNum - 1) {
+                        KFOL.removePopTips($('.pd_pop_tips'));
+                        var pidWinnerFloorStatContent = '', displayWinnerFloorStatContent = '';
+                        pidWinnerFloorStatContent = displayWinnerFloorStatContent =
+                            '<tr>' +
+                            '  <th style="width:75px;text-align:left">实际楼层号</th>' +
+                            '  <th style="width:75px;text-align:left">显示楼层号</th>' +
+                            '  <th style="width:100px;text-align:left">pid</th>' +
+                            '  <th style="width:150px;text-align:left">用户名</th>' +
+                            '  <th style="width:70px;text-align:left">神秘等级</th>' +
+                            '  <th style="width:75px;text-align:left">奖金</th>' +
+                            '</tr>';
+                        var pidWinnerDifferentNum = 0, displayWinnerDifferentNum = 0;
+                        var pidWinnerTotalPrize = 0, displayWinnerTotalPrize = 0;
+                        $.each(pidWinnerList, function (i, data) {
+                            var isDifferent = data.index !== data.floor;
+                            if (isDifferent) pidWinnerDifferentNum++;
+                            var smLevel = typeof winnerUserList[data.uid] !== 'undefined' ? winnerUserList[data.uid].smLevel : -1;
+                            if (typeof smLevel === 'undefined') smLevel = -1;
+                            var prize = getPrize(smLevel, data.index);
+                            pidWinnerTotalPrize += prize;
+                            pidWinnerFloorStatContent +=
+                                '<tr>' +
+                                '  <td style="background-color:{0}">{1}</td>'
+                                    .replace('{0}', isDifferent ? '#99CC33' : 'inherit').replace('{1}', data.index) +
+                                '  <td style="background-color:{0}">{1}</td>'
+                                    .replace('{0}', isDifferent ? '#FF9999' : 'inherit')
+                                    .replace('{1}', data.floor) +
+                                '  <td><a target="_blank" href="read.php?tid={0}&spid={1}">{1}</a></td>'
+                                    .replace('{0}', tid)
+                                    .replace(/\{1\}/g, data.pid) +
+                                '  <td><a target="_blank" href="profile.php?action=show&uid={0}">{1}</a></td>'
+                                    .replace('{0}', data.uid)
+                                    .replace('{1}', data.userName) +
+                                '  <td>{0}</td>'.replace('{0}', smLevel) +
+                                '  <td style="background-color:{0}">{1}</td>'
+                                    .replace('{0}', data.floor % 100 === 0 ? '#FFCC00' : (data.floor % 50 === 0 ? '#CC6699' : 'inherit'))
+                                    .replace('{1}', prize) +
+                                '</tr>';
+                        });
+                        $.each(displayWinnerList, function (i, data) {
+                            var isDifferent = data.index !== data.floor;
+                            if (isDifferent) displayWinnerDifferentNum++;
+                            var smLevel = typeof winnerUserList[data.uid] !== 'undefined' ? winnerUserList[data.uid].smLevel : -1;
+                            if (typeof smLevel === 'undefined') smLevel = -1;
+                            var prize = getPrize(smLevel, data.floor);
+                            displayWinnerTotalPrize += prize;
+                            displayWinnerFloorStatContent +=
+                                '<tr>' +
+                                '  <td style="background-color:{0}">{1}</td>'
+                                    .replace('{0}', isDifferent ? '#99CC33' : 'inherit').replace('{1}', data.index) +
+                                '  <td style="background-color:{0}">{1}</td>'
+                                    .replace('{0}', isDifferent ? '#FF9999' : 'inherit')
+                                    .replace('{1}', data.floor) +
+                                '  <td><a target="_blank" href="read.php?tid={0}&spid={1}">{1}</a></td>'
+                                    .replace('{0}', tid)
+                                    .replace(/\{1\}/g, data.pid) +
+                                '  <td><a target="_blank" href="profile.php?action=show&uid={0}">{1}</a></td>'
+                                    .replace('{0}', data.uid)
+                                    .replace('{1}', data.userName) +
+                                '  <td>{0}</td>'.replace('{0}', smLevel) +
+                                '  <td style="background-color:{0}">{1}</td>'
+                                    .replace('{0}', data.floor % 100 === 0 ? '#FFCC00' : (data.floor % 50 === 0 ? '#CC6699' : 'inherit'))
+                                    .replace('{1}', prize) +
+                                '</tr>';
+                        });
+                        showDialog(allFloorStatContent, allDifferentNum, pidWinnerFloorStatContent, pidWinnerDifferentNum, pidWinnerTotalPrize,
+                            displayWinnerFloorStatContent, displayWinnerDifferentNum, displayWinnerTotalPrize, errorMsg);
+                    }
+                    else {
+                        index++;
+                        window.setTimeout(function () {
+                            $(document).dequeue('StatWinnerUser');
+                        }, Const.defAjaxInterval);
+                    }
+                }, 'html');
+            });
+        });
+        $(document).dequeue('StatWinnerUser');
+        if ($.isEmptyObject(winnerUserList)) {
+            KFOL.removePopTips($('.pd_pop_tips'));
+            showDialog(allFloorStatContent, allDifferentNum, '', 0, 0, '', 0, 0, errorMsg);
+        }
+    };
+
+    /***
+     * 显示楼层统计名单对话框
+     * @param {string} allFloorStatContent 所有楼层统计名单内容
+     * @param {number} allDifferentNum 所有楼层中不相符的楼层数
+     * @param {string} pidWinnerFloorStatContent 按pid排序的中奖楼层统计名单内容
+     * @param {number} pidWinnerDifferentNum 按pid排序的中奖楼层中不相符的楼层数
+     * @param {number} pidWinnerTotalPrize 按pid排序的中奖楼层的奖金合计
+     * @param {string} displayWinnerFloorStatContent 按显示楼层排序的中奖楼层统计名单内容
+     * @param {number} displayWinnerDifferentNum 按显示楼层排序的中奖楼层中不相符的楼层数
+     * @param {number} displayWinnerTotalPrize 按显示楼层排序的中奖楼层的奖金合计
+     * @param {string} errorMsg 错误信息
+     */
+    var showDialog = function (allFloorStatContent, allDifferentNum, pidWinnerFloorStatContent, pidWinnerDifferentNum, pidWinnerTotalPrize,
+                               displayWinnerFloorStatContent, displayWinnerDifferentNum, displayWinnerTotalPrize, errorMsg) {
+        var noWinnerTips = '<tr><td colspan="6" class="pd_notice">没有中奖楼层</td></tr>';
+        var statTime = Tools.getDateString() + ' ' + Tools.getTimeString();
+        var html =
+            '<div class="pd_cfg_main">' +
+            '  <h2 style="font-size:14px;text-align:center;color:#F00">中奖楼层（按pid）</h2>' +
+            '  <span class="pd_notice">统计时间：{0}</span>'.replace('{0}', statTime) +
+            '  <a class="pd_stat_floor_hide_extra_info" style="float:right" data-sort="pid" href="#">[隐藏额外信息]</a>' +
+            '  <table style="clear:both">' +
+            '    <tbody>{0}</tbody>'.replace('{0}', pidWinnerFloorStatContent ? pidWinnerFloorStatContent : noWinnerTips) +
+            '  </table>' +
+            '  <strong>不相符的楼层数：{0}</strong><br />'.replace('{0}', pidWinnerDifferentNum) +
+            '  <strong>奖金合计：{0}</strong>'.replace('{0}', pidWinnerTotalPrize) +
+            '  <hr />' +
+            '  <h2 style="font-size:14px;text-align:center;color:#F00">中奖楼层（按显示楼层）</h2>' +
+            '  <span class="pd_notice">统计时间：{0}</span>'.replace('{0}', statTime) +
+            '  <a class="pd_stat_floor_hide_extra_info" style="float:right" data-sort="display" href="#">[隐藏额外信息]</a>' +
+            '  <table style="clear:both">' +
+            '    <tbody>{0}</tbody>'.replace('{0}', displayWinnerFloorStatContent ? displayWinnerFloorStatContent : noWinnerTips) +
+            '  </table>' +
+            '  <strong>不相符的楼层数：{0}</strong><br />'.replace('{0}', displayWinnerDifferentNum) +
+            '  <strong>奖金合计：{0}</strong>'.replace('{0}', displayWinnerTotalPrize) +
+            '  <hr />' +
+            '  <h2 style="font-size:14px;text-align:center;color:#F00">所有楼层（按pid排序）</h2>' +
+            '  <span class="pd_notice">统计时间：{0}</span>'.replace('{0}', statTime) +
+            '  <table>' +
+            '    <tbody>{0}</tbody>'.replace('{0}', allFloorStatContent) +
+            '  </table>' +
+            '  <strong>不相符的楼层数：{0}</strong>'.replace('{0}', allDifferentNum) +
+            '</div>';
+        var $dialog = Dialog.create('pd_stat_floor_list', '楼层统计名单', html);
+        if (errorMsg) {
+            $dialog.find('.pd_cfg_main').prepend(
+                '  <h2 style="font-size:14px;text-align:center;color:#F00">错误信息</h2>' +
+                '  <p style="color:#F00">{0}</p>'.replace('{0}', errorMsg) +
+                '  <hr />'
+            );
+        }
+        $dialog.on('click', '.pd_stat_floor_hide_extra_info', function (e) {
+            e.preventDefault();
+            var $this = $(this);
+            var sortType = $this.data('sort');
+            var $table = $this.next('table');
+            $table.find('tbody > tr > th:nth-child(3), tbody > tr > td:nth-child(3)')
+                .remove()
+                .end()
+                .find('tbody > tr > th:nth-child({0}), tbody > tr > td:nth-child({0})'.replace(/\{0\}/g, sortType === 'pid' ? 2 : 1))
+                .remove()
+                .end()
+                .find('tbody > tr > td:first-child')
+                .css('background-color', 'inherit')
+                .end()
+                .next('strong')
+                .remove();
+            $this.remove();
+        });
+        Dialog.show('pd_stat_floor_list');
+    };
+}());
+
+/*==========================================*/
+
+// 查找经过强化或升级的卡片 V1.0
+(function () {
+    if (!/\/kf_fw_card_my\.php$/.test(location.href)) return;
+    $('.pd_item_btns button:contains("开启批量模式")').click(function (e) {
+        e.preventDefault();
+        $('<button>查找强化过的卡片</button>').insertBefore($(this).prev('button')).click(function (e) {
+            e.preventDefault();
+            KFOL.removePopTips($('.pd_pop_tips'));
+            var cardList = [];
+            $('.kf_fw_ig2 > tbody > tr:gt(2) input:checked').each(function () {
+                cardList.push(parseInt($(this).val()));
+            });
+            if (cardList.length === 0) return;
+            if (!window.confirm('你共选择了{0}张卡片，是否开始查找？'.replace('{0}', cardList.length))) return;
+
+            KFOL.showWaitMsg('<strong>正在查找卡片中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                    .replace('{0}', cardList.length)
+                , true);
+            $('.kf_fw_ig2:last').parent().append('<ul class="pd_result"><li><strong>查找结果：</strong></li></ul>');
+            $(document).clearQueue('FindSpecialCard');
+            var foundNum = 0, errorNum = 0;
+            $.each(cardList, function (index, id) {
+                $(document).queue('FindSpecialCard', function () {
+                    $.ajax({
+                        type: 'GET',
+                        url: 'kf_fw_card_my.php?id={0}&t={1}'.replace('{0}', id).replace('{1}', new Date().getTime()),
+                        timeout: Const.defAjaxTimeout,
+                        success: function (html) {
+                            var matches = /卡片星级：(\d+)星<br>卡片等级：(\d+)级<br>卡片武力：(\d+)点<br>卡片生命：(\d+)点<br>卡片幸运：(\d+)点<br>卡片武器：(\d+)<br>卡片防具：(\d+)<br>卡片饰品：(\d+)/i.exec(html);
+                            if (!matches) {
+                                errorNum++;
+                                return;
+                            }
+                            var card = {
+                                '星级': parseInt(matches[1]),
+                                '等级': parseInt(matches[2]),
+                                '武力': parseInt(matches[3]),
+                                '生命': parseInt(matches[4]),
+                                '幸运': parseInt(matches[5]),
+                                '武器': parseInt(matches[6]),
+                                '防具': parseInt(matches[7]),
+                                '饰品': parseInt(matches[8])
+                            };
+                            if (card['星级'] === 1 && card['等级'] === 0 && card['武力'] === 1 && card['生命'] === 1 && card['幸运'] === 1) return;
+                            var imgMatches = /<img src="ys\/card\/(\d+)\.png"\s*\/>/i.exec(html);
+                            if (!imgMatches) {
+                                errorNum++;
+                                return;
+                            }
+                            card['图片ID'] = parseInt(imgMatches[1]);
+                            foundNum++;
+                            console.log(
+                                '找到一张符合条件的卡片，ID：{0}，星级：{1}，等级：{2}，武力：{3}，生命：{4}，幸运：{5}'
+                                    .replace('{0}', id)
+                                    .replace('{1}', card['星级'])
+                                    .replace('{2}', card['等级'])
+                                    .replace('{3}', card['武力'])
+                                    .replace('{4}', card['生命'])
+                                    .replace('{5}', card['幸运'])
+                            );
+                            $('.pd_result:last').append(
+                                ('<li style="line-height:50px"><a target="_blank" href="kf_fw_card_my.php?id={0}">' +
+                                '<img style="width:45px;height:45px;vertical-align:middle" src="ys/card/{1}s.png" alt="卡片" /></a>&nbsp;&nbsp;' +
+                                'ID：{0}，星级：{2}，等级：{3}，武力：{4}，生命：{5}，幸运：{6}</li>')
+                                    .replace(/\{0\}/g, id)
+                                    .replace('{1}', card['图片ID'])
+                                    .replace('{2}', card['星级'])
+                                    .replace('{3}', card['等级'])
+                                    .replace('{4}', card['武力'])
+                                    .replace('{5}', card['生命'])
+                                    .replace('{6}', card['幸运'])
+                            );
+                        },
+                        error: function () {
+                            errorNum++;
+                        },
+                        complete: function () {
+                            var $remainingNum = $('#pd_remaining_num');
+                            $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                            var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                            if (isStop) $(document).clearQueue('FindSpecialCard');
+
+                            if (isStop || index === cardList.length - 1) {
+                                KFOL.removePopTips($('.pd_pop_tips'));
+                                console.log(
+                                    '在{0}张卡片中，共查找到{1}张符合条件的卡片{2}'
+                                        .replace('{0}', cardList.length)
+                                        .replace('{1}', foundNum)
+                                        .replace('{2}', errorNum > 0 ? '，共有' + errorNum + '张卡片查找失败' : '')
+                                );
+                                var statMsg = '在<em>{0}</em>张卡片中，共查找到<em>{1}</em>张符合条件的卡片{2}'
+                                    .replace('{0}', cardList.length)
+                                    .replace('{1}', foundNum)
+                                    .replace('{2}', errorNum > 0 ? '，共有<em>' + errorNum + '</em>张卡片查找失败' : '');
+                                KFOL.showMsg('<strong>' + statMsg + '</strong>');
+                                $('.pd_result:last').append('<li class="pd_stat"><b>统计结果：</b><br />{0}</li>'.replace('{0}', statMsg));
+                            }
+                            else {
+                                window.setTimeout(function () {
+                                    $(document).dequeue('FindSpecialCard');
+                                }, Const.defAjaxInterval);
+                            }
+                        },
+                        dataType: 'html'
+                    });
+                });
+            });
+            $(document).dequeue('FindSpecialCard');
+        });
     });
 }());
 
