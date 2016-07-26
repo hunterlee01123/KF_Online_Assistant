@@ -25,7 +25,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.4.2
+// @version     5.4.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -1508,7 +1508,8 @@ var KFOL = {
         $('.readtext a, .thread2 a').each(function () {
             var $this = $(this);
             var url = $this.attr('href');
-            var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola)\.[\w\.]+?\/).+/i.exec(url);
+            if (/m\.miaola\.info\//i.test(url)) return;
+            var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola|kfer)\.\w+?\/).+/i.exec(url);
             if (matches) $this.attr('href', url.replace(matches[1], Tools.getHostNameUrl()));
         });
     },
@@ -1855,7 +1856,7 @@ var KFOL = {
         }
         else if (location.pathname === '/read.php') {
             if (Config.blockUserForumType > 0) {
-                var matches = /fid=(\d+)/i.exec($('form[name="delatc"] > div:first > table > tbody > tr:nth-child(2) > td > a[href^="thread.php?fid="]').attr('href'));
+                var matches = /fid=(\d+)/i.exec($('form[name="delatc"] > div:first > table > tbody > tr:nth-child(2) > td > a[href^="thread.php?fid="]:last').attr('href'));
                 if (!matches) return;
                 var fid = parseInt(matches[1]);
                 if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
@@ -1990,7 +1991,7 @@ var KFOL = {
             var userName = $userName.text();
             if (!userName) return;
             var fid = 0;
-            var matches = /fid=(\d+)/i.exec($threadInfo.find('tr:nth-child(2) > td > a[href^="thread.php?fid="]').attr('href'));
+            var matches = /fid=(\d+)/i.exec($threadInfo.find('tr:nth-child(2) > td > a[href^="thread.php?fid="]:last').attr('href'));
             if (matches) fid = parseInt(matches[1]);
             if (isNaN(fid) || fid <= 0) return;
             if (isBlock(title, userName, fid)) {
