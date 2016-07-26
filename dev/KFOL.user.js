@@ -32,7 +32,7 @@
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.4.2';
+var version = '5.4.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
