@@ -12,14 +12,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.2.0
+// @version     2.2.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.2.0';
+var extraVersion = '2.2.1';
 
 /**
  * 自定义道具类
@@ -1233,7 +1233,7 @@ var Extra = {
      * 初始化
      */
     init: function () {
-        if (typeof jQuery === 'undefined' || typeof jQuery.ui === 'undefined' || !KFOL.uid) return;
+        if (typeof jQuery === 'undefined' || !KFOL.uid) return;
         var startDate = new Date();
         Extra.initConfig();
         Extra.prepare();
@@ -1245,7 +1245,7 @@ var Extra = {
         if (location.pathname === '/read.php') {
             Extra.modifyRainbowSmColor();
             Extra.addNekoMiMiAboveAvatar();
-            if (Extra.Config.grayPenguinFriendEnabled) Extra.controlGrayPenguinSmile();
+            if (Extra.Config.grayPenguinFriendEnabled && typeof jQuery.ui !== 'undefined') Extra.controlGrayPenguinSmile();
             Extra.rotateAvatar();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
