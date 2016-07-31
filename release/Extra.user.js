@@ -12,14 +12,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.2.1
+// @version     2.2.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.2.1';
+var extraVersion = '2.2.2';
 
 /**
  * 自定义道具类
@@ -1230,6 +1230,14 @@ var Extra = {
     },
 
     /**
+     * 添加移动版链接
+     */
+    addMobileSiteLink: function () {
+        $('.topright > a[href^="login.php?action=quit"]')
+            .before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span style="margin:0 4px">|</span>');
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -1257,6 +1265,7 @@ var Extra = {
         if (Extra.Config.customSmLevel) Extra.modifyCustomSmLevel();
         if (Extra.Config.kfOnlyYouEnabled) Extra.kfOnlyYou();
         if (Extra.isInMiaolaDomain) {
+            Extra.addMobileSiteLink();
             if (Extra.Config.kfSmileEnhanceExtensionEnabled) Extra.importKfSmileEnhanceExtension();
             Extra.preventContinueRefreshPage();
             Extra.rotateTopLogo();
