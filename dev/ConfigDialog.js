@@ -156,8 +156,14 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span></label><br />' +
             '      <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +
             '<span class="pd_cfg_tips" title="默认值：{0}">[?]</span></label>'.replace('{0}', ConfigMethod.defConfig.logSaveDays) +
-            '      <label style="margin-left:10px"><input id="pd_cfg_show_log_link_in_page_enabled" type="checkbox" />在页面上方显示日志链接 ' +
-            '<span class="pd_cfg_tips" title="在论坛页面上方显示助手日志的链接">[?]</span></label><br />' +
+            '      <label style="margin-left:10px">浏览器类型<select id="pd_cfg_browse_type"><option value="auto">自动检测</option>' +
+            '<option value="desktop">桌面版</option><option value="mobile">移动版</option></select>' +
+            '<span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；如果当前浏览器与自动检测的类型不相符' +
+            '（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_show_log_link_enabled" type="checkbox" />显示日志链接 ' +
+            '<span class="pd_cfg_tips" title="在页面上方显示助手日志的链接">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_show_search_link_enabled" type="checkbox" />显示搜索链接 ' +
+            '<span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox" />为侧边栏添加快捷导航 ' +
             '<span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
@@ -167,11 +173,7 @@ var ConfigDialog = {
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" data-disabled="#pd_cfg_custom_script_dialog" />执行自定义脚本 ' +
             '<span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a><br />' +
-            '      <label>浏览器类型<select id="pd_cfg_browse_type"><option value="auto">自动检测</option>' +
-            '<option value="desktop">桌面版</option><option value="mobile">移动版</option></select>' +
-            '<span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），' +
-            '请手动设置为正确的类型">[?]</span></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>关注和屏蔽</legend>' +
@@ -349,7 +351,8 @@ var ConfigDialog = {
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
         $('#pd_cfg_log_save_days').val(Config.logSaveDays);
-        $('#pd_cfg_show_log_link_in_page_enabled').prop('checked', Config.showLogLinkInPageEnabled);
+        $('#pd_cfg_show_log_link_enabled').prop('checked', Config.showLogLinkEnabled);
+        $('#pd_cfg_show_search_link_enabled').prop('checked', Config.showSearchLinkEnabled);
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
@@ -433,7 +436,8 @@ var ConfigDialog = {
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
         options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
-        options.showLogLinkInPageEnabled = $('#pd_cfg_show_log_link_in_page_enabled').prop('checked');
+        options.showLogLinkEnabled = $('#pd_cfg_show_log_link_enabled').prop('checked');
+        options.showSearchLinkEnabled = $('#pd_cfg_show_search_link_enabled').prop('checked');
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');

@@ -105,7 +105,9 @@ var Config = {
     // 日志保存天数
     logSaveDays: 30,
     // 在页面上方显示助手日志的链接，true：开启；false：关闭
-    showLogLinkInPageEnabled: true,
+    showLogLinkEnabled: true,
+    // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
+    showSearchLinkEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
     logSortType: 'time',
     // 日志统计范围类型，cur：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果

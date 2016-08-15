@@ -351,9 +351,13 @@ var ConfigMethod = {
             if (logSaveDays > 0) settings.logSaveDays = logSaveDays;
             else settings.logSaveDays = defConfig.logSaveDays;
         }
-        if (typeof options.showLogLinkInPageEnabled !== 'undefined') {
-            settings.showLogLinkInPageEnabled = typeof options.showLogLinkInPageEnabled === 'boolean' ?
-                options.showLogLinkInPageEnabled : defConfig.showLogLinkInPageEnabled;
+        if (typeof options.showLogLinkEnabled !== 'undefined') {
+            settings.showLogLinkEnabled = typeof options.showLogLinkEnabled === 'boolean' ?
+                options.showLogLinkEnabled : defConfig.showLogLinkEnabled;
+        }
+        if (typeof options.showSearchLinkEnabled !== 'undefined') {
+            settings.showSearchLinkEnabled = typeof options.showSearchLinkEnabled === 'boolean' ?
+                options.showSearchLinkEnabled : defConfig.showSearchLinkEnabled;
         }
         if (typeof options.logSortType !== 'undefined') {
             var logSortType = $.trim(options.logSortType).toLowerCase();
