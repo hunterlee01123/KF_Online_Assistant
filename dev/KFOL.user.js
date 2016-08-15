@@ -2607,15 +2607,7 @@ var KFOL = {
             var textArea = $('textarea[name="atc_content"]').get(0);
             if (!textArea) return;
             var code = '[s:' + id + ']';
-            if (typeof textArea.selectionStart !== 'undefined') {
-                var prePos = textArea.selectionStart;
-                textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(prePos);
-                textArea.selectionStart = prePos + code.length;
-                textArea.selectionEnd = prePos + code.length;
-            }
-            else {
-                textArea.value += code;
-            }
+            Tools.addCode(textArea, code, '');
             if (KFOL.isMobile) textArea.blur();
             else textArea.focus();
         };
@@ -2747,7 +2739,9 @@ var KFOL = {
             var target = e.target;
             if (!target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && target.parentNode && target.parentNode.title)
                 target = target.parentNode;
-            if (target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && (!target.id || target.id.indexOf('wy_') !== 0) && !$(target).is('.pd_editor_btn')) {
+            if (target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 &&
+                (!target.id || target.id.indexOf('wy_') !== 0) && !$(target).is('.pd_editor_btn')
+            ) {
                 KFOL.showElementTitleTips(e, target.title);
             }
             else {
@@ -2921,32 +2915,6 @@ var KFOL = {
         var textArea = $('textarea[name="atc_content"]').get(0);
         if (!textArea) return;
 
-        /**
-         * 添加BBCode
-         * @param {string} code BBCode
-         * @param {string} selText 选择文本
-         */
-        var addCode = function (code, selText) {
-            var startPos = selText == '' ? code.indexOf(']') + 1 : code.indexOf(selText);
-            if (typeof textArea.selectionStart !== 'undefined') {
-                var prePos = textArea.selectionStart;
-                textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(textArea.selectionEnd);
-                textArea.selectionStart = prePos + startPos;
-                textArea.selectionEnd = prePos + startPos + selText.length;
-            }
-            else {
-                textArea.value += code;
-            }
-        };
-
-        /**
-         * 获取选择文本
-         * @returns {string} 选择文本
-         */
-        var getSelText = function () {
-            return textArea.value.substr(textArea.selectionStart, textArea.selectionEnd - textArea.selectionStart);
-        };
-
         $('<span id="wy_post" title="插入隐藏内容" data-type="hide" style="background-position:0 -280px">插入隐藏内容</span>' +
             '<span id="wy_justifyleft" title="左对齐" data-type="left" style="background-position:0 -360px">左对齐</span>' +
             '<span id="wy_justifycenter" title="居中" data-type="center" style="background-position:0 -380px">居中</span>' +
@@ -2977,31 +2945,31 @@ var KFOL = {
             var code = '';
             switch (type) {
                 case 'hide':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[hide={0}]{1}[/hide]'.replace('{0}', text).replace('{1}', selText);
                     break;
                 case 'left':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[align=left]{0}[/align]'.replace('{0}', selText);
                     break;
                 case 'center':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[align=center]{0}[/align]'.replace('{0}', selText);
                     break;
                 case 'right':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[align=right]{0}[/align]'.replace('{0}', selText);
                     break;
                 case 'fly':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[fly]{0}[/fly]'.replace('{0}', selText);
                     break;
                 case 'sub':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[sub]{0}[/sub]'.replace('{0}', selText);
                     break;
                 case 'sup':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[sup]{0}[/sup]'.replace('{0}', selText);
                     break;
                 case 'audio':
@@ -3012,7 +2980,7 @@ var KFOL = {
                     break;
             }
             if (!code) return;
-            addCode(code, selText);
+            Tools.addCode(textArea, code, selText);
             textArea.focus();
         }).mouseenter(function () {
             $(this).addClass('buttonHover');

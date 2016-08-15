@@ -469,5 +469,33 @@ var Tools = {
             len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
         }
         return len;
+    },
+
+    /**
+     * 添加BBCode
+     * @param textArea 文本框
+     * @param {string} code BBCode
+     * @param {string} selText 选择文本
+     */
+    addCode: function (textArea, code, selText) {
+        var startPos = selText === '' ? code.indexOf(']') + 1 : code.indexOf(selText);
+        if (typeof textArea.selectionStart !== 'undefined') {
+            var prePos = textArea.selectionStart;
+            textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(textArea.selectionEnd);
+            textArea.selectionStart = prePos + startPos;
+            textArea.selectionEnd = prePos + startPos + selText.length;
+        }
+        else {
+            textArea.value += code;
+        }
+    },
+
+    /**
+     * 获取选择文本
+     * @param textArea 文本框
+     * @returns {string} 选择文本
+     */
+    getSelText: function (textArea) {
+        return textArea.value.substr(textArea.selectionStart, textArea.selectionEnd - textArea.selectionStart);
     }
 };
