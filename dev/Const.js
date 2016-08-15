@@ -88,6 +88,8 @@ var Const = {
     },
     // 定期存款到期期限（天）
     fixedDepositDueTime: 90,
+    // 自助评分错标范围百分比
+    ratingErrorSizePercent: 3,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
