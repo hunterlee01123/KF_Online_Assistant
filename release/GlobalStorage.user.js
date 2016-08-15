@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.5.1
+// @version     5.5.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -21,7 +21,7 @@
 // @use-greasemonkey true
 // ==/UserScript==
 // 版本号
-var version = '5.5.1';
+var version = '5.5.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -11538,7 +11538,6 @@ var KFOL = {
             if (matches) {
                 titleSize = parseFloat(matches[1]);
                 if (matches[2].toUpperCase() === 'G') titleSize *= 1024;
-                titleSize = Math.floor(titleSize);
             }
 
             var ratingSize = 0;
@@ -11553,8 +11552,8 @@ var KFOL = {
                 return;
             }
 
-            if (titleSize > Math.round(ratingSize * (100 + Const.ratingErrorSizePercent) / 100) ||
-                titleSize < Math.round(ratingSize * (100 - Const.ratingErrorSizePercent) / 100)
+            if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 ||
+                titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100
             ) {
                 $ratingCell.addClass('pd_highlight');
             }
