@@ -3070,6 +3070,41 @@ var KFOL = {
     },
 
     /**
+     * 高亮自助评分错标文件大小
+     */
+    highlightRatingErrorSize: function () {
+        var nonMatchTitleList = [];
+        $('.adp1 a[href^="read.php?tid="]').each(function () {
+            var $this = $(this);
+            var title = $this.text();
+            var titleSize = 0;
+            var matches = /\[[^\[\]]*?([\d\.]+)(M|G)B?\]/i.exec(title);
+            if (matches) {
+                titleSize = parseFloat(matches[1]);
+                if (matches[2].toUpperCase() === 'G') titleSize *= 1024;
+                titleSize = Math.floor(titleSize);
+            }
+
+            var ratingSize = 0;
+            var $ratingCell = $this.parent('td').next('td');
+            matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
+            if (matches) {
+                ratingSize = parseInt(matches[1]);
+            }
+
+            if (!titleSize || !ratingSize) {
+                nonMatchTitleList.push(title + ' (认定[' + ratingSize + ']MB)');
+                return;
+            }
+
+            if (titleSize > ratingSize * 1.03 || ratingSize < ratingSize * 0.97) {
+                $ratingCell.addClass('pd_highlight');
+            }
+        });
+        if (nonMatchTitleList.length > 0) console.log('无法解析的标题：\n' + nonMatchTitleList.join('\n'));
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -3199,6 +3234,9 @@ var KFOL = {
         }
         else if (location.pathname === '/search.php') {
             if (Config.turnPageViaKeyboardEnabled) KFOL.turnPageViaKeyboard();
+        }
+        else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
+            KFOL.highlightRatingErrorSize();
         }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();
