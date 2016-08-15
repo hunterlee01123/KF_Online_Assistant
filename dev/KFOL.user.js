@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.4.3
+// @version     5.5.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.4.3';
+var version = '5.5.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -830,14 +830,14 @@ var KFOL = {
      * 添加设置和日志对话框的链接
      */
     addConfigAndLogDialogLink: function () {
-        var $login = $('a[href^="login.php?action=quit"]:eq(0)');
-        $('<a href="#">助手设置</a><span style="margin:0 4px">|</span>').insertBefore($login)
+        var $login = $('a[href^="login.php?action=quit"]:first');
+        $('<a href="#">助手设置</a><span> | </span>').insertBefore($login)
             .filter('a').click(function (e) {
             e.preventDefault();
             ConfigDialog.show();
         });
         if (Config.showLogLinkEnabled) {
-            $('<a href="#">助手日志</a><span style="margin:0 4px">|</span>').insertBefore($login)
+            $('<a href="#">助手日志</a><span> | </span>').insertBefore($login)
                 .filter('a').click(function (e) {
                 e.preventDefault();
                 Log.show();
@@ -1843,7 +1843,8 @@ var KFOL = {
             });
         }
         else if (location.pathname === '/thread.php') {
-            var fid = parseInt(Tools.getUrlParam('fid'));
+            var fid = parseInt($('input[name="f_fid"]:first').val());
+            if (!fid) return;
             if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
             else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
             $('a.bl[href^="profile.php?action=show&uid="]').each(function () {
@@ -1857,9 +1858,8 @@ var KFOL = {
         }
         else if (location.pathname === '/read.php') {
             if (Config.blockUserForumType > 0) {
-                var matches = /fid=(\d+)/i.exec($('form[name="delatc"] > div:first > table > tbody > tr:nth-child(2) > td > a[href^="thread.php?fid="]:last').attr('href'));
-                if (!matches) return;
-                var fid = parseInt(matches[1]);
+                var fid = parseInt($('input[name="fid"]:first').val());
+                if (!fid) return;
                 if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
                 else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
             }
@@ -1972,8 +1972,8 @@ var KFOL = {
             });
         }
         else if (location.pathname === '/thread.php') {
-            var fid = parseInt(Tools.getUrlParam('fid'));
-            if (isNaN(fid) || fid <= 0) return;
+            var fid = parseInt($('input[name="f_fid"]:first').val());
+            if (!fid) return;
             $('.threadtit1 a[href^="read.php"]').each(function () {
                 var $this = $(this);
                 if (isBlock($this.text(), $this.closest('tr').find('td:last-child > a.bl').text(), fid)) {
@@ -1991,10 +1991,8 @@ var KFOL = {
             if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text() !== '楼主') return;
             var userName = $userName.text();
             if (!userName) return;
-            var fid = 0;
-            var matches = /fid=(\d+)/i.exec($threadInfo.find('tr:nth-child(2) > td > a[href^="thread.php?fid="]:last').attr('href'));
-            if (matches) fid = parseInt(matches[1]);
-            if (isNaN(fid) || fid <= 0) return;
+            var fid = parseInt($('input[name="fid"]:first').val());
+            if (!fid) return;
             if (isBlock(title, userName, fid)) {
                 num++;
                 var $lou = $userName.closest('.readtext');
@@ -2753,11 +2751,11 @@ var KFOL = {
     /**
      * 在首页上添加搜索类型选择框
      */
-    addSearchTypeSelectBox: function () {
+    addSearchTypeSelectBoxInHomePage: function () {
         var $form = $('form[action="search.php?"]');
         $form.attr('name', 'pd_search');
         var $keyWord = $form.find('input[type="text"][name="keyword"]');
-        $keyWord.css('width', '116px');
+        $keyWord.attr('type', 'search').css('width', '116px');
         $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
     },
 
@@ -2836,7 +2834,7 @@ var KFOL = {
      * 添加搜索对话框链接
      */
     addSearchDialogLink: function () {
-        $('<span style="margin:0 4px">|</span><a href="#">搜索</a>')
+        $('<span> | </span><a href="#">搜索</a>')
             .insertAfter('.topright > a[href="message.php"]')
             .filter('a')
             .click(function (e) {
@@ -2870,8 +2868,8 @@ var KFOL = {
                     'target': '_blank'
                 }).off('submit');
 
-                var fid = $('input[name="f_fid"]:first, input[name="fid"]:first').val();
-                if (fid && fid !== 'all') {
+                var fid = parseInt($('input[name="f_fid"]:first, input[name="fid"]:first').val());
+                if (fid) {
                     $dialog.find('input[name="search_range"]').click(function () {
                         var $this = $(this);
                         $dialog.find('input[name="f_fid"]').val($this.val() === 'current' ? fid : 'all');
@@ -3174,7 +3172,7 @@ var KFOL = {
             KFOL.handleAtTips();
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
-            KFOL.addSearchTypeSelectBox();
+            KFOL.addSearchTypeSelectBoxInHomePage();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
             if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();

@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.4.3
+// @version     5.5.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.4.3';
+var version = '5.5.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -137,7 +137,9 @@ var Config = {
     // 日志保存天数
     logSaveDays: 30,
     // 在页面上方显示助手日志的链接，true：开启；false：关闭
-    showLogLinkInPageEnabled: true,
+    showLogLinkEnabled: true,
+    // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
+    showSearchLinkEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
     logSortType: 'time',
     // 日志统计范围类型，cur：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
@@ -696,9 +698,13 @@ var ConfigMethod = {
             if (logSaveDays > 0) settings.logSaveDays = logSaveDays;
             else settings.logSaveDays = defConfig.logSaveDays;
         }
-        if (typeof options.showLogLinkInPageEnabled !== 'undefined') {
-            settings.showLogLinkInPageEnabled = typeof options.showLogLinkInPageEnabled === 'boolean' ?
-                options.showLogLinkInPageEnabled : defConfig.showLogLinkInPageEnabled;
+        if (typeof options.showLogLinkEnabled !== 'undefined') {
+            settings.showLogLinkEnabled = typeof options.showLogLinkEnabled === 'boolean' ?
+                options.showLogLinkEnabled : defConfig.showLogLinkEnabled;
+        }
+        if (typeof options.showSearchLinkEnabled !== 'undefined') {
+            settings.showSearchLinkEnabled = typeof options.showSearchLinkEnabled === 'boolean' ?
+                options.showSearchLinkEnabled : defConfig.showSearchLinkEnabled;
         }
         if (typeof options.logSortType !== 'undefined') {
             var logSortType = $.trim(options.logSortType).toLowerCase();
@@ -1397,6 +1403,34 @@ var Tools = {
             len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
         }
         return len;
+    },
+
+    /**
+     * 添加BBCode
+     * @param textArea 文本框
+     * @param {string} code BBCode
+     * @param {string} selText 选择文本
+     */
+    addCode: function (textArea, code, selText) {
+        var startPos = selText === '' ? code.indexOf(']') + 1 : code.indexOf(selText);
+        if (typeof textArea.selectionStart !== 'undefined') {
+            var prePos = textArea.selectionStart;
+            textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(textArea.selectionEnd);
+            textArea.selectionStart = prePos + startPos;
+            textArea.selectionEnd = prePos + startPos + selText.length;
+        }
+        else {
+            textArea.value += code;
+        }
+    },
+
+    /**
+     * 获取选择文本
+     * @param textArea 文本框
+     * @returns {string} 选择文本
+     */
+    getSelText: function (textArea) {
+        return textArea.value.substr(textArea.selectionStart, textArea.selectionEnd - textArea.selectionStart);
     }
 };
 
@@ -1703,8 +1737,14 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span></label><br />' +
             '      <label>日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text" />' +
             '<span class="pd_cfg_tips" title="默认值：{0}">[?]</span></label>'.replace('{0}', ConfigMethod.defConfig.logSaveDays) +
-            '      <label style="margin-left:10px"><input id="pd_cfg_show_log_link_in_page_enabled" type="checkbox" />在页面上方显示日志链接 ' +
-            '<span class="pd_cfg_tips" title="在论坛页面上方显示助手日志的链接">[?]</span></label><br />' +
+            '      <label style="margin-left:10px">浏览器类型<select id="pd_cfg_browse_type"><option value="auto">自动检测</option>' +
+            '<option value="desktop">桌面版</option><option value="mobile">移动版</option></select>' +
+            '<span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；如果当前浏览器与自动检测的类型不相符' +
+            '（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_show_log_link_enabled" type="checkbox" />显示日志链接 ' +
+            '<span class="pd_cfg_tips" title="在页面上方显示助手日志的链接">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_show_search_link_enabled" type="checkbox" />显示搜索链接 ' +
+            '<span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox" />为侧边栏添加快捷导航 ' +
             '<span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox" />将侧边栏修改为平铺样式 ' +
@@ -1714,11 +1754,7 @@ var ConfigDialog = {
             '<a style="margin-left:10px" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br />' +
             '      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" data-disabled="#pd_cfg_custom_script_dialog" />执行自定义脚本 ' +
             '<span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a><br />' +
-            '      <label>浏览器类型<select id="pd_cfg_browse_type"><option value="auto">自动检测</option>' +
-            '<option value="desktop">桌面版</option><option value="mobile">移动版</option></select>' +
-            '<span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），' +
-            '请手动设置为正确的类型">[?]</span></label>' +
+            '<a style="margin-left:10px" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>关注和屏蔽</legend>' +
@@ -1896,7 +1932,8 @@ var ConfigDialog = {
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
         $('#pd_cfg_log_save_days').val(Config.logSaveDays);
-        $('#pd_cfg_show_log_link_in_page_enabled').prop('checked', Config.showLogLinkInPageEnabled);
+        $('#pd_cfg_show_log_link_enabled').prop('checked', Config.showLogLinkEnabled);
+        $('#pd_cfg_show_search_link_enabled').prop('checked', Config.showSearchLinkEnabled);
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
@@ -1980,7 +2017,8 @@ var ConfigDialog = {
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
         options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
-        options.showLogLinkInPageEnabled = $('#pd_cfg_show_log_link_in_page_enabled').prop('checked');
+        options.showLogLinkEnabled = $('#pd_cfg_show_log_link_enabled').prop('checked');
+        options.showSearchLinkEnabled = $('#pd_cfg_show_search_link_enabled').prop('checked');
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
@@ -8548,7 +8586,8 @@ var KFOL = {
             '}' +
             '.pd_search_type i { font-style: normal; margin-left: 5px; font-family: "Microsoft YaHei"; }' +
             '.pd_search_type_list {' +
-            '  position: absolute; width: 63px; background-color: #FCFCFC; border: 1px solid #CCC; border-top: none; line-height: 26px; text-indent: 13px; cursor: pointer;' +
+            '  position: absolute; width: 63px; background-color: #FCFCFC; border: 1px solid #CCC; border-top: none; line-height: 26px;' +
+            '  text-indent: 13px; cursor: pointer; z-index: 1003;' +
             '}' +
             '.pd_search_type_list li:hover { color: #FFF; background-color: #87C3CF; }' +
             '.editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }' +
@@ -8567,7 +8606,7 @@ var KFOL = {
             '#pd_custom_sm_color { width: 360px; }' +
             '.pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }' +
             '.pd_cfg_nav a { margin-left: 10px; }' +
-            '.pd_cfg_main { background-color: #FCFCFC; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 180px; overflow: auto; }' +
+            '.pd_cfg_main { background-color: #FCFCFC; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 50px; overflow: auto; }' +
             '.pd_cfg_main fieldset { border: 1px solid #CCCCFF; padding: 0 6px 6px; }' +
             '.pd_cfg_main legend { font-weight: bold; }' +
             '.pd_cfg_main label input, .pd_cfg_main legend input, .pd_cfg_main label select { margin: 0 5px; }' +
@@ -9202,14 +9241,14 @@ var KFOL = {
      * 添加设置和日志对话框的链接
      */
     addConfigAndLogDialogLink: function () {
-        var $login = $('a[href^="login.php?action=quit"]:eq(0)');
-        $('<a href="#">助手设置</a><span style="margin:0 4px">|</span>').insertBefore($login)
+        var $login = $('a[href^="login.php?action=quit"]:first');
+        $('<a href="#">助手设置</a><span> | </span>').insertBefore($login)
             .filter('a').click(function (e) {
             e.preventDefault();
             ConfigDialog.show();
         });
-        if (Config.showLogLinkInPageEnabled) {
-            $('<a href="#">助手日志</a><span style="margin:0 4px">|</span>').insertBefore($login)
+        if (Config.showLogLinkEnabled) {
+            $('<a href="#">助手日志</a><span> | </span>').insertBefore($login)
                 .filter('a').click(function (e) {
                 e.preventDefault();
                 Log.show();
@@ -10215,7 +10254,8 @@ var KFOL = {
             });
         }
         else if (location.pathname === '/thread.php') {
-            var fid = parseInt(Tools.getUrlParam('fid'));
+            var fid = parseInt($('input[name="f_fid"]:first').val());
+            if (!fid) return;
             if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
             else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
             $('a.bl[href^="profile.php?action=show&uid="]').each(function () {
@@ -10229,9 +10269,8 @@ var KFOL = {
         }
         else if (location.pathname === '/read.php') {
             if (Config.blockUserForumType > 0) {
-                var matches = /fid=(\d+)/i.exec($('form[name="delatc"] > div:first > table > tbody > tr:nth-child(2) > td > a[href^="thread.php?fid="]:last').attr('href'));
-                if (!matches) return;
-                var fid = parseInt(matches[1]);
+                var fid = parseInt($('input[name="fid"]:first').val());
+                if (!fid) return;
                 if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
                 else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
             }
@@ -10344,8 +10383,8 @@ var KFOL = {
             });
         }
         else if (location.pathname === '/thread.php') {
-            var fid = parseInt(Tools.getUrlParam('fid'));
-            if (isNaN(fid) || fid <= 0) return;
+            var fid = parseInt($('input[name="f_fid"]:first').val());
+            if (!fid) return;
             $('.threadtit1 a[href^="read.php"]').each(function () {
                 var $this = $(this);
                 if (isBlock($this.text(), $this.closest('tr').find('td:last-child > a.bl').text(), fid)) {
@@ -10363,10 +10402,8 @@ var KFOL = {
             if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text() !== '楼主') return;
             var userName = $userName.text();
             if (!userName) return;
-            var fid = 0;
-            var matches = /fid=(\d+)/i.exec($threadInfo.find('tr:nth-child(2) > td > a[href^="thread.php?fid="]:last').attr('href'));
-            if (matches) fid = parseInt(matches[1]);
-            if (isNaN(fid) || fid <= 0) return;
+            var fid = parseInt($('input[name="fid"]:first').val());
+            if (!fid) return;
             if (isBlock(title, userName, fid)) {
                 num++;
                 var $lou = $userName.closest('.readtext');
@@ -10416,7 +10453,7 @@ var KFOL = {
             }
             $('#r_menu > a:last').before(
                 '<span style="color:#ff9999;">快捷导航</span><br />' +
-                '<a href="guanjianci.php?gjc={0}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">神秘</a><br />'
+                '<a href="guanjianci.php?gjc={0}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br />'
                     .replace('{0}', KFOL.userName) +
                 '<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_smbox.php">盒子</a><br />' +
                 '<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br />'
@@ -10427,7 +10464,7 @@ var KFOL = {
                 '<li class="r_cmenuho"><a href="javascript:;">快捷导航</a>' +
                 '  <ul class="r_cmenu2">' +
                 '    <li><a href="guanjianci.php?gjc={0}">@提醒</a></li>'.replace('{0}', KFOL.userName) +
-                '    <li><a href="kf_growup.php">神秘等级</a></li>' +
+                '    <li><a href="kf_growup.php">等级经验</a></li>' +
                 '    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>' +
                 '    <li><a href="kf_fw_ig_my.php">我的道具</a></li>' +
                 '    <li><a href="kf_fw_ig_shop.php">道具商店</a></li>' +
@@ -10979,16 +11016,9 @@ var KFOL = {
             var textArea = $('textarea[name="atc_content"]').get(0);
             if (!textArea) return;
             var code = '[s:' + id + ']';
-            if (typeof textArea.selectionStart !== 'undefined') {
-                var prePos = textArea.selectionStart;
-                textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(prePos);
-                textArea.selectionStart = prePos + code.length;
-                textArea.selectionEnd = prePos + code.length;
-            }
-            else {
-                textArea.value += code;
-            }
-            if (!KFOL.isMobile) textArea.focus();
+            Tools.addCode(textArea, code, '');
+            if (KFOL.isMobile) textArea.blur();
+            else textArea.focus();
         };
 
         var $parent = $('input[name="diy_guanjianci"]').parent();
@@ -11118,7 +11148,9 @@ var KFOL = {
             var target = e.target;
             if (!target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && target.parentNode && target.parentNode.title)
                 target = target.parentNode;
-            if (target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 && (!target.id || target.id.indexOf('wy_') !== 0) && !$(target).is('.pd_editor_btn')) {
+            if (target.title && $.inArray(target.nodeName, excludeNodeNameList) === -1 &&
+                (!target.id || target.id.indexOf('wy_') !== 0) && !$(target).is('.pd_editor_btn')
+            ) {
                 KFOL.showElementTitleTips(e, target.title);
             }
             else {
@@ -11130,46 +11162,138 @@ var KFOL = {
     /**
      * 在首页上添加搜索类型选择框
      */
-    addSearchTypeSelectBox: function () {
-        var $keyWord = $('input[type="text"][name="keyword"]');
-        $keyWord.css('width', '116px');
-        var $searchType = $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
-        $searchType.click(function () {
+    addSearchTypeSelectBoxInHomePage: function () {
+        var $form = $('form[action="search.php?"]');
+        $form.attr('name', 'pd_search');
+        var $keyWord = $form.find('input[type="text"][name="keyword"]');
+        $keyWord.attr('type', 'search').css('width', '116px');
+        $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
+    },
+
+    /**
+     * 绑定搜索类型下拉菜单点击事件
+     */
+    bindSearchTypeSelectMenuClick: function () {
+        $(document).on('click', '.pd_search_type', function () {
+            var $menu = $(this);
             var $searchTypeList = $('.pd_search_type_list');
             if ($searchTypeList.length > 0) {
                 $searchTypeList.remove();
                 return;
             }
+            var type = $menu.data('type');
             $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>作者</li><li>关键词</li><li>用户名</li></ul>').appendTo('body');
-            var offset = $searchType.offset();
-            $searchTypeList.css('top', offset.top + $searchType.height() + 2).css('left', offset.left + 1);
+            var offset = $menu.offset();
+            $searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
+            if (type === 'dialog') {
+                $searchTypeList.css({
+                    'width': '65px',
+                    'left': offset.left - 1
+                });
+            }
             $searchTypeList.on('click', 'li', function () {
                 var $this = $(this);
                 var type = $.trim($this.text());
-                $searchType.find('span').text(type);
-                var $form = $keyWord.closest('form');
-                if (type === '关键词') $form.attr('action', 'guanjianci.php?');
-                else if (type === '用户名') $form.attr('action', 'profile.php?action=show');
-                else $form.attr('action', 'search.php?');
+                var $form = $menu.closest('form');
+                var $keyWord = $form.find('input[name="keyword"], input[name="pwuser"]');
+                $menu.find('span').text(type);
+                if (type !== '关键词' && type !== '用户名') $form.attr('action', 'search.php?');
                 if (type === '作者') $keyWord.attr('name', 'pwuser');
-                else if (type === '关键词') $keyWord.attr('name', 'gjc');
-                else if (type === '用户名') $keyWord.attr('name', 'username');
                 else $keyWord.attr('name', 'keyword');
+                var $searchRange = $form.find('input[name="search_range"][value="current"]');
+                if ($searchRange.length > 0) {
+                    $searchRange.prop('disabled', type === '关键词' || type === '用户名' || !$searchRange.data('enabled'));
+                }
                 $searchTypeList.remove();
                 $keyWord.focus();
             });
         });
 
-        $('form[action="search.php?"]').submit(function () {
+        $(document).on('submit', 'form[name="pd_search"]', function () {
             var $this = $(this);
-            var type = $.trim($searchType.find('span').text());
+            var type = $.trim($this.find('.pd_search_type > span').text());
             if (type === '关键词') {
-                $this.attr('action', 'guanjianci.php?gjc=' + $this.find('input[name="gjc"]').val());
+                $this.attr('action', 'guanjianci.php?gjc=' + $this.find('input[name="keyword"]').val());
             }
             else if (type === '用户名') {
-                $this.attr('action', 'profile.php?action=show&username=' + $this.find('input[name="username"]').val());
+                $this.attr('action', 'profile.php?action=show&username=' + $this.find('input[name="keyword"]').val());
             }
         });
+    },
+
+    /**
+     * 可使用2个字以下的关键字进行搜索
+     */
+    makeSearchByBelowTwoKeyWordAvailable: function () {
+        $(document).on('submit', 'form[action="search.php?"]', function () {
+            var $this = $(this);
+            var $keyWord = $this.find('input[name="keyword"]');
+            var $method = $this.find('input[name="method"]');
+            if (!$keyWord.length || !$method.length) return;
+            var keyWord = $.trim($keyWord.val());
+            if (!keyWord || Tools.getStrLen(keyWord) > 2) return;
+            $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
+            $method.val('OR');
+            window.setTimeout(function () {
+                $keyWord.val(keyWord);
+                $method.val('AND');
+            }, 200);
+        });
+    },
+
+    /**
+     * 添加搜索对话框链接
+     */
+    addSearchDialogLink: function () {
+        $('<span> | </span><a href="#">搜索</a>')
+            .insertAfter('.topright > a[href="message.php"]')
+            .filter('a')
+            .click(function (e) {
+                e.preventDefault();
+                if ($('#pd_search').length > 0) return;
+                var html =
+                    '<div class="pd_cfg_main">' +
+                    '  <input name="step" value="2" type="hidden" />' +
+                    '  <input name="method" value="AND" type="hidden" />' +
+                    '  <input name="sch_area" value="0" type="hidden" />' +
+                    '  <input name="s_type" value="forum" type="hidden" />' +
+                    '  <input name="f_fid" value="all" type="hidden" />' +
+                    '  <input name="orderway" value="lastpost" type="hidden" />' +
+                    '  <input name="asc" value="DESC" type="hidden" />' +
+                    '  <div style="margin-top:15px;">' +
+                    '    <input class="pd_input" name="keyword" type="search" style="float: left; width: 175px; line-height: 26px;" placeholder="关键字" />' +
+                    '    <div class="pd_search_type" data-type="dialog"><span>标题</span><i>∨</i></div>' +
+                    '    <button class="indloginm" name="submit" type="submit">搜索</button>' +
+                    '  </div>' +
+                    '  <div style="margin-bottom:8px; line-height:35px;">' +
+                    '    <label><input name="search_range" type="radio" value="all" checked="checked" /> 全站 </label>' +
+                    '    <label><input name="search_range" type="radio" value="current" disabled="disabled" /> 本版</label>' +
+                    '  </div>' +
+                    '</div>';
+                var $dialog = Dialog.create('pd_search', '搜索', html);
+
+                $dialog.closest('form').attr({
+                    'name': 'pd_search',
+                    'action': 'search.php?',
+                    'method': 'post',
+                    'target': '_blank'
+                }).off('submit');
+
+                var fid = parseInt($('input[name="f_fid"]:first, input[name="fid"]:first').val());
+                if (fid) {
+                    $dialog.find('input[name="search_range"]').click(function () {
+                        var $this = $(this);
+                        $dialog.find('input[name="f_fid"]').val($this.val() === 'current' ? fid : 'all');
+                    });
+                    $dialog.find('input[name="search_range"][value="current"]')
+                        .prop('disabled', false)
+                        .data('enabled', true)
+                        .click();
+                }
+
+                Dialog.show('pd_search');
+                $dialog.find('input[name="keyword"]').focus();
+            });
     },
 
     /**
@@ -11199,32 +11323,6 @@ var KFOL = {
     addExtraPostEditorButton: function () {
         var textArea = $('textarea[name="atc_content"]').get(0);
         if (!textArea) return;
-
-        /**
-         * 添加BBCode
-         * @param {string} code BBCode
-         * @param {string} selText 选择文本
-         */
-        var addCode = function (code, selText) {
-            var startPos = selText == '' ? code.indexOf(']') + 1 : code.indexOf(selText);
-            if (typeof textArea.selectionStart !== 'undefined') {
-                var prePos = textArea.selectionStart;
-                textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(textArea.selectionEnd);
-                textArea.selectionStart = prePos + startPos;
-                textArea.selectionEnd = prePos + startPos + selText.length;
-            }
-            else {
-                textArea.value += code;
-            }
-        };
-
-        /**
-         * 获取选择文本
-         * @returns {string} 选择文本
-         */
-        var getSelText = function () {
-            return textArea.value.substr(textArea.selectionStart, textArea.selectionEnd - textArea.selectionStart);
-        };
 
         $('<span id="wy_post" title="插入隐藏内容" data-type="hide" style="background-position:0 -280px">插入隐藏内容</span>' +
             '<span id="wy_justifyleft" title="左对齐" data-type="left" style="background-position:0 -360px">左对齐</span>' +
@@ -11256,31 +11354,31 @@ var KFOL = {
             var code = '';
             switch (type) {
                 case 'hide':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[hide={0}]{1}[/hide]'.replace('{0}', text).replace('{1}', selText);
                     break;
                 case 'left':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[align=left]{0}[/align]'.replace('{0}', selText);
                     break;
                 case 'center':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[align=center]{0}[/align]'.replace('{0}', selText);
                     break;
                 case 'right':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[align=right]{0}[/align]'.replace('{0}', selText);
                     break;
                 case 'fly':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[fly]{0}[/fly]'.replace('{0}', selText);
                     break;
                 case 'sub':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[sub]{0}[/sub]'.replace('{0}', selText);
                     break;
                 case 'sup':
-                    selText = getSelText();
+                    selText = Tools.getSelText(textArea);
                     code = '[sup]{0}[/sup]'.replace('{0}', selText);
                     break;
                 case 'audio':
@@ -11291,7 +11389,7 @@ var KFOL = {
                     break;
             }
             if (!code) return;
-            addCode(code, selText);
+            Tools.addCode(textArea, code, selText);
             textArea.focus();
         }).mouseenter(function () {
             $(this).addClass('buttonHover');
@@ -11392,26 +11490,6 @@ var KFOL = {
     },
 
     /**
-     * 可使用2个字以下的关键字进行搜索
-     */
-    makeSearchByBelowTwoKeyWordAvailable: function () {
-        $('form[action="search.php?"]').submit(function () {
-            var $this = $(this);
-            var $keyWord = $this.find('input[name="keyword"]');
-            var $method = $this.find('input[name="method"]');
-            if (!$keyWord.length || !$method.length) return;
-            var keyWord = $.trim($keyWord.val());
-            if (!keyWord || Tools.getStrLen(keyWord) > 2) return;
-            $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
-            $method.val('OR');
-            window.setTimeout(function () {
-                $keyWord.val(keyWord);
-                $method.val('AND');
-            }, 500);
-        });
-    },
-
-    /**
      * 通过左右键进行翻页
      */
     turnPageViaKeyboard: function () {
@@ -11443,6 +11521,41 @@ var KFOL = {
     },
 
     /**
+     * 高亮自助评分错标文件大小
+     */
+    highlightRatingErrorSize: function () {
+        var nonMatchTitleList = [];
+        $('.adp1 a[href^="read.php?tid="]').each(function () {
+            var $this = $(this);
+            var title = $this.text();
+            var titleSize = 0;
+            var matches = /\[[^\[\]]*?([\d\.]+)(M|G)B?\]/i.exec(title);
+            if (matches) {
+                titleSize = parseFloat(matches[1]);
+                if (matches[2].toUpperCase() === 'G') titleSize *= 1024;
+                titleSize = Math.floor(titleSize);
+            }
+
+            var ratingSize = 0;
+            var $ratingCell = $this.parent('td').next('td');
+            matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
+            if (matches) {
+                ratingSize = parseInt(matches[1]);
+            }
+
+            if (!titleSize || !ratingSize) {
+                nonMatchTitleList.push(title + ' (认定[' + ratingSize + ']MB)');
+                return;
+            }
+
+            if (titleSize > Math.round(ratingSize * 1.03) || ratingSize < Math.round(ratingSize * 0.97)) {
+                $ratingCell.addClass('pd_highlight');
+            }
+        });
+        if (nonMatchTitleList.length > 0) console.log('无法解析的标题：\n' + nonMatchTitleList.join('\n'));
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -11461,14 +11574,16 @@ var KFOL = {
         if (Config.customScriptEnabled) KFOL.runCustomScript(1);
         KFOL.repairBbsErrorCode();
         KFOL.preventCloseWindowWhenActioning();
+        if (Config.showSearchLinkEnabled) KFOL.addSearchDialogLink();
+        KFOL.bindSearchTypeSelectMenuClick();
+        KFOL.makeSearchByBelowTwoKeyWordAvailable();
         if (Config.modifySideBarEnabled) KFOL.modifySideBar();
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
             KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
-            KFOL.addSearchTypeSelectBox();
-            KFOL.makeSearchByBelowTwoKeyWordAvailable();
+            KFOL.addSearchTypeSelectBoxInHomePage();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
             if (Config.showVipSurplusTimeEnabled) KFOL.showVipSurplusTime();
@@ -11498,7 +11613,6 @@ var KFOL = {
             KFOL.addMoreSmileLink();
         }
         else if (location.pathname === '/thread.php') {
-            KFOL.makeSearchByBelowTwoKeyWordAvailable();
             if (Config.highlightNewPostEnabled) KFOL.highlightNewPost();
             if (Config.showFastGotoThreadPageEnabled) KFOL.addFastGotoThreadPageLink();
         }
@@ -11572,6 +11686,9 @@ var KFOL = {
         }
         else if (location.pathname === '/search.php') {
             if (Config.turnPageViaKeyboardEnabled) KFOL.turnPageViaKeyboard();
+        }
+        else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
+            KFOL.highlightRatingErrorSize();
         }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();
