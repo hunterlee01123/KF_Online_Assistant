@@ -257,25 +257,29 @@ var ConfigMethod = {
                 settings.maxFastGotoThreadPageNum = maxFastGotoThreadPageNum;
             else settings.maxFastGotoThreadPageNum = defConfig.maxFastGotoThreadPageNum;
         }
+        if (typeof options.highlightNewPostEnabled !== 'undefined') {
+            settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ?
+                options.highlightNewPostEnabled : defConfig.highlightNewPostEnabled;
+        }
+
         if (typeof options.perPageFloorNum !== 'undefined') {
             var perPageFloorNum = parseInt(options.perPageFloorNum);
             if ($.inArray(perPageFloorNum, [10, 20, 30]) > -1)
                 settings.perPageFloorNum = perPageFloorNum;
             else settings.perPageFloorNum = defConfig.perPageFloorNum;
         }
-        if (typeof options.highlightNewPostEnabled !== 'undefined') {
-            settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ?
-                options.highlightNewPostEnabled : defConfig.highlightNewPostEnabled;
-        }
-
-        if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
-            settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ?
-                options.adjustThreadContentWidthEnabled : defConfig.adjustThreadContentWidthEnabled;
-        }
         if (typeof options.threadContentFontSize !== 'undefined') {
             var threadContentFontSize = parseInt(options.threadContentFontSize);
             if (threadContentFontSize > 0) settings.threadContentFontSize = threadContentFontSize;
             else settings.threadContentFontSize = defConfig.threadContentFontSize;
+        }
+        if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
+            settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ?
+                options.adjustThreadContentWidthEnabled : defConfig.adjustThreadContentWidthEnabled;
+        }
+        if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
+            settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ?
+                options.turnPageViaKeyboardEnabled : defConfig.turnPageViaKeyboardEnabled;
         }
         if (typeof options.customMySmColor !== 'undefined') {
             var customMySmColor = options.customMySmColor;
@@ -331,10 +335,6 @@ var ConfigMethod = {
             settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ?
                 options.parseMediaTagEnabled : defConfig.parseMediaTagEnabled;
         }
-        if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
-            settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ?
-                options.turnPageViaKeyboardEnabled : defConfig.turnPageViaKeyboardEnabled;
-        }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);
@@ -350,6 +350,11 @@ var ConfigMethod = {
             var logSaveDays = parseInt(options.logSaveDays);
             if (logSaveDays > 0) settings.logSaveDays = logSaveDays;
             else settings.logSaveDays = defConfig.logSaveDays;
+        }
+        if (typeof options.browseType !== 'undefined') {
+            if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1)
+                settings.browseType = options.browseType.toLowerCase();
+            else settings.browseType = defConfig.options.browseType;
         }
         if (typeof options.showLogLinkEnabled !== 'undefined') {
             settings.showLogLinkEnabled = typeof options.showLogLinkEnabled === 'boolean' ?
@@ -410,11 +415,6 @@ var ConfigMethod = {
                 settings.customScriptEndContent = options.customScriptEndContent;
             else
                 settings.customScriptEndContent = defConfig.customScriptEndContent;
-        }
-        if (typeof options.browseType !== 'undefined') {
-            if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1)
-                settings.browseType = options.browseType.toLowerCase();
-            else settings.browseType = defConfig.options.browseType;
         }
 
         if (typeof options.followUserEnabled !== 'undefined') {
