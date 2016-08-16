@@ -108,16 +108,16 @@ var ConfigDialog = {
             '  </div>' +
             '  <div class="pd_cfg_panel">' +
             '    <fieldset>' +
-            '      <legend>帖子列表页面相关</legend>' +
+            '      <legend>版块页面相关</legend>' +
             '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
-            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在帖子列表页面中显示帖子页数快捷链接">[?]</span></label>' +
+            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span></label>' +
             '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
             '<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br />' +
             '      <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>' +
             '<option value="20">20</option><option value="30">30</option></select>' +
             '<span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
-            '<span class="pd_cfg_tips" title="在帖子列表中高亮今日新发表帖子的发表时间">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在版块中高亮今日新发表帖子的发表时间">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>帖子页面相关</legend>' +
@@ -1126,7 +1126,7 @@ var ConfigDialog = {
             '    <label><input id="pd_cfg_highlight_follow_user_thread_in_hp_enabled" type="checkbox" />高亮所关注用户的首页帖子链接 ' +
             '<span class="pd_cfg_tips" title="高亮所关注用户在首页下的帖子链接">[?]</span></label><br />' +
             '    <label><input id="pd_cfg_highlight_follow_user_thread_link_enabled" type="checkbox" />高亮所关注用户的帖子链接 ' +
-            '<span class="pd_cfg_tips" title="高亮所关注用户在帖子列表页面下的帖子链接">[?]</span></label><br />' +
+            '<span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span></label><br />' +
             '  </div>' +
             '  <ul id="pd_cfg_follow_user_list" style="margin-top:5px;width:274px;line-height:24px"></ul>' +
             '  <div id="pd_cfg_follow_user_btns" style="margin-top:5px;">' +

@@ -1015,7 +1015,7 @@
 
 /*==========================================*/
 
-// 去除帖子列表页面的帖子链接里的fpage参数 V1.0
+// 去除版块页面的帖子链接里的fpage参数 V1.0
 (function () {
     if (location.pathname !== '/thread.php') return;
     $('.threadtit1 > a[href*="fpage="]').each(function () {

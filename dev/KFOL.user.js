@@ -1051,7 +1051,7 @@ var KFOL = {
     },
 
     /**
-     * 在帖子列表页面中添加帖子页数快捷链接
+     * 在版块页面中添加帖子页数快捷链接
      */
     addFastGotoThreadPageLink: function () {
         $('.threadtit1 > a[href^="read.php"]').each(function () {
@@ -3117,10 +3117,11 @@ var KFOL = {
             var $this = $(this);
             var title = $this.text();
             var titleSize = 0;
-            var matches = title.match(/\D([\d\.]+)(M|G)/ig);
+            var matches = title.match(/\D(\d+(?:\.\d+)?)(M|G)/ig);
             if (matches) {
                 for (var i = 0; i < matches.length; i++) {
-                    var sizeMatches = /([\d\.]+)(M|G)/i.exec(matches[i]);
+                    var sizeMatches = /(\d+(?:\.\d+)?)(M|G)/i.exec(matches[i]);
+                    if (!sizeMatches) continue;
                     var size = parseFloat(sizeMatches[1]);
                     if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
                     titleSize += size;
