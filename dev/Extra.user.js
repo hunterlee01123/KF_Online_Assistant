@@ -14,14 +14,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.2.2
+// @version     2.2.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.2.2';
+var extraVersion = '2.2.3';
 
 /* {PartFileContent} */
 /**
@@ -182,6 +182,7 @@ var Extra = {
         Extra.version = extraVersion;
         KFOL.window.Extra = Extra;
         KFOL.window.CustomItem = CustomItem;
+        Const.mobileAlertCookieName = 'pd_mobile_alert';
     },
 
     /**
@@ -463,7 +464,6 @@ var Extra = {
             });
         }
         else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
-            if (Tools.getCookie(Const.kfOnlyYouCookieName) === Extra.customItemList[3].cookieValue) return;
             var $owner = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child > span:contains("现持有者：")');
             var matches = /现持有者：(.+)/.exec($owner.text());
             if (matches) {
@@ -825,7 +825,32 @@ var Extra = {
      */
     addMobileSiteLink: function () {
         $('.topright > a[href^="login.php?action=quit"]')
-            .before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span style="margin:0 4px">|</span>');
+            .before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
+    },
+
+    /**
+     * 提示移动浏览器
+     */
+    mobileAlert: function () {
+        if (Tools.getUrlParam('nomobile')) {
+            Tools.setCookie(Const.mobileAlertCookieName, 1, Tools.getDate('+3d'));
+            return;
+        }
+        var $msg = KFOL.showWaitMsg(
+            '<strong>你当前正在使用移动浏览器的样子，是否需要跳转到移动版网站？</strong><br />' +
+            '<a href="https://m.miaola.info/" target="_blank">跳转到移动版</a><a class="pd_highlight" href="#">不再提示</a>',
+            true
+        );
+        $msg.find('a').click(function (e) {
+            if ($(this).is('a[href="#"]')) {
+                e.preventDefault();
+                Tools.setCookie(Const.mobileAlertCookieName, 1, Tools.getDate('+1M'));
+            }
+            else {
+                Tools.setCookie(Const.mobileAlertCookieName, 1);
+            }
+            KFOL.removePopTips($msg);
+        });
     },
 
     /**
@@ -860,6 +885,7 @@ var Extra = {
             if (Extra.Config.kfSmileEnhanceExtensionEnabled) Extra.importKfSmileEnhanceExtension();
             Extra.preventContinueRefreshPage();
             Extra.rotateTopLogo();
+            if (KFOL.isMobile && KFOL.isInHomePage && !Tools.getCookie(Const.mobileAlertCookieName)) Extra.mobileAlert();
         }
 
         Func.run('Extra.init_after_');
