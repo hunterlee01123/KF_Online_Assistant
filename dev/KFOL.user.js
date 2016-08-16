@@ -3152,7 +3152,9 @@ var KFOL = {
     addUserNameLinkInRankPage: function () {
         $('.kf_no11:eq(2) > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
             var $this = $(this);
-            $this.html('<a href="profile.php?action=show&username={0}" target="_blank">{0}</a>'.replace(/\{0\}/g, $.trim($this.text())));
+            var userName = $.trim($this.text());
+            $this.html('<a href="profile.php?action=show&username={0}" target="_blank">{0}</a>'.replace(/\{0\}/g, userName));
+            if (userName === KFOL.userName) $this.find('a').addClass('pd_highlight');
         });
     },
 
