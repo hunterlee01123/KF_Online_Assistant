@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.5.2
+// @version     5.5.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.2';
+var version = '5.5.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -3113,17 +3113,19 @@ var KFOL = {
      * 高亮自助评分错标文件大小
      */
     highlightRatingErrorSize: function () {
-        var nonMatchTitleList = [];
         $('.adp1 a[href^="read.php?tid="]').each(function () {
             var $this = $(this);
             var title = $this.text();
             var titleSize = 0;
-            var matches = /\[[^\[\]]*?([\d\.]+)(M|G)B?\]/i.exec(title);
+            var matches = title.match(/\D([\d\.]+)(M|G)/ig);
             if (matches) {
-                titleSize = parseFloat(matches[1]);
-                if (matches[2].toUpperCase() === 'G') titleSize *= 1024;
+                for (var i = 0; i < matches.length; i++) {
+                    var sizeMatches = /([\d\.]+)(M|G)/i.exec(matches[i]);
+                    var size = parseFloat(sizeMatches[1]);
+                    if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
+                    titleSize += size;
+                }
             }
-
             var ratingSize = 0;
             var $ratingCell = $this.parent('td').next('td');
             matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
@@ -3132,17 +3134,25 @@ var KFOL = {
             }
 
             if (!titleSize || !ratingSize) {
-                nonMatchTitleList.push(title + ' (认定[' + ratingSize + ']MB)');
-                return;
+                $ratingCell.css('color', '#FF9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
             }
-
-            if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 ||
-                titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100
+            else if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 + 1 ||
+                titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100 - 1
             ) {
-                $ratingCell.addClass('pd_highlight');
+                $ratingCell.addClass('pd_highlight pd_custom_tips')
+                    .attr('title', '标题文件大小({0}M)与认定文件大小({1}M)不一致'.replace('{0}', titleSize).replace('{1}', ratingSize));
             }
         });
-        if (nonMatchTitleList.length > 0) console.log('无法解析的标题：\n' + nonMatchTitleList.join('\n'));
+    },
+
+    /**
+     * 在论坛排行页面为用户名添加链接
+     */
+    addUserNameLinkInRankPage: function () {
+        $('.kf_no11:eq(2) > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
+            var $this = $(this);
+            $this.html('<a href="profile.php?action=show&username={0}" target="_blank">{0}</a>'.replace(/\{0\}/g, $.trim($this.text())));
+        });
     },
 
     /**
@@ -3279,6 +3289,9 @@ var KFOL = {
         }
         else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
             KFOL.highlightRatingErrorSize();
+        }
+        else if (location.pathname === '/kf_no1.php') {
+            KFOL.addUserNameLinkInRankPage();
         }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();
