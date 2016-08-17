@@ -96,6 +96,8 @@ var Const = {
     // 自定义侧边栏导航内容（手机平铺样式）
     // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br />'，换行：'<br />'
     customTileSideBarContent: '',
+    // 可进行自助评分的版块ID列表
+    selfRatingFidList: [41, 67, 92, 127, 68],
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称

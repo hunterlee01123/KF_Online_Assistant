@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.5.4
+// @version     5.5.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.4';
+var version = '5.5.5';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -129,6 +129,8 @@ var Config = {
     parseMediaTagEnabled: true,
     // 是否在帖子和搜索页面通过左右键进行翻页，true：开启；false：关闭
     turnPageViaKeyboardEnabled: false,
+    // 是否在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用），true：开启；false：关闭
+    showSelfRatingLinkEnabled: false,
 
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -311,6 +313,8 @@ var Const = {
     // 自定义侧边栏导航内容（手机平铺样式）
     // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br />'，换行：'<br />'
     customTileSideBarContent: '',
+    // 可进行自助评分的版块ID列表
+    selfRatingFidList: [41, 67, 92, 127, 68],
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
@@ -689,6 +693,10 @@ var ConfigMethod = {
         if (typeof options.parseMediaTagEnabled !== 'undefined') {
             settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ?
                 options.parseMediaTagEnabled : defConfig.parseMediaTagEnabled;
+        }
+        if (typeof options.showSelfRatingLinkEnabled !== 'undefined') {
+            settings.showSelfRatingLinkEnabled = typeof options.showSelfRatingLinkEnabled === 'boolean' ?
+                options.showSelfRatingLinkEnabled : defConfig.showSelfRatingLinkEnabled;
         }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
@@ -1606,6 +1614,7 @@ var ConfigDialog = {
             '    <a href="#">查看日志</a>' +
             '    <a href="#">导入/导出设置</a>' +
             '  </div>' +
+
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
@@ -1695,6 +1704,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span></label>' +
             '    </fieldset>' +
             '  </div>' +
+
             '  <div class="pd_cfg_panel">' +
             '    <fieldset>' +
             '      <legend>版块页面相关</legend>' +
@@ -1735,7 +1745,9 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox" />显示自助评分链接 ' +
+            '<span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span></label><br />' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -1786,6 +1798,7 @@ var ConfigDialog = {
             '    </fieldset>' +
             '  </div>' +
             '</div>' +
+
             '<div class="pd_cfg_btns">' +
             '  <span class="pd_cfg_about">' +
             '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
@@ -1936,6 +1949,7 @@ var ConfigDialog = {
         $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
         $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
+        $('#pd_cfg_show_self_rating_link_enabled').prop('checked', Config.showSelfRatingLinkEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
@@ -2021,6 +2035,7 @@ var ConfigDialog = {
         options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
         options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
+        options.showSelfRatingLinkEnabled = $('#pd_cfg_show_self_rating_link_enabled').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
@@ -8496,11 +8511,15 @@ var KFOL = {
 
     /**
      * 获取用户的SafeID
+     * @returns {string} 用户的SafeID
      */
     getSafeId: function () {
-        var matches = /safeid=(\w+)/i.exec($('a[href*="safeid="]').eq(0).attr('href'));
-        if (!matches) return '';
-        else return matches[1];
+        var safeId = $('input#safeid').val();
+        if (!safeId) {
+            var matches = /safeid=(\w+)/i.exec($('a[href*="safeid="]:first').attr('href'));
+            if (matches) safeId = matches[1];
+        }
+        return safeId ? safeId : '';
     },
 
     /**
@@ -9974,37 +9993,39 @@ var KFOL = {
                 .replace('{1}', url)
             );
         });
-        $('<span style="margin:0 5px">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
-            .filter('a').click(function (e) {
-            e.preventDefault();
-            KFOL.removePopTips($('.pd_pop_tips'));
-            var threadList = [];
-            var totalSell = 0;
-            $('.pd_buy_thread:checked').each(function () {
-                var $this = $(this);
-                var url = $this.data('url');
-                var sell = parseInt($this.data('sell'));
-                if (url && !isNaN(sell)) {
-                    threadList.push({url: url, sell: sell});
-                    totalSell += sell;
+        $('<span style="margin:0 5px">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>')
+            .insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
+            .filter('a')
+            .click(function (e) {
+                e.preventDefault();
+                KFOL.removePopTips($('.pd_pop_tips'));
+                var threadList = [];
+                var totalSell = 0;
+                $('.pd_buy_thread:checked').each(function () {
+                    var $this = $(this);
+                    var url = $this.data('url');
+                    var sell = parseInt($this.data('sell'));
+                    if (url && !isNaN(sell)) {
+                        threadList.push({url: url, sell: sell});
+                        totalSell += sell;
+                    }
+                });
+                if (threadList.length === 0) {
+                    alert('请选择要购买的帖子');
+                    return;
                 }
-            });
-            if (threadList.length === 0) {
-                alert('请选择要购买的帖子');
-                return;
-            }
-            if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
-                    .replace('{0}', threadList.length)
-                    .replace('{1}', totalSell.toLocaleString())
-                    .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
-                )
-            ) {
-                KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
                         .replace('{0}', threadList.length)
-                    , true);
-                KFOL.buyThreads(threadList);
-            }
-        }).parent().mouseenter(function () {
+                        .replace('{1}', totalSell.toLocaleString())
+                        .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
+                    )
+                ) {
+                    KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                            .replace('{0}', threadList.length)
+                        , true);
+                    KFOL.buyThreads(threadList);
+                }
+            }).parent().mouseenter(function () {
             $('<span style="margin-left:5px">[<a href="#">全选</a><a style="margin-left:5px" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn'))
                 .find('a:first')
                 .click(function (e) {
@@ -11568,6 +11589,22 @@ var KFOL = {
     },
 
     /**
+     * 在帖子页面添加自助评分链接
+     */
+    addSelfRatingLink: function () {
+        var fid = parseInt($('input[name="fid"]:first').val());
+        if (!fid || $.inArray(fid, Const.selfRatingFidList) === -1) return;
+        var tid = parseInt($('input[name="tid"]:first').val());
+        var safeId = KFOL.getSafeId();
+        if (!safeId || !tid) return;
+        if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
+        $('a[href^="kf_tidfavor.php?action=favor"]').after(
+            '<span style="margin:0 5px">|</span><a href="kf_fw_1wkfb.php?do=1&safeid={0}&ptid={1}" title="仅限自助评分测试人员使用">自助评分</a>'
+                .replace('{0}', safeId).replace('{1}', tid)
+        );
+    },
+
+    /**
      * 在论坛排行页面为用户名添加链接
      */
     addUserNameLinkInRankPage: function () {
@@ -11632,6 +11669,7 @@ var KFOL = {
             KFOL.addStatReplyersLink();
             KFOL.addBuyThreadWarning();
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
+            if (Config.showSelfRatingLinkEnabled) KFOL.addSelfRatingLink();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
             KFOL.addCopyCodeLink();
             KFOL.addMoreSmileLink();

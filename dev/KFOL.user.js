@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.5.4
+// @version     5.5.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.4';
+var version = '5.5.5';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -77,11 +77,15 @@ var KFOL = {
 
     /**
      * 获取用户的SafeID
+     * @returns {string} 用户的SafeID
      */
     getSafeId: function () {
-        var matches = /safeid=(\w+)/i.exec($('a[href*="safeid="]').eq(0).attr('href'));
-        if (!matches) return '';
-        else return matches[1];
+        var safeId = $('input#safeid').val();
+        if (!safeId) {
+            var matches = /safeid=(\w+)/i.exec($('a[href*="safeid="]:first').attr('href'));
+            if (matches) safeId = matches[1];
+        }
+        return safeId ? safeId : '';
     },
 
     /**
@@ -1555,37 +1559,39 @@ var KFOL = {
                 .replace('{1}', url)
             );
         });
-        $('<span style="margin:0 5px">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
-            .filter('a').click(function (e) {
-            e.preventDefault();
-            KFOL.removePopTips($('.pd_pop_tips'));
-            var threadList = [];
-            var totalSell = 0;
-            $('.pd_buy_thread:checked').each(function () {
-                var $this = $(this);
-                var url = $this.data('url');
-                var sell = parseInt($this.data('sell'));
-                if (url && !isNaN(sell)) {
-                    threadList.push({url: url, sell: sell});
-                    totalSell += sell;
+        $('<span style="margin:0 5px">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>')
+            .insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
+            .filter('a')
+            .click(function (e) {
+                e.preventDefault();
+                KFOL.removePopTips($('.pd_pop_tips'));
+                var threadList = [];
+                var totalSell = 0;
+                $('.pd_buy_thread:checked').each(function () {
+                    var $this = $(this);
+                    var url = $this.data('url');
+                    var sell = parseInt($this.data('sell'));
+                    if (url && !isNaN(sell)) {
+                        threadList.push({url: url, sell: sell});
+                        totalSell += sell;
+                    }
+                });
+                if (threadList.length === 0) {
+                    alert('请选择要购买的帖子');
+                    return;
                 }
-            });
-            if (threadList.length === 0) {
-                alert('请选择要购买的帖子');
-                return;
-            }
-            if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
-                    .replace('{0}', threadList.length)
-                    .replace('{1}', totalSell.toLocaleString())
-                    .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
-                )
-            ) {
-                KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
                         .replace('{0}', threadList.length)
-                    , true);
-                KFOL.buyThreads(threadList);
-            }
-        }).parent().mouseenter(function () {
+                        .replace('{1}', totalSell.toLocaleString())
+                        .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
+                    )
+                ) {
+                    KFOL.showWaitMsg('<strong>正在购买帖子中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                            .replace('{0}', threadList.length)
+                        , true);
+                    KFOL.buyThreads(threadList);
+                }
+            }).parent().mouseenter(function () {
             $('<span style="margin-left:5px">[<a href="#">全选</a><a style="margin-left:5px" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn'))
                 .find('a:first')
                 .click(function (e) {
@@ -3149,6 +3155,22 @@ var KFOL = {
     },
 
     /**
+     * 在帖子页面添加自助评分链接
+     */
+    addSelfRatingLink: function () {
+        var fid = parseInt($('input[name="fid"]:first').val());
+        if (!fid || $.inArray(fid, Const.selfRatingFidList) === -1) return;
+        var tid = parseInt($('input[name="tid"]:first').val());
+        var safeId = KFOL.getSafeId();
+        if (!safeId || !tid) return;
+        if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
+        $('a[href^="kf_tidfavor.php?action=favor"]').after(
+            '<span style="margin:0 5px">|</span><a href="kf_fw_1wkfb.php?do=1&safeid={0}&ptid={1}" title="仅限自助评分测试人员使用">自助评分</a>'
+                .replace('{0}', safeId).replace('{1}', tid)
+        );
+    },
+
+    /**
      * 在论坛排行页面为用户名添加链接
      */
     addUserNameLinkInRankPage: function () {
@@ -3213,6 +3235,7 @@ var KFOL = {
             KFOL.addStatReplyersLink();
             KFOL.addBuyThreadWarning();
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
+            if (Config.showSelfRatingLinkEnabled) KFOL.addSelfRatingLink();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
             KFOL.addCopyCodeLink();
             KFOL.addMoreSmileLink();

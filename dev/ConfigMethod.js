@@ -335,6 +335,10 @@ var ConfigMethod = {
             settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ?
                 options.parseMediaTagEnabled : defConfig.parseMediaTagEnabled;
         }
+        if (typeof options.showSelfRatingLinkEnabled !== 'undefined') {
+            settings.showSelfRatingLinkEnabled = typeof options.showSelfRatingLinkEnabled === 'boolean' ?
+                options.showSelfRatingLinkEnabled : defConfig.showSelfRatingLinkEnabled;
+        }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);

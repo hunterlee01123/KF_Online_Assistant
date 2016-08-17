@@ -17,6 +17,7 @@ var ConfigDialog = {
             '    <a href="#">查看日志</a>' +
             '    <a href="#">导入/导出设置</a>' +
             '  </div>' +
+
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
@@ -106,6 +107,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span></label>' +
             '    </fieldset>' +
             '  </div>' +
+
             '  <div class="pd_cfg_panel">' +
             '    <fieldset>' +
             '      <legend>版块页面相关</legend>' +
@@ -146,7 +148,9 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox" />显示自助评分链接 ' +
+            '<span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span></label><br />' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -197,6 +201,7 @@ var ConfigDialog = {
             '    </fieldset>' +
             '  </div>' +
             '</div>' +
+
             '<div class="pd_cfg_btns">' +
             '  <span class="pd_cfg_about">' +
             '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
@@ -347,6 +352,7 @@ var ConfigDialog = {
         $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
         $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
+        $('#pd_cfg_show_self_rating_link_enabled').prop('checked', Config.showSelfRatingLinkEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
@@ -432,6 +438,7 @@ var ConfigDialog = {
         options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
         options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
+        options.showSelfRatingLinkEnabled = $('#pd_cfg_show_self_rating_link_enabled').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');

@@ -97,6 +97,8 @@ var Config = {
     parseMediaTagEnabled: true,
     // 是否在帖子和搜索页面通过左右键进行翻页，true：开启；false：关闭
     turnPageViaKeyboardEnabled: false,
+    // 是否在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用），true：开启；false：关闭
+    showSelfRatingLinkEnabled: false,
 
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
