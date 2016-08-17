@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.5.3
+// @version     5.5.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.3';
+var version = '5.5.4';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -96,13 +96,13 @@ var Config = {
     // 是否在首页显示VIP剩余时间，true：开启；false：关闭
     showVipSurplusTimeEnabled: false,
 
-    // 是否在帖子列表页面中显示帖子页数快捷链接，true：开启；false：关闭
+    // 是否在版块页面中显示帖子页数快捷链接，true：开启；false：关闭
     showFastGotoThreadPageEnabled: false,
     // 在帖子页数快捷链接中显示页数链接的最大数量
     maxFastGotoThreadPageNum: 5,
     // 帖子每页楼层数量，用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目
     perPageFloorNum: 10,
-    // 是否在帖子列表中高亮今日新发表帖子的发表时间，true：开启；false：关闭
+    // 是否在版块页面中高亮今日新发表帖子的发表时间，true：开启；false：关闭
     highlightNewPostEnabled: true,
 
     // 是否调整帖子内容宽度，使其保持一致，true：开启；false：关闭
@@ -305,6 +305,12 @@ var Const = {
     fixedDepositDueTime: 90,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
+    // 自定义侧边栏导航内容
+    // 格式：'<li><a href="导航链接">导航项名称</a></li>'
+    customSideBarContent: '',
+    // 自定义侧边栏导航内容（手机平铺样式）
+    // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br />'，换行：'<br />'
+    customTileSideBarContent: '',
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称
@@ -606,25 +612,29 @@ var ConfigMethod = {
                 settings.maxFastGotoThreadPageNum = maxFastGotoThreadPageNum;
             else settings.maxFastGotoThreadPageNum = defConfig.maxFastGotoThreadPageNum;
         }
+        if (typeof options.highlightNewPostEnabled !== 'undefined') {
+            settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ?
+                options.highlightNewPostEnabled : defConfig.highlightNewPostEnabled;
+        }
+
         if (typeof options.perPageFloorNum !== 'undefined') {
             var perPageFloorNum = parseInt(options.perPageFloorNum);
             if ($.inArray(perPageFloorNum, [10, 20, 30]) > -1)
                 settings.perPageFloorNum = perPageFloorNum;
             else settings.perPageFloorNum = defConfig.perPageFloorNum;
         }
-        if (typeof options.highlightNewPostEnabled !== 'undefined') {
-            settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ?
-                options.highlightNewPostEnabled : defConfig.highlightNewPostEnabled;
-        }
-
-        if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
-            settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ?
-                options.adjustThreadContentWidthEnabled : defConfig.adjustThreadContentWidthEnabled;
-        }
         if (typeof options.threadContentFontSize !== 'undefined') {
             var threadContentFontSize = parseInt(options.threadContentFontSize);
             if (threadContentFontSize > 0) settings.threadContentFontSize = threadContentFontSize;
             else settings.threadContentFontSize = defConfig.threadContentFontSize;
+        }
+        if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
+            settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ?
+                options.adjustThreadContentWidthEnabled : defConfig.adjustThreadContentWidthEnabled;
+        }
+        if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
+            settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ?
+                options.turnPageViaKeyboardEnabled : defConfig.turnPageViaKeyboardEnabled;
         }
         if (typeof options.customMySmColor !== 'undefined') {
             var customMySmColor = options.customMySmColor;
@@ -680,10 +690,6 @@ var ConfigMethod = {
             settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ?
                 options.parseMediaTagEnabled : defConfig.parseMediaTagEnabled;
         }
-        if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
-            settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ?
-                options.turnPageViaKeyboardEnabled : defConfig.turnPageViaKeyboardEnabled;
-        }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);
@@ -699,6 +705,11 @@ var ConfigMethod = {
             var logSaveDays = parseInt(options.logSaveDays);
             if (logSaveDays > 0) settings.logSaveDays = logSaveDays;
             else settings.logSaveDays = defConfig.logSaveDays;
+        }
+        if (typeof options.browseType !== 'undefined') {
+            if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1)
+                settings.browseType = options.browseType.toLowerCase();
+            else settings.browseType = defConfig.options.browseType;
         }
         if (typeof options.showLogLinkEnabled !== 'undefined') {
             settings.showLogLinkEnabled = typeof options.showLogLinkEnabled === 'boolean' ?
@@ -759,11 +770,6 @@ var ConfigMethod = {
                 settings.customScriptEndContent = options.customScriptEndContent;
             else
                 settings.customScriptEndContent = defConfig.customScriptEndContent;
-        }
-        if (typeof options.browseType !== 'undefined') {
-            if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1)
-                settings.browseType = options.browseType.toLowerCase();
-            else settings.browseType = defConfig.options.browseType;
         }
 
         if (typeof options.followUserEnabled !== 'undefined') {
@@ -1691,23 +1697,25 @@ var ConfigDialog = {
             '  </div>' +
             '  <div class="pd_cfg_panel">' +
             '    <fieldset>' +
-            '      <legend>帖子列表页面相关</legend>' +
+            '      <legend>版块页面相关</legend>' +
             '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
-            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在帖子列表页面中显示帖子页数快捷链接">[?]</span></label>' +
+            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span></label>' +
             '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
             '<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br />' +
-            '      <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>' +
-            '<option value="20">20</option><option value="30">30</option></select>' +
-            '<span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
-            '<span class="pd_cfg_tips" title="在帖子列表中高亮今日新发表帖子的发表时间">[?]</span></label>' +
+            '      <label><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
+            '<span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>帖子页面相关</legend>' +
-            '      <label><input id="pd_cfg_adjust_thread_content_width_enabled" type="checkbox" />调整帖子内容宽度 ' +
-            '<span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span></label>' +
+            '      <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>' +
+            '<option value="20">20</option><option value="30">30</option></select>' +
+            '<span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span></label>' +
             '      <label style="margin-left:10px">帖子内容字体大小<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width:20px" type="text" />px ' +
             '<span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_adjust_thread_content_width_enabled" type="checkbox" />调整帖子内容宽度 ' +
+            '<span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_turn_page_via_keyboard_enabled" type="checkbox" />通过左右键翻页 ' +
+            '<span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page" />自动更换神秘颜色 ' +
             '<span class="pd_cfg_tips" title="可自动更换神秘颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>' +
             '<a id="pd_cfg_auto_change_sm_color_page" style="margin-left:10px" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br />' +
@@ -1727,9 +1735,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_turn_page_via_keyboard_enabled" type="checkbox" />通过左右键翻页 ' +
-            '<span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -1915,11 +1921,12 @@ var ConfigDialog = {
 
         $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked', Config.showFastGotoThreadPageEnabled);
         $('#pd_cfg_max_fast_goto_thread_page_num').val(Config.maxFastGotoThreadPageNum);
-        $('#pd_cfg_per_page_floor_num').val(Config.perPageFloorNum);
         $('#pd_cfg_highlight_new_post_enabled').prop('checked', Config.highlightNewPostEnabled);
 
-        $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked', Config.adjustThreadContentWidthEnabled);
+        $('#pd_cfg_per_page_floor_num').val(Config.perPageFloorNum);
         $('#pd_cfg_thread_content_font_size').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
+        $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked', Config.adjustThreadContentWidthEnabled);
+        $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked', Config.turnPageViaKeyboardEnabled);
         $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked', Config.autoChangeSMColorEnabled);
         $('#pd_cfg_custom_my_sm_color').val(Config.customMySmColor);
         if (Config.customMySmColor) $('#pd_cfg_custom_my_sm_color_select').val(Config.customMySmColor);
@@ -1929,18 +1936,17 @@ var ConfigDialog = {
         $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
         $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
-        $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked', Config.turnPageViaKeyboardEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
         $('#pd_cfg_log_save_days').val(Config.logSaveDays);
+        $('#pd_cfg_browse_type').val(Config.browseType);
         $('#pd_cfg_show_log_link_enabled').prop('checked', Config.showLogLinkEnabled);
         $('#pd_cfg_show_search_link_enabled').prop('checked', Config.showSearchLinkEnabled);
         $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
         $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
         $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
         $('#pd_cfg_custom_script_enabled').prop('checked', Config.customScriptEnabled);
-        $('#pd_cfg_browse_type').val(Config.browseType);
 
         $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
         $('#pd_cfg_block_user_enabled').prop('checked', Config.blockUserEnabled);
@@ -2001,11 +2007,12 @@ var ConfigDialog = {
 
         options.showFastGotoThreadPageEnabled = $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked');
         options.maxFastGotoThreadPageNum = parseInt($.trim($('#pd_cfg_max_fast_goto_thread_page_num').val()));
-        options.perPageFloorNum = $('#pd_cfg_per_page_floor_num').val();
         options.highlightNewPostEnabled = $('#pd_cfg_highlight_new_post_enabled').prop('checked');
 
-        options.adjustThreadContentWidthEnabled = $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked');
+        options.perPageFloorNum = $('#pd_cfg_per_page_floor_num').val();
         options.threadContentFontSize = parseInt($.trim($('#pd_cfg_thread_content_font_size').val()));
+        options.adjustThreadContentWidthEnabled = $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked');
+        options.turnPageViaKeyboardEnabled = $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked');
         options.autoChangeSMColorEnabled = $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked');
         options.customMySmColor = $.trim($('#pd_cfg_custom_my_sm_color').val()).toUpperCase();
         options.customSmColorEnabled = $('#pd_cfg_custom_sm_color_enabled').prop('checked');
@@ -2014,18 +2021,17 @@ var ConfigDialog = {
         options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
         options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
-        options.turnPageViaKeyboardEnabled = $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
         options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
+        options.browseType = $('#pd_cfg_browse_type').val();
         options.showLogLinkEnabled = $('#pd_cfg_show_log_link_enabled').prop('checked');
         options.showSearchLinkEnabled = $('#pd_cfg_show_search_link_enabled').prop('checked');
         options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
         options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
         options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
         options.customScriptEnabled = $('#pd_cfg_custom_script_enabled').prop('checked');
-        options.browseType = $('#pd_cfg_browse_type').val();
 
         options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
         options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
@@ -2709,7 +2715,7 @@ var ConfigDialog = {
             '    <label><input id="pd_cfg_highlight_follow_user_thread_in_hp_enabled" type="checkbox" />高亮所关注用户的首页帖子链接 ' +
             '<span class="pd_cfg_tips" title="高亮所关注用户在首页下的帖子链接">[?]</span></label><br />' +
             '    <label><input id="pd_cfg_highlight_follow_user_thread_link_enabled" type="checkbox" />高亮所关注用户的帖子链接 ' +
-            '<span class="pd_cfg_tips" title="高亮所关注用户在帖子列表页面下的帖子链接">[?]</span></label><br />' +
+            '<span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span></label><br />' +
             '  </div>' +
             '  <ul id="pd_cfg_follow_user_list" style="margin-top:5px;width:274px;line-height:24px"></ul>' +
             '  <div id="pd_cfg_follow_user_btns" style="margin-top:5px;">' +
@@ -9464,7 +9470,7 @@ var KFOL = {
     },
 
     /**
-     * 在帖子列表页面中添加帖子页数快捷链接
+     * 在版块页面中添加帖子页数快捷链接
      */
     addFastGotoThreadPageLink: function () {
         $('.threadtit1 > a[href^="read.php"]').each(function () {
@@ -10458,7 +10464,8 @@ var KFOL = {
                 '<a href="guanjianci.php?gjc={0}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br />'
                     .replace('{0}', KFOL.userName) +
                 '<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_smbox.php">盒子</a><br />' +
-                '<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br />'
+                '<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br />' +
+                Const.customTileSideBarContent
             );
         }
         else {
@@ -10475,6 +10482,7 @@ var KFOL = {
                 '    <li><a href="hack.php?H_name=bank">银行</a></li>' +
                 '    <li><a href="profile.php?action=favor">收藏</a></li>' +
                 '    <li><a href="personal.php?action=post">我的回复</a></li>' +
+                Const.customSideBarContent +
                 '  </ul>' +
                 '</li>'
             );
@@ -11530,10 +11538,11 @@ var KFOL = {
             var $this = $(this);
             var title = $this.text();
             var titleSize = 0;
-            var matches = title.match(/\D([\d\.]+)(M|G)/ig);
+            var matches = title.match(/\D(\d+(?:\.\d+)?)(M|G)/ig);
             if (matches) {
                 for (var i = 0; i < matches.length; i++) {
-                    var sizeMatches = /([\d\.]+)(M|G)/i.exec(matches[i]);
+                    var sizeMatches = /(\d+(?:\.\d+)?)(M|G)/i.exec(matches[i]);
+                    if (!sizeMatches) continue;
                     var size = parseFloat(sizeMatches[1]);
                     if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
                     titleSize += size;
@@ -11564,7 +11573,9 @@ var KFOL = {
     addUserNameLinkInRankPage: function () {
         $('.kf_no11:eq(2) > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
             var $this = $(this);
-            $this.html('<a href="profile.php?action=show&username={0}" target="_blank">{0}</a>'.replace(/\{0\}/g, $.trim($this.text())));
+            var userName = $.trim($this.text());
+            $this.html('<a href="profile.php?action=show&username={0}" target="_blank">{0}</a>'.replace(/\{0\}/g, userName));
+            if (userName === KFOL.userName) $this.find('a').addClass('pd_highlight');
         });
     },
 

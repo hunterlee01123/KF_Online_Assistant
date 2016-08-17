@@ -90,6 +90,12 @@ var Const = {
     fixedDepositDueTime: 90,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
+    // 自定义侧边栏导航内容
+    // 格式：'<li><a href="导航链接">导航项名称</a></li>'
+    customSideBarContent: '',
+    // 自定义侧边栏导航内容（手机平铺样式）
+    // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br />'，换行：'<br />'
+    customTileSideBarContent: '',
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: 'pd_multi_quote',
     // 神秘升级提醒的临时日志名称

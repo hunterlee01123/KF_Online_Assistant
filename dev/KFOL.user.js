@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.5.3
+// @version     5.5.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.3';
+var version = '5.5.4';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -2045,7 +2045,8 @@ var KFOL = {
                 '<a href="guanjianci.php?gjc={0}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br />'
                     .replace('{0}', KFOL.userName) +
                 '<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_smbox.php">盒子</a><br />' +
-                '<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br />'
+                '<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br />' +
+                Const.customTileSideBarContent
             );
         }
         else {
@@ -2062,6 +2063,7 @@ var KFOL = {
                 '    <li><a href="hack.php?H_name=bank">银行</a></li>' +
                 '    <li><a href="profile.php?action=favor">收藏</a></li>' +
                 '    <li><a href="personal.php?action=post">我的回复</a></li>' +
+                Const.customSideBarContent +
                 '  </ul>' +
                 '</li>'
             );
