@@ -11179,7 +11179,7 @@ var KFOL = {
         var $form = $('form[action="search.php?"]');
         $form.attr('name', 'pd_search');
         var $keyWord = $form.find('input[type="text"][name="keyword"]');
-        $keyWord.attr('type', 'search').css('width', '116px');
+        $keyWord.css('width', '116px');
         $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
     },
 
