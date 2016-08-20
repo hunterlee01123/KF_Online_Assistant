@@ -833,7 +833,7 @@ var Extra = {
      */
     mobileAlert: function () {
         if (Tools.getUrlParam('nomobile')) {
-            Tools.setCookie(Const.mobileAlertCookieName, 1, Tools.getDate('+3d'));
+            Tools.setCookie(Const.mobileAlertCookieName, 1, Tools.getDate('+1M'));
             return;
         }
         var $msg = KFOL.showWaitMsg(
@@ -851,6 +851,14 @@ var Extra = {
             }
             KFOL.removePopTips($msg);
         });
+    },
+
+    /**
+     * 在设置页面添加更换头像提醒
+     */
+    addAvatarChangeAlert: function () {
+        $('input[name="uploadurl[2]"]')
+            .parent().append('<div class="pd_highlight">本反向代理服务器为了提高性能而对图片使用了缓存，更换头像后需等待<b>最多30分钟</b>才能看到效果</div>');
     },
 
     /**
@@ -886,6 +894,9 @@ var Extra = {
             Extra.preventContinueRefreshPage();
             Extra.rotateTopLogo();
             if (KFOL.isMobile && KFOL.isInHomePage && !Tools.getCookie(Const.mobileAlertCookieName)) Extra.mobileAlert();
+            if (/\/profile\.php\?action=modify/i.exec(location.href)) {
+                Extra.addAvatarChangeAlert();
+            }
         }
 
         Func.run('Extra.init_after_');
