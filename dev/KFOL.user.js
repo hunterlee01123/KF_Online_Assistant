@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.5.5
+// @version     5.5.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.5';
+var version = '5.5.6';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -2887,6 +2887,14 @@ var KFOL = {
                         .data('enabled', true)
                         .click();
                 }
+
+                $dialog.keydown(function (e) {
+                    if (e.keyCode === 27) {
+                        $('.pd_search_type_list').remove();
+                    }
+                }).find('h1 > span').click(function () {
+                    $('.pd_search_type_list').remove();
+                });
 
                 Dialog.show('pd_search');
                 $dialog.find('input[name="keyword"]').focus();

@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.5.5
+// @version     5.5.6
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -21,7 +21,7 @@
 // @use-greasemonkey true
 // ==/UserScript==
 // 版本号
-var version = '5.5.5';
+var version = '5.5.6';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -4468,9 +4468,9 @@ var Item = {
                                 .replace('{2}', logStat)
                             );
                             KFOL.showMsg('<strong>共有<em>{0}</em>个道具被使用{1}</strong>{2}'
-                                .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具未能使用'.replace('{0}', failNum) : '')
-                                .replace('{2}', msgStat)
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具未能使用'.replace('{0}', failNum) : '')
+                                    .replace('{2}', msgStat)
                                 , -1);
                             if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
                             $('.pd_result:last').append(
@@ -4629,9 +4629,9 @@ var Item = {
                                 .replace('{2}', successEnergyNum)
                             );
                             KFOL.showMsg('<strong>共有<em>{0}</em>个道具恢复成功，共有<em>{1}</em>个道具恢复失败</strong><i>能量<ins>-{2}</ins></i>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', failNum)
-                                .replace('{2}', successEnergyNum)
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', failNum)
+                                    .replace('{2}', successEnergyNum)
                                 , -1);
                             $('.pd_result:last').append(
                                 '<li class="pd_stat">共有<em>{0}</em>个道具恢复成功，共有<em>{1}</em>个道具恢复失败，<i>能量<ins>-{2}</ins></i></li>'
@@ -4751,7 +4751,7 @@ var Item = {
         if (type === 1) {
             showResult(type, cycle.stat);
             KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                .replace('{0}', options.itemIdList.length)
+                    .replace('{0}', options.itemIdList.length)
                 , true);
             window.setTimeout(function () {
                 Item.useItems(options, cycle);
@@ -4759,7 +4759,7 @@ var Item = {
         }
         else if (type === 2) {
             KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                .replace('{0}', options.itemIdList.length)
+                    .replace('{0}', options.itemIdList.length)
                 , true);
             window.setTimeout(function () {
                 Item.restoreItems(options, cycle);
@@ -4882,9 +4882,9 @@ var Item = {
                                 .replace('{2}', successEnergyNum)
                             );
                             KFOL.showMsg('<strong>共有<em>{0}</em>个道具成功转换为能量{1}</strong><i>能量<em>+{2}</em></i>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具转换失败'.replace('{0}', failNum) : '')
-                                .replace('{2}', successEnergyNum)
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具转换失败'.replace('{0}', failNum) : '')
+                                    .replace('{2}', successEnergyNum)
                                 , -1);
                             $('.pd_result:last').append(
                                 '<li class="pd_stat">共有<em>{0}</em>个道具成功转换为能量{1}，<i>能量<em>+{2}</em></i></li>'
@@ -4986,9 +4986,9 @@ var Item = {
                                 .replace('{2}', totalGain)
                             );
                             KFOL.showMsg('<strong>共有<em>{0}</em>个道具出售成功{1}</strong><i>KFB<em>+{2}</em></i>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具出售失败'.replace('{0}', failNum) : '')
-                                .replace('{2}', totalGain)
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', failNum > 0 ? '，共有<em>{0}</em>个道具出售失败'.replace('{0}', failNum) : '')
+                                    .replace('{2}', totalGain)
                                 , -1);
                             $('.pd_result:last').append(
                                 '<li class="pd_stat">共有<em>{0}</em>个道具出售成功{1}，<i>KFB<em>+{2}</em></i></li>'
@@ -5046,7 +5046,7 @@ var Item = {
                 if (itemIdList.length === 0) return;
                 if (!window.confirm('共选择了{0}个道具，是否批量使用道具？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                    .replace('{0}', itemIdList.length)
+                        .replace('{0}', itemIdList.length)
                     , true);
                 Item.useItems({
                     type: 2,
@@ -5132,7 +5132,7 @@ var Item = {
                 if (itemIdList.length === 0) return;
                 if (!window.confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在出售道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                    .replace('{0}', itemIdList.length)
+                        .replace('{0}', itemIdList.length)
                     , true);
                 Item.sellItems({
                     itemIdList: itemIdList,
@@ -5180,7 +5180,7 @@ var Item = {
                 if (itemIdList.length === 0) return;
                 if (!window.confirm('共选择了{0}个道具，是否转换为能量？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                    .replace('{0}', itemIdList.length)
+                        .replace('{0}', itemIdList.length)
                     , true);
                 Item.convertItemsToEnergy({
                     type: 2,
@@ -5210,7 +5210,7 @@ var Item = {
                     return;
                 }
                 KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                    .replace('{0}', itemIdList.length)
+                        .replace('{0}', itemIdList.length)
                     , true);
                 Item.restoreItems({
                     type: 2,
@@ -5296,8 +5296,8 @@ var Item = {
             if ($this.is('.pd_items_batch_use')) {
                 var num = parseInt(
                     window.prompt('你要使用多少个【Lv.{0}：{1}】道具？'
-                        .replace('{0}', itemLevel)
-                        .replace('{1}', itemName)
+                            .replace('{0}', itemLevel)
+                            .replace('{1}', itemName)
                         , itemUsableNum ? itemUsableNum : 0)
                 );
                 if (isNaN(num) || num <= 0) return;
@@ -5314,7 +5314,7 @@ var Item = {
                     }
                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
                     KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                        .replace('{0}', itemIdList.length)
+                            .replace('{0}', itemIdList.length)
                         , true);
                     Item.useItems({
                         type: 1,
@@ -5388,8 +5388,8 @@ var Item = {
             else if ($this.is('.pd_items_batch_restore')) {
                 var num = parseInt(
                     window.prompt('你要恢复多少个【Lv.{0}：{1}】道具？'
-                        .replace('{0}', itemLevel)
-                        .replace('{1}', itemName)
+                            .replace('{0}', itemLevel)
+                            .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
                 );
                 if (isNaN(num) || num <= 0) return;
@@ -5406,7 +5406,7 @@ var Item = {
                     }
                     console.log('批量恢复道具Start，恢复道具数量：' + itemIdList.length);
                     KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                        .replace('{0}', itemIdList.length)
+                            .replace('{0}', itemIdList.length)
                         , true);
                     Item.restoreItems({
                         type: 1,
@@ -5422,8 +5422,8 @@ var Item = {
             else if ($this.is('.pd_items_batch_convert')) {
                 var num = parseInt(
                     window.prompt('你要将多少个【Lv.{0}：{1}】道具转换为能量？'
-                        .replace('{0}', itemLevel)
-                        .replace('{1}', itemName)
+                            .replace('{0}', itemLevel)
+                            .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
                 );
                 if (isNaN(num) || num <= 0) return;
@@ -5440,7 +5440,7 @@ var Item = {
                     }
                     console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
                     KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                        .replace('{0}', itemIdList.length)
+                            .replace('{0}', itemIdList.length)
                         , true);
                     Item.convertItemsToEnergy({
                         type: 1,
@@ -5679,6 +5679,10 @@ var Item = {
      * @param {jQuery} $links 道具名称的链接列表
      */
     showItemUsedInfo: function ($links) {
+        var tipsList = [
+            '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
+            '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死'
+        ];
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
             $links.next('.pd_used_item_info').remove();
@@ -5692,11 +5696,12 @@ var Item = {
                 if (usedNum > maxUsedNum) nextSuccessPercent = 0;
                 else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
                 $this.after(
-                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}（仅供参考）">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
+                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}（{4}）">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
                         .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
                         .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
                         .replace('{2}', usedNum)
                         .replace('{3}', maxUsedNum)
+                        .replace('{4}', tipsList[Math.floor(Math.random() * tipsList.length)])
                 );
             });
         });
@@ -5823,10 +5828,10 @@ var Item = {
                                 .replace('{3}', failNum > 0 ? '，共有{0}个道具购买失败'.replace('{0}', failNum) : '')
                             );
                             KFOL.showMsg('<strong>共有<em>{0}</em>个【<em>Lv.{1}</em>{2}】道具购买成功{3}</strong>'
-                                .replace('{0}', successNum)
-                                .replace('{1}', settings.itemLevel)
-                                .replace('{2}', settings.itemName)
-                                .replace('{3}', failNum > 0 ? '，共有<em>{0}</em>个道具购买失败'.replace('{0}', failNum) : '')
+                                    .replace('{0}', successNum)
+                                    .replace('{1}', settings.itemLevel)
+                                    .replace('{2}', settings.itemName)
+                                    .replace('{3}', failNum > 0 ? '，共有<em>{0}</em>个道具购买失败'.replace('{0}', failNum) : '')
                                 , -1);
 
                             if (successNum > 0) {
@@ -5873,7 +5878,7 @@ var Item = {
         });
         if (!marketPrice) marketPrice = 1;
         KFOL.showWaitMsg('<strong>正在统计购买价格中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i>'
-            .replace('{0}', totalNum)
+                .replace('{0}', totalNum)
             , true);
         $(document).clearQueue('StatBuyItemsPrice');
         $result.find('li > a').each(function (index) {
@@ -6004,13 +6009,13 @@ var Item = {
             var safeId = matches[2];
             var num = parseInt(
                 $.trim(window.prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
-                    .replace('{0}', itemLevel)
-                    .replace('{1}', itemName)
+                        .replace('{0}', itemLevel)
+                        .replace('{1}', itemName)
                     , 0))
             );
             if (isNaN(num) || num <= 0) return;
             KFOL.showWaitMsg('<strong>正在购买道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                .replace('{0}', num)
+                    .replace('{0}', num)
                 , true);
             Item.buyItems({itemTypeId: itemTypeId, num: num, safeId: safeId, itemLevel: itemLevel, itemName: itemName});
         });
@@ -11324,6 +11329,14 @@ var KFOL = {
                         .data('enabled', true)
                         .click();
                 }
+
+                $dialog.keydown(function (e) {
+                    if (e.keyCode === 27) {
+                        $('.pd_search_type_list').remove();
+                    }
+                }).find('h1 > span').click(function () {
+                    $('.pd_search_type_list').remove();
+                });
 
                 Dialog.show('pd_search');
                 $dialog.find('input[name="keyword"]').focus();
