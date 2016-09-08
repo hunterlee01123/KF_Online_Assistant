@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.5.6
+// @version     5.5.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -21,7 +21,7 @@
 // @use-greasemonkey true
 // ==/UserScript==
 // 版本号
-var version = '5.5.6';
+var version = '5.5.7';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -206,15 +206,15 @@ var Config = {
     // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
     saveCurrentDepositKfb: 0,
 
-    // 是否自动更换神秘颜色，true：开启；false：关闭
+    // 是否自动更换ID颜色，true：开启；false：关闭
     autoChangeSMColorEnabled: false,
-    // 自动更换神秘颜色的更换顺序类型，random：随机；sequence：顺序
+    // 自动更换ID颜色的更换顺序类型，random：随机；sequence：顺序
     autoChangeSMColorType: 'random',
-    // 自动更换神秘颜色的时间间隔（小时）
+    // 自动更换ID颜色的时间间隔（小时）
     autoChangeSMColorInterval: 24,
-    // 是否从当前所有可用的神秘颜色中进行更换，true：开启；false：关闭
+    // 是否从当前所有可用的ID颜色中进行更换，true：开启；false：关闭
     changeAllAvailableSMColorEnabled: true,
-    // 自定义自动更换神秘颜色的ID列表，例：[1,8,13,20]
+    // 自定义自动更换ID颜色的ID列表，例：[1,8,13,20]
     customAutoChangeSMColorList: []
 };
 
@@ -271,7 +271,9 @@ var Const = {
     showRefreshModeTipsInterval: 1,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
-    // 神秘系数排名变化的提醒间隔（小时）
+    // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
+    smLevelUpAlertInterval: 3,
+    // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
@@ -1729,8 +1731,8 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_turn_page_via_keyboard_enabled" type="checkbox" />通过左右键翻页 ' +
             '<span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page" />自动更换神秘颜色 ' +
-            '<span class="pd_cfg_tips" title="可自动更换神秘颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>' +
+            '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page" />自动更换ID颜色 ' +
+            '<span class="pd_cfg_tips" title="可自动更换ID颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>' +
             '<a id="pd_cfg_auto_change_sm_color_page" style="margin-left:10px" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br />' +
             '      <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width:50px" type="text" />' +
             '<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">' +
@@ -9249,7 +9251,7 @@ var KFOL = {
                 && !Tools.getCookie(Const.autoAttackingCookieName)) {
                 Loot.checkAutoAttack();
             }
-            if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeSMColor();
+            if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeIdColor();
 
             var interval = KFOL.getMinRefreshInterval();
             if (interval > 0) errorNum = 0;
@@ -10569,7 +10571,7 @@ var KFOL = {
      * 在神秘等级升级后进行提醒
      */
     smLevelUpAlert: function () {
-        var matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
+        var matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"]').text());
         if (!matches) return;
         var smLevel = parseInt(matches[1]);
 
@@ -10586,18 +10588,24 @@ var KFOL = {
             writeData(smLevel);
         }
         else if (smLevel > data.smLevel) {
-            var date = new Date(data.time);
-            writeData(smLevel);
-            Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级共上升了`{1}`级 (Lv.`{2}`->Lv.`{3}`)'
-                .replace('{0}', Tools.getDateString(date))
-                .replace('{1}', smLevel - data.smLevel)
-                .replace('{2}', data.smLevel)
-                .replace('{3}', smLevel)
-            );
-            KFOL.showMsg('自<em>{0}</em>以来，你的神秘等级共上升了<em>{1}</em>级'
-                .replace('{0}', Tools.getDateString(date))
-                .replace('{1}', smLevel - data.smLevel)
-            );
+            var diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
+            if (diff >= Const.smLevelUpAlertInterval) {
+                var date = new Date(data.time);
+                writeData(smLevel);
+                Log.push('神秘等级升级', '自`{0}`以来，你的神秘等级共上升了`{1}`级 (Lv.`{2}`->Lv.`{3}`)'
+                    .replace('{0}', Tools.getDateString(date))
+                    .replace('{1}', smLevel - data.smLevel)
+                    .replace('{2}', data.smLevel)
+                    .replace('{3}', smLevel)
+                );
+                KFOL.showMsg('自<em>{0}</em>以来，你的神秘等级共上升了<em>{1}</em>级'
+                    .replace('{0}', Tools.getDateString(date))
+                    .replace('{1}', smLevel - data.smLevel)
+                );
+            }
+            else if (diff < 0) {
+                writeData(smLevel);
+            }
         }
         else if (smLevel < data.smLevel) {
             writeData(smLevel);
@@ -10608,7 +10616,7 @@ var KFOL = {
      * 在神秘系数排名发生变化时进行提醒
      */
     smRankChangeAlert: function () {
-        var matches = /系数排名第\s*(\d+)\s*位/.exec($('a[href="kf_growup.php"][title="用户等级和权限"]').text());
+        var matches = /系数排名第\s*(\d+)\s*位/.exec($('a[href="kf_growup.php"]').text());
         if (!matches) return;
         var smRank = parseInt(matches[1]);
 
@@ -10819,22 +10827,22 @@ var KFOL = {
     },
 
     /**
-     * 添加自动更换神秘颜色的按钮
+     * 添加自动更换ID颜色的按钮
      */
-    addAutoChangeSmColorButton: function () {
-        var $autoChangeSMColor = $('table div > table > tbody > tr > td:contains("自定义ID颜色")');
+    addAutoChangeIdColorButton: function () {
+        var $autoChangeIdColor = $('table div > table > tbody > tr > td:contains("自定义ID颜色")');
         $('<span class="pd_highlight">低等级没人权？没有自己喜欢的颜色？快来试试助手的<a href="#">自定义本人神秘颜色</a>的功能吧！（虽然仅限自己可见 ╮(╯▽╰)╭）</span><br />')
-            .appendTo($autoChangeSMColor)
+            .appendTo($autoChangeIdColor)
             .find('a').click(function (e) {
             e.preventDefault();
             ConfigDialog.show();
         });
 
-        var $smColors = $autoChangeSMColor.parent('tr').nextAll('tr').not('tr:last');
-        if ($smColors.find('a').length <= 1) return;
+        var $idColors = $autoChangeIdColor.parent('tr').nextAll('tr').not('tr:last');
+        if ($idColors.find('a').length <= 1) return;
         $('<form><div id="pd_auto_change_sm_color_btns" style="margin-top:5px">' +
-            '<label><input id="pd_cfg_auto_change_sm_color_enabled" class="pd_input" type="checkbox" /> 自动更换神秘颜色</label></div></form>')
-            .appendTo($autoChangeSMColor)
+            '<label><input id="pd_cfg_auto_change_sm_color_enabled" class="pd_input" type="checkbox" /> 自动更换ID颜色</label></div></form>')
+            .appendTo($autoChangeIdColor)
             .find('#pd_cfg_auto_change_sm_color_enabled')
             .click(function () {
                 var $this = $(this);
@@ -10846,30 +10854,30 @@ var KFOL = {
                 }
 
                 if (enabled) {
-                    $smColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
+                    $idColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
                     $('<label>更换顺序 <select id="pd_cfg_auto_change_sm_color_type" style="font-size:12px"><option value="random">随机</option>' +
                         '<option value="sequence">顺序</option></select></label>' +
                         '<label>每隔 <input id="pd_cfg_auto_change_sm_color_interval" class="pd_input" style="width:25px" type="text" maxlength="5" /> 小时</label>' +
                         '<button>保存</button><button style="margin-left:3px">重置</button><br />' +
                         '<a href="#">全选</a><a style="margin-left:7px;margin-right:10px" href="#">反选</a>' +
-                        '<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox" /> 选择当前所有可用的神秘颜色</label>'
+                        '<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox" /> 选择当前所有可用的ID颜色</label>'
                     ).insertAfter($this.parent()).filter('button:first').click(function (e) {
                         e.preventDefault();
                         var $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
                         var interval = parseInt($.trim($autoChangeSMColorInterval.val()));
                         if (isNaN(interval) || interval <= 0) {
-                            alert('神秘颜色更换时间间隔格式不正确');
+                            alert('ID颜色更换时间间隔格式不正确');
                             $autoChangeSMColorInterval.select();
                             $autoChangeSMColorInterval.focus();
                             return;
                         }
                         var changeAllAvailableSMColorEnabled = $('#pd_cfg_change_all_available_sm_color_enabled').prop('checked');
                         var customChangeSMColorList = [];
-                        $smColors.find('input[type="checkbox"]:checked').each(function () {
+                        $idColors.find('input[type="checkbox"]:checked').each(function () {
                             customChangeSMColorList.push(parseInt($(this).val()));
                         });
                         if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
-                            alert('必须选择2种或以上的神秘颜色');
+                            alert('必须选择2种或以上的ID颜色');
                             return;
                         }
                         if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
@@ -10900,22 +10908,22 @@ var KFOL = {
                         location.reload();
                     }).end().filter('a').click(function (e) {
                         e.preventDefault();
-                        if ($smColors.find('input[disabled]').length > 0) {
-                            alert('请先取消勾选“选择当前所有可用的神秘颜色”复选框');
+                        if ($idColors.find('input[disabled]').length > 0) {
+                            alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
                             $('#pd_cfg_change_all_available_sm_color_enabled').focus();
                             return;
                         }
                         if ($(this).is('#pd_auto_change_sm_color_btns > a:first')) {
-                            $smColors.find('input[type="checkbox"]').prop('checked', true);
+                            $idColors.find('input[type="checkbox"]').prop('checked', true);
                         }
                         else {
-                            $smColors.find('input[type="checkbox"]').each(function () {
+                            $idColors.find('input[type="checkbox"]').each(function () {
                                 $(this).prop('checked', !$(this).prop('checked'));
                             });
                         }
                     });
 
-                    $smColors.find('td:has(a)').each(function () {
+                    $idColors.find('td:has(a)').each(function () {
                         var $this = $(this);
                         var matches = /&color=(\d+)/i.exec($this.find('a').attr('href'));
                         if (matches) {
@@ -10926,23 +10934,23 @@ var KFOL = {
                     $('#pd_cfg_auto_change_sm_color_type').val(Config.autoChangeSMColorType);
                     $('#pd_cfg_auto_change_sm_color_interval').val(Config.autoChangeSMColorInterval);
                     $('#pd_cfg_change_all_available_sm_color_enabled').click(function () {
-                        $smColors.find('input').prop('disabled', $(this).prop('checked'));
+                        $idColors.find('input').prop('disabled', $(this).prop('checked'));
                     }).prop('checked', Config.changeAllAvailableSMColorEnabled).triggerHandler('click');
                     for (var i in Config.customAutoChangeSMColorList) {
-                        $smColors.find('input[value="{0}"]'.replace('{0}', Config.customAutoChangeSMColorList[i])).prop('checked', true);
+                        $idColors.find('input[value="{0}"]'.replace('{0}', Config.customAutoChangeSMColorList[i])).prop('checked', true);
                     }
                 }
                 else {
                     $this.parent().nextAll().remove();
-                    $smColors.removeClass('pd_sm_color_select').find('input').remove();
+                    $idColors.removeClass('pd_sm_color_select').find('input').remove();
                 }
             });
 
-        $smColors.on('click', 'td', function (e) {
+        $idColors.on('click', 'td', function (e) {
             if (!$(e.target).is('a')) {
                 var $this = $(this);
                 if ($this.find('input[disabled]').length > 0) {
-                    alert('请先取消勾选“选择当前所有可用的神秘颜色”复选框');
+                    alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
                     $('#pd_cfg_change_all_available_sm_color_enabled').focus();
                 }
                 else if (!$(e.target).is('input')) {
@@ -10957,9 +10965,9 @@ var KFOL = {
     },
 
     /**
-     * 更换神秘颜色
+     * 更换ID颜色
      */
-    changeSMColor: function () {
+    changeIdColor: function () {
         if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1) return;
         /**
          * 写入Cookie
@@ -10968,7 +10976,7 @@ var KFOL = {
             var nextTime = Tools.getDate('+' + Config.autoChangeSMColorInterval + 'h');
             Tools.setCookie(Const.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
         };
-        console.log('自动更换神秘颜色Start');
+        console.log('自动更换ID颜色Start');
         $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
             if (Tools.getCookie(Const.autoChangeSMColorCookieName)) return;
             var matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/gi);
@@ -11030,9 +11038,9 @@ var KFOL = {
                     .replace('{2}', new Date().getTime());
                 $.get(url, function (html) {
                     setCookie();
-                    KFOL.showFormatLog('自动更换神秘颜色', html);
+                    KFOL.showFormatLog('自动更换ID颜色', html);
                     if (/等级颜色修改完毕/.test(html)) {
-                        console.log('神秘颜色ID更换为：' + nextId);
+                        console.log('ID颜色更换为：' + nextId);
                         TmpLog.setValue(Const.prevAutoChangeSMColorIdTmpLogName, nextId);
                     }
                 }, 'html');
@@ -11575,10 +11583,10 @@ var KFOL = {
             var $this = $(this);
             var title = $this.text();
             var titleSize = 0;
-            var matches = title.match(/\D(\d+(?:\.\d+)?)(M|G)/ig);
+            var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
             if (matches) {
                 for (var i = 0; i < matches.length; i++) {
-                    var sizeMatches = /(\d+(?:\.\d+)?)(M|G)/i.exec(matches[i]);
+                    var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
                     if (!sizeMatches) continue;
                     var size = parseFloat(sizeMatches[1]);
                     if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
@@ -11599,7 +11607,12 @@ var KFOL = {
                 titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100 - 1
             ) {
                 $ratingCell.addClass('pd_highlight pd_custom_tips')
-                    .attr('title', '标题文件大小({0}M)与认定文件大小({1}M)不一致'.replace('{0}', titleSize).replace('{1}', ratingSize));
+                    .attr(
+                        'title',
+                        '标题文件大小({0}M)与认定文件大小({1}M)不一致'
+                            .replace('{0}', titleSize.toLocaleString())
+                            .replace('{1}', ratingSize.toLocaleString())
+                    );
             }
         });
     },
@@ -11736,7 +11749,7 @@ var KFOL = {
             if (Config.perPageFloorNum === 10) KFOL.modifyMyPostLink();
         }
         else if (location.pathname === '/kf_growup.php') {
-            KFOL.addAutoChangeSmColorButton();
+            KFOL.addAutoChangeIdColorButton();
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Item.addBatchBuyItemsLink();
@@ -11805,7 +11818,7 @@ var KFOL = {
             Loot.checkAutoAttack();
         }
 
-        if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeSMColor();
+        if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeIdColor();
 
         if (Config.autoRefreshEnabled && KFOL.isInHomePage) KFOL.startAutoRefreshMode();
 

@@ -129,8 +129,8 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_turn_page_via_keyboard_enabled" type="checkbox" />通过左右键翻页 ' +
             '<span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page" />自动更换神秘颜色 ' +
-            '<span class="pd_cfg_tips" title="可自动更换神秘颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>' +
+            '      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page" />自动更换ID颜色 ' +
+            '<span class="pd_cfg_tips" title="可自动更换ID颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>' +
             '<a id="pd_cfg_auto_change_sm_color_page" style="margin-left:10px" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br />' +
             '      <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width:50px" type="text" />' +
             '<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">' +

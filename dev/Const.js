@@ -51,7 +51,9 @@ var Const = {
     showRefreshModeTipsInterval: 1,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
-    // 神秘系数排名变化的提醒间隔（小时）
+    // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
+    smLevelUpAlertInterval: 3,
+    // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,

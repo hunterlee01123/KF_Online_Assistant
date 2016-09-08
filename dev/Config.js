@@ -171,14 +171,14 @@ var Config = {
     // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
     saveCurrentDepositKfb: 0,
 
-    // 是否自动更换神秘颜色，true：开启；false：关闭
+    // 是否自动更换ID颜色，true：开启；false：关闭
     autoChangeSMColorEnabled: false,
-    // 自动更换神秘颜色的更换顺序类型，random：随机；sequence：顺序
+    // 自动更换ID颜色的更换顺序类型，random：随机；sequence：顺序
     autoChangeSMColorType: 'random',
-    // 自动更换神秘颜色的时间间隔（小时）
+    // 自动更换ID颜色的时间间隔（小时）
     autoChangeSMColorInterval: 24,
-    // 是否从当前所有可用的神秘颜色中进行更换，true：开启；false：关闭
+    // 是否从当前所有可用的ID颜色中进行更换，true：开启；false：关闭
     changeAllAvailableSMColorEnabled: true,
-    // 自定义自动更换神秘颜色的ID列表，例：[1,8,13,20]
+    // 自定义自动更换ID颜色的ID列表，例：[1,8,13,20]
     customAutoChangeSMColorList: []
 };
