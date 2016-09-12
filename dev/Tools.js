@@ -103,7 +103,7 @@ var Tools = {
                 date.setFullYear(increment);
                 break;
             case 'y':
-                date.setYear(flag === 0 ? increment : date.getYear() + increment);
+                date.setFullYear(flag === 0 ? increment : date.getFullYear() + increment);
                 break;
             case 'M':
                 date.setMonth(flag === 0 ? increment : date.getMonth() + increment);
@@ -416,8 +416,14 @@ var Tools = {
      * @returns {string} 去除了不配对BBCode的引用内容
      */
     getRemoveUnpairedBBCodeQuoteContent: function (content) {
-        var startCodeList = [/\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g, /\[strike\]/g];
-        var endCodeList = [/\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/align\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g, /\[\/strike\]/g];
+        var startCodeList = [
+            /\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g,
+            /\[strike\]/g, /\[sup\]/g, /\[sub\]/g
+        ];
+        var endCodeList = [
+            /\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/align\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g,
+            /\[\/strike\]/g, /\[\/sup\]/g, /\[\/sub\]/g
+        ];
         for (var i = 0; i < startCodeList.length; i++) {
             var startMatches = content.match(startCodeList[i]);
             var endMatches = content.match(endCodeList[i]);

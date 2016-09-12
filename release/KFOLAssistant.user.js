@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.5.7
+// @version     5.5.8
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.7';
+var version = '5.5.8';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1055,7 +1055,7 @@ var Tools = {
                 date.setFullYear(increment);
                 break;
             case 'y':
-                date.setYear(flag === 0 ? increment : date.getYear() + increment);
+                date.setFullYear(flag === 0 ? increment : date.getFullYear() + increment);
                 break;
             case 'M':
                 date.setMonth(flag === 0 ? increment : date.getMonth() + increment);
@@ -1368,8 +1368,14 @@ var Tools = {
      * @returns {string} 去除了不配对BBCode的引用内容
      */
     getRemoveUnpairedBBCodeQuoteContent: function (content) {
-        var startCodeList = [/\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g, /\[strike\]/g];
-        var endCodeList = [/\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/align\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g, /\[\/strike\]/g];
+        var startCodeList = [
+            /\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g,
+            /\[strike\]/g, /\[sup\]/g, /\[sub\]/g
+        ];
+        var endCodeList = [
+            /\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/align\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g,
+            /\[\/strike\]/g, /\[\/sup\]/g, /\[\/sub\]/g
+        ];
         for (var i = 0; i < startCodeList.length; i++) {
             var startMatches = content.match(startCodeList[i]);
             var endMatches = content.match(endCodeList[i]);
@@ -8628,6 +8634,7 @@ var KFOL = {
             '.readtext img[onclick] { max-width: 550px; }' +
             '.pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }' +
             '.pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }' +
+            '.read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }' +
 
             /* 设置对话框 */
             '.pd_cfg_box {' +
