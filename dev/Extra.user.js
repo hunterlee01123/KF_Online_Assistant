@@ -14,14 +14,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.2.4
+// @version     2.2.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.2.4';
+var extraVersion = '2.2.5';
 
 /* {PartFileContent} */
 /**
@@ -838,8 +838,7 @@ var Extra = {
         }
         var $msg = KFOL.showWaitMsg(
             '<strong>你当前正在使用移动浏览器的样子，是否需要跳转到移动版网站？</strong><br />' +
-            '<a href="https://m.miaola.info/" target="_blank">跳转到移动版</a><a class="pd_highlight" href="#">不再提示</a>',
-            true
+            '<a href="https://m.miaola.info/" target="_blank">跳转到移动版</a><a class="pd_highlight" href="#">不再提示</a>'
         );
         $msg.find('a').click(function (e) {
             if ($(this).is('a[href="#"]')) {
@@ -859,6 +858,18 @@ var Extra = {
     addAvatarChangeAlert: function () {
         $('input[name="uploadurl[2]"]')
             .parent().append('<div class="pd_highlight">本反向代理服务器为了提高性能对图片设置了缓存，更换头像后可能需等待<b>最多30分钟</b>才能看到效果</div>');
+    },
+
+    /**
+     * 在发帖页面添加更新附件提醒
+     */
+    addAttachChangeAlert: function () {
+        $(document).on('click', '.abtn[id^="md_"]', function () {
+            if (!$(document).data('attachUpdateAlert')) {
+                alert('本反向代理服务器为了提高性能对图片设置了缓存，更新附件图片后可能需等待最多30分钟才能看到效果');
+                $(document).data('attachUpdateAlert', true);
+            }
+        });
     },
 
     /**
@@ -896,6 +907,9 @@ var Extra = {
             if (KFOL.isMobile && KFOL.isInHomePage && !Tools.getCookie(Const.mobileAlertCookieName)) Extra.mobileAlert();
             if (/\/profile\.php\?action=modify/i.exec(location.href)) {
                 Extra.addAvatarChangeAlert();
+            }
+            else if (location.pathname === '/post.php') {
+                Extra.addAttachChangeAlert();
             }
         }
 
