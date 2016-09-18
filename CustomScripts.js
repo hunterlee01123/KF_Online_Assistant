@@ -226,7 +226,7 @@
 
 /*==========================================*/
 
-// 发帖时自动附加额外内容 V1.6
+// 发帖时自动附加额外内容 V1.7
 (function () {
     if (location.pathname !== '/read.php' && location.pathname !== '/post.php') return;
     var options = {
@@ -291,9 +291,9 @@
         };
         var getText = function (text) {
             if (typeof text === 'function')
-                return handleText(text().toString());
+                return Tools.getRemoveUnpairedBBCodeQuoteContent(handleText(text().toString()));
             else
-                return handleText(text[Math.floor(Math.random() * text.length)]);
+                return Tools.getRemoveUnpairedBBCodeQuoteContent(handleText(text[Math.floor(Math.random() * text.length)]));
         };
         if (handleText('[img]a[/img]').indexOf('[img]') > -1) return;
         $textArea.val(getText(options.insertText) + content + getText(options.addText));
