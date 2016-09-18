@@ -7,19 +7,19 @@
 // @description KF Online助手的额外脚本，可提供更丰富有趣的玩法（需配合最新版的KFOL助手使用，请先安装KFOL助手再安装此脚本）
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/Extra.user.js
-// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/jquery-ui.custom.min.js?V2
+// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/jquery-ui.custom.min.js?V1.12.1
 // @include     http://*2dkf.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.2.5
+// @version     2.2.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // Extra版本号
-var extraVersion = '2.2.5';
+var extraVersion = '2.2.6';
 
 /**
  * 自定义道具类
