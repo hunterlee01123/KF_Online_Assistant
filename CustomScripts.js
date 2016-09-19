@@ -1602,3 +1602,30 @@ Const.customTileSideBarContent =
     '<a href="test3.php">导航项3</a> | <a href="test4.php">导航项4</a><br />';
 
 /*==========================================*/
+
+// 显示新短消息通知 V1.0
+(function () {
+    // 通知类型，1：使用HTML5 Notification API在屏幕右下角进行通知；2：使用KFOL助手的显示消息在屏幕中央进行通知
+    var type = 1;
+    if (location.pathname === '/message.php') return;
+    if (!$('.topright > a[href="message.php"]:contains("新消息")').length) return;
+    if (type === 2) {
+        KFOL.showMsg('<strong>你有新的短消息</strong><a href="message.php">点击查看</a>');
+    }
+    else {
+        if ('Notification' in window && Notification.permission !== 'denied') {
+            Notification.requestPermission(function (permission) {
+                if (permission === 'granted') {
+                    var notification = new Notification('【绯月Galgame】', {body: '你有新的短消息'});
+                    notification.onclick = function (e) {
+                        e.preventDefault();
+                        window.open('message.php');
+                        notification.close();
+                    }
+                }
+            });
+        }
+    }
+}());
+
+/*==========================================*/
