@@ -227,7 +227,7 @@ var Item = {
      * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
      * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
      * @param {{}} cycle.stat 循环使用道具的统计项
-     * @param {number} cycle.maxUseItemRound 使用道具轮数上限（0表示不限制）
+     * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
      * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
      */
     useItems: function (options, cycle) {
@@ -244,19 +244,19 @@ var Item = {
 
         if (cycle) {
             if (cycle.round === 1) {
-                console.log('循环使用道具Start，使用道具数量：{0}，使用道具轮数上限：{1}，恢复道具成功次数上限：{2}'
+                console.log('循环使用道具Start，使用道具数量：{0}，有效道具使用次数上限：{1}，恢复道具成功次数上限：{2}'
                     .replace('{0}', cycle.itemNum)
-                    .replace('{1}', cycle.maxUseItemRound ? cycle.maxUseItemRound : '无限制')
+                    .replace('{1}', cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制')
                     .replace('{2}', cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制')
                 );
                 $('.kf_fw_ig1:last').parent().append(
                     ('<ul class="pd_result"><li class="pd_stat"><strong>对<em>{0}</em>个【Lv.{1}：{2}】道具的循环使用开始（当前道具恢复能量<em>{3}</em>点）<br />' +
-                    '（使用道具轮数上限：<em>{4}</em>，恢复道具成功次数上限：<em>{5}</em>）</strong></li></ul>')
+                    '（有效道具使用次数上限：<em>{4}</em>，恢复道具成功次数上限：<em>{5}</em>）</strong></li></ul>')
                         .replace('{0}', cycle.itemNum)
                         .replace('{1}', settings.itemLevel)
                         .replace('{2}', settings.itemName)
                         .replace('{3}', cycle.totalEnergyNum)
-                        .replace('{4}', cycle.maxUseItemRound ? cycle.maxUseItemRound : '无限制')
+                        .replace('{4}', cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制')
                         .replace('{5}', cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制')
                 );
             }
@@ -277,8 +277,9 @@ var Item = {
         }
 
         var successNum = 0, failNum = 0;
-        var responseMsg = '';
+        var stat = {'有效道具': 0, '无效道具': 0};
         var nextRoundItemIdList = [];
+        var isStop = false;
         $(document).clearQueue('UseItems');
         $.each(settings.itemIdList, function (index, itemId) {
             $(document).queue('UseItems', function () {
@@ -291,8 +292,18 @@ var Item = {
                         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
                         if (matches && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(html)) {
                             successNum++;
-                            responseMsg += matches[1] + '\n';
                             nextRoundItemIdList.push(itemId);
+                            var credits = Item.getCreditsViaResponse(matches[1], settings.itemTypeId);
+                            if (credits !== -1) {
+                                if ($.isEmptyObject(credits)) stat['无效道具']++;
+                                else stat['有效道具']++;
+                                $.each(credits, function (key, credit) {
+                                    if (typeof stat[key] === 'undefined')
+                                        stat[key] = credit;
+                                    else
+                                        stat[key] += credit;
+                                });
+                            }
                         }
                         else {
                             failNum++;
@@ -302,6 +313,11 @@ var Item = {
                             .replace('{0}', index + 1)
                             .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
                         );
+                        if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
+                            isStop = true;
+                            console.log('有效道具使用次数到达设定上限，循环使用操作停止');
+                            $('.pd_result:last').append('<li><span class="pd_notice">（有效道具使用次数到达设定上限，循环操作中止）</span></li>');
+                        }
                     },
                     error: function () {
                         failNum++;
@@ -309,26 +325,11 @@ var Item = {
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
+                        isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
                         if (isStop) $(document).clearQueue('UseItems');
 
                         if (isStop || index === settings.itemIdList.length - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                            var stat = {'有效道具': 0, '无效道具': 0};
-                            $.each(responseMsg.split('\n'), function (i, text) {
-                                if (!text) return;
-                                var credits = Item.getCreditsViaResponse(text, settings.itemTypeId);
-                                if (credits !== -1) {
-                                    if ($.isEmptyObject(credits)) stat['无效道具']++;
-                                    else stat['有效道具']++;
-                                    $.each(credits, function (key, credit) {
-                                        if (typeof stat[key] === 'undefined')
-                                            stat[key] = credit;
-                                        else
-                                            stat[key] += credit;
-                                    });
-                                }
-                            });
                             if (stat['有效道具'] === 0) delete stat['有效道具'];
                             if (stat['无效道具'] === 0) delete stat['无效道具'];
                             if (!cycle && successNum > 0) {
@@ -427,7 +428,7 @@ var Item = {
      * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
      * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
      * @param {{}} cycle.stat 循环使用道具的统计项
-     * @param {number} cycle.maxUseItemRound 使用道具轮数上限（0表示不限制）
+     * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
      * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
      */
     restoreItems: function (options, cycle) {
@@ -589,7 +590,7 @@ var Item = {
      * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
      * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
      * @param {{}} cycle.stat 循环使用道具的统计项
-     * @param {number} cycle.maxUseItemRound 使用道具轮数上限（0表示不限制）
+     * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
      * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
      */
     cycleUseItems: function (type, options, cycle) {
@@ -612,11 +613,6 @@ var Item = {
 
         if ($('.pd_pop_tips').length >= 5) {
             KFOL.removePopTips($('.pd_pop_tips:first'));
-        }
-        if (cycle.maxUseItemRound && type === 2 && cycle.round >= cycle.maxUseItemRound) {
-            type = 0;
-            console.log('使用道具轮数到达设定上限，循环使用操作停止');
-            $('.pd_result:last').append('<li><span class="pd_notice">（使用道具轮数到达设定上限，循环操作中止）</span></li>');
         }
 
         var showResult = function (type, stat) {
@@ -973,7 +969,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 var value = window.prompt(
-                    '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
+                    '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
                     , itemIdList.length);
                 if (value === null) return;
                 value = $.trim(value);
@@ -982,10 +978,10 @@ var Item = {
                     return;
                 }
                 var arr = value.split('|');
-                var num = 0, maxUseItemRound = 0, maxSuccessRestoreItemCount = 0;
+                var num = 0, maxEffectiveItemCount = 0, maxSuccessRestoreItemCount = 0;
                 num = parseInt(arr[0]);
                 if (!num) return;
-                if (typeof arr[1] !== 'undefined') maxUseItemRound = parseInt(arr[1]);
+                if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
                 if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
                 KFOL.removePopTips($('.pd_pop_tips'));
 
@@ -1013,7 +1009,7 @@ var Item = {
                         totalEnergyNum: totalEnergyNum,
                         countStat: {},
                         stat: {},
-                        maxUseItemRound: maxUseItemRound,
+                        maxEffectiveItemCount: maxEffectiveItemCount,
                         maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
                     });
                 }, 'html');
@@ -1227,7 +1223,7 @@ var Item = {
             else if ($this.is('.pd_items_cycle_use')) {
                 var value = window.prompt(
                     ('你要循环使用多少个【Lv.{0}：{1}】道具？\n' +
-                    '（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）')
+                    '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）')
                         .replace('{0}', itemLevel)
                         .replace('{1}', itemName)
                     , itemUsableNum ? itemUsableNum : 0);
@@ -1238,10 +1234,10 @@ var Item = {
                     return;
                 }
                 var arr = value.split('|');
-                var num = 0, maxUseItemRound = 0, maxSuccessRestoreItemCount = 0;
+                var num = 0, maxEffectiveItemCount = 0, maxSuccessRestoreItemCount = 0;
                 num = parseInt(arr[0]);
                 if (!num) return;
-                if (typeof arr[1] !== 'undefined') maxUseItemRound = parseInt(arr[1]);
+                if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
                 if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
                 KFOL.removePopTips($('.pd_pop_tips'));
 
@@ -1275,7 +1271,7 @@ var Item = {
                                 totalEnergyNum: totalEnergyNum,
                                 countStat: {},
                                 stat: {},
-                                maxUseItemRound: maxUseItemRound,
+                                maxEffectiveItemCount: maxEffectiveItemCount,
                                 maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
                             });
                         }, 'html');
