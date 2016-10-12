@@ -11,14 +11,14 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.5.8
+// @version     5.6.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.8';
+var version = '5.6.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -4329,13 +4329,14 @@ var Item = {
      * @param {number} options.itemTypeId 道具种类ID
      * @param {string} options.itemName 道具名称
      * @param {jQuery} [options.$itemLine] 当前使用道具种类所在的表格行（用于使用类型1）
+     * @param {boolean} [options.isTypeBatch=false] 是否批量使用不同种类的道具
      * @param {{}} [cycle] 循环使用道具的信息类
      * @param {number} cycle.itemNum 循环使用的道具数量
      * @param {number} cycle.round 当前循环的轮数
      * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
      * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
      * @param {{}} cycle.stat 循环使用道具的统计项
-     * @param {number} cycle.maxUseItemRound 使用道具轮数上限（0表示不限制）
+     * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
      * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
      */
     useItems: function (options, cycle) {
@@ -4346,25 +4347,26 @@ var Item = {
             itemLevel: 0,
             itemTypeId: 0,
             itemName: '',
-            $itemLine: null
+            $itemLine: null,
+            isTypeBatch: false
         };
         $.extend(settings, options);
 
         if (cycle) {
             if (cycle.round === 1) {
-                console.log('循环使用道具Start，使用道具数量：{0}，使用道具轮数上限：{1}，恢复道具成功次数上限：{2}'
+                console.log('循环使用道具Start，使用道具数量：{0}，有效道具使用次数上限：{1}，恢复道具成功次数上限：{2}'
                     .replace('{0}', cycle.itemNum)
-                    .replace('{1}', cycle.maxUseItemRound ? cycle.maxUseItemRound : '无限制')
+                    .replace('{1}', cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制')
                     .replace('{2}', cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制')
                 );
                 $('.kf_fw_ig1:last').parent().append(
                     ('<ul class="pd_result"><li class="pd_stat"><strong>对<em>{0}</em>个【Lv.{1}：{2}】道具的循环使用开始（当前道具恢复能量<em>{3}</em>点）<br />' +
-                    '（使用道具轮数上限：<em>{4}</em>，恢复道具成功次数上限：<em>{5}</em>）</strong></li></ul>')
+                    '（有效道具使用次数上限：<em>{4}</em>，恢复道具成功次数上限：<em>{5}</em>）</strong></li></ul>')
                         .replace('{0}', cycle.itemNum)
                         .replace('{1}', settings.itemLevel)
                         .replace('{2}', settings.itemName)
                         .replace('{3}', cycle.totalEnergyNum)
-                        .replace('{4}', cycle.maxUseItemRound ? cycle.maxUseItemRound : '无限制')
+                        .replace('{4}', cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制')
                         .replace('{5}', cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制')
                 );
             }
@@ -4385,8 +4387,9 @@ var Item = {
         }
 
         var successNum = 0, failNum = 0;
-        var responseMsg = '';
+        var stat = {'有效道具': 0, '无效道具': 0};
         var nextRoundItemIdList = [];
+        var isStop = false;
         $(document).clearQueue('UseItems');
         $.each(settings.itemIdList, function (index, itemId) {
             $(document).queue('UseItems', function () {
@@ -4399,8 +4402,18 @@ var Item = {
                         var matches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
                         if (matches && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(html)) {
                             successNum++;
-                            responseMsg += matches[1] + '\n';
                             nextRoundItemIdList.push(itemId);
+                            var credits = Item.getCreditsViaResponse(matches[1], settings.itemTypeId);
+                            if (credits !== -1) {
+                                if ($.isEmptyObject(credits)) stat['无效道具']++;
+                                else stat['有效道具']++;
+                                $.each(credits, function (key, credit) {
+                                    if (typeof stat[key] === 'undefined')
+                                        stat[key] = credit;
+                                    else
+                                        stat[key] += credit;
+                                });
+                            }
                         }
                         else {
                             failNum++;
@@ -4410,6 +4423,11 @@ var Item = {
                             .replace('{0}', index + 1)
                             .replace('{1}', matches ? matches[1] : '未能获得预期的回应')
                         );
+                        if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
+                            isStop = true;
+                            console.log('有效道具使用次数到达设定上限，循环使用操作停止');
+                            $('.pd_result:last').append('<li><span class="pd_notice">（有效道具使用次数到达设定上限，循环操作中止）</span></li>');
+                        }
                     },
                     error: function () {
                         failNum++;
@@ -4417,26 +4435,14 @@ var Item = {
                     complete: function () {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).clearQueue('UseItems');
+                        isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
+                        if (isStop) {
+                            $(document).clearQueue('UseItems');
+                            if (settings.isTypeBatch) $(document).clearQueue('UseItemTypes');
+                        }
 
                         if (isStop || index === settings.itemIdList.length - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                            var stat = {'有效道具': 0, '无效道具': 0};
-                            $.each(responseMsg.split('\n'), function (i, text) {
-                                if (!text) return;
-                                var credits = Item.getCreditsViaResponse(text, settings.itemTypeId);
-                                if (credits !== -1) {
-                                    if ($.isEmptyObject(credits)) stat['无效道具']++;
-                                    else stat['有效道具']++;
-                                    $.each(credits, function (key, credit) {
-                                        if (typeof stat[key] === 'undefined')
-                                            stat[key] = credit;
-                                        else
-                                            stat[key] += credit;
-                                    });
-                                }
-                            });
                             if (stat['有效道具'] === 0) delete stat['有效道具'];
                             if (stat['无效道具'] === 0) delete stat['无效道具'];
                             if (!cycle && successNum > 0) {
@@ -4505,6 +4511,9 @@ var Item = {
                                 cycle.stat['已使用道具'] += successNum;
                                 Item.cycleUseItems(isStop ? 0 : 2, settings, cycle);
                             }
+                            else if (settings.isTypeBatch) {
+                                $(document).dequeue('UseItemTypes');
+                            }
                         }
                         else {
                             window.setTimeout(function () {
@@ -4535,7 +4544,7 @@ var Item = {
      * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
      * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
      * @param {{}} cycle.stat 循环使用道具的统计项
-     * @param {number} cycle.maxUseItemRound 使用道具轮数上限（0表示不限制）
+     * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
      * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
      */
     restoreItems: function (options, cycle) {
@@ -4697,7 +4706,7 @@ var Item = {
      * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
      * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
      * @param {{}} cycle.stat 循环使用道具的统计项
-     * @param {number} cycle.maxUseItemRound 使用道具轮数上限（0表示不限制）
+     * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
      * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
      */
     cycleUseItems: function (type, options, cycle) {
@@ -4720,11 +4729,6 @@ var Item = {
 
         if ($('.pd_pop_tips').length >= 5) {
             KFOL.removePopTips($('.pd_pop_tips:first'));
-        }
-        if (cycle.maxUseItemRound && type === 2 && cycle.round >= cycle.maxUseItemRound) {
-            type = 0;
-            console.log('使用道具轮数到达设定上限，循环使用操作停止');
-            $('.pd_result:last').append('<li><span class="pd_notice">（使用道具轮数到达设定上限，循环操作中止）</span></li>');
         }
 
         var showResult = function (type, stat) {
@@ -4828,6 +4832,7 @@ var Item = {
      * @param {number} options.itemLevel 道具等级
      * @param {string} options.itemName 道具名称
      * @param {jQuery} [options.$itemLine] 当前恢复道具种类所在的表格行（用于转换类型1）
+     * @param {boolean} [options.isTypeBatch=false] 是否批量转换不同种类的道具
      */
     convertItemsToEnergy: function (options) {
         var settings = {
@@ -4835,7 +4840,9 @@ var Item = {
             itemIdList: [],
             safeId: '',
             itemLevel: 0,
-            itemName: ''
+            itemName: '',
+            $itemLine: null,
+            isTypeBatch: false
         };
         $.extend(settings, options);
         $('.kf_fw_ig1:last').parent().append(
@@ -4867,7 +4874,10 @@ var Item = {
                         var $remainingNum = $('#pd_remaining_num');
                         $remainingNum.text(parseInt($remainingNum.text()) - 1);
                         var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                        if (isStop) $(document).clearQueue('ConvertItemsToEnergy');
+                        if (isStop) {
+                            $(document).clearQueue('ConvertItemsToEnergy');
+                            if (settings.isTypeBatch) $(document).clearQueue('ConvertItemTypesToEnergy');
+                        }
 
                         if (isStop || index === settings.itemIdList.length - 1) {
                             KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
@@ -4906,6 +4916,7 @@ var Item = {
                                     });
                             }
                             Item.setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, null, successEnergyNum);
+                            if (settings.isTypeBatch) $(document).dequeue('ConvertItemTypesToEnergy');
                         }
                         else {
                             window.setTimeout(function () {
@@ -5081,7 +5092,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 var value = window.prompt(
-                    '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
+                    '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
                     , itemIdList.length);
                 if (value === null) return;
                 value = $.trim(value);
@@ -5090,10 +5101,10 @@ var Item = {
                     return;
                 }
                 var arr = value.split('|');
-                var num = 0, maxUseItemRound = 0, maxSuccessRestoreItemCount = 0;
+                var num = 0, maxEffectiveItemCount = 0, maxSuccessRestoreItemCount = 0;
                 num = parseInt(arr[0]);
                 if (!num) return;
-                if (typeof arr[1] !== 'undefined') maxUseItemRound = parseInt(arr[1]);
+                if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
                 if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
                 KFOL.removePopTips($('.pd_pop_tips'));
 
@@ -5121,7 +5132,7 @@ var Item = {
                         totalEnergyNum: totalEnergyNum,
                         countStat: {},
                         stat: {},
-                        maxUseItemRound: maxUseItemRound,
+                        maxEffectiveItemCount: maxEffectiveItemCount,
                         maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
                     });
                 }, 'html');
@@ -5279,6 +5290,113 @@ var Item = {
     },
 
     /**
+     * 添加批量使用和转换指定种类的道具的按钮
+     */
+    addBatchUseAndConvertItemTypesButton: function () {
+        var safeId = KFOL.getSafeId();
+        if (!safeId) return;
+        $('<div class="pd_item_btns"><button title="批量使用指定种类的道具" data-action="useItemTypes">批量使用</button>' +
+            '<button class="pd_highlight" title="批量将指定种类的道具转换为能量" data-action="convertItemTypes">批量转换</button>' +
+            '<button data-action="selectAll">全选</button><button data-action="selectInverse">反选</button></div>')
+            .insertAfter('.pd_my_items')
+            .on('click', 'button', function () {
+                var action = $(this).data('action');
+                if (action === 'useItemTypes' || action === 'convertItemTypes') {
+                    var itemTypeList = [];
+                    $('.pd_item_type_chk:checked').each(function () {
+                        var $itemLine = $(this).closest('tr'),
+                            itemLevel = parseInt($itemLine.find('td:first-child').text()),
+                            itemTypeId = parseInt($itemLine.data('itemTypeId')),
+                            itemName = $itemLine.find('td:nth-child(2) > a').text();
+                        if (isNaN(itemTypeId) || itemTypeId <= 0) return;
+                        if (action === 'convertItemTypes' && itemTypeId === 1) return;
+                        var itemListUrl = $itemLine.find('td:last-child')
+                                .find(action === 'useItemTypes' ? 'a:first-child' : 'a:last-child')
+                                .attr('href') + '&t=' + new Date().getTime();
+                        itemTypeList.push({
+                            itemTypeId: itemTypeId,
+                            itemLevel: itemLevel,
+                            itemName: itemName,
+                            $itemLine: $itemLine,
+                            itemListUrl: itemListUrl
+                        });
+                    });
+                    if (!itemTypeList.length) return;
+                    var num = parseInt(window.prompt('在指定种类道具中你要' + (action === 'useItemTypes' ? '使用' : '转换') + '多少个道具？（0表示不限制）', 0));
+                    if (isNaN(num) || num < 0) return;
+                    KFOL.removePopTips($('.pd_pop_tips'));
+
+                    var queueName = action === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
+                    $.each(itemTypeList, function (index, data) {
+                        $(document).queue(queueName, function () {
+                            var $tips = KFOL.showWaitMsg('正在获取本种类' + (action === 'useItemTypes' ? '未' : '已') + '使用道具列表，请稍后...', true);
+                            $.ajax({
+                                type: 'GET',
+                                url: data.itemListUrl,
+                                timeout: Const.defAjaxTimeout,
+                                success: function (html) {
+                                    KFOL.removePopTips($tips);
+                                    var itemIdList = Item.getItemIdList(html, num);
+                                    if (!itemIdList.length) {
+                                        $(document).dequeue(queueName);
+                                        return;
+                                    }
+
+                                    if (action === 'useItemTypes') {
+                                        console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
+                                        KFOL.showWaitMsg(
+                                            '<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                                                .replace('{0}', itemIdList.length)
+                                            , true);
+                                        Item.useItems({
+                                            type: 1,
+                                            itemIdList: itemIdList,
+                                            safeId: safeId,
+                                            itemLevel: data.itemLevel,
+                                            itemTypeId: data.itemTypeId,
+                                            itemName: data.itemName,
+                                            $itemLine: data.$itemLine,
+                                            isTypeBatch: true
+                                        });
+                                    }
+                                    else {
+                                        console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
+                                        KFOL.showWaitMsg(
+                                            '<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+                                                .replace('{0}', itemIdList.length)
+                                            , true);
+                                        Item.convertItemsToEnergy({
+                                            type: 1,
+                                            itemIdList: itemIdList,
+                                            safeId: safeId,
+                                            itemLevel: data.itemLevel,
+                                            itemName: data.itemName,
+                                            $itemLine: data.$itemLine,
+                                            isTypeBatch: true
+                                        });
+                                    }
+                                },
+                                error: function () {
+                                    KFOL.removePopTips($tips);
+                                    $(document).dequeue(queueName);
+                                }
+                            });
+                        });
+                    });
+                    $(document).dequeue(queueName);
+                }
+                else if (action === 'selectAll') {
+                    $('.pd_item_type_chk').prop('checked', true);
+                }
+                else if (action === 'selectInverse') {
+                    $('.pd_item_type_chk').each(function () {
+                        $(this).prop('checked', !$(this).prop('checked'));
+                    });
+                }
+            });
+    },
+
+    /**
      * 为我的道具页面中的道具操作链接绑定点击事件
      * @param {jQuery} $element 要绑定的容器元素
      */
@@ -5300,12 +5418,12 @@ var Item = {
 
             if ($this.is('.pd_items_batch_use')) {
                 var num = parseInt(
-                    window.prompt('你要使用多少个【Lv.{0}：{1}】道具？'
+                    window.prompt('你要使用多少个【Lv.{0}：{1}】道具？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsableNum ? itemUsableNum : 0)
                 );
-                if (isNaN(num) || num <= 0) return;
+                if (isNaN(num) || num < 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
 
                 KFOL.showWaitMsg('正在获取本种类未使用道具列表，请稍后...', true);
@@ -5335,7 +5453,7 @@ var Item = {
             else if ($this.is('.pd_items_cycle_use')) {
                 var value = window.prompt(
                     ('你要循环使用多少个【Lv.{0}：{1}】道具？\n' +
-                    '（可直接填写道具数量，也可使用“道具数量|使用道具轮数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）')
+                    '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）')
                         .replace('{0}', itemLevel)
                         .replace('{1}', itemName)
                     , itemUsableNum ? itemUsableNum : 0);
@@ -5346,10 +5464,10 @@ var Item = {
                     return;
                 }
                 var arr = value.split('|');
-                var num = 0, maxUseItemRound = 0, maxSuccessRestoreItemCount = 0;
+                var num = 0, maxEffectiveItemCount = 0, maxSuccessRestoreItemCount = 0;
                 num = parseInt(arr[0]);
-                if (!num) return;
-                if (typeof arr[1] !== 'undefined') maxUseItemRound = parseInt(arr[1]);
+                if (isNaN(num) || num < 0) return;
+                if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
                 if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
                 KFOL.removePopTips($('.pd_pop_tips'));
 
@@ -5383,7 +5501,7 @@ var Item = {
                                 totalEnergyNum: totalEnergyNum,
                                 countStat: {},
                                 stat: {},
-                                maxUseItemRound: maxUseItemRound,
+                                maxEffectiveItemCount: maxEffectiveItemCount,
                                 maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
                             });
                         }, 'html');
@@ -5392,12 +5510,12 @@ var Item = {
             }
             else if ($this.is('.pd_items_batch_restore')) {
                 var num = parseInt(
-                    window.prompt('你要恢复多少个【Lv.{0}：{1}】道具？'
+                    window.prompt('你要恢复多少个【Lv.{0}：{1}】道具？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
                 );
-                if (isNaN(num) || num <= 0) return;
+                if (isNaN(num) || num < 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
 
                 itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href') + '&t=' + new Date().getTime();
@@ -5426,12 +5544,12 @@ var Item = {
             }
             else if ($this.is('.pd_items_batch_convert')) {
                 var num = parseInt(
-                    window.prompt('你要将多少个【Lv.{0}：{1}】道具转换为能量？'
+                    window.prompt('你要将多少个【Lv.{0}：{1}】道具转换为能量？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
                 );
-                if (isNaN(num) || num <= 0) return;
+                if (isNaN(num) || num < 0) return;
                 KFOL.removePopTips($('.pd_pop_tips'));
 
                 itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href') + '&t=' + new Date().getTime();
@@ -5478,6 +5596,7 @@ var Item = {
                     .before('<td style="width:135px">使用道具</td><td style="width:135px">恢复道具 和 转换能量</td>');
             }
             else {
+                $this.find('td:first-child').prepend('<input class="pd_input pd_item_type_chk" type="checkbox" />');
                 $this.find('td:nth-child(3)')
                     .wrapInner('<span class="pd_usable_num" style="margin-left:5px"></span>')
                     .append(' / <span class="pd_used_num pd_custom_tips">?</span>')
@@ -8574,7 +8693,7 @@ var KFOL = {
             '.pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }' +
             '.pd_highlight { color: #FF0000 !important; }' +
             '.pd_notice, .pd_pop_tips .pd_notice { font-style: italic; color: #666; }' +
-            '.pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: inherit; margin-right: 0; line-height: 22px; font-size: 12px; }' +
+            '.pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px; }' +
             '.pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }' +
             '.pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7EB4EA; }' +
             '.pd_textarea, .pd_cfg_main textarea { border: 1px solid #CCC; font-size: 12px; }' +
@@ -8635,6 +8754,7 @@ var KFOL = {
             '.pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }' +
             '.pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }' +
             '.read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }' +
+            '.pd_item_type_chk { margin-right: 5px; }' +
 
             /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -11580,43 +11700,81 @@ var KFOL = {
     },
 
     /**
+     * 检查自助评分文件大小
+     * @param {string} title 帖子标题
+     * @param {number} ratingSize 评分大小
+     * @returns {{}} 检查结果
+     */
+    checkRatingSize: function (title, ratingSize) {
+        var titleSize = 0;
+        var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
+                if (!sizeMatches) continue;
+                var size = parseFloat(sizeMatches[1]);
+                if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
+                titleSize += size;
+            }
+        }
+
+        if (!titleSize || !ratingSize) {
+            return {result: -1};
+        }
+        else if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 + 1 ||
+            titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100 - 1
+        ) {
+            return {resultType: 1, titleSize: titleSize, ratingSize: ratingSize};
+        }
+        else return {result: 0};
+    },
+
+    /**
      * 高亮自助评分错标文件大小
      */
     highlightRatingErrorSize: function () {
         $('.adp1 a[href^="read.php?tid="]').each(function () {
             var $this = $(this);
             var title = $this.text();
-            var titleSize = 0;
-            var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
-            if (matches) {
-                for (var i = 0; i < matches.length; i++) {
-                    var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
-                    if (!sizeMatches) continue;
-                    var size = parseFloat(sizeMatches[1]);
-                    if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
-                    titleSize += size;
-                }
-            }
             var ratingSize = 0;
             var $ratingCell = $this.parent('td').next('td');
-            matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
+            var matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
             if (matches) {
                 ratingSize = parseInt(matches[1]);
             }
 
-            if (!titleSize || !ratingSize) {
+            var result = KFOL.checkRatingSize(title, ratingSize);
+            if (result.resultType === -1) {
                 $ratingCell.css('color', '#FF9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
             }
-            else if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 + 1 ||
-                titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100 - 1
-            ) {
+            else if (result.resultType === 1) {
                 $ratingCell.addClass('pd_highlight pd_custom_tips')
                     .attr(
                         'title',
                         '标题文件大小({0}M)与认定文件大小({1}M)不一致'
-                            .replace('{0}', titleSize.toLocaleString())
-                            .replace('{1}', ratingSize.toLocaleString())
+                            .replace('{0}', result.titleSize.toLocaleString())
+                            .replace('{1}', result.ratingSize.toLocaleString())
                     );
+            }
+        });
+    },
+
+    /**
+     * 在提交自助评分时显示错标文件大小警告
+     */
+    showSelfRatingErrorSizeSubmitWarning: function () {
+        $('form[name="mail1"]').submit(function () {
+            var ratingSize = parseInt($('[name="psize"]').val());
+            if (isNaN(ratingSize) || ratingSize <= 0) return;
+            if (parseInt($('[name="psizegb"]').val()) === 2) ratingSize *= 1024;
+            var title = $('.adp1 a[href^="read.php?tid="]').text();
+            var result = KFOL.checkRatingSize(title, ratingSize);
+            if (result.resultType === 1) {
+                return window.confirm(
+                    '标题文件大小({0}M)与认定文件大小({1}M)不一致，是否继续？'
+                        .replace('{0}', result.titleSize.toLocaleString())
+                        .replace('{1}', result.ratingSize.toLocaleString())
+                );
             }
         });
     },
@@ -11713,6 +11871,7 @@ var KFOL = {
         }
         else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
             Item.enhanceMyItemsPage();
+            Item.addBatchUseAndConvertItemTypesButton();
         }
         else if (/\/kf_fw_ig_renew\.php$/i.test(location.href)) {
             Item.addBatchConvertEnergyAndRestoreItemsLink();
@@ -11784,6 +11943,9 @@ var KFOL = {
         }
         else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
             KFOL.highlightRatingErrorSize();
+        }
+        else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
+            KFOL.showSelfRatingErrorSizeSubmitWarning();
         }
         else if (location.pathname === '/kf_no1.php') {
             KFOL.addUserNameLinkInRankPage();

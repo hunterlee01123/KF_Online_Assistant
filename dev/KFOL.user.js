@@ -25,14 +25,14 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.5.8
+// @version     5.6.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
 // ==/UserScript==
 // 版本号
-var version = '5.5.8';
+var version = '5.6.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -3134,43 +3134,81 @@ var KFOL = {
     },
 
     /**
+     * 检查自助评分文件大小
+     * @param {string} title 帖子标题
+     * @param {number} ratingSize 评分大小
+     * @returns {{}} 检查结果
+     */
+    checkRatingSize: function (title, ratingSize) {
+        var titleSize = 0;
+        var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
+                if (!sizeMatches) continue;
+                var size = parseFloat(sizeMatches[1]);
+                if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
+                titleSize += size;
+            }
+        }
+
+        if (!titleSize || !ratingSize) {
+            return {result: -1};
+        }
+        else if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 + 1 ||
+            titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100 - 1
+        ) {
+            return {resultType: 1, titleSize: titleSize, ratingSize: ratingSize};
+        }
+        else return {result: 0};
+    },
+
+    /**
      * 高亮自助评分错标文件大小
      */
     highlightRatingErrorSize: function () {
         $('.adp1 a[href^="read.php?tid="]').each(function () {
             var $this = $(this);
             var title = $this.text();
-            var titleSize = 0;
-            var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
-            if (matches) {
-                for (var i = 0; i < matches.length; i++) {
-                    var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
-                    if (!sizeMatches) continue;
-                    var size = parseFloat(sizeMatches[1]);
-                    if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
-                    titleSize += size;
-                }
-            }
             var ratingSize = 0;
             var $ratingCell = $this.parent('td').next('td');
-            matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
+            var matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
             if (matches) {
                 ratingSize = parseInt(matches[1]);
             }
 
-            if (!titleSize || !ratingSize) {
+            var result = KFOL.checkRatingSize(title, ratingSize);
+            if (result.resultType === -1) {
                 $ratingCell.css('color', '#FF9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
             }
-            else if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 + 1 ||
-                titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100 - 1
-            ) {
+            else if (result.resultType === 1) {
                 $ratingCell.addClass('pd_highlight pd_custom_tips')
                     .attr(
                         'title',
                         '标题文件大小({0}M)与认定文件大小({1}M)不一致'
-                            .replace('{0}', titleSize.toLocaleString())
-                            .replace('{1}', ratingSize.toLocaleString())
+                            .replace('{0}', result.titleSize.toLocaleString())
+                            .replace('{1}', result.ratingSize.toLocaleString())
                     );
+            }
+        });
+    },
+
+    /**
+     * 在提交自助评分时显示错标文件大小警告
+     */
+    showSelfRatingErrorSizeSubmitWarning: function () {
+        $('form[name="mail1"]').submit(function () {
+            var ratingSize = parseInt($('[name="psize"]').val());
+            if (isNaN(ratingSize) || ratingSize <= 0) return;
+            if (parseInt($('[name="psizegb"]').val()) === 2) ratingSize *= 1024;
+            var title = $('.adp1 a[href^="read.php?tid="]').text();
+            var result = KFOL.checkRatingSize(title, ratingSize);
+            if (result.resultType === 1) {
+                return window.confirm(
+                    '标题文件大小({0}M)与认定文件大小({1}M)不一致，是否继续？'
+                        .replace('{0}', result.titleSize.toLocaleString())
+                        .replace('{1}', result.ratingSize.toLocaleString())
+                );
             }
         });
     },
@@ -3339,6 +3377,9 @@ var KFOL = {
         }
         else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
             KFOL.highlightRatingErrorSize();
+        }
+        else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
+            KFOL.showSelfRatingErrorSizeSubmitWarning();
         }
         else if (location.pathname === '/kf_no1.php') {
             KFOL.addUserNameLinkInRankPage();
