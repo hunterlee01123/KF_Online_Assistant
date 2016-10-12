@@ -127,7 +127,7 @@ var KFOL = {
             '.pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }' +
             '.pd_highlight { color: #FF0000 !important; }' +
             '.pd_notice, .pd_pop_tips .pd_notice { font-style: italic; color: #666; }' +
-            '.pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: inherit; margin-right: 0; line-height: 22px; font-size: 12px; }' +
+            '.pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px; }' +
             '.pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }' +
             '.pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7EB4EA; }' +
             '.pd_textarea, .pd_cfg_main textarea { border: 1px solid #CCC; font-size: 12px; }' +
@@ -188,6 +188,7 @@ var KFOL = {
             '.pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }' +
             '.pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }' +
             '.read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }' +
+            '.pd_item_type_chk { margin-right: 5px; }' +
 
             /* 设置对话框 */
             '.pd_cfg_box {' +
@@ -3266,6 +3267,7 @@ var KFOL = {
         }
         else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
             Item.enhanceMyItemsPage();
+            Item.addBatchUseAndConvertItemTypesButton();
         }
         else if (/\/kf_fw_ig_renew\.php$/i.test(location.href)) {
             Item.addBatchConvertEnergyAndRestoreItemsLink();
