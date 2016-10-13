@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.6.1
+// @version     5.6.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -22,7 +22,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.6.1';
+var version = '5.6.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -11781,7 +11781,7 @@ var KFOL = {
      */
     showSelfRatingErrorSizeSubmitWarning: function () {
         $('form[name="mail1"]').submit(function () {
-            var ratingSize = parseInt($('[name="psize"]').val());
+            var ratingSize = parseFloat($('[name="psize"]').val());
             if (isNaN(ratingSize) || ratingSize <= 0) return;
             if (parseInt($('[name="psizegb"]').val()) === 2) ratingSize *= 1024;
             var title = $('.adp1 a[href^="read.php?tid="]').text();
