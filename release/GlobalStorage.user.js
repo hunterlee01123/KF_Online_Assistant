@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.6.0
+// @version     5.6.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -20,8 +20,9 @@
 // @include-jquery   true
 // @use-greasemonkey true
 // ==/UserScript==
+'use strict';
 // 版本号
-var version = '5.6.0';
+var version = '5.6.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -5330,6 +5331,7 @@ var Item = {
                     KFOL.removePopTips($('.pd_pop_tips'));
 
                     var queueName = action === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
+                    $(document).clearQueue(queueName);
                     $.each(itemTypeList, function (index, data) {
                         $(document).queue(queueName, function () {
                             var $tips = KFOL.showWaitMsg('正在获取本种类' + (action === 'useItemTypes' ? '未' : '已') + '使用道具列表，请稍后...', true);
@@ -5808,7 +5810,7 @@ var Item = {
     showItemUsedInfo: function ($links) {
         var tipsList = [
             '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
-            '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死'
+            '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律'
         ];
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
@@ -5822,13 +5824,15 @@ var Item = {
                 var nextSuccessPercent = 0;
                 if (usedNum > maxUsedNum) nextSuccessPercent = 0;
                 else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
+                var tips = '';
+                if (usedNum < maxUsedNum && usedNum > 0) tips = '（' + tipsList[Math.floor(Math.random() * tipsList.length)] + '）';
                 $this.after(
-                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}（{4}）">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
+                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}{4}">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
                         .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
                         .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
                         .replace('{2}', usedNum)
                         .replace('{3}', maxUsedNum)
-                        .replace('{4}', tipsList[Math.floor(Math.random() * tipsList.length)])
+                        .replace('{4}', tips)
                 );
             });
         });
@@ -9150,6 +9154,13 @@ var KFOL = {
             var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm').getTime() + 10 * 1000;
             Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime, new Date(nextTime));
         });
+
+        var $intro = $('td[style="line-height:30px;text-align:center;border-bottom:1px solid #9999ff;"]');
+        $intro.html(
+            $intro.html().replace('灰色表示已经被抽过未中的，淡蓝色表示可以抽奖的', '空的表示已经被抽过未中的，粉色的表示可以抽奖的')
+                .replace('如果中奖则获取[ 1000KFB ]', '如果中奖则获取[ 2000KFB ]')
+                .replace('基础随机数由神秘等级决定', '基础随机数由神秘系数决定')
+        );
     },
 
     /**
@@ -11089,6 +11100,9 @@ var KFOL = {
         if (Config.autoChangeSMColorEnabled) {
             $('#pd_cfg_auto_change_sm_color_enabled').prop('checked', true).triggerHandler('click');
         }
+
+        $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
+        $('div[style="border-bottom:#8000FF 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
     },
 
     /**
@@ -11811,6 +11825,33 @@ var KFOL = {
     },
 
     /**
+     * 修改帮助页面
+     */
+    modifyFaq: function () {
+        var id = parseInt(Tools.getUrlParam('id'));
+        var $faq = $('.kf_share1 > tbody > tr:nth-child(2) > td:last-child > div:last-child');
+        if (id === 1) {
+            if ($faq.html().length !== 848) return;
+            $faq.html(
+                '你可以通过发帖/回贴、参与争夺奖励（推荐）、抽取神秘盒子（不推荐）等方式获取KFB（论坛货币）。<br><br>' +
+                '争夺奖励的默认间隔为11小时，领取争夺奖励后可选择恰当的时机攻击NPC来夺取KFB与经验，NPC也同样会对你发动攻击，在一回合结束后所剩下的KFB就是你该回合的收获。<br>' +
+                '你可以通过吃道具来提升争夺的各项属性，各项争夺属性的说明详见<a href="kf_fw_ig_index.php" target="_blank">争夺首页</a>。<br><br>' +
+                '你还可以通过抽取<a href="kf_smbox.php" target="_blank">神秘盒子</a>的方式来获得少量KFB（不推荐），每次抽取神秘盒子的间隔为5小时。<br>' +
+                '<span class="pd_highlight">（注：抽取神秘盒子将延长争夺奖励的领取时间，请二选其一，尽量不要同时进行）</span><br><br>' +
+                '发帖/回贴时会获得基本的KFB奖励，每天第一次发帖/回贴还可获得额外经验奖励。<br>' +
+                '发帖请先阅读规定避免违规，在你还没有时间阅读全部规定之前，请至少注意以下几点：<br>' +
+                '不要发表纯水帖；不要纯复制发帖；不要发表政治、广告、恶心的内容；不要攻击、讽刺、挑衅他人；<br>' +
+                '不要发表成人图片、视频、小说等内容；不要伪造原创、盗取他人原创。<br><br>' +
+                '升级（神秘系数）可以获得不同的等级权限，你可以在<a href="kf_growup.php" target="_blank">等级经验页面</a>进行KFB捐款，' +
+                '根据不同的捐款数额获得相应的经验来提升神秘系数。<br>' +
+                '注册初始神秘系数为0，为“通常版”等级，拥有大部分的日常权限；提升为神秘系数4时，升级为“初回限定版”等级，拥有部分追加的权限。<br>' +
+                '部分板块需要一定神秘系数以上才可进入，如打开帖子时出现“Error&hellip;”之类的提示，说明你当前的神秘系数无法进入该板块。<br><br>' +
+                '神秘等级的值以神秘系数为基础，基本上是装饰用的属性，可见于帖子页面各楼层用户名称旁，还可用于选择自定义ID颜色。'
+            );
+        }
+    },
+
+    /**
      * 初始化
      */
     init: function () {
@@ -11952,6 +11993,9 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_no1.php') {
             KFOL.addUserNameLinkInRankPage();
+        }
+        else if (location.pathname === '/faq.php') {
+            KFOL.modifyFaq();
         }
         if (location.pathname === '/post.php') {
             KFOL.addExtraPostEditorButton();

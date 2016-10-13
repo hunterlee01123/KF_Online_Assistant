@@ -1219,6 +1219,7 @@ var Item = {
                     KFOL.removePopTips($('.pd_pop_tips'));
 
                     var queueName = action === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
+                    $(document).clearQueue(queueName);
                     $.each(itemTypeList, function (index, data) {
                         $(document).queue(queueName, function () {
                             var $tips = KFOL.showWaitMsg('正在获取本种类' + (action === 'useItemTypes' ? '未' : '已') + '使用道具列表，请稍后...', true);
@@ -1697,7 +1698,7 @@ var Item = {
     showItemUsedInfo: function ($links) {
         var tipsList = [
             '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
-            '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死'
+            '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律'
         ];
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
             var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
@@ -1711,13 +1712,15 @@ var Item = {
                 var nextSuccessPercent = 0;
                 if (usedNum > maxUsedNum) nextSuccessPercent = 0;
                 else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
+                var tips = '';
+                if (usedNum < maxUsedNum && usedNum > 0) tips = '（' + tipsList[Math.floor(Math.random() * tipsList.length)] + '）';
                 $this.after(
-                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}（{4}）">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
+                    '<span class="pd_used_item_info" title="下个道具使用成功几率：{0}{4}">(<span style="{1}">{2}</span>/<span style="color:#F00">{3}</span>)</span>'
                         .replace('{0}', usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%')
                         .replace('{1}', usedNum >= maxUsedNum ? 'color:#F00' : '')
                         .replace('{2}', usedNum)
                         .replace('{3}', maxUsedNum)
-                        .replace('{4}', tipsList[Math.floor(Math.random() * tipsList.length)])
+                        .replace('{4}', tips)
                 );
             });
         });
