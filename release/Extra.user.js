@@ -920,7 +920,7 @@ var Extra = {
                 var $this = $(this);
                 var $parent = $this.parent();
                 if ($parent.is('.readidmleft')) {
-                    var smLevelText = smLevel.substr(0, 5);
+                    var smLevelText = smLevel.substring(0, 5);
                     var $smLevel = $parent.next('.readidmright');
                     var oriSmLevel = $smLevel.text();
                     $smLevel.css('font-size', smLevelText.length === 4 ? '14px' : '13px')
@@ -929,7 +929,7 @@ var Extra = {
                         .addClass('pd_custom_tips');
                 }
                 else {
-                    var smLevelText = smLevel.substr(0, 8);
+                    var smLevelText = smLevel.substring(0, 8);
                     var $smLevel = $parent.contents().last();
                     var matches = /(\d+)级神秘/.exec($smLevel.text());
                     if (matches) {

@@ -281,7 +281,7 @@
         if (options.attachWhenLteWordNum > -1 && content.length > options.attachWhenLteWordNum) return;
 
         var handleText = function (text) {
-            text = text.substr(0, 250).replace(/\[(img|url|sell|audio|video).+?\/(img|url|sell|audio|video)\]/gi, '[代码已屏蔽]');
+            text = text.substring(0, 250).replace(/\[(img|url|sell|audio|video).+?\/(img|url|sell|audio|video)\]/gi, '[代码已屏蔽]');
             var matches = text.match(/\[size=\d+\]/gi);
             for (var i in matches) {
                 var size = parseInt(/\d+/.exec(matches[i])[0]);
