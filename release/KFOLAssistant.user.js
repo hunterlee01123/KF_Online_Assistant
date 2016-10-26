@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.6.2
+// @version     5.6.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -19,7 +19,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.6.2';
+var version = '5.6.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -1214,7 +1214,7 @@ var Tools = {
      */
     getUrlParam: function (name) {
         var regex = new RegExp('(^|&)' + name + '=([^&]*)(&|$)');
-        var matches = location.search.substr(1).match(regex);
+        var matches = location.search.substring(1).match(regex);
         if (matches) return decodeURI(matches[2]);
         else return null;
     },
@@ -1416,16 +1416,15 @@ var Tools = {
     },
 
     /**
-     * 获取指定字符串的长度（1个GBK字符按2个字符来算）
+     * 获取指定字符串的字节长度（1个GBK字符按2个字节来算）
      * @param {string} str 指定字符串
      * @returns {number} 字符串的长度
      */
-    getStrLen: function (str) {
+    getStrByteLen: function (str) {
         var len = 0;
-        var s_len = str.length = (KFOL.window.is_ie && str.indexOf('\n') !== -1) ? str.replace(/\r?\n/g, '_').length : str.length;
-        var c_len = 2;
-        for (var i = 0; i < s_len; i++) {
-            len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? c_len : 1;
+        var cLen = 2;
+        for (var i = 0; i < str.length; i++) {
+            len += str.charCodeAt(i) < 0 || str.charCodeAt(i) > 255 ? cLen : 1;
         }
         return len;
     },
@@ -1440,7 +1439,7 @@ var Tools = {
         var startPos = selText === '' ? code.indexOf(']') + 1 : code.indexOf(selText);
         if (typeof textArea.selectionStart !== 'undefined') {
             var prePos = textArea.selectionStart;
-            textArea.value = textArea.value.substr(0, prePos) + code + textArea.value.substr(textArea.selectionEnd);
+            textArea.value = textArea.value.substring(0, prePos) + code + textArea.value.substring(textArea.selectionEnd);
             textArea.selectionStart = prePos + startPos;
             textArea.selectionEnd = prePos + startPos + selText.length;
         }
@@ -1455,7 +1454,7 @@ var Tools = {
      * @returns {string} 选择文本
      */
     getSelText: function (textArea) {
-        return textArea.value.substr(textArea.selectionStart, textArea.selectionEnd - textArea.selectionStart);
+        return textArea.value.substring(textArea.selectionStart, textArea.selectionEnd);
     }
 };
 
@@ -11416,7 +11415,7 @@ var KFOL = {
             var $method = $this.find('input[name="method"]');
             if (!$keyWord.length || !$method.length) return;
             var keyWord = $.trim($keyWord.val());
-            if (!keyWord || Tools.getStrLen(keyWord) > 2) return;
+            if (!keyWord || Tools.getStrByteLen(keyWord) > 2) return;
             $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
             $method.val('OR');
             window.setTimeout(function () {
@@ -11625,7 +11624,7 @@ var KFOL = {
         KFOL.window.is_ie = typeof KFOL.window.is_ie !== 'undefined' ? KFOL.window.is_ie : false;
 
         if (location.pathname === '/read.php') {
-            KFOL.window.strlen = Tools.getStrLen;
+            KFOL.window.strlen = Tools.getStrByteLen;
         }
     },
 

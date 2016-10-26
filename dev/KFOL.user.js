@@ -25,7 +25,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.6.2
+// @version     5.6.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -33,7 +33,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.6.2';
+var version = '5.6.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -2847,7 +2847,7 @@ var KFOL = {
             var $method = $this.find('input[name="method"]');
             if (!$keyWord.length || !$method.length) return;
             var keyWord = $.trim($keyWord.val());
-            if (!keyWord || Tools.getStrLen(keyWord) > 2) return;
+            if (!keyWord || Tools.getStrByteLen(keyWord) > 2) return;
             $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
             $method.val('OR');
             window.setTimeout(function () {
@@ -3056,7 +3056,7 @@ var KFOL = {
         KFOL.window.is_ie = typeof KFOL.window.is_ie !== 'undefined' ? KFOL.window.is_ie : false;
 
         if (location.pathname === '/read.php') {
-            KFOL.window.strlen = Tools.getStrLen;
+            KFOL.window.strlen = Tools.getStrByteLen;
         }
     },
 

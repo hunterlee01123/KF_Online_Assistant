@@ -9,7 +9,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.6.2
+// @version     5.6.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
