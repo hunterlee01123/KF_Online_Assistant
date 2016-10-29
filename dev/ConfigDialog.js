@@ -217,7 +217,7 @@ var ConfigDialog = {
             return Dialog.close('pd_config');
         }).end().find('.pd_cfg_btns > button:eq(2)').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否重置所有设置？')) {
+            if (confirm('是否重置所有设置？')) {
                 ConfigMethod.clear();
                 if (typeof Extra !== 'undefined' && typeof Extra.clearConfig !== 'undefined') {
                     Extra.clearConfig();
@@ -227,7 +227,7 @@ var ConfigDialog = {
             }
         }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
             e.preventDefault();
-            var type = window.prompt('可清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地缓存', 0);
+            var type = prompt('可清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地缓存', 0);
             if (type === null) return;
             type = parseInt($.trim(type));
             if (!isNaN(type) && type >= 0) {
@@ -287,7 +287,7 @@ var ConfigDialog = {
             ConfigMethod.write();
             Dialog.close('pd_config');
             if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
-                if (window.confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
+                if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
                     location.reload();
                 }
             }
@@ -749,7 +749,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_im_or_ex_setting', '导入或导出设置', html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的设置？')) return;
+            if (!confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_setting').val());
             if (!options) return;
             try {
@@ -835,7 +835,7 @@ var ConfigDialog = {
             Dialog.show('pd_custom_sm_color');
         }).end().find('a:last').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除所有设置？')) {
+            if (confirm('是否清除所有设置？')) {
                 $customSmColorList.empty();
                 Dialog.show('pd_custom_sm_color');
             }
@@ -933,7 +933,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_im_or_ex_sm_color_config', '导入或导出配色方案', html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的设置？')) return;
+            if (!confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_sm_color_config').val());
             if (!options) return;
             try {
@@ -1213,7 +1213,7 @@ var ConfigDialog = {
                 e.preventDefault();
                 var $checked = $followUserList.find('li:has(input[type="checkbox"]:checked)');
                 if ($checked.length === 0) return;
-                if (window.confirm('是否删除所选用户？')) {
+                if (confirm('是否删除所选用户？')) {
                     $checked.remove();
                     Dialog.show('pd_follow_user');
                 }
@@ -1363,7 +1363,7 @@ var ConfigDialog = {
                 e.preventDefault();
                 var $checked = $blockUserList.find('li:has(input[type="checkbox"]:checked)');
                 if ($checked.length === 0) return;
-                if (window.confirm('是否删除所选用户？')) {
+                if (confirm('是否删除所选用户？')) {
                     $checked.remove();
                     Dialog.show('pd_block_user');
                 }
@@ -1582,7 +1582,7 @@ var ConfigDialog = {
             Dialog.show('pd_block_thread');
         }).end().find('a:last').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除所有屏蔽关键字？')) {
+            if (confirm('是否清除所有屏蔽关键字？')) {
                 $blockThreadList.find('tbody > tr:gt(0)').remove();
                 Dialog.show('pd_block_thread');
             }
@@ -1624,7 +1624,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_common_im_or_ex_config', '导入或导出{0}'.replace('{0}', title), html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的设置？')) return;
+            if (!confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_common_config').val());
             if (!options) return;
             try {

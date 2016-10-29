@@ -408,7 +408,7 @@ var Item = {
                             }
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('UseItems');
                             }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                         }
@@ -569,7 +569,7 @@ var Item = {
                             }
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('RestoreItems');
                             }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                         }
@@ -654,7 +654,7 @@ var Item = {
             KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', options.itemIdList.length)
                 , true);
-            window.setTimeout(function () {
+            setTimeout(function () {
                 Item.useItems(options, cycle);
             }, cycle.round === 1 ? 500 : typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
@@ -662,7 +662,7 @@ var Item = {
             KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', options.itemIdList.length)
                 , true);
-            window.setTimeout(function () {
+            setTimeout(function () {
                 Item.restoreItems(options, cycle);
             }, typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
@@ -811,7 +811,7 @@ var Item = {
                             if (settings.isTypeBatch) $(document).dequeue('ConvertItemTypesToEnergy');
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('ConvertItemsToEnergy');
                             }, Const.defAjaxInterval);
                         }
@@ -906,7 +906,7 @@ var Item = {
                             );
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('SellItems');
                             }, Const.defAjaxInterval);
                         }
@@ -952,7 +952,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                if (!window.confirm('共选择了{0}个道具，是否批量使用道具？'.replace('{0}', itemIdList.length))) return;
+                if (!confirm('共选择了{0}个道具，是否批量使用道具？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                     , true);
@@ -983,7 +983,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                var value = window.prompt(
+                var value = prompt(
                     '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
                     , itemIdList.length);
                 if (value === null) return;
@@ -1038,7 +1038,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                if (!window.confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
+                if (!confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在出售道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                     , true);
@@ -1086,7 +1086,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                if (!window.confirm('共选择了{0}个道具，是否转换为能量？'.replace('{0}', itemIdList.length))) return;
+                if (!confirm('共选择了{0}个道具，是否转换为能量？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                     , true);
@@ -1107,7 +1107,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 var totalRequiredEnergyNum = itemIdList.length * Item.getRestoreEnergyNumByItemLevel(itemLevel);
-                if (!window.confirm('共选择了{0}个道具，共需要{1}点恢复能量，是否恢复道具？'
+                if (!confirm('共选择了{0}个道具，共需要{1}点恢复能量，是否恢复道具？'
                         .replace('{0}', itemIdList.length)
                         .replace('{1}', totalRequiredEnergyNum)
                     )
@@ -1214,7 +1214,7 @@ var Item = {
                         });
                     });
                     if (!itemTypeList.length) return;
-                    var num = parseInt(window.prompt('在指定种类道具中你要' + (action === 'useItemTypes' ? '使用' : '转换') + '多少个道具？（0表示不限制）', 0));
+                    var num = parseInt(prompt('在指定种类道具中你要' + (action === 'useItemTypes' ? '使用' : '转换') + '多少个道具？（0表示不限制）', 0));
                     if (isNaN(num) || num < 0) return;
                     KFOL.removePopTips($('.pd_pop_tips'));
 
@@ -1311,7 +1311,7 @@ var Item = {
 
             if ($this.is('.pd_items_batch_use')) {
                 var num = parseInt(
-                    window.prompt('你要使用多少个【Lv.{0}：{1}】道具？（0表示不限制）'
+                    prompt('你要使用多少个【Lv.{0}：{1}】道具？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsableNum ? itemUsableNum : 0)
@@ -1344,7 +1344,7 @@ var Item = {
                 }, 'html');
             }
             else if ($this.is('.pd_items_cycle_use')) {
-                var value = window.prompt(
+                var value = prompt(
                     ('你要循环使用多少个【Lv.{0}：{1}】道具？\n' +
                     '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）')
                         .replace('{0}', itemLevel)
@@ -1403,7 +1403,7 @@ var Item = {
             }
             else if ($this.is('.pd_items_batch_restore')) {
                 var num = parseInt(
-                    window.prompt('你要恢复多少个【Lv.{0}：{1}】道具？（0表示不限制）'
+                    prompt('你要恢复多少个【Lv.{0}：{1}】道具？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
@@ -1437,7 +1437,7 @@ var Item = {
             }
             else if ($this.is('.pd_items_batch_convert')) {
                 var num = parseInt(
-                    window.prompt('你要将多少个【Lv.{0}：{1}】道具转换为能量？（0表示不限制）'
+                    prompt('你要将多少个【Lv.{0}：{1}】道具转换为能量？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
@@ -1868,7 +1868,7 @@ var Item = {
                             }
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('BatchBuyItems');
                             }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                         }
@@ -1977,7 +1977,7 @@ var Item = {
                             );
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('StatBuyItemsPrice');
                             }, Const.defAjaxInterval);
                         }
@@ -2011,7 +2011,7 @@ var Item = {
             if (!itemLevel) return;
             var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
             if (!itemName) return;
-            if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', itemLevel).replace('{1}', itemName))) {
+            if (!confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', itemLevel).replace('{1}', itemName))) {
                 return false;
             }
         }).on('click', 'a.pd_batch_buy_items', function (e) {
@@ -2027,7 +2027,7 @@ var Item = {
             var itemTypeId = parseInt(matches[1]);
             var safeId = matches[2];
             var num = parseInt(
-                $.trim(window.prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
+                $.trim(prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
                         .replace('{0}', itemLevel)
                         .replace('{1}', itemName)
                     , 0))

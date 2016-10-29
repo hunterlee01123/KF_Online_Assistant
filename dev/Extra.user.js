@@ -305,7 +305,7 @@ var Extra = {
                 .insertAfter($('div > a[href="kf_fw_1wkfb.php"]').parent())
                 .click(function (e) {
                     e.preventDefault();
-                    var value = window.prompt('添加想从替换中被排除的用户名单（多个用户名请用英文逗号分隔）：', Extra.Config.kfOnlyYouExcludeUserList.join(','));
+                    var value = prompt('添加想从替换中被排除的用户名单（多个用户名请用英文逗号分隔）：', Extra.Config.kfOnlyYouExcludeUserList.join(','));
                     if (value === null) return;
                     value = $.trim(value);
                     Extra.readConfig();
@@ -652,7 +652,7 @@ var Extra = {
                     $(type ? '.pd_draggable_move_selected' : '.pd_draggable_move').stop(true);
                 }
                 else if (action === '移动') {
-                    var value = $.trim(window.prompt('移动多少像素？（格式：上下,左右；例：200,-100）', '0,0'));
+                    var value = $.trim(prompt('移动多少像素？（格式：上下,左右；例：200,-100）', '0,0'));
                     if (!value) return;
                     if (!/^-?\d+,-?\d+$/.test(value)) {
                         alert('格式错误');

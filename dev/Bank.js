@@ -27,7 +27,7 @@ var Bank = {
                         '活期存款：{0}KFB'.replace('{0}', currentDeposit + money)
                         )
                     );
-                    window.setTimeout(function () {
+                    setTimeout(function () {
                         $(document).dequeue('Bank');
                     }, 5000);
                 }
@@ -169,7 +169,7 @@ var Bank = {
                             );
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('Bank');
                             }, 5000);
                         }
@@ -276,7 +276,7 @@ var Bank = {
                     totalMoney += users[i][1];
                 }
                 totalMoney = Math.floor(totalMoney * (1 + fee));
-                if (!window.confirm('共计{0}名用户，总额{1}KFB，是否转账？'
+                if (!confirm('共计{0}名用户，总额{1}KFB，是否转账？'
                         .replace('{0}', users.length)
                         .replace('{1}', totalMoney)
                     )
@@ -328,7 +328,7 @@ var Bank = {
                 });
                 if (userList.length === 0) return;
 
-                var range = window.prompt('设定随机金额的范围（注：最低转账金额为20KFB）', '20-100');
+                var range = prompt('设定随机金额的范围（注：最低转账金额为20KFB）', '20-100');
                 if (range === null) return;
                 range = $.trim(range);
                 if (!/^\d+-\d+$/.test(range)) {
@@ -415,7 +415,7 @@ var Bank = {
             var fixedDeposit = parseInt(matches[1]);
             var money = parseInt($.trim($('input[name="to_money"]').val()));
             if (!isNaN(money) && fixedDeposit > 0 && money > currentDeposit) {
-                if (!window.confirm('你的活期存款不足，转账金额将从定期存款里扣除，是否继续？')) {
+                if (!confirm('你的活期存款不足，转账金额将从定期存款里扣除，是否继续？')) {
                     $(this).find('input[type="submit"]').prop('disabled', false);
                     return false;
                 }
@@ -435,7 +435,7 @@ var Bank = {
             var interest = parseInt(matches[1]);
             if (interest > 0) {
                 Tools.setCookie(Const.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(7));
-                if (window.confirm('您的定期存款已到期，共产生利息{0}KFB，是否前往银行取款？'.replace('{0}', interest))) {
+                if (confirm('您的定期存款已到期，共产生利息{0}KFB，是否前往银行取款？'.replace('{0}', interest))) {
                     location.href = 'hack.php?H_name=bank';
                 }
             }

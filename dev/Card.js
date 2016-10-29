@@ -69,7 +69,7 @@ var Card = {
                                 });
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('ConvertCardsToVipTime');
                             }, Const.defAjaxInterval);
                         }
@@ -126,7 +126,7 @@ var Card = {
                             cardList.push(parseInt($(this).val()));
                         });
                         if (cardList.length === 0) return;
-                        if (!window.confirm('共选择了{0}张卡片，是否将卡片批量转换为VIP时间？'.replace('{0}', cardList.length))) return;
+                        if (!confirm('共选择了{0}张卡片，是否将卡片批量转换为VIP时间？'.replace('{0}', cardList.length))) return;
                         KFOL.showWaitMsg('<strong>正在批量转换中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                             .replace('{0}', cardList.length)
                             , true);

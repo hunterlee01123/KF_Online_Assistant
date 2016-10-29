@@ -213,7 +213,7 @@ var Log = {
             return Dialog.close('pd_log');
         }).next('button').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除所有日志？')) {
+            if (confirm('是否清除所有日志？')) {
                 Log.clear();
                 alert('日志已清除');
                 location.reload();
@@ -645,7 +645,7 @@ var Log = {
             e.preventDefault();
             var action = $(this).data('action');
             if (action === 'merge' || action === 'overwrite') {
-                if (!window.confirm('是否将文本框中的日志{0}到本地日志？'.replace('{0}', action === 'overwrite' ? '覆盖' : '合并'))) return;
+                if (!confirm('是否将文本框中的日志{0}到本地日志？'.replace('{0}', action === 'overwrite' ? '覆盖' : '合并'))) return;
                 var log = $.trim($('#pd_log_setting').val());
                 if (!log) return;
                 try {

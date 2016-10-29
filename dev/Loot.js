@@ -278,7 +278,7 @@ var Loot = {
                 },
                 error: function (jqXHR, textStatus) {
                     if (textStatus === 'timeout') {
-                        window.setTimeout(checkDeadlyAttackNum, 2000);
+                        setTimeout(checkDeadlyAttackNum, 2000);
                     }
                 },
                 dataType: 'html'
@@ -579,7 +579,7 @@ var Loot = {
                                         Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
                                 },
                                 complete: function () {
-                                    window.setTimeout(function () {
+                                    setTimeout(function () {
                                         $(document).dequeue('BatchAttack');
                                     }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
                                 },
@@ -587,7 +587,7 @@ var Loot = {
                             });
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('BatchAttack');
                             }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
                         }
@@ -685,7 +685,7 @@ var Loot = {
                 var attackList = {};
                 var totalAttackNum = getAttackNum(attackList);
                 if (!totalAttackNum) return;
-                if (!window.confirm('准备进行{0}次批量攻击，是否开始攻击？'.replace('{0}', totalAttackNum))) return;
+                if (!confirm('准备进行{0}次批量攻击，是否开始攻击？'.replace('{0}', totalAttackNum))) return;
                 KFOL.showWaitMsg(
                     ('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>' +
                     '<a target="_blank" href="/">浏览其它页面</a><a class="pd_stop_action pd_highlight" href="#">停止操作</a>')
@@ -1643,7 +1643,7 @@ var Loot = {
                         }
                     }
                     else {
-                        window.setTimeout(function () {
+                        setTimeout(function () {
                             $(document).dequeue('GetItemList');
                         }, Const.defAjaxInterval);
                     }
@@ -1724,7 +1724,7 @@ var Loot = {
                                 KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
                             }
                             else {
-                                window.setTimeout(function () {
+                                setTimeout(function () {
                                     $(document).dequeue('UseItemList');
                                 }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                             }
