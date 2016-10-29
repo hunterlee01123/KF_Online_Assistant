@@ -502,5 +502,31 @@ var Tools = {
      */
     getSelText: function (textArea) {
         return textArea.value.substring(textArea.selectionStart, textArea.selectionEnd);
+    },
+
+    /**
+     * 复制文本
+     * @param {jQuery} $target 要复制文本的目标元素
+     * @param {string} [msg] 复制成功的消息
+     * @param {jQuery} [$excludeElem] 要排除复制的元素
+     * @returns {boolean} 是否复制成功
+     */
+    copyText: function ($target, msg, $excludeElem) {
+        if (!('execCommand' in document) || !$target.length) return false;
+        var copyText = $target.data('copy-text');
+        if (copyText) {
+            $target = $('<span class="text-hide">' + copyText + '</span>').insertAfter($target);
+        }
+        if ($excludeElem) $excludeElem.prop('hidden', true);
+        var s = window.getSelection();
+        s.selectAllChildren($target.get(0));
+        var result = document.execCommand('copy');
+        s.removeAllRanges();
+        if (copyText) $target.remove();
+        if ($excludeElem) $excludeElem.removeProp('hidden');
+        if (result) {
+            alert(msg ? msg : '已复制');
+        }
+        return result;
     }
 };

@@ -776,14 +776,14 @@ var KFOL = {
                                 .replace('{0}', errorText)
                                 .replace('{1}', interval)
                             , -1);
-                        window.setTimeout(handleError, interval * 60 * 1000);
+                        setTimeout(handleError, interval * 60 * 1000);
                         showRefreshModeTips(interval * 60, true);
                     }
                     else {
                         if (errorNum > 6) {
                             errorNum = 0;
                             interval = 15;
-                            window.setTimeout(checkRefreshInterval, interval * 60 * 1000);
+                            setTimeout(checkRefreshInterval, interval * 60 * 1000);
                             showRefreshModeTips(interval * 60, true);
                         }
                         else {
@@ -832,11 +832,11 @@ var KFOL = {
                 return;
             }
             else if (interval === 0) interval = Const.actionFinishRetryInterval;
-            window.setTimeout(checkRefreshInterval, interval * 1000);
+            setTimeout(checkRefreshInterval, interval * 1000);
             showRefreshModeTips(interval, true);
         };
 
-        window.setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
+        setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
         showRefreshModeTips(interval < 60 ? 60 : interval);
     },
 
@@ -957,10 +957,15 @@ var KFOL = {
                 .replace('{0}', Tools.getHostNameUrl())
                 .replace('{1}', Tools.getUrlParam('tid'))
                 .replace('{2}', linkName);
-            $this.html('<a class="pd_goto_link" href="{0}">{1}</a>'.replace('{0}', url).replace('{1}', floorText));
+            $this.html('<a class="pd_goto_link" href="{0}" title="复制楼层链接">{1}</a>'.replace('{0}', url).replace('{1}', floorText));
             $this.find('a').click(function (e) {
                 e.preventDefault();
-                window.prompt('本楼的跳转链接（请按Ctrl+C复制）：', url);
+                var $this = $(this);
+                var url = $this.attr('href');
+                $this.data('copy-text', url);
+                if (!Tools.copyText($this, '楼层链接已复制')) {
+                    prompt('本楼的跳转链接（请按Ctrl+C复制）：', url);
+                }
             });
         });
     },
@@ -1209,7 +1214,7 @@ var KFOL = {
 
             var tid = Tools.getUrlParam('tid');
             if (!tid) return;
-            var value = $.trim(window.prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
+            var value = $.trim(prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
             if (value === '') return;
             if (!/^\d+(-\d+)?$/.test(value)) {
                 alert('统计楼层格式不正确');
@@ -1281,7 +1286,7 @@ var KFOL = {
                                 KFOL.showStatReplyersDialog(replyerList);
                             }
                             else {
-                                window.setTimeout(function () {
+                                setTimeout(function () {
                                     $(document).dequeue('StatReplyers');
                                 }, Const.defAjaxInterval);
                             }
@@ -1428,7 +1433,7 @@ var KFOL = {
                             $('#textarea').val(content).focus();
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('MultiQuote');
                             }, 100);
                         }
@@ -1546,7 +1551,7 @@ var KFOL = {
                 var sell = $this.data('sell');
                 var url = $this.data('url');
                 if (!sell || !url) return;
-                if (sell < Const.minBuyThreadWarningSell || window.confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) {
+                if (sell < Const.minBuyThreadWarningSell || confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) {
                     location.href = url;
                 }
             });
@@ -1590,7 +1595,7 @@ var KFOL = {
                     alert('请选择要购买的帖子');
                     return;
                 }
-                if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
+                if (confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
                         .replace('{0}', threadList.length)
                         .replace('{1}', totalSell.toLocaleString())
                         .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
@@ -1676,7 +1681,7 @@ var KFOL = {
                             Func.run('KFOL.buyThreads_after_', threadList);
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('BuyThreads');
                             }, Const.defAjaxInterval);
                         }
@@ -1731,7 +1736,7 @@ var KFOL = {
             if ($this.is('a:contains("备注")')) {
                 var memo = $this.data('memo');
                 if (!memo) memo = '';
-                var value = window.prompt('为此用户添加备注（要删除备注请留空）：', memo);
+                var value = prompt('为此用户添加备注（要删除备注请留空）：', memo);
                 if (value === null) return;
                 if (!Config.userMemoEnabled) Config.userMemoEnabled = true;
                 value = $.trim(value);
@@ -1770,7 +1775,7 @@ var KFOL = {
                     if (Tools.inFollowOrBlockUserList(userName, userList) === -1) {
                         if (str === '屏蔽') {
                             var type = Config.blockUserDefaultType;
-                            type = window.prompt('请填写屏蔽类型，0：屏蔽主题和回帖；1：仅屏蔽主题；2：仅屏蔽回帖', type);
+                            type = prompt('请填写屏蔽类型，0：屏蔽主题和回帖；1：仅屏蔽主题；2：仅屏蔽回帖', type);
                             if (type === null) return;
                             type = parseInt($.trim(type));
                             if (isNaN(type) || type < 0 || type > 2) type = Config.blockUserDefaultType;
@@ -2241,7 +2246,7 @@ var KFOL = {
         $('<input value="自定义" type="button" style="margin-right:3px">').insertBefore('input[type="button"][value="全选"]')
             .click(function (e) {
                 e.preventDefault();
-                var title = $.trim(window.prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
+                var title = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
                 if (title !== '') {
                     $('.thread1 > tbody > tr > td:nth-child(2) > a').each(function () {
                         var $this = $(this);
@@ -2367,7 +2372,10 @@ var KFOL = {
         if ($('.pd_copy_code').length === 0) return;
         $('#alldiv').on('click', 'a.pd_copy_code', function (e) {
             e.preventDefault();
-            var $fieldset = $(this).closest('fieldset');
+            var $this = $(this);
+            var $fieldset = $this.closest('fieldset');
+            if (Tools.copyText($fieldset, '代码已复制', $this.parent())) return;
+
             var content = $fieldset.data('content');
             if (content) {
                 $fieldset.html('<legend><a class="pd_copy_code" href="#">复制代码</a></legend>' + content).removeData('content');
@@ -2850,7 +2858,7 @@ var KFOL = {
             if (!keyWord || Tools.getStrByteLen(keyWord) > 2) return;
             $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
             $method.val('OR');
-            window.setTimeout(function () {
+            setTimeout(function () {
                 $keyWord.val(keyWord);
                 $method.val('AND');
             }, 200);
@@ -2963,13 +2971,13 @@ var KFOL = {
             var text = '';
             switch (type) {
                 case 'hide':
-                    text = window.prompt('请输入神秘等级：', 5);
+                    text = prompt('请输入神秘等级：', 5);
                     break;
                 case 'audio':
-                    text = Tools.convertToAudioExternalLinkUrl(window.prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://'));
+                    text = Tools.convertToAudioExternalLinkUrl(prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://'));
                     break;
                 case 'video':
-                    text = Tools.convertToVideoExternalLinkUrl(window.prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://'));
+                    text = Tools.convertToVideoExternalLinkUrl(prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://'));
                     break;
             }
             if (text === null) return;
@@ -3053,7 +3061,7 @@ var KFOL = {
      * 修复论坛错误代码
      */
     repairBbsErrorCode: function () {
-        KFOL.window.is_ie = typeof KFOL.window.is_ie !== 'undefined' ? KFOL.window.is_ie : false;
+        KFOL.window.is_ie = false;
 
         if (location.pathname === '/read.php') {
             KFOL.window.strlen = Tools.getStrByteLen;
@@ -3137,7 +3145,7 @@ var KFOL = {
             }
             if (location.pathname === '/read.php') {
                 if ($.trim($('textarea[name="atc_content"]').val())) {
-                    if (!window.confirm('发帖框尚有文字，是否继续翻页？')) return;
+                    if (!confirm('发帖框尚有文字，是否继续翻页？')) return;
                 }
             }
             location.href = url;
@@ -3215,7 +3223,7 @@ var KFOL = {
             var title = $('.adp1 a[href^="read.php?tid="]').text();
             var result = KFOL.checkRatingSize(title, ratingSize);
             if (result.resultType === 1) {
-                return window.confirm(
+                return confirm(
                     '标题文件大小({0}M)与认定文件大小({1}M)不一致，是否继续？'
                         .replace('{0}', result.titleSize.toLocaleString())
                         .replace('{1}', result.ratingSize.toLocaleString())
