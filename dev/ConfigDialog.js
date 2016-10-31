@@ -30,7 +30,7 @@ var ConfigDialog = {
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox" />自动KFB捐款</label></legend>' +
             '      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
-            '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
             '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
             '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>' +
             '    </fieldset>' +
@@ -142,15 +142,17 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox" />开启多重引用功能 ' +
             '<span class="pd_cfg_tips" title="在帖子页面开启多重回复和多重引用功能">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label><br />' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox" />显示自助评分链接 ' +
+            '<span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span></label><br>' +
             '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" data-disabled="#pd_cfg_user_memo_dialog" />显示用户备注 ' +
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
             '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox" />显示自助评分链接 ' +
-            '<span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
+            '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_buy_thread_via_ajax_enabled" type="checkbox" />使用Ajax购买帖子 ' +
+            '<span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span></label><br />' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -353,6 +355,7 @@ var ConfigDialog = {
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
         $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
         $('#pd_cfg_show_self_rating_link_enabled').prop('checked', Config.showSelfRatingLinkEnabled);
+        $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked', Config.buyThreadViaAjaxEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
@@ -439,6 +442,7 @@ var ConfigDialog = {
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
         options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
         options.showSelfRatingLinkEnabled = $('#pd_cfg_show_self_rating_link_enabled').prop('checked');
+        options.buyThreadViaAjaxEnabled = $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');

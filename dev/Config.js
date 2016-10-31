@@ -10,7 +10,7 @@ var Config = {
 
     // 是否自动KFB捐款，true：开启；false：关闭
     autoDonationEnabled: false,
-    // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%
+    // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     donationAfterTime: '00:05:00',
@@ -99,6 +99,8 @@ var Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用），true：开启；false：关闭
     showSelfRatingLinkEnabled: false,
+    // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
+    buyThreadViaAjaxEnabled: true,
 
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,

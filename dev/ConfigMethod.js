@@ -339,6 +339,10 @@ var ConfigMethod = {
             settings.showSelfRatingLinkEnabled = typeof options.showSelfRatingLinkEnabled === 'boolean' ?
                 options.showSelfRatingLinkEnabled : defConfig.showSelfRatingLinkEnabled;
         }
+        if (typeof options.buyThreadViaAjaxEnabled !== 'undefined') {
+            settings.buyThreadViaAjaxEnabled = typeof options.buyThreadViaAjaxEnabled === 'boolean' ?
+                options.buyThreadViaAjaxEnabled : defConfig.buyThreadViaAjaxEnabled;
+        }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
             var defShowMsgDuration = parseInt(options.defShowMsgDuration);

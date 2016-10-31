@@ -1535,9 +1535,9 @@ var KFOL = {
     },
 
     /**
-     * 添加购买帖子提醒
+     * 处理购买帖子按钮
      */
-    addBuyThreadWarning: function () {
+    handleBuyThreadBtn: function () {
         $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
             var $this = $(this);
             var matches = /此帖售价\s*(\d+)\s*KFB/i.exec($this.closest('legend').contents().eq(0).text());
@@ -1551,9 +1551,24 @@ var KFOL = {
                 var sell = $this.data('sell');
                 var url = $this.data('url');
                 if (!sell || !url) return;
-                if (sell < Const.minBuyThreadWarningSell || confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) {
-                    location.href = url;
+                if (sell >= Const.minBuyThreadWarningSell && !confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) return;
+                if (Config.buyThreadViaAjaxEnabled) {
+                    var $wait = KFOL.showWaitMsg('正在购买帖子&hellip;', true);
+                    $.get(url, function (html) {
+                        KFOL.removePopTips($wait);
+                        if (/操作完成/.test(html)) {
+                            location.reload();
+                        }
+                        else if (/您已经购买此帖/.test(html)) {
+                            alert('你已经购买过此帖');
+                            location.reload();
+                        }
+                        else {
+                            alert('帖子购买失败');
+                        }
+                    });
                 }
+                else location.href = url;
             });
         });
     },
@@ -3338,7 +3353,7 @@ var KFOL = {
             KFOL.addFloorGotoLink();
             KFOL.addCopyBuyersListLink();
             KFOL.addStatReplyersLink();
-            KFOL.addBuyThreadWarning();
+            KFOL.handleBuyThreadBtn();
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
             if (Config.showSelfRatingLinkEnabled) KFOL.addSelfRatingLink();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
