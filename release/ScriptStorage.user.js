@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.7.0
+// @version     5.7.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -22,7 +22,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.7.0';
+var version = '5.7.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -6524,6 +6524,67 @@ var Bank = {
     }
 };
 
+/**
+ * 争夺类
+ */
+var Loot = {
+    /**
+     * 增强争夺首页
+     */
+    enhanceLootIndexPage: function () {
+        var $area = $('.kf_fw_ig1');
+        var $property = $area.find('tbody > tr:nth-child(2) > td:first-child');
+        var maxPoint = 0;
+        var matches = /可分配属性点：(\d+)/.exec($property.html());
+        if (matches) maxPoint = parseInt(matches[1]);
+
+        $area.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).css('width', '60px');
+        $area.find('input[readonly]').attr('min', 0).prop('disabled', true);
+
+        /**
+         * 获取已分配的属性点
+         * @returns {number}
+         */
+        var getUsedPoint = function () {
+            var usedPoint = 0;
+            $area.find('[type="number"]').each(function () {
+                var point = parseInt($(this).val());
+                if (point && point > 0) usedPoint += point;
+            });
+            return usedPoint;
+        };
+
+        $property.next('td').prepend(
+            '<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point">{0}</span></span><br>'.replace('{0}', maxPoint - getUsedPoint())
+        );
+
+        $area.on('change', '[type="number"]', function () {
+            $('#pd_surplus_point').text(maxPoint - getUsedPoint());
+        });
+
+        $area.closest('form').submit(function () {
+            var surplusPoint = maxPoint - getUsedPoint();
+            if (surplusPoint < 0) {
+                alert('剩余属性点为负，请重新填写');
+                return false;
+            }
+            else if (surplusPoint > 0) {
+                return confirm('你的可分配属性点尚未用完，是否提交？');
+            }
+        });
+    },
+
+    /**
+     * 在争夺排行页面添加用户链接
+     */
+    addUserLinkInPkListPage: function () {
+        $('.kf_fw_ig1 > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
+            var $this = $(this);
+            $this.html('<a href="profile.php?action=show&username={0}" target="_blank">{0}</a>'.replace(/\{0}/g, $this.text().trim()));
+        });
+    }
+};
+
 
 /**
  * KF Online主类
@@ -9792,6 +9853,15 @@ var KFOL = {
         else if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
             Item.addSampleItemTips();
         }
+        else if (location.pathname === '/kf_fw_ig_shop.php') {
+            Item.addBatchBuyItemsLink();
+        }
+        else if (location.pathname === '/kf_fw_ig_index.php') {
+            Loot.enhanceLootIndexPage();
+        }
+        else if (location.pathname === '/kf_fw_ig_pklist.php') {
+            Loot.addUserLinkInPkListPage();
+        }
         else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
             Bank.addBatchTransferButton();
             Bank.handleInBankPage();
@@ -9820,9 +9890,6 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_growup.php') {
             KFOL.addAutoChangeIdColorButton();
-        }
-        else if (location.pathname === '/kf_fw_ig_shop.php') {
-            Item.addBatchBuyItemsLink();
         }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();

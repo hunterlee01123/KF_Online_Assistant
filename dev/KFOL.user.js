@@ -24,7 +24,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @pd-require-end
-// @version     5.7.0
+// @version     5.7.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -32,7 +32,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.7.0';
+var version = '5.7.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -3312,6 +3312,15 @@ var KFOL = {
         else if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
             Item.addSampleItemTips();
         }
+        else if (location.pathname === '/kf_fw_ig_shop.php') {
+            Item.addBatchBuyItemsLink();
+        }
+        else if (location.pathname === '/kf_fw_ig_index.php') {
+            Loot.enhanceLootIndexPage();
+        }
+        else if (location.pathname === '/kf_fw_ig_pklist.php') {
+            Loot.addUserLinkInPkListPage();
+        }
         else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
             Bank.addBatchTransferButton();
             Bank.handleInBankPage();
@@ -3340,9 +3349,6 @@ var KFOL = {
         }
         else if (location.pathname === '/kf_growup.php') {
             KFOL.addAutoChangeIdColorButton();
-        }
-        else if (location.pathname === '/kf_fw_ig_shop.php') {
-            Item.addBatchBuyItemsLink();
         }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();
