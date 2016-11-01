@@ -15,36 +15,6 @@ var Config = {
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     donationAfterTime: '00:05:00',
 
-    // 是否自动争夺，可自动领取争夺奖励，并可自动进行批量攻击（可选），true：开启；false：关闭
-    autoLootEnabled: false,
-    // 在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：['07:00-08:15','17:00-18:15']，留空表示不启用
-    noAutoLootWhen: [],
-    // 是否在领取争夺奖励时，当本回合剩余攻击次数不低于{@link Config.deferLootTimeWhenRemainAttackNum}所设定的次数的情况下，抽取神秘盒子以延长争夺时间，true：开启；false：关闭
-    deferLootTimeWhenRemainAttackNumEnabled: false,
-    // 抽取神秘盒子以延长争夺时间的剩余攻击次数的上限
-    deferLootTimeWhenRemainAttackNum: 15,
-    // 是否自定义怪物名称，true：开启；false：关闭
-    customMonsterNameEnabled: false,
-    // 自定义怪物名称列表，格式：{怪物ID：'自定义名称'}，例：{1:'萝莉',5:'信仰风'}
-    customMonsterNameList: {},
-    // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
-    autoAttackEnabled: false,
-    // 在距本回合结束前指定时间内才自动完成（剩余）批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
-    attackAfterTime: 0,
-    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置{@link Config.attackAfterTime}），true：开启；false：关闭
-    attemptAttackEnabled: false,
-    // 是否在自动攻击时限之前的指定时间（{@link Const.attemptAttackAfterTime}）内才进行试探攻击（适合有时间挂机的用户），true：开启；false：关闭
-    // 例：设置{@link Config.attackAfterTime}为90分钟，设置{@link Const.attemptAttackAfterTime}为40分钟，则在距本回合结束前130分钟内才进行试探攻击
-    attemptAttackAfterTimeEnabled: false,
-    // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
-    batchAttackList: {},
-    // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
-    deadlyAttackId: 0,
-    // 是否自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，true：开启；false：关闭
-    autoUseItemEnabled: false,
-    // 自动使用批量攻击后刚掉落的道具的名称，例：['被遗弃的告白信','学校天台的钥匙','LOLI的钱包']
-    autoUseItemNames: [],
-
     // 是否自动抽取神秘盒子，true：开启；false：关闭
     autoDrawSmbox2Enabled: false,
     // 偏好的神秘盒子数字，例：[52,1,28,400]（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空

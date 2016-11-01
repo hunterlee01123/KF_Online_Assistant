@@ -35,54 +35,6 @@ var ConfigDialog = {
             '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
-            '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
-            '<span class="pd_cfg_tips" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</span></label></legend>' +
-            '      <label>在<input placeholder="例：07:00-08:15,17:00-18:15" id="pd_cfg_no_auto_loot_when" maxlength="23" style="width:150px" type="text" />内不自动领取争夺奖励 ' +
-            '<span class="pd_cfg_tips" title="在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：07:00-08:15,17:00-18:15，留空表示不启用">[?]</span>' +
-            '</label><br />' +
-            '      <label><input id="pd_cfg_defer_loot_time_when_remain_attack_num_enabled" type="checkbox" data-disabled="#pd_cfg_defer_loot_time_when_remain_attack_num" />' +
-            '在剩余攻击次数不低于</label><label><input id="pd_cfg_defer_loot_time_when_remain_attack_num" maxlength="2" style="width:15px" type="text" />次时，抽盒子延长争夺时间 ' +
-            '<span class="pd_cfg_tips" title="在领取争夺奖励时，当本回合剩余攻击次数不低于指定次数的情况下，抽取神秘盒子以延长争夺时间">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" data-disabled="#pd_cfg_custom_monster_name_dialog" />自定义怪物名称 ' +
-            '<span class="pd_cfg_tips" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</span></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_monster_name_dialog" href="#">详细设置&raquo;</a>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
-            '<span class="pd_cfg_tips" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</span></label></legend>' +
-            '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
-            '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
-                .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
-            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_attempt_attack_after_time_enabled" />在生命值不超过{0}时进行试探攻击 '
-                .replace('{0}', Const.maxAttemptAttackLifeNum) +
-            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置攻击时限，适用于较低等级玩家，详见【常见问题10】">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_attempt_attack_after_time_enabled" type="checkbox" />在攻击时限之前的{0}分钟内才进行试探攻击 '
-                .replace('{0}', Const.attemptAttackAfterTime) +
-            '<span class="pd_cfg_tips" title="在自动攻击时限之前的指定时间内才进行试探攻击，可有效减少被怪物攻击次数（适合有时间挂机的较低等级玩家），' +
-            '例：攻击时限设为80分钟，则在距本回合结束前{0}分钟内才进行试探攻击">[?]</span></label>'.replace('{0}', 80 + Const.attemptAttackAfterTime) +
-            '        <table id="pd_cfg_batch_attack_list">' +
-            '          <tbody>' +
-            '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
-            '</label></td><td style="width:62px">Lv.2：笨蛋</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="2" />次</label></td></tr>' +
-            '            <tr><td>Lv.3：大果冻史莱姆</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="3" />次</label></td>' +
-            '<td>Lv.4：肉山</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="4" />次</label></td></tr>' +
-            '            <tr><td>Lv.5：大魔王</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="5" />次</label></td></tr>' +
-            '          </tbody>' +
-            '        </table>' +
-            '        <label>拥有致命一击时的攻击目标<select id="pd_cfg_deadly_attack_id" style="width:130px"><option value="0">保持默认</option>' +
-            '<option value="1">Lv.1：小史莱姆</option><option value="2">Lv.2：笨蛋</option><option value="3">Lv.3：大果冻史莱姆</option><option value="4">Lv.4：肉山</option>' +
-            '<option value="5">Lv.5：大魔王</option></select><span class="pd_cfg_tips" title="当拥有致命一击时的自动攻击目标">[?]</span></label>' +
-            '      </fieldset>' +
-            '      <label><input id="pd_cfg_auto_use_item_enabled" type="checkbox" data-disabled="#pd_cfg_auto_use_item_names" />自动使用刚掉落的道具 ' +
-            '<span class="pd_cfg_tips" title="自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，按Shift或Ctrl键可多选">[?]</span></label><br />' +
-            '      <label><select id="pd_cfg_auto_use_item_names" multiple="multiple" size="4">' +
-            '<option value="被遗弃的告白信">Lv.1：被遗弃的告白信</option><option value="学校天台的钥匙">Lv.1：学校天台的钥匙</option>' +
-            '<option value="TMA最新作压缩包">Lv.1：TMA最新作压缩包</option><option value="LOLI的钱包">Lv.2：LOLI的钱包</option>' +
-            '<option value="棒棒糖">Lv.2：棒棒糖</option><option value="蕾米莉亚同人漫画">Lv.3：蕾米莉亚同人漫画</option>' +
-            '<option value="十六夜同人漫画">Lv.3：十六夜同人漫画</option><option value="档案室钥匙">Lv.4：档案室钥匙</option>' +
-            '<option value="傲娇LOLI娇蛮音CD">Lv.4：傲娇LOLI娇蛮音CD</option><option value="整形优惠卷">Lv.5：整形优惠卷</option>' +
-            '<option value="消逝之药">Lv.5：消逝之药</option></select></label>' +
-            '    </fieldset>' +
-            '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
             '<span class="pd_cfg_tips" title="注意：抽取神秘盒子将延长争夺奖励的领取时间">[?]</span></label></legend>' +
             '      <label>偏好的神秘盒子数字<input placeholder="例: 52,1,28,400" id="pd_cfg_favor_smbox_numbers" style="width:180px" type="text" />' +
@@ -105,18 +57,6 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_show_vip_surplus_time_enabled" type="checkbox" />显示VIP剩余时间 ' +
             '<span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span></label>' +
-            '    </fieldset>' +
-            '  </div>' +
-
-            '  <div class="pd_cfg_panel">' +
-            '    <fieldset>' +
-            '      <legend>版块页面相关</legend>' +
-            '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
-            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span></label>' +
-            '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
-            '<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
-            '<span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>帖子页面相关</legend>' +
@@ -153,6 +93,18 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_buy_thread_via_ajax_enabled" type="checkbox" />使用Ajax购买帖子 ' +
             '<span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span></label><br />' +
+            '    </fieldset>' +
+            '  </div>' +
+
+            '  <div class="pd_cfg_panel">' +
+            '    <fieldset>' +
+            '      <legend>版块页面相关</legend>' +
+            '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
+            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span></label>' +
+            '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
+            '<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
+            '<span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -311,22 +263,6 @@ var ConfigDialog = {
         $('#pd_cfg_donation_kfb').val(Config.donationKfb);
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
 
-        $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
-        $('#pd_cfg_no_auto_loot_when').val(Config.noAutoLootWhen.join(','));
-        $('#pd_cfg_defer_loot_time_when_remain_attack_num_enabled').prop('checked', Config.deferLootTimeWhenRemainAttackNumEnabled);
-        $('#pd_cfg_defer_loot_time_when_remain_attack_num').val(Config.deferLootTimeWhenRemainAttackNum);
-        $('#pd_cfg_custom_monster_name_enabled').prop('checked', Config.customMonsterNameEnabled);
-        $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
-        if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
-        $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
-        $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked', Config.attemptAttackAfterTimeEnabled);
-        $.each(Config.batchAttackList, function (id, num) {
-            $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
-        });
-        $('#pd_cfg_deadly_attack_id').val(Config.deadlyAttackId);
-        $('#pd_cfg_auto_use_item_enabled').prop('checked', Config.autoUseItemEnabled);
-        $('#pd_cfg_auto_use_item_names').val(Config.autoUseItemNames);
-
         $('#pd_cfg_auto_draw_smbox_enabled').prop('checked', Config.autoDrawSmbox2Enabled);
         $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
 
@@ -390,30 +326,6 @@ var ConfigDialog = {
         options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
         options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
-
-        options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
-        options.noAutoLootWhen = $.trim($('#pd_cfg_no_auto_loot_when').val()).split(',');
-        options.deferLootTimeWhenRemainAttackNumEnabled = $('#pd_cfg_defer_loot_time_when_remain_attack_num_enabled').prop('checked');
-        options.deferLootTimeWhenRemainAttackNum = parseInt($.trim($('#pd_cfg_defer_loot_time_when_remain_attack_num').val()));
-        options.customMonsterNameEnabled = $('#pd_cfg_custom_monster_name_enabled').prop('checked');
-        options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
-        options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
-        options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
-        options.attemptAttackAfterTimeEnabled = $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked');
-        options.batchAttackList = {};
-        $('#pd_cfg_batch_attack_list input').each(function () {
-            var $this = $(this);
-            var attackNum = $.trim($this.val());
-            if (!attackNum) return;
-            attackNum = parseInt(attackNum);
-            if (attackNum <= 0) return;
-            var id = parseInt($this.data('id'));
-            if (!id) return;
-            options.batchAttackList[id] = attackNum;
-        });
-        options.deadlyAttackId = parseInt($('#pd_cfg_deadly_attack_id').val());
-        options.autoUseItemEnabled = $('#pd_cfg_auto_use_item_enabled').prop('checked');
-        options.autoUseItemNames = $('#pd_cfg_auto_use_item_names').val();
 
         options.autoDrawSmbox2Enabled = $('#pd_cfg_auto_draw_smbox_enabled').prop('checked');
         options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
@@ -507,83 +419,6 @@ var ConfigDialog = {
             alert('在指定时间之后捐款格式不正确');
             $txtDonationAfterTime.select();
             $txtDonationAfterTime.focus();
-            return false;
-        }
-
-        var $txtNoAutoLootWhen = $('#pd_cfg_no_auto_loot_when');
-        var noAutoLootWhen = $.trim($txtNoAutoLootWhen.val());
-        if (noAutoLootWhen) {
-            if (!/^((2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9],?){1,2}$/.test(noAutoLootWhen)) {
-                alert('在指定时间段内不自动领取争夺奖励格式不正确');
-                $txtNoAutoLootWhen.select();
-                $txtNoAutoLootWhen.focus();
-                return false;
-            }
-        }
-
-        var $txtDeferLootTimeWhenRemainAttackNum = $('#pd_cfg_defer_loot_time_when_remain_attack_num');
-        var deferLootTimeWhenRemainAttackNum = parseInt($.trim($txtDeferLootTimeWhenRemainAttackNum.val()));
-        if (isNaN(deferLootTimeWhenRemainAttackNum)) {
-            alert('剩余攻击次数上限格式不正确');
-            $txtDeferLootTimeWhenRemainAttackNum.select();
-            $txtDeferLootTimeWhenRemainAttackNum.focus();
-            return false;
-        }
-        else if (deferLootTimeWhenRemainAttackNum < 1 || deferLootTimeWhenRemainAttackNum > Const.maxAttackNum) {
-            alert('剩余攻击次数上限范围在1-{0}之间'.replace('{0}', Const.maxAttackNum));
-            $txtDeferLootTimeWhenRemainAttackNum.select();
-            $txtDeferLootTimeWhenRemainAttackNum.focus();
-            return false;
-        }
-
-        var $txtAttackAfterTime = $('#pd_cfg_attack_after_time');
-        var attackAfterTime = $.trim($txtAttackAfterTime.val());
-        if (attackAfterTime) {
-            attackAfterTime = parseInt(attackAfterTime);
-            if (isNaN(attackAfterTime) || attackAfterTime > Const.defLootInterval || attackAfterTime < Const.minAttackAfterTime) {
-                alert('在指定时间之内才完成攻击的取值范围为：{0}-{1}'.replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime));
-                $txtAttackAfterTime.select();
-                $txtAttackAfterTime.focus();
-                return false;
-            }
-        }
-        else {
-            if ($('#pd_cfg_attempt_attack_enabled').prop('checked')) {
-                alert('开启“试探攻击”必须同时设置“在指定时间之内才完成攻击”');
-                $txtAttackAfterTime.select();
-                $txtAttackAfterTime.focus();
-                return false;
-            }
-        }
-
-        var totalAttackNum = 0;
-        var isAttackVerification = true;
-        $('#pd_cfg_batch_attack_list input').each(function () {
-            var $this = $(this);
-            var attackNum = $.trim($this.val());
-            if (!attackNum) return;
-            attackNum = parseInt(attackNum);
-            if (isNaN(attackNum) || attackNum < 0) {
-                isAttackVerification = false;
-                alert('攻击次数格式不正确');
-                $this.select();
-                $this.focus();
-                return false;
-            }
-            totalAttackNum += attackNum;
-        });
-        if (!isAttackVerification) return false;
-        if (totalAttackNum > Const.maxAttackNum) {
-            alert('攻击次数不得超过{0}次'.replace('{0}', Const.maxAttackNum));
-            return false;
-        }
-        if ($('#pd_cfg_auto_attack_enabled').prop('checked') && !totalAttackNum) {
-            alert('请填写自动攻击的目标次数');
-            return false;
-        }
-
-        if ($('#pd_cfg_auto_draw_smbox_enabled').prop('checked') && $('#pd_cfg_auto_loot_enabled').prop('checked')) {
-            alert('请不要将自动争夺与自动抽取神秘盒子一起使用');
             return false;
         }
 

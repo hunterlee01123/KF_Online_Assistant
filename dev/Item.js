@@ -1696,12 +1696,14 @@ var Item = {
      * @param {jQuery} $links 道具名称的链接列表
      */
     showItemUsedInfo: function ($links) {
+        return;
         var tipsList = [
             '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
             '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律'
         ];
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-            var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
+            //var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
+            var itemUsedNumList = undefined;
             $links.next('.pd_used_item_info').remove();
             $links.each(function () {
                 var $this = $(this);

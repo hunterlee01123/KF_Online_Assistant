@@ -9,38 +9,8 @@ var Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
-    // 争夺的默认领取间隔（分钟）
-    defLootInterval: 660,
-    // 争夺初始的预领KFB
-    lootInitialBonus: 100,
-    // 所允许的在距本回合结束前指定时间后才进行自动批量攻击的最小时间（分钟）
-    minAttackAfterTime: 63,
-    // 在实际生命值不超过指定值时才进行试探攻击，-1表示使用低保值
-    maxAttemptAttackLifeNum: 10,
-    // 在自动攻击时限之前的指定时间（分钟）内才进行试探攻击
-    attemptAttackAfterTime: 40,
-    // 每回合攻击的最大次数
-    maxAttackNum: 20,
-    // 致命一击比例
-    deadlyAttackPercent: 1.5,
     // 抽取神秘盒子头奖的奖金（KFB）
     smboxFirstPrizeBonus: 2000,
-    // 在批量攻击中每次攻击的时间间隔（毫秒），可设置为函数来返回值
-    perAttackInterval: function () {
-        return Math.floor(Math.random() * 1000) + 2000;
-    },
-    // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
-    checkAutoAttackingInterval: 4,
-    // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
-    firstCheckLifeInterval: 145,
-    // 检查生命值的默认时间间隔（分钟），可设置为函数来返回值
-    defCheckLifeInterval: function () {
-        return Config.attemptAttackAfterTimeEnabled ? 3 : 20; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
-    },
-    // 在进行试探攻击后检查生命值的时间间隔（分钟），可设置为函数来返回值
-    checkLifeAfterAttemptAttackInterval: function () {
-        return Config.attemptAttackAfterTimeEnabled ? 1 : 2; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
-    },
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
@@ -108,24 +78,10 @@ var Const = {
     smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
-    // 上一次领取争夺奖励时记录的争夺信息的临时日志名称
-    prevLootInfoTmpLogName: 'PrevLootInfo',
     // 上一次自动更换神秘颜色的ID的临时日志名称
     prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
     // 标记已KFB捐款的Cookie名称
     donationCookieName: 'pd_donation',
-    // 标记已领取争夺奖励的Cookie名称
-    getLootAwardCookieName: 'pd_get_loot_award',
-    // 标记自动攻击已准备就绪的Cookie名称
-    autoAttackReadyCookieName: 'pd_auto_attack_ready',
-    // 标记正在进行自动攻击的Cookie名称
-    autoAttackingCookieName: 'pd_auto_attacking',
-    // 标记已检查生命值的Cookie名称
-    checkLifeCookieName: 'pd_check_life',
-    // 标记已完成的试探攻击次数的Cookie名称
-    attackCountCookieName: 'pd_attack_count',
-    // 存储上一次试探攻击日志的Cookie名称
-    prevAttemptAttackLogCookieName: 'pd_prev_attempt_attack_log',
     // 标记已抽取神秘盒子的Cookie名称
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称

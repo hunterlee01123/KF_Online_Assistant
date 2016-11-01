@@ -102,112 +102,11 @@ var ConfigMethod = {
                 settings.donationAfterTime = donationAfterTime;
             else settings.donationAfterTime = defConfig.donationAfterTime;
         }
-        if (typeof options.deferLootTimeWhenRemainAttackNum !== 'undefined') {
-            var attackNum = parseInt(options.deferLootTimeWhenRemainAttackNum);
-            if (!isNaN(attackNum) && attackNum >= 1 && attackNum <= Const.maxAttackNum) settings.deferLootTimeWhenRemainAttackNum = attackNum;
-            else settings.deferLootTimeWhenRemainAttackNum = defConfig.deferLootTimeWhenRemainAttackNum;
-        }
-        if (typeof options.autoLootEnabled !== 'undefined') {
-            settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
-                options.autoLootEnabled : defConfig.autoLootEnabled;
-        }
-        if (typeof options.noAutoLootWhen !== 'undefined') {
-            if ($.isArray(options.noAutoLootWhen)) {
-                settings.noAutoLootWhen = [];
-                for (var i in options.noAutoLootWhen) {
-                    var time = $.trim(options.noAutoLootWhen[i]);
-                    if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9]$/.test(time)) settings.noAutoLootWhen.push(time);
-                }
-            }
-            else settings.noAutoLootWhen = defConfig.noAutoLootWhen;
-        }
-        if (typeof options.deferLootTimeWhenRemainAttackNumEnabled !== 'undefined') {
-            settings.deferLootTimeWhenRemainAttackNumEnabled = typeof options.deferLootTimeWhenRemainAttackNumEnabled === 'boolean' ?
-                options.deferLootTimeWhenRemainAttackNumEnabled : defConfig.deferLootTimeWhenRemainAttackNumEnabled;
-        }
-
-        if (typeof options.customMonsterNameEnabled !== 'undefined') {
-            settings.customMonsterNameEnabled = typeof options.customMonsterNameEnabled === 'boolean' ?
-                options.customMonsterNameEnabled : defConfig.customMonsterNameEnabled;
-        }
-        if (typeof options.customMonsterNameList !== 'undefined') {
-            if ($.type(options.customMonsterNameList) === 'object') {
-                settings.customMonsterNameList = {};
-                for (var id in options.customMonsterNameList) {
-                    id = parseInt(id);
-                    var name = $.trim(options.customMonsterNameList[id]);
-                    if (id >= 1 && id <= 5 && name !== '' && name.length <= 18) {
-                        settings.customMonsterNameList[id] = name;
-                    }
-                }
-            }
-            else settings.customMonsterNameList = defConfig.customMonsterNameList;
-        }
-        if (typeof options.autoAttackEnabled !== 'undefined') {
-            settings.autoAttackEnabled = typeof options.autoAttackEnabled === 'boolean' ?
-                options.autoAttackEnabled : defConfig.autoAttackEnabled;
-        }
-        if (typeof options.attackAfterTime !== 'undefined') {
-            var attackAfterTime = parseInt(options.attackAfterTime);
-            if (!isNaN(attackAfterTime) && attackAfterTime >= Const.minAttackAfterTime && attackAfterTime <= Const.defLootInterval)
-                settings.attackAfterTime = attackAfterTime;
-            else settings.attackAfterTime = defConfig.attackAfterTime;
-        }
-        if (typeof options.attemptAttackEnabled !== 'undefined') {
-            settings.attemptAttackEnabled = typeof options.attemptAttackEnabled === 'boolean' ?
-                options.attemptAttackEnabled : defConfig.attemptAttackEnabled;
-        }
-        if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
-        if (typeof options.attemptAttackAfterTimeEnabled !== 'undefined') {
-            settings.attemptAttackAfterTimeEnabled = typeof options.attemptAttackAfterTimeEnabled === 'boolean' ?
-                options.attemptAttackAfterTimeEnabled : defConfig.attemptAttackAfterTimeEnabled;
-        }
-        if (typeof options.batchAttackList !== 'undefined') {
-            if ($.type(options.batchAttackList) === 'object') {
-                settings.batchAttackList = {};
-                var totalAttackNum = 0;
-                for (var id in options.batchAttackList) {
-                    var attackNum = parseInt(options.batchAttackList[id]);
-                    if (!isNaN(attackNum) && attackNum > 0) {
-                        settings.batchAttackList[parseInt(id)] = attackNum;
-                        totalAttackNum += attackNum;
-                    }
-                }
-                if (totalAttackNum > Const.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
-            }
-            else settings.batchAttackList = defConfig.batchAttackList;
-        }
-        if (settings.autoAttackEnabled && (!settings.batchAttackList || $.isEmptyObject(settings.batchAttackList)))
-            settings.autoAttackEnabled = false;
-        if (typeof options.deadlyAttackId !== 'undefined') {
-            var deadlyAttackId = parseInt(options.deadlyAttackId);
-            if (!isNaN(deadlyAttackId) && deadlyAttackId >= 0 && deadlyAttackId <= 5) settings.deadlyAttackId = deadlyAttackId;
-            else settings.deadlyAttackId = defConfig.deadlyAttackId;
-        }
-        if (typeof options.autoUseItemEnabled !== 'undefined') {
-            settings.autoUseItemEnabled = typeof options.autoUseItemEnabled === 'boolean' ?
-                options.autoUseItemEnabled : defConfig.autoUseItemEnabled;
-        }
-        if (typeof options.autoUseItemNames !== 'undefined') {
-            var autoUseItemNames = options.autoUseItemNames;
-            var allowTypes = ['被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
-                '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
-            if ($.isArray(autoUseItemNames)) {
-                settings.autoUseItemNames = [];
-                for (var i in autoUseItemNames) {
-                    if ($.inArray(autoUseItemNames[i], allowTypes) > -1) {
-                        settings.autoUseItemNames.push(autoUseItemNames[i]);
-                    }
-                }
-            }
-            else settings.autoUseItemNames = defConfig.autoUseItemNames;
-        }
 
         if (typeof options.autoDrawSmbox2Enabled !== 'undefined') {
             settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
                 options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
         }
-        if (settings.autoDrawSmbox2Enabled && settings.autoLootEnabled) settings.autoDrawSmbox2Enabled = false;
         if (typeof options.favorSmboxNumbers !== 'undefined') {
             if ($.isArray(options.favorSmboxNumbers)) {
                 settings.favorSmboxNumbers = [];

@@ -23,9 +23,8 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Item.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Loot.js
 // @pd-require-end
-// @version     5.6.3
+// @version     5.7.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -33,7 +32,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.6.3';
+var version = '5.7.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -609,59 +608,6 @@ var KFOL = {
             }
         }
 
-        var getLootAwardInterval = -1, autoAttackInterval = -1, attackCheckInterval = -1;
-        if (Config.autoLootEnabled) {
-            var lootTimeLog = Loot.getNextLootAwardTime();
-            if (lootTimeLog.type > 0) {
-                getLootAwardInterval = Math.floor((lootTimeLog.time - new Date().getTime()) / 1000);
-                if (getLootAwardInterval < 0) getLootAwardInterval = 0;
-            }
-            else getLootAwardInterval = 0;
-            if (Config.noAutoLootWhen.length > 0) {
-                var next = Tools.getDate('+' + getLootAwardInterval + 's');
-                var now = new Date();
-                for (var i in Config.noAutoLootWhen) {
-                    var whenArr = Config.noAutoLootWhen[i].split('-');
-                    if (whenArr.length !== 2) continue;
-                    var start = Tools.getDateByTime(whenArr[0]);
-                    var end = Tools.getDateByTime(whenArr[1]);
-                    if (end < start) {
-                        if (now > end) end.setDate(end.getDate() + 1);
-                        else start.setDate(start.getDate() - 1);
-                    }
-                    if (next >= start && next <= end) {
-                        getLootAwardInterval = Math.floor((end - now) / 1000);
-                        break;
-                    }
-                }
-            }
-            if (Config.autoAttackEnabled && Config.attackAfterTime > 0 && !$.isEmptyObject(Config.batchAttackList)
-                && Tools.getCookie(Const.autoAttackReadyCookieName) && !Tools.getCookie(Const.autoAttackingCookieName)) {
-                if (lootTimeLog.type > 0) {
-                    var attackAfterTime = Config.attackAfterTime;
-                    if (lootTimeLog.type === 1) {
-                        var diff = attackAfterTime - Const.minAttackAfterTime - 30;
-                        if (diff < 0) diff = 0;
-                        else if (diff > 30) diff = 30;
-                        attackAfterTime -= diff;
-                    }
-                    autoAttackInterval = Math.floor((lootTimeLog.time - attackAfterTime * 60 * 1000 - new Date().getTime()) / 1000);
-                    if (autoAttackInterval < 0) autoAttackInterval = 0;
-                }
-                else autoAttackInterval = 0;
-                if (Config.attemptAttackEnabled && autoAttackInterval > 0) {
-                    var time = parseInt(Tools.getCookie(Const.checkLifeCookieName));
-                    var now = new Date();
-                    if (!isNaN(time) && time > 0 && time >= now.getTime()) {
-                        attackCheckInterval = Math.floor((time - now.getTime()) / 1000);
-                    }
-                    else attackCheckInterval = 0;
-                }
-            }
-            if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Const.autoAttackingCookieName))
-                autoAttackInterval = Const.checkAutoAttackingInterval * 60 + 1;
-        }
-
         var drawSmboxInterval = -1;
         if (Config.autoDrawSmbox2Enabled) {
             var smboxTimeLog = KFOL.getNextDrawSmboxTime();
@@ -684,7 +630,7 @@ var KFOL = {
             else autoChangeSMColorInterval = 0;
         }
 
-        var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, attackCheckInterval, drawSmboxInterval, autoChangeSMColorInterval];
+        var minArr = [donationInterval, drawSmboxInterval, autoChangeSMColorInterval];
         minArr.sort(function (a, b) {
             return a > b;
         });
@@ -801,21 +747,11 @@ var KFOL = {
          */
         var checkRefreshInterval = function () {
             KFOL.removePopTips($('.pd_refresh_notice').parent());
-            var isGetLootAwardStarted = false;
-            var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
-            if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
-                isGetLootAwardStarted = true;
-                Loot.getLootAward(autoDonationAvailable, Config.autoSaveCurrentDepositEnabled);
-            }
             if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
                 KFOL.drawSmbox();
             }
-            if (autoDonationAvailable && !isGetLootAwardStarted) {
+            if (Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName)) {
                 KFOL.donation();
-            }
-            if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
-                && !Tools.getCookie(Const.autoAttackingCookieName)) {
-                Loot.checkAutoAttack();
             }
             if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeIdColor();
 
@@ -2301,7 +2237,8 @@ var KFOL = {
      * 在首页上显示领取争夺奖励的剩余时间
      */
     showLootAwardInterval: function () {
-        var timeLog = Loot.getNextLootAwardTime();
+        //var timeLog = Loot.getNextLootAwardTime();
+        var timeLog = {};
         if (!timeLog.type) return;
         var $msg = $('a[href="kf_fw_ig_index.php"]');
         if ($msg.length === 0) return;
@@ -3120,7 +3057,6 @@ var KFOL = {
         KFOL.window.Item = Item;
         KFOL.window.Card = Card;
         KFOL.window.Bank = Bank;
-        KFOL.window.Loot = Loot;
         KFOL.window.KFOL = KFOL;
     },
 
@@ -3285,10 +3221,6 @@ var KFOL = {
             if ($faq.html().length !== 848) return;
             $faq.html(
                 '你可以通过发帖/回贴、参与争夺奖励（推荐）、抽取神秘盒子（不推荐）等方式获取KFB（论坛货币）。<br><br>' +
-                '争夺奖励的默认间隔为11小时，领取争夺奖励后可选择恰当的时机攻击NPC来夺取KFB与经验，NPC也同样会对你发动攻击，在一回合结束后所剩下的KFB就是你该回合的收获。<br>' +
-                '你可以通过吃道具来提升争夺的各项属性，各项争夺属性的说明详见<a href="kf_fw_ig_index.php" target="_blank">争夺首页</a>。<br><br>' +
-                '你还可以通过抽取<a href="kf_smbox.php" target="_blank">神秘盒子</a>的方式来获得少量KFB（不推荐），每次抽取神秘盒子的间隔为5小时。<br>' +
-                '<span class="pd_highlight">（注：抽取神秘盒子将延长争夺奖励的领取时间，请二选其一，尽量不要同时进行）</span><br><br>' +
                 '发帖/回贴时会获得基本的KFB奖励，每天第一次发帖/回贴还可获得额外经验奖励。<br>' +
                 '发帖请先阅读规定避免违规，在你还没有时间阅读全部规定之前，请至少注意以下几点：<br>' +
                 '不要发表纯水帖；不要纯复制发帖；不要发表政治、广告、恶心的内容；不要攻击、讽刺、挑衅他人；<br>' +
@@ -3328,7 +3260,7 @@ var KFOL = {
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
-            KFOL.showLootAwardInterval();
+            //KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
             KFOL.addSearchTypeSelectBoxInHomePage();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
@@ -3412,15 +3344,6 @@ var KFOL = {
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Item.addBatchBuyItemsLink();
         }
-        else if (location.pathname === '/kf_fw_ig_index.php') {
-            Loot.handleInLootIndexPage();
-            if (Config.customMonsterNameEnabled) Loot.customMonsterName();
-        }
-        else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
-            Loot.addBatchAttackButton();
-            if (Config.customMonsterNameEnabled) Loot.customMonsterName();
-            Loot.addMonsterLootInfoTips();
-        }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();
         }
@@ -3457,30 +3380,18 @@ var KFOL = {
         if (Config.followUserEnabled) KFOL.followUsers();
         if (KFOL.isMobile) KFOL.bindElementTitleClick();
 
-        var isGetLootAwardStarted = false;
-        var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
-        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
-        if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
-            isGetLootAwardStarted = true;
-            Loot.getLootAward(autoDonationAvailable, autoSaveCurrentDepositAvailable);
-        }
-
         if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
             KFOL.drawSmbox();
         }
 
+        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         var isDonationStarted = false;
-        if (autoDonationAvailable && !isGetLootAwardStarted) {
+        if (Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName)) {
             isDonationStarted = true;
             KFOL.donation(autoSaveCurrentDepositAvailable);
         }
 
-        if (autoSaveCurrentDepositAvailable && !isGetLootAwardStarted && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
-
-        if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
-            && !Tools.getCookie(Const.autoAttackingCookieName)) {
-            Loot.checkAutoAttack();
-        }
+        if (autoSaveCurrentDepositAvailable && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
 
         if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeIdColor();
 

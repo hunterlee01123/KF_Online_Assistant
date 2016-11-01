@@ -5,7 +5,7 @@ from jsmin import jsmin
 
 devDirName = 'dev' # 开发版文件夹名
 devKFOLFileName = 'KFOL' # 开发版KFOL主文件名
-devPartFileNameList = ['Config', 'Const', 'ConfigMethod', 'Tools', 'Func', 'Dialog', 'ConfigDialog', 'Log', 'TmpLog', 'Item', 'Card', 'Bank', 'Loot'] # 开发版各部分文件名
+devPartFileNameList = ['Config', 'Const', 'ConfigMethod', 'Tools', 'Func', 'Dialog', 'ConfigDialog', 'Log', 'TmpLog', 'Item', 'Card', 'Bank'] # 开发版各部分文件名
 extraDevFileName = 'Extra' # Extra开发版主文件名
 extraDevPartFileNameList = ['CustomItem'] # Extra开发版各部分文件名
 releaseDirName = 'release' # 正式版文件夹名
