@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.6.3
+// @version     5.7.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -22,7 +22,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.6.3';
+var version = '5.7.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -46,40 +46,10 @@ var Config = {
 
     // 是否自动KFB捐款，true：开启；false：关闭
     autoDonationEnabled: false,
-    // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%
+    // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     donationAfterTime: '00:05:00',
-
-    // 是否自动争夺，可自动领取争夺奖励，并可自动进行批量攻击（可选），true：开启；false：关闭
-    autoLootEnabled: false,
-    // 在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：['07:00-08:15','17:00-18:15']，留空表示不启用
-    noAutoLootWhen: [],
-    // 是否在领取争夺奖励时，当本回合剩余攻击次数不低于{@link Config.deferLootTimeWhenRemainAttackNum}所设定的次数的情况下，抽取神秘盒子以延长争夺时间，true：开启；false：关闭
-    deferLootTimeWhenRemainAttackNumEnabled: false,
-    // 抽取神秘盒子以延长争夺时间的剩余攻击次数的上限
-    deferLootTimeWhenRemainAttackNum: 15,
-    // 是否自定义怪物名称，true：开启；false：关闭
-    customMonsterNameEnabled: false,
-    // 自定义怪物名称列表，格式：{怪物ID：'自定义名称'}，例：{1:'萝莉',5:'信仰风'}
-    customMonsterNameList: {},
-    // 是否在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标），true：开启；false：关闭
-    autoAttackEnabled: false,
-    // 在距本回合结束前指定时间内才自动完成（剩余）批量攻击，取值范围：660-63（分钟），设置为0表示不启用（注意不要设置得太接近最小值，以免错过攻击）
-    attackAfterTime: 0,
-    // 是否当生命值不超过低保线时自动进行试探攻击（需同时设置{@link Config.attackAfterTime}），true：开启；false：关闭
-    attemptAttackEnabled: false,
-    // 是否在自动攻击时限之前的指定时间（{@link Const.attemptAttackAfterTime}）内才进行试探攻击（适合有时间挂机的用户），true：开启；false：关闭
-    // 例：设置{@link Config.attackAfterTime}为90分钟，设置{@link Const.attemptAttackAfterTime}为40分钟，则在距本回合结束前130分钟内才进行试探攻击
-    attemptAttackAfterTimeEnabled: false,
-    // 批量攻击的目标列表，格式：{怪物ID:次数}，例：{1:10,2:10}
-    batchAttackList: {},
-    // 当拥有致命一击时所自动攻击的怪物ID，设置为0表示保持默认
-    deadlyAttackId: 0,
-    // 是否自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，true：开启；false：关闭
-    autoUseItemEnabled: false,
-    // 自动使用批量攻击后刚掉落的道具的名称，例：['被遗弃的告白信','学校天台的钥匙','LOLI的钱包']
-    autoUseItemNames: [],
 
     // 是否自动抽取神秘盒子，true：开启；false：关闭
     autoDrawSmbox2Enabled: false,
@@ -135,6 +105,8 @@ var Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用），true：开启；false：关闭
     showSelfRatingLinkEnabled: false,
+    // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
+    buyThreadViaAjaxEnabled: true,
 
     // 默认提示消息的持续时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -230,38 +202,8 @@ var Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
-    // 争夺的默认领取间隔（分钟）
-    defLootInterval: 660,
-    // 争夺初始的预领KFB
-    lootInitialBonus: 100,
-    // 所允许的在距本回合结束前指定时间后才进行自动批量攻击的最小时间（分钟）
-    minAttackAfterTime: 63,
-    // 在实际生命值不超过指定值时才进行试探攻击，-1表示使用低保值
-    maxAttemptAttackLifeNum: 10,
-    // 在自动攻击时限之前的指定时间（分钟）内才进行试探攻击
-    attemptAttackAfterTime: 40,
-    // 每回合攻击的最大次数
-    maxAttackNum: 20,
-    // 致命一击比例
-    deadlyAttackPercent: 1.5,
     // 抽取神秘盒子头奖的奖金（KFB）
     smboxFirstPrizeBonus: 2000,
-    // 在批量攻击中每次攻击的时间间隔（毫秒），可设置为函数来返回值
-    perAttackInterval: function () {
-        return Math.floor(Math.random() * 1000) + 2000;
-    },
-    // 检查正在进行的自动攻击是否已完成的时间间隔（分钟）
-    checkAutoAttackingInterval: 4,
-    // 在领取争夺奖励后首次检查生命值的时间间隔（分钟）
-    firstCheckLifeInterval: 145,
-    // 检查生命值的默认时间间隔（分钟），可设置为函数来返回值
-    defCheckLifeInterval: function () {
-        return Config.attemptAttackAfterTimeEnabled ? 3 : 20; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
-    },
-    // 在进行试探攻击后检查生命值的时间间隔（分钟），可设置为函数来返回值
-    checkLifeAfterAttemptAttackInterval: function () {
-        return Config.attemptAttackAfterTimeEnabled ? 1 : 2; // 左边数字为推迟试探攻击情况下的时间间隔，右边数字为正常情况下的时间间隔
-    },
     // 神秘盒子的默认抽取间隔（分钟）
     defDrawSmboxInterval: 300,
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
@@ -329,24 +271,10 @@ var Const = {
     smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
-    // 上一次领取争夺奖励时记录的争夺信息的临时日志名称
-    prevLootInfoTmpLogName: 'PrevLootInfo',
     // 上一次自动更换神秘颜色的ID的临时日志名称
     prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
     // 标记已KFB捐款的Cookie名称
     donationCookieName: 'pd_donation',
-    // 标记已领取争夺奖励的Cookie名称
-    getLootAwardCookieName: 'pd_get_loot_award',
-    // 标记自动攻击已准备就绪的Cookie名称
-    autoAttackReadyCookieName: 'pd_auto_attack_ready',
-    // 标记正在进行自动攻击的Cookie名称
-    autoAttackingCookieName: 'pd_auto_attacking',
-    // 标记已检查生命值的Cookie名称
-    checkLifeCookieName: 'pd_check_life',
-    // 标记已完成的试探攻击次数的Cookie名称
-    attackCountCookieName: 'pd_attack_count',
-    // 存储上一次试探攻击日志的Cookie名称
-    prevAttemptAttackLogCookieName: 'pd_prev_attempt_attack_log',
     // 标记已抽取神秘盒子的Cookie名称
     drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称
@@ -467,112 +395,11 @@ var ConfigMethod = {
                 settings.donationAfterTime = donationAfterTime;
             else settings.donationAfterTime = defConfig.donationAfterTime;
         }
-        if (typeof options.deferLootTimeWhenRemainAttackNum !== 'undefined') {
-            var attackNum = parseInt(options.deferLootTimeWhenRemainAttackNum);
-            if (!isNaN(attackNum) && attackNum >= 1 && attackNum <= Const.maxAttackNum) settings.deferLootTimeWhenRemainAttackNum = attackNum;
-            else settings.deferLootTimeWhenRemainAttackNum = defConfig.deferLootTimeWhenRemainAttackNum;
-        }
-        if (typeof options.autoLootEnabled !== 'undefined') {
-            settings.autoLootEnabled = typeof options.autoLootEnabled === 'boolean' ?
-                options.autoLootEnabled : defConfig.autoLootEnabled;
-        }
-        if (typeof options.noAutoLootWhen !== 'undefined') {
-            if ($.isArray(options.noAutoLootWhen)) {
-                settings.noAutoLootWhen = [];
-                for (var i in options.noAutoLootWhen) {
-                    var time = $.trim(options.noAutoLootWhen[i]);
-                    if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9]$/.test(time)) settings.noAutoLootWhen.push(time);
-                }
-            }
-            else settings.noAutoLootWhen = defConfig.noAutoLootWhen;
-        }
-        if (typeof options.deferLootTimeWhenRemainAttackNumEnabled !== 'undefined') {
-            settings.deferLootTimeWhenRemainAttackNumEnabled = typeof options.deferLootTimeWhenRemainAttackNumEnabled === 'boolean' ?
-                options.deferLootTimeWhenRemainAttackNumEnabled : defConfig.deferLootTimeWhenRemainAttackNumEnabled;
-        }
-
-        if (typeof options.customMonsterNameEnabled !== 'undefined') {
-            settings.customMonsterNameEnabled = typeof options.customMonsterNameEnabled === 'boolean' ?
-                options.customMonsterNameEnabled : defConfig.customMonsterNameEnabled;
-        }
-        if (typeof options.customMonsterNameList !== 'undefined') {
-            if ($.type(options.customMonsterNameList) === 'object') {
-                settings.customMonsterNameList = {};
-                for (var id in options.customMonsterNameList) {
-                    id = parseInt(id);
-                    var name = $.trim(options.customMonsterNameList[id]);
-                    if (id >= 1 && id <= 5 && name !== '' && name.length <= 18) {
-                        settings.customMonsterNameList[id] = name;
-                    }
-                }
-            }
-            else settings.customMonsterNameList = defConfig.customMonsterNameList;
-        }
-        if (typeof options.autoAttackEnabled !== 'undefined') {
-            settings.autoAttackEnabled = typeof options.autoAttackEnabled === 'boolean' ?
-                options.autoAttackEnabled : defConfig.autoAttackEnabled;
-        }
-        if (typeof options.attackAfterTime !== 'undefined') {
-            var attackAfterTime = parseInt(options.attackAfterTime);
-            if (!isNaN(attackAfterTime) && attackAfterTime >= Const.minAttackAfterTime && attackAfterTime <= Const.defLootInterval)
-                settings.attackAfterTime = attackAfterTime;
-            else settings.attackAfterTime = defConfig.attackAfterTime;
-        }
-        if (typeof options.attemptAttackEnabled !== 'undefined') {
-            settings.attemptAttackEnabled = typeof options.attemptAttackEnabled === 'boolean' ?
-                options.attemptAttackEnabled : defConfig.attemptAttackEnabled;
-        }
-        if (settings.attemptAttackEnabled && !settings.attackAfterTime) settings.attemptAttackEnabled = false;
-        if (typeof options.attemptAttackAfterTimeEnabled !== 'undefined') {
-            settings.attemptAttackAfterTimeEnabled = typeof options.attemptAttackAfterTimeEnabled === 'boolean' ?
-                options.attemptAttackAfterTimeEnabled : defConfig.attemptAttackAfterTimeEnabled;
-        }
-        if (typeof options.batchAttackList !== 'undefined') {
-            if ($.type(options.batchAttackList) === 'object') {
-                settings.batchAttackList = {};
-                var totalAttackNum = 0;
-                for (var id in options.batchAttackList) {
-                    var attackNum = parseInt(options.batchAttackList[id]);
-                    if (!isNaN(attackNum) && attackNum > 0) {
-                        settings.batchAttackList[parseInt(id)] = attackNum;
-                        totalAttackNum += attackNum;
-                    }
-                }
-                if (totalAttackNum > Const.maxAttackNum) settings.batchAttackList = defConfig.batchAttackList;
-            }
-            else settings.batchAttackList = defConfig.batchAttackList;
-        }
-        if (settings.autoAttackEnabled && (!settings.batchAttackList || $.isEmptyObject(settings.batchAttackList)))
-            settings.autoAttackEnabled = false;
-        if (typeof options.deadlyAttackId !== 'undefined') {
-            var deadlyAttackId = parseInt(options.deadlyAttackId);
-            if (!isNaN(deadlyAttackId) && deadlyAttackId >= 0 && deadlyAttackId <= 5) settings.deadlyAttackId = deadlyAttackId;
-            else settings.deadlyAttackId = defConfig.deadlyAttackId;
-        }
-        if (typeof options.autoUseItemEnabled !== 'undefined') {
-            settings.autoUseItemEnabled = typeof options.autoUseItemEnabled === 'boolean' ?
-                options.autoUseItemEnabled : defConfig.autoUseItemEnabled;
-        }
-        if (typeof options.autoUseItemNames !== 'undefined') {
-            var autoUseItemNames = options.autoUseItemNames;
-            var allowTypes = ['被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
-                '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
-            if ($.isArray(autoUseItemNames)) {
-                settings.autoUseItemNames = [];
-                for (var i in autoUseItemNames) {
-                    if ($.inArray(autoUseItemNames[i], allowTypes) > -1) {
-                        settings.autoUseItemNames.push(autoUseItemNames[i]);
-                    }
-                }
-            }
-            else settings.autoUseItemNames = defConfig.autoUseItemNames;
-        }
 
         if (typeof options.autoDrawSmbox2Enabled !== 'undefined') {
             settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
                 options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
         }
-        if (settings.autoDrawSmbox2Enabled && settings.autoLootEnabled) settings.autoDrawSmbox2Enabled = false;
         if (typeof options.favorSmboxNumbers !== 'undefined') {
             if ($.isArray(options.favorSmboxNumbers)) {
                 settings.favorSmboxNumbers = [];
@@ -703,6 +530,10 @@ var ConfigMethod = {
         if (typeof options.showSelfRatingLinkEnabled !== 'undefined') {
             settings.showSelfRatingLinkEnabled = typeof options.showSelfRatingLinkEnabled === 'boolean' ?
                 options.showSelfRatingLinkEnabled : defConfig.showSelfRatingLinkEnabled;
+        }
+        if (typeof options.buyThreadViaAjaxEnabled !== 'undefined') {
+            settings.buyThreadViaAjaxEnabled = typeof options.buyThreadViaAjaxEnabled === 'boolean' ?
+                options.buyThreadViaAjaxEnabled : defConfig.buyThreadViaAjaxEnabled;
         }
 
         if (typeof options.defShowMsgDuration !== 'undefined') {
@@ -1458,6 +1289,32 @@ var Tools = {
      */
     getSelText: function (textArea) {
         return textArea.value.substring(textArea.selectionStart, textArea.selectionEnd);
+    },
+
+    /**
+     * 复制文本
+     * @param {jQuery} $target 要复制文本的目标元素
+     * @param {string} [msg] 复制成功的消息
+     * @param {jQuery} [$excludeElem] 要排除复制的元素
+     * @returns {boolean} 是否复制成功
+     */
+    copyText: function ($target, msg, $excludeElem) {
+        if (!('execCommand' in document) || !$target.length) return false;
+        var copyText = $target.data('copy-text');
+        if (copyText) {
+            $target = $('<span class="text-hide">' + copyText + '</span>').insertAfter($target);
+        }
+        if ($excludeElem) $excludeElem.prop('hidden', true);
+        var s = window.getSelection();
+        s.selectAllChildren($target.get(0));
+        var result = document.execCommand('copy');
+        s.removeAllRanges();
+        if (copyText) $target.remove();
+        if ($excludeElem) $excludeElem.removeProp('hidden');
+        if (result) {
+            alert(msg ? msg : '已复制');
+        }
+        return result;
     }
 };
 
@@ -1638,57 +1495,9 @@ var ConfigDialog = {
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox" />自动KFB捐款</label></legend>' +
             '      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text" />' +
-            '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前收入的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
+            '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
             '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
             '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>' +
-            '    </fieldset>' +
-            '    <fieldset>' +
-            '      <legend><label><input id="pd_cfg_auto_loot_enabled" type="checkbox" />自动争夺 ' +
-            '<span class="pd_cfg_tips" title="可自动领取争夺奖励，并可自动进行批量攻击（可选）">[?]</span></label></legend>' +
-            '      <label>在<input placeholder="例：07:00-08:15,17:00-18:15" id="pd_cfg_no_auto_loot_when" maxlength="23" style="width:150px" type="text" />内不自动领取争夺奖励 ' +
-            '<span class="pd_cfg_tips" title="在指定的时间段内不自动领取争夺奖励（主要与在指定时间内才攻击配合使用），例：07:00-08:15,17:00-18:15，留空表示不启用">[?]</span>' +
-            '</label><br />' +
-            '      <label><input id="pd_cfg_defer_loot_time_when_remain_attack_num_enabled" type="checkbox" data-disabled="#pd_cfg_defer_loot_time_when_remain_attack_num" />' +
-            '在剩余攻击次数不低于</label><label><input id="pd_cfg_defer_loot_time_when_remain_attack_num" maxlength="2" style="width:15px" type="text" />次时，抽盒子延长争夺时间 ' +
-            '<span class="pd_cfg_tips" title="在领取争夺奖励时，当本回合剩余攻击次数不低于指定次数的情况下，抽取神秘盒子以延长争夺时间">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_custom_monster_name_enabled" type="checkbox" data-disabled="#pd_cfg_custom_monster_name_dialog" />自定义怪物名称 ' +
-            '<span class="pd_cfg_tips" title="自定义怪物名称，请点击详细设置自定义各怪物的名称">[?]</span></label>' +
-            '<a style="margin-left:10px" id="pd_cfg_custom_monster_name_dialog" href="#">详细设置&raquo;</a>' +
-            '      <fieldset>' +
-            '        <legend><label><input id="pd_cfg_auto_attack_enabled" type="checkbox" />自动攻击 ' +
-            '<span class="pd_cfg_tips" title="在自动领取争夺奖励后，自动进行批量攻击（需指定攻击目标）">[?]</span></label></legend>' +
-            '      <label>在距本回合结束前<input id="pd_cfg_attack_after_time" maxlength="3" style="width:23px" type="text" />分钟内才完成(剩余)攻击 ' +
-            '<span class="pd_cfg_tips" title="在距本回合结束前指定时间内才自动完成(剩余)批量攻击，取值范围：{0}-{1}，留空表示不启用">[?]</span></label><br />'
-                .replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime) +
-            '      <label><input id="pd_cfg_attempt_attack_enabled" type="checkbox" data-disabled="#pd_cfg_attempt_attack_after_time_enabled" />在生命值不超过{0}时进行试探攻击 '
-                .replace('{0}', Const.maxAttemptAttackLifeNum) +
-            '<span class="pd_cfg_tips" title="当实际生命值不超过指定值时自动进行试探攻击，需同时设置攻击时限，适用于较低等级玩家，详见【常见问题10】">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_attempt_attack_after_time_enabled" type="checkbox" />在攻击时限之前的{0}分钟内才进行试探攻击 '
-                .replace('{0}', Const.attemptAttackAfterTime) +
-            '<span class="pd_cfg_tips" title="在自动攻击时限之前的指定时间内才进行试探攻击，可有效减少被怪物攻击次数（适合有时间挂机的较低等级玩家），' +
-            '例：攻击时限设为80分钟，则在距本回合结束前{0}分钟内才进行试探攻击">[?]</span></label>'.replace('{0}', 80 + Const.attemptAttackAfterTime) +
-            '        <table id="pd_cfg_batch_attack_list">' +
-            '          <tbody>' +
-            '            <tr><td style="width:110px">Lv.1：小史莱姆</td><td style="width:70px"><label><input style="width:15px" type="text" maxlength="2" data-id="1" />次' +
-            '</label></td><td style="width:62px">Lv.2：笨蛋</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="2" />次</label></td></tr>' +
-            '            <tr><td>Lv.3：大果冻史莱姆</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="3" />次</label></td>' +
-            '<td>Lv.4：肉山</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="4" />次</label></td></tr>' +
-            '            <tr><td>Lv.5：大魔王</td><td><label><input style="width:15px" type="text" maxlength="2" data-id="5" />次</label></td></tr>' +
-            '          </tbody>' +
-            '        </table>' +
-            '        <label>拥有致命一击时的攻击目标<select id="pd_cfg_deadly_attack_id" style="width:130px"><option value="0">保持默认</option>' +
-            '<option value="1">Lv.1：小史莱姆</option><option value="2">Lv.2：笨蛋</option><option value="3">Lv.3：大果冻史莱姆</option><option value="4">Lv.4：肉山</option>' +
-            '<option value="5">Lv.5：大魔王</option></select><span class="pd_cfg_tips" title="当拥有致命一击时的自动攻击目标">[?]</span></label>' +
-            '      </fieldset>' +
-            '      <label><input id="pd_cfg_auto_use_item_enabled" type="checkbox" data-disabled="#pd_cfg_auto_use_item_names" />自动使用刚掉落的道具 ' +
-            '<span class="pd_cfg_tips" title="自动使用批量攻击后刚掉落的道具，需指定自动使用的道具名称，按Shift或Ctrl键可多选">[?]</span></label><br />' +
-            '      <label><select id="pd_cfg_auto_use_item_names" multiple="multiple" size="4">' +
-            '<option value="被遗弃的告白信">Lv.1：被遗弃的告白信</option><option value="学校天台的钥匙">Lv.1：学校天台的钥匙</option>' +
-            '<option value="TMA最新作压缩包">Lv.1：TMA最新作压缩包</option><option value="LOLI的钱包">Lv.2：LOLI的钱包</option>' +
-            '<option value="棒棒糖">Lv.2：棒棒糖</option><option value="蕾米莉亚同人漫画">Lv.3：蕾米莉亚同人漫画</option>' +
-            '<option value="十六夜同人漫画">Lv.3：十六夜同人漫画</option><option value="档案室钥匙">Lv.4：档案室钥匙</option>' +
-            '<option value="傲娇LOLI娇蛮音CD">Lv.4：傲娇LOLI娇蛮音CD</option><option value="整形优惠卷">Lv.5：整形优惠卷</option>' +
-            '<option value="消逝之药">Lv.5：消逝之药</option></select></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
@@ -1714,18 +1523,6 @@ var ConfigDialog = {
             '      <label style="margin-left:10px"><input id="pd_cfg_show_vip_surplus_time_enabled" type="checkbox" />显示VIP剩余时间 ' +
             '<span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span></label>' +
             '    </fieldset>' +
-            '  </div>' +
-
-            '  <div class="pd_cfg_panel">' +
-            '    <fieldset>' +
-            '      <legend>版块页面相关</legend>' +
-            '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
-            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span></label>' +
-            '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
-            '<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
-            '<span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span></label>' +
-            '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>帖子页面相关</legend>' +
             '      <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>' +
@@ -1750,15 +1547,29 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox" />开启多重引用功能 ' +
             '<span class="pd_cfg_tips" title="在帖子页面开启多重回复和多重引用功能">[?]</span></label>' +
-            '      <label style="margin-left:10px"><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label><br />' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox" />显示自助评分链接 ' +
+            '<span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span></label><br>' +
             '      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" data-disabled="#pd_cfg_user_memo_dialog" />显示用户备注 ' +
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
             '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label><br />' +
-            '      <label><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox" />显示自助评分链接 ' +
-            '<span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
+            '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label>' +
+            '      <label style="margin-left:10px"><input id="pd_cfg_buy_thread_via_ajax_enabled" type="checkbox" />使用Ajax购买帖子 ' +
+            '<span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span></label><br />' +
+            '    </fieldset>' +
+            '  </div>' +
+
+            '  <div class="pd_cfg_panel">' +
+            '    <fieldset>' +
+            '      <legend>版块页面相关</legend>' +
+            '      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num" />' +
+            '显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span></label>' +
+            '      <label style="margin-left:10px">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text" />' +
+            '<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br />' +
+            '      <label><input id="pd_cfg_highlight_new_post_enabled" type="checkbox" />高亮今日的新帖 ' +
+            '<span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
@@ -1825,7 +1636,7 @@ var ConfigDialog = {
             return Dialog.close('pd_config');
         }).end().find('.pd_cfg_btns > button:eq(2)').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否重置所有设置？')) {
+            if (confirm('是否重置所有设置？')) {
                 ConfigMethod.clear();
                 if (typeof Extra !== 'undefined' && typeof Extra.clearConfig !== 'undefined') {
                     Extra.clearConfig();
@@ -1835,7 +1646,7 @@ var ConfigDialog = {
             }
         }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
             e.preventDefault();
-            var type = window.prompt('可清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地缓存', 0);
+            var type = prompt('可清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地缓存', 0);
             if (type === null) return;
             type = parseInt($.trim(type));
             if (!isNaN(type) && type >= 0) {
@@ -1895,7 +1706,7 @@ var ConfigDialog = {
             ConfigMethod.write();
             Dialog.close('pd_config');
             if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
-                if (window.confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
+                if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
                     location.reload();
                 }
             }
@@ -1916,22 +1727,6 @@ var ConfigDialog = {
         $('#pd_cfg_auto_donation_enabled').prop('checked', Config.autoDonationEnabled);
         $('#pd_cfg_donation_kfb').val(Config.donationKfb);
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
-
-        $('#pd_cfg_auto_loot_enabled').prop('checked', Config.autoLootEnabled);
-        $('#pd_cfg_no_auto_loot_when').val(Config.noAutoLootWhen.join(','));
-        $('#pd_cfg_defer_loot_time_when_remain_attack_num_enabled').prop('checked', Config.deferLootTimeWhenRemainAttackNumEnabled);
-        $('#pd_cfg_defer_loot_time_when_remain_attack_num').val(Config.deferLootTimeWhenRemainAttackNum);
-        $('#pd_cfg_custom_monster_name_enabled').prop('checked', Config.customMonsterNameEnabled);
-        $('#pd_cfg_auto_attack_enabled').prop('checked', Config.autoAttackEnabled);
-        if (Config.attackAfterTime > 0) $('#pd_cfg_attack_after_time').val(Config.attackAfterTime);
-        $('#pd_cfg_attempt_attack_enabled').prop('checked', Config.attemptAttackEnabled);
-        $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked', Config.attemptAttackAfterTimeEnabled);
-        $.each(Config.batchAttackList, function (id, num) {
-            $('#pd_cfg_batch_attack_list input[data-id="{0}"]'.replace('{0}', id)).val(num);
-        });
-        $('#pd_cfg_deadly_attack_id').val(Config.deadlyAttackId);
-        $('#pd_cfg_auto_use_item_enabled').prop('checked', Config.autoUseItemEnabled);
-        $('#pd_cfg_auto_use_item_names').val(Config.autoUseItemNames);
 
         $('#pd_cfg_auto_draw_smbox_enabled').prop('checked', Config.autoDrawSmbox2Enabled);
         $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
@@ -1961,6 +1756,7 @@ var ConfigDialog = {
         $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
         $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
         $('#pd_cfg_show_self_rating_link_enabled').prop('checked', Config.showSelfRatingLinkEnabled);
+        $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked', Config.buyThreadViaAjaxEnabled);
 
         $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
         $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
@@ -1996,30 +1792,6 @@ var ConfigDialog = {
         options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
 
-        options.autoLootEnabled = $('#pd_cfg_auto_loot_enabled').prop('checked');
-        options.noAutoLootWhen = $.trim($('#pd_cfg_no_auto_loot_when').val()).split(',');
-        options.deferLootTimeWhenRemainAttackNumEnabled = $('#pd_cfg_defer_loot_time_when_remain_attack_num_enabled').prop('checked');
-        options.deferLootTimeWhenRemainAttackNum = parseInt($.trim($('#pd_cfg_defer_loot_time_when_remain_attack_num').val()));
-        options.customMonsterNameEnabled = $('#pd_cfg_custom_monster_name_enabled').prop('checked');
-        options.autoAttackEnabled = $('#pd_cfg_auto_attack_enabled').prop('checked');
-        options.attackAfterTime = parseInt($.trim($('#pd_cfg_attack_after_time').val()));
-        options.attemptAttackEnabled = $('#pd_cfg_attempt_attack_enabled').prop('checked');
-        options.attemptAttackAfterTimeEnabled = $('#pd_cfg_attempt_attack_after_time_enabled').prop('checked');
-        options.batchAttackList = {};
-        $('#pd_cfg_batch_attack_list input').each(function () {
-            var $this = $(this);
-            var attackNum = $.trim($this.val());
-            if (!attackNum) return;
-            attackNum = parseInt(attackNum);
-            if (attackNum <= 0) return;
-            var id = parseInt($this.data('id'));
-            if (!id) return;
-            options.batchAttackList[id] = attackNum;
-        });
-        options.deadlyAttackId = parseInt($('#pd_cfg_deadly_attack_id').val());
-        options.autoUseItemEnabled = $('#pd_cfg_auto_use_item_enabled').prop('checked');
-        options.autoUseItemNames = $('#pd_cfg_auto_use_item_names').val();
-
         options.autoDrawSmbox2Enabled = $('#pd_cfg_auto_draw_smbox_enabled').prop('checked');
         options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
 
@@ -2047,6 +1819,7 @@ var ConfigDialog = {
         options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
         options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
         options.showSelfRatingLinkEnabled = $('#pd_cfg_show_self_rating_link_enabled').prop('checked');
+        options.buyThreadViaAjaxEnabled = $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked');
 
         options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
         options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
@@ -2111,83 +1884,6 @@ var ConfigDialog = {
             alert('在指定时间之后捐款格式不正确');
             $txtDonationAfterTime.select();
             $txtDonationAfterTime.focus();
-            return false;
-        }
-
-        var $txtNoAutoLootWhen = $('#pd_cfg_no_auto_loot_when');
-        var noAutoLootWhen = $.trim($txtNoAutoLootWhen.val());
-        if (noAutoLootWhen) {
-            if (!/^((2[0-3]|[0-1][0-9]):[0-5][0-9]-(2[0-3]|[0-1][0-9]):[0-5][0-9],?){1,2}$/.test(noAutoLootWhen)) {
-                alert('在指定时间段内不自动领取争夺奖励格式不正确');
-                $txtNoAutoLootWhen.select();
-                $txtNoAutoLootWhen.focus();
-                return false;
-            }
-        }
-
-        var $txtDeferLootTimeWhenRemainAttackNum = $('#pd_cfg_defer_loot_time_when_remain_attack_num');
-        var deferLootTimeWhenRemainAttackNum = parseInt($.trim($txtDeferLootTimeWhenRemainAttackNum.val()));
-        if (isNaN(deferLootTimeWhenRemainAttackNum)) {
-            alert('剩余攻击次数上限格式不正确');
-            $txtDeferLootTimeWhenRemainAttackNum.select();
-            $txtDeferLootTimeWhenRemainAttackNum.focus();
-            return false;
-        }
-        else if (deferLootTimeWhenRemainAttackNum < 1 || deferLootTimeWhenRemainAttackNum > Const.maxAttackNum) {
-            alert('剩余攻击次数上限范围在1-{0}之间'.replace('{0}', Const.maxAttackNum));
-            $txtDeferLootTimeWhenRemainAttackNum.select();
-            $txtDeferLootTimeWhenRemainAttackNum.focus();
-            return false;
-        }
-
-        var $txtAttackAfterTime = $('#pd_cfg_attack_after_time');
-        var attackAfterTime = $.trim($txtAttackAfterTime.val());
-        if (attackAfterTime) {
-            attackAfterTime = parseInt(attackAfterTime);
-            if (isNaN(attackAfterTime) || attackAfterTime > Const.defLootInterval || attackAfterTime < Const.minAttackAfterTime) {
-                alert('在指定时间之内才完成攻击的取值范围为：{0}-{1}'.replace('{0}', Const.defLootInterval).replace('{1}', Const.minAttackAfterTime));
-                $txtAttackAfterTime.select();
-                $txtAttackAfterTime.focus();
-                return false;
-            }
-        }
-        else {
-            if ($('#pd_cfg_attempt_attack_enabled').prop('checked')) {
-                alert('开启“试探攻击”必须同时设置“在指定时间之内才完成攻击”');
-                $txtAttackAfterTime.select();
-                $txtAttackAfterTime.focus();
-                return false;
-            }
-        }
-
-        var totalAttackNum = 0;
-        var isAttackVerification = true;
-        $('#pd_cfg_batch_attack_list input').each(function () {
-            var $this = $(this);
-            var attackNum = $.trim($this.val());
-            if (!attackNum) return;
-            attackNum = parseInt(attackNum);
-            if (isNaN(attackNum) || attackNum < 0) {
-                isAttackVerification = false;
-                alert('攻击次数格式不正确');
-                $this.select();
-                $this.focus();
-                return false;
-            }
-            totalAttackNum += attackNum;
-        });
-        if (!isAttackVerification) return false;
-        if (totalAttackNum > Const.maxAttackNum) {
-            alert('攻击次数不得超过{0}次'.replace('{0}', Const.maxAttackNum));
-            return false;
-        }
-        if ($('#pd_cfg_auto_attack_enabled').prop('checked') && !totalAttackNum) {
-            alert('请填写自动攻击的目标次数');
-            return false;
-        }
-
-        if ($('#pd_cfg_auto_draw_smbox_enabled').prop('checked') && $('#pd_cfg_auto_loot_enabled').prop('checked')) {
-            alert('请不要将自动争夺与自动抽取神秘盒子一起使用');
             return false;
         }
 
@@ -2357,7 +2053,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_im_or_ex_setting', '导入或导出设置', html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的设置？')) return;
+            if (!confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_setting').val());
             if (!options) return;
             try {
@@ -2443,7 +2139,7 @@ var ConfigDialog = {
             Dialog.show('pd_custom_sm_color');
         }).end().find('a:last').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除所有设置？')) {
+            if (confirm('是否清除所有设置？')) {
                 $customSmColorList.empty();
                 Dialog.show('pd_custom_sm_color');
             }
@@ -2541,7 +2237,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_im_or_ex_sm_color_config', '导入或导出配色方案', html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的设置？')) return;
+            if (!confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_sm_color_config').val());
             if (!options) return;
             try {
@@ -2821,7 +2517,7 @@ var ConfigDialog = {
                 e.preventDefault();
                 var $checked = $followUserList.find('li:has(input[type="checkbox"]:checked)');
                 if ($checked.length === 0) return;
-                if (window.confirm('是否删除所选用户？')) {
+                if (confirm('是否删除所选用户？')) {
                     $checked.remove();
                     Dialog.show('pd_follow_user');
                 }
@@ -2971,7 +2667,7 @@ var ConfigDialog = {
                 e.preventDefault();
                 var $checked = $blockUserList.find('li:has(input[type="checkbox"]:checked)');
                 if ($checked.length === 0) return;
-                if (window.confirm('是否删除所选用户？')) {
+                if (confirm('是否删除所选用户？')) {
                     $checked.remove();
                     Dialog.show('pd_block_user');
                 }
@@ -3190,7 +2886,7 @@ var ConfigDialog = {
             Dialog.show('pd_block_thread');
         }).end().find('a:last').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除所有屏蔽关键字？')) {
+            if (confirm('是否清除所有屏蔽关键字？')) {
                 $blockThreadList.find('tbody > tr:gt(0)').remove();
                 Dialog.show('pd_block_thread');
             }
@@ -3232,7 +2928,7 @@ var ConfigDialog = {
         var $dialog = Dialog.create('pd_common_im_or_ex_config', '导入或导出{0}'.replace('{0}', title), html);
         $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
             e.preventDefault();
-            if (!window.confirm('是否导入文本框中的设置？')) return;
+            if (!confirm('是否导入文本框中的设置？')) return;
             var options = $.trim($('#pd_cfg_common_config').val());
             if (!options) return;
             try {
@@ -3479,7 +3175,7 @@ var Log = {
             return Dialog.close('pd_log');
         }).next('button').click(function (e) {
             e.preventDefault();
-            if (window.confirm('是否清除所有日志？')) {
+            if (confirm('是否清除所有日志？')) {
                 Log.clear();
                 alert('日志已清除');
                 location.reload();
@@ -3911,7 +3607,7 @@ var Log = {
             e.preventDefault();
             var action = $(this).data('action');
             if (action === 'merge' || action === 'overwrite') {
-                if (!window.confirm('是否将文本框中的日志{0}到本地日志？'.replace('{0}', action === 'overwrite' ? '覆盖' : '合并'))) return;
+                if (!confirm('是否将文本框中的日志{0}到本地日志？'.replace('{0}', action === 'overwrite' ? '覆盖' : '合并'))) return;
                 var log = $.trim($('#pd_log_setting').val());
                 if (!log) return;
                 try {
@@ -4519,7 +4215,7 @@ var Item = {
                             }
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('UseItems');
                             }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                         }
@@ -4680,7 +4376,7 @@ var Item = {
                             }
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('RestoreItems');
                             }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                         }
@@ -4765,7 +4461,7 @@ var Item = {
             KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', options.itemIdList.length)
                 , true);
-            window.setTimeout(function () {
+            setTimeout(function () {
                 Item.useItems(options, cycle);
             }, cycle.round === 1 ? 500 : typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
@@ -4773,7 +4469,7 @@ var Item = {
             KFOL.showWaitMsg('<strong>正在恢复道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                     .replace('{0}', options.itemIdList.length)
                 , true);
-            window.setTimeout(function () {
+            setTimeout(function () {
                 Item.restoreItems(options, cycle);
             }, typeof Const.cycleUseItemsFirstAjaxInterval === 'function' ? Const.cycleUseItemsFirstAjaxInterval() : Const.cycleUseItemsFirstAjaxInterval);
         }
@@ -4922,7 +4618,7 @@ var Item = {
                             if (settings.isTypeBatch) $(document).dequeue('ConvertItemTypesToEnergy');
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('ConvertItemsToEnergy');
                             }, Const.defAjaxInterval);
                         }
@@ -5017,7 +4713,7 @@ var Item = {
                             );
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('SellItems');
                             }, Const.defAjaxInterval);
                         }
@@ -5063,7 +4759,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                if (!window.confirm('共选择了{0}个道具，是否批量使用道具？'.replace('{0}', itemIdList.length))) return;
+                if (!confirm('共选择了{0}个道具，是否批量使用道具？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                     , true);
@@ -5094,7 +4790,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                var value = window.prompt(
+                var value = prompt(
                     '你要循环使用多少个道具？\n（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[上限设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
                     , itemIdList.length);
                 if (value === null) return;
@@ -5149,7 +4845,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                if (!window.confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
+                if (!confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在出售道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                     , true);
@@ -5197,7 +4893,7 @@ var Item = {
                     itemIdList.push(parseInt($(this).val()));
                 });
                 if (itemIdList.length === 0) return;
-                if (!window.confirm('共选择了{0}个道具，是否转换为能量？'.replace('{0}', itemIdList.length))) return;
+                if (!confirm('共选择了{0}个道具，是否转换为能量？'.replace('{0}', itemIdList.length))) return;
                 KFOL.showWaitMsg('<strong>正在转换能量中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                         .replace('{0}', itemIdList.length)
                     , true);
@@ -5218,7 +4914,7 @@ var Item = {
                 });
                 if (itemIdList.length === 0) return;
                 var totalRequiredEnergyNum = itemIdList.length * Item.getRestoreEnergyNumByItemLevel(itemLevel);
-                if (!window.confirm('共选择了{0}个道具，共需要{1}点恢复能量，是否恢复道具？'
+                if (!confirm('共选择了{0}个道具，共需要{1}点恢复能量，是否恢复道具？'
                         .replace('{0}', itemIdList.length)
                         .replace('{1}', totalRequiredEnergyNum)
                     )
@@ -5325,7 +5021,7 @@ var Item = {
                         });
                     });
                     if (!itemTypeList.length) return;
-                    var num = parseInt(window.prompt('在指定种类道具中你要' + (action === 'useItemTypes' ? '使用' : '转换') + '多少个道具？（0表示不限制）', 0));
+                    var num = parseInt(prompt('在指定种类道具中你要' + (action === 'useItemTypes' ? '使用' : '转换') + '多少个道具？（0表示不限制）', 0));
                     if (isNaN(num) || num < 0) return;
                     KFOL.removePopTips($('.pd_pop_tips'));
 
@@ -5422,7 +5118,7 @@ var Item = {
 
             if ($this.is('.pd_items_batch_use')) {
                 var num = parseInt(
-                    window.prompt('你要使用多少个【Lv.{0}：{1}】道具？（0表示不限制）'
+                    prompt('你要使用多少个【Lv.{0}：{1}】道具？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsableNum ? itemUsableNum : 0)
@@ -5455,7 +5151,7 @@ var Item = {
                 }, 'html');
             }
             else if ($this.is('.pd_items_cycle_use')) {
-                var value = window.prompt(
+                var value = prompt(
                     ('你要循环使用多少个【Lv.{0}：{1}】道具？\n' +
                     '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）')
                         .replace('{0}', itemLevel)
@@ -5514,7 +5210,7 @@ var Item = {
             }
             else if ($this.is('.pd_items_batch_restore')) {
                 var num = parseInt(
-                    window.prompt('你要恢复多少个【Lv.{0}：{1}】道具？（0表示不限制）'
+                    prompt('你要恢复多少个【Lv.{0}：{1}】道具？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
@@ -5548,7 +5244,7 @@ var Item = {
             }
             else if ($this.is('.pd_items_batch_convert')) {
                 var num = parseInt(
-                    window.prompt('你要将多少个【Lv.{0}：{1}】道具转换为能量？（0表示不限制）'
+                    prompt('你要将多少个【Lv.{0}：{1}】道具转换为能量？（0表示不限制）'
                             .replace('{0}', itemLevel)
                             .replace('{1}', itemName)
                         , itemUsedNum ? itemUsedNum : 0)
@@ -5807,12 +5503,14 @@ var Item = {
      * @param {jQuery} $links 道具名称的链接列表
      */
     showItemUsedInfo: function ($links) {
+        return;
         var tipsList = [
             '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
             '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律'
         ];
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-            var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
+            //var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
+            var itemUsedNumList = undefined;
             $links.next('.pd_used_item_info').remove();
             $links.each(function () {
                 var $this = $(this);
@@ -5979,7 +5677,7 @@ var Item = {
                             }
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('BatchBuyItems');
                             }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
                         }
@@ -6088,7 +5786,7 @@ var Item = {
                             );
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('StatBuyItemsPrice');
                             }, Const.defAjaxInterval);
                         }
@@ -6122,7 +5820,7 @@ var Item = {
             if (!itemLevel) return;
             var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
             if (!itemName) return;
-            if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', itemLevel).replace('{1}', itemName))) {
+            if (!confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', itemLevel).replace('{1}', itemName))) {
                 return false;
             }
         }).on('click', 'a.pd_batch_buy_items', function (e) {
@@ -6138,7 +5836,7 @@ var Item = {
             var itemTypeId = parseInt(matches[1]);
             var safeId = matches[2];
             var num = parseInt(
-                $.trim(window.prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
+                $.trim(prompt('你要批量购买多少个【Lv.{0}：{1}】道具？'
                         .replace('{0}', itemLevel)
                         .replace('{1}', itemName)
                     , 0))
@@ -6272,7 +5970,7 @@ var Card = {
                                 });
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('ConvertCardsToVipTime');
                             }, Const.defAjaxInterval);
                         }
@@ -6329,7 +6027,7 @@ var Card = {
                             cardList.push(parseInt($(this).val()));
                         });
                         if (cardList.length === 0) return;
-                        if (!window.confirm('共选择了{0}张卡片，是否将卡片批量转换为VIP时间？'.replace('{0}', cardList.length))) return;
+                        if (!confirm('共选择了{0}张卡片，是否将卡片批量转换为VIP时间？'.replace('{0}', cardList.length))) return;
                         KFOL.showWaitMsg('<strong>正在批量转换中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
                             .replace('{0}', cardList.length)
                             , true);
@@ -6410,7 +6108,7 @@ var Bank = {
                         '活期存款：{0}KFB'.replace('{0}', currentDeposit + money)
                         )
                     );
-                    window.setTimeout(function () {
+                    setTimeout(function () {
                         $(document).dequeue('Bank');
                     }, 5000);
                 }
@@ -6552,7 +6250,7 @@ var Bank = {
                             );
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('Bank');
                             }, 5000);
                         }
@@ -6659,7 +6357,7 @@ var Bank = {
                     totalMoney += users[i][1];
                 }
                 totalMoney = Math.floor(totalMoney * (1 + fee));
-                if (!window.confirm('共计{0}名用户，总额{1}KFB，是否转账？'
+                if (!confirm('共计{0}名用户，总额{1}KFB，是否转账？'
                         .replace('{0}', users.length)
                         .replace('{1}', totalMoney)
                     )
@@ -6711,7 +6409,7 @@ var Bank = {
                 });
                 if (userList.length === 0) return;
 
-                var range = window.prompt('设定随机金额的范围（注：最低转账金额为20KFB）', '20-100');
+                var range = prompt('设定随机金额的范围（注：最低转账金额为20KFB）', '20-100');
                 if (range === null) return;
                 range = $.trim(range);
                 if (!/^\d+-\d+$/.test(range)) {
@@ -6798,7 +6496,7 @@ var Bank = {
             var fixedDeposit = parseInt(matches[1]);
             var money = parseInt($.trim($('input[name="to_money"]').val()));
             if (!isNaN(money) && fixedDeposit > 0 && money > currentDeposit) {
-                if (!window.confirm('你的活期存款不足，转账金额将从定期存款里扣除，是否继续？')) {
+                if (!confirm('你的活期存款不足，转账金额将从定期存款里扣除，是否继续？')) {
                     $(this).find('input[type="submit"]').prop('disabled', false);
                     return false;
                 }
@@ -6818,1801 +6516,11 @@ var Bank = {
             var interest = parseInt(matches[1]);
             if (interest > 0) {
                 Tools.setCookie(Const.fixedDepositDueAlertCookieName, 1, Tools.getMidnightHourDate(7));
-                if (window.confirm('您的定期存款已到期，共产生利息{0}KFB，是否前往银行取款？'.replace('{0}', interest))) {
+                if (confirm('您的定期存款已到期，共产生利息{0}KFB，是否前往银行取款？'.replace('{0}', interest))) {
                     location.href = 'hack.php?H_name=bank';
                 }
             }
         }, 'html');
-    }
-};
-
-/**
- * 争夺类
- */
-var Loot = {
-    /**
-     * 领取争夺奖励
-     * @param {boolean} [isAutoDonation=false] 是否自动捐款
-     * @param {boolean} [isAutoSaveCurrentDeposit=false] 是否自动活期存款
-     */
-    getLootAward: function (isAutoDonation, isAutoSaveCurrentDeposit) {
-        if (Config.noAutoLootWhen.length > 0) {
-            var now = new Date();
-            for (var i in Config.noAutoLootWhen) {
-                if (Tools.isBetweenInTimeRange(now, Config.noAutoLootWhen[i])) {
-                    if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
-                    else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
-                    return;
-                }
-            }
-        }
-
-        /**
-         * 自动攻击
-         * @param {string} safeId 用户的SafeID
-         * @param {number} deadlyAttackNum 致命一击的攻击次数
-         */
-        var autoAttack = function (safeId, deadlyAttackNum) {
-            if (Config.autoAttackEnabled && !$.isEmptyObject(Config.batchAttackList) && safeId) {
-                if (Loot.isAutoAttackNow()) {
-                    Tools.setCookie(Const.autoAttackReadyCookieName, '1|' + safeId, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                    Loot.autoAttack(safeId, deadlyAttackNum);
-                }
-                else {
-                    Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                }
-            }
-        };
-
-        Func.run('Loot.getLootAward_before_');
-        console.log('领取争夺奖励Start');
-        var $tips = KFOL.showWaitMsg('<strong>正在领取争夺奖励，请稍候...</strong>', true);
-        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-            if (Loot.getNextLootAwardTime().type) {
-                KFOL.removePopTips($tips);
-                return;
-            }
-            var matches = /<INPUT name="submit1" type="submit" value="(.+?)"/i.exec(html);
-            if (!matches) {
-                KFOL.removePopTips($tips);
-                var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
-                Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
-                return;
-            }
-
-            var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
-            var safeId = '';
-            if (safeIdMatches) safeId = safeIdMatches[1];
-
-            var deadlyAttackNum = 0;
-            if (Config.deadlyAttackId > 0) {
-                var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
-                if (deadlyAttackMatches) deadlyAttackNum = parseInt(deadlyAttackMatches[1]);
-                if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
-            }
-
-            var remainingMatches = /还有(\d+)(分钟|小时)领取/i.exec(matches[1]);
-            if (remainingMatches) {
-                KFOL.removePopTips($tips);
-                var lootInterval = parseInt(remainingMatches[1]);
-                if (remainingMatches[2] === '小时') lootInterval = lootInterval * 60;
-                lootInterval++;
-                var nextTime = Tools.getDate('+' + lootInterval + 'm');
-                Tools.setCookie(Const.getLootAwardCookieName,
-                    '{0}|{1}'.replace('{0}', remainingMatches[2] === '小时' ? 1 : 2).replace('{1}', nextTime.getTime()),
-                    nextTime
-                );
-                if (Config.attemptAttackEnabled) {
-                    var nextCheckInterval = Const.firstCheckLifeInterval - (Const.defLootInterval - lootInterval);
-                    if (nextCheckInterval <= 0) nextCheckInterval = 1;
-                    var nextCheckTime = Tools.getDate('+' + nextCheckInterval + 'm');
-                    Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                    Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                }
-
-                var attackNumMatches = />本回合剩余攻击次数\s*(\d+)\s*次<\/span><br/.exec(html);
-                if (attackNumMatches && parseInt(attackNumMatches[1]) > 0) {
-                    autoAttack(safeId, deadlyAttackNum);
-                }
-                if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
-                else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
-            }
-            else if (/(点击这里预领KFB|已经可以领取KFB)/i.test(matches[1])) {
-                if (Config.deferLootTimeWhenRemainAttackNumEnabled) {
-                    var remainAttackNumMatches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
-                    var remainAttackNum = 0;
-                    if (remainAttackNumMatches) remainAttackNum = parseInt(remainAttackNumMatches[1]);
-                    if (remainAttackNum >= Config.deferLootTimeWhenRemainAttackNum && !Tools.getCookie(Const.drawSmboxCookieName)) {
-                        KFOL.removePopTips($tips);
-                        console.log('检测到本回合剩余攻击次数还有{0}次，抽取神秘盒子以延长争夺时间'.replace('{0}', remainAttackNum));
-                        KFOL.drawSmbox();
-                        if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
-                        else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
-                        return;
-                    }
-                }
-
-                var gainMatches = /当前拥有\s*<span style=".+?">(\d+)<\/span>\s*预领KFB<br \/>/i.exec(html);
-                var gain = 0;
-                if (gainMatches) gain = parseInt(gainMatches[1]);
-
-                var attackLogList = Loot.getMonsterAttackLogList(html);
-                var lootInfo = Loot.getLootInfo(html);
-
-                $.post('kf_fw_ig_index.php',
-                    {submit1: 1, one: 1},
-                    function (msg) {
-                        KFOL.removePopTips($tips);
-                        KFOL.showFormatLog('领取争夺奖励', msg);
-                        if (/(领取成功！|已经预领\d+KFB)/i.test(msg)) {
-                            var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
-                            Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime.getTime(), nextTime);
-                            if (Config.attemptAttackEnabled) {
-                                var nextCheckTime = Tools.getDate('+' + Const.firstCheckLifeInterval + 'm');
-                                Tools.setCookie(Const.checkLifeCookieName, nextCheckTime.getTime(), nextCheckTime);
-                                Tools.setCookie(Const.attackCountCookieName, 0, Tools.getDate('+' + Const.defLootInterval + 'm'));
-                            }
-
-                            var lootCountDiff = -1, attackKfbDiff = -1, attackedCountDiff = -1, attackedKfbDiff = -1;
-                            if (lootInfo) {
-                                var prevLootInfo = Loot.getPrevLootInfo();
-                                if (prevLootInfo) {
-                                    lootCountDiff = lootInfo.lootCount - prevLootInfo.lootCount;
-                                    if (lootCountDiff === 1) {
-                                        attackKfbDiff = lootInfo.attackKfb - prevLootInfo.attackKfb;
-                                        attackedCountDiff = lootInfo.attackedCount - prevLootInfo.attackedCount;
-                                    }
-                                }
-                                TmpLog.setValue(Const.prevLootInfoTmpLogName, lootInfo);
-                            }
-
-                            if (/已经预领\d+KFB/i.test(msg)) {
-                                gain = 0;
-                            }
-                            else {
-                                var options = {gain: {'KFB': gain}};
-                                if (attackKfbDiff >= 0) attackedKfbDiff = attackKfbDiff + Const.lootInitialBonus - gain;
-                                if (attackKfbDiff >= 0 && attackedKfbDiff >= 0) {
-                                    options['gain']['夺取KFB'] = attackKfbDiff;
-                                    options['pay'] = {'夺取KFB': -attackedKfbDiff};
-                                }
-                                Log.push('领取争夺奖励',
-                                    '领取争夺奖励{0}'.replace('{0}', attackedCountDiff > 0 ? '(共受到`{0}`次攻击)'.replace('{0}', attackedCountDiff) : ''), options
-                                );
-                            }
-                            console.log('领取争夺奖励{0}，KFB+{1}{2}{3}'
-                                .replace('{0}', attackedCountDiff >= 0 ? '(共受到{0}次攻击)'.replace('{0}', attackedCountDiff) : '')
-                                .replace('{1}', gain)
-                                .replace('{2}', attackKfbDiff >= 0 ? '，夺取KFB+' + attackKfbDiff : '')
-                                .replace('{3}', attackedKfbDiff >= 0 ? '，夺取KFB-' + attackedKfbDiff : '')
-                            );
-                            var $msg = KFOL.showMsg('<strong>领取争夺奖励{0}</strong><i>KFB<em>+{1}</em></i>{2}{3}{4}{5}'
-                                .replace('{0}', attackedCountDiff >= 0 ? ' (共受到<em>{0}</em>次攻击)'.replace('{0}', attackedCountDiff) : '')
-                                .replace('{1}', gain)
-                                .replace('{2}', attackKfbDiff >= 0 ? '<i>夺取KFB<em>+{0}</em></i>'.replace('{0}', attackKfbDiff) : '')
-                                .replace('{3}', attackedKfbDiff >= 0 ? '<i>夺取KFB<ins>-{0}</ins></i>'.replace('{0}', attackedKfbDiff) : '')
-                                .replace('{4}', attackLogList.length > 0 ? '<a href="#">查看日志</a>' : '')
-                                .replace('{5}', !Config.autoAttackEnabled ? '<a target="_blank" href="kf_fw_ig_pklist.php">手动攻击</a>' : '')
-                            );
-                            $msg.find('a[href="#"]:first').click(function (e) {
-                                e.preventDefault();
-                                Loot.showAttackLogDialog(2, attackLogList);
-                            });
-                            autoAttack(safeId, deadlyAttackNum);
-                            if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
-                            else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit(true);
-                            Func.run('Loot.getLootAward_after_', html);
-                        }
-                    }, 'html');
-            }
-            else {
-                KFOL.removePopTips($tips);
-                var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm');
-                Tools.setCookie(Const.getLootAwardCookieName, '1|' + nextTime.getTime(), nextTime);
-                if (isAutoDonation) KFOL.donation(isAutoSaveCurrentDeposit);
-                else if (isAutoSaveCurrentDeposit) KFOL.autoSaveCurrentDeposit();
-            }
-        }, 'html');
-    },
-
-    /**
-     * 自动攻击
-     * @param {string} safeId 用户的SafeID
-     * @param {number} [deadlyAttackNum=-1] 致命一击的攻击次数（-1表示自动检查致命一击的剩余次数）
-     */
-    autoAttack: function (safeId, deadlyAttackNum) {
-        var $remainingTips = $('#pd_remaining_num').closest('.pd_pop_tips');
-        if ($remainingTips.length > 0 && !$remainingTips.data('retry')) {
-            Tools.setCookie(Const.autoAttackingCookieName, 1, Tools.getDate('+' + Const.checkAutoAttackingInterval + 'm'));
-            $remainingTips.data('retry', 1);
-            return;
-        }
-        Func.run('Loot.autoAttack_before_');
-        KFOL.removePopTips($remainingTips);
-
-        /**
-         * 攻击
-         * @param {number} [deadlyAttackId=0] 致命一击的攻击目标ID
-         * @param {number} [deadlyAttackNum=0] 致命一击的攻击次数
-         */
-        var attack = function (deadlyAttackId, deadlyAttackNum) {
-            if (!deadlyAttackId) deadlyAttackId = 0;
-            if (!deadlyAttackNum) deadlyAttackNum = 0;
-            var attackList = {};
-            if (deadlyAttackNum > 0) attackList['0' + deadlyAttackId] = deadlyAttackNum;
-            if (Config.attemptAttackEnabled) {
-                var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
-                if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
-                var num = 0;
-                for (var id in Config.batchAttackList) {
-                    for (var i = 1; i <= Config.batchAttackList[id]; i++) {
-                        num++;
-                        if (num > Const.maxAttackNum - deadlyAttackNum) break;
-                        if (num > attackCount) {
-                            if (typeof attackList['0' + id] === 'undefined') attackList['0' + id] = 1;
-                            else attackList['0' + id]++;
-                        }
-                    }
-                }
-            }
-            else if (deadlyAttackNum > 0) {
-                var num = 0;
-                for (var id in Config.batchAttackList) {
-                    for (var i = 1; i <= Config.batchAttackList[id]; i++) {
-                        num++;
-                        if (num > Const.maxAttackNum - deadlyAttackNum) break;
-                        if (typeof attackList['0' + id] === 'undefined') attackList['0' + id] = 1;
-                        else attackList['0' + id]++;
-                    }
-                }
-            }
-            if ($.isEmptyObject(attackList)) attackList = Config.batchAttackList;
-            var totalAttackNum = 0;
-            for (var id in attackList) {
-                totalAttackNum += attackList[id];
-            }
-            if (!totalAttackNum) return;
-            Tools.setCookie(Const.autoAttackingCookieName, 1, Tools.getDate('+' + Const.checkAutoAttackingInterval + 'm'));
-            KFOL.showWaitMsg(
-                ('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>' +
-                '<a target="_blank" href="{1}">浏览其它页面</a><a class="pd_stop_action pd_highlight" href="#">停止操作</a>')
-                    .replace('{0}', totalAttackNum)
-                    .replace('{1}', location.href)
-                , true);
-            Loot.batchAttack({
-                type: 2,
-                totalAttackNum: totalAttackNum,
-                attackList: attackList,
-                safeId: safeId
-            });
-        };
-
-        /**
-         * 检查致命一击剩余攻击次数
-         */
-        var checkDeadlyAttackNum = function () {
-            console.log('检查致命一击剩余攻击次数Start');
-            $.ajax({
-                type: 'GET',
-                url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
-                timeout: Const.defAjaxTimeout,
-                success: function (html) {
-                    var deadlyAttackNum = 0;
-                    var matches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
-                    if (matches) deadlyAttackNum = parseInt(matches[1]);
-                    if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
-                    if (deadlyAttackNum > 0) attack(Config.deadlyAttackId, deadlyAttackNum);
-                    else attack();
-                },
-                error: function (jqXHR, textStatus) {
-                    if (textStatus === 'timeout') {
-                        window.setTimeout(checkDeadlyAttackNum, 2000);
-                    }
-                },
-                dataType: 'html'
-            });
-        };
-
-        if (!$.isNumeric(deadlyAttackNum)) deadlyAttackNum = -1;
-        if (Config.deadlyAttackId > 0) {
-            if (deadlyAttackNum === -1) {
-                checkDeadlyAttackNum();
-            }
-            else {
-                attack(Config.deadlyAttackId, deadlyAttackNum);
-            }
-        }
-        else {
-            attack();
-        }
-    },
-
-    /**
-     * 通过回应获取攻击收获
-     * @param {string} msg 攻击回应
-     * @returns {{}} 攻击收获
-     */
-    getGainViaMsg: function (msg) {
-        var gain = {};
-        var matches = /被实际夺取(\d+)KFB/i.exec(msg);
-        if (matches) gain['夺取KFB'] = parseInt(matches[1]);
-        matches = /被实际燃烧(\d+)KFB/i.exec(msg);
-        if (matches) gain['经验值'] = parseInt(matches[1]);
-        matches = /掉落道具!(.+?)$/.exec(msg);
-        if (matches) {
-            gain['道具'] = 1;
-            var item = {};
-            item[matches[1]] = 1;
-            gain['item'] = item;
-        }
-        return gain;
-    },
-
-    /**
-     * 批量攻击
-     * @param {{}} options 设置项
-     * @param {number} options.type 攻击类型，1：在争夺页面中进行批量攻击；2：在自动争夺中进行批量攻击；3：进行试探攻击
-     * @param {number} options.totalAttackNum 总攻击次数
-     * @param {{}} options.attackList 攻击目标列表
-     * @param {string} options.safeId 用户的SafeID
-     * @param {string} [options.life] 当前实际生命值（用于试探攻击）
-     * @param {string} [options.recentMonsterAttackLog] 最近一次的被怪物攻击日志（用于试探攻击）
-     */
-    batchAttack: function (options) {
-        var settings = {
-            type: 1,
-            totalAttackNum: 0,
-            attackList: {},
-            safeId: '',
-            life: 0,
-            recentMonsterAttackLog: ''
-        };
-        $.extend(settings, options);
-        Func.run('Loot.batchAttack_before_');
-        if (settings.type === 1)
-            $('.kf_fw_ig1').parent().append('<div class="pd_result"><strong>攻击结果：</strong><ul></ul></div>');
-        var count = 0, successNum = 0, failNum = 0, strongAttackNum = 0, criticalStrikeNum = 0;
-        var gain = {'夺取KFB': 0, '经验值': 0};
-        var isStop = false, isRetakeSafeId = false;
-        var attackLogList = [];
-        var oriHtml = '', customHtml = '';
-
-        /**
-         * 攻击指定ID的怪物
-         * @param {number} id 攻击ID
-         */
-        var attack = function (id) {
-            count++;
-            $.ajax({
-                type: 'POST',
-                url: 'kf_fw_ig_pkhit.php',
-                data: {uid: id, safeid: settings.safeId},
-                timeout: Const.defAjaxTimeout,
-                success: function (msg) {
-                    if (/发起争夺/.test(msg)) {
-                        successNum++;
-                        if (/触发暴击!/.test(msg)) strongAttackNum++;
-                        if (/致命一击!/.test(msg)) criticalStrikeNum++;
-                        $.each(Loot.getGainViaMsg(msg), function (key, data) {
-                            if (key === 'item') {
-                                if (typeof gain[key] === 'undefined') gain['item'] = {};
-                                for (var k in data) {
-                                    if (typeof gain['item'][k] === 'undefined') gain['item'][k] = data[k];
-                                    else gain['item'][k] += data[k];
-                                }
-                            }
-                            else {
-                                if (typeof gain[key] === 'undefined') gain[key] = data;
-                                else gain[key] += data;
-                            }
-                        });
-                    }
-                    else if (/每次攻击间隔\d+秒/.test(msg)) {
-                        failNum++;
-                        $(document).queue('BatchAttack', function () {
-                            attack(id);
-                        });
-                    }
-                    else if (/⑧2/.test(msg)) {
-                        msg = 'SafeID错误（尝试重新获取SafeID）';
-                        isRetakeSafeId = true;
-                        failNum++;
-                        $(document).queue('BatchAttack', function () {
-                            attack(id);
-                        });
-                    }
-                    else if (/(⑧1|⑧3|<a href="javascript:history.go\(-1\);">返回上一步操作<\/a>)/i.test(msg)) {
-                        failNum++;
-                    }
-                    else {
-                        isStop = true;
-                    }
-                    attackLogList.push('第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
-                    if (settings.type === 3)
-                        console.log('【试探攻击】{0}{1}'.replace('{0}', msg).replace('{1}', isStop ? '（攻击已中止）' : ''));
-                    else
-                        console.log('【批量攻击】第{0}次：{1}{2}'.replace('{0}', count).replace('{1}', msg).replace('{2}', isStop ? '（攻击已中止）' : ''));
-                    if (settings.type === 1) {
-                        var html = '<li><b>第{0}次：</b>{1}{2}</li>'
-                            .replace('{0}', count)
-                            .replace('{1}', msg)
-                            .replace('{2}', isStop ? '<span class="pd_notice">（攻击已中止）</span>' : '');
-                        oriHtml += html;
-                        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
-                            $.each(Config.customMonsterNameList, function (id, name) {
-                                var oriName = Loot.getMonsterNameById(parseInt(id));
-                                html = html.replace(
-                                    '对[{0}]'.replace('{0}', oriName),
-                                    '对<span class="pd_custom_tips" title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
-                                );
-                            });
-                            customHtml += html;
-                        }
-                        $('.pd_result:last > ul').append(html);
-                    }
-
-                },
-                error: function () {
-                    failNum++;
-                    attackLogList.push('第{0}次：{1}'.replace('{0}', count).replace('{1}', '连接超时'));
-                    console.log('【{0}攻击】第{1}次：{2}'.replace('{0}', settings.type === 3 ? '试探' : '批量').replace('{1}', count).replace('{2}', '连接超时'));
-                    if (settings.type === 1) {
-                        var html = '<li><b>第{0}次：</b>{1}</li>'
-                            .replace('{0}', count)
-                            .replace('{1}', '<span class="pd_notice">连接超时</span>');
-                        $('.pd_result:last > ul').append(html);
-                    }
-                    $(document).queue('BatchAttack', function () {
-                        attack(id);
-                    });
-                },
-                complete: function () {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(settings.totalAttackNum + failNum - count);
-                    isStop = isStop || $remainingNum.closest('.pd_pop_tips').data('stop');
-                    if (isStop) $(document).clearQueue('BatchAttack');
-
-                    if (isStop || count === settings.totalAttackNum + failNum) {
-                        KFOL.removePopTips($remainingNum.closest('.pd_pop_tips'));
-                        if (gain['夺取KFB'] === 0) delete gain['夺取KFB'];
-                        if (gain['经验值'] === 0) delete gain['经验值'];
-                        if (successNum > 0) {
-                            var extraLog = '';
-                            if (strongAttackNum > 0) extraLog += '暴击`+{0}`'.replace('{0}', strongAttackNum);
-                            if (criticalStrikeNum > 0) extraLog += (extraLog ? '，' : '') + '致命一击`+{0}`'.replace('{0}', criticalStrikeNum);
-                            if (extraLog) extraLog = '(' + extraLog + ')';
-                            if (settings.type === 3) Log.push('试探攻击', '成功进行了`{0}`次试探攻击'.replace('{0}', successNum) + extraLog, {gain: gain});
-                            else Log.push('批量攻击', '共有`{0}`次攻击成功'.replace('{0}', successNum) + extraLog, {gain: gain});
-                        }
-
-                        var msgStat = '', logStat = '', resultStat = '';
-                        for (var key in gain) {
-                            if (key === 'item') {
-                                msgStat += '<br />';
-                                for (var itemName in gain['item']) {
-                                    msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
-                                    logStat += '，{0}+{1}'.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
-                                    resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', gain['item'][itemName]);
-                                }
-                            }
-                            else {
-                                msgStat += '<i>{0}<em>+{1}</em></i>'.replace('{0}', key).replace('{1}', gain[key]);
-                                logStat += '，{0}+{1}'.replace('{0}', key).replace('{1}', gain[key]);
-                                resultStat += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', gain[key]);
-                            }
-                        }
-                        console.log((settings.type === 3 ? '成功进行了{0}次试探攻击'.replace('{0}', successNum) : '共有{0}次攻击成功'.replace('{0}', successNum)) + logStat);
-
-                        var extraMsg = '';
-                        if (strongAttackNum > 0) extraMsg += '暴击<em>+{0}</em>'.replace('{0}', strongAttackNum);
-                        if (criticalStrikeNum > 0) extraMsg += (extraMsg ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
-                        if (extraMsg) extraMsg = '（' + extraMsg + '）';
-                        var $msg = KFOL.showMsg('<strong>{0}{1}</strong>{2}{3}'
-                                .replace('{0}', settings.type === 3 ?
-                                    '成功进行了<em>{0}</em>次试探攻击'.replace('{0}', successNum)
-                                    : '共有<em>{0}</em>次攻击成功'.replace('{0}', successNum))
-                                .replace('{1}', extraMsg)
-                                .replace('{2}', msgStat)
-                                .replace('{3}', settings.type >= 2 ? '<a href="#">查看日志</a>' : '')
-                            , Config.defShowMsgDuration
-                        );
-
-                        if (isStop || settings.type === 2 || count >= Const.maxAttackNum) {
-                            Tools.setCookie(Const.autoAttackingCookieName, '', Tools.getDate('-1d'));
-                            Tools.setCookie(Const.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
-                            if (Config.attemptAttackEnabled) {
-                                Tools.setCookie(Const.checkLifeCookieName, '', Tools.getDate('-1d'));
-                                Tools.setCookie(Const.attackCountCookieName, '', Tools.getDate('-1d'));
-                                Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
-                            }
-                        }
-                        else if (settings.type === 3) {
-                            var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
-                            if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
-                            attackCount++;
-                            if (attackCount >= Const.maxAttackNum) {
-                                Tools.setCookie(Const.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
-                                Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
-                            }
-                            else {
-                                Tools.setCookie(Const.attackCountCookieName, attackCount, new Date(Loot.getNextLootAwardTime().time));
-                                if (options.recentMonsterAttackLog) {
-                                    var thisGainKfb = 0;
-                                    if (gain['夺取KFB']) thisGainKfb = gain['夺取KFB'];
-                                    Tools.setCookie(Const.prevAttemptAttackLogCookieName,
-                                        (thisGainKfb + options.life) + '/' + options.recentMonsterAttackLog,
-                                        new Date(Loot.getNextLootAwardTime().time)
-                                    );
-                                }
-                            }
-                        }
-                        if (settings.type >= 2) {
-                            $msg.find('a:last').click(function (e) {
-                                e.preventDefault();
-                                Loot.showAttackLogDialog(1, attackLogList, resultStat);
-                            });
-                            if (settings.type === 2 && KFOL.isInHomePage) {
-                                $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
-                            }
-                        }
-                        else {
-                            var $result = $('.pd_result:last');
-                            $result.append('<div class="pd_stat"><b>统计结果{0}：</b><br />{1}</div>'
-                                .replace('{0}', extraMsg)
-                                .replace('{1}', resultStat ? resultStat : '无')
-                            );
-                            if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
-                                $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-                                    '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" />' +
-                                    ' 自定义</label><br />')
-                                    .prependTo($result)
-                                    .find('input[name="pd_custom_attack_log"]')
-                                    .click(function () {
-                                        if ($(this).val() === 'custom') {
-                                            $result.find('ul').html(customHtml);
-                                        }
-                                        else {
-                                            $result.find('ul').html(oriHtml);
-                                        }
-                                    });
-                            }
-                        }
-
-                        if (Config.autoUseItemEnabled && Config.autoUseItemNames.length > 0 && typeof gain['item'] !== 'undefined') {
-                            var itemNameList = {};
-                            for (var itemName in gain['item']) {
-                                if ($.inArray(itemName, Config.autoUseItemNames) > -1) {
-                                    itemNameList[itemName] = gain['item'][itemName];
-                                }
-                            }
-                            if (!$.isEmptyObject(itemNameList)) Loot.useItemsAfterBatchAttack(itemNameList);
-                        }
-                        Func.run('Loot.batchAttack_after_', gain);
-                    }
-                    else {
-                        if (isRetakeSafeId) {
-                            isRetakeSafeId = false;
-                            console.log('重新获取SafeID Start');
-                            $.ajax({
-                                type: 'GET',
-                                url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
-                                timeout: Const.defAjaxTimeout,
-                                success: function (html) {
-                                    var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
-                                    var safeId = '';
-                                    if (safeIdMatches) safeId = safeIdMatches[1];
-                                    if (!safeId) return;
-                                    settings.safeId = safeId;
-                                    if (Tools.getCookie(Const.autoAttackReadyCookieName))
-                                        Tools.setCookie(Const.autoAttackReadyCookieName, '2|' + safeId, new Date(Loot.getNextLootAwardTime().time));
-                                },
-                                complete: function () {
-                                    window.setTimeout(function () {
-                                        $(document).dequeue('BatchAttack');
-                                    }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
-                                },
-                                dataType: 'html'
-                            });
-                        }
-                        else {
-                            window.setTimeout(function () {
-                                $(document).dequeue('BatchAttack');
-                            }, typeof Const.perAttackInterval === 'function' ? Const.perAttackInterval() : Const.perAttackInterval);
-                        }
-                    }
-                },
-                dataType: 'html'
-            });
-        };
-
-        $(document).clearQueue('BatchAttack');
-        $.each(settings.attackList, function (id, num) {
-            $.each(new Array(num), function () {
-                $(document).queue('BatchAttack', function () {
-                    attack(parseInt(id));
-                });
-            });
-        });
-        $(document).dequeue('BatchAttack');
-    },
-
-    /**
-     * 添加批量攻击按钮
-     */
-    addBatchAttackButton: function () {
-        var safeId = KFOL.getSafeId();
-        if (!safeId) return;
-        $('.kf_fw_ig1 > tbody > tr:gt(3) > td > a.kfigpk_hit').each(function () {
-            var $this = $(this);
-            var hitId = parseInt($this.attr('hitid'));
-            if (!hitId) return;
-            $this.parent().attr('colspan', '3')
-                .after(('<td class="pd_batch_attack" style="text-align:center"><label>' +
-                    '<input style="width:15px" class="pd_input" type="text" maxlength="2" data-id="{0}" value="{1}" /> 次</label></td>')
-                        .replace('{0}', hitId)
-                        .replace('{1}', Config.batchAttackList[hitId] ? Config.batchAttackList[hitId] : '')
-                );
-        });
-        $('.pd_batch_attack .pd_input').keydown(function (e) {
-            if (e.keyCode === 13) {
-                $('.pd_item_btns > button:last-child').click();
-            }
-        });
-
-        /**
-         * 获取攻击列表和总次数
-         * @param {{}} attackList 攻击目标列表
-         * @returns {number} 攻击总次数
-         */
-        var getAttackNum = function (attackList) {
-            var totalAttackNum = 0;
-            $('.pd_batch_attack .pd_input').each(function () {
-                var $this = $(this);
-                var attackNum = $.trim($this.val());
-                if (!attackNum) return 0;
-                attackNum = parseInt(attackNum);
-                if (isNaN(attackNum) || attackNum < 0) {
-                    alert('攻击次数格式不正确');
-                    $this.select();
-                    $this.focus();
-                    return 0;
-                }
-                attackList[parseInt($this.data('id'))] = attackNum;
-                totalAttackNum += attackNum;
-            });
-            if ($.isEmptyObject(attackList)) return 0;
-            if (totalAttackNum > Const.maxAttackNum) {
-                alert('攻击次数不得超过{0}次'.replace('{0}', Const.maxAttackNum));
-                return 0;
-            }
-            return totalAttackNum;
-        };
-
-        $('<div class="pd_item_btns"><button>保存设置</button><button>清除设置</button><button><b>批量攻击</b></button></div>')
-            .insertAfter('.kf_fw_ig1')
-            .find('button:first-child')
-            .click(function () {
-                var attackList = {};
-                var totalAttackNum = getAttackNum(attackList);
-                if (totalAttackNum == 0) return;
-                ConfigMethod.read();
-                Config.batchAttackList = attackList;
-                ConfigMethod.write();
-                alert('设置已保存');
-            })
-            .next()
-            .click(function () {
-                ConfigMethod.read();
-                Config.batchAttackList = {};
-                ConfigMethod.write();
-                alert('设置已清除');
-            })
-            .next()
-            .click(function () {
-                KFOL.removePopTips($('.pd_pop_tips'));
-                var attackList = {};
-                var totalAttackNum = getAttackNum(attackList);
-                if (!totalAttackNum) return;
-                if (!window.confirm('准备进行{0}次批量攻击，是否开始攻击？'.replace('{0}', totalAttackNum))) return;
-                KFOL.showWaitMsg(
-                    ('<strong>正在批量攻击中，请耐心等待...</strong><i>攻击次数：<em id="pd_remaining_num">{0}</em></i>' +
-                    '<a target="_blank" href="/">浏览其它页面</a><a class="pd_stop_action pd_highlight" href="#">停止操作</a>')
-                        .replace('{0}', totalAttackNum)
-                    , true);
-                Loot.batchAttack({type: 1, totalAttackNum: totalAttackNum, attackList: attackList, safeId: safeId});
-            });
-    },
-
-    /**
-     * 在争夺首页进行对页面元素进行相关处理
-     */
-    handleInLootIndexPage: function () {
-        var $btn = $('input[name="submit1"][value="已经可以领取KFB，请点击这里获取"]');
-        if ($btn.length > 0) {
-            if (Config.autoLootEnabled && Tools.getCookie(Const.getLootAwardCookieName)) {
-                $btn.prop('disabled', true);
-                Tools.setCookie(Const.getLootAwardCookieName, '', Tools.getDate('-1d'));
-                Loot.getLootAward();
-            }
-            else {
-                $('form[name="rvrc1"]').submit(function () {
-                    var gain = parseInt($btn.parent('td').find('span:eq(0)').text());
-                    if (!isNaN(gain) && gain >= 0) {
-                        var nextTime = Tools.getDate('+' + Const.defLootInterval + 'm').getTime() + 10 * 1000;
-                        Tools.setCookie(Const.getLootAwardCookieName, '2|' + nextTime, new Date(nextTime));
-                        Log.push('领取争夺奖励', '领取争夺奖励', {gain: {'KFB': gain}});
-                    }
-                });
-            }
-        }
-
-        var $submit = $('input[name="submit1"][value$="领取，点击这里抢别人的"]');
-        if ($submit.length > 0) {
-            (function () {
-                var timeLog = Loot.getNextLootAwardTime();
-                if (timeLog.type >= 1) {
-                    var diff = Tools.getTimeDiffInfo(timeLog.time);
-                    if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-                    var matches = /还有(\d+)小时领取，点击这里抢别人的/.exec($submit.val());
-                    if (timeLog.type === 2 && matches) {
-                        if (matches) {
-                            if (diff.hours !== parseInt(matches[1])) return;
-                            $submit.css('width', '270px').val('还有{0}小时{1}分领取，点击这里抢别人的'.replace('{0}', diff.hours).replace('{1}', diff.minutes));
-                        }
-                        else {
-                            if (diff.hours !== 0) return;
-                        }
-                    }
-                    var end1 = new Date(timeLog.time);
-                    var end2 = new Date(timeLog.time + 60 * 60 * 1000);
-                    var getLootAwardHtml = '<span class="pd_highlight">可领取时间：{0} {1}{2}</span>'
-                        .replace('{0}', Tools.getDateString(end1))
-                        .replace('{1}', Tools.getTimeString(end1, ':', false))
-                        .replace('{2}', timeLog.type === 1 ? '~' + Tools.getTimeString(end2, ':', false) : '');
-                    if (Config.attackAfterTime && Tools.getCookie(Const.autoAttackReadyCookieName)) {
-                        var attackTime = new Date(timeLog.time - Config.attackAfterTime * 60 * 1000);
-                        if (attackTime < new Date()) attackTime = new Date();
-                        getLootAwardHtml += '<br /><span style="color:#00F">自动攻击时间：{0} {1}</span>'
-                            .replace('{0}', Tools.getDateString(attackTime))
-                            .replace('{1}', Tools.getTimeString(attackTime, ':', false));
-                    }
-                    $submit.prev().prev().before(getLootAwardHtml);
-                }
-            }());
-        }
-
-        if (Tools.getCookie(Const.checkLifeCookieName)) {
-            var $lifeNode = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child');
-            var value = Tools.getCookie(Const.prevAttemptAttackLogCookieName);
-            if (value) {
-                var arr = value.split('/');
-                if (arr.length === 2 && !isNaN(parseInt(arr[0]))) {
-                    var realLife = parseInt(arr[0]);
-                    var prevMonsterAttackLog = $.trim(arr[1]);
-                    var recentMonsterAttackLogTime = '';
-                    var attackLogMatches = />(\d+:\d+:\d+)\s*\|/.exec($('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html());
-                    if (attackLogMatches) recentMonsterAttackLogTime = attackLogMatches[1];
-
-                    var text = $lifeNode.text();
-                    var life = 0, minLife = 0;
-                    var lifeMatches = /当前拥有\s*(\d+)\s*预领KFB/i.exec(text);
-                    if (lifeMatches) life = parseInt(lifeMatches[1]);
-                    var minLifeMatches = /则你可以领取(\d+)KFB\)/i.exec(text);
-                    if (minLifeMatches) minLife = parseInt(minLifeMatches[1]);
-                    if (minLife > 0 && life === minLife && recentMonsterAttackLogTime && prevMonsterAttackLog.indexOf(recentMonsterAttackLogTime) === 0) {
-                        $lifeNode.find('br:first').before(
-                            '<span class="pd_custom_tips" style="color:#339933" title="当前实际生命值（在少数情况下可能会不准确）"> (生命值：<b>{0}</b>)</span>'
-                                .replace('{0}', realLife)
-                        );
-                    }
-                }
-            }
-
-            if (Config.attemptAttackEnabled) {
-                $('<span class="pd_custom_tips" style="color:#339933;margin-left:7px;cursor:pointer" title="立即检查生命值">&#10010;</span>')
-                    .insertBefore($lifeNode.find('br:first'))
-                    .click(function () {
-                        Tools.setCookie(Const.checkLifeCookieName, '', Tools.getDate('-1d'));
-                        Loot.checkLife();
-                        alert('已重新检查生命值');
-                    });
-            }
-        }
-
-        var $lootPropertyInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(2)');
-        if ($lootPropertyInfo.length > 0) {
-            var html = $lootPropertyInfo.html();
-            var lootInfoMatches = html.match(/>.+?\s*\d+\(\+\d+(\+\d+)?\)\s*(点|%)<\/span>/gi);
-            if (lootInfoMatches) {
-                for (var i in lootInfoMatches) {
-                    var lineMatches = /(\d+)\(\+(\d+)(\+\d+)?\)/.exec(lootInfoMatches[i]);
-                    if (!lineMatches) continue;
-                    var totalNum = 0;
-                    for (var j = 1; j < lineMatches.length; j++) {
-                        var num = parseInt(lineMatches[j]);
-                        if (isNaN(num)) continue;
-                        totalNum += num;
-                    }
-                    if (totalNum > 0) {
-                        var replace = lootInfoMatches[i].replace(lineMatches[0], lineMatches[0] + '=' + totalNum);
-                        html = html.replace(lootInfoMatches[i], replace);
-                    }
-                }
-                $lootPropertyInfo.html(html);
-            }
-            $lootPropertyInfo.find('span[title]').addClass('pd_custom_tips');
-
-            $lootPropertyInfo.css('position', 'relative');
-            $('<a style="position:absolute;top:4px;right:5px;" href="#">[合计]</a>').appendTo($lootPropertyInfo).click(function (e) {
-                e.preventDefault();
-                var $this = $(this);
-                var $panel = $('#pd_attack_sum_panel');
-                if ($panel.length > 0) {
-                    $this.text('[合计]');
-                    $panel.remove();
-                    return;
-                }
-                $this.text('[关闭]');
-
-                var attackNum = 0, attackBurnNum = 0, strongAttackPercent = 0;
-                var content = $lootPropertyInfo.html();
-                var matches = /争夺攻击\s*\d+\(\+\d+\)=(\d+)\s*点/.exec(content);
-                if (matches) attackNum = parseInt(matches[1]);
-                matches = /争夺燃烧\s*\d+\(\+\d+\)=(\d+)\s*点/.exec(content);
-                if (matches) attackBurnNum = parseInt(matches[1]);
-                matches = /争夺暴击比例\s*\d+\(\+\d+\)=(\d+)\s*%/.exec(content);
-                if (matches) strongAttackPercent = parseInt(matches[1]) / 100;
-
-                var html =
-                    '<table class="pd_panel" id="pd_attack_sum_panel" style="text-align:center;padding:0 5px">' +
-                    '  <tbody>' +
-                    '    <tr>' +
-                    '      <th style="width:95px;text-align:left">攻击|攻击+燃烧</th>' +
-                    '      <th style="width:120px">正常</th>' +
-                    '      <th style="width:120px">致命一击(如果有)</th>' +
-                    '    </tr>' +
-                    '    <tr>' +
-                    '      <th style="text-align:left">普通攻击</th>' +
-                    '      <td class="pd_custom_tips" title="争夺攻击+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
-                        .replace('{0}', attackNum)
-                        .replace('{1}', attackNum + attackBurnNum) +
-                    '      <td class="pd_custom_tips" title="争夺攻击×致命一击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
-                        .replace('{0}', Math.round(attackNum * Const.deadlyAttackPercent))
-                        .replace('{1}', Math.round(attackNum * Const.deadlyAttackPercent) + attackBurnNum) +
-                    '    </tr>' +
-                    '    <tr>' +
-                    '      <th style="text-align:left">暴击(如果有)</th>' +
-                    '      <td class="pd_custom_tips" title="争夺攻击×暴击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
-                        .replace('{0}', Math.round(attackNum * strongAttackPercent))
-                        .replace('{1}', Math.round(attackNum * strongAttackPercent) + attackBurnNum) +
-                    '      <td class="pd_custom_tips" title="争夺攻击×致命一击比例×暴击比例+争夺燃烧">{0} | <span class="pd_highlight">{1}</span></td>'
-                        .replace('{0}', Math.round(Math.round(attackNum * Const.deadlyAttackPercent) * strongAttackPercent))
-                        .replace('{1}', Math.round(Math.round(attackNum * Const.deadlyAttackPercent) * strongAttackPercent) + attackBurnNum) +
-                    '    </tr>' +
-                    '  </tbody>' +
-                    '</table>';
-                var offset = $lootPropertyInfo.offset();
-                $panel = $(html).appendTo('body');
-                $panel.css('top', offset.top - $panel.height() - 2).css('left', offset.left);
-            });
-        }
-
-        var prevLootInfo = Loot.getPrevLootInfo();
-        if (prevLootInfo) {
-            var $lootInfo = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:nth-child(3)');
-            var html = $lootInfo.html();
-            var lootInfo = Loot.getLootInfo(html);
-            if (lootInfo) {
-                var lootCountDiff = lootInfo.lootCount - prevLootInfo.lootCount;
-                if (lootCountDiff === 1) {
-                    var attackCountDiff = lootInfo.attackCount - prevLootInfo.attackCount,
-                        attackKfbDiff = lootInfo.attackKfb - prevLootInfo.attackKfb,
-                        attackedCountDiff = lootInfo.attackedCount - prevLootInfo.attackedCount,
-                        attackedKfbDiff = lootInfo.attackedKfb - prevLootInfo.attackedKfb;
-                    if (attackCountDiff >= 0 && attackKfbDiff >= 0 && attackedCountDiff >= 0 && attackedKfbDiff >= 0) {
-                        $lootInfo.html(
-                            html.replace(/(总计争夺\s*\d+\s*次)/i, '$1 <span class="pd_custom_tips" title="本回合目前攻击的次数">({0} 次)</span>'.replace('{0}', attackCountDiff))
-                                .replace(/(总计争夺\s*\d+\s*KFB)/i, '$1 <span class="pd_custom_tips" title="本回合目前夺取的KFB">({0} KFB)</span>'.replace('{0}', attackKfbDiff))
-                                .replace(/(总计被争夺\s*\d+\s*次)/i, '$1 <span class="pd_custom_tips" title="本回合目前被攻击的次数">({0} 次)</span>'.replace('{0}', attackedCountDiff))
-                                .replace(/(总计被争夺\s*\d+\s*KFB)/i, '$1 <span class="pd_custom_tips" title="本回合目前被夺取的KFB（不包括被燃烧的KFB）">({0} KFB)</span>'.replace('{0}', attackedKfbDiff))
-                        ).find('.pd_custom_tips').css('color', '#339933');
-                    }
-                }
-            }
-        }
-
-        $('.kf_fw_ig1 > tbody > tr:first-child > td:first-child > br:last')
-            .before('<span style="color:#FF3333">争夺攻略可<a target="_blank" href="read.php?tid=551121">参见此贴</a>。</span>');
-    },
-
-    /**
-     * 获取下次领取争夺奖励的时间对象
-     * @returns {{type: number, time: number}} 下次领取争夺奖励的时间对象，type：时间类型（0：获取失败；1：估计时间；2：精确时间）；time：下次领取时间
-     */
-    getNextLootAwardTime: function () {
-        var log = Tools.getCookie(Const.getLootAwardCookieName);
-        if (log) {
-            log = log.split('|');
-            if (log.length === 2) {
-                var type = parseInt(log[0]);
-                var time = parseInt(log[1]);
-                if (!isNaN(type) && !isNaN(time) && type > 0 && time > 0) {
-                    return {type: parseInt(type), time: parseInt(time)};
-                }
-            }
-        }
-        return {type: 0, time: 0};
-    },
-
-    /**
-     * 判断当前是否可以自动攻击
-     * @returns {boolean} 是否可以自动攻击
-     */
-    isAutoAttackNow: function () {
-        if (!Config.attackAfterTime) return true;
-        var timeLog = Loot.getNextLootAwardTime();
-        if (timeLog.type > 0) {
-            var end = timeLog.time - Config.attackAfterTime * 60 * 1000;
-            return end <= new Date().getTime();
-        }
-        else return false;
-    },
-
-    /**
-     * 检查自动攻击是否已完成
-     */
-    checkAutoAttack: function () {
-        var value = Tools.getCookie(Const.autoAttackReadyCookieName);
-        if (!value) return;
-        var valueArr = value.split('|');
-        if (valueArr.length !== 2) return;
-        var type = parseInt(valueArr[0]);
-        if (isNaN(type)) return;
-        var safeId = valueArr[1];
-        if (!safeId) safeId = KFOL.getSafeId();
-        if (!safeId) return;
-        if (type === 2 && Config.attackAfterTime > 0) {
-            if (Loot.isAutoAttackNow())
-                Loot.autoAttack(safeId);
-            else if (Config.attemptAttackEnabled && !Tools.getCookie(Const.checkLifeCookieName))
-                Loot.checkLife();
-        }
-        else {
-            Loot.autoAttack(safeId);
-        }
-    },
-
-    /**
-     * 检查当前生命值
-     */
-    checkLife: function () {
-        Func.run('Loot.checkLife_before_');
-        console.log('检查生命值Start');
-        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-            if (Tools.getCookie(Const.checkLifeCookieName)) return;
-            if (/本回合剩余攻击次数\s*0\s*次/.test(html)) {
-                Tools.setCookie(Const.autoAttackReadyCookieName, '', Tools.getDate('-1d'));
-                Tools.setCookie(Const.checkLifeCookieName, '', Tools.getDate('-1d'));
-                Tools.setCookie(Const.attackCountCookieName, '', Tools.getDate('-1d'));
-                Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
-            }
-            var safeIdMatches = /<a href="kf_fw_card_pk\.php\?safeid=(\w+)">/i.exec(html);
-            var safeId = '';
-            if (safeIdMatches) safeId = safeIdMatches[1];
-            if (!safeId) return;
-
-            var lootInfo = Loot.getNextLootAwardTime();
-            if (!lootInfo.type || lootInfo.time <= 0) return;
-            var curLootMinutes = Const.defLootInterval - Math.floor((lootInfo.time - new Date().getTime()) / 60 / 1000);
-
-            var checkLifeInterval = typeof Const.defCheckLifeInterval === 'function' ? Const.defCheckLifeInterval() : Const.defCheckLifeInterval;
-            if (curLootMinutes < Const.firstCheckLifeInterval) checkLifeInterval = Const.firstCheckLifeInterval - curLootMinutes;
-            var lifeMatches = />(\d+)<\/span>\s*预领KFB<br/i.exec(html);
-            var minLifeMatches = /你的神秘系数\]，则你可以领取(\d+)KFB\)<br/i.exec(html);
-            var life = 0, minLife = 0;
-            var isLteMinLife = false;
-            if (lifeMatches && minLifeMatches) {
-                life = parseInt(lifeMatches[1]);
-                minLife = parseInt(minLifeMatches[1]);
-                if (life <= minLife) {
-                    checkLifeInterval = typeof Const.checkLifeAfterAttemptAttackInterval === 'function' ?
-                        Const.checkLifeAfterAttemptAttackInterval() : Const.checkLifeAfterAttemptAttackInterval;
-                    isLteMinLife = true;
-                }
-            }
-            var maxCheckAttackLifeNum = Const.maxAttemptAttackLifeNum;
-            if (maxCheckAttackLifeNum > minLife || maxCheckAttackLifeNum < 0) maxCheckAttackLifeNum = minLife;
-            var recentMonsterAttackLog = '';
-            var monsterAttackLogList = Loot.getMonsterAttackLogList(html);
-            if (monsterAttackLogList.length > 0) recentMonsterAttackLog = $.trim(monsterAttackLogList[0]);
-            if (Const.debug) console.log('最近一次的被攻击日志：' + (recentMonsterAttackLog ? recentMonsterAttackLog : '无'));
-            var deadlyAttackNum = 0;
-            if (Config.deadlyAttackId > 0) {
-                var deadlyAttackMatches = /致命一击剩余攻击次数\s*(\d+)\s*次/i.exec(html);
-                if (deadlyAttackMatches) deadlyAttackNum = parseInt(deadlyAttackMatches[1]);
-                if (deadlyAttackNum > Const.maxAttackNum) deadlyAttackNum = Const.maxAttackNum;
-            }
-
-            /**
-             * 写入下次检查生命值的Cookie信息
-             * @param {number} life 当前实际生命值
-             * @param {number} interval 下次检查生命值的时间间隔（分钟）
-             * @param {string} msg 提示消息
-             */
-            var writeNextCheckLifeCookie = function (life, interval, msg) {
-                var nextTime = Tools.getDate('+' + Math.floor(interval * 60) + 's');
-                Tools.setCookie(Const.checkLifeCookieName, nextTime.getTime(), nextTime);
-                console.log('【检查生命值】当前生命值：{0}，低保线：{1}；距本回合开始已经过{2}分钟{3}，下一次检查生命值的时间间隔为{4}分钟\n{5}'
-                    .replace('{0}', life)
-                    .replace('{1}', minLife)
-                    .replace('{2}', curLootMinutes)
-                    .replace('{3}', lootInfo.type === 1 ? '(估计时间)' : '')
-                    .replace('{4}', interval)
-                    .replace('{5}', msg)
-                );
-            };
-
-            /**
-             * 试探攻击
-             * @param {number} life 当前实际生命值
-             * @param {string} recentMonsterAttackLog 最近一次的被怪物攻击日志
-             * @param {string} msg 提示消息
-             */
-            var attemptAttack = function (life, recentMonsterAttackLog, msg) {
-                writeNextCheckLifeCookie(life, checkLifeInterval, msg);
-                KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
-                var attackCount = parseInt(Tools.getCookie(Const.attackCountCookieName));
-                if (isNaN(attackCount) || attackCount < 0) attackCount = 0;
-                var num = 0, attackId = 0;
-                for (var id in Config.batchAttackList) {
-                    for (var i = 1; i <= Config.batchAttackList[id]; i++) {
-                        if (attackCount === num) {
-                            attackId = id;
-                            break;
-                        }
-                        num++;
-                    }
-                    if (attackId > 0) break;
-                }
-                if (!attackId) return;
-                if (deadlyAttackNum > 0) attackId = Config.deadlyAttackId;
-                var attackList = {};
-                attackList[attackId] = 1;
-                KFOL.showWaitMsg('<strong>正在进行试探攻击中...</strong><i>攻击次数：<em id="pd_remaining_num">1</em></i>', true);
-                Loot.batchAttack({
-                    type: 3,
-                    totalAttackNum: 1,
-                    attackList: attackList,
-                    safeId: safeId,
-                    life: life,
-                    recentMonsterAttackLog: recentMonsterAttackLog
-                });
-            };
-
-            if (Config.attemptAttackAfterTimeEnabled) {
-                var firstCheckLifeInterval = Const.defLootInterval - Config.attackAfterTime - Const.attemptAttackAfterTime;
-                if (firstCheckLifeInterval < Const.firstCheckLifeInterval) firstCheckLifeInterval = Const.firstCheckLifeInterval;
-                if (curLootMinutes < firstCheckLifeInterval) {
-                    checkLifeInterval = firstCheckLifeInterval - curLootMinutes;
-                    if (curLootMinutes < 185) checkLifeInterval = 185 - curLootMinutes;
-                    writeNextCheckLifeCookie(isLteMinLife ? 0 : life, checkLifeInterval, '试探攻击时限尚未到达，不进行试探攻击');
-                    if (recentMonsterAttackLog && !isLteMinLife)
-                        Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(lootInfo.time));
-                    return;
-                }
-            }
-
-            if (!isLteMinLife) {
-                writeNextCheckLifeCookie(life, checkLifeInterval, '当前生命值大于低保线，不进行试探攻击');
-                if (recentMonsterAttackLog)
-                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, life + '/' + recentMonsterAttackLog, new Date(lootInfo.time));
-                else
-                    Tools.setCookie(Const.prevAttemptAttackLogCookieName, '', Tools.getDate('-1d'));
-                return;
-            }
-
-            var prevCheckAttackInfo = Tools.getCookie(Const.prevAttemptAttackLogCookieName);
-            if (prevCheckAttackInfo && recentMonsterAttackLog) {
-                var arr = prevCheckAttackInfo.split('/');
-                if (arr.length === 2 && $.type(parseInt(arr[0])) === 'number') {
-                    var realLife = parseInt(arr[0]), loss = 0;
-                    if (realLife < 0) realLife = 0;
-                    var prevMonsterAttackLog = $.trim(arr[1]);
-                    if (Const.debug) console.log('上次记录的被攻击日志：' + prevMonsterAttackLog);
-                    var index = 0;
-                    for (; index <= monsterAttackLogList.length; index++) {
-                        if ($.trim(monsterAttackLogList[index]) === prevMonsterAttackLog) break;
-                        if (/清空生命值/.test(monsterAttackLogList[index])) {
-                            attemptAttack(0, recentMonsterAttackLog, '自上次检查生命值以来，在后续的被攻击日志中发现被清空生命值的情况，需要进行试探攻击');
-                            return;
-                        }
-                        var matches = /被实际夺取(\d+)KFB.+被实际燃烧(\d+)KFB/i.exec(monsterAttackLogList[index]);
-                        if (matches) loss += parseInt(matches[1]) + parseInt(matches[2]);
-                    }
-                    realLife -= loss;
-                    if (realLife < 0) realLife = 0;
-                    if (index > monsterAttackLogList.length) {
-                        attemptAttack(0, recentMonsterAttackLog, '在当前被攻击日志中未找到上次记录的被攻击日志，需要进行试探攻击');
-                    }
-                    else {
-                        if (index === 0 && realLife <= maxCheckAttackLifeNum) {
-                            attemptAttack(realLife, prevMonsterAttackLog, '当前生命值未超过阈值，继续进行试探攻击');
-                        }
-                        else {
-                            if (realLife > maxCheckAttackLifeNum) {
-                                var msg = '';
-                                if (recentMonsterAttackLog === prevMonsterAttackLog) msg = '未遭到新的攻击';
-                                else msg = '共损失{0}KFB'.replace('{0}', loss);
-                                writeNextCheckLifeCookie(realLife,
-                                    typeof Const.defCheckLifeInterval === 'function' ? Const.defCheckLifeInterval() : Const.defCheckLifeInterval,
-                                    '自上次检查生命值以来，{0}，生命值高于阈值，暂无试探攻击的必要'.replace('{0}', msg)
-                                );
-                                Tools.setCookie(Const.prevAttemptAttackLogCookieName,
-                                    realLife + '/' + recentMonsterAttackLog,
-                                    new Date(lootInfo.time)
-                                );
-                            }
-                            else {
-                                attemptAttack(realLife,
-                                    recentMonsterAttackLog,
-                                    '自上次检查生命值以来，共损失{0}KFB，生命值未超过阈值，需要进行试探攻击'.replace('{0}', loss)
-                                );
-                            }
-                        }
-                    }
-                }
-                else {
-                    attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值的记录，需要进行试探攻击');
-                }
-            }
-            else {
-                attemptAttack(0, recentMonsterAttackLog, '未发现检查生命值的记录，需要进行试探攻击');
-            }
-            Func.run('Loot.checkLife_after_', html);
-        }, 'html');
-    },
-
-    /**
-     * 显示批量攻击或被NPC攻击的日志对话框
-     * @param {number} type 对话框类型，1：批量攻击日志；2：被NPC攻击日志
-     * @param {string[]} logList 攻击日志列表
-     * @param {string} [stat] 批量攻击收获
-     */
-    showAttackLogDialog: function (type, logList, stat) {
-        if ($('#pd_attack_log').length > 0) return;
-        var log = '<li>' + logList.join('</li><li>') + '</li>';
-        var strongAttackNum = 0, criticalStrikeNum = 0;
-        var matches = log.match(/触发暴击!/g);
-        if (matches) strongAttackNum = matches.length;
-        matches = log.match(/致命一击!/g);
-        if (matches) criticalStrikeNum = matches.length;
-        var html =
-            '<div class="pd_cfg_main">' +
-            '<div style="margin-top:5px">' +
-            '  <label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" checked="checked" /> 原版</label>' +
-            '  <label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" /> 自定义</label>' +
-            '</div>' +
-            '  <ul id="pd_attack_log_content"></ul>' +
-            '</div>';
-        var $dialog = Dialog.create('pd_attack_log', '{0}日志'.replace('{0}', type === 2 ? 'NPC攻击' : '批量攻击'), html);
-
-        /**
-         * 显示日志
-         * @param {string} log 攻击日志
-         */
-        var showLog = function (log) {
-            var extraLog = '';
-            if (strongAttackNum > 0) extraLog += '暴击<em>+{0}</em>'.replace('{0}', strongAttackNum);
-            if (criticalStrikeNum > 0) extraLog += (extraLog ? ' ' : '') + '致命一击<em>+{0}</em>'.replace('{0}', criticalStrikeNum);
-            if (extraLog) extraLog = '（' + extraLog + '）';
-            if (type === 1) {
-                log += '<li class="pd_stat" style="margin-top:10px"><b>统计结果{0}：</b><br />{1}</li>'
-                    .replace('{0}', extraLog)
-                    .replace('{1}', stat ? stat : '无');
-            }
-            $dialog.find('#pd_attack_log_content').html(log);
-        };
-
-        $dialog.find('input[name="pd_custom_attack_log"]').click(function () {
-            var content = '';
-            if ($(this).val() === 'custom') {
-                var customLog = log;
-                $.each(Config.customMonsterNameList, function (id, name) {
-                    var oriName = Loot.getMonsterNameById(parseInt(id));
-                    if (type === 2) {
-                        customLog = customLog.replace(
-                            new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
-                            '<span class="pd_custom_tips" title="{0}">[{1}]</span>对'.replace('{0}', oriName).replace('{1}', name)
-                        );
-                    }
-                    else {
-                        customLog = customLog.replace(
-                            new RegExp('对\\[{0}\\]'.replace('{0}', oriName), 'g'),
-                            '对<span class="pd_custom_tips" title="{0}">[{1}]</span>'.replace('{0}', oriName).replace('{1}', name)
-                        );
-                    }
-                });
-                content = customLog;
-            }
-            else {
-                content = log;
-            }
-            showLog(content);
-        });
-
-        if (Config.customMonsterNameEnabled && !$.isEmptyObject(Config.customMonsterNameList)) {
-            $dialog.find('input[name="pd_custom_attack_log"][value="custom"]')
-                .prop('checked', true)
-                .triggerHandler('click');
-        }
-        else {
-            $dialog.find('input[name="pd_custom_attack_log"][value="custom"]').prop('disabled', true);
-            showLog(log);
-        }
-        Dialog.show('pd_attack_log');
-        $dialog.find('input:first').focus();
-        Func.run('Loot.showAttackLogDialog_after_', log);
-    },
-
-    /**
-     * 通过怪物ID获取怪物原始名称
-     * @param {number} id 怪物ID
-     * @returns {string} 怪物原始名称
-     */
-    getMonsterNameById: function (id) {
-        switch (id) {
-            case 1:
-                return '小史莱姆';
-            case 2:
-                return '笨蛋';
-            case 3:
-                return '大果冻史莱姆';
-            case 4:
-                return '肉山';
-            case 5:
-                return '大魔王';
-            default:
-                return '';
-        }
-    },
-
-    /**
-     * 自定义怪物名称
-     */
-    customMonsterName: function () {
-        if ($.isEmptyObject(Config.customMonsterNameList)) return;
-        if (location.pathname === '/kf_fw_ig_index.php') {
-            var $log = $('.kf_fw_ig1 > tbody > tr:nth-last-child(2) > td');
-            var oriLog = $log.html();
-            if (!$.trim(oriLog)) return;
-            $log.wrapInner('<div></div>');
-            $('<label><input class="pd_input" type="radio" name="pd_custom_attack_log" value="ori" /> 原版</label>' +
-                '<label style="margin-left:7px"><input class="pd_input" type="radio" name="pd_custom_attack_log" value="custom" checked="checked" /> 自定义</label><br />')
-                .prependTo($log)
-                .find('input[name="pd_custom_attack_log"]')
-                .click(function () {
-                    if ($(this).val() === 'custom') {
-                        var customLog = oriLog;
-                        $.each(Config.customMonsterNameList, function (id, name) {
-                            var oriName = Loot.getMonsterNameById(parseInt(id));
-                            customLog = customLog.replace(
-                                new RegExp('\\[{0}\\]对'.replace('{0}', oriName), 'g'),
-                                '<span class="pd_custom_tips" title="{0}">[{1}]</span>对'.replace('{0}', oriName).replace('{1}', name)
-                            );
-                        });
-                        $log.find('div:last-child').html(customLog);
-                    }
-                    else {
-                        $log.find('div:last-child').html(oriLog);
-                    }
-                })
-                .end()
-                .find('input[value="custom"]')
-                .triggerHandler('click');
-        }
-        else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
-            $('.kf_fw_ig1 > tbody > tr:gt(2):nth-child(3n+1) > td:first-child').each(function () {
-                var $this = $(this);
-                var html = $this.html();
-                $.each(Config.customMonsterNameList, function (id, name) {
-                    var oriName = Loot.getMonsterNameById(parseInt(id));
-                    html = html.replace(oriName, '<span class="pd_custom_tips" title="{0}">{1}</span>'.replace('{0}', oriName).replace('{1}', name));
-                });
-                $this.html(html);
-            });
-            $('a.kfigpk_hit').each(function () {
-                var $this = $(this);
-                var html = $this.html();
-                $.each(Config.customMonsterNameList, function (id, name) {
-                    html = html.replace(Loot.getMonsterNameById(parseInt(id)), name);
-                });
-                $this.html(html);
-            });
-            $(function () {
-                $('a.kfigpk_hit').off('click').click(function () {
-                    var $this = $(this);
-                    $.post('kf_fw_ig_pkhit.php',
-                        {uid: $this.attr('hitid'), safeid: $this.attr('safeid')},
-                        function (msg) {
-                            $.each(Config.customMonsterNameList, function (id, name) {
-                                msg = msg.replace(
-                                    '对[{0}]'.replace('{0}', Loot.getMonsterNameById(parseInt(id))),
-                                    '对[{0}]'.replace('{0}', name)
-                                );
-                            });
-                            $this.html(msg);
-                        }, 'html');
-                });
-            });
-        }
-        Func.run('Loot.customMonsterName_after_');
-    },
-
-    /**
-     * 获取争夺属性列表
-     * @param {string} html 争夺首页的HTML代码
-     * @returns {{}} 争夺属性列表
-     */
-    getLootPropertyList: function (html) {
-        var lootPropertyList = {
-            '剩余攻击次数': 0,
-            '致命一击剩余攻击次数': 0,
-            '争夺攻击': 0,
-            '神秘系数': 0,
-            '争夺燃烧': 0,
-            '争夺暴击几率': 0,
-            '争夺暴击比例': 0,
-            '命中': 0,
-            '闪避': 0,
-            '防御': 0,
-            '道具使用列表': {}
-        };
-        var itemUsedNumList = {'蕾米莉亚同人漫画': 0, '十六夜同人漫画': 0, '档案室钥匙': 0, '傲娇LOLI娇蛮音CD': 0, '整形优惠卷': 0, '消逝之药': 0};
-
-        var matches = /本回合剩余攻击次数\s*(\d+)\s*次/.exec(html);
-        if (matches) lootPropertyList['剩余攻击次数'] = parseInt(matches[1]);
-
-        matches = /致命一击剩余攻击次数\s*(\d+)\s*次/.exec(html);
-        if (matches) lootPropertyList['致命一击剩余攻击次数'] = parseInt(matches[1]);
-
-        matches = /争夺攻击\s*(\d+)\(\+(\d+)\)\s*点/.exec(html);
-        if (matches) {
-            lootPropertyList['争夺攻击'] = parseInt(matches[1]) + parseInt(matches[2]);
-            lootPropertyList['神秘系数'] = parseInt(matches[2]);
-        }
-
-        matches = /争夺燃烧\s*(\d+)\(\+(\d+)\)\s*点/.exec(html);
-        if (matches) {
-            lootPropertyList['争夺燃烧'] = parseInt(matches[1]) + parseInt(matches[2]);
-            itemUsedNumList['蕾米莉亚同人漫画'] = parseInt(matches[2]);
-        }
-
-        matches = /争夺暴击几率\s*(\d+)\s*%/.exec(html);
-        if (matches) {
-            lootPropertyList['争夺暴击几率'] = parseInt(matches[1]);
-            itemUsedNumList['整形优惠卷'] = Math.floor(parseInt(matches[1]) / 3);
-        }
-
-        matches = /争夺暴击比例\s*(\d+)\(\+(\d+)\)\s*%/.exec(html);
-        if (matches) {
-            lootPropertyList['争夺暴击比例'] = parseInt(matches[1]) + parseInt(matches[2]);
-            itemUsedNumList['档案室钥匙'] = Math.floor(parseInt(matches[2]) / 10);
-        }
-
-        matches = /命中\s*(\d+)\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
-        if (matches) {
-            lootPropertyList['命中'] = parseInt(matches[1]) + parseInt(matches[2]) + parseInt(matches[3]);
-            itemUsedNumList['傲娇LOLI娇蛮音CD'] = parseInt(matches[3]);
-        }
-
-        matches = /闪避\s*(\d+)\(\+(\d+)\+(\d+)\)\s*点/.exec(html);
-        if (matches) {
-            lootPropertyList['闪避'] = parseInt(matches[1]) + parseInt(matches[2]) + parseInt(matches[3]);
-            itemUsedNumList['十六夜同人漫画'] = parseInt(matches[2]);
-        }
-
-        matches = /防御\s*(\d+)\s*%/.exec(html);
-        if (matches) {
-            lootPropertyList['防御'] = parseInt(matches[1]);
-            itemUsedNumList['消逝之药'] = Math.floor(parseInt(matches[1]) / 7);
-        }
-
-        lootPropertyList['道具使用列表'] = itemUsedNumList;
-        return lootPropertyList;
-    },
-
-    /**
-     * 添加怪物争夺信息的提示
-     */
-    addMonsterLootInfoTips: function () {
-        $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-            var lootPropertyList = Loot.getLootPropertyList(html);
-            $('.kf_fw_ig1 > tbody > tr').each(function (index) {
-                var $this = $(this);
-                if (index === 0) {
-                    $this.find('td').append(
-                        ('<span style="color:#FFF;margin-left:7px;font-weight:normal;font-size:12px">' +
-                        '(本回合剩余攻击次数 <b style="font-size:14px">{0}</b> 次，致命一击剩余次数 <b style="font-size:14px">{1}</b> 次)</span>')
-                            .replace('{0}', lootPropertyList['剩余攻击次数'])
-                            .replace('{1}', lootPropertyList['致命一击剩余攻击次数'])
-                    );
-                    return;
-                }
-                if (index === 1 || $this.children('td').length !== 4) return;
-                $this.children('td:gt(0)').each(function (index) {
-                    var $this = $(this);
-                    var html = $this.html();
-                    if (index === 0) {
-                        var matches = /(\d+)生命值\s*\|\s*(\d+)闪避\s*\|\s*\((\d+)x(\d+)\)%防御/.exec(html);
-                        if (!matches) return;
-                        var life = parseInt(matches[1]), avoid = parseInt(matches[2]), defense = parseInt(matches[3]) * parseInt(matches[4]) / 100;
-
-                        var clearLife = false;
-                        var tipsClassName = '';
-                        if (life <= Math.round(lootPropertyList['争夺攻击'] * (1 - defense)) + lootPropertyList['争夺燃烧']) {
-                            clearLife = true;
-                            tipsClassName = 'pd_verify_tips_ok';
-                        }
-                        else {
-                            if (life <= Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent) * (1 - defense)) + lootPropertyList['争夺燃烧'])
-                                clearLife = true;
-                            else if (life <= Math.round(Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense))
-                                + lootPropertyList['争夺燃烧']
-                            )
-                                clearLife = true;
-                            else if (life <= Math.round(Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent)
-                                        * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense)) + lootPropertyList['争夺燃烧']
-                            )
-                                clearLife = true;
-                            if (clearLife) tipsClassName = 'pd_verify_tips_conditional';
-                            else tipsClassName = 'pd_verify_tips_unable';
-                        }
-                        var lifeTips = '<span class="pd_verify_tips pd_verify_tips_details" data-life="{0}" data-defense="{1}">[<b class="{2}">{3}</b>]</span>'
-                            .replace('{0}', life)
-                            .replace('{1}', defense)
-                            .replace('{2}', tipsClassName)
-                            .replace('{3}', clearLife ? '&#10003;' : '&times;');
-                        html = html.replace('生命值', '生命值' + lifeTips);
-
-                        var avoidTips = '';
-                        if (avoid <= lootPropertyList['命中']) {
-                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物可100%命中">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
-                        }
-                        else {
-                            avoidTips = '<span class="pd_verify_tips" title="攻击此怪物有40%的几率命中（还差{0}点可100%命中）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
-                                .replace('{0}', avoid - lootPropertyList['命中']);
-                        }
-                        html = html.replace('闪避', '闪避' + avoidTips);
-
-                        $this.html(html);
-                    }
-                    else if (index === 1) {
-                        matches = /(\d+)攻击\s*\|\s*(\d+)燃烧\s*\|\s*(\d+)命中.+?(\((\d+)%\+(\d+)x(\d+)%\)暴击伤害)/.exec(html);
-                        if (!matches) return;
-                        var attack = parseInt(matches[1]), burn = parseInt(matches[2]), hit = parseInt(matches[3]);
-                        var strongAttackText = matches[4];
-                        var strongAttackPercent = parseInt(matches[5]) + Math.round(parseInt(matches[6]) * parseInt(matches[7]));
-
-                        var attackTips = '<span class="pd_custom_tips" title="可实际夺取{0}KFB">{1}攻击</span>'
-                            .replace('{0}', Math.round(attack * (100 - lootPropertyList['防御']) / 100))
-                            .replace('{1}', attack);
-                        html = html.replace(attack + '攻击', attackTips);
-
-                        var burnTips = '<span class="pd_custom_tips" title="实际夺取KFB+燃烧KFB={0}KFB">{1}燃烧</span>'
-                            .replace('{0}', Math.round(attack * (100 - lootPropertyList['防御']) / 100) + burn)
-                            .replace('{1}', burn);
-                        html = html.replace(burn + '燃烧', burnTips);
-
-                        var htiTips = '';
-                        if (hit < lootPropertyList['闪避']) {
-                            htiTips = '<span class="pd_verify_tips" title="有60%的几率可闪避此怪物的攻击">[<b class="pd_verify_tips_ok">&#10003;</b>]</span>';
-                        }
-                        else {
-                            htiTips = '<span class="pd_verify_tips" title="无法闪避此怪物的攻击（还差{0}点有几率可闪避）">[<b class="pd_verify_tips_unable">&times;</b>]</span>'
-                                .replace('{0}', hit - lootPropertyList['闪避'] + 1);
-                        }
-                        html = html.replace('命中', '命中' + htiTips);
-
-                        var strongAttackTips = '<span class="pd_custom_tips" title="暴击可实际夺取{0}KFB">{1}</span>'
-                            .replace('{0}', Math.round(Math.round(attack * strongAttackPercent / 100) * (100 - lootPropertyList['防御']) / 100))
-                            .replace('{1}', strongAttackText);
-                        html = html.replace(strongAttackText, strongAttackTips);
-
-                        $this.html(html);
-                    }
-                    else if (index === 2) {
-                        var itemDropPercent = parseInt($.trim($this.text()));
-                        if (isNaN(itemDropPercent)) return;
-                        $this.addClass('pd_custom_tips').attr('title', '在20次攻击中预计可掉落{0}个道具'.replace('{0}', (itemDropPercent / 100 * 20).toFixed(1)));
-                    }
-                });
-            });
-
-            $(document).on('click', '.pd_verify_tips_details[data-life]', function () {
-                var $this = $(this);
-                var life = parseInt($this.data('life'));
-                if (isNaN(life)) return;
-                var defense = parseFloat($this.data('defense'));
-                if (isNaN(defense)) return;
-                var $panel = $('#pd_monster_loot_info_panel');
-                if ($panel.length > 0) $panel.remove();
-
-                var tipsList = new Array(4);
-                for (var i = 0; i < tipsList.length; i++) {
-                    var attack = 0, burn = lootPropertyList['争夺燃烧'], totalAttack = 0;
-                    switch (i) {
-                        case 0:
-                            attack = Math.round(lootPropertyList['争夺攻击'] * (1 - defense));
-                            break;
-                        case 1:
-                            attack = Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent) * (1 - defense));
-                            break;
-                        case 2:
-                            attack = Math.round(Math.round(lootPropertyList['争夺攻击'] * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense));
-                            break;
-                        case 3:
-                            attack = Math.round(Math.round(Math.round(lootPropertyList['争夺攻击'] * Const.deadlyAttackPercent)
-                                    * lootPropertyList['争夺暴击比例'] / 100) * (1 - defense));
-                            break;
-                    }
-                    totalAttack = attack + burn;
-
-                    var attackOverflow = attack - life;
-                    if (attackOverflow < 0) attackOverflow = 0;
-                    var burnOverflow = totalAttack - life;
-                    if (burnOverflow < 0) burnOverflow = 0;
-                    else if (burnOverflow > lootPropertyList['争夺燃烧']) burnOverflow = lootPropertyList['争夺燃烧'];
-                    var totalAttackOverflow = totalAttack - life;
-
-                    tipsList[i] = ('<em title="夺取KFB">{0}</em>{1} | <em style="font-weight:bold" title="夺取KFB+燃烧KFB">{2}</em>' +
-                    ' (<em {3}>{4}</em>)')
-                        .replace('{0}', attack <= life ? attack : life)
-                        .replace('{1}', attackOverflow > 0 || burnOverflow > 0 ?
-                            ' (<em style="color:#0099CC" title="夺取KFB溢出">+{0}</em>'.replace('{0}', attackOverflow) +
-                            ' <em style="color:#FF0033" title="燃烧KFB溢出">+{0}</em>)'.replace('{0}', burnOverflow)
-                                : ''
-                        )
-                        .replace('{2}', totalAttack <= life ? totalAttack : life)
-                        .replace('{3}', totalAttackOverflow >= 0 ? 'style="color:#CC3399" title="总溢出"' : 'style="color:#339933" title="距清空生命值的差额"')
-                        .replace('{4}', totalAttackOverflow >= 0 ? '+' + totalAttackOverflow : totalAttackOverflow);
-                }
-
-                var html =
-                    '<table class="pd_panel" id="pd_monster_loot_info_panel" style="text-align:center;padding:0 5px">' +
-                    '  <tbody>' +
-                    '    <tr>' +
-                    '      <th style="width:87px;text-align:left"></th>' +
-                    '      <th style="width:175px">正常</th>' +
-                    '      <th style="width:175px">致命一击(如果有)</th>' +
-                    '    </tr>' +
-                    '    <tr>' +
-                    '      <th style="text-align:left">普通攻击</th>' +
-                    '      <td>{0}</td>'.replace('{0}', tipsList[0]) +
-                    '      <td>{0}</td>'.replace('{0}', tipsList[1]) +
-                    '    </tr>' +
-                    '    <tr>' +
-                    '      <th style="text-align:left">暴击(如果有)</th>' +
-                    '      <td>{0}</td>'.replace('{0}', tipsList[2]) +
-                    '      <td>{0}</td>'.replace('{0}', tipsList[3]) +
-                    '    </tr>' +
-                    '  </tbody>' +
-                    '</table>';
-                var offset = $this.closest('tr').offset();
-                $panel = $(html).appendTo('body');
-                $panel.css('top', offset.top - $panel.height() - 2).css('left', offset.left);
-            }).on('click', function (e) {
-                var $target = $(e.target);
-                if (!($target.is('.pd_panel') || $target.closest('.pd_panel').length || $target.is('.pd_verify_tips_details')
-                    || $target.closest('.pd_verify_tips_details').length)
-                ) {
-                    $('#pd_monster_loot_info_panel').remove();
-                }
-            });
-        }, 'html');
-    },
-
-    /**
-     * 获取被怪物攻击日志列表
-     * @param {string} html 争夺首页的HTML代码
-     * @returns {string[]} 被怪物攻击日志列表
-     */
-    getMonsterAttackLogList: function (html) {
-        var matches = /<tr><td colspan="\d+">\r\n<span style=".+?">(\d+:\d+:\d+ \|.+?)<br \/><\/td><\/tr>/i.exec(html);
-        var attackLogList = [];
-        if (matches && /发起争夺/.test(matches[1])) {
-            attackLogList = matches[1].replace(/<br \/>/ig, '\n').replace(/(<.+?>|<.+?\/>)/g, '').split('\n');
-        }
-        return attackLogList;
-    },
-
-    /**
-     * 在批量攻击后使用刚掉落的指定种类ID列表的道具
-     * @param {{}} itemNameList 刚掉落的道具名称列表
-     */
-    useItemsAfterBatchAttack: function (itemNameList) {
-        var totalCount = 0;
-        for (var k in itemNameList) {
-            totalCount++;
-        }
-        if (!totalCount) return;
-        var $getItemListMsg = KFOL.showWaitMsg('正在获取刚掉落道具的信息，请稍后...', true);
-        var itemList = [];
-        var count = 0;
-        $(document).clearQueue('GetItemList');
-        $.each(itemNameList, function (itemName, num) {
-            var itemTypeId = Item.getItemTypeIdByItemName(itemName);
-            if (!itemTypeId) return;
-            $(document).queue('GetItemList', function () {
-                $.get('kf_fw_ig_my.php?lv={0}&t={1}'.replace('{0}', itemTypeId).replace('{1}', new Date().getTime()), function (html) {
-                    count++;
-                    var matches = html.match(/<tr><td>.+?<\/td><td>\d+级道具<\/td><td>.+?<\/td><td><a href="kf_fw_ig_my\.php\?pro=\d+">查看详细<\/a><\/td><\/tr>/gi);
-                    if (matches) {
-                        var totalNum = matches.length - num;
-                        if (totalNum < 0) totalNum = 0;
-                        for (var i = matches.length - 1; i >= totalNum; i--) {
-                            var itemIdMatches = /kf_fw_ig_my\.php\?pro=(\d+)/i.exec(matches[i]);
-                            var itemLevelMatches = /<td>(\d+)级道具<\/td>/i.exec(matches[i]);
-                            var itemNameMatches = /<tr><td>(.+?)<\/td>/i.exec(matches[i]);
-                            itemList.push({
-                                itemId: parseInt(itemIdMatches[1]),
-                                itemLevel: parseInt(itemLevelMatches[1]),
-                                itemTypeId: itemTypeId,
-                                itemName: itemNameMatches[1]
-                            });
-                        }
-                    }
-                    if (count === totalCount) {
-                        KFOL.removePopTips($getItemListMsg);
-                        if (itemList.length > 0) {
-                            KFOL.showWaitMsg('<strong>正在使用道具中...</strong><i>剩余数量：<em id="pd_remaining_num">{0}</em></i><a class="pd_stop_action" href="#">停止操作</a>'
-                                    .replace('{0}', itemList.length)
-                                , true);
-                            useItemList(itemList);
-                        }
-                    }
-                    else {
-                        window.setTimeout(function () {
-                            $(document).dequeue('GetItemList');
-                        }, Const.defAjaxInterval);
-                    }
-                }, 'html');
-            });
-        });
-
-        /**
-         * 使用指定列表的道具
-         * @param {{}[]} itemList 道具列表
-         */
-        var useItemList = function (itemList) {
-            $(document).clearQueue('UseItemList');
-            $.each(itemList, function (index, item) {
-                $(document).queue('UseItemList', function () {
-                    $.ajax({
-                        type: 'GET',
-                        url: 'kf_fw_ig_doit.php?id={0}&t={1}'.replace('{0}', item.itemId).replace('{1}', new Date().getTime()),
-                        timeout: Const.defAjaxTimeout,
-                        success: function (html) {
-                            var msgMatches = /<span style=".+?">(.+?)<\/span><br \/><a href=".+?">/i.exec(html);
-                            if (msgMatches) {
-                                var stat = {'有效道具': 0, '无效道具': 0};
-                                var credits = Item.getCreditsViaResponse(msgMatches[1], item.itemTypeId);
-                                if (credits !== -1) {
-                                    if ($.isEmptyObject(credits)) stat['无效道具']++;
-                                    else stat['有效道具']++;
-                                    $.each(credits, function (key, credit) {
-                                        if (typeof stat[key] === 'undefined')
-                                            stat[key] = credit;
-                                        else
-                                            stat[key] += credit;
-                                    });
-                                }
-                                if (stat['有效道具'] === 0) delete stat['有效道具'];
-                                if (stat['无效道具'] === 0) delete stat['无效道具'];
-                                if (credits !== -1) {
-                                    Log.push('使用道具',
-                                        '共有`1`个道具【`Lv.{0}：{1}`】被使用'
-                                            .replace('{0}', item.itemLevel)
-                                            .replace('{1}', item.itemName),
-                                        {
-                                            gain: $.extend({}, stat, {'已使用道具': 1}),
-                                            pay: {'道具': -1}
-                                        }
-                                    );
-                                }
-                                var logStat = '', msgStat = '';
-                                for (var creditsType in stat) {
-                                    logStat += '，{0}+{1}'
-                                        .replace('{0}', creditsType)
-                                        .replace('{1}', stat[creditsType]);
-                                    msgStat += '<i>{0}<em>+{1}</em></i>'
-                                        .replace('{0}', creditsType)
-                                        .replace('{1}', stat[creditsType]);
-                                }
-                                console.log('道具【Lv.{0}：{1}】被使用{2}【{3}】'
-                                    .replace('{0}', item.itemLevel)
-                                    .replace('{1}', item.itemName)
-                                    .replace('{2}', logStat)
-                                    .replace('{3}', msgMatches[1])
-                                );
-                                KFOL.showMsg('道具【<b><em>Lv.{0}</em>{1}</b>】被使用{2}<br /><span style="font-style:italic">{3}</span>'
-                                        .replace('{0}', item.itemLevel)
-                                        .replace('{1}', item.itemName)
-                                        .replace('{2}', msgStat)
-                                        .replace('{3}', msgMatches[1])
-                                    , Config.defShowMsgDuration);
-                            }
-                        },
-                        complete: function () {
-                            var $remainingNum = $('#pd_remaining_num');
-                            $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                            var isStop = $remainingNum.closest('.pd_pop_tips').data('stop');
-                            if (isStop) $(document).clearQueue('UseItemList');
-
-                            if (isStop || index === itemList.length - 1) {
-                                KFOL.removePopTips($('#pd_remaining_num').closest('.pd_pop_tips'));
-                            }
-                            else {
-                                window.setTimeout(function () {
-                                    $(document).dequeue('UseItemList');
-                                }, typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval);
-                            }
-                        },
-                        dataType: 'html'
-                    });
-                });
-            });
-            $(document).dequeue('UseItemList');
-        };
-        $(document).dequeue('GetItemList');
-    },
-
-    /**
-     * 获取当前争夺数据信息
-     * @param {string} html 争夺首页的HTML代码
-     * @returns {?{lootCount: number, lootKfb: number, attackCount: number, attackKfb: number, attackedCount: number, attackedKfb: number}}
-     * 当前争夺数据信息
-     * lootCount：争夺次数；lootKfb：争夺实际获得的KFB；attackCount：攻击次数；attackKfb：夺取KFB；attackedCount：被攻击次数；attackedKfb：被夺取KFB；
-     */
-    getLootInfo: function (html) {
-        var lootCountMatches = /总计获得\(实际\)KFB\s*(\d+)\s*次/.exec(html),
-            lootKfbMatches = /总计获得\(实际\)\s*(\d+)\s*KFB/i.exec(html),
-            attackCountMatches = /总计争夺\s*(\d+)\s*次/.exec(html),
-            attackKfbMatches = /总计争夺\s*(\d+)\s*KFB/i.exec(html),
-            attackedCountMatches = /总计被争夺\s*(\d+)\s*次/.exec(html),
-            attackedKfbMatches = /总计被争夺\s*(\d+)\s*KFB/i.exec(html);
-        if (lootCountMatches && lootKfbMatches && attackCountMatches && attackKfbMatches && attackedCountMatches && attackedKfbMatches) {
-            return {
-                lootCount: parseInt(lootCountMatches[1]),
-                lootKfb: parseInt(lootKfbMatches[1]),
-                attackCount: parseInt(attackCountMatches[1]),
-                attackKfb: parseInt(attackKfbMatches[1]),
-                attackedCount: parseInt(attackedCountMatches[1]),
-                attackedKfb: parseInt(attackedKfbMatches[1])
-            };
-        }
-        else return null;
-    },
-
-    /**
-     * 获取上一次领取争夺奖励时记录的争夺信息
-     * @returns {?{lootCount: number, lootKfb: number, attackCount: number, attackKfb: number, attackedCount: number, attackedKfb: number}}
-     * 上一次领取争夺奖励时记录的争夺信息
-     * lootCount：争夺次数；lootKfb：争夺实际获得的KFB；attackCount：攻击次数；attackKfb：夺取KFB；attackedCount：被攻击次数；attackedKfb：被夺取KFB；
-     */
-    getPrevLootInfo: function () {
-        var info = TmpLog.getValue(Const.prevLootInfoTmpLogName);
-        if (info && $.type(info) === 'object' && $.type(info.lootCount) === 'number' && $.type(info.lootKfb) === 'number' && $.type(info.attackCount) === 'number' &&
-            $.type(info.attackKfb) === 'number' && $.type(info.attackedCount) === 'number' && $.type(info.attackedKfb) === 'number') {
-            return {
-                lootCount: parseInt(info.lootCount),
-                lootKfb: parseInt(info.lootKfb),
-                attackCount: parseInt(info.attackCount),
-                attackKfb: parseInt(info.attackKfb),
-                attackedCount: parseInt(info.attackedCount),
-                attackedKfb: parseInt(info.attackedKfb)
-            };
-        }
-        else return null;
     }
 };
 
@@ -9180,59 +7088,6 @@ var KFOL = {
             }
         }
 
-        var getLootAwardInterval = -1, autoAttackInterval = -1, attackCheckInterval = -1;
-        if (Config.autoLootEnabled) {
-            var lootTimeLog = Loot.getNextLootAwardTime();
-            if (lootTimeLog.type > 0) {
-                getLootAwardInterval = Math.floor((lootTimeLog.time - new Date().getTime()) / 1000);
-                if (getLootAwardInterval < 0) getLootAwardInterval = 0;
-            }
-            else getLootAwardInterval = 0;
-            if (Config.noAutoLootWhen.length > 0) {
-                var next = Tools.getDate('+' + getLootAwardInterval + 's');
-                var now = new Date();
-                for (var i in Config.noAutoLootWhen) {
-                    var whenArr = Config.noAutoLootWhen[i].split('-');
-                    if (whenArr.length !== 2) continue;
-                    var start = Tools.getDateByTime(whenArr[0]);
-                    var end = Tools.getDateByTime(whenArr[1]);
-                    if (end < start) {
-                        if (now > end) end.setDate(end.getDate() + 1);
-                        else start.setDate(start.getDate() - 1);
-                    }
-                    if (next >= start && next <= end) {
-                        getLootAwardInterval = Math.floor((end - now) / 1000);
-                        break;
-                    }
-                }
-            }
-            if (Config.autoAttackEnabled && Config.attackAfterTime > 0 && !$.isEmptyObject(Config.batchAttackList)
-                && Tools.getCookie(Const.autoAttackReadyCookieName) && !Tools.getCookie(Const.autoAttackingCookieName)) {
-                if (lootTimeLog.type > 0) {
-                    var attackAfterTime = Config.attackAfterTime;
-                    if (lootTimeLog.type === 1) {
-                        var diff = attackAfterTime - Const.minAttackAfterTime - 30;
-                        if (diff < 0) diff = 0;
-                        else if (diff > 30) diff = 30;
-                        attackAfterTime -= diff;
-                    }
-                    autoAttackInterval = Math.floor((lootTimeLog.time - attackAfterTime * 60 * 1000 - new Date().getTime()) / 1000);
-                    if (autoAttackInterval < 0) autoAttackInterval = 0;
-                }
-                else autoAttackInterval = 0;
-                if (Config.attemptAttackEnabled && autoAttackInterval > 0) {
-                    var time = parseInt(Tools.getCookie(Const.checkLifeCookieName));
-                    var now = new Date();
-                    if (!isNaN(time) && time > 0 && time >= now.getTime()) {
-                        attackCheckInterval = Math.floor((time - now.getTime()) / 1000);
-                    }
-                    else attackCheckInterval = 0;
-                }
-            }
-            if (Config.autoAttackEnabled && autoAttackInterval === -1 && Tools.getCookie(Const.autoAttackingCookieName))
-                autoAttackInterval = Const.checkAutoAttackingInterval * 60 + 1;
-        }
-
         var drawSmboxInterval = -1;
         if (Config.autoDrawSmbox2Enabled) {
             var smboxTimeLog = KFOL.getNextDrawSmboxTime();
@@ -9255,7 +7110,7 @@ var KFOL = {
             else autoChangeSMColorInterval = 0;
         }
 
-        var minArr = [donationInterval, getLootAwardInterval, autoAttackInterval, attackCheckInterval, drawSmboxInterval, autoChangeSMColorInterval];
+        var minArr = [donationInterval, drawSmboxInterval, autoChangeSMColorInterval];
         minArr.sort(function (a, b) {
             return a > b;
         });
@@ -9347,14 +7202,14 @@ var KFOL = {
                                 .replace('{0}', errorText)
                                 .replace('{1}', interval)
                             , -1);
-                        window.setTimeout(handleError, interval * 60 * 1000);
+                        setTimeout(handleError, interval * 60 * 1000);
                         showRefreshModeTips(interval * 60, true);
                     }
                     else {
                         if (errorNum > 6) {
                             errorNum = 0;
                             interval = 15;
-                            window.setTimeout(checkRefreshInterval, interval * 60 * 1000);
+                            setTimeout(checkRefreshInterval, interval * 60 * 1000);
                             showRefreshModeTips(interval * 60, true);
                         }
                         else {
@@ -9372,21 +7227,11 @@ var KFOL = {
          */
         var checkRefreshInterval = function () {
             KFOL.removePopTips($('.pd_refresh_notice').parent());
-            var isGetLootAwardStarted = false;
-            var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
-            if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
-                isGetLootAwardStarted = true;
-                Loot.getLootAward(autoDonationAvailable, Config.autoSaveCurrentDepositEnabled);
-            }
             if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
                 KFOL.drawSmbox();
             }
-            if (autoDonationAvailable && !isGetLootAwardStarted) {
+            if (Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName)) {
                 KFOL.donation();
-            }
-            if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
-                && !Tools.getCookie(Const.autoAttackingCookieName)) {
-                Loot.checkAutoAttack();
             }
             if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeIdColor();
 
@@ -9403,11 +7248,11 @@ var KFOL = {
                 return;
             }
             else if (interval === 0) interval = Const.actionFinishRetryInterval;
-            window.setTimeout(checkRefreshInterval, interval * 1000);
+            setTimeout(checkRefreshInterval, interval * 1000);
             showRefreshModeTips(interval, true);
         };
 
-        window.setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
+        setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
         showRefreshModeTips(interval < 60 ? 60 : interval);
     },
 
@@ -9528,10 +7373,15 @@ var KFOL = {
                 .replace('{0}', Tools.getHostNameUrl())
                 .replace('{1}', Tools.getUrlParam('tid'))
                 .replace('{2}', linkName);
-            $this.html('<a class="pd_goto_link" href="{0}">{1}</a>'.replace('{0}', url).replace('{1}', floorText));
+            $this.html('<a class="pd_goto_link" href="{0}" title="复制楼层链接">{1}</a>'.replace('{0}', url).replace('{1}', floorText));
             $this.find('a').click(function (e) {
                 e.preventDefault();
-                window.prompt('本楼的跳转链接（请按Ctrl+C复制）：', url);
+                var $this = $(this);
+                var url = $this.attr('href');
+                $this.data('copy-text', url);
+                if (!Tools.copyText($this, '楼层链接已复制')) {
+                    prompt('本楼的跳转链接（请按Ctrl+C复制）：', url);
+                }
             });
         });
     },
@@ -9780,7 +7630,7 @@ var KFOL = {
 
             var tid = Tools.getUrlParam('tid');
             if (!tid) return;
-            var value = $.trim(window.prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
+            var value = $.trim(prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
             if (value === '') return;
             if (!/^\d+(-\d+)?$/.test(value)) {
                 alert('统计楼层格式不正确');
@@ -9852,7 +7702,7 @@ var KFOL = {
                                 KFOL.showStatReplyersDialog(replyerList);
                             }
                             else {
-                                window.setTimeout(function () {
+                                setTimeout(function () {
                                     $(document).dequeue('StatReplyers');
                                 }, Const.defAjaxInterval);
                             }
@@ -9999,7 +7849,7 @@ var KFOL = {
                             $('#textarea').val(content).focus();
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('MultiQuote');
                             }, 100);
                         }
@@ -10101,9 +7951,9 @@ var KFOL = {
     },
 
     /**
-     * 添加购买帖子提醒
+     * 处理购买帖子按钮
      */
-    addBuyThreadWarning: function () {
+    handleBuyThreadBtn: function () {
         $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
             var $this = $(this);
             var matches = /此帖售价\s*(\d+)\s*KFB/i.exec($this.closest('legend').contents().eq(0).text());
@@ -10117,9 +7967,24 @@ var KFOL = {
                 var sell = $this.data('sell');
                 var url = $this.data('url');
                 if (!sell || !url) return;
-                if (sell < Const.minBuyThreadWarningSell || window.confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) {
-                    location.href = url;
+                if (sell >= Const.minBuyThreadWarningSell && !confirm('此贴售价{0}KFB，是否购买？'.replace('{0}', sell))) return;
+                if (Config.buyThreadViaAjaxEnabled) {
+                    var $wait = KFOL.showWaitMsg('正在购买帖子&hellip;', true);
+                    $.get(url, function (html) {
+                        KFOL.removePopTips($wait);
+                        if (/操作完成/.test(html)) {
+                            location.reload();
+                        }
+                        else if (/您已经购买此帖/.test(html)) {
+                            alert('你已经购买过此帖');
+                            location.reload();
+                        }
+                        else {
+                            alert('帖子购买失败');
+                        }
+                    });
                 }
+                else location.href = url;
             });
         });
     },
@@ -10161,7 +8026,7 @@ var KFOL = {
                     alert('请选择要购买的帖子');
                     return;
                 }
-                if (window.confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
+                if (confirm('你共选择了{0}个帖子，总售价{1}KFB，均价{2}KFB，是否批量购买？'
                         .replace('{0}', threadList.length)
                         .replace('{1}', totalSell.toLocaleString())
                         .replace('{2}', Tools.getFixedNumberLocaleString(totalSell / threadList.length, 2))
@@ -10247,7 +8112,7 @@ var KFOL = {
                             Func.run('KFOL.buyThreads_after_', threadList);
                         }
                         else {
-                            window.setTimeout(function () {
+                            setTimeout(function () {
                                 $(document).dequeue('BuyThreads');
                             }, Const.defAjaxInterval);
                         }
@@ -10302,7 +8167,7 @@ var KFOL = {
             if ($this.is('a:contains("备注")')) {
                 var memo = $this.data('memo');
                 if (!memo) memo = '';
-                var value = window.prompt('为此用户添加备注（要删除备注请留空）：', memo);
+                var value = prompt('为此用户添加备注（要删除备注请留空）：', memo);
                 if (value === null) return;
                 if (!Config.userMemoEnabled) Config.userMemoEnabled = true;
                 value = $.trim(value);
@@ -10341,7 +8206,7 @@ var KFOL = {
                     if (Tools.inFollowOrBlockUserList(userName, userList) === -1) {
                         if (str === '屏蔽') {
                             var type = Config.blockUserDefaultType;
-                            type = window.prompt('请填写屏蔽类型，0：屏蔽主题和回帖；1：仅屏蔽主题；2：仅屏蔽回帖', type);
+                            type = prompt('请填写屏蔽类型，0：屏蔽主题和回帖；1：仅屏蔽主题；2：仅屏蔽回帖', type);
                             if (type === null) return;
                             type = parseInt($.trim(type));
                             if (isNaN(type) || type < 0 || type > 2) type = Config.blockUserDefaultType;
@@ -10812,7 +8677,7 @@ var KFOL = {
         $('<input value="自定义" type="button" style="margin-right:3px">').insertBefore('input[type="button"][value="全选"]')
             .click(function (e) {
                 e.preventDefault();
-                var title = $.trim(window.prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
+                var title = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
                 if (title !== '') {
                     $('.thread1 > tbody > tr > td:nth-child(2) > a').each(function () {
                         var $this = $(this);
@@ -10852,7 +8717,8 @@ var KFOL = {
      * 在首页上显示领取争夺奖励的剩余时间
      */
     showLootAwardInterval: function () {
-        var timeLog = Loot.getNextLootAwardTime();
+        //var timeLog = Loot.getNextLootAwardTime();
+        var timeLog = {};
         if (!timeLog.type) return;
         var $msg = $('a[href="kf_fw_ig_index.php"]');
         if ($msg.length === 0) return;
@@ -10938,7 +8804,10 @@ var KFOL = {
         if ($('.pd_copy_code').length === 0) return;
         $('#alldiv').on('click', 'a.pd_copy_code', function (e) {
             e.preventDefault();
-            var $fieldset = $(this).closest('fieldset');
+            var $this = $(this);
+            var $fieldset = $this.closest('fieldset');
+            if (Tools.copyText($fieldset, '代码已复制', $this.parent())) return;
+
             var content = $fieldset.data('content');
             if (content) {
                 $fieldset.html('<legend><a class="pd_copy_code" href="#">复制代码</a></legend>' + content).removeData('content');
@@ -11421,7 +9290,7 @@ var KFOL = {
             if (!keyWord || Tools.getStrByteLen(keyWord) > 2) return;
             $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
             $method.val('OR');
-            window.setTimeout(function () {
+            setTimeout(function () {
                 $keyWord.val(keyWord);
                 $method.val('AND');
             }, 200);
@@ -11534,13 +9403,13 @@ var KFOL = {
             var text = '';
             switch (type) {
                 case 'hide':
-                    text = window.prompt('请输入神秘等级：', 5);
+                    text = prompt('请输入神秘等级：', 5);
                     break;
                 case 'audio':
-                    text = Tools.convertToAudioExternalLinkUrl(window.prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://'));
+                    text = Tools.convertToAudioExternalLinkUrl(prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://'));
                     break;
                 case 'video':
-                    text = Tools.convertToVideoExternalLinkUrl(window.prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://'));
+                    text = Tools.convertToVideoExternalLinkUrl(prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://'));
                     break;
             }
             if (text === null) return;
@@ -11624,7 +9493,7 @@ var KFOL = {
      * 修复论坛错误代码
      */
     repairBbsErrorCode: function () {
-        KFOL.window.is_ie = typeof KFOL.window.is_ie !== 'undefined' ? KFOL.window.is_ie : false;
+        KFOL.window.is_ie = false;
 
         if (location.pathname === '/read.php') {
             KFOL.window.strlen = Tools.getStrByteLen;
@@ -11668,7 +9537,6 @@ var KFOL = {
         KFOL.window.Item = Item;
         KFOL.window.Card = Card;
         KFOL.window.Bank = Bank;
-        KFOL.window.Loot = Loot;
         KFOL.window.KFOL = KFOL;
     },
 
@@ -11708,7 +9576,7 @@ var KFOL = {
             }
             if (location.pathname === '/read.php') {
                 if ($.trim($('textarea[name="atc_content"]').val())) {
-                    if (!window.confirm('发帖框尚有文字，是否继续翻页？')) return;
+                    if (!confirm('发帖框尚有文字，是否继续翻页？')) return;
                 }
             }
             location.href = url;
@@ -11786,7 +9654,7 @@ var KFOL = {
             var title = $('.adp1 a[href^="read.php?tid="]').text();
             var result = KFOL.checkRatingSize(title, ratingSize);
             if (result.resultType === 1) {
-                return window.confirm(
+                return confirm(
                     '标题文件大小({0}M)与认定文件大小({1}M)不一致，是否继续？'
                         .replace('{0}', result.titleSize.toLocaleString())
                         .replace('{1}', result.ratingSize.toLocaleString())
@@ -11833,10 +9701,6 @@ var KFOL = {
             if ($faq.html().length !== 848) return;
             $faq.html(
                 '你可以通过发帖/回贴、参与争夺奖励（推荐）、抽取神秘盒子（不推荐）等方式获取KFB（论坛货币）。<br><br>' +
-                '争夺奖励的默认间隔为11小时，领取争夺奖励后可选择恰当的时机攻击NPC来夺取KFB与经验，NPC也同样会对你发动攻击，在一回合结束后所剩下的KFB就是你该回合的收获。<br>' +
-                '你可以通过吃道具来提升争夺的各项属性，各项争夺属性的说明详见<a href="kf_fw_ig_index.php" target="_blank">争夺首页</a>。<br><br>' +
-                '你还可以通过抽取<a href="kf_smbox.php" target="_blank">神秘盒子</a>的方式来获得少量KFB（不推荐），每次抽取神秘盒子的间隔为5小时。<br>' +
-                '<span class="pd_highlight">（注：抽取神秘盒子将延长争夺奖励的领取时间，请二选其一，尽量不要同时进行）</span><br><br>' +
                 '发帖/回贴时会获得基本的KFB奖励，每天第一次发帖/回贴还可获得额外经验奖励。<br>' +
                 '发帖请先阅读规定避免违规，在你还没有时间阅读全部规定之前，请至少注意以下几点：<br>' +
                 '不要发表纯水帖；不要纯复制发帖；不要发表政治、广告、恶心的内容；不要攻击、讽刺、挑衅他人；<br>' +
@@ -11876,7 +9740,7 @@ var KFOL = {
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
-            KFOL.showLootAwardInterval();
+            //KFOL.showLootAwardInterval();
             KFOL.showDrawSmboxInterval();
             KFOL.addSearchTypeSelectBoxInHomePage();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
@@ -11901,7 +9765,7 @@ var KFOL = {
             KFOL.addFloorGotoLink();
             KFOL.addCopyBuyersListLink();
             KFOL.addStatReplyersLink();
-            KFOL.addBuyThreadWarning();
+            KFOL.handleBuyThreadBtn();
             if (Config.batchBuyThreadEnabled) KFOL.addBatchBuyThreadButton();
             if (Config.showSelfRatingLinkEnabled) KFOL.addSelfRatingLink();
             if (Config.userMemoEnabled) KFOL.addUserMemo();
@@ -11960,15 +9824,6 @@ var KFOL = {
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Item.addBatchBuyItemsLink();
         }
-        else if (location.pathname === '/kf_fw_ig_index.php') {
-            Loot.handleInLootIndexPage();
-            if (Config.customMonsterNameEnabled) Loot.customMonsterName();
-        }
-        else if (/\/kf_fw_ig_pklist\.php(\?l=s)?$/i.test(location.href)) {
-            Loot.addBatchAttackButton();
-            if (Config.customMonsterNameEnabled) Loot.customMonsterName();
-            Loot.addMonsterLootInfoTips();
-        }
         else if (location.pathname === '/kf_smbox.php') {
             KFOL.addSmboxLinkClickEvent();
         }
@@ -12005,30 +9860,18 @@ var KFOL = {
         if (Config.followUserEnabled) KFOL.followUsers();
         if (KFOL.isMobile) KFOL.bindElementTitleClick();
 
-        var isGetLootAwardStarted = false;
-        var autoDonationAvailable = Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName);
-        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
-        if (Config.autoLootEnabled && !Loot.getNextLootAwardTime().type) {
-            isGetLootAwardStarted = true;
-            Loot.getLootAward(autoDonationAvailable, autoSaveCurrentDepositAvailable);
-        }
-
         if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
             KFOL.drawSmbox();
         }
 
+        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         var isDonationStarted = false;
-        if (autoDonationAvailable && !isGetLootAwardStarted) {
+        if (Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName)) {
             isDonationStarted = true;
             KFOL.donation(autoSaveCurrentDepositAvailable);
         }
 
-        if (autoSaveCurrentDepositAvailable && !isGetLootAwardStarted && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
-
-        if (Config.autoLootEnabled && Config.autoAttackEnabled && Tools.getCookie(Const.autoAttackReadyCookieName)
-            && !Tools.getCookie(Const.autoAttackingCookieName)) {
-            Loot.checkAutoAttack();
-        }
+        if (autoSaveCurrentDepositAvailable && !isDonationStarted) KFOL.autoSaveCurrentDeposit();
 
         if (Config.autoChangeSMColorEnabled && !Tools.getCookie(Const.autoChangeSMColorCookieName)) KFOL.changeIdColor();
 
