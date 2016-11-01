@@ -14,7 +14,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.2.7
+// @version     2.2.8
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -22,7 +22,7 @@
 // ==/UserScript==
 'use strict';
 // Extra版本号
-var extraVersion = '2.2.7';
+var extraVersion = '2.2.8';
 
 /* {PartFileContent} */
 /**

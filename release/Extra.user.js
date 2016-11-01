@@ -12,7 +12,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     2.2.7
+// @version     2.2.8
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -20,7 +20,7 @@
 // ==/UserScript==
 'use strict';
 // Extra版本号
-var extraVersion = '2.2.7';
+var extraVersion = '2.2.8';
 
 /**
  * 自定义道具类
@@ -121,9 +121,9 @@ var CustomItem = {
             configName: 'customSmLevel',
             configValue: '*',
             use: function () {
-                var smLevel = $.trim(window.prompt('请输入你想自定义的神秘等级（普通头像最多限8个字符，卡片头像最多限5个字符）：'));
+                var smLevel = $.trim(prompt('请输入你想自定义的神秘等级（普通头像最多限8个字符，卡片头像最多限5个字符）：'));
                 if (!smLevel) return false;
-                var type = window.confirm('是否只在帖子页面里修改神秘等级？否则将在所有可能的页面里修改') ? 1 : 0;
+                var type = confirm('是否只在帖子页面里修改神秘等级？否则将在所有可能的页面里修改') ? 1 : 0;
                 smLevel = smLevel.substr(0, 8);
                 Extra.Config[this.configName] = smLevel;
                 Extra.Config.customSmLevelType = type;
@@ -270,7 +270,7 @@ var CustomItem = {
                     var $this = $(this);
                     var text = $this.text();
                     if (text.indexOf('出售') > -1) {
-                        if (window.confirm('是否出售此道具？\n（出售道具后使用道具的效果也将一并还原）')) {
+                        if (confirm('是否出售此道具？\n（出售道具后使用道具的效果也将一并还原）')) {
                             CustomItem.sellItem(itemTypeId, item);
                         }
                     }
@@ -304,7 +304,7 @@ var CustomItem = {
                         alert('你当前的节操值不足此道具市场价的两倍');
                         return;
                     }
-                    if (!window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
+                    if (!confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
                     CustomItem.buyItem(itemTypeId, item);
                 });
         }
@@ -391,7 +391,7 @@ var CustomItem = {
                     return;
                 }
                 var isAlerted = $this.data('sell_alerted');
-                if (!isAlerted && !window.confirm('是否出售【Lv.{0}：{1}】道具？\n（出售道具后使用道具的效果也将一并还原）'.replace('{0}', item.level).replace('{1}', item.name)))
+                if (!isAlerted && !confirm('是否出售【Lv.{0}：{1}】道具？\n（出售道具后使用道具的效果也将一并还原）'.replace('{0}', item.level).replace('{1}', item.name)))
                     return;
                 $this.data('sell_alerted', true);
                 CustomItem.sellItem(itemTypeId, item);
@@ -407,7 +407,7 @@ var CustomItem = {
                     return;
                 }
                 var isAlerted = $this.data('buy_alerted');
-                if (!isAlerted && !window.confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
+                if (!isAlerted && !confirm('是否购买【Lv.{0}：{1}】道具？'.replace('{0}', item.level).replace('{1}', item.name))) return;
                 $this.data('buy_alerted', true);
                 CustomItem.buyItem(itemTypeId, item);
                 $this.closest('tr').find('td:nth-child(3)').css('color', '#669933').text('是');
@@ -418,7 +418,7 @@ var CustomItem = {
             if (!clickCount) clickCount = 1;
             if (clickCount >= 5) {
                 $this.removeData('click_count');
-                if (window.confirm('是否将节操值重置为{0}？'.replace('{0}', Extra.defConfig.jieCao))) {
+                if (confirm('是否将节操值重置为{0}？'.replace('{0}', Extra.defConfig.jieCao))) {
                     Extra.readConfig();
                     Extra.Config.jieCao = Extra.defConfig.jieCao;
                     Extra.writeConfig();
@@ -714,7 +714,7 @@ var Extra = {
                 .insertAfter($('div > a[href="kf_fw_1wkfb.php"]').parent())
                 .click(function (e) {
                     e.preventDefault();
-                    var value = window.prompt('添加想从替换中被排除的用户名单（多个用户名请用英文逗号分隔）：', Extra.Config.kfOnlyYouExcludeUserList.join(','));
+                    var value = prompt('添加想从替换中被排除的用户名单（多个用户名请用英文逗号分隔）：', Extra.Config.kfOnlyYouExcludeUserList.join(','));
                     if (value === null) return;
                     value = $.trim(value);
                     Extra.readConfig();
@@ -1061,7 +1061,7 @@ var Extra = {
                     $(type ? '.pd_draggable_move_selected' : '.pd_draggable_move').stop(true);
                 }
                 else if (action === '移动') {
-                    var value = $.trim(window.prompt('移动多少像素？（格式：上下,左右；例：200,-100）', '0,0'));
+                    var value = $.trim(prompt('移动多少像素？（格式：上下,左右；例：200,-100）', '0,0'));
                     if (!value) return;
                     if (!/^-?\d+,-?\d+$/.test(value)) {
                         alert('格式错误');
