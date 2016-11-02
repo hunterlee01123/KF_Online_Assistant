@@ -3057,6 +3057,7 @@ var KFOL = {
         KFOL.window.Item = Item;
         KFOL.window.Card = Card;
         KFOL.window.Bank = Bank;
+        KFOL.window.Loot = Loot;
         KFOL.window.KFOL = KFOL;
     },
 
@@ -3228,7 +3229,7 @@ var KFOL = {
                 '升级（神秘系数）可以获得不同的等级权限，你可以在<a href="kf_growup.php" target="_blank">等级经验页面</a>进行KFB捐款，' +
                 '根据不同的捐款数额获得相应的经验来提升神秘系数。<br>' +
                 '注册初始神秘系数为0，为“通常版”等级，拥有大部分的日常权限；提升为神秘系数4时，升级为“初回限定版”等级，拥有部分追加的权限。<br>' +
-                '部分板块需要一定神秘系数以上才可进入，如打开帖子时出现“Error&hellip;”之类的提示，说明你当前的神秘系数无法进入该板块。<br><br>' +
+                '部分板块需要一定神秘系数以上才可进入，如打开帖子时出现“error&hellip;”的提示，说明你当前的神秘系数无法进入该板块。<br><br>' +
                 '神秘等级的值以神秘系数为基础，基本上是装饰用的属性，可见于帖子页面各楼层用户名称旁，还可用于选择自定义ID颜色。'
             );
         }
@@ -3309,8 +3310,11 @@ var KFOL = {
         else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
             Item.addSellAndUseItemsButton();
         }
-        else if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
-            Item.addSampleItemTips();
+        else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
+            Item.modifyItemDescription();
+            if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
+                Item.addSampleItemTips();
+            }
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Item.addBatchBuyItemsLink();

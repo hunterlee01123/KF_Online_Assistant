@@ -2097,5 +2097,29 @@ var Item = {
                 $this.after('<span class="pd_verify_tips" title="{0}" style="font-size:12px;margin-left:3px">({1})</span>'.replace('{0}', title).replace('{1}', tips));
             });
         });
+    },
+
+    /**
+     * 修正道具描述
+     */
+    modifyItemDescription: function () {
+        var $area = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child');
+        var matches = /道具名称：(.+)/.exec($area.find('span:first').text().trim());
+        if (!matches) return;
+        var itemName = matches[1];
+        var itemDescReplaceList = {
+            '蕾米莉亚同人漫画': ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。'],
+            '十六夜同人漫画': ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。'],
+            '档案室钥匙': ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。'],
+            '傲娇LOLI娇蛮音CD': ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。'],
+            '整形优惠卷': ['暴击几率+3%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。'],
+            '消逝之药': [
+                '消除伤害。<br>防御效果+7%。上限10。',
+                '在获得盒子时，增加3%的几率直接获得高一级的盒子；<br />满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。'
+            ]
+        };
+        if (itemDescReplaceList[itemName]) {
+            $area.html($area.html().replace(itemDescReplaceList[itemName][0], itemDescReplaceList[itemName][1]));
+        }
     }
 };
