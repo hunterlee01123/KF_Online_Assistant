@@ -1692,18 +1692,39 @@ var Item = {
     },
 
     /**
+     * 获取道具使用情况
+     * @param html 争夺首页的HTML代码
+     * @returns {{}} 道具使用情况对象
+     */
+    getItemUsedInfo: function (html) {
+        var itemUsedNumList = {
+            '蕾米莉亚同人漫画': 0,
+            '十六夜同人漫画': 0,
+            '档案室钥匙': 0,
+            '傲娇LOLI娇蛮音CD': 0,
+            '消逝之药': 0,
+            '整形优惠卷': 0
+        };
+        var matches = /道具：\[(蕾米莉亚同人漫画)：(\d+)]\[(十六夜同人漫画)：(\d+)]\[(档案室钥匙)：(\d+)]\[(傲娇LOLI娇蛮音CD)：(\d+)]\[(消逝之药)：(\d+)]\[(整形优惠卷)：(\d+)]/.exec(html);
+        if (matches) {
+            for (var i = 1; i < matches.length; i += 2) {
+                itemUsedNumList[matches[i]] = parseInt(matches[i + 1]);
+            }
+        }
+        return itemUsedNumList;
+    },
+
+    /**
      * 显示道具使用情况
      * @param {jQuery} $links 道具名称的链接列表
      */
     showItemUsedInfo: function ($links) {
-        return;
         var tipsList = [
             '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
             '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律'
         ];
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-            //var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
-            var itemUsedNumList = undefined;
+            var itemUsedNumList = Item.getItemUsedInfo(html);
             $links.next('.pd_used_item_info').remove();
             $links.each(function () {
                 var $this = $(this);
