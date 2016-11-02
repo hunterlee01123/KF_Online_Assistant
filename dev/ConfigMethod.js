@@ -103,21 +103,6 @@ var ConfigMethod = {
             else settings.donationAfterTime = defConfig.donationAfterTime;
         }
 
-        if (typeof options.autoDrawSmbox2Enabled !== 'undefined') {
-            settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
-                options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
-        }
-        if (typeof options.favorSmboxNumbers !== 'undefined') {
-            if ($.isArray(options.favorSmboxNumbers)) {
-                settings.favorSmboxNumbers = [];
-                for (var i in options.favorSmboxNumbers) {
-                    var num = parseInt(options.favorSmboxNumbers[i]);
-                    if (num >= 1 && num <= 400) settings.favorSmboxNumbers.push(num);
-                }
-            }
-            else settings.favorSmboxNumbers = defConfig.favorSmboxNumbers;
-        }
-
         if (typeof options.atTipsHandleType !== 'undefined') {
             var atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
             var allowTypes = ['no_highlight', 'no_highlight_extra', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];

@@ -21,7 +21,7 @@ var ConfigDialog = {
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
-            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子、自动更换神秘颜色，需开启相关功能），只在论坛首页生效' +
+            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效' +
             '（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span></label></legend>' +
             '      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
@@ -33,12 +33,6 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
             '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
             '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>' +
-            '    </fieldset>' +
-            '    <fieldset>' +
-            '      <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
-            '<span class="pd_cfg_tips" title="注意：抽取神秘盒子将延长争夺奖励的领取时间">[?]</span></label></legend>' +
-            '      <label>偏好的神秘盒子数字<input placeholder="例: 52,1,28,400" id="pd_cfg_favor_smbox_numbers" style="width:180px" type="text" />' +
-            '<span class="pd_cfg_tips" title="例：52,1,28,400（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>首页相关</legend>' +
@@ -263,9 +257,6 @@ var ConfigDialog = {
         $('#pd_cfg_donation_kfb').val(Config.donationKfb);
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
 
-        $('#pd_cfg_auto_draw_smbox_enabled').prop('checked', Config.autoDrawSmbox2Enabled);
-        $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
-
         $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
         $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
         $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
@@ -326,9 +317,6 @@ var ConfigDialog = {
         options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
         options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
-
-        options.autoDrawSmbox2Enabled = $('#pd_cfg_auto_draw_smbox_enabled').prop('checked');
-        options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
 
         options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
         options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
@@ -420,23 +408,6 @@ var ConfigDialog = {
             $txtDonationAfterTime.select();
             $txtDonationAfterTime.focus();
             return false;
-        }
-
-        var $txtFavorSmboxNumbers = $('#pd_cfg_favor_smbox_numbers');
-        var favorSmboxNumbers = $.trim($txtFavorSmboxNumbers.val());
-        if (favorSmboxNumbers) {
-            if (!/^\d+(,\d+)*$/.test(favorSmboxNumbers)) {
-                alert('偏好的神秘盒子数字格式不正确');
-                $txtFavorSmboxNumbers.select();
-                $txtFavorSmboxNumbers.focus();
-                return false;
-            }
-            if (/(\b\d{4,}\b|\b0+\b|\b[05-9]\d{2}\b|\b4\d[1-9]\b)/.test(favorSmboxNumbers)) {
-                alert('每个神秘盒子数字的取值范围在1-400之间');
-                $txtFavorSmboxNumbers.select();
-                $txtFavorSmboxNumbers.focus();
-                return false;
-            }
         }
 
         var $txtMaxFastGotoThreadPageNum = $('#pd_cfg_max_fast_goto_thread_page_num');

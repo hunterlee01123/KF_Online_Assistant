@@ -9,10 +9,6 @@ var Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
-    // 抽取神秘盒子头奖的奖金（KFB）
-    smboxFirstPrizeBonus: 2000,
-    // 神秘盒子的默认抽取间隔（分钟）
-    defDrawSmboxInterval: 300,
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
     actionFinishRetryInterval: 30,
     // 在连接超时的情况下获取剩余时间失败后的重试间隔（分钟），用于定时模式
@@ -82,8 +78,6 @@ var Const = {
     prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
     // 标记已KFB捐款的Cookie名称
     donationCookieName: 'pd_donation',
-    // 标记已抽取神秘盒子的Cookie名称
-    drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
     // 存储之前已读的at提醒信息的Cookie名称

@@ -486,111 +486,6 @@ var KFOL = {
     },
 
     /**
-     * 获取下次抽取神秘盒子的时间对象
-     * @returns {{type: number, time: number}} 下次抽取神秘盒子的时间对象，type：时间类型（0：获取失败；1：估计时间；2：精确时间）；time：下次领取时间
-     */
-    getNextDrawSmboxTime: function () {
-        var log = Tools.getCookie(Const.drawSmboxCookieName);
-        if (log) {
-            log = log.split('|');
-            if (log.length === 2) {
-                var type = parseInt(log[0]);
-                var time = parseInt(log[1]);
-                if (!isNaN(type) && !isNaN(time) && type > 0 && time > 0) {
-                    return {type: parseInt(type), time: parseInt(time)};
-                }
-            }
-        }
-        return {type: 0, time: 0};
-    },
-
-    /**
-     * 抽取神秘盒子
-     */
-    drawSmbox: function () {
-        Func.run('KFOL.drawSmbox_before_');
-        console.log('抽取神秘盒子Start');
-        $.get('kf_smbox.php?t=' + new Date().getTime(), function (html) {
-            if (KFOL.getNextDrawSmboxTime().type) return;
-            if (!/kf_smbox\.php\?box=\d+&safeid=\w+/i.test(html)) {
-                KFOL.showFormatLog('抽取神秘盒子', html);
-                return;
-            }
-            var smboxNumber = 0;
-            var url = '';
-            for (var i in Config.favorSmboxNumbers) {
-                var regex = new RegExp('kf_smbox\\.php\\?box=' + Config.favorSmboxNumbers[i] + '&safeid=\\w+', 'i');
-                var favorMatches = regex.exec(html);
-                if (favorMatches) {
-                    smboxNumber = Config.favorSmboxNumbers[i];
-                    url = favorMatches[0];
-                    break;
-                }
-            }
-            if (!url) {
-                var matches = html.match(/kf_smbox\.php\?box=\d+&safeid=\w+/gi);
-                if (!matches) return;
-                url = matches[Math.floor(Math.random() * matches.length)];
-                var numberMatches = /box=(\d+)/i.exec(url);
-                smboxNumber = numberMatches ? numberMatches[1] : 0;
-            }
-
-            $.get(url + '&t=' + new Date().getTime(), function (html) {
-                var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm');
-                Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
-                KFOL.showFormatLog('抽取神秘盒子', html);
-                var kfbRegex = /获得了(\d+)KFB的奖励.*?(\(\d+\|\d+\))/i;
-                var smRegex = /获得本轮的头奖/i;
-                var msg = '<strong>抽取神秘盒子[<em>No.{0}</em>]</strong>'.replace('{0}', smboxNumber);
-                var gain = {};
-                var action = '抽取神秘盒子[`No.{0}`]'.replace('{0}', smboxNumber);
-                if (kfbRegex.test(html)) {
-                    var matches = kfbRegex.exec(html);
-                    msg += '<i>KFB<em>+{0}</em></i><i class="pd_notice">{1}</i>'
-                        .replace('{0}', matches[1])
-                        .replace('{1}', matches[2]);
-                    gain['KFB'] = parseInt(matches[1]);
-                    action += ' ' + matches[2];
-                }
-                else if (smRegex.test(html)) {
-                    msg += '<i class="pd_highlight" style="font-weight:bold">KFB<em>+{0}</em></i><a target="_blank" href="kf_smbox.php">查看头奖</a>'
-                        .replace('{0}', Const.smboxFirstPrizeBonus);
-                    gain['KFB'] = Const.smboxFirstPrizeBonus;
-                }
-                else {
-                    nextTime = Tools.getDate('+1h');
-                    Tools.setCookie(Const.drawSmboxCookieName, '1|' + nextTime.getTime(), nextTime);
-                    return;
-                }
-                Log.push('抽取神秘盒子', action, {gain: gain});
-                KFOL.showMsg(msg);
-                if (KFOL.isInHomePage) {
-                    $('a[href="kf_smbox.php"].indbox5').removeClass('indbox5').addClass('indbox6');
-                }
-                Func.run('KFOL.drawSmbox_after_', html);
-            }, 'html');
-        }, 'html');
-    },
-
-    /**
-     * 添加神秘盒子链接点击事件
-     */
-    addSmboxLinkClickEvent: function () {
-        $('.box1').on('click', 'a[href^="kf_smbox.php?box="]', function () {
-            if (KFOL.getNextDrawSmboxTime().type) return;
-            var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm').getTime() + 10 * 1000;
-            Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime, new Date(nextTime));
-        });
-
-        var $intro = $('td[style="line-height:30px;text-align:center;border-bottom:1px solid #9999ff;"]');
-        $intro.html(
-            $intro.html().replace('灰色表示已经被抽过未中的，淡蓝色表示可以抽奖的', '空的表示已经被抽过未中的，粉色的表示可以抽奖的')
-                .replace('如果中奖则获取[ 1000KFB ]', '如果中奖则获取[ 2000KFB ]')
-                .replace('基础随机数由神秘等级决定', '基础随机数由神秘系数决定')
-        );
-    },
-
-    /**
      * 获取倒计时的最小时间间隔（秒）
      * @returns {number} 倒计时的最小时间间隔（秒）
      */
@@ -608,16 +503,6 @@ var KFOL = {
             }
         }
 
-        var drawSmboxInterval = -1;
-        if (Config.autoDrawSmbox2Enabled) {
-            var smboxTimeLog = KFOL.getNextDrawSmboxTime();
-            if (smboxTimeLog.type > 0) {
-                drawSmboxInterval = Math.floor((smboxTimeLog.time - new Date().getTime()) / 1000);
-                if (drawSmboxInterval < 0) drawSmboxInterval = 0;
-            }
-            else drawSmboxInterval = 0;
-        }
-
         var autoChangeSMColorInterval = -1;
         if (Config.autoChangeSMColorEnabled) {
             var nextTime = parseInt(Tools.getCookie(Const.autoChangeSMColorCookieName));
@@ -630,7 +515,7 @@ var KFOL = {
             else autoChangeSMColorInterval = 0;
         }
 
-        var minArr = [donationInterval, drawSmboxInterval, autoChangeSMColorInterval];
+        var minArr = [donationInterval, autoChangeSMColorInterval];
         minArr.sort(function (a, b) {
             return a > b;
         });
@@ -747,9 +632,6 @@ var KFOL = {
          */
         var checkRefreshInterval = function () {
             KFOL.removePopTips($('.pd_refresh_notice').parent());
-            if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
-                KFOL.drawSmbox();
-            }
             if (Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName)) {
                 KFOL.donation();
             }
@@ -2016,7 +1898,7 @@ var KFOL = {
                 '<span style="color:#ff9999;">快捷导航</span><br />' +
                 '<a href="guanjianci.php?gjc={0}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br />'
                     .replace('{0}', KFOL.userName) +
-                '<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_smbox.php">盒子</a><br />' +
+                '<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_fw_ig_shop.php">商店</a><br />' +
                 '<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br />' +
                 Const.customTileSideBarContent
             );
@@ -2030,7 +1912,6 @@ var KFOL = {
                 '    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>' +
                 '    <li><a href="kf_fw_ig_my.php">我的道具</a></li>' +
                 '    <li><a href="kf_fw_ig_shop.php">道具商店</a></li>' +
-                '    <li><a href="kf_smbox.php">神秘盒子</a></li>' +
                 '    <li><a href="profile.php?action=modify">设置</a></li>' +
                 '    <li><a href="hack.php?H_name=bank">银行</a></li>' +
                 '    <li><a href="profile.php?action=favor">收藏</a></li>' +
@@ -2231,43 +2112,6 @@ var KFOL = {
         }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
             $(this).css('position', 'static').find('.pd_thread_goto').remove();
         });
-    },
-
-    /**
-     * 在首页上显示领取争夺奖励的剩余时间
-     */
-    showLootAwardInterval: function () {
-        //var timeLog = Loot.getNextLootAwardTime();
-        var timeLog = {};
-        if (!timeLog.type) return;
-        var $msg = $('a[href="kf_fw_ig_index.php"]');
-        if ($msg.length === 0) return;
-        var diff = Tools.getTimeDiffInfo(timeLog.time);
-        if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-        if (timeLog.type === 2) {
-            $msg.text('争夺奖励 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
-        }
-        else {
-            diff.hours += 1;
-            $msg.text('争夺奖励 (剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
-        }
-        if (!Tools.getCookie(Const.autoAttackReadyCookieName))
-            $msg.removeClass('indbox5').addClass('indbox6');
-    },
-
-    /**
-     * 在首页上显示抽取神秘盒子的剩余时间
-     */
-    showDrawSmboxInterval: function () {
-        var timeLog = KFOL.getNextDrawSmboxTime();
-        if (timeLog.type !== 2) return;
-        var $msg = $('a[href="kf_smbox.php"]');
-        if ($msg.length === 0) return;
-        var diff = Tools.getTimeDiffInfo(timeLog.time);
-        if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-        $msg.text('神秘盒子 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
-            .removeClass('indbox5')
-            .addClass('indbox6');
     },
 
     /**
@@ -3221,7 +3065,7 @@ var KFOL = {
         if (id === 1) {
             if ($faq.html().length !== 848) return;
             $faq.html(
-                '你可以通过发帖/回贴、参与争夺奖励（推荐）、抽取神秘盒子（不推荐）等方式获取KFB（论坛货币）。<br><br>' +
+                '你可以通过发帖/回贴、参与<a href="kf_fw_ig_index.php" target="_blank">争夺奖励</a>等方式获取KFB（论坛货币）和经验。<br><br>' +
                 '发帖/回贴时会获得基本的KFB奖励，每天第一次发帖/回贴还可获得额外经验奖励。<br>' +
                 '发帖请先阅读规定避免违规，在你还没有时间阅读全部规定之前，请至少注意以下几点：<br>' +
                 '不要发表纯水帖；不要纯复制发帖；不要发表政治、广告、恶心的内容；不要攻击、讽刺、挑衅他人；<br>' +
@@ -3261,8 +3105,6 @@ var KFOL = {
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
-            //KFOL.showLootAwardInterval();
-            KFOL.showDrawSmboxInterval();
             KFOL.addSearchTypeSelectBoxInHomePage();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
@@ -3354,9 +3196,6 @@ var KFOL = {
         else if (location.pathname === '/kf_growup.php') {
             KFOL.addAutoChangeIdColorButton();
         }
-        else if (location.pathname === '/kf_smbox.php') {
-            KFOL.addSmboxLinkClickEvent();
-        }
         else if (location.pathname === '/guanjianci.php') {
             KFOL.highlightUnReadAtTipsMsg();
         }
@@ -3389,10 +3228,6 @@ var KFOL = {
         if (Config.blockThreadEnabled) KFOL.blockThread();
         if (Config.followUserEnabled) KFOL.followUsers();
         if (KFOL.isMobile) KFOL.bindElementTitleClick();
-
-        if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
-            KFOL.drawSmbox();
-        }
 
         var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         var isDonationStarted = false;

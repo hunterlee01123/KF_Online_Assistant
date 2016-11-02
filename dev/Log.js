@@ -360,7 +360,6 @@ var Log = {
         var validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
         var buyItemTotalNum = 0, buyItemTotalPrice = 0, totalBuyItemPricePercent = 0, minBuyItemPricePercent = 0,
             maxBuyItemPricePercent = 0, buyItemStat = {};
-        var smBoxGain = [];
         var invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
         for (var d in log) {
             $.each(log[d], function (index, key) {
@@ -370,9 +369,6 @@ var Log = {
                         if ($.inArray(k, invalidKeyList) > -1) continue;
                         if (typeof income[k] === 'undefined') income[k] = key.gain[k];
                         else income[k] += key.gain[k];
-                    }
-                    if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
-                        smBoxGain.push(key.gain['KFB']);
                     }
                 }
                 if ($.type(key.pay) === 'object') {
@@ -489,23 +485,6 @@ var Log = {
             .replace('{3}', minBuyItemPricePercent)
             .replace('{4}', maxBuyItemPricePercent)
             .replace('{5}', buyItemStatContent);
-
-        if (Config.autoDrawSmbox2Enabled) {
-            var smBoxIncome = 0, minSmBox = 0, maxSmBox = 0;
-            $.each(smBoxGain, function (index, kfb) {
-                smBoxIncome += kfb;
-                if (index === 0) minSmBox = kfb;
-                if (minSmBox > kfb) minSmBox = kfb;
-                if (maxSmBox < kfb) maxSmBox = kfb;
-            });
-            content += ('<br /><strong>神秘盒子收获：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
-            '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', smBoxGain.length.toLocaleString())
-                .replace('{1}', smBoxIncome.toLocaleString())
-                .replace('{2}', smBoxGain.length > 0 ? Tools.getFixedNumberLocaleString(smBoxIncome / smBoxGain.length, 2) : 0)
-                .replace('{3}', minSmBox.toLocaleString())
-                .replace('{4}', maxSmBox.toLocaleString());
-        }
 
         return content;
     },
