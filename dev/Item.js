@@ -161,22 +161,7 @@ var Item = {
             return -1;
         }
         if (itemTypeId >= 7 && itemTypeId <= 12) {
-            if (/成功！/.test(response)) {
-                switch (itemTypeId) {
-                    case 11:
-                        return {'燃烧伤害': 1};
-                    case 7:
-                        return {'命中': 3, '闪避': 1};
-                    case 8:
-                        return {'暴击比例': 10};
-                    case 12:
-                        return {'命中': 1, '闪避': 3};
-                    case 9:
-                        return {'暴击几率': 3};
-                    case 10:
-                        return {'防御': 7};
-                }
-            }
+            if (/成功！/.test(response)) return {'效果': 1};
         }
         else {
             var matches = null;
@@ -299,12 +284,14 @@ var Item = {
                             if (credits !== -1) {
                                 if ($.isEmptyObject(credits)) stat['无效道具']++;
                                 else stat['有效道具']++;
-                                $.each(credits, function (key, credit) {
-                                    if (typeof stat[key] === 'undefined')
-                                        stat[key] = credit;
-                                    else
-                                        stat[key] += credit;
-                                });
+                                if (settings.itemTypeId <= 6) {
+                                    $.each(credits, function (key, credit) {
+                                        if (typeof stat[key] === 'undefined')
+                                            stat[key] = credit;
+                                        else
+                                            stat[key] += credit;
+                                    });
+                                }
                             }
                         }
                         else {

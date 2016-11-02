@@ -323,11 +323,26 @@ var Tools = {
         for (var key in obj) {
             list.push(key);
         }
-        if (sortBy != 0) {
+        if (!sortBy) {
             list.sort(function (a, b) {
                 return sortBy > 0 ? a > b : a < b;
             });
         }
+        return list;
+    },
+
+    /**
+     * 获取经过排序的指定对象的关键字列表
+     * @param {string[]} sortKeyList 用于排序的关键字列表
+     * @param {Object} obj 指定对象
+     * @param {number} [sortBy] 是否排序，0：不排序；1：升序；-1：降序
+     * @returns {string[]} 关键字列表
+     */
+    getSortedObjectKeyList: function (sortKeyList, obj, sortBy) {
+        var list = Tools.getObjectKeyList(obj, sortBy);
+        list.sort(function (a, b) {
+            return $.inArray(a, sortKeyList) > $.inArray(b, sortKeyList);
+        });
         return list;
     },
 

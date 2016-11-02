@@ -357,83 +357,51 @@ var Log = {
         }
 
         var income = {}, expense = {}, profit = {};
-        var smBoxGain = [], lootGain = [], lootItemGain = {};
-        var lootCount = 0, lootAttackedCount = 0, minLootAttackedCount = -1, maxLootAttackedCount = -1,
-            lootAttackKfb = 0, minLootAttackKfb = -1, maxLootAttackKfb = -1,
-            lootAttackedKfb = 0, minLootAttackedKfb = -1, maxLootAttackedKfb = -1;
-        var attackCount = 0, attemptAttackCount = 0, attackKfb = 0, attackExp = 0,
-            strongAttackCount = 0, minStrongAttackCount = -1, maxStrongAttackCount = -1, deadlyAttackCount = 0;
+        var validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
         var buyItemTotalNum = 0, buyItemTotalPrice = 0, totalBuyItemPricePercent = 0, minBuyItemPricePercent = 0,
             maxBuyItemPricePercent = 0, buyItemStat = {};
+        var smBoxGain = [];
+        var invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
                 if ($.type(key.gain) === 'object') {
                     for (var k in key.gain) {
-                        if (k === 'item' || k === '夺取KFB') continue;
+                        if ($.inArray(k, invalidKeyList) > -1) continue;
                         if (typeof income[k] === 'undefined') income[k] = key.gain[k];
                         else income[k] += key.gain[k];
                     }
-                    if (key.type === '领取争夺奖励') {
-                        if (typeof key.gain['KFB'] !== 'undefined')lootGain.push(key.gain['KFB']);
-
-                        var matches = /`(\d+)`次攻击/.exec(key.action);
-                        if (matches && $.type(key.pay) === 'object' && typeof key.gain['夺取KFB'] !== 'undefined' && typeof key.pay['夺取KFB'] !== 'undefined') {
-                            lootCount++;
-                            var count = parseInt(matches[1]);
-                            lootAttackedCount += count;
-                            if (minLootAttackedCount < 0 || count < minLootAttackedCount) minLootAttackedCount = count;
-                            if (count > maxLootAttackedCount) maxLootAttackedCount = count;
-                            var kfb = parseInt(key.gain['夺取KFB']);
-                            lootAttackKfb += kfb;
-                            if (minLootAttackKfb < 0 || kfb < minLootAttackKfb) minLootAttackKfb = kfb;
-                            if (kfb > maxLootAttackKfb) maxLootAttackKfb = kfb;
-                            var kfb = Math.abs(parseInt(key.pay['夺取KFB']));
-                            lootAttackedKfb += kfb;
-                            if (minLootAttackedKfb < 0 || kfb < minLootAttackedKfb) minLootAttackedKfb = kfb;
-                            if (kfb > maxLootAttackedKfb) maxLootAttackedKfb = kfb;
-                        }
-                    }
-                    else if (key.type === '批量攻击' || key.type === '试探攻击') {
-                        var matches = /`(\d+)`次/.exec(key.action);
-                        if (matches) {
-                            if (key.type === '试探攻击') attemptAttackCount++;
-                            if (typeof key.gain['夺取KFB'] !== 'undefined') attackKfb += parseInt(key.gain['夺取KFB']);
-                            if (typeof key.gain['经验值'] !== 'undefined') attackExp += parseInt(key.gain['经验值']);
-                            attackCount += parseInt(matches[1]);
-                            matches = /暴击`\+(\d+)`/.exec(key.action);
-                            if (matches) {
-                                var count = parseInt(matches[1]);
-                                strongAttackCount += count;
-                                if (key.type === '批量攻击') {
-                                    if (minStrongAttackCount < 0 || count < minStrongAttackCount) minStrongAttackCount = count;
-                                    if (count > maxStrongAttackCount) maxStrongAttackCount = count;
-                                }
-                            }
-                            matches = /致命一击`\+(\d+)`/.exec(key.action);
-                            if (matches) deadlyAttackCount += parseInt(matches[1]);
-                        }
-
-                        if ($.type(key.gain['item']) === 'object') {
-                            for (var itemName in key.gain['item']) {
-                                var num = parseInt(key.gain['item'][itemName]);
-                                if (typeof lootItemGain[itemName] === 'undefined') lootItemGain[itemName] = num;
-                                else lootItemGain[itemName] += num;
-                            }
-                        }
-                    }
-                    else if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
+                    if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
                         smBoxGain.push(key.gain['KFB']);
                     }
                 }
                 if ($.type(key.pay) === 'object') {
                     for (var k in key.pay) {
-                        if (k === 'item' || k === '夺取KFB') continue;
+                        if ($.inArray(k, invalidKeyList) > -1) continue;
                         if (typeof expense[k] === 'undefined') expense[k] = key.pay[k];
                         else expense[k] += key.pay[k];
                     }
                 }
-                if (key.type === '统计道具购买价格' && $.type(key.pay) === 'object' && typeof key.pay['KFB'] !== 'undefined') {
+                if ((key.type === '使用道具' || key.type === '循环使用道具') && $.type(key.gain) === 'object') {
+                    var matches = /【`Lv.(\d+)：(.+?)`】/.exec(key.action);
+                    if (matches) {
+                        var itemLevel = parseInt(matches[1]);
+                        var itemName = matches[2];
+                        if (key.gain['有效道具'] > 0) {
+                            validItemNum += key.gain['有效道具'];
+                            if (itemLevel >= 3) highValidItemNum += key.gain['有效道具'];
+                            if (typeof validItemStat[itemName] === 'undefined') validItemStat[itemName] = 0;
+                            validItemStat[itemName] += key.gain['有效道具'];
+                        }
+                        if (key.gain['无效道具'] > 0) {
+                            invalidItemNum += key.gain['无效道具'];
+                            if (itemLevel >= 3) highInvalidItemNum += key.gain['无效道具'];
+                            if (typeof invalidItemStat[itemName] === 'undefined') invalidItemStat[itemName] = 0;
+                            invalidItemStat[itemName] += key.gain['无效道具'];
+                        }
+                    }
+                }
+                else if (key.type === '统计道具购买价格' && $.type(key.pay) === 'object' && typeof key.pay['KFB'] !== 'undefined') {
                     var matches = /共有`(\d+)`个【`Lv.\d+：(.+?)`】道具统计成功，总计价格：`[^`]+?`，平均价格：`[^`]+?`\(`(\d+)%`\)，最低价格：`[^`]+?`\(`(\d+)%`\)，最高价格：`[^`]+?`\(`(\d+)%`\)/.exec(key.action);
                     if (matches) {
                         var itemNum = parseInt(matches[1]);
@@ -463,39 +431,65 @@ var Log = {
             });
         }
 
-        /**
-         * 为统计项目排序
-         * @param {{}} obj 统计结果列表
-         * @returns {string[]} 经过排序项目列表
-         */
-        var sortStatItemList = function (obj) {
-            var sortTypeList = ['KFB', '经验值', '能量', 'VIP小时', '贡献', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率',
-                '防御', '道具', '已使用道具', '有效道具', '无效道具', '卡片'];
-            var list = Tools.getObjectKeyList(obj, 0);
-            list.sort(function (a, b) {
-                return $.inArray(a, sortTypeList) > $.inArray(b, sortTypeList);
-            });
-            return list;
-        };
-
         var content = '';
+        var sortStatTypeList = ['KFB', '经验值', '能量', '贡献', '道具', '已使用道具', '卡片'];
         content += '<strong>收获：</strong>';
-        $.each(sortStatItemList(income), function (index, key) {
+        $.each(Tools.getSortedObjectKeyList(sortStatTypeList, income), function (index, key) {
             profit[key] = income[key];
             content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', income[key].toLocaleString());
         });
         content += '<br /><strong>付出：</strong>';
-        $.each(sortStatItemList(expense), function (index, key) {
+        $.each(Tools.getSortedObjectKeyList(sortStatTypeList, expense), function (index, key) {
             if (typeof profit[key] === 'undefined') profit[key] = expense[key];
             else profit[key] += expense[key];
             content += '<i>{0}<ins>{1}</ins></i> '.replace('{0}', key).replace('{1}', expense[key].toLocaleString());
         });
         content += '<br /><strong>结余：</strong>';
-        $.each(sortStatItemList(profit), function (index, key) {
+        $.each(Tools.getSortedObjectKeyList(sortStatTypeList, profit), function (index, key) {
             content += '<i>{0}{1}</i> '.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(profit[key]));
         });
 
         content += '<div style="margin:5px 0;border-bottom:1px dashed #CCCCFF"></div>';
+
+        var sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
+            '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
+        content += '\n<strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+{0}</em>(<em title="3级以上有效道具">+{1}</em>)</i></span> '
+            .replace('{0}', validItemNum.toLocaleString())
+            .replace('{1}', highValidItemNum.toLocaleString());
+        $.each(Tools.getSortedObjectKeyList(sortItemTypeList, validItemStat), function (i, itemName) {
+            content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', validItemStat[itemName].toLocaleString());
+        });
+        content += '<br /><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+{0}</em>(<em title="3级以上无效道具">+{1}</em>)</i></span> '
+            .replace('{0}', invalidItemNum.toLocaleString())
+            .replace('{1}', highInvalidItemNum.toLocaleString());
+        $.each(Tools.getSortedObjectKeyList(sortItemTypeList, invalidItemStat), function (i, itemName) {
+            content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', invalidItemStat[itemName].toLocaleString());
+        });
+
+        var buyItemStatContent = '';
+        var buyItemStatKeyList = Tools.getObjectKeyList(buyItemStat, 0);
+        buyItemStatKeyList.sort(function (a, b) {
+            return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
+        });
+        $.each(buyItemStatKeyList, function (index, key) {
+            var item = buyItemStat[key];
+            buyItemStatContent += '<i class="pd_custom_tips" title="总价：{0}，平均价格比例：{1}%，最低价格比例：{2}%，最高价格比例：{3}%">{4}<em>+{5}</em></i> '
+                .replace('{0}', item['总计价格'].toLocaleString())
+                .replace('{1}', item['道具数量'] > 0 ? Tools.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0)
+                .replace('{2}', item['最低价格比例'])
+                .replace('{3}', item['最高价格比例'])
+                .replace('{4}', key)
+                .replace('{5}', item['道具数量']);
+        });
+        content += ('<br /><strong>购买道具统计：</strong><i>道具<em>+{0}</em></i> <i>道具价格<span class="pd_stat_extra"><em title="道具总价">+{1}</em>' +
+        '(<em title="平均价格比例">{2}%</em>|<em title="最低价格比例">{3}%</em>|<em title="最高价格比例">{4}%</em>)</span></i> {5}')
+            .replace('{0}', buyItemTotalNum)
+            .replace('{1}', buyItemTotalPrice.toLocaleString())
+            .replace('{2}', buyItemTotalNum > 0 ? Tools.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0)
+            .replace('{3}', minBuyItemPricePercent)
+            .replace('{4}', maxBuyItemPricePercent)
+            .replace('{5}', buyItemStatContent);
+
         if (Config.autoDrawSmbox2Enabled) {
             var smBoxIncome = 0, minSmBox = 0, maxSmBox = 0;
             $.each(smBoxGain, function (index, kfb) {
@@ -504,99 +498,13 @@ var Log = {
                 if (minSmBox > kfb) minSmBox = kfb;
                 if (maxSmBox < kfb) maxSmBox = kfb;
             });
-            content += ('\n<strong>神秘盒子KFB收获：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
+            content += ('<br /><strong>神秘盒子收获：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
             '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
                 .replace('{0}', smBoxGain.length.toLocaleString())
                 .replace('{1}', smBoxIncome.toLocaleString())
                 .replace('{2}', smBoxGain.length > 0 ? Tools.getFixedNumberLocaleString(smBoxIncome / smBoxGain.length, 2) : 0)
                 .replace('{3}', minSmBox.toLocaleString())
                 .replace('{4}', maxSmBox.toLocaleString());
-        }
-        else {
-            var lootIncome = 0, minLoot = 0, maxLoot = 0;
-            $.each(lootGain, function (index, kfb) {
-                lootIncome += kfb;
-                if (index === 0) minLoot = kfb;
-                if (minLoot > kfb) minLoot = kfb;
-                if (maxLoot < kfb) maxLoot = kfb;
-            });
-            content += ('\n<strong>争夺KFB收获：</strong><i>回合数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
-            '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', lootGain.length.toLocaleString())
-                .replace('{1}', lootIncome.toLocaleString())
-                .replace('{2}', lootGain.length > 0 ? Tools.getFixedNumberLocaleString(lootIncome / lootGain.length, 2) : 0)
-                .replace('{3}', minLoot.toLocaleString())
-                .replace('{4}', maxLoot.toLocaleString());
-
-            if (Config.autoLootEnabled) {
-                content += ('<br /><strong>争夺详情统计：</strong><i class="pd_custom_tips" title="只有连续记录的争夺回合才会被统计">回合数<em>+{0}</em></i> ' +
-                '<i>被攻击次数<em>+{1}</em><span class="pd_stat_extra">(<em title="平均值">+{2}</em>|<em title="最小值">+{3}</em>|<em title="最大值">+{4}</em>)</span></i> ' +
-                '<i>夺取KFB<em>+{5}</em><span class="pd_stat_extra">(<em title="平均值">+{6}</em>|<em title="最小值">+{7}</em>|<em title="最大值">+{8}</em>)</span></i> ' +
-                '<i>夺取KFB<ins>-{9}</ins><span class="pd_stat_extra">(<ins title="平均值">-{10}</ins>|<ins title="最小值">-{11}</ins>|<ins title="最大值">-{12}</ins>)</span></i> ')
-                    .replace('{0}', lootCount.toLocaleString())
-                    .replace('{1}', lootAttackedCount.toLocaleString())
-                    .replace('{2}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackedCount / lootCount, 2) : 0)
-                    .replace('{3}', minLootAttackedCount > 0 ? minLootAttackedCount.toLocaleString() : 0)
-                    .replace('{4}', maxLootAttackedCount > 0 ? maxLootAttackedCount.toLocaleString() : 0)
-                    .replace('{5}', lootAttackKfb.toLocaleString())
-                    .replace('{6}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackKfb / lootCount, 2) : 0)
-                    .replace('{7}', minLootAttackKfb > 0 ? minLootAttackKfb.toLocaleString() : 0)
-                    .replace('{8}', maxLootAttackKfb > 0 ? maxLootAttackKfb.toLocaleString() : 0)
-                    .replace('{9}', lootAttackedKfb.toLocaleString())
-                    .replace('{10}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackedKfb / lootCount, 2) : 0)
-                    .replace('{11}', minLootAttackedKfb > 0 ? minLootAttackedKfb.toLocaleString() : 0)
-                    .replace('{12}', maxLootAttackedKfb > 0 ? maxLootAttackedKfb.toLocaleString() : 0);
-            }
-
-            content += ('<br /><strong>攻击详情统计：</strong>' +
-            '<i>攻击次数<em>+{0}</em><span class="pd_stat_extra">(<em title="试探攻击次数">+{1}</em>)</span></i> <i>夺取KFB<em>+{2}</em></i> <i>经验值<em>+{3}</em></i> ' +
-            '<i>暴击次数<em>+{4}</em><span class="pd_stat_extra">(<em title="暴击几率">{5}%</em>|<em title="最小值（批量攻击）">+{6}</em>|' +
-            '<em title="最大值（批量攻击）">+{7}</em>)</span></i> <i>致命一击次数<em>+{8}</em></i>')
-                .replace('{0}', attackCount.toLocaleString())
-                .replace('{1}', attemptAttackCount.toLocaleString())
-                .replace('{2}', attackKfb.toLocaleString())
-                .replace('{3}', attackExp.toLocaleString())
-                .replace('{4}', strongAttackCount.toLocaleString())
-                .replace('{5}', attackCount > 0 ? (strongAttackCount / attackCount * 100).toFixed(2) : 0)
-                .replace('{6}', minStrongAttackCount > 0 ? minStrongAttackCount.toLocaleString() : 0)
-                .replace('{7}', maxStrongAttackCount > 0 ? maxStrongAttackCount.toLocaleString() : 0)
-                .replace('{8}', deadlyAttackCount.toLocaleString());
-
-            var lootItemGainContent = '';
-            var lootItemGainKeyList = Tools.getObjectKeyList(lootItemGain, 0);
-            lootItemGainKeyList.sort(function (a, b) {
-                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
-            });
-            var lootItemGainTotalNum = 0;
-            $.each(lootItemGainKeyList, function (index, key) {
-                lootItemGainTotalNum += lootItemGain[key];
-                lootItemGainContent += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', lootItemGain[key]);
-            });
-            content += '<br /><strong>争夺道具收获：</strong><i>道具<em>+{0}</em></i> {1}'.replace('{0}', lootItemGainTotalNum).replace('{1}', lootItemGainContent);
-
-            var buyItemStatContent = '';
-            var buyItemStatKeyList = Tools.getObjectKeyList(buyItemStat, 0);
-            buyItemStatKeyList.sort(function (a, b) {
-                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
-            });
-            $.each(buyItemStatKeyList, function (index, key) {
-                var item = buyItemStat[key];
-                buyItemStatContent += '<i class="pd_custom_tips" title="总价：{0}，平均价格比例：{1}%，最低价格比例：{2}%，最高价格比例：{3}%">{4}<em>+{5}</em></i> '
-                    .replace('{0}', item['总计价格'].toLocaleString())
-                    .replace('{1}', item['道具数量'] > 0 ? Tools.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0)
-                    .replace('{2}', item['最低价格比例'])
-                    .replace('{3}', item['最高价格比例'])
-                    .replace('{4}', key)
-                    .replace('{5}', item['道具数量']);
-            });
-            content += ('<br /><strong>购买道具统计：</strong><i>道具<em>+{0}</em></i> <i>道具价格<span class="pd_stat_extra"><em title="道具总价">+{1}</em>' +
-            '(<em title="平均价格比例">{2}%</em>|<em title="最低价格比例">{3}%</em>|<em title="最高价格比例">{4}%</em>)</span></i> {5}')
-                .replace('{0}', buyItemTotalNum)
-                .replace('{1}', buyItemTotalPrice.toLocaleString())
-                .replace('{2}', buyItemTotalNum > 0 ? Tools.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0)
-                .replace('{3}', minBuyItemPricePercent)
-                .replace('{4}', maxBuyItemPricePercent)
-                .replace('{5}', buyItemStatContent);
         }
 
         return content;
@@ -701,7 +609,7 @@ var Log = {
                     '----------------------------------------------\n' +
                     '合计：\n' +
                     Log.getLogStat(date, 'cur')
-                        .replace(/<br \/>/g, '\n')
+                        .replace(/<br\s*\/?>/g, '\n')
                         .replace(/(<.+?>|<\/.+?>)/g, '') +
                     '\n';
             }
