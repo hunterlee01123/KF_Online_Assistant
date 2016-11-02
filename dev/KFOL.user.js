@@ -24,7 +24,7 @@
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
 // @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
 // @pd-require-end
-// @version     5.7.1
+// @version     6.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -32,7 +32,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.7.1';
+var version = '6.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；

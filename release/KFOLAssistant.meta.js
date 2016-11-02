@@ -4,12 +4,12 @@
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
-// @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
+// @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @include     http://*2dkf.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.7.1
+// @version     6.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT

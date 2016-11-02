@@ -4,14 +4,14 @@
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
-// @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
+// @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @updateURL   https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.meta.js
 // @downloadURL https://greasyfork.org/scripts/8615-kf-online%E5%8A%A9%E6%89%8B/code/KF%20Online%E5%8A%A9%E6%89%8B.user.js
 // @include     http://*2dkf.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     5.7.1
+// @version     6.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -19,7 +19,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '5.7.1';
+var version = '6.0';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -36,7 +36,7 @@ var myConfig = {};
  */
 // （注意：请到设置界面里修改相应设置，请勿在代码里修改！）
 var Config = {
-    // 是否开启定时模式，可按时进行自动操作（包括捐款、争夺、抽取神秘盒子，需开启相关功能），只在论坛首页生效，true：开启；false：关闭
+    // 是否开启定时模式，可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效，true：开启；false：关闭
     autoRefreshEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
     showRefreshModeTipsType: 'auto',
@@ -47,11 +47,6 @@ var Config = {
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     donationAfterTime: '00:05:00',
-
-    // 是否自动抽取神秘盒子，true：开启；false：关闭
-    autoDrawSmbox2Enabled: false,
-    // 偏好的神秘盒子数字，例：[52,1,28,400]（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空
-    favorSmboxNumbers: [],
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -199,10 +194,6 @@ var Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
-    // 抽取神秘盒子头奖的奖金（KFB）
-    smboxFirstPrizeBonus: 2000,
-    // 神秘盒子的默认抽取间隔（分钟）
-    defDrawSmboxInterval: 300,
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
     actionFinishRetryInterval: 30,
     // 在连接超时的情况下获取剩余时间失败后的重试间隔（分钟），用于定时模式
@@ -272,8 +263,6 @@ var Const = {
     prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
     // 标记已KFB捐款的Cookie名称
     donationCookieName: 'pd_donation',
-    // 标记已抽取神秘盒子的Cookie名称
-    drawSmboxCookieName: 'pd_draw_smbox',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
     // 存储之前已读的at提醒信息的Cookie名称
@@ -391,21 +380,6 @@ var ConfigMethod = {
             if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime))
                 settings.donationAfterTime = donationAfterTime;
             else settings.donationAfterTime = defConfig.donationAfterTime;
-        }
-
-        if (typeof options.autoDrawSmbox2Enabled !== 'undefined') {
-            settings.autoDrawSmbox2Enabled = typeof options.autoDrawSmbox2Enabled === 'boolean' ?
-                options.autoDrawSmbox2Enabled : defConfig.autoDrawSmbox2Enabled;
-        }
-        if (typeof options.favorSmboxNumbers !== 'undefined') {
-            if ($.isArray(options.favorSmboxNumbers)) {
-                settings.favorSmboxNumbers = [];
-                for (var i in options.favorSmboxNumbers) {
-                    var num = parseInt(options.favorSmboxNumbers[i]);
-                    if (num >= 1 && num <= 400) settings.favorSmboxNumbers.push(num);
-                }
-            }
-            else settings.favorSmboxNumbers = defConfig.favorSmboxNumbers;
         }
 
         if (typeof options.atTipsHandleType !== 'undefined') {
@@ -1107,11 +1081,26 @@ var Tools = {
         for (var key in obj) {
             list.push(key);
         }
-        if (sortBy != 0) {
+        if (!sortBy) {
             list.sort(function (a, b) {
                 return sortBy > 0 ? a > b : a < b;
             });
         }
+        return list;
+    },
+
+    /**
+     * 获取经过排序的指定对象的关键字列表
+     * @param {string[]} sortKeyList 用于排序的关键字列表
+     * @param {Object} obj 指定对象
+     * @param {number} [sortBy] 是否排序，0：不排序；1：升序；-1：降序
+     * @returns {string[]} 关键字列表
+     */
+    getSortedObjectKeyList: function (sortKeyList, obj, sortBy) {
+        var list = Tools.getObjectKeyList(obj, sortBy);
+        list.sort(function (a, b) {
+            return $.inArray(a, sortKeyList) > $.inArray(b, sortKeyList);
+        });
         return list;
     },
 
@@ -1483,7 +1472,7 @@ var ConfigDialog = {
             '  <div class="pd_cfg_panel" style="margin-bottom:5px">' +
             '    <fieldset>' +
             '      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox" />定时模式 ' +
-            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、争夺、抽取神秘盒子、自动更换神秘颜色，需开启相关功能），只在论坛首页生效' +
+            '<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效' +
             '（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span></label></legend>' +
             '      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>' +
             '<option value="always">总是显示</option><option value="never">不显示</option></select>' +
@@ -1495,12 +1484,6 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span></label>' +
             '      <label style="margin-left:10px">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text" />' +
             '之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>' +
-            '    </fieldset>' +
-            '    <fieldset>' +
-            '      <legend><label><input id="pd_cfg_auto_draw_smbox_enabled" type="checkbox" />自动抽取神秘盒子 ' +
-            '<span class="pd_cfg_tips" title="注意：抽取神秘盒子将延长争夺奖励的领取时间">[?]</span></label></legend>' +
-            '      <label>偏好的神秘盒子数字<input placeholder="例: 52,1,28,400" id="pd_cfg_favor_smbox_numbers" style="width:180px" type="text" />' +
-            '<span class="pd_cfg_tips" title="例：52,1,28,400（以英文逗号分隔，按优先级排序），如设定的数字都不可用，则从剩余的盒子中随机抽选一个，如无需求可留空">[?]</span></label>' +
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>首页相关</legend>' +
@@ -1725,9 +1708,6 @@ var ConfigDialog = {
         $('#pd_cfg_donation_kfb').val(Config.donationKfb);
         $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
 
-        $('#pd_cfg_auto_draw_smbox_enabled').prop('checked', Config.autoDrawSmbox2Enabled);
-        $('#pd_cfg_favor_smbox_numbers').val(Config.favorSmboxNumbers.join(','));
-
         $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
         $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
         $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
@@ -1788,9 +1768,6 @@ var ConfigDialog = {
         options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
         options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
-
-        options.autoDrawSmbox2Enabled = $('#pd_cfg_auto_draw_smbox_enabled').prop('checked');
-        options.favorSmboxNumbers = $.trim($('#pd_cfg_favor_smbox_numbers').val()).split(',');
 
         options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
         options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
@@ -1882,23 +1859,6 @@ var ConfigDialog = {
             $txtDonationAfterTime.select();
             $txtDonationAfterTime.focus();
             return false;
-        }
-
-        var $txtFavorSmboxNumbers = $('#pd_cfg_favor_smbox_numbers');
-        var favorSmboxNumbers = $.trim($txtFavorSmboxNumbers.val());
-        if (favorSmboxNumbers) {
-            if (!/^\d+(,\d+)*$/.test(favorSmboxNumbers)) {
-                alert('偏好的神秘盒子数字格式不正确');
-                $txtFavorSmboxNumbers.select();
-                $txtFavorSmboxNumbers.focus();
-                return false;
-            }
-            if (/(\b\d{4,}\b|\b0+\b|\b[05-9]\d{2}\b|\b4\d[1-9]\b)/.test(favorSmboxNumbers)) {
-                alert('每个神秘盒子数字的取值范围在1-400之间');
-                $txtFavorSmboxNumbers.select();
-                $txtFavorSmboxNumbers.focus();
-                return false;
-            }
         }
 
         var $txtMaxFastGotoThreadPageNum = $('#pd_cfg_max_fast_goto_thread_page_num');
@@ -3316,83 +3276,47 @@ var Log = {
         }
 
         var income = {}, expense = {}, profit = {};
-        var smBoxGain = [], lootGain = [], lootItemGain = {};
-        var lootCount = 0, lootAttackedCount = 0, minLootAttackedCount = -1, maxLootAttackedCount = -1,
-            lootAttackKfb = 0, minLootAttackKfb = -1, maxLootAttackKfb = -1,
-            lootAttackedKfb = 0, minLootAttackedKfb = -1, maxLootAttackedKfb = -1;
-        var attackCount = 0, attemptAttackCount = 0, attackKfb = 0, attackExp = 0,
-            strongAttackCount = 0, minStrongAttackCount = -1, maxStrongAttackCount = -1, deadlyAttackCount = 0;
+        var validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
         var buyItemTotalNum = 0, buyItemTotalPrice = 0, totalBuyItemPricePercent = 0, minBuyItemPricePercent = 0,
             maxBuyItemPricePercent = 0, buyItemStat = {};
+        var invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
         for (var d in log) {
             $.each(log[d], function (index, key) {
                 if (key.notStat || typeof key.type === 'undefined') return;
                 if ($.type(key.gain) === 'object') {
                     for (var k in key.gain) {
-                        if (k === 'item' || k === '夺取KFB') continue;
+                        if ($.inArray(k, invalidKeyList) > -1) continue;
                         if (typeof income[k] === 'undefined') income[k] = key.gain[k];
                         else income[k] += key.gain[k];
-                    }
-                    if (key.type === '领取争夺奖励') {
-                        if (typeof key.gain['KFB'] !== 'undefined')lootGain.push(key.gain['KFB']);
-
-                        var matches = /`(\d+)`次攻击/.exec(key.action);
-                        if (matches && $.type(key.pay) === 'object' && typeof key.gain['夺取KFB'] !== 'undefined' && typeof key.pay['夺取KFB'] !== 'undefined') {
-                            lootCount++;
-                            var count = parseInt(matches[1]);
-                            lootAttackedCount += count;
-                            if (minLootAttackedCount < 0 || count < minLootAttackedCount) minLootAttackedCount = count;
-                            if (count > maxLootAttackedCount) maxLootAttackedCount = count;
-                            var kfb = parseInt(key.gain['夺取KFB']);
-                            lootAttackKfb += kfb;
-                            if (minLootAttackKfb < 0 || kfb < minLootAttackKfb) minLootAttackKfb = kfb;
-                            if (kfb > maxLootAttackKfb) maxLootAttackKfb = kfb;
-                            var kfb = Math.abs(parseInt(key.pay['夺取KFB']));
-                            lootAttackedKfb += kfb;
-                            if (minLootAttackedKfb < 0 || kfb < minLootAttackedKfb) minLootAttackedKfb = kfb;
-                            if (kfb > maxLootAttackedKfb) maxLootAttackedKfb = kfb;
-                        }
-                    }
-                    else if (key.type === '批量攻击' || key.type === '试探攻击') {
-                        var matches = /`(\d+)`次/.exec(key.action);
-                        if (matches) {
-                            if (key.type === '试探攻击') attemptAttackCount++;
-                            if (typeof key.gain['夺取KFB'] !== 'undefined') attackKfb += parseInt(key.gain['夺取KFB']);
-                            if (typeof key.gain['经验值'] !== 'undefined') attackExp += parseInt(key.gain['经验值']);
-                            attackCount += parseInt(matches[1]);
-                            matches = /暴击`\+(\d+)`/.exec(key.action);
-                            if (matches) {
-                                var count = parseInt(matches[1]);
-                                strongAttackCount += count;
-                                if (key.type === '批量攻击') {
-                                    if (minStrongAttackCount < 0 || count < minStrongAttackCount) minStrongAttackCount = count;
-                                    if (count > maxStrongAttackCount) maxStrongAttackCount = count;
-                                }
-                            }
-                            matches = /致命一击`\+(\d+)`/.exec(key.action);
-                            if (matches) deadlyAttackCount += parseInt(matches[1]);
-                        }
-
-                        if ($.type(key.gain['item']) === 'object') {
-                            for (var itemName in key.gain['item']) {
-                                var num = parseInt(key.gain['item'][itemName]);
-                                if (typeof lootItemGain[itemName] === 'undefined') lootItemGain[itemName] = num;
-                                else lootItemGain[itemName] += num;
-                            }
-                        }
-                    }
-                    else if (key.type === '抽取神秘盒子' && typeof key.gain['KFB'] !== 'undefined') {
-                        smBoxGain.push(key.gain['KFB']);
                     }
                 }
                 if ($.type(key.pay) === 'object') {
                     for (var k in key.pay) {
-                        if (k === 'item' || k === '夺取KFB') continue;
+                        if ($.inArray(k, invalidKeyList) > -1) continue;
                         if (typeof expense[k] === 'undefined') expense[k] = key.pay[k];
                         else expense[k] += key.pay[k];
                     }
                 }
-                if (key.type === '统计道具购买价格' && $.type(key.pay) === 'object' && typeof key.pay['KFB'] !== 'undefined') {
+                if ((key.type === '使用道具' || key.type === '循环使用道具') && $.type(key.gain) === 'object') {
+                    var matches = /【`Lv.(\d+)：(.+?)`】/.exec(key.action);
+                    if (matches) {
+                        var itemLevel = parseInt(matches[1]);
+                        var itemName = matches[2];
+                        if (key.gain['有效道具'] > 0) {
+                            validItemNum += key.gain['有效道具'];
+                            if (itemLevel >= 3) highValidItemNum += key.gain['有效道具'];
+                            if (typeof validItemStat[itemName] === 'undefined') validItemStat[itemName] = 0;
+                            validItemStat[itemName] += key.gain['有效道具'];
+                        }
+                        if (key.gain['无效道具'] > 0) {
+                            invalidItemNum += key.gain['无效道具'];
+                            if (itemLevel >= 3) highInvalidItemNum += key.gain['无效道具'];
+                            if (typeof invalidItemStat[itemName] === 'undefined') invalidItemStat[itemName] = 0;
+                            invalidItemStat[itemName] += key.gain['无效道具'];
+                        }
+                    }
+                }
+                else if (key.type === '统计道具购买价格' && $.type(key.pay) === 'object' && typeof key.pay['KFB'] !== 'undefined') {
                     var matches = /共有`(\d+)`个【`Lv.\d+：(.+?)`】道具统计成功，总计价格：`[^`]+?`，平均价格：`[^`]+?`\(`(\d+)%`\)，最低价格：`[^`]+?`\(`(\d+)%`\)，最高价格：`[^`]+?`\(`(\d+)%`\)/.exec(key.action);
                     if (matches) {
                         var itemNum = parseInt(matches[1]);
@@ -3422,141 +3346,64 @@ var Log = {
             });
         }
 
-        /**
-         * 为统计项目排序
-         * @param {{}} obj 统计结果列表
-         * @returns {string[]} 经过排序项目列表
-         */
-        var sortStatItemList = function (obj) {
-            var sortTypeList = ['KFB', '经验值', '能量', 'VIP小时', '贡献', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率',
-                '防御', '道具', '已使用道具', '有效道具', '无效道具', '卡片'];
-            var list = Tools.getObjectKeyList(obj, 0);
-            list.sort(function (a, b) {
-                return $.inArray(a, sortTypeList) > $.inArray(b, sortTypeList);
-            });
-            return list;
-        };
-
         var content = '';
+        var sortStatTypeList = ['KFB', '经验值', '能量', '贡献', '道具', '已使用道具', '卡片'];
         content += '<strong>收获：</strong>';
-        $.each(sortStatItemList(income), function (index, key) {
+        $.each(Tools.getSortedObjectKeyList(sortStatTypeList, income), function (index, key) {
             profit[key] = income[key];
             content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', income[key].toLocaleString());
         });
         content += '<br /><strong>付出：</strong>';
-        $.each(sortStatItemList(expense), function (index, key) {
+        $.each(Tools.getSortedObjectKeyList(sortStatTypeList, expense), function (index, key) {
             if (typeof profit[key] === 'undefined') profit[key] = expense[key];
             else profit[key] += expense[key];
             content += '<i>{0}<ins>{1}</ins></i> '.replace('{0}', key).replace('{1}', expense[key].toLocaleString());
         });
         content += '<br /><strong>结余：</strong>';
-        $.each(sortStatItemList(profit), function (index, key) {
+        $.each(Tools.getSortedObjectKeyList(sortStatTypeList, profit), function (index, key) {
             content += '<i>{0}{1}</i> '.replace('{0}', key).replace('{1}', Tools.getStatFormatNumber(profit[key]));
         });
 
         content += '<div style="margin:5px 0;border-bottom:1px dashed #CCCCFF"></div>';
-        if (Config.autoDrawSmbox2Enabled) {
-            var smBoxIncome = 0, minSmBox = 0, maxSmBox = 0;
-            $.each(smBoxGain, function (index, kfb) {
-                smBoxIncome += kfb;
-                if (index === 0) minSmBox = kfb;
-                if (minSmBox > kfb) minSmBox = kfb;
-                if (maxSmBox < kfb) maxSmBox = kfb;
-            });
-            content += ('\n<strong>神秘盒子KFB收获：</strong><i>抽取次数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
-            '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', smBoxGain.length.toLocaleString())
-                .replace('{1}', smBoxIncome.toLocaleString())
-                .replace('{2}', smBoxGain.length > 0 ? Tools.getFixedNumberLocaleString(smBoxIncome / smBoxGain.length, 2) : 0)
-                .replace('{3}', minSmBox.toLocaleString())
-                .replace('{4}', maxSmBox.toLocaleString());
-        }
-        else {
-            var lootIncome = 0, minLoot = 0, maxLoot = 0;
-            $.each(lootGain, function (index, kfb) {
-                lootIncome += kfb;
-                if (index === 0) minLoot = kfb;
-                if (minLoot > kfb) minLoot = kfb;
-                if (maxLoot < kfb) maxLoot = kfb;
-            });
-            content += ('\n<strong>争夺KFB收获：</strong><i>回合数<em>+{0}</em></i> <i>合计<em>+{1}</em></i> <i>平均值<em>+{2}</em></i> ' +
-            '<i>最小值<em>+{3}</em></i> <i>最大值<em>+{4}</em></i>')
-                .replace('{0}', lootGain.length.toLocaleString())
-                .replace('{1}', lootIncome.toLocaleString())
-                .replace('{2}', lootGain.length > 0 ? Tools.getFixedNumberLocaleString(lootIncome / lootGain.length, 2) : 0)
-                .replace('{3}', minLoot.toLocaleString())
-                .replace('{4}', maxLoot.toLocaleString());
 
-            if (Config.autoLootEnabled) {
-                content += ('<br /><strong>争夺详情统计：</strong><i class="pd_custom_tips" title="只有连续记录的争夺回合才会被统计">回合数<em>+{0}</em></i> ' +
-                '<i>被攻击次数<em>+{1}</em><span class="pd_stat_extra">(<em title="平均值">+{2}</em>|<em title="最小值">+{3}</em>|<em title="最大值">+{4}</em>)</span></i> ' +
-                '<i>夺取KFB<em>+{5}</em><span class="pd_stat_extra">(<em title="平均值">+{6}</em>|<em title="最小值">+{7}</em>|<em title="最大值">+{8}</em>)</span></i> ' +
-                '<i>夺取KFB<ins>-{9}</ins><span class="pd_stat_extra">(<ins title="平均值">-{10}</ins>|<ins title="最小值">-{11}</ins>|<ins title="最大值">-{12}</ins>)</span></i> ')
-                    .replace('{0}', lootCount.toLocaleString())
-                    .replace('{1}', lootAttackedCount.toLocaleString())
-                    .replace('{2}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackedCount / lootCount, 2) : 0)
-                    .replace('{3}', minLootAttackedCount > 0 ? minLootAttackedCount.toLocaleString() : 0)
-                    .replace('{4}', maxLootAttackedCount > 0 ? maxLootAttackedCount.toLocaleString() : 0)
-                    .replace('{5}', lootAttackKfb.toLocaleString())
-                    .replace('{6}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackKfb / lootCount, 2) : 0)
-                    .replace('{7}', minLootAttackKfb > 0 ? minLootAttackKfb.toLocaleString() : 0)
-                    .replace('{8}', maxLootAttackKfb > 0 ? maxLootAttackKfb.toLocaleString() : 0)
-                    .replace('{9}', lootAttackedKfb.toLocaleString())
-                    .replace('{10}', lootCount > 0 ? Tools.getFixedNumberLocaleString(lootAttackedKfb / lootCount, 2) : 0)
-                    .replace('{11}', minLootAttackedKfb > 0 ? minLootAttackedKfb.toLocaleString() : 0)
-                    .replace('{12}', maxLootAttackedKfb > 0 ? maxLootAttackedKfb.toLocaleString() : 0);
-            }
+        var sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
+            '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
+        content += '\n<strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+{0}</em>(<em title="3级以上有效道具">+{1}</em>)</i></span> '
+            .replace('{0}', validItemNum.toLocaleString())
+            .replace('{1}', highValidItemNum.toLocaleString());
+        $.each(Tools.getSortedObjectKeyList(sortItemTypeList, validItemStat), function (i, itemName) {
+            content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', validItemStat[itemName].toLocaleString());
+        });
+        content += '<br /><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+{0}</em>(<em title="3级以上无效道具">+{1}</em>)</i></span> '
+            .replace('{0}', invalidItemNum.toLocaleString())
+            .replace('{1}', highInvalidItemNum.toLocaleString());
+        $.each(Tools.getSortedObjectKeyList(sortItemTypeList, invalidItemStat), function (i, itemName) {
+            content += '<i>{0}<em>+{1}</em></i> '.replace('{0}', itemName).replace('{1}', invalidItemStat[itemName].toLocaleString());
+        });
 
-            content += ('<br /><strong>攻击详情统计：</strong>' +
-            '<i>攻击次数<em>+{0}</em><span class="pd_stat_extra">(<em title="试探攻击次数">+{1}</em>)</span></i> <i>夺取KFB<em>+{2}</em></i> <i>经验值<em>+{3}</em></i> ' +
-            '<i>暴击次数<em>+{4}</em><span class="pd_stat_extra">(<em title="暴击几率">{5}%</em>|<em title="最小值（批量攻击）">+{6}</em>|' +
-            '<em title="最大值（批量攻击）">+{7}</em>)</span></i> <i>致命一击次数<em>+{8}</em></i>')
-                .replace('{0}', attackCount.toLocaleString())
-                .replace('{1}', attemptAttackCount.toLocaleString())
-                .replace('{2}', attackKfb.toLocaleString())
-                .replace('{3}', attackExp.toLocaleString())
-                .replace('{4}', strongAttackCount.toLocaleString())
-                .replace('{5}', attackCount > 0 ? (strongAttackCount / attackCount * 100).toFixed(2) : 0)
-                .replace('{6}', minStrongAttackCount > 0 ? minStrongAttackCount.toLocaleString() : 0)
-                .replace('{7}', maxStrongAttackCount > 0 ? maxStrongAttackCount.toLocaleString() : 0)
-                .replace('{8}', deadlyAttackCount.toLocaleString());
-
-            var lootItemGainContent = '';
-            var lootItemGainKeyList = Tools.getObjectKeyList(lootItemGain, 0);
-            lootItemGainKeyList.sort(function (a, b) {
-                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
-            });
-            var lootItemGainTotalNum = 0;
-            $.each(lootItemGainKeyList, function (index, key) {
-                lootItemGainTotalNum += lootItemGain[key];
-                lootItemGainContent += '<i>{0}<em>+{1}</em></i> '.replace('{0}', key).replace('{1}', lootItemGain[key]);
-            });
-            content += '<br /><strong>争夺道具收获：</strong><i>道具<em>+{0}</em></i> {1}'.replace('{0}', lootItemGainTotalNum).replace('{1}', lootItemGainContent);
-
-            var buyItemStatContent = '';
-            var buyItemStatKeyList = Tools.getObjectKeyList(buyItemStat, 0);
-            buyItemStatKeyList.sort(function (a, b) {
-                return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
-            });
-            $.each(buyItemStatKeyList, function (index, key) {
-                var item = buyItemStat[key];
-                buyItemStatContent += '<i class="pd_custom_tips" title="总价：{0}，平均价格比例：{1}%，最低价格比例：{2}%，最高价格比例：{3}%">{4}<em>+{5}</em></i> '
-                    .replace('{0}', item['总计价格'].toLocaleString())
-                    .replace('{1}', item['道具数量'] > 0 ? Tools.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0)
-                    .replace('{2}', item['最低价格比例'])
-                    .replace('{3}', item['最高价格比例'])
-                    .replace('{4}', key)
-                    .replace('{5}', item['道具数量']);
-            });
-            content += ('<br /><strong>购买道具统计：</strong><i>道具<em>+{0}</em></i> <i>道具价格<span class="pd_stat_extra"><em title="道具总价">+{1}</em>' +
-            '(<em title="平均价格比例">{2}%</em>|<em title="最低价格比例">{3}%</em>|<em title="最高价格比例">{4}%</em>)</span></i> {5}')
-                .replace('{0}', buyItemTotalNum)
-                .replace('{1}', buyItemTotalPrice.toLocaleString())
-                .replace('{2}', buyItemTotalNum > 0 ? Tools.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0)
-                .replace('{3}', minBuyItemPricePercent)
-                .replace('{4}', maxBuyItemPricePercent)
-                .replace('{5}', buyItemStatContent);
-        }
+        var buyItemStatContent = '';
+        var buyItemStatKeyList = Tools.getObjectKeyList(buyItemStat, 0);
+        buyItemStatKeyList.sort(function (a, b) {
+            return Item.getItemLevelByItemName(a) > Item.getItemLevelByItemName(b);
+        });
+        $.each(buyItemStatKeyList, function (index, key) {
+            var item = buyItemStat[key];
+            buyItemStatContent += '<i class="pd_custom_tips" title="总价：{0}，平均价格比例：{1}%，最低价格比例：{2}%，最高价格比例：{3}%">{4}<em>+{5}</em></i> '
+                .replace('{0}', item['总计价格'].toLocaleString())
+                .replace('{1}', item['道具数量'] > 0 ? Tools.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0)
+                .replace('{2}', item['最低价格比例'])
+                .replace('{3}', item['最高价格比例'])
+                .replace('{4}', key)
+                .replace('{5}', item['道具数量']);
+        });
+        content += ('<br /><strong>购买道具统计：</strong><i>道具<em>+{0}</em></i> <i>道具价格<span class="pd_stat_extra"><em title="道具总价">+{1}</em>' +
+        '(<em title="平均价格比例">{2}%</em>|<em title="最低价格比例">{3}%</em>|<em title="最高价格比例">{4}%</em>)</span></i> {5}')
+            .replace('{0}', buyItemTotalNum)
+            .replace('{1}', buyItemTotalPrice.toLocaleString())
+            .replace('{2}', buyItemTotalNum > 0 ? Tools.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0)
+            .replace('{3}', minBuyItemPricePercent)
+            .replace('{4}', maxBuyItemPricePercent)
+            .replace('{5}', buyItemStatContent);
 
         return content;
     },
@@ -3660,7 +3507,7 @@ var Log = {
                     '----------------------------------------------\n' +
                     '合计：\n' +
                     Log.getLogStat(date, 'cur')
-                        .replace(/<br \/>/g, '\n')
+                        .replace(/<br\s*\/?>/g, '\n')
                         .replace(/(<.+?>|<\/.+?>)/g, '') +
                     '\n';
             }
@@ -3965,22 +3812,7 @@ var Item = {
             return -1;
         }
         if (itemTypeId >= 7 && itemTypeId <= 12) {
-            if (/成功！/.test(response)) {
-                switch (itemTypeId) {
-                    case 11:
-                        return {'燃烧伤害': 1};
-                    case 7:
-                        return {'命中': 3, '闪避': 1};
-                    case 8:
-                        return {'暴击比例': 10};
-                    case 12:
-                        return {'命中': 1, '闪避': 3};
-                    case 9:
-                        return {'暴击几率': 3};
-                    case 10:
-                        return {'防御': 7};
-                }
-            }
+            if (/成功！/.test(response)) return {'效果': 1};
         }
         else {
             var matches = null;
@@ -4103,12 +3935,14 @@ var Item = {
                             if (credits !== -1) {
                                 if ($.isEmptyObject(credits)) stat['无效道具']++;
                                 else stat['有效道具']++;
-                                $.each(credits, function (key, credit) {
-                                    if (typeof stat[key] === 'undefined')
-                                        stat[key] = credit;
-                                    else
-                                        stat[key] += credit;
-                                });
+                                if (settings.itemTypeId <= 6) {
+                                    $.each(credits, function (key, credit) {
+                                        if (typeof stat[key] === 'undefined')
+                                            stat[key] = credit;
+                                        else
+                                            stat[key] += credit;
+                                    });
+                                }
                             }
                         }
                         else {
@@ -5496,18 +5330,39 @@ var Item = {
     },
 
     /**
+     * 获取道具使用情况
+     * @param html 争夺首页的HTML代码
+     * @returns {{}} 道具使用情况对象
+     */
+    getItemUsedInfo: function (html) {
+        var itemUsedNumList = {
+            '蕾米莉亚同人漫画': 0,
+            '十六夜同人漫画': 0,
+            '档案室钥匙': 0,
+            '傲娇LOLI娇蛮音CD': 0,
+            '消逝之药': 0,
+            '整形优惠卷': 0
+        };
+        var matches = /道具：\[(蕾米莉亚同人漫画)：(\d+)]\[(十六夜同人漫画)：(\d+)]\[(档案室钥匙)：(\d+)]\[(傲娇LOLI娇蛮音CD)：(\d+)]\[(消逝之药)：(\d+)]\[(整形优惠卷)：(\d+)]/.exec(html);
+        if (matches) {
+            for (var i = 1; i < matches.length; i += 2) {
+                itemUsedNumList[matches[i]] = parseInt(matches[i + 1]);
+            }
+        }
+        return itemUsedNumList;
+    },
+
+    /**
      * 显示道具使用情况
      * @param {jQuery} $links 道具名称的链接列表
      */
     showItemUsedInfo: function ($links) {
-        return;
         var tipsList = [
             '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
             '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律'
         ];
         $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-            //var itemUsedNumList = Loot.getLootPropertyList(html)['道具使用列表'];
-            var itemUsedNumList = undefined;
+            var itemUsedNumList = Item.getItemUsedInfo(html);
             $links.next('.pd_used_item_info').remove();
             $links.each(function () {
                 var $this = $(this);
@@ -5893,6 +5748,30 @@ var Item = {
                 $this.after('<span class="pd_verify_tips" title="{0}" style="font-size:12px;margin-left:3px">({1})</span>'.replace('{0}', title).replace('{1}', tips));
             });
         });
+    },
+
+    /**
+     * 修正道具描述
+     */
+    modifyItemDescription: function () {
+        var $area = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child');
+        var matches = /道具名称：(.+)/.exec($area.find('span:first').text().trim());
+        if (!matches) return;
+        var itemName = matches[1];
+        var itemDescReplaceList = {
+            '蕾米莉亚同人漫画': ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。'],
+            '十六夜同人漫画': ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。'],
+            '档案室钥匙': ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。'],
+            '傲娇LOLI娇蛮音CD': ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。'],
+            '整形优惠卷': ['暴击几率+3%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。'],
+            '消逝之药': [
+                '消除伤害。<br>防御效果+7%。上限10。',
+                '在获得盒子时，增加3%的几率直接获得高一级的盒子；<br />满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。'
+            ]
+        };
+        if (itemDescReplaceList[itemName]) {
+            $area.html($area.html().replace(itemDescReplaceList[itemName][0], itemDescReplaceList[itemName][1]));
+        }
     }
 };
 
@@ -6530,37 +6409,71 @@ var Loot = {
      */
     enhanceLootIndexPage: function () {
         var $area = $('.kf_fw_ig1');
-        var $property = $area.find('tbody > tr:nth-child(2) > td:first-child');
-        var maxPoint = 0;
-        var matches = /可分配属性点：(\d+)/.exec($property.html());
-        if (matches) maxPoint = parseInt(matches[1]);
+        var $property = $area.find('> tbody > tr:nth-child(2) > td:first-child');
+        var propertyList = Loot.getCurrentLootPropertyList();
+        var itemUsedNumList = Item.getItemUsedInfo($area.find('> tbody > tr:nth-child(3)').html());
 
-        $area.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).css('width', '60px');
-        $area.find('input[readonly]').attr('min', 0).prop('disabled', true);
-
-        /**
-         * 获取已分配的属性点
-         * @returns {number}
-         */
-        var getUsedPoint = function () {
-            var usedPoint = 0;
-            $area.find('[type="number"]').each(function () {
-                var point = parseInt($(this).val());
-                if (point && point > 0) usedPoint += point;
-            });
-            return usedPoint;
-        };
-
-        $property.next('td').prepend(
-            '<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point">{0}</span></span><br>'.replace('{0}', maxPoint - getUsedPoint())
+        $property.html(
+            $property.html().replace(
+                '技能伤害：攻击伤害+(体质点数*4)', '技能伤害：<span class="pd_custom_tips" id="pd_skill_attack" title="攻击伤害+(体质点数*4)"></span>'
+            )
         );
-
-        $area.on('change', '[type="number"]', function () {
-            $('#pd_surplus_point').text(maxPoint - getUsedPoint());
+        $property.find('br').each(function (index) {
+            var name = '';
+            switch (index) {
+                case 1:
+                    name = 's1';
+                    break;
+                case 2:
+                    name = 's2';
+                    break;
+                case 3:
+                    name = 'd1';
+                    break;
+                case 4:
+                    name = 'd2';
+                    break;
+                case 6:
+                    name = 'i1';
+                    break;
+                case 7:
+                    name = 'i2';
+                    break;
+            }
+            if (name) {
+                $(this).before(' <span style="color:#777" id="pd_new_{0}"></span>'.replace('{0}', name));
+            }
         });
 
-        $area.closest('form').submit(function () {
-            var surplusPoint = maxPoint - getUsedPoint();
+        $area.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
+        $area.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
+        $property.next('td').prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br />');
+
+        $area.on('change', '[type="number"]', function () {
+            var $this = $(this);
+            $('#pd_surplus_point').text(propertyList['可分配属性点'] - Loot.getCurrentAssignedPoint());
+            Loot.showNewLootProperty($this, propertyList, itemUsedNumList);
+            Loot.showSumOfPoint($this);
+
+            var skillAttack = 0;
+            for (var i = 1; i <= 2; i++) {
+                var matches = /\d+/.exec($area.find('[name="s' + i + '"]').next('span').next('.pd_point_sum').text());
+                var num = 0;
+                if (matches) {
+                    num = parseInt(matches[0]);
+                    skillAttack += i == 2 ? num * 4 : num * 5;
+                }
+            }
+            $('#pd_skill_attack').text(skillAttack);
+        }).on('click', '.pd_point_sum', function () {
+            var surplusPoint = propertyList['可分配属性点'] - Loot.getCurrentAssignedPoint();
+            if (!surplusPoint) return;
+            var $point = $(this).prev('span').prev('[type="number"]');
+            var num = parseInt($point.val());
+            if (isNaN(num) || num < 0) num = 0;
+            $point.val(num + surplusPoint).trigger('change');
+        }).closest('form').submit(function () {
+            var surplusPoint = propertyList['可分配属性点'] - Loot.getCurrentAssignedPoint();
             if (surplusPoint < 0) {
                 alert('剩余属性点为负，请重新填写');
                 return false;
@@ -6568,14 +6481,156 @@ var Loot = {
             else if (surplusPoint > 0) {
                 return confirm('你的可分配属性点尚未用完，是否提交？');
             }
+        }).find('[type="number"]').trigger('change');
+
+        Loot.enhanceLootLog();
+    },
+
+    /**
+     * 获取当前已分配的属性点
+     * @returns {number} 当前已分配的属性点
+     */
+    getCurrentAssignedPoint: function () {
+        var usedPoint = 0;
+        $('.kf_fw_ig1').find('[type="number"]').each(function () {
+            var point = parseInt($(this).val());
+            if (point && point > 0) usedPoint += point;
         });
+        return usedPoint;
+    },
+
+    /**
+     * 显示各项属性点的和值
+     */
+    showSumOfPoint: function ($point) {
+        var num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        var extraNum = parseInt($point.next('span').text());
+        var $sum = $point.next('span').next('.pd_point_sum');
+        if (!$sum.length) {
+            $sum = $('<span class="pd_point_sum" style="color:#FF0033;cursor:pointer" title="点击：给该项加上或减去剩余属性点"></span>')
+                .insertAfter($point.next('span'));
+        }
+        $sum.text('=' + (num + extraNum));
+    },
+
+    /**
+     * 获取当前的争夺属性
+     * @returns {{}} 争夺属性
+     */
+    getCurrentLootPropertyList: function () {
+        var propertyList = {
+            '攻击力': 0,
+            '最大生命值': 0,
+            '攻击速度': 0,
+            '暴击几率': 0,
+            '技能释放概率': 0,
+            '防御': 0,
+            '可分配属性点': 0
+        };
+        var html = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child').html();
+        var matches = /攻击力：(\d+)/.exec(html);
+        if (matches) propertyList['攻击力'] = parseInt(matches[1]);
+        matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
+        if (matches) propertyList['最大生命值'] = parseInt(matches[1]);
+        matches = /攻击速度：(\d+)/.exec(html);
+        if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
+        matches = /暴击几率：(\d+)%/.exec(html);
+        if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
+        matches = /技能释放概率：(\d+)%/.exec(html);
+        if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);
+        matches = /防御：(\d+)%/.exec(html);
+        if (matches) propertyList['防御'] = parseInt(matches[1]);
+        matches = /可分配属性点：(\d+)/.exec(html);
+        if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
+        return propertyList;
+    },
+
+    /**
+     * 显示新的争夺属性
+     * @param {jQuery} $point 属性字段
+     * @param {{}} currentLootProperty 当前的争夺属性
+     * @param {{}} itemUsedNumList 道具使用情况对象
+     */
+    showNewLootProperty: function ($point, currentLootProperty, itemUsedNumList) {
+        var name = $point.attr('name');
+        var num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        var oriNum = parseInt($point.get(0).defaultValue);
+        var extraNum = parseInt($point.next('span').text());
+        var newValue = 0, diffValue = 0, unit = '';
+        switch (name) {
+            case 's1':
+                newValue = (num + extraNum) * 5;
+                diffValue = newValue - currentLootProperty['攻击力'];
+                break;
+            case 's2':
+                newValue = (num + extraNum) * 20 + (itemUsedNumList['蕾米莉亚同人漫画'] === 50 ? 700 : 0);
+                diffValue = newValue - currentLootProperty['最大生命值'];
+                break;
+            case 'd1':
+                newValue = (num + extraNum) * 2 + (itemUsedNumList['十六夜同人漫画'] === 50 ? 100 : 0);
+                diffValue = newValue - currentLootProperty['攻击速度'];
+                break;
+            case 'd2':
+                newValue = num + extraNum;
+                newValue = Math.round(newValue / (newValue + 100) * 100);
+                diffValue = newValue - currentLootProperty['暴击几率'];
+                unit = '%';
+                break;
+            case 'i1':
+                newValue = num + extraNum;
+                newValue = Math.round(newValue / (newValue + 120) * 100);
+                diffValue = newValue - currentLootProperty['技能释放概率'];
+                unit = '%';
+                break;
+            case 'i2':
+                newValue = num + extraNum;
+                newValue = Math.round(newValue / (newValue + 150) * 100);
+                diffValue = newValue - currentLootProperty['防御'];
+                unit = '%';
+                break;
+        }
+        if (num !== oriNum) {
+            $('#pd_new_' + name).html(
+                ' (<span style="color:#00F">{0}{1}</span>|<span style="color:{2}">{3}</span>)'
+                    .replace('{0}', newValue)
+                    .replace('{1}', unit)
+                    .replace('{2}', diffValue >= 0 ? '#FF0033' : '#339933')
+                    .replace('{3}', (diffValue >= 0 ? '+' : '') + diffValue)
+            );
+        }
+        else {
+            $('#pd_new_' + name).html('');
+        }
+    },
+
+    /**
+     * 增强争夺记录
+     */
+    enhanceLootLog: function () {
+        var $log = $('.kf_fw_ig1 > tbody > tr:nth-child(4) > td');
+        var matches = $log.html().match(/获得\d+经验和\d+KFB/g);
+        var exp = 0, kfb = 0;
+        for (var i in matches) {
+            var logMatches = /获得(\d+)经验和(\d+)KFB/.exec(matches[i]);
+            exp += parseInt(logMatches[1]);
+            kfb += parseInt(logMatches[2]);
+        }
+        if (exp || kfb) {
+            $log.prepend(
+                '<b class="pd_stat">你总共获得了<em>{0}</em>经验和<em>{1}</em>KFB</b><br />'
+                    .replace('{0}', exp.toLocaleString())
+                    .replace('{1}', kfb.toLocaleString())
+            );
+        }
     },
 
     /**
      * 在争夺排行页面添加用户链接
      */
     addUserLinkInPkListPage: function () {
-        $('.kf_fw_ig1 > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
+        $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
             var $this = $(this);
             $this.html('<a href="profile.php?action=show&username={0}" target="_blank">{0}</a>'.replace(/\{0}/g, $this.text().trim()));
         });
@@ -6592,7 +6647,7 @@ var KFOL = {
     // 用户名
     userName: '',
     // 是否位于首页
-    isInHomePage: false,
+    isInHomePage: location.pathname === '/' || location.pathname === '/index.php',
     // 是否为移动版
     isMobile: false,
     // 当前窗口
@@ -7024,111 +7079,6 @@ var KFOL = {
     },
 
     /**
-     * 获取下次抽取神秘盒子的时间对象
-     * @returns {{type: number, time: number}} 下次抽取神秘盒子的时间对象，type：时间类型（0：获取失败；1：估计时间；2：精确时间）；time：下次领取时间
-     */
-    getNextDrawSmboxTime: function () {
-        var log = Tools.getCookie(Const.drawSmboxCookieName);
-        if (log) {
-            log = log.split('|');
-            if (log.length === 2) {
-                var type = parseInt(log[0]);
-                var time = parseInt(log[1]);
-                if (!isNaN(type) && !isNaN(time) && type > 0 && time > 0) {
-                    return {type: parseInt(type), time: parseInt(time)};
-                }
-            }
-        }
-        return {type: 0, time: 0};
-    },
-
-    /**
-     * 抽取神秘盒子
-     */
-    drawSmbox: function () {
-        Func.run('KFOL.drawSmbox_before_');
-        console.log('抽取神秘盒子Start');
-        $.get('kf_smbox.php?t=' + new Date().getTime(), function (html) {
-            if (KFOL.getNextDrawSmboxTime().type) return;
-            if (!/kf_smbox\.php\?box=\d+&safeid=\w+/i.test(html)) {
-                KFOL.showFormatLog('抽取神秘盒子', html);
-                return;
-            }
-            var smboxNumber = 0;
-            var url = '';
-            for (var i in Config.favorSmboxNumbers) {
-                var regex = new RegExp('kf_smbox\\.php\\?box=' + Config.favorSmboxNumbers[i] + '&safeid=\\w+', 'i');
-                var favorMatches = regex.exec(html);
-                if (favorMatches) {
-                    smboxNumber = Config.favorSmboxNumbers[i];
-                    url = favorMatches[0];
-                    break;
-                }
-            }
-            if (!url) {
-                var matches = html.match(/kf_smbox\.php\?box=\d+&safeid=\w+/gi);
-                if (!matches) return;
-                url = matches[Math.floor(Math.random() * matches.length)];
-                var numberMatches = /box=(\d+)/i.exec(url);
-                smboxNumber = numberMatches ? numberMatches[1] : 0;
-            }
-
-            $.get(url + '&t=' + new Date().getTime(), function (html) {
-                var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm');
-                Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime.getTime(), nextTime);
-                KFOL.showFormatLog('抽取神秘盒子', html);
-                var kfbRegex = /获得了(\d+)KFB的奖励.*?(\(\d+\|\d+\))/i;
-                var smRegex = /获得本轮的头奖/i;
-                var msg = '<strong>抽取神秘盒子[<em>No.{0}</em>]</strong>'.replace('{0}', smboxNumber);
-                var gain = {};
-                var action = '抽取神秘盒子[`No.{0}`]'.replace('{0}', smboxNumber);
-                if (kfbRegex.test(html)) {
-                    var matches = kfbRegex.exec(html);
-                    msg += '<i>KFB<em>+{0}</em></i><i class="pd_notice">{1}</i>'
-                        .replace('{0}', matches[1])
-                        .replace('{1}', matches[2]);
-                    gain['KFB'] = parseInt(matches[1]);
-                    action += ' ' + matches[2];
-                }
-                else if (smRegex.test(html)) {
-                    msg += '<i class="pd_highlight" style="font-weight:bold">KFB<em>+{0}</em></i><a target="_blank" href="kf_smbox.php">查看头奖</a>'
-                        .replace('{0}', Const.smboxFirstPrizeBonus);
-                    gain['KFB'] = Const.smboxFirstPrizeBonus;
-                }
-                else {
-                    nextTime = Tools.getDate('+1h');
-                    Tools.setCookie(Const.drawSmboxCookieName, '1|' + nextTime.getTime(), nextTime);
-                    return;
-                }
-                Log.push('抽取神秘盒子', action, {gain: gain});
-                KFOL.showMsg(msg);
-                if (KFOL.isInHomePage) {
-                    $('a[href="kf_smbox.php"].indbox5').removeClass('indbox5').addClass('indbox6');
-                }
-                Func.run('KFOL.drawSmbox_after_', html);
-            }, 'html');
-        }, 'html');
-    },
-
-    /**
-     * 添加神秘盒子链接点击事件
-     */
-    addSmboxLinkClickEvent: function () {
-        $('.box1').on('click', 'a[href^="kf_smbox.php?box="]', function () {
-            if (KFOL.getNextDrawSmboxTime().type) return;
-            var nextTime = Tools.getDate('+' + Const.defDrawSmboxInterval + 'm').getTime() + 10 * 1000;
-            Tools.setCookie(Const.drawSmboxCookieName, '2|' + nextTime, new Date(nextTime));
-        });
-
-        var $intro = $('td[style="line-height:30px;text-align:center;border-bottom:1px solid #9999ff;"]');
-        $intro.html(
-            $intro.html().replace('灰色表示已经被抽过未中的，淡蓝色表示可以抽奖的', '空的表示已经被抽过未中的，粉色的表示可以抽奖的')
-                .replace('如果中奖则获取[ 1000KFB ]', '如果中奖则获取[ 2000KFB ]')
-                .replace('基础随机数由神秘等级决定', '基础随机数由神秘系数决定')
-        );
-    },
-
-    /**
      * 获取倒计时的最小时间间隔（秒）
      * @returns {number} 倒计时的最小时间间隔（秒）
      */
@@ -7146,16 +7096,6 @@ var KFOL = {
             }
         }
 
-        var drawSmboxInterval = -1;
-        if (Config.autoDrawSmbox2Enabled) {
-            var smboxTimeLog = KFOL.getNextDrawSmboxTime();
-            if (smboxTimeLog.type > 0) {
-                drawSmboxInterval = Math.floor((smboxTimeLog.time - new Date().getTime()) / 1000);
-                if (drawSmboxInterval < 0) drawSmboxInterval = 0;
-            }
-            else drawSmboxInterval = 0;
-        }
-
         var autoChangeSMColorInterval = -1;
         if (Config.autoChangeSMColorEnabled) {
             var nextTime = parseInt(Tools.getCookie(Const.autoChangeSMColorCookieName));
@@ -7168,7 +7108,7 @@ var KFOL = {
             else autoChangeSMColorInterval = 0;
         }
 
-        var minArr = [donationInterval, drawSmboxInterval, autoChangeSMColorInterval];
+        var minArr = [donationInterval, autoChangeSMColorInterval];
         minArr.sort(function (a, b) {
             return a > b;
         });
@@ -7285,9 +7225,6 @@ var KFOL = {
          */
         var checkRefreshInterval = function () {
             KFOL.removePopTips($('.pd_refresh_notice').parent());
-            if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
-                KFOL.drawSmbox();
-            }
             if (Config.autoDonationEnabled && !Tools.getCookie(Const.donationCookieName)) {
                 KFOL.donation();
             }
@@ -8554,7 +8491,7 @@ var KFOL = {
                 '<span style="color:#ff9999;">快捷导航</span><br />' +
                 '<a href="guanjianci.php?gjc={0}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br />'
                     .replace('{0}', KFOL.userName) +
-                '<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_smbox.php">盒子</a><br />' +
+                '<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_fw_ig_shop.php">商店</a><br />' +
                 '<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br />' +
                 Const.customTileSideBarContent
             );
@@ -8568,7 +8505,6 @@ var KFOL = {
                 '    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>' +
                 '    <li><a href="kf_fw_ig_my.php">我的道具</a></li>' +
                 '    <li><a href="kf_fw_ig_shop.php">道具商店</a></li>' +
-                '    <li><a href="kf_smbox.php">神秘盒子</a></li>' +
                 '    <li><a href="profile.php?action=modify">设置</a></li>' +
                 '    <li><a href="hack.php?H_name=bank">银行</a></li>' +
                 '    <li><a href="profile.php?action=favor">收藏</a></li>' +
@@ -8769,43 +8705,6 @@ var KFOL = {
         }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
             $(this).css('position', 'static').find('.pd_thread_goto').remove();
         });
-    },
-
-    /**
-     * 在首页上显示领取争夺奖励的剩余时间
-     */
-    showLootAwardInterval: function () {
-        //var timeLog = Loot.getNextLootAwardTime();
-        var timeLog = {};
-        if (!timeLog.type) return;
-        var $msg = $('a[href="kf_fw_ig_index.php"]');
-        if ($msg.length === 0) return;
-        var diff = Tools.getTimeDiffInfo(timeLog.time);
-        if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-        if (timeLog.type === 2) {
-            $msg.text('争夺奖励 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes));
-        }
-        else {
-            diff.hours += 1;
-            $msg.text('争夺奖励 (剩余{0})'.replace('{0}', diff.hours < 1 ? '1小时以内' : diff.hours + '个多小时'));
-        }
-        if (!Tools.getCookie(Const.autoAttackReadyCookieName))
-            $msg.removeClass('indbox5').addClass('indbox6');
-    },
-
-    /**
-     * 在首页上显示抽取神秘盒子的剩余时间
-     */
-    showDrawSmboxInterval: function () {
-        var timeLog = KFOL.getNextDrawSmboxTime();
-        if (timeLog.type !== 2) return;
-        var $msg = $('a[href="kf_smbox.php"]');
-        if ($msg.length === 0) return;
-        var diff = Tools.getTimeDiffInfo(timeLog.time);
-        if (diff.hours === 0 && diff.minutes === 0 && diff.seconds === 0) return;
-        $msg.text('神秘盒子 (剩余{0}{1}分)'.replace('{0}', diff.hours < 1 ? '' : diff.hours + '小时').replace('{1}', diff.minutes))
-            .removeClass('indbox5')
-            .addClass('indbox6');
     },
 
     /**
@@ -9595,6 +9494,7 @@ var KFOL = {
         KFOL.window.Item = Item;
         KFOL.window.Card = Card;
         KFOL.window.Bank = Bank;
+        KFOL.window.Loot = Loot;
         KFOL.window.KFOL = KFOL;
     },
 
@@ -9758,7 +9658,7 @@ var KFOL = {
         if (id === 1) {
             if ($faq.html().length !== 848) return;
             $faq.html(
-                '你可以通过发帖/回贴、参与争夺奖励（推荐）、抽取神秘盒子（不推荐）等方式获取KFB（论坛货币）。<br><br>' +
+                '你可以通过发帖/回贴、参与<a href="kf_fw_ig_index.php" target="_blank">争夺奖励</a>等方式获取KFB（论坛货币）和经验。<br><br>' +
                 '发帖/回贴时会获得基本的KFB奖励，每天第一次发帖/回贴还可获得额外经验奖励。<br>' +
                 '发帖请先阅读规定避免违规，在你还没有时间阅读全部规定之前，请至少注意以下几点：<br>' +
                 '不要发表纯水帖；不要纯复制发帖；不要发表政治、广告、恶心的内容；不要攻击、讽刺、挑衅他人；<br>' +
@@ -9766,7 +9666,7 @@ var KFOL = {
                 '升级（神秘系数）可以获得不同的等级权限，你可以在<a href="kf_growup.php" target="_blank">等级经验页面</a>进行KFB捐款，' +
                 '根据不同的捐款数额获得相应的经验来提升神秘系数。<br>' +
                 '注册初始神秘系数为0，为“通常版”等级，拥有大部分的日常权限；提升为神秘系数4时，升级为“初回限定版”等级，拥有部分追加的权限。<br>' +
-                '部分板块需要一定神秘系数以上才可进入，如打开帖子时出现“Error&hellip;”之类的提示，说明你当前的神秘系数无法进入该板块。<br><br>' +
+                '部分板块需要一定神秘系数以上才可进入，如打开帖子时出现“error&hellip;”的提示，说明你当前的神秘系数无法进入该板块。<br><br>' +
                 '神秘等级的值以神秘系数为基础，基本上是装饰用的属性，可见于帖子页面各楼层用户名称旁，还可用于选择自定义ID颜色。'
             );
         }
@@ -9779,7 +9679,6 @@ var KFOL = {
         if (typeof jQuery === 'undefined') return;
         var startDate = new Date();
         //console.log('【KF Online助手】启动');
-        if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
         ConfigMethod.init();
         KFOL.exposeInterface();
@@ -9798,8 +9697,6 @@ var KFOL = {
         if (Config.addSideBarFastNavEnabled) KFOL.addFastNavForSideBar();
         if (KFOL.isInHomePage) {
             KFOL.handleAtTips();
-            //KFOL.showLootAwardInterval();
-            KFOL.showDrawSmboxInterval();
             KFOL.addSearchTypeSelectBoxInHomePage();
             if (Config.smLevelUpAlertEnabled) KFOL.smLevelUpAlert();
             if (Config.smRankChangeAlertEnabled) KFOL.smRankChangeAlert();
@@ -9847,8 +9744,11 @@ var KFOL = {
         else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
             Item.addSellAndUseItemsButton();
         }
-        else if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
-            Item.addSampleItemTips();
+        else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
+            Item.modifyItemDescription();
+            if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
+                Item.addSampleItemTips();
+            }
         }
         else if (location.pathname === '/kf_fw_ig_shop.php') {
             Item.addBatchBuyItemsLink();
@@ -9888,9 +9788,6 @@ var KFOL = {
         else if (location.pathname === '/kf_growup.php') {
             KFOL.addAutoChangeIdColorButton();
         }
-        else if (location.pathname === '/kf_smbox.php') {
-            KFOL.addSmboxLinkClickEvent();
-        }
         else if (location.pathname === '/guanjianci.php') {
             KFOL.highlightUnReadAtTipsMsg();
         }
@@ -9923,10 +9820,6 @@ var KFOL = {
         if (Config.blockThreadEnabled) KFOL.blockThread();
         if (Config.followUserEnabled) KFOL.followUsers();
         if (KFOL.isMobile) KFOL.bindElementTitleClick();
-
-        if (Config.autoDrawSmbox2Enabled && !KFOL.getNextDrawSmboxTime().type) {
-            KFOL.drawSmbox();
-        }
 
         var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && KFOL.isInHomePage;
         var isDonationStarted = false;
