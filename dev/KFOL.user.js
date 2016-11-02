@@ -4,7 +4,7 @@
 // @icon        https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/icon.png
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
-// @description KFOL必备！可在绯月Galgame上自动进行争夺、抽取神秘盒子以及KFB捐款，并可使用各种便利的辅助功能，更多功能开发中……
+// @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @pd-update-url-placeholder
 // @include     http://*2dkf.com/*
 // @include     http://*ddgal.com/*
@@ -54,7 +54,7 @@ var KFOL = {
     // 用户名
     userName: '',
     // 是否位于首页
-    isInHomePage: false,
+    isInHomePage: location.pathname === '/' || location.pathname === '/index.php',
     // 是否为移动版
     isMobile: false,
     // 当前窗口
@@ -3086,7 +3086,6 @@ var KFOL = {
         if (typeof jQuery === 'undefined') return;
         var startDate = new Date();
         //console.log('【KF Online助手】启动');
-        if (location.pathname === '/' || location.pathname === '/index.php') KFOL.isInHomePage = true;
         if (!KFOL.getUidAndUserName()) return;
         ConfigMethod.init();
         KFOL.exposeInterface();
