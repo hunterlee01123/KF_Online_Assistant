@@ -45,7 +45,7 @@ var Loot = {
 
         $area.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
         $area.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
-        $property.next('td').prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br />');
+        $property.next('td').prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br>');
 
         $area.on('change', '[type="number"]', function () {
             var $this = $(this);
@@ -217,7 +217,7 @@ var Loot = {
         }
         if (exp || kfb) {
             $log.prepend(
-                '<b class="pd_stat">你总共获得了<em>{0}</em>经验和<em>{1}</em>KFB</b><br />'
+                '<b class="pd_stat">你总共获得了<em>{0}</em>经验和<em>{1}</em>KFB</b><br>'
                     .replace('{0}', exp.toLocaleString())
                     .replace('{1}', kfb.toLocaleString())
             );

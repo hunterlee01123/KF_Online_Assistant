@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     6.0
+// @version     6.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -19,7 +19,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '6.0';
+var version = '6.0.1';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -5763,11 +5763,11 @@ var Item = {
             '十六夜同人漫画': ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。'],
             '档案室钥匙': ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。'],
             '傲娇LOLI娇蛮音CD': ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。'],
-            '整形优惠卷': ['暴击几率+3%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。'],
-            '消逝之药': [
-                '消除伤害。<br>防御效果+7%。上限10。',
-                '在获得盒子时，增加3%的几率直接获得高一级的盒子；<br />满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。'
-            ]
+            '整形优惠卷': [
+                '暴击几率+3%。上限10。',
+                '在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。'
+            ],
+            '消逝之药': ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']
         };
         if (itemDescReplaceList[itemName]) {
             $area.html($area.html().replace(itemDescReplaceList[itemName][0], itemDescReplaceList[itemName][1]));
@@ -6447,7 +6447,7 @@ var Loot = {
 
         $area.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
         $area.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
-        $property.next('td').prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br />');
+        $property.next('td').prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br>');
 
         $area.on('change', '[type="number"]', function () {
             var $this = $(this);
@@ -6619,7 +6619,7 @@ var Loot = {
         }
         if (exp || kfb) {
             $log.prepend(
-                '<b class="pd_stat">你总共获得了<em>{0}</em>经验和<em>{1}</em>KFB</b><br />'
+                '<b class="pd_stat">你总共获得了<em>{0}</em>经验和<em>{1}</em>KFB</b><br>'
                     .replace('{0}', exp.toLocaleString())
                     .replace('{1}', kfb.toLocaleString())
             );
