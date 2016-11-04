@@ -54,14 +54,9 @@ var Loot = {
             Loot.showSumOfPoint($this);
 
             var skillAttack = 0;
-            for (var i = 1; i <= 2; i++) {
-                var matches = /\d+/.exec($area.find('[name="s' + i + '"]').next('span').next('.pd_point_sum').text());
-                var num = 0;
-                if (matches) {
-                    num = parseInt(matches[0]);
-                    skillAttack += i == 2 ? num * 4 : num * 5;
-                }
-            }
+            var matches = /\d+/.exec($area.find('[name="s1"]').next('span').next('.pd_point_sum').text());
+            if (matches) skillAttack = parseInt(matches[0]) * 5;
+            skillAttack += parseInt($area.find('[name="s2"]').val()) * 4;
             $('#pd_skill_attack').text(skillAttack);
         }).on('click', '.pd_point_sum', function () {
             var surplusPoint = propertyList['可分配属性点'] - Loot.getCurrentAssignedPoint();

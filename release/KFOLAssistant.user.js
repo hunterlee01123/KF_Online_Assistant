@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     6.0.1
+// @version     6.0.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -19,7 +19,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '6.0.1';
+var version = '6.0.2';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
@@ -6456,14 +6456,9 @@ var Loot = {
             Loot.showSumOfPoint($this);
 
             var skillAttack = 0;
-            for (var i = 1; i <= 2; i++) {
-                var matches = /\d+/.exec($area.find('[name="s' + i + '"]').next('span').next('.pd_point_sum').text());
-                var num = 0;
-                if (matches) {
-                    num = parseInt(matches[0]);
-                    skillAttack += i == 2 ? num * 4 : num * 5;
-                }
-            }
+            var matches = /\d+/.exec($area.find('[name="s1"]').next('span').next('.pd_point_sum').text());
+            if (matches) skillAttack = parseInt(matches[0]) * 5;
+            skillAttack += parseInt($area.find('[name="s2"]').val()) * 4;
             $('#pd_skill_attack').text(skillAttack);
         }).on('click', '.pd_point_sum', function () {
             var surplusPoint = propertyList['可分配属性点'] - Loot.getCurrentAssignedPoint();
