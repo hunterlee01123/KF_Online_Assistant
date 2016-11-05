@@ -6,16 +6,23 @@ var ConfigMethod = {
     name: 'pd_config',
     // 默认的Config对象
     defConfig: {},
+    /**
+     * 助手设置和日志的存储位置类型
+     * Default：存储在浏览器的localStorage中，设置仅按域名区分，日志同时按域名和uid区分；
+     * ByUid：存储在油猴脚本的数据库中，设置和日志仅按uid区分;
+     * Global：存储在油猴脚本的数据库中，各域名和各uid均使用全局设置，日志仅按uid区分；
+     */
+    storageType: 'Default',
 
     /**
      * 初始化
      */
     init: function () {
-        if (storageType === 'Script' || storageType === 'Global') {
-            var storageName = storageType === 'Script' ? 'ByUid' : 'Global';
-            if (GM_getValue('StorageType') !== storageName) GM_setValue('StorageType', storageName);
-        }
         $.extend(true, ConfigMethod.defConfig, Config);
+        if (typeof GM_getValue !== 'undefined') {
+            ConfigMethod.storageType = GM_getValue('StorageType');
+            if (ConfigMethod.storageType !== 'ByUid' && ConfigMethod.storageType !== 'Global') ConfigMethod.storageType = 'Default';
+        }
         if (myConfig && $.type(myConfig) === 'object' && !$.isEmptyObject(myConfig)) {
             var options = ConfigMethod.normalize(myConfig);
             Config = $.extend(true, {}, ConfigMethod.defConfig, options);
@@ -28,8 +35,8 @@ var ConfigMethod = {
      */
     read: function () {
         var options = null;
-        if (storageType === 'Script') options = GM_getValue(ConfigMethod.name + '_' + KFOL.uid);
-        else if (storageType === 'Global') options = GM_getValue(ConfigMethod.name);
+        if (ConfigMethod.storageType === 'ByUid') options = GM_getValue(ConfigMethod.name + '_' + KFOL.uid);
+        else if (ConfigMethod.storageType === 'Global') options = GM_getValue(ConfigMethod.name);
         else options = localStorage.getItem(ConfigMethod.name);
         if (!options) return;
         try {
@@ -48,8 +55,8 @@ var ConfigMethod = {
      */
     write: function () {
         var options = Tools.getDifferentValueOfObject(ConfigMethod.defConfig, Config);
-        if (storageType === 'Script') GM_setValue(ConfigMethod.name + '_' + KFOL.uid, JSON.stringify(options));
-        else if (storageType === 'Global') GM_setValue(ConfigMethod.name, JSON.stringify(options));
+        if (ConfigMethod.storageType === 'ByUid') GM_setValue(ConfigMethod.name + '_' + KFOL.uid, JSON.stringify(options));
+        else if (ConfigMethod.storageType === 'Global') GM_setValue(ConfigMethod.name, JSON.stringify(options));
         else localStorage.setItem(ConfigMethod.name, JSON.stringify(options));
     },
 
@@ -57,9 +64,27 @@ var ConfigMethod = {
      * 清空设置
      */
     clear: function () {
-        if (storageType === 'Script') GM_deleteValue(ConfigMethod.name + '_' + KFOL.uid);
-        else if (storageType === 'Global') GM_deleteValue(ConfigMethod.name);
+        if (ConfigMethod.storageType === 'ByUid') GM_deleteValue(ConfigMethod.name + '_' + KFOL.uid);
+        else if (ConfigMethod.storageType === 'Global') GM_deleteValue(ConfigMethod.name);
         else localStorage.removeItem(ConfigMethod.name);
+    },
+
+    /**
+     * 更改存储类型
+     * @param {string} storageType 要更改的存储类型
+     */
+    changeStorageType: function (storageType) {
+        Log.read();
+        TmpLog.read();
+        ConfigMethod.storageType = storageType;
+        if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', storageType);
+        if (!Tools.deepEqual(Config, ConfigMethod.defConfig) || !$.isEmptyObject(Log.log)) {
+            if (confirm('是否将助手设置和日志转移到对应存储类型中？（对应存储类型中的数据将被覆盖）')) {
+                ConfigMethod.write();
+                Log.write();
+                TmpLog.write();
+            }
+        }
     },
 
     /**
@@ -91,7 +116,7 @@ var ConfigMethod = {
         if (typeof options.donationKfb !== 'undefined') {
             var donationKfb = options.donationKfb;
             if ($.isNumeric(donationKfb) && donationKfb > 0 && donationKfb <= Const.maxDonationKfb)
-                settings.donationKfb = parseInt(donationKfb);
+                settings.donationKfb = parseInt(donationKfb).toString();
             else if (/^1?\d?\d%$/.test(donationKfb) && parseInt(donationKfb) > 0 && parseInt(donationKfb) <= 100)
                 settings.donationKfb = parseInt(donationKfb) + '%';
             else settings.donationKfb = defConfig.donationKfb;

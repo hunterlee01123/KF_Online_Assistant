@@ -10,20 +10,6 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @pd-require-start
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Config.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Const.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/ConfigMethod.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Tools.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Func.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Dialog.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/ConfigDialog.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Log.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/TmpLog.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Item.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Card.js
-// @require     https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/dev/Bank.js
-// @pd-require-end
 // @version     6.0.2
 // @grant       none
 // @run-at      document-end
@@ -33,20 +19,13 @@
 'use strict';
 // 版本号
 var version = '6.0.2';
-/**
- * 助手设置和日志的存储位置类型
- * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
- * Script：存储在油猴脚本的配置中，设置和日志仅通过uid区分（可用于设置经常会被浏览器清除的情况）;
- * Global：存储在油猴脚本的配置中，各域名和各uid使用全局设置，日志仅通过uid区分（可用于想要使用全局设置的情况）；
- */
-var storageType = 'Default';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（可用于设置经常会被浏览器清除或想要使用全局设置的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
 
 /* {PartFileContent} */
 /**
- * KF Online主类
+ * KFOL类
  */
 var KFOL = {
     // 用户ID

@@ -13,7 +13,7 @@ var TmpLog = {
     read: function () {
         TmpLog.log = {};
         var log = null;
-        if (storageType === 'Script' || storageType === 'Global') log = GM_getValue(TmpLog.name + '_' + KFOL.uid);
+        if (ConfigMethod.storageType === 'ByUid' || ConfigMethod.storageType === 'Global') log = GM_getValue(TmpLog.name + '_' + KFOL.uid);
         else log = localStorage.getItem(TmpLog.name + '_' + KFOL.uid);
         if (!log) return;
         try {
@@ -37,7 +37,8 @@ var TmpLog = {
      * 写入临时日志
      */
     write: function () {
-        if (storageType === 'Script' || storageType === 'Global') GM_setValue(TmpLog.name + '_' + KFOL.uid, JSON.stringify(TmpLog.log));
+        if (ConfigMethod.storageType === 'ByUid' || ConfigMethod.storageType === 'Global')
+            GM_setValue(TmpLog.name + '_' + KFOL.uid, JSON.stringify(TmpLog.log));
         else localStorage.setItem(TmpLog.name + '_' + KFOL.uid, JSON.stringify(TmpLog.log));
     },
 
@@ -45,7 +46,7 @@ var TmpLog = {
      * 清除临时日志
      */
     clear: function () {
-        if (storageType === 'Script' || storageType === 'Global') GM_deleteValue(TmpLog.name + '_' + KFOL.uid);
+        if (ConfigMethod.storageType === 'ByUid' || ConfigMethod.storageType === 'Global') GM_deleteValue(TmpLog.name + '_' + KFOL.uid);
         else localStorage.removeItem(TmpLog.name + '_' + KFOL.uid);
     },
 

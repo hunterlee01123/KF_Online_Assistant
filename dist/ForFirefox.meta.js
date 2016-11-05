@@ -9,9 +9,13 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     6.0.3
-// @grant       none
+// @version     6.0.2
+// @grant       GM_getValue
+// @grant       GM_setValue
+// @grant       GM_deleteValue
 // @run-at      document-end
 // @license     MIT
+// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/src/lib/jquery.min.js?V2.2.4
 // @include-jquery   true
+// @use-greasemonkey true
 // ==/UserScript==

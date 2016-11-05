@@ -13,7 +13,7 @@ var Log = {
     read: function () {
         Log.log = {};
         var log = null;
-        if (storageType === 'Script' || storageType === 'Global') log = GM_getValue(Log.name + '_' + KFOL.uid);
+        if (ConfigMethod.storageType === 'ByUid' || ConfigMethod.storageType === 'Global') log = GM_getValue(Log.name + '_' + KFOL.uid);
         else log = localStorage.getItem(Log.name + '_' + KFOL.uid);
         if (!log) return;
         try {
@@ -31,7 +31,8 @@ var Log = {
      * 写入日志
      */
     write: function () {
-        if (storageType === 'Script' || storageType === 'Global') GM_setValue(Log.name + '_' + KFOL.uid, JSON.stringify(Log.log));
+        if (ConfigMethod.storageType === 'ByUid' || ConfigMethod.storageType === 'Global')
+            GM_setValue(Log.name + '_' + KFOL.uid, JSON.stringify(Log.log));
         else localStorage.setItem(Log.name + '_' + KFOL.uid, JSON.stringify(Log.log));
     },
 
@@ -39,7 +40,7 @@ var Log = {
      * 清除日志
      */
     clear: function () {
-        if (storageType === 'Script' || storageType === 'Global') GM_deleteValue(Log.name + '_' + KFOL.uid);
+        if (ConfigMethod.storageType === 'ByUid' || ConfigMethod.storageType === 'Global') GM_deleteValue(Log.name + '_' + KFOL.uid);
         else localStorage.removeItem(Log.name + '_' + KFOL.uid);
     },
 

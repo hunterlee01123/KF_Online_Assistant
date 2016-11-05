@@ -9,9 +9,12 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     6.0.3
-// @grant       none
+// @version     6.0.2
+// @grant       GM_getValue
+// @grant       GM_setValue
+// @grant       GM_deleteValue
 // @run-at      document-end
 // @license     MIT
 // @include-jquery   true
+// @use-greasemonkey true
 // ==/UserScript==

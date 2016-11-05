@@ -12,7 +12,7 @@ var ConfigDialog = {
         var html =
             '<div class="pd_cfg_main">' +
             '  <div class="pd_cfg_nav">' +
-            '    <a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除缓存</a>' +
+            '    <a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除临时数据</a>' +
             '    <a href="#">运行命令</a>' +
             '    <a href="#">查看日志</a>' +
             '    <a href="#">导入/导出设置</a>' +
@@ -82,7 +82,7 @@ var ConfigDialog = {
             '<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>' +
             '<a style="margin-left:10px" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox" />解析多媒体标签 ' +
-            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题15】">[?]</span></label><br />' +
+            '<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题11】">[?]</span></label><br />' +
             '      <label><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox" />开启批量购买帖子功能 ' +
             '<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_buy_thread_via_ajax_enabled" type="checkbox" />使用Ajax购买帖子 ' +
@@ -102,6 +102,9 @@ var ConfigDialog = {
             '    </fieldset>' +
             '    <fieldset>' +
             '      <legend>其它设置</legend>' +
+            '      <label class="pd_highlight">存储类型<select id="pd_cfg_storage_type"><option value="Default">默认</option>' +
+            '<option value="ByUid">按uid</option><option value="Global">全局</option></select>' +
+            '<span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span></label><br />' +
             '      <label>默认提示消息的持续时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width:30px" type="text" />秒 ' +
             '<span class="pd_cfg_tips" title="设置为-1表示永久显示，例：15">[?]</span></label>' +
             '      <label style="margin-left:10px"><input id="pd_cfg_animation_effect_off_enabled" type="checkbox" />禁用动画效果 ' +
@@ -152,10 +155,9 @@ var ConfigDialog = {
 
             '<div class="pd_cfg_btns">' +
             '  <span class="pd_cfg_about">' +
-            '    <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/8615">By 喵拉布丁</a>' +
+            '    <a target="_blank" href="read.php?tid=508450">By 喵拉布丁</a>' +
             '    <i style="color:#666;font-style:normal">(V{0})</i>'.replace('{0}', version) +
             '    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>' +
-            '    <a target="_blank" href="read.php?tid=508450">[讨论帖]</a>' +
             '  </span>' +
             '  <button>确定</button><button>取消</button><button>默认值</button>' +
             '</div>';
@@ -175,11 +177,11 @@ var ConfigDialog = {
             }
         }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
             e.preventDefault();
-            var type = prompt('可清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地缓存', 0);
+            var type = prompt('可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据', 0);
             if (type === null) return;
             type = parseInt($.trim(type));
             if (!isNaN(type) && type >= 0) {
-                ConfigDialog.clearCache(type);
+                ConfigDialog.clearTmpData(type);
                 alert('缓存已清除');
             }
         }).next('a').click(function (e) {
@@ -233,6 +235,14 @@ var ConfigDialog = {
             options = ConfigMethod.normalize(options);
             $.extend(Config, options);
             ConfigMethod.write();
+            var storageType = $('#pd_cfg_storage_type').val();
+            if (storageType !== ConfigMethod.storageType) {
+                ConfigMethod.changeStorageType(storageType);
+                alert('存储类型已修改');
+                Dialog.close('pd_config');
+                location.reload();
+                return;
+            }
             Dialog.close('pd_config');
             if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
                 if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
@@ -302,6 +312,9 @@ var ConfigDialog = {
         $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked', Config.autoSaveCurrentDepositEnabled);
         if (Config.saveCurrentDepositAfterKfb > 0) $('#pd_cfg_save_current_deposit_after_kfb').val(Config.saveCurrentDepositAfterKfb);
         if (Config.saveCurrentDepositKfb > 0) $('#pd_cfg_save_current_deposit_kfb').val(Config.saveCurrentDepositKfb);
+
+        $('#pd_cfg_storage_type').val(ConfigMethod.storageType);
+        if (typeof GM_getValue === 'undefined') $('#pd_cfg_storage_type > option:gt(0)').prop('disabled', true);
     },
 
     /**
@@ -315,7 +328,6 @@ var ConfigDialog = {
 
         options.autoDonationEnabled = $('#pd_cfg_auto_donation_enabled').prop('checked');
         options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
-        options.donationKfb = $.isNumeric(options.donationKfb) ? parseInt(options.donationKfb) : options.donationKfb;
         options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
 
         options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
@@ -478,10 +490,10 @@ var ConfigDialog = {
     },
 
     /**
-     * 清除缓存
-     * @param {number} type 清除类别，0：全部清除；1：清除Cookies；2：清除本地缓存
+     * 清除临时数据
+     * @param {number} type 清除类别，0：全部清除；1：清除Cookies；2：清除本地临时数据
      */
-    clearCache: function (type) {
+    clearTmpData: function (type) {
         if (type === 0 || type === 1) {
             for (var key in Const) {
                 if (/CookieName$/.test(key)) {

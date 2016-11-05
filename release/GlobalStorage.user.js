@@ -5,13 +5,13 @@
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
-// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.meta.js
-// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/release/GlobalStorage.user.js
+// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/Full.meta.js
+// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/Full.user.js
 // @include     http://*2dkf.com/*
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     6.0.2
+// @version     6.0.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -22,7 +22,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '6.0.2';
+var version = '6.0.3';
 /**
  * 助手设置和日志的存储位置类型
  * Default：存储在浏览器的localStorage中，设置仅通过域名区分，日志通过域名和uid区分；
