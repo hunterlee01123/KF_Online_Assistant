@@ -7,16 +7,17 @@ var Loot = {
      */
     enhanceLootIndexPage: function () {
         var $area = $('.kf_fw_ig1');
-        var $property = $area.find('> tbody > tr:nth-child(2) > td:first-child');
+        var $properties = $area.find('> tbody > tr:nth-child(3) > td:first-child');
+        var $points = $properties.next('td');
         var propertyList = Loot.getCurrentLootPropertyList();
-        var itemUsedNumList = Item.getItemUsedInfo($area.find('> tbody > tr:nth-child(3)').html());
+        var itemUsedNumList = Item.getItemUsedInfo($area.find('> tbody > tr:nth-child(4) > td').html());
 
-        $property.html(
-            $property.html().replace(
+        $properties.html(
+            $properties.html().replace(
                 '技能伤害：攻击伤害+(体质点数*4)', '技能伤害：<span class="pd_custom_tips" id="pd_skill_attack" title="攻击伤害+(体质点数*4)"></span>'
             )
         );
-        $property.find('br').each(function (index) {
+        $properties.find('br').each(function (index) {
             var name = '';
             switch (index) {
                 case 1:
@@ -43,11 +44,11 @@ var Loot = {
             }
         });
 
-        $area.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
-        $area.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
-        $property.next('td').prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br>');
+        $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
+        $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
+        $points.prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br>');
 
-        $area.on('change', '[type="number"]', function () {
+        $points.on('change', '[type="number"]', function () {
             var $this = $(this);
             $('#pd_surplus_point').text(propertyList['可分配属性点'] - Loot.getCurrentAssignedPoint());
             Loot.showNewLootProperty($this, propertyList, itemUsedNumList);
@@ -65,7 +66,7 @@ var Loot = {
             var num = parseInt($point.val());
             if (isNaN(num) || num < 0) num = 0;
             $point.val(num + surplusPoint).trigger('change');
-        }).closest('form').submit(function () {
+        }).find('form').submit(function () {
             var surplusPoint = propertyList['可分配属性点'] - Loot.getCurrentAssignedPoint();
             if (surplusPoint < 0) {
                 alert('剩余属性点为负，请重新填写');
@@ -121,7 +122,7 @@ var Loot = {
             '防御': 0,
             '可分配属性点': 0
         };
-        var html = $('.kf_fw_ig1 > tbody > tr:nth-child(2) > td:first-child').html();
+        var html = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html();
         var matches = /攻击力：(\d+)/.exec(html);
         if (matches) propertyList['攻击力'] = parseInt(matches[1]);
         matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
@@ -202,7 +203,7 @@ var Loot = {
      * 增强争夺记录
      */
     enhanceLootLog: function () {
-        var $log = $('.kf_fw_ig1 > tbody > tr:nth-child(4) > td');
+        var $log = $('.kf_fw_ig1 > tbody > tr:nth-child(5) > td');
         var matches = $log.html().match(/获得\d+经验和\d+KFB/g);
         var exp = 0, kfb = 0;
         for (var i in matches) {

@@ -10,7 +10,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     6.0.2
+// @version     6.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -18,7 +18,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-var version = '6.0.2';
+var version = '6.1';
 // 可先在设置界面里修改好相应设置，再将导入/导出设置文本框里的设置填入此处即可覆盖相应的默认设置（可用于设置经常会被浏览器清除或想要使用全局设置的情况）
 // 例：var myConfig = {"autoDonationEnabled":true,"donationKfb":100};
 var myConfig = {};
