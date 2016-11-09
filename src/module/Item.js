@@ -1856,7 +1856,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                                 '统计道具购买价格',
                                 `共有\`${successNum}\`个【\`Lv.${itemLevel}：${itemName}\`】道具统计成功` +
                                 `${failNum > 0 ? `（共有\`${failNum}\`个道具未能统计成功）` : ''}，总计价格：\`${totalPrice.toLocaleString()}\`，` +
-                                `平均价格：\`${successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0}\`` +
+                                `平均价格：\`${successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0}\`` +
                                 `(\`${successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0}%\`)，` +
                                 `最低价格：\`${minPrice.toLocaleString()}\`(\`${Math.round(minPrice / marketPrice * 100)}%\`)，` +
                                 `最高价格：\`${maxPrice.toLocaleString()}\`(\`${Math.round(maxPrice / marketPrice * 100)}%\`)`,
@@ -1865,7 +1865,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                         }
                         console.log(
                             `统计道具购买价格（KFB）（共有${failNum}个道具未能统计成功），统计成功数量：${successNum}，总计价格：${totalPrice.toLocaleString()}，` +
-                            `平均价格：${successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0} ` +
+                            `平均价格：${successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0} ` +
                             `(${successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0}%)，最低价格：${minPrice.toLocaleString()} ` +
                             `(${Math.round(minPrice / marketPrice * 100)}%)，最高价格：${maxPrice.toLocaleString()} (${Math.round(maxPrice / marketPrice * 100)}%)`
                         );
@@ -1874,7 +1874,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
   <b>统计结果${failNum > 0 ? `<span class="pd_notice">（共有${failNum}个道具未能统计成功）</span>` : ''}：</b><br>
   <i>统计成功数量：<em>${successNum}</em></i>
   <i>总计价格：<em>${totalPrice.toLocaleString()}</em></i>
-  <i>平均价格：<em>${successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0} 
+  <i>平均价格：<em>${successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0} 
 (${successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0}%)</em></i>
   <i>最低价格：<em>${minPrice.toLocaleString()} (${Math.round(minPrice / marketPrice * 100)}%)</em></i>
   <i>最高价格：<em>${maxPrice.toLocaleString()} (${Math.round(maxPrice / marketPrice * 100)}%)</em></i>

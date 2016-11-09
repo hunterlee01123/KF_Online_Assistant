@@ -2,7 +2,7 @@
 import Info from './Info';
 import * as Util from './Util';
 import * as Dialog from './Dialog';
-import {run as runFunc} from './Func';
+import * as Func from './Func';
 import {
     read as readConfig,
     write as writeConfig,
@@ -22,7 +22,7 @@ export const show = function () {
     if ($('#pd_log').length > 0) return;
     Dialog.close('pd_config');
     readConfig();
-    runFunc('LogDialog.show_before_');
+    Func.run('LogDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_log_nav">
@@ -57,7 +57,7 @@ export const show = function () {
   <span class="pd_cfg_about"><a id="pd_log_im_or_ex_log_dialog" href="#">导入/导出日志</a></span>
   <button>关闭</button><button>清除日志</button>
 </div>`;
-    let $dialog = Dialog.create('pd_log', 'KF Online助手日志', html);
+    let $dialog = Dialog.create('pd_log', 'KFOL助手日志', html);
 
     readLog();
     let dateList = [];
@@ -153,7 +153,7 @@ export const show = function () {
     if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
     Dialog.show('pd_log');
     $dialog.find('input:first').focus();
-    runFunc('LogDialog.show_after_');
+    Func.run('LogDialog.show_after_');
 };
 
 /**
@@ -377,12 +377,12 @@ const getLogStat = function (date, logStatType) {
     for (let key of buyItemStatKeyList) {
         let item = buyItemStat[key];
         buyItemStatContent += `<i class="pd_custom_tips" title="总价：${item['总计价格'].toLocaleString()}，` +
-            `平均价格比例：${item['道具数量'] > 0 ? Util.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0}%，` +
+            `平均价格比例：${item['道具数量'] > 0 ? Util.getFixedNumLocStr(item['总计价格比例'] / item['道具数量'], 2) : 0}%，` +
             `最低价格比例：${item['最低价格比例']}%，最高价格比例：${item['最高价格比例']}%">${key}<em>+${item['道具数量']}</em></i> `;
     }
     content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemTotalNum}</em></i> ` +
         `<i>道具价格<span class="pd_stat_extra"><em title="道具总价">+${buyItemTotalPrice.toLocaleString()}</em>` +
-        `(<em title="平均价格比例">${buyItemTotalNum > 0 ? Util.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0}%</em>|` +
+        `(<em title="平均价格比例">${buyItemTotalNum > 0 ? Util.getFixedNumLocStr(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0}%</em>|` +
         `<em title="最低价格比例">${minBuyItemPricePercent}%</em>|<em title="最高价格比例">${maxBuyItemPricePercent}%</em>)</span></i> ${buyItemStatContent}`;
 
     return content;
@@ -459,7 +459,7 @@ const showImportOrExportLogDialog = function () {
     Dialog.show('pd_im_or_ex_log');
     $('#pd_log_setting').val(JSON.stringify(Log)).select();
     $(`input[name="pd_log_sort_type_2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');
-    runFunc('LogDialog.showImportOrExportLogDialog_after_');
+    Func.run('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**

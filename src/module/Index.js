@@ -36,8 +36,8 @@ export const handleAtTips = function () {
                     if ($this.data('disabled')) return;
                     let cookieText = Util.getCookie(Const.hideMarkReadAtTipsCookieName);
                     if (!cookieText) {
-                        let curDate = (new Date()).getDate();
-                        Util.setCookie(Const.prevReadAtTipsCookieName, (curDate < 10 ? '0' + curDate : curDate) + '日00时00分');
+                        let curDate = (new Date()).getDate().toString();
+                        Util.setCookie(Const.prevReadAtTipsCookieName, curDate.padStart(2, '0') + '日00时00分');
                     }
                     else if (cookieText !== atTipsText) {
                         Util.setCookie(Const.prevReadAtTipsCookieName, cookieText);
@@ -55,8 +55,13 @@ export const handleAtTips = function () {
             }
         }
         else if (!$atTips.length && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
-            let html = `<div style="width: 300px;"><a class="indbox6" href="guanjianci.php?gjc=${Info.userName}" target="_blank">
-最近无人${type === 'at_change_to_cao' ? '艹' : '@'}你</a><br><div class="line"></div><div class="c"></div></div><div class="line"></div>`;
+            let html = `
+<div style="width: 300px;">
+  <a class="indbox6" href="guanjianci.php?gjc=${Info.userName}" target="_blank">最近无人${type === 'at_change_to_cao' ? '艹' : '@'}你</a><br>
+  <div class="line"></div>
+  <div class="c"></div>
+</div>
+<div class="line"></div>`;
             $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
         }
     }

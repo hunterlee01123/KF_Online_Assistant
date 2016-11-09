@@ -42,10 +42,10 @@ export const deleteCookie = function (name, prefix = Info.uid + '_') {
  */
 export const getDateByTime = function (time) {
     let date = new Date();
-    let timeArr = time.split(':');
-    if (timeArr[0]) date.setHours(parseInt(timeArr[0]));
-    if (timeArr[1]) date.setMinutes(parseInt(timeArr[1]));
-    if (timeArr[2]) date.setSeconds(parseInt(timeArr[2]));
+    let [hour, minute, second] = time.split(':');
+    if (typeof hour !== 'undefined') date.setHours(parseInt(hour));
+    if (typeof minute !== 'undefined') date.setMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setSeconds(parseInt(second));
     date.setMilliseconds(0);
     return date;
 };
@@ -58,10 +58,10 @@ export const getDateByTime = function (time) {
  */
 export const getTimezoneDateByTime = function (time, timezoneOffset = Const.forumTimezoneOffset) {
     let date = new Date();
-    let timeArr = time.split(':');
-    if (timeArr[0]) date.setUTCHours(parseInt(timeArr[0]) + timezoneOffset);
-    if (timeArr[1]) date.setUTCMinutes(parseInt(timeArr[1]));
-    if (timeArr[2]) date.setUTCSeconds(parseInt(timeArr[2]));
+    let [hour, minute, second] = time.split(':');
+    if (typeof hour !== 'undefined') date.setHours(parseInt(hour) + timezoneOffset);
+    if (typeof minute !== 'undefined') date.setMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setSeconds(parseInt(second));
     date.setUTCMilliseconds(0);
     let now = new Date();
     if (now.getDate() > date.getDate() || now.getMonth() > date.getMonth() || now.getFullYear() > date.getFullYear()) {
@@ -138,9 +138,9 @@ export const getDate = function (value) {
  */
 export const getDateString = function (date, separator = '-') {
     date = date ? date : new Date();
-    let month = date.getMonth() + 1;
-    let day = date.getDate();
-    return date.getFullYear() + separator + (month < 10 ? '0' + month : month) + separator + (day < 10 ? '0' + day : day);
+    let month = (date.getMonth() + 1).toString();
+    let day = date.getDate().toString();
+    return date.getFullYear() + separator + month.padStart(2, '0') + separator + day.padStart(2, '0');
 };
 
 /**
@@ -151,11 +151,11 @@ export const getDateString = function (date, separator = '-') {
  * @returns {string} 时间字符串
  */
 export const getTimeString = function (date = new Date(), separator = ':', isShowSecond = true) {
-    let hour = date.getHours();
-    let minute = date.getMinutes();
-    let second = date.getSeconds();
-    return (hour < 10 ? '0' + hour : hour) + separator + (minute < 10 ? '0' + minute : minute) + (isShowSecond ? separator : '') +
-        (isShowSecond ? (second < 10 ? '0' + second : second) : '');
+    let hour = date.getHours().toString();
+    let minute = date.getMinutes().toString();
+    let second = date.getSeconds().toString();
+    return hour.padStart(2, '0') + separator + minute.padStart(2, '0') + (isShowSecond ? separator : '') +
+        (isShowSecond ? second.padStart(2, '0') : '');
 };
 
 /**
@@ -173,7 +173,7 @@ export const getTimeDiffInfo = function (timestamp) {
             if (minutes < 0) minutes = 0;
             let seconds = Math.floor(diff - hours * 60 * 60 - minutes * 60);
             if (seconds < 0) seconds = 0;
-            return {hours: hours, minutes: minutes, seconds: seconds};
+            return {hours, minutes, seconds};
         }
     }
     return {hours: 0, minutes: 0, seconds: 0};
@@ -186,10 +186,10 @@ export const getTimeDiffInfo = function (timestamp) {
  * @returns {?boolean} 是否处于规定时间段内，返回null表示规定时间段格式不正确
  */
 export const isBetweenInTimeRange = function (time, range) {
-    let rangeArr = range.split('-');
-    if (rangeArr.length !== 2) return null;
-    let start = getDateByTime(rangeArr[0]);
-    let end = getDateByTime(rangeArr[1]);
+    let [range1, range2] = range.split('-');
+    if (typeof range2 === 'undefined') return null;
+    let start = getDateByTime(range1);
+    let end = getDateByTime(range2);
     if (end < start) {
         if (time > end) end.setDate(end.getDate() + 1);
         else start.setDate(start.getDate() - 1);
@@ -379,7 +379,7 @@ export const getCurrentThreadPage = function () {
  * @param {number} digit 指定小数位
  * @returns {string} 指定小数位的本地字符串
  */
-export const getFixedNumberLocaleString = function (num, digit = 0) {
+export const getFixedNumLocStr = function (num, digit = 0) {
     let [iNum, dNum] = num.toFixed(digit).split('.');
     let iStr = parseInt(iNum).toLocaleString();
     let dStr = '';
@@ -388,11 +388,11 @@ export const getFixedNumberLocaleString = function (num, digit = 0) {
 };
 
 /**
- * 获取去除了不配对BBCode的引用内容
+ * 去除不配对的BBCode
  * @param {string} content 引用内容
- * @returns {string} 去除了不配对BBCode的引用内容
+ * @returns {string} 去除了不配对BBCode的内容
  */
-export const getRemoveUnpairedBBCodeQuoteContent = function (content) {
+export const removeUnpairedBBCodeContent = function (content) {
     let startCodeList = [
         /\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g,
         /\[strike\]/g, /\[sup\]/g, /\[sub\]/g
@@ -503,7 +503,7 @@ export const getResponseMsg = function (html) {
  * 返回指定对象由可枚举属性名和对应属性值组成的的键值对
  * @param {Object} obj 指定对象
  */
-export const entries = function* (obj) {
+export const entries = function*(obj) {
     for (let key of Object.keys(obj)) {
         yield [key, obj[key]];
     }

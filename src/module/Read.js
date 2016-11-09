@@ -3,7 +3,7 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import * as Dialog from './Dialog';
-import {run as runFunc} from './Func';
+import * as Func from './Func';
 import Const from './Const';
 import {push as pushLog} from './Log';
 import * as Public from './Public';
@@ -465,7 +465,7 @@ export const addBatchBuyThreadButton = function () {
                 return;
             }
             if (confirm(`你共选择了${threadList.length}个帖子，总售价${totalSell.toLocaleString()}KFB，` +
-                    `均价${Util.getFixedNumberLocaleString(totalSell / threadList.length, 2)}KFB，是否批量购买？`
+                    `均价${Util.getFixedNumLocStr(totalSell / threadList.length, 2)}KFB，是否批量购买？`
                 )
             ) {
                 Msg.wait(
@@ -541,7 +541,7 @@ export const buyThreads = function (threadList) {
                             `<i>KFB<ins>-${totalSell}</ins></i>`
                             , -1
                         );
-                        runFunc('Read.buyThreads_after_', threadList);
+                        Func.run('Read.buyThreads_after_', threadList);
                     }
                     else {
                         setTimeout(() => $(document).dequeue('BuyThreads'), Const.defAjaxInterval);
@@ -677,7 +677,7 @@ export const addMoreSmileLink = function () {
                     let id = $(this).data('id');
                     if (id) addSmileCode(id);
                 });
-            runFunc('Read.addMoreSmileLink_after_click_');
+            Func.run('Read.addMoreSmileLink_after_click_');
         });
 };
 

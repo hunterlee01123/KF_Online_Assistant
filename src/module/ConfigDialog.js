@@ -2,7 +2,7 @@
 import Info from './Info';
 import * as Util from './Util';
 import * as Dialog from './Dialog';
-import {run as runFunc} from './Func';
+import * as Func from './Func';
 import Const from './Const';
 import {
     read as readConfig,
@@ -21,7 +21,7 @@ import * as TmpLog from './TmpLog';
 export const show = function () {
     if ($('#pd_config').length > 0) return;
     readConfig();
-    runFunc('ConfigDialog.show_before_');
+    Func.run('ConfigDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
@@ -174,7 +174,7 @@ export const show = function () {
   </span>
   <button>确定</button><button>取消</button><button>默认值</button>
 </div>`;
-    let $dialog = Dialog.create('pd_config', 'KF Online助手设置' + (Info.isMobile ? ' (For Mobile)' : ''), html);
+    let $dialog = Dialog.create('pd_config', 'KFOL助手设置' + (Info.isMobile ? ' (For Mobile)' : ''), html);
 
     $dialog.find('.pd_cfg_btns > button:eq(1)')
         .click(() => Dialog.close('pd_config'))
@@ -266,7 +266,7 @@ export const show = function () {
 
     Dialog.show('pd_config');
     $dialog.find('a:first').focus();
-    runFunc('ConfigDialog.show_after_');
+    Func.run('ConfigDialog.show_after_');
 };
 
 /**

@@ -1,7 +1,7 @@
 'use strict';
 import * as Util from './Util';
 import * as Msg from './Msg';
-import {run as runFunc} from './Func';
+import * as Func from './Func';
 import Const from './Const';
 
 /**
@@ -9,7 +9,7 @@ import Const from './Const';
  * @param {number} type 处理类型，1：多重回复；2：多重引用
  */
 export const handleMultiQuote = function (type = 1) {
-    runFunc('Post.handleMultiQuote_before_', type);
+    Func.run('Post.handleMultiQuote_before_', type);
     if (!$('#pd_clear_multi_quote_data').length) {
         $('<a id="pd_clear_multi_quote_data" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
             .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
@@ -60,7 +60,7 @@ export const handleMultiQuote = function (type = 1) {
                     function (html) {
                         let matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                         if (matches) {
-                            content += Util.getRemoveUnpairedBBCodeQuoteContent(
+                            content += Util.removeUnpairedBBCodeContent(
                                     Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')
                                 ) + (index === list.length - 1 ? '' : '\n');
                         }
@@ -88,7 +88,7 @@ export const handleMultiQuote = function (type = 1) {
     });
     if (type === 2) $(document).dequeue('MultiQuote');
     else $('textarea[name="atc_content"]').val(content).focus();
-    runFunc('Post.handleMultiQuote_after_', type);
+    Func.run('Post.handleMultiQuote_after_', type);
 };
 
 /**
@@ -99,7 +99,7 @@ export const removeUnpairedBBCodeInQuoteContent = function () {
     let content = $content.val();
     let matches = /\[quote\](.|\r|\n)+?\[\/quote\]/.exec(content);
     if (matches) {
-        let workedContent = Util.getRemoveUnpairedBBCodeQuoteContent(matches[0]);
+        let workedContent = Util.removeUnpairedBBCodeContent(matches[0]);
         if (matches[0] !== workedContent) {
             $content.val(content.replace(matches[0], workedContent));
         }

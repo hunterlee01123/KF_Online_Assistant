@@ -3,7 +3,7 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import * as Dialog from './Dialog';
-import {run as runFunc} from './Func';
+import * as Func from './Func';
 import Const from './Const';
 import {show as showConfigDialog} from './ConfigDialog';
 import {push as pushLog} from './Log';
@@ -223,9 +223,8 @@ export const addPolyfill = function () {
             if (this == null) {
                 throw new TypeError('Array.prototype.includes called on null or undefined');
             }
-
-            let O = Object(this);
-            let len = parseInt(O.length) || 0;
+            const O = Object(this);
+            const len = parseInt(O.length) || 0;
             if (len === 0) return false;
             let n = parseInt(arguments[1]) || 0;
             let k;
@@ -250,6 +249,52 @@ export const addPolyfill = function () {
             return false;
         };
     }
+    if (!String.prototype.padStart) {
+        String.prototype.padStart = function padStart(maxLength, fillString = ' ') {
+            const O = Object(this);
+            const S = String(O);
+            const intMaxLength = parseInt(maxLength) || 0;
+            const stringLength = parseInt(S.length) || 0;
+            if (intMaxLength <= stringLength) return S;
+            let filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') return S;
+            const fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                const fLen = filler.length;
+                const remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            const truncatedStringFiller = filler.slice(0, fillLen);
+            return truncatedStringFiller + S;
+        };
+    }
+    if (!String.prototype.padEnd) {
+        String.prototype.padEnd = function padEnd(maxLength, fillString = ' ') {
+            const O = Object(this);
+            const S = String(O);
+            const intMaxLength = parseInt(maxLength) || 0;
+            const stringLength = parseInt(S.length) || 0;
+            if (intMaxLength <= stringLength) return S;
+            let filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') return S;
+            const fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                const fLen = filler.length;
+                const remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            const truncatedStringFiller = filler.slice(0, fillLen);
+            return S + truncatedStringFiller;
+        };
+    }
 };
 
 /**
@@ -263,7 +308,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
         if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
         return;
     }
-    runFunc('Public.donation_before_');
+    Func.run('Public.donation_before_');
     console.log('KFB捐款Start');
     let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
 
@@ -314,7 +359,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
             }
             Msg.show(msg);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            runFunc('Public.donation_after_', html);
+            Func.run('Public.donation_after_', html);
         });
     };
 

@@ -1033,321 +1033,17 @@ const changeStorageType = exports.changeStorageType = function (storageType) {
 
 /**
  * 获取经过规范化的Config对象
- * @param {Config} options 待处理的Config对象
- * @returns {Config} 经过规范化的Config对象
+ * @param {{}} options 待处理的Config对象
+ * @returns {{}} 经过规范化的Config对象
  */
 const normalize = exports.normalize = function (options) {
     let settings = {};
     if ($.type(options) !== 'object') return settings;
-
-    if (typeof options.autoRefreshEnabled !== 'undefined') {
-        settings.autoRefreshEnabled = typeof options.autoRefreshEnabled === 'boolean' ? options.autoRefreshEnabled : Config.autoRefreshEnabled;
+    for (let [key, value] of Util.entries(options)) {
+        if (key in Config && $.type(value) === $.type(Config[key])) {
+            settings[key] = value;
+        }
     }
-    if (typeof options.showRefreshModeTipsType !== 'undefined') {
-        let showRefreshModeTipsType = $.trim(options.showRefreshModeTipsType).toLowerCase();
-        let allowTypes = ['auto', 'always', 'never'];
-        if (showRefreshModeTipsType !== '' && $.inArray(showRefreshModeTipsType, allowTypes) > -1) settings.showRefreshModeTipsType = showRefreshModeTipsType;else settings.showRefreshModeTipsType = Config.showRefreshModeTipsType;
-    }
-
-    if (typeof options.autoDonationEnabled !== 'undefined') {
-        settings.autoDonationEnabled = typeof options.autoDonationEnabled === 'boolean' ? options.autoDonationEnabled : Config.autoDonationEnabled;
-    }
-    if (typeof options.donationKfb !== 'undefined') {
-        let donationKfb = options.donationKfb;
-        if ($.isNumeric(donationKfb) && donationKfb > 0 && donationKfb <= _Const2.default.maxDonationKfb) settings.donationKfb = parseInt(donationKfb).toString();else if (/^1?\d?\d%$/.test(donationKfb) && parseInt(donationKfb) > 0 && parseInt(donationKfb) <= 100) settings.donationKfb = parseInt(donationKfb) + '%';else settings.donationKfb = Config.donationKfb;
-    }
-    if (typeof options.donationAfterTime !== 'undefined') {
-        let donationAfterTime = options.donationAfterTime;
-        if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) settings.donationAfterTime = donationAfterTime;else settings.donationAfterTime = Config.donationAfterTime;
-    }
-
-    if (typeof options.atTipsHandleType !== 'undefined') {
-        let atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
-        let allowTypes = ['no_highlight', 'no_highlight_extra', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
-        if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, allowTypes) > -1) settings.atTipsHandleType = atTipsHandleType;else settings.atTipsHandleType = Config.atTipsHandleType;
-    }
-    if (typeof options.smLevelUpAlertEnabled !== 'undefined') {
-        settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ? options.smLevelUpAlertEnabled : Config.smLevelUpAlertEnabled;
-    }
-    if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
-        settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ? options.fixedDepositDueAlertEnabled : Config.fixedDepositDueAlertEnabled;
-    }
-    if (typeof options.smRankChangeAlertEnabled !== 'undefined') {
-        settings.smRankChangeAlertEnabled = typeof options.smRankChangeAlertEnabled === 'boolean' ? options.smRankChangeAlertEnabled : Config.smRankChangeAlertEnabled;
-    }
-    if (typeof options.homePageThreadFastGotoLinkEnabled !== 'undefined') {
-        settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ? options.homePageThreadFastGotoLinkEnabled : Config.homePageThreadFastGotoLinkEnabled;
-    }
-    if (typeof options.showVipSurplusTimeEnabled !== 'undefined') {
-        settings.showVipSurplusTimeEnabled = typeof options.showVipSurplusTimeEnabled === 'boolean' ? options.showVipSurplusTimeEnabled : Config.showVipSurplusTimeEnabled;
-    }
-
-    if (typeof options.showFastGotoThreadPageEnabled !== 'undefined') {
-        settings.showFastGotoThreadPageEnabled = typeof options.showFastGotoThreadPageEnabled === 'boolean' ? options.showFastGotoThreadPageEnabled : Config.showFastGotoThreadPageEnabled;
-    }
-    if (typeof options.maxFastGotoThreadPageNum !== 'undefined') {
-        let maxFastGotoThreadPageNum = parseInt(options.maxFastGotoThreadPageNum);
-        if (!isNaN(maxFastGotoThreadPageNum) && maxFastGotoThreadPageNum > 0) settings.maxFastGotoThreadPageNum = maxFastGotoThreadPageNum;else settings.maxFastGotoThreadPageNum = Config.maxFastGotoThreadPageNum;
-    }
-    if (typeof options.highlightNewPostEnabled !== 'undefined') {
-        settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ? options.highlightNewPostEnabled : Config.highlightNewPostEnabled;
-    }
-
-    if (typeof options.perPageFloorNum !== 'undefined') {
-        let perPageFloorNum = parseInt(options.perPageFloorNum);
-        if ($.inArray(perPageFloorNum, [10, 20, 30]) > -1) settings.perPageFloorNum = perPageFloorNum;else settings.perPageFloorNum = Config.perPageFloorNum;
-    }
-    if (typeof options.threadContentFontSize !== 'undefined') {
-        let threadContentFontSize = parseInt(options.threadContentFontSize);
-        if (threadContentFontSize > 0) settings.threadContentFontSize = threadContentFontSize;else settings.threadContentFontSize = Config.threadContentFontSize;
-    }
-    if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
-        settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ? options.adjustThreadContentWidthEnabled : Config.adjustThreadContentWidthEnabled;
-    }
-    if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
-        settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ? options.turnPageViaKeyboardEnabled : Config.turnPageViaKeyboardEnabled;
-    }
-    if (typeof options.customMySmColor !== 'undefined') {
-        let customMySmColor = options.customMySmColor;
-        if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) settings.customMySmColor = customMySmColor;else settings.customMySmColor = Config.customMySmColor;
-    }
-    if (typeof options.customSmColorEnabled !== 'undefined') {
-        settings.customSmColorEnabled = typeof options.customSmColorEnabled === 'boolean' ? options.customSmColorEnabled : Config.customSmColorEnabled;
-    }
-    if (typeof options.customSmColorConfigList !== 'undefined') {
-        let customSmColorConfigList = options.customSmColorConfigList;
-        if ($.isArray(customSmColorConfigList)) {
-            settings.customSmColorConfigList = [];
-            $.each(customSmColorConfigList, function (index, data) {
-                if ($.type(data) === 'object' && $.type(data.min) === 'string' && $.type(data.max) === 'string' && $.type(data.color) === 'string' && /^(-?\d+|MAX)$/i.test(data.min) && /^(-?\d+|MAX)$/i.test(data.max) && /^#[0-9a-fA-F]{6}$/.test(data.color) && Util.compareSmLevel(data.min, data.max) <= 0) {
-                    settings.customSmColorConfigList.push(data);
-                }
-            });
-        } else settings.customSmColorConfigList = Config.customSmColorConfigList;
-    }
-    if (typeof options.modifyKFOtherDomainEnabled !== 'undefined') {
-        settings.modifyKFOtherDomainEnabled = typeof options.modifyKFOtherDomainEnabled === 'boolean' ? options.modifyKFOtherDomainEnabled : Config.modifyKFOtherDomainEnabled;
-    }
-    if (typeof options.multiQuoteEnabled !== 'undefined') {
-        settings.multiQuoteEnabled = typeof options.multiQuoteEnabled === 'boolean' ? options.multiQuoteEnabled : Config.multiQuoteEnabled;
-    }
-    if (typeof options.batchBuyThreadEnabled !== 'undefined') {
-        settings.batchBuyThreadEnabled = typeof options.batchBuyThreadEnabled === 'boolean' ? options.batchBuyThreadEnabled : Config.batchBuyThreadEnabled;
-    }
-    if (typeof options.userMemoEnabled !== 'undefined') {
-        settings.userMemoEnabled = typeof options.userMemoEnabled === 'boolean' ? options.userMemoEnabled : Config.userMemoEnabled;
-    }
-    if (typeof options.userMemoList !== 'undefined') {
-        if ($.type(options.userMemoList) === 'object') {
-            settings.userMemoList = {};
-            for (let user in options.userMemoList) {
-                let memo = $.trim(options.userMemoList[user]);
-                if (memo) settings.userMemoList[user] = memo;
-            }
-        } else settings.userMemoList = Config.userMemoList;
-    }
-    if (typeof options.parseMediaTagEnabled !== 'undefined') {
-        settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ? options.parseMediaTagEnabled : Config.parseMediaTagEnabled;
-    }
-    if (typeof options.showSelfRatingLinkEnabled !== 'undefined') {
-        settings.showSelfRatingLinkEnabled = typeof options.showSelfRatingLinkEnabled === 'boolean' ? options.showSelfRatingLinkEnabled : Config.showSelfRatingLinkEnabled;
-    }
-    if (typeof options.buyThreadViaAjaxEnabled !== 'undefined') {
-        settings.buyThreadViaAjaxEnabled = typeof options.buyThreadViaAjaxEnabled === 'boolean' ? options.buyThreadViaAjaxEnabled : Config.buyThreadViaAjaxEnabled;
-    }
-
-    if (typeof options.defShowMsgDuration !== 'undefined') {
-        let defShowMsgDuration = parseInt(options.defShowMsgDuration);
-        if (!isNaN(defShowMsgDuration) && defShowMsgDuration >= -1) settings.defShowMsgDuration = defShowMsgDuration;else settings.defShowMsgDuration = Config.defShowMsgDuration;
-    }
-    if (typeof options.animationEffectOffEnabled !== 'undefined') {
-        settings.animationEffectOffEnabled = typeof options.animationEffectOffEnabled === 'boolean' ? options.animationEffectOffEnabled : Config.animationEffectOffEnabled;
-    }
-    if (typeof options.logSaveDays !== 'undefined') {
-        let logSaveDays = parseInt(options.logSaveDays);
-        if (logSaveDays > 0) settings.logSaveDays = logSaveDays;else settings.logSaveDays = Config.logSaveDays;
-    }
-    if (typeof options.browseType !== 'undefined') {
-        if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1) settings.browseType = options.browseType.toLowerCase();else settings.browseType = Config.options.browseType;
-    }
-    if (typeof options.showLogLinkEnabled !== 'undefined') {
-        settings.showLogLinkEnabled = typeof options.showLogLinkEnabled === 'boolean' ? options.showLogLinkEnabled : Config.showLogLinkEnabled;
-    }
-    if (typeof options.showSearchLinkEnabled !== 'undefined') {
-        settings.showSearchLinkEnabled = typeof options.showSearchLinkEnabled === 'boolean' ? options.showSearchLinkEnabled : Config.showSearchLinkEnabled;
-    }
-    if (typeof options.logSortType !== 'undefined') {
-        let logSortType = $.trim(options.logSortType).toLowerCase();
-        let allowTypes = ['time', 'type'];
-        if (logSortType !== '' && $.inArray(logSortType, allowTypes) > -1) settings.logSortType = logSortType;else settings.logSortType = Config.logSortType;
-    }
-    if (typeof options.logStatType !== 'undefined') {
-        let logStatType = $.trim(options.logStatType).toLowerCase();
-        let allowTypes = ['cur', 'custom', 'all'];
-        if (logStatType !== '' && $.inArray(logStatType, allowTypes) > -1) settings.logStatType = logStatType;else settings.logStatType = Config.logStatType;
-    }
-    if (typeof options.logStatDays !== 'undefined') {
-        let logStatDays = parseInt(options.logStatDays);
-        if (logStatDays > 0) settings.logStatDays = logStatDays;else settings.logStatDays = Config.logStatDays;
-    }
-    if (typeof options.addSideBarFastNavEnabled !== 'undefined') {
-        settings.addSideBarFastNavEnabled = typeof options.addSideBarFastNavEnabled === 'boolean' ? options.addSideBarFastNavEnabled : Config.addSideBarFastNavEnabled;
-    }
-    if (typeof options.modifySideBarEnabled !== 'undefined') {
-        settings.modifySideBarEnabled = typeof options.modifySideBarEnabled === 'boolean' ? options.modifySideBarEnabled : Config.modifySideBarEnabled;
-    }
-    if (typeof options.customCssEnabled !== 'undefined') {
-        settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ? options.customCssEnabled : Config.customCssEnabled;
-    }
-    if (typeof options.customCssContent !== 'undefined') {
-        let customCssContent = $.trim(options.customCssContent);
-        if (customCssContent !== '') settings.customCssContent = customCssContent;else settings.customCssContent = Config.customCssContent;
-    }
-    if (typeof options.customScriptEnabled !== 'undefined') {
-        settings.customScriptEnabled = typeof options.customScriptEnabled === 'boolean' ? options.customScriptEnabled : Config.customScriptEnabled;
-    }
-    if (typeof options.customScriptStartContent !== 'undefined') {
-        if (typeof options.customScriptStartContent === 'string') settings.customScriptStartContent = options.customScriptStartContent;else settings.customScriptStartContent = Config.customScriptStartContent;
-    }
-    if (typeof options.customScriptEndContent !== 'undefined') {
-        if (typeof options.customScriptEndContent === 'string') settings.customScriptEndContent = options.customScriptEndContent;else settings.customScriptEndContent = Config.customScriptEndContent;
-    }
-
-    if (typeof options.followUserEnabled !== 'undefined') {
-        settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ? options.followUserEnabled : Config.followUserEnabled;
-    }
-    if (typeof options.highlightFollowUserThreadInHPEnabled !== 'undefined') {
-        settings.highlightFollowUserThreadInHPEnabled = typeof options.highlightFollowUserThreadInHPEnabled === 'boolean' ? options.highlightFollowUserThreadInHPEnabled : Config.highlightFollowUserThreadInHPEnabled;
-    }
-    if (typeof options.highlightFollowUserThreadLinkEnabled !== 'undefined') {
-        settings.highlightFollowUserThreadLinkEnabled = typeof options.highlightFollowUserThreadLinkEnabled === 'boolean' ? options.highlightFollowUserThreadLinkEnabled : Config.highlightFollowUserThreadLinkEnabled;
-    }
-    if (typeof options.followUserList !== 'undefined') {
-        if ($.isArray(options.followUserList)) {
-            settings.followUserList = [];
-            for (let i in options.followUserList) {
-                let user = options.followUserList[i];
-                if ($.type(user) === 'object' && $.type(user.name) === 'string') {
-                    let name = $.trim(user.name);
-                    if (name) settings.followUserList.push({ name: name });
-                } else if ($.type(user) === 'string') {
-                    let name = $.trim(user);
-                    if (name) settings.followUserList.push({ name: name });
-                }
-            }
-        } else settings.followUserList = Config.followUserList;
-    }
-
-    if (typeof options.blockUserEnabled !== 'undefined') {
-        settings.blockUserEnabled = typeof options.blockUserEnabled === 'boolean' ? options.blockUserEnabled : Config.blockUserEnabled;
-    }
-    if (typeof options.blockUserDefaultType !== 'undefined') {
-        let blockUserDefaultType = parseInt(options.blockUserDefaultType);
-        if (!isNaN(blockUserDefaultType) && blockUserDefaultType >= 0 && blockUserDefaultType <= 2) settings.blockUserDefaultType = blockUserDefaultType;else settings.blockUserDefaultType = Config.blockUserDefaultType;
-    }
-    if (typeof options.blockUserAtTipsEnabled !== 'undefined') {
-        settings.blockUserAtTipsEnabled = typeof options.blockUserAtTipsEnabled === 'boolean' ? options.blockUserAtTipsEnabled : Config.blockUserAtTipsEnabled;
-    }
-    if (typeof options.blockUserForumType !== 'undefined') {
-        let blockUserForumType = parseInt(options.blockUserForumType);
-        if (!isNaN(blockUserForumType) && blockUserForumType >= 0 && blockUserForumType <= 2) settings.blockUserForumType = blockUserForumType;else settings.blockUserForumType = Config.blockUserForumType;
-    }
-    if (typeof options.blockUserFidList !== 'undefined') {
-        if ($.isArray(options.blockUserFidList)) {
-            settings.blockUserFidList = [];
-            for (let i in options.blockUserFidList) {
-                let fid = parseInt(options.blockUserFidList[i]);
-                if (!isNaN(fid) && fid > 0) settings.blockUserFidList.push(fid);
-            }
-        } else settings.blockUserFidList = Config.blockUserFidList;
-    }
-    if (typeof options.blockUserList !== 'undefined') {
-        if ($.isArray(options.blockUserList)) {
-            settings.blockUserList = [];
-            for (let i in options.blockUserList) {
-                let user = options.blockUserList[i];
-                if ($.type(user) === 'object' && $.type(user.name) === 'string' && $.type(user.type) === 'number') {
-                    let type = user.type;
-                    if (type < 0 || type > 2) type = Config.blockUserDefaultType;
-                    let name = $.trim(user.name);
-                    if (name) settings.blockUserList.push({ name: name, type: type });
-                } else if ($.type(user) === 'string') {
-                    let name = $.trim(user);
-                    if (name) settings.blockUserList.push({ name: name, type: Config.blockUserDefaultType });
-                }
-            }
-        } else settings.blockUserList = Config.blockUserList;
-    }
-    if (typeof options.blockThreadEnabled !== 'undefined') {
-        settings.blockThreadEnabled = typeof options.blockThreadEnabled === 'boolean' ? options.blockThreadEnabled : Config.blockThreadEnabled;
-    }
-    if (typeof options.blockThreadDefForumType !== 'undefined') {
-        let blockThreadDefForumType = parseInt(options.blockThreadDefForumType);
-        if (!isNaN(blockThreadDefForumType) && blockThreadDefForumType >= 0 && blockThreadDefForumType <= 2) settings.blockThreadDefForumType = blockThreadDefForumType;else settings.blockThreadDefForumType = Config.blockThreadDefForumType;
-    }
-    if (typeof options.blockThreadDefFidList !== 'undefined') {
-        if ($.isArray(options.blockThreadDefFidList)) {
-            settings.blockThreadDefFidList = [];
-            for (let i in options.blockThreadDefFidList) {
-                let fid = parseInt(options.blockThreadDefFidList[i]);
-                if (!isNaN(fid) && fid > 0) settings.blockThreadDefFidList.push(fid);
-            }
-        } else settings.blockThreadDefFidList = Config.blockThreadDefFidList;
-    }
-    if (typeof options.blockThreadList !== 'undefined') {
-        if ($.isArray(options.blockThreadList)) {
-            settings.blockThreadList = [];
-            for (let i in options.blockThreadList) {
-                let obj = options.blockThreadList[i];
-                if ($.type(obj) === 'object' && $.type(obj.keyWord) === 'string' && $.trim(obj.keyWord) !== '') {
-                    let newObj = { keyWord: obj.keyWord };
-                    if ($.isArray(obj.includeUser) && obj.includeUser.length > 0) newObj.includeUser = obj.includeUser;else if ($.isArray(obj.excludeUser) && obj.excludeUser.length > 0) newObj.excludeUser = obj.excludeUser;else if ($.isArray(obj.userName) && obj.userName.length > 0) newObj.includeUser = obj.userName;
-                    if ($.isArray(obj.includeFid) && obj.includeFid.length > 0) newObj.includeFid = obj.includeFid;else if ($.isArray(obj.excludeFid) && obj.excludeFid.length > 0) newObj.excludeFid = obj.excludeFid;
-                    settings.blockThreadList.push(newObj);
-                }
-            }
-        } else settings.blockThreadList = Config.blockThreadList;
-    }
-
-    if (typeof options.autoSaveCurrentDepositEnabled !== 'undefined') {
-        settings.autoSaveCurrentDepositEnabled = typeof options.autoSaveCurrentDepositEnabled === 'boolean' ? options.autoSaveCurrentDepositEnabled : Config.autoSaveCurrentDepositEnabled;
-    }
-    if (typeof options.saveCurrentDepositAfterKfb !== 'undefined') {
-        let saveCurrentDepositAfterKfb = parseInt(options.saveCurrentDepositAfterKfb);
-        if (saveCurrentDepositAfterKfb > 0) settings.saveCurrentDepositAfterKfb = saveCurrentDepositAfterKfb;else settings.saveCurrentDepositAfterKfb = Config.saveCurrentDepositAfterKfb;
-    }
-    if (typeof options.saveCurrentDepositKfb !== 'undefined') {
-        let saveCurrentDepositKfb = parseInt(options.saveCurrentDepositKfb);
-        if (saveCurrentDepositKfb > 0 && saveCurrentDepositKfb <= settings.saveCurrentDepositAfterKfb) settings.saveCurrentDepositKfb = saveCurrentDepositKfb;else settings.saveCurrentDepositKfb = Config.saveCurrentDepositKfb;
-    }
-
-    if (typeof options.autoChangeSMColorEnabled !== 'undefined') {
-        settings.autoChangeSMColorEnabled = typeof options.autoChangeSMColorEnabled === 'boolean' ? options.autoChangeSMColorEnabled : Config.autoChangeSMColorEnabled;
-    }
-    if (typeof options.autoChangeSMColorType !== 'undefined') {
-        let autoChangeSMColorType = $.trim(options.autoChangeSMColorType).toLowerCase();
-        let allowTypes = ['random', 'sequence'];
-        if (autoChangeSMColorType !== '' && $.inArray(autoChangeSMColorType, allowTypes) > -1) settings.autoChangeSMColorType = autoChangeSMColorType;else settings.autoChangeSMColorType = Config.autoChangeSMColorType;
-    }
-    if (typeof options.autoChangeSMColorInterval !== 'undefined') {
-        let autoChangeSMColorInterval = parseInt(options.autoChangeSMColorInterval);
-        if (!isNaN(autoChangeSMColorInterval) && autoChangeSMColorInterval > 0) settings.autoChangeSMColorInterval = autoChangeSMColorInterval;else settings.autoChangeSMColorInterval = Config.autoChangeSMColorInterval;
-    }
-    if (typeof options.changeAllAvailableSMColorEnabled !== 'undefined') {
-        settings.changeAllAvailableSMColorEnabled = typeof options.changeAllAvailableSMColorEnabled === 'boolean' ? options.changeAllAvailableSMColorEnabled : Config.changeAllAvailableSMColorEnabled;
-    }
-    if (typeof options.customAutoChangeSMColorList !== 'undefined') {
-        if ($.isArray(options.customAutoChangeSMColorList)) {
-            settings.customAutoChangeSMColorList = [];
-            for (let i in options.customAutoChangeSMColorList) {
-                let id = parseInt(options.customAutoChangeSMColorList[i]);
-                if (!isNaN(id) && id >= 1 && id <= 20) {
-                    settings.customAutoChangeSMColorList.push(id);
-                }
-            }
-        } else settings.customAutoChangeSMColorList = Config.customAutoChangeSMColorList;
-    }
-
     return settings;
 };
 
@@ -1373,6 +1069,8 @@ var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
@@ -1395,7 +1093,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const show = exports.show = function () {
     if ($('#pd_config').length > 0) return;
     (0, _Config.read)();
-    (0, _Func.run)('ConfigDialog.show_before_');
+    Func.run('ConfigDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
@@ -1548,7 +1246,7 @@ const show = exports.show = function () {
   </span>
   <button>确定</button><button>取消</button><button>默认值</button>
 </div>`;
-    let $dialog = Dialog.create('pd_config', 'KF Online助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
+    let $dialog = Dialog.create('pd_config', 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
     $dialog.find('.pd_cfg_btns > button:eq(1)').click(() => Dialog.close('pd_config')).end().find('.pd_cfg_btns > button:eq(2)').click(function (e) {
         e.preventDefault();
@@ -1621,7 +1319,7 @@ const show = exports.show = function () {
 
     Dialog.show('pd_config');
     $dialog.find('a:first').focus();
-    (0, _Func.run)('ConfigDialog.show_after_');
+    Func.run('ConfigDialog.show_after_');
 };
 
 /**
@@ -3078,8 +2776,8 @@ const handleAtTips = exports.handleAtTips = function () {
                     if ($this.data('disabled')) return;
                     let cookieText = Util.getCookie(_Const2.default.hideMarkReadAtTipsCookieName);
                     if (!cookieText) {
-                        let curDate = new Date().getDate();
-                        Util.setCookie(_Const2.default.prevReadAtTipsCookieName, (curDate < 10 ? '0' + curDate : curDate) + '日00时00分');
+                        let curDate = new Date().getDate().toString();
+                        Util.setCookie(_Const2.default.prevReadAtTipsCookieName, curDate.padStart(2, '0') + '日00时00分');
                     } else if (cookieText !== atTipsText) {
                         Util.setCookie(_Const2.default.prevReadAtTipsCookieName, cookieText);
                     }
@@ -3092,8 +2790,13 @@ const handleAtTips = exports.handleAtTips = function () {
                 $atTips.text($atTips.text().replace('@', '艹'));
             }
         } else if (!$atTips.length && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
-            let html = `<div style="width: 300px;"><a class="indbox6" href="guanjianci.php?gjc=${ _Info2.default.userName }" target="_blank">
-最近无人${ type === 'at_change_to_cao' ? '艹' : '@' }你</a><br><div class="line"></div><div class="c"></div></div><div class="line"></div>`;
+            let html = `
+<div style="width: 300px;">
+  <a class="indbox6" href="guanjianci.php?gjc=${ _Info2.default.userName }" target="_blank">最近无人${ type === 'at_change_to_cao' ? '艹' : '@' }你</a><br>
+  <div class="line"></div>
+  <div class="c"></div>
+</div>
+<div class="line"></div>`;
             $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
         }
     } else if (type === 'hide_box_2') {
@@ -4871,15 +4574,15 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                     if (index === totalNum - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            (0, _Log.push)('统计道具购买价格', `共有\`${ successNum }\`个【\`Lv.${ itemLevel }：${ itemName }\`】道具统计成功` + `${ failNum > 0 ? `（共有\`${ failNum }\`个道具未能统计成功）` : '' }，总计价格：\`${ totalPrice.toLocaleString() }\`，` + `平均价格：\`${ successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0 }\`` + `(\`${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%\`)，` + `最低价格：\`${ minPrice.toLocaleString() }\`(\`${ Math.round(minPrice / marketPrice * 100) }%\`)，` + `最高价格：\`${ maxPrice.toLocaleString() }\`(\`${ Math.round(maxPrice / marketPrice * 100) }%\`)`, { pay: { 'KFB': -totalPrice } });
+                            (0, _Log.push)('统计道具购买价格', `共有\`${ successNum }\`个【\`Lv.${ itemLevel }：${ itemName }\`】道具统计成功` + `${ failNum > 0 ? `（共有\`${ failNum }\`个道具未能统计成功）` : '' }，总计价格：\`${ totalPrice.toLocaleString() }\`，` + `平均价格：\`${ successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0 }\`` + `(\`${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%\`)，` + `最低价格：\`${ minPrice.toLocaleString() }\`(\`${ Math.round(minPrice / marketPrice * 100) }%\`)，` + `最高价格：\`${ maxPrice.toLocaleString() }\`(\`${ Math.round(maxPrice / marketPrice * 100) }%\`)`, { pay: { 'KFB': -totalPrice } });
                         }
-                        console.log(`统计道具购买价格（KFB）（共有${ failNum }个道具未能统计成功），统计成功数量：${ successNum }，总计价格：${ totalPrice.toLocaleString() }，` + `平均价格：${ successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0 } ` + `(${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%)，最低价格：${ minPrice.toLocaleString() } ` + `(${ Math.round(minPrice / marketPrice * 100) }%)，最高价格：${ maxPrice.toLocaleString() } (${ Math.round(maxPrice / marketPrice * 100) }%)`);
+                        console.log(`统计道具购买价格（KFB）（共有${ failNum }个道具未能统计成功），统计成功数量：${ successNum }，总计价格：${ totalPrice.toLocaleString() }，` + `平均价格：${ successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0 } ` + `(${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%)，最低价格：${ minPrice.toLocaleString() } ` + `(${ Math.round(minPrice / marketPrice * 100) }%)，最高价格：${ maxPrice.toLocaleString() } (${ Math.round(maxPrice / marketPrice * 100) }%)`);
                         $result.append(`
 <li class="pd_stat">
   <b>统计结果${ failNum > 0 ? `<span class="pd_notice">（共有${ failNum }个道具未能统计成功）</span>` : '' }：</b><br>
   <i>统计成功数量：<em>${ successNum }</em></i>
   <i>总计价格：<em>${ totalPrice.toLocaleString() }</em></i>
-  <i>平均价格：<em>${ successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0 } 
+  <i>平均价格：<em>${ successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0 } 
 (${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%)</em></i>
   <i>最低价格：<em>${ minPrice.toLocaleString() } (${ Math.round(minPrice / marketPrice * 100) }%)</em></i>
   <i>最高价格：<em>${ maxPrice.toLocaleString() } (${ Math.round(maxPrice / marketPrice * 100) }%)</em></i>
@@ -5144,6 +4847,8 @@ var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Config = require('./Config');
 
 var _Log = require('./Log');
@@ -5163,7 +4868,7 @@ const show = exports.show = function () {
     if ($('#pd_log').length > 0) return;
     Dialog.close('pd_config');
     (0, _Config.read)();
-    (0, _Func.run)('LogDialog.show_before_');
+    Func.run('LogDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_log_nav">
@@ -5198,7 +4903,7 @@ const show = exports.show = function () {
   <span class="pd_cfg_about"><a id="pd_log_im_or_ex_log_dialog" href="#">导入/导出日志</a></span>
   <button>关闭</button><button>清除日志</button>
 </div>`;
-    let $dialog = Dialog.create('pd_log', 'KF Online助手日志', html);
+    let $dialog = Dialog.create('pd_log', 'KFOL助手日志', html);
 
     (0, _Log.read)();
     let dateList = [];
@@ -5282,7 +4987,7 @@ const show = exports.show = function () {
     if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
     Dialog.show('pd_log');
     $dialog.find('input:first').focus();
-    (0, _Func.run)('LogDialog.show_after_');
+    Func.run('LogDialog.show_after_');
 };
 
 /**
@@ -5500,9 +5205,9 @@ const getLogStat = function (date, logStatType) {
     buyItemStatKeyList.sort((a, b) => Item.getLevelByName(a) > Item.getLevelByName(b));
     for (let key of buyItemStatKeyList) {
         let item = buyItemStat[key];
-        buyItemStatContent += `<i class="pd_custom_tips" title="总价：${ item['总计价格'].toLocaleString() }，` + `平均价格比例：${ item['道具数量'] > 0 ? Util.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0 }%，` + `最低价格比例：${ item['最低价格比例'] }%，最高价格比例：${ item['最高价格比例'] }%">${ key }<em>+${ item['道具数量'] }</em></i> `;
+        buyItemStatContent += `<i class="pd_custom_tips" title="总价：${ item['总计价格'].toLocaleString() }，` + `平均价格比例：${ item['道具数量'] > 0 ? Util.getFixedNumLocStr(item['总计价格比例'] / item['道具数量'], 2) : 0 }%，` + `最低价格比例：${ item['最低价格比例'] }%，最高价格比例：${ item['最高价格比例'] }%">${ key }<em>+${ item['道具数量'] }</em></i> `;
     }
-    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${ buyItemTotalNum }</em></i> ` + `<i>道具价格<span class="pd_stat_extra"><em title="道具总价">+${ buyItemTotalPrice.toLocaleString() }</em>` + `(<em title="平均价格比例">${ buyItemTotalNum > 0 ? Util.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0 }%</em>|` + `<em title="最低价格比例">${ minBuyItemPricePercent }%</em>|<em title="最高价格比例">${ maxBuyItemPricePercent }%</em>)</span></i> ${ buyItemStatContent }`;
+    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${ buyItemTotalNum }</em></i> ` + `<i>道具价格<span class="pd_stat_extra"><em title="道具总价">+${ buyItemTotalPrice.toLocaleString() }</em>` + `(<em title="平均价格比例">${ buyItemTotalNum > 0 ? Util.getFixedNumLocStr(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0 }%</em>|` + `<em title="最低价格比例">${ minBuyItemPricePercent }%</em>|<em title="最高价格比例">${ maxBuyItemPricePercent }%</em>)</span></i> ${ buyItemStatContent }`;
 
     return content;
 };
@@ -5576,7 +5281,7 @@ const showImportOrExportLogDialog = function () {
     Dialog.show('pd_im_or_ex_log');
     $('#pd_log_setting').val(JSON.stringify(Log)).select();
     $(`input[name="pd_log_sort_type_2"][value="${ Config.logSortType }"]`).prop('checked', true).triggerHandler('click');
-    (0, _Func.run)('LogDialog.showImportOrExportLogDialog_after_');
+    Func.run('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**
@@ -6483,6 +6188,8 @@ var Msg = _interopRequireWildcard(_Msg);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
@@ -6496,7 +6203,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
  * @param {number} type 处理类型，1：多重回复；2：多重引用
  */
 const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
-    (0, _Func.run)('Post.handleMultiQuote_before_', type);
+    Func.run('Post.handleMultiQuote_before_', type);
     if (!$('#pd_clear_multi_quote_data').length) {
         $('<a id="pd_clear_multi_quote_data" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
             e.preventDefault();
@@ -6543,7 +6250,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
                 $.get(`post.php?action=quote&fid=${ fid }&tid=${ tid }&pid=${ data.pid }&article=${ data.floor }&t=${ new Date().getTime() }`, function (html) {
                     let matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                     if (matches) {
-                        content += Util.getRemoveUnpairedBBCodeQuoteContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
+                        content += Util.removeUnpairedBBCodeContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
                     }
                     let $remainingNum = $('#pd_remaining_num');
                     $remainingNum.text(parseInt($remainingNum.text()) - 1);
@@ -6566,7 +6273,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
     if (type === 2) $(document).dequeue('MultiQuote');else $('textarea[name="atc_content"]').val(content).focus();
-    (0, _Func.run)('Post.handleMultiQuote_after_', type);
+    Func.run('Post.handleMultiQuote_after_', type);
 };
 
 /**
@@ -6577,7 +6284,7 @@ const removeUnpairedBBCodeInQuoteContent = exports.removeUnpairedBBCodeInQuoteCo
     let content = $content.val();
     let matches = /\[quote\](.|\r|\n)+?\[\/quote\]/.exec(content);
     if (matches) {
-        let workedContent = Util.getRemoveUnpairedBBCodeQuoteContent(matches[0]);
+        let workedContent = Util.removeUnpairedBBCodeContent(matches[0]);
         if (matches[0] !== workedContent) {
             $content.val(content.replace(matches[0], workedContent));
         }
@@ -6738,6 +6445,8 @@ var _Dialog = require('./Dialog');
 var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
+
+var Func = _interopRequireWildcard(_Func);
 
 var _Const = require('./Const');
 
@@ -6970,9 +6679,8 @@ const addPolyfill = exports.addPolyfill = function () {
             if (this == null) {
                 throw new TypeError('Array.prototype.includes called on null or undefined');
             }
-
-            let O = Object(this);
-            let len = parseInt(O.length) || 0;
+            const O = Object(this);
+            const len = parseInt(O.length) || 0;
             if (len === 0) return false;
             let n = parseInt(arguments[1]) || 0;
             let k;
@@ -6995,6 +6703,52 @@ const addPolyfill = exports.addPolyfill = function () {
             return false;
         };
     }
+    if (!String.prototype.padStart) {
+        String.prototype.padStart = function padStart(maxLength, fillString = ' ') {
+            const O = Object(this);
+            const S = String(O);
+            const intMaxLength = parseInt(maxLength) || 0;
+            const stringLength = parseInt(S.length) || 0;
+            if (intMaxLength <= stringLength) return S;
+            let filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') return S;
+            const fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                const fLen = filler.length;
+                const remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            const truncatedStringFiller = filler.slice(0, fillLen);
+            return truncatedStringFiller + S;
+        };
+    }
+    if (!String.prototype.padEnd) {
+        String.prototype.padEnd = function padEnd(maxLength, fillString = ' ') {
+            const O = Object(this);
+            const S = String(O);
+            const intMaxLength = parseInt(maxLength) || 0;
+            const stringLength = parseInt(S.length) || 0;
+            if (intMaxLength <= stringLength) return S;
+            let filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') return S;
+            const fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                const fLen = filler.length;
+                const remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            const truncatedStringFiller = filler.slice(0, fillLen);
+            return S + truncatedStringFiller;
+        };
+    }
 };
 
 /**
@@ -7008,7 +6762,7 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
         if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
         return;
     }
-    (0, _Func.run)('Public.donation_before_');
+    Func.run('Public.donation_before_');
     console.log('KFB捐款Start');
     let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
 
@@ -7055,7 +6809,7 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
             }
             Msg.show(msg);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            (0, _Func.run)('Public.donation_after_', html);
+            Func.run('Public.donation_after_', html);
         });
     };
 
@@ -7909,6 +7663,8 @@ var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
@@ -8342,7 +8098,7 @@ const addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function () {
             alert('请选择要购买的帖子');
             return;
         }
-        if (confirm(`你共选择了${ threadList.length }个帖子，总售价${ totalSell.toLocaleString() }KFB，` + `均价${ Util.getFixedNumberLocaleString(totalSell / threadList.length, 2) }KFB，是否批量购买？`)) {
+        if (confirm(`你共选择了${ threadList.length }个帖子，总售价${ totalSell.toLocaleString() }KFB，` + `均价${ Util.getFixedNumLocStr(totalSell / threadList.length, 2) }KFB，是否批量购买？`)) {
             Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ threadList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
             buyThreads(threadList);
         }
@@ -8405,7 +8161,7 @@ const buyThreads = exports.buyThreads = function (threadList) {
                         }
                         console.log(`共有${ successNum }个帖子购买成功，共有${ failNum }个帖子购买失败，KFB-${ totalSell }`);
                         Msg.show(`<strong>共有<em>${ successNum }</em>个帖子购买成功${ failNum > 0 ? `，共有<em>${ failNum }</em>个帖子购买失败` : '' }</strong>` + `<i>KFB<ins>-${ totalSell }</ins></i>`, -1);
-                        (0, _Func.run)('Read.buyThreads_after_', threadList);
+                        Func.run('Read.buyThreads_after_', threadList);
                     } else {
                         setTimeout(() => $(document).dequeue('BuyThreads'), _Const2.default.defAjaxInterval);
                     }
@@ -8530,7 +8286,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
             let id = $(this).data('id');
             if (id) addSmileCode(id);
         });
-        (0, _Func.run)('Read.addMoreSmileLink_after_click_');
+        Func.run('Read.addMoreSmileLink_after_click_');
     });
 };
 
@@ -8675,7 +8431,7 @@ const deleteValue = exports.deleteValue = function (key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.getRemoveUnpairedBBCodeQuoteContent = exports.getFixedNumberLocaleString = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -8726,10 +8482,10 @@ const deleteCookie = exports.deleteCookie = function (name, prefix = _Info2.defa
  */
 const getDateByTime = exports.getDateByTime = function (time) {
     let date = new Date();
-    let timeArr = time.split(':');
-    if (timeArr[0]) date.setHours(parseInt(timeArr[0]));
-    if (timeArr[1]) date.setMinutes(parseInt(timeArr[1]));
-    if (timeArr[2]) date.setSeconds(parseInt(timeArr[2]));
+    let [hour, minute, second] = time.split(':');
+    if (typeof hour !== 'undefined') date.setHours(parseInt(hour));
+    if (typeof minute !== 'undefined') date.setMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setSeconds(parseInt(second));
     date.setMilliseconds(0);
     return date;
 };
@@ -8742,10 +8498,10 @@ const getDateByTime = exports.getDateByTime = function (time) {
  */
 const getTimezoneDateByTime = exports.getTimezoneDateByTime = function (time, timezoneOffset = _Const2.default.forumTimezoneOffset) {
     let date = new Date();
-    let timeArr = time.split(':');
-    if (timeArr[0]) date.setUTCHours(parseInt(timeArr[0]) + timezoneOffset);
-    if (timeArr[1]) date.setUTCMinutes(parseInt(timeArr[1]));
-    if (timeArr[2]) date.setUTCSeconds(parseInt(timeArr[2]));
+    let [hour, minute, second] = time.split(':');
+    if (typeof hour !== 'undefined') date.setHours(parseInt(hour) + timezoneOffset);
+    if (typeof minute !== 'undefined') date.setMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setSeconds(parseInt(second));
     date.setUTCMilliseconds(0);
     let now = new Date();
     if (now.getDate() > date.getDate() || now.getMonth() > date.getMonth() || now.getFullYear() > date.getFullYear()) {
@@ -8822,9 +8578,9 @@ const getDate = exports.getDate = function (value) {
  */
 const getDateString = exports.getDateString = function (date, separator = '-') {
     date = date ? date : new Date();
-    let month = date.getMonth() + 1;
-    let day = date.getDate();
-    return date.getFullYear() + separator + (month < 10 ? '0' + month : month) + separator + (day < 10 ? '0' + day : day);
+    let month = (date.getMonth() + 1).toString();
+    let day = date.getDate().toString();
+    return date.getFullYear() + separator + month.padStart(2, '0') + separator + day.padStart(2, '0');
 };
 
 /**
@@ -8835,10 +8591,10 @@ const getDateString = exports.getDateString = function (date, separator = '-') {
  * @returns {string} 时间字符串
  */
 const getTimeString = exports.getTimeString = function (date = new Date(), separator = ':', isShowSecond = true) {
-    let hour = date.getHours();
-    let minute = date.getMinutes();
-    let second = date.getSeconds();
-    return (hour < 10 ? '0' + hour : hour) + separator + (minute < 10 ? '0' + minute : minute) + (isShowSecond ? separator : '') + (isShowSecond ? second < 10 ? '0' + second : second : '');
+    let hour = date.getHours().toString();
+    let minute = date.getMinutes().toString();
+    let second = date.getSeconds().toString();
+    return hour.padStart(2, '0') + separator + minute.padStart(2, '0') + (isShowSecond ? separator : '') + (isShowSecond ? second.padStart(2, '0') : '');
 };
 
 /**
@@ -8856,7 +8612,7 @@ const getTimeDiffInfo = exports.getTimeDiffInfo = function (timestamp) {
             if (minutes < 0) minutes = 0;
             let seconds = Math.floor(diff - hours * 60 * 60 - minutes * 60);
             if (seconds < 0) seconds = 0;
-            return { hours: hours, minutes: minutes, seconds: seconds };
+            return { hours, minutes, seconds };
         }
     }
     return { hours: 0, minutes: 0, seconds: 0 };
@@ -9046,7 +8802,7 @@ const getCurrentThreadPage = exports.getCurrentThreadPage = function () {
  * @param {number} digit 指定小数位
  * @returns {string} 指定小数位的本地字符串
  */
-const getFixedNumberLocaleString = exports.getFixedNumberLocaleString = function (num, digit = 0) {
+const getFixedNumLocStr = exports.getFixedNumLocStr = function (num, digit = 0) {
     let [iNum, dNum] = num.toFixed(digit).split('.');
     let iStr = parseInt(iNum).toLocaleString();
     let dStr = '';
@@ -9055,11 +8811,11 @@ const getFixedNumberLocaleString = exports.getFixedNumberLocaleString = function
 };
 
 /**
- * 获取去除了不配对BBCode的引用内容
+ * 去除不配对的BBCode
  * @param {string} content 引用内容
- * @returns {string} 去除了不配对BBCode的引用内容
+ * @returns {string} 去除了不配对BBCode的内容
  */
-const getRemoveUnpairedBBCodeQuoteContent = exports.getRemoveUnpairedBBCodeQuoteContent = function (content) {
+const removeUnpairedBBCodeContent = exports.removeUnpairedBBCodeContent = function (content) {
     let startCodeList = [/\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g, /\[strike\]/g, /\[sup\]/g, /\[sub\]/g];
     let endCodeList = [/\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/align\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g, /\[\/strike\]/g, /\[\/sup\]/g, /\[\/sub\]/g];
     for (let i = 0; i < startCodeList.length; i++) {
