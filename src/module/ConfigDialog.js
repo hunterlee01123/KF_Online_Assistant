@@ -1,3 +1,4 @@
+/* 设置对话框模块 */
 'use strict';
 import Info from './Info';
 import * as Util from './Util';
@@ -14,6 +15,7 @@ import {
 } from './Config';
 import {show as showLogDialog} from './LogDialog';
 import * as TmpLog from './TmpLog';
+import * as Public from './Public';
 
 /**
  * 显示设置对话框
@@ -540,13 +542,7 @@ const showRunCommandDialog = function () {
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         let content = $textArea.val();
-        if (!content) return;
-        try {
-            console.log(eval(content));
-        }
-        catch (ex) {
-            console.log(ex);
-        }
+        if (content) Public.runCmd(content, true);
     }).next('button').click(function (e) {
         e.preventDefault();
         $textArea.val('').focus();
@@ -1406,7 +1402,7 @@ const showBlockThreadDialog = function () {
 const showCommonImportOrExportConfigDialog = function (type) {
     if ($('#pd_common_im_or_ex_config').length > 0) return;
     readConfig();
-    let html =`
+    let html = `
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>

@@ -1,5 +1,5 @@
+/* 消息模块 */
 'use strict';
-import Info from './Info';
 
 /**
  * 显示消息

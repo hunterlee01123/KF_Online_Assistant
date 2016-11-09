@@ -1,3 +1,4 @@
+/* 配置模块 */
 'use strict';
 import Info from './Info';
 import * as Util from './Util';

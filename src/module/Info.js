@@ -1,7 +1,8 @@
+/* 信息模块 */
 'use strict';
 
 /**
- * KFOL类
+ * 信息类
  */
 const Info = {
     // 用户ID

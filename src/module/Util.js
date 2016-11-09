@@ -1,3 +1,4 @@
+/* 工具模块 */
 'use strict';
 import Info from './Info';
 import Const from './Const';

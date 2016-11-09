@@ -1,3 +1,4 @@
+/* 公共模块 */
 'use strict';
 import Info from './Info';
 import * as Util from './Util';
@@ -386,7 +387,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
             else {
                 donationSubmit(parseInt(Config.donationKfb));
             }
-        }, 'html');
+        });
     }
 };
 
@@ -922,14 +923,7 @@ export const runCustomScript = function (type = 1) {
     let script = '';
     if (type === 2) script = Config.customScriptEndContent;
     else script = Config.customScriptStartContent;
-    if (script) {
-        try {
-            eval(script);
-        }
-        catch (ex) {
-            console.log(ex);
-        }
-    }
+    if (script) runCmd(script);
 };
 
 /**
@@ -1245,4 +1239,23 @@ export const checkRatingSize = function (title, ratingSize) {
         return {type: 1, titleSize, ratingSize};
     }
     else return {type: 0};
+};
+
+/**
+ * 运行命令
+ * @param {string} cmd 命令
+ * @param {boolean} isOutput 是否在控制台上显示结果
+ * @returns {string} 运行结果
+ */
+export const runCmd = function (cmd, isOutput = false) {
+    let result = '';
+    try {
+        result = eval(cmd);
+        if (isOutput) console.log(result);
+    }
+    catch (ex) {
+        result = ex;
+        console.log(ex);
+    }
+    return String(result);
 };

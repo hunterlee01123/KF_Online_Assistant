@@ -1,3 +1,4 @@
+/* 日志对话框模块 */
 'use strict';
 import Info from './Info';
 import * as Util from './Util';

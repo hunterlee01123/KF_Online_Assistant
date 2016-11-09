@@ -1,3 +1,4 @@
+/* 争夺模块 */
 'use strict';
 import * as Item from './Item';
 

@@ -1,3 +1,4 @@
+/* 卡片模块 */
 'use strict';
 import Const from './Const';
 import * as Msg from './Msg';

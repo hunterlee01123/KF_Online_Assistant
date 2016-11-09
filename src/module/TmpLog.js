@@ -1,3 +1,4 @@
+/* 临时日志模块 */
 'use strict';
 import Info from './Info';
 import Const from './Const';

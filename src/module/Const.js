@@ -1,7 +1,8 @@
+/* 常量模块 */
 'use strict';
 
 /**
- * 配置常量类
+ * 常量类
  */
 const Const = {
     // 开启调试模式，true：开启；false：关闭
