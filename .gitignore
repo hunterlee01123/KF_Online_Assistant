@@ -1,8 +1,7 @@
 .idea/
-__pycache__/
-res/psd/
+node_modules/
 wiki/
 vps/
-CompileScript.py
 push.sh
-KF Online助手文件创建软链接.bat
+build.bat
+myGulpFile.js
