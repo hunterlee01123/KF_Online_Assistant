@@ -42,7 +42,7 @@ export const addFastGotoFloorInput = function () {
         .prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul'))
         .submit(function (e) {
             e.preventDefault();
-            let floor = parseInt($.trim($(this).find('input').val()));
+            let floor = parseInt($(this).find('input').val());
             if (!floor || floor < 0) return;
             location.href = `${Util.getHostNameUrl}read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
         })

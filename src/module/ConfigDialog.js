@@ -199,7 +199,7 @@ export const show = function () {
                 0
             );
             if (type === null) return;
-            type = parseInt($.trim(type));
+            type = parseInt(type);
             if (!isNaN(type) && type >= 0) {
                 clearTmpData(type);
                 alert('缓存已清除');

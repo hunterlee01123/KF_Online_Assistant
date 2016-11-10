@@ -51,11 +51,11 @@ export const Config = {
     adjustThreadContentWidthEnabled: false,
     // 帖子内容字体大小，留空表示使用默认大小，推荐值：14
     threadContentFontSize: 0,
-    // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空
+    // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空
     customMySmColor: '',
     // 是否开启自定义各等级神秘颜色的功能，（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），true：开启；false：关闭
     customSmColorEnabled: false,
-    // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009CFF'},{min:'800',max:'MAX',color:'#FF0000'}]
+    // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009cff'},{min:'800',max:'MAX',color:'#ff0000'}]
     customSmColorConfigList: [],
     // 是否将帖子中的绯月其它域名的链接修改为当前域名，true：开启；false：关闭
     modifyKFOtherDomainEnabled: true,
@@ -88,8 +88,8 @@ export const Config = {
     showSearchLinkEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
     logSortType: 'time',
-    // 日志统计范围类型，cur：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
-    logStatType: 'cur',
+    // 日志统计范围类型，current：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
+    logStatType: 'current',
     // 显示距该日N天内的统计结果（用于日志统计范围）
     logStatDays: 7,
     // 是否为侧边栏添加快捷导航的链接，true：开启；false：关闭
@@ -238,6 +238,7 @@ export const changeStorageType = function (storageType) {
 export const normalize = function (options) {
     let settings = {};
     if ($.type(options) !== 'object') return settings;
+    if (typeof options.donationKfb === 'number') options.donationKfb = options.donationKfb.toString();
     for (let [key, value] of Util.entries(options)) {
         if (key in Config && $.type(value) === $.type(Config[key])) {
             settings[key] = value;

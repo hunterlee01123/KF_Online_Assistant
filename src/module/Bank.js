@@ -186,7 +186,7 @@ const batchTransferVerify = function () {
         return false;
     }
     let $bankMoney = $('#pd_bank_money');
-    let money = parseInt($.trim($bankMoney.val()));
+    let money = parseInt($bankMoney.val());
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
             alert('通用转账金额格式不正确');
@@ -244,7 +244,7 @@ export const addBatchTransferButton = function () {
             e.preventDefault();
             Msg.destroy();
             if (!batchTransferVerify()) return;
-            let commonMoney = parseInt($.trim($('#pd_bank_money').val()));
+            let commonMoney = parseInt($('#pd_bank_money').val());
             if (!commonMoney) commonMoney = 0;
             let msg = $('#pd_bank_msg').val();
             let users = [];

@@ -77,12 +77,12 @@ export const push = function (type, action, {gain = null, pay = null} = {}) {
     let date = new Date();
     let time = date.getTime();
     let today = Util.getDateString(date);
-    let settings = {time, type, action};
-    if (gain) settings['gain'] = gain;
-    if (pay) settings['pay'] = pay;
+    let obj = {time, type, action};
+    if (gain) obj['gain'] = gain;
+    if (pay) obj['pay'] = pay;
     let log = read();
     if (!Array.isArray(log[today])) log[today] = [];
-    log[today].push(settings);
+    log[today].push(obj);
     write(log);
 };
 

@@ -41,7 +41,7 @@ export const show = function () {
     <legend>统计结果</legend>
     <div>
       <strong>统计范围：</strong>
-      <label title="显示当天的统计结果"><input type="radio" name="pd_log_stat_type" value="cur" checked>当天</label>
+      <label title="显示当天的统计结果"><input type="radio" name="pd_log_stat_type" value="current" checked>当天</label>
       <label title="显示距该日N天内的统计结果"><input type="radio" name="pd_log_stat_type" value="custom"></label>
       <label title="显示距该日N天内的统计结果"><input id="pd_log_stat_days" type="text" style="width: 22px;" maxlength="3">天内</label>
       <label title="显示全部统计结果"><input type="radio" name="pd_log_stat_type" value="all">全部</label>
@@ -115,7 +115,7 @@ export const show = function () {
             showLogStat(log, dateList[curIndex]);
         }
     }).end().find('#pd_log_stat_days').keyup(function () {
-        let days = parseInt($.trim($(this).val()));
+        let days = parseInt($(this).val());
         if (days > 0 && Config.logStatDays !== days) {
             Config.logStatDays = days;
             writeConfig();
@@ -480,7 +480,7 @@ const showLogText = function (log) {
                 .replace(/(<.+?>|<\/.+?>)/g, '')
                 .replace(/`/g, '');
         if (isShowStat) {
-            content += `${'-'.repeat(46)}\n合计：\n${getLogStat(log, date, 'cur')
+            content += `${'-'.repeat(46)}\n合计：\n${getLogStat(log, date, 'current')
                 .replace(/<br\s*\/?>/g, '\n')
                 .replace(/(<.+?>|<\/.+?>)/g, '')}\n`;
         }

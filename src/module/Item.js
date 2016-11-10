@@ -1941,7 +1941,7 @@ export const addBatchBuyItemsLink = function () {
 
     $shop.find('tbody > tr:gt(1) > td:nth-child(4)').each(function () {
         let $this = $(this);
-        let price = parseInt($.trim($this.prev('td').text()));
+        let price = parseInt($this.prev('td').text());
         if (isNaN(price)) return;
         $this.addClass('pd_custom_tips')
             .attr('title', `${Math.floor(price * 0.5)}~${price * 2}（均价：${Math.floor(price * 1.25)}）`);
