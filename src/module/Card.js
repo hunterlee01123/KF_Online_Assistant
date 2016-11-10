@@ -2,7 +2,7 @@
 'use strict';
 import Const from './Const';
 import * as Msg from './Msg';
-import {push as pushLog} from './Log';
+import * as Log from './Log';
 import * as Public from './Public';
 
 /**
@@ -33,14 +33,14 @@ const convertCardsToVipTime = function (cardList, safeId) {
                     failNum++;
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('ConvertCardsToVipTime');
 
                     if (isStop || index === cardList.length - 1) {
                         if (successNum > 0) {
-                            pushLog(
+                            Log.push(
                                 '将卡片转换为VIP时间',
                                 `共有\`${successNum}\`张卡片成功为VIP时间`,
                                 {
@@ -125,7 +125,7 @@ export const addStartBatchModeButton = function () {
                     if (!cardList.length) return;
                     if (!confirm(`共选择了${cardList.length}张卡片，是否将卡片批量转换为VIP时间？`)) return;
                     Msg.wait(
-                        `<strong>正在批量转换中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${cardList.length}</em></i>`+
+                        `<strong>正在批量转换中&hellip;</strong><i>剩余：<em class="pd_countdown">${cardList.length}</em></i>`+
                         `<a class="pd_stop_action" href="#">停止操作</a>`
                     );
                     convertCardsToVipTime(cardList, safeId);

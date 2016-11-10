@@ -8,12 +8,7 @@ import {
     read as readConfig,
     write as writeConfig,
 } from './Config';
-import {
-    read as readLog,
-    write as writeLog,
-    clear as clearLog,
-    getMergeLog,
-} from './Log';
+import * as Log from './Log';
 import * as Item from './Item';
 
 /**
@@ -60,11 +55,11 @@ export const show = function () {
 </div>`;
     let $dialog = Dialog.create('pd_log', 'KFOL助手日志', html);
 
-    readLog();
+    let log = Log.read();
     let dateList = [];
     let curIndex = 0;
-    if (!$.isEmptyObject(Log)) {
-        dateList = Util.getObjectKeyList(Log, 1);
+    if (!$.isEmptyObject(log)) {
+        dateList = Util.getObjectKeyList(log, 1);
         curIndex = dateList.length - 1;
         $dialog.find('.pd_log_nav h2').attr('title', `总共记录了${dateList.length}天的日志`).text(dateList[curIndex]);
         if (dateList.length > 1) {
@@ -89,8 +84,8 @@ export const show = function () {
             curIndex = dateList.length - 1;
         }
         $dialog.find('.pd_log_nav h2').text(dateList[curIndex]);
-        showLogContent(dateList[curIndex]);
-        showLogStat(dateList[curIndex]);
+        showLogContent(log, dateList[curIndex]);
+        showLogStat(log, dateList[curIndex]);
         if (curIndex > 0) {
             $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
             $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
@@ -110,14 +105,14 @@ export const show = function () {
         if (Config.logSortType !== value) {
             Config.logSortType = value;
             writeConfig();
-            showLogContent(dateList[curIndex]);
+            showLogContent(log, dateList[curIndex]);
         }
     }).end().find('input[name="pd_log_stat_type"]').click(function () {
         let value = $(this).val();
         if (Config.logStatType !== value) {
             Config.logStatType = value;
             writeConfig();
-            showLogStat(dateList[curIndex]);
+            showLogStat(log, dateList[curIndex]);
         }
     }).end().find('#pd_log_stat_days').keyup(function () {
         let days = parseInt($.trim($(this).val()));
@@ -125,7 +120,7 @@ export const show = function () {
             Config.logStatDays = days;
             writeConfig();
             $('input[name="pd_log_stat_type"][value="custom"]:not(:checked)').click();
-            showLogStat(dateList[curIndex]);
+            showLogStat(log, dateList[curIndex]);
         }
     }).end().find('input[name="pd_log_sort_type"][value="{0}"]'.replace('{0}', Config.logSortType)).click()
         .end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click()
@@ -137,7 +132,7 @@ export const show = function () {
         .click(function (e) {
             e.preventDefault();
             if (confirm('是否清除所有日志？')) {
-                clearLog();
+                Log.clear();
                 alert('日志已清除');
                 location.reload();
             }
@@ -148,8 +143,8 @@ export const show = function () {
         showImportOrExportLogDialog();
     });
 
-    showLogContent(dateList[curIndex]);
-    showLogStat(dateList[curIndex]);
+    showLogContent(log, dateList[curIndex]);
+    showLogStat(log, dateList[curIndex]);
 
     if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
     Dialog.show('pd_log');
@@ -159,22 +154,24 @@ export const show = function () {
 
 /**
  * 显示指定日期的日志内容
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  */
-const showLogContent = function (date) {
-    if (!Array.isArray(Log[date])) return;
-    $('#pd_log_content').html(getLogContent(date, Config.logSortType))
-        .parent().find('legend:first-child').text(`日志内容 (共${Log[date].length}项)`);
+const showLogContent = function (log, date) {
+    if (!Array.isArray(log[date])) return;
+    $('#pd_log_content').html(getLogContent(log, date, Config.logSortType))
+        .parent().find('legend:first-child').text(`日志内容 (共${log[date].length}项)`);
 };
 
 /**
  * 获取指定日期的日志内容
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  * @param {string} logSortType 日志内容的排序方式
  * @returns {string} 指定日期的日志内容
  */
-const getLogContent = function (date, logSortType) {
-    let logList = Log[date];
+const getLogContent = function (log, date, logSortType) {
+    let logList = log[date];
     if (logSortType === 'type') {
         const sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具',
             '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级',
@@ -236,35 +233,37 @@ const getLogContent = function (date, logSortType) {
 
 /**
  * 显示指定日期的日志统计结果
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  */
-const showLogStat = function (date) {
-    if (!Array.isArray(Log[date])) return;
-    $('#pd_log_stat').html(getLogStat(date, Config.logStatType));
+const showLogStat = function (log, date) {
+    if (!Array.isArray(log[date])) return;
+    $('#pd_log_stat').html(getLogStat(log, date, Config.logStatType));
 };
 
 /**
  * 获取指定日期的日志统计结果
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  * @param {string} logStatType 日志统计范围类型
  * @returns {string} 指定日期的日志统计结果
  */
-const getLogStat = function (date, logStatType) {
-    let log = {};
+const getLogStat = function (log, date, logStatType) {
+    let rangeLog = {};
 
     if (logStatType === 'custom') {
         let minDate = new Date(date);
         minDate.setDate(minDate.getDate() - Config.logStatDays + 1);
         minDate = Util.getDateString(minDate);
-        for (let d of Util.getObjectKeyList(Log, 1)) {
-            if (d >= minDate && d <= date) log[d] = Log[d];
+        for (let d of Util.getObjectKeyList(log, 1)) {
+            if (d >= minDate && d <= date) rangeLog[d] = log[d];
         }
     }
     else if (logStatType === 'all') {
-        log = Log;
+        rangeLog = log;
     }
     else {
-        log[date] = Log[date];
+        rangeLog[date] = log[date];
     }
 
     let income = {}, expense = {}, profit = {};
@@ -272,8 +271,8 @@ const getLogStat = function (date, logStatType) {
     let buyItemTotalNum = 0, buyItemTotalPrice = 0, totalBuyItemPricePercent = 0, minBuyItemPricePercent = 0,
         maxBuyItemPricePercent = 0, buyItemStat = {};
     let invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
-    for (let d in log) {
-        for (let {type, action, gain, pay, notStat} of log[d]) {
+    for (let d in rangeLog) {
+        for (let {type, action, gain, pay, notStat} of rangeLog[d]) {
             if (typeof type === 'undefined' || typeof notStat !== 'undefined') continue;
             if ($.type(gain) === 'object') {
                 for (let k of Object.keys(gain)) {
@@ -394,7 +393,7 @@ const getLogStat = function (date, logStatType) {
  */
 const showImportOrExportLogDialog = function () {
     if ($('#pd_im_or_ex_log').length > 0) return;
-    readLog();
+    let log = Log.read();
     let html = `
 <div class="pd_cfg_main">
   <div style="margin-top: 5px;">
@@ -422,7 +421,7 @@ const showImportOrExportLogDialog = function () {
 
     let $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
     $dialog.find('[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
-        showLogText();
+        showLogText(log);
         $('#pd_log_text').select();
     }).end().find('[name="pd_im_or_ex_log_type"]').click(function () {
         let type = $(this).val();
@@ -434,22 +433,21 @@ const showImportOrExportLogDialog = function () {
         let action = $(this).data('action');
         if (action === 'merge' || action === 'overwrite') {
             if (!confirm(`是否将文本框中的日志${action === 'overwrite' ? '覆盖' : '合并'}到本地日志？`)) return;
-            let log = $.trim($('#pd_log_setting').val());
-            if (!log) return;
+            let newLog = $.trim($('#pd_log_setting').val());
+            if (!newLog) return;
             try {
-                log = JSON.parse(log);
+                newLog = JSON.parse(newLog);
             }
             catch (ex) {
                 alert('日志有错误');
                 return;
             }
-            if (!log || $.type(log) !== 'object') {
+            if (!newLog || $.type(newLog) !== 'object') {
                 alert('日志有错误');
                 return;
             }
-            if (action === 'merge') log = getMergeLog(Log, log);
-            Info.w.Log = log;
-            writeLog();
+            if (action === 'merge') log = Log.getMergeLog(log, newLog);
+            Log.write(log);
             alert('日志已导入');
             location.reload();
         }
@@ -458,35 +456,38 @@ const showImportOrExportLogDialog = function () {
         }
     });
     Dialog.show('pd_im_or_ex_log');
-    $('#pd_log_setting').val(JSON.stringify(Log)).select();
+    $('#pd_log_setting').val(JSON.stringify(log)).select();
     $(`input[name="pd_log_sort_type_2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');
     Func.run('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**
  * 显示日志文本
+ * @param {{}} log 日志对象
  */
-const showLogText = function () {
+const showLogText = function (log) {
     let logSortType = $('input[name="pd_log_sort_type_2"]:checked').val();
     let isShowStat = $('#pd_log_show_stat').prop('checked');
     let content = '', lastDate = '';
-    for (let date of Object.keys(Log)) {
-        if (!Array.isArray(Log[date])) continue;
+    for (let date of Object.keys(log)) {
+        if (!Array.isArray(log[date])) continue;
         if (lastDate > date) lastDate = date;
-        content += `【${date}】(共${Log[date].length}项)\n${logSortType === 'type' ? '' : '\n'}` +
-            getLogContent(date, logSortType)
+        content += `【${date}】(共${log[date].length}项)\n${logSortType === 'type' ? '' : '\n'}` +
+            getLogContent(log, date, logSortType)
                 .replace(/<h3>/g, '\n')
                 .replace(/<\/h3>/g, '\n')
                 .replace(/<\/p>/g, '\n')
                 .replace(/(<.+?>|<\/.+?>)/g, '')
                 .replace(/`/g, '');
         if (isShowStat) {
-            content += `${'-'.repeat(46)}\n合计：\n${getLogStat(date, 'cur').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '')}\n`;
+            content += `${'-'.repeat(46)}\n合计：\n${getLogStat(log, date, 'cur')
+                .replace(/<br\s*\/?>/g, '\n')
+                .replace(/(<.+?>|<\/.+?>)/g, '')}\n`;
         }
         content += '='.repeat(46) + '\n';
     }
     if (content && isShowStat) {
-        content += '\n总计：\n' + getLogStat(lastDate, 'all').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '');
+        content += '\n总计：\n' + getLogStat(log, lastDate, 'all').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '');
     }
     $('#pd_log_text').val(content);
 };

@@ -4,7 +4,7 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
-import {push as pushLog} from './Log';
+import * as Log from './Log';
 import * as Public from './Public';
 
 /**
@@ -307,20 +307,20 @@ const useItems = function (options, cycle) {
                     failNum++;
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
                         $(document).clearQueue('UseItems');
                         if (settings.isTypeBatch) $(document).clearQueue('UseItemTypes');
                     }
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (stat['有效道具'] === 0) delete stat['有效道具'];
                         if (stat['无效道具'] === 0) delete stat['无效道具'];
                         if (!cycle && successNum > 0) {
-                            pushLog(
+                            Log.push(
                                 '使用道具',
                                 `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具被使用`,
                                 {
@@ -475,15 +475,15 @@ const restoreItems = function (options, cycle) {
                     $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('RestoreItems');
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (!cycle && (successNum > 0 || failNum > 0)) {
-                            pushLog(
+                            Log.push(
                                 '恢复道具',
                                 `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具恢复成功，共有\`${failNum}\`个道具恢复失败`,
                                 {
@@ -605,7 +605,7 @@ const cycleUseItems = function (type, options, cycle) {
     if (type === 1) {
         showResult(type, cycle.stat);
         Msg.wait(
-            `<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${options.itemIdList.length}</em></i>` +
+            `<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${options.itemIdList.length}</em></i>` +
             `<a class="pd_stop_action" href="#">停止操作</a>`
         );
         setTimeout(function () {
@@ -614,7 +614,7 @@ const cycleUseItems = function (type, options, cycle) {
     }
     else if (type === 2) {
         Msg.wait(
-            `<strong>正在恢复道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${options.itemIdList.length}</em></i>` +
+            `<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${options.itemIdList.length}</em></i>` +
             `<a class="pd_stop_action" href="#">停止操作</a>`
         );
         setTimeout(
@@ -634,7 +634,7 @@ const cycleUseItems = function (type, options, cycle) {
         }
 
         if (cycle.countStat['被使用次数'] > 0) {
-            pushLog(
+            Log.push(
                 '循环使用道具',
                 `对\`${cycle.itemNum}\`个【\`Lv.${options.itemLevel}：${options.itemName}\`】道具进行了\`${cycle.round}\`轮循环使用` +
                 `(被使用次数\`+${cycle.countStat['被使用次数']}\`，恢复成功次数\`+${cycle.countStat['恢复成功次数']}\`，` +
@@ -706,19 +706,19 @@ const convertItemsToEnergy = function (options) {
                     failNum++;
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
                         $(document).clearQueue('ConvertItemsToEnergy');
                         if (settings.isTypeBatch) $(document).clearQueue('ConvertItemTypesToEnergy');
                     }
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         let successEnergyNum = successNum * energyNum;
                         if (successNum > 0) {
-                            pushLog(
+                            Log.push(
                                 '将道具转换为能量',
                                 `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具成功转换为能量`,
                                 {gain: {'能量': successEnergyNum}, pay: {'已使用道具': -successNum}}
@@ -796,15 +796,15 @@ const sellItems = function (options) {
                     failNum++;
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('SellItems');
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (successNum > 0) {
-                            pushLog(
+                            Log.push(
                                 '出售道具',
                                 `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具出售成功`,
                                 {
@@ -873,7 +873,7 @@ export const addSellAndUseItemsButton = function () {
             if (!itemIdList.length) return;
             if (!confirm(`共选择了${itemIdList.length}个道具，是否批量使用道具？`)) return;
             Msg.wait(
-                `<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                `<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                 `<a class="pd_stop_action" href="#">停止操作</a>`
             );
             useItems({
@@ -965,7 +965,7 @@ export const addSellAndUseItemsButton = function () {
                 if (!itemIdList.length) return;
                 if (!confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
                 Msg.wait(
-                    `<strong>正在出售道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                    `<strong>正在出售道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                     `<a class="pd_stop_action" href="#">停止操作</a>`
                 );
                 sellItems({
@@ -1012,7 +1012,7 @@ export const addConvertEnergyAndRestoreItemsButton = function () {
             if (!itemIdList.length) return;
             if (!confirm(`共选择了${itemIdList.length}个道具，是否转换为能量？`)) return;
             Msg.wait(
-                `<strong>正在转换能量中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                `<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                 `<a class="pd_stop_action" href="#">停止操作</a>`
             );
             convertItemsToEnergy({
@@ -1039,7 +1039,7 @@ export const addConvertEnergyAndRestoreItemsButton = function () {
                 return;
             }
             Msg.wait(
-                `<strong>正在恢复道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                `<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                 `<a class="pd_stop_action" href="#">停止操作</a>`
             );
             restoreItems({
@@ -1161,7 +1161,7 @@ export const addBatchUseAndConvertItemTypesButton = function () {
                                 if (action === 'useItemTypes') {
                                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
                                     Msg.wait(
-                                        `<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                                        `<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                                         `<a class="pd_stop_action" href="#">停止操作</a>`
                                     );
                                     useItems({
@@ -1178,7 +1178,7 @@ export const addBatchUseAndConvertItemTypesButton = function () {
                                 else {
                                     console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
                                     Msg.wait(
-                                        `<strong>正在转换能量中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                                        `<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                                         `<a class="pd_stop_action" href="#">停止操作</a>`
                                     );
                                     convertItemsToEnergy({
@@ -1253,7 +1253,7 @@ const bindItemActionLinksClick = function ($element) {
                 }
                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
                 Msg.wait(
-                    `<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                    `<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                     `<a class="pd_stop_action" href="#">停止操作</a>`
                 );
                 useItems({
@@ -1342,7 +1342,7 @@ const bindItemActionLinksClick = function ($element) {
                 }
                 console.log('批量恢复道具Start，恢复道具数量：' + itemIdList.length);
                 Msg.wait(
-                    `<strong>正在恢复道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                    `<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                     `<a class="pd_stop_action" href="#">停止操作</a>`
                 );
                 restoreItems({
@@ -1374,7 +1374,7 @@ const bindItemActionLinksClick = function ($element) {
                 }
                 console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
                 Msg.wait(
-                    `<strong>正在转换能量中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${itemIdList.length}</em></i>` +
+                    `<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
                     `<a class="pd_stop_action" href="#">停止操作</a>`
                 );
                 convertItemsToEnergy({
@@ -1749,15 +1749,15 @@ const buyItems = function (options) {
                     failNum++;
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BatchBuyItems');
 
                     if (isStop || index === settings.num - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (successNum > 0) {
-                            pushLog(
+                            Log.push(
                                 '购买道具',
                                 `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具购买成功`,
                                 {gain: {'道具': successNum}}
@@ -1816,7 +1816,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
         }
     });
     if (!marketPrice) marketPrice = 1;
-    Msg.wait(`<strong>正在统计购买价格中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${totalNum}</em></i>`);
+    Msg.wait(`<strong>正在统计购买价格中&hellip;</strong><i>剩余：<em class="pd_countdown">${totalNum}</em></i>`);
     $(document).clearQueue('StatBuyItemsPrice');
     $result.find('li > a').each(function (index) {
         let $this = $(this);
@@ -1828,8 +1828,8 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                 url: `kf_fw_ig_my.php?pro=${itemId}&t=${new Date().getTime()}`,
                 timeout: Const.defAjaxTimeout,
                 success (html) {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
                     let matches = /从商店购买，购买价(\d+)KFB。<br/.exec(html);
                     if (matches) {
                         successNum++;
@@ -1853,7 +1853,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                     if (index === totalNum - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            pushLog(
+                            Log.push(
                                 '统计道具购买价格',
                                 `共有\`${successNum}\`个【\`Lv.${itemLevel}：${itemName}\`】道具统计成功` +
                                 `${failNum > 0 ? `（共有\`${failNum}\`个道具未能统计成功）` : ''}，总计价格：\`${totalPrice.toLocaleString()}\`，` +
@@ -1934,7 +1934,7 @@ export const addBatchBuyItemsLink = function () {
         );
         if (!num || num < 0) return;
         Msg.wait(
-            `<strong>正在购买道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
+            `<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
         );
         buyItems({itemTypeId, num, safeId, itemLevel, itemName});
     });

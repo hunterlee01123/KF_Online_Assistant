@@ -6,7 +6,7 @@ import * as Msg from './Msg';
 import * as Dialog from './Dialog';
 import * as Func from './Func';
 import Const from './Const';
-import {push as pushLog} from './Log';
+import * as Log from './Log';
 import * as Public from './Public';
 import * as Post from './Post';
 
@@ -259,7 +259,7 @@ export const addStatRepliersLink = function () {
         }
 
         Msg.wait(
-            `<strong>正在统计回帖名单中&hellip;</strong><i>剩余页数：<em id="pd_remaining_num">${endPage - startPage + 1}</em></i>` +
+            `<strong>正在统计回帖名单中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${endPage - startPage + 1}</em></i>` +
             `<a class="pd_stop_action" href="#">停止操作</a>`
         );
         let isStop = false;
@@ -291,9 +291,9 @@ export const addStatRepliersLink = function () {
                         alert('因连接超时，统计回帖名单操作中止');
                     },
                     complete () {
-                        let $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                        let $countdown = $('.pd_countdown');
+                        $countdown.text(parseInt($countdown.text()) - 1);
+                        isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                         if (isStop) $(document).clearQueue('StatRepliers');
 
                         if (isStop || index === endPage - 1) {
@@ -470,7 +470,7 @@ export const addBatchBuyThreadButton = function () {
                 )
             ) {
                 Msg.wait(
-                    `<strong>正在购买帖子中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${threadList.length}</em></i>` +
+                    `<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${threadList.length}</em></i>` +
                     `<a class="pd_stop_action" href="#">停止操作</a>`
                 );
                 buyThreads(threadList);
@@ -526,15 +526,15 @@ export const buyThreads = function (threadList) {
                     failNum++;
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BuyThreads');
 
                     if (isStop || index === threadList.length - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            pushLog('购买帖子', `共有\`${successNum}\`个帖子购买成功`, {pay: {'KFB': -totalSell}});
+                            Log.push('购买帖子', `共有\`${successNum}\`个帖子购买成功`, {pay: {'KFB': -totalSell}});
                         }
                         console.log(`共有${successNum}个帖子购买成功，共有${failNum}个帖子购买失败，KFB-${totalSell}`);
                         Msg.show(

@@ -7,7 +7,7 @@ import * as Dialog from './Dialog';
 import * as Func from './Func';
 import Const from './Const';
 import {show as showConfigDialog} from './ConfigDialog';
-import {push as pushLog} from './Log';
+import * as Log from './Log';
 import {show as showLogDialog} from './LogDialog';
 import * as TmpLog from './TmpLog';
 
@@ -356,7 +356,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
                     if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
                     if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
                 }
-                pushLog('捐款', `捐款\`${kfb}\`KFB`, {gain: gain, pay: {'KFB': -kfb}});
+                Log.push('捐款', `捐款\`${kfb}\`KFB`, {gain: gain, pay: {'KFB': -kfb}});
             }
             Msg.show(msg);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
@@ -894,7 +894,7 @@ export const autoSaveCurrentDeposit = function (isRead) {
             function (html) {
                 showFormatLog('自动存款', html);
                 if (/完成存款/.test(html)) {
-                    pushLog('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
+                    Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
                     console.log(`共有${money}KFB已自动存入活期存款`);
                     Msg.show(`共有<em>${money}</em>KFB已自动存入活期存款`);
                     if (Info.isInHomePage) $kfb.text(`拥有${income - money}KFB`);

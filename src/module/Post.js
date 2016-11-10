@@ -49,7 +49,7 @@ export const handleMultiQuote = function (type = 1) {
     let keywords = new Set();
     let content = '';
     if (type === 2) {
-        Msg.wait(`<strong>正在获取引用内容中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${list.length}</em></i>`);
+        Msg.wait(`<strong>正在获取引用内容中&hellip;</strong><i>剩余：<em class="pd_countdown">${list.length}</em></i>`);
         $(document).clearQueue('MultiQuote');
     }
     $.each(list, function (index, data) {
@@ -65,8 +65,8 @@ export const handleMultiQuote = function (type = 1) {
                                     Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')
                                 ) + (index === list.length - 1 ? '' : '\n');
                         }
-                        let $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                        let $countdown = $('.pd_countdown');
+                        $countdown.text(parseInt($countdown.text()) - 1);
                         if (index === list.length - 1) {
                             Msg.destroy();
                             $('#textarea').val(content).focus();

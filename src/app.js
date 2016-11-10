@@ -3,7 +3,6 @@ import Info from './module/Info';
 import * as Util from './module/Util';
 import Const from './module/Const';
 import {init as initConfig} from './module/Config';
-import {init as initLog} from './module/Log';
 import * as Public from './module/Public';
 import * as Index from './module/Index';
 import * as Read from './module/Read';
@@ -25,7 +24,6 @@ $(function () {
     if (!Public.getUidAndUserName()) return;
     Public.addPolyfill();
     initConfig();
-    initLog();
     Public.checkBrowserType();
     Public.appendCss();
     Public.addConfigAndLogDialogLink();

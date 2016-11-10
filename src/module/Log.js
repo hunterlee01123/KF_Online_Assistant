@@ -8,40 +8,35 @@ import Const from './Const';
 const name = 'pd_log';
 
 /**
- * 初始化
- */
-export const init = function () {
-    if (typeof unsafeWindow === 'undefined') window.Log = {};
-    else unsafeWindow.Log = {};
-};
-
-/**
  * 读取日志
+ * @returns {{}} 日志对象
  */
 export const read = function () {
-    Info.w.Log = {};
+    let log = {};
     let options = null;
     if (Info.storageType === 'ByUid' || Info.storageType === 'Global') options = GM_getValue(name + '_' + Info.uid);
     else options = localStorage.getItem(name + '_' + Info.uid);
-    if (!options) return;
+    if (!options) return log;
     try {
         options = JSON.parse(options);
     }
     catch (ex) {
-        return;
+        return log;
     }
-    if (!options || $.type(options) !== 'object') return;
-    Info.w.Log = options;
-    if (!Util.getCookie(Const.checkOverdueLogCookieName)) deleteOverdueLog();
+    if (!options || $.type(options) !== 'object') return log;
+    log = options;
+    if (!Util.getCookie(Const.checkOverdueLogCookieName)) deleteOverdueLog(log);
+    return log;
 };
 
 /**
  * 写入日志
+ * @param {{}} log 日志对象
  */
-export const write = function () {
+export const write = function (log) {
     if (Info.storageType === 'ByUid' || Info.storageType === 'Global')
-        GM_setValue(name + '_' + Info.uid, JSON.stringify(Info.w.Log));
-    else localStorage.setItem(name + '_' + Info.uid, JSON.stringify(Info.w.Log));
+        GM_setValue(name + '_' + Info.uid, JSON.stringify(log));
+    else localStorage.setItem(name + '_' + Info.uid, JSON.stringify(log));
 };
 
 /**
@@ -54,19 +49,20 @@ export const clear = function () {
 
 /**
  * 删除过期日志
+ * @param {{}} log 日志对象
  */
-const deleteOverdueLog = function () {
-    let dateList = Util.getObjectKeyList(Log, 1);
+const deleteOverdueLog = function (log) {
+    let dateList = Util.getObjectKeyList(log, 1);
     let overdueDate = Util.getDateString(Util.getDate(`-${Config.logSaveDays}d`));
     let isDeleted = false;
     for (let date of dateList) {
         if (date <= overdueDate) {
-            delete Log[date];
+            delete log[date];
             isDeleted = true;
         }
         else break;
     }
-    if (isDeleted) write();
+    if (isDeleted) write(log);
     Util.setCookie(Const.checkOverdueLogCookieName, 1, Util.getMidnightHourDate(1));
 };
 
@@ -84,10 +80,10 @@ export const push = function (type, action, {gain = null, pay = null} = {}) {
     let settings = {time, type, action};
     if (gain) settings['gain'] = gain;
     if (pay) settings['pay'] = pay;
-    read();
-    if (!Array.isArray(Info.w.Log[today])) Info.w.Log[today] = [];
-    Info.w.Log[today].push(settings);
-    write();
+    let log = read();
+    if (!Array.isArray(log[today])) log[today] = [];
+    log[today].push(settings);
+    write(log);
 };
 
 /**

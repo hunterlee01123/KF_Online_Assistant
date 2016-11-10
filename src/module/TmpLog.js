@@ -5,25 +5,24 @@ import Const from './Const';
 
 // 保存临时日志的键值名称
 const name = 'pd_tmp_log';
-// 临时日志对象
-let log = {};
 
 /**
  * 读取临时日志
+ * @returns {{}} 临时日志对象
  */
 export const read = function () {
-    log = {};
+    let log = {};
     let options = null;
     if (Info.storageType === 'ByUid' || Info.storageType === 'Global') options = GM_getValue(name + '_' + Info.uid);
     else options = localStorage.getItem(name + '_' + Info.uid);
-    if (!options) return;
+    if (!options) return log;
     try {
         options = JSON.parse(options);
     }
     catch (ex) {
-        return;
+        return log;
     }
-    if (!options || $.type(options) !== 'object') return;
+    if (!options || $.type(options) !== 'object') return log;
     let allowKeys = [];
     for (let k in Const) {
         if (k.endsWith('TmpLogName')) allowKeys.push(Const[k]);
@@ -32,12 +31,13 @@ export const read = function () {
         if (!allowKeys.includes(k)) delete options[k];
     }
     log = options;
+    return log;
 };
 
 /**
  * 写入临时日志
  */
-export const write = function () {
+export const write = function (log) {
     if (Info.storageType === 'ByUid' || Info.storageType === 'Global')
         GM_setValue(name + '_' + Info.uid, JSON.stringify(log));
     else localStorage.setItem(name + '_' + Info.uid, JSON.stringify(log));
@@ -57,7 +57,7 @@ export const clear = function () {
  * @returns {*} 日志内容
  */
 export const getValue = function (key) {
-    read();
+    let log = read();
     return key in log ? log[key] : null;
 };
 
@@ -67,9 +67,9 @@ export const getValue = function (key) {
  * @param {*} value 日志内容
  */
 export const setValue = function (key, value) {
-    read();
+    let log = read();
     log[key] = value;
-    write();
+    write(log);
 };
 
 /**
@@ -77,9 +77,9 @@ export const setValue = function (key, value) {
  * @param {string} key 日志名称
  */
 export const deleteValue = function (key) {
-    read();
+    let log = read();
     if (key in log) {
         delete log[key];
-        write();
+        write(log);
     }
 };

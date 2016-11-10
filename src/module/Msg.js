@@ -3,24 +3,30 @@
 
 /**
  * 显示消息
- * @param {string} msg 消息
- * @param {number} duration 消息持续时间（秒），-1为永久显示
- * @param {boolean} clickable 消息框可否手动点击消除
- * @param {boolean} preventable 是否阻止点击网页上的其它元素
+ * @param {(string|Object)} options 消息或设置对象
+ * @param {string} [options.msg] 消息
+ * @param {number} [options.duration={@link Config.defShowMsgDuration}] 消息显示时间（秒），-1为永久显示
+ * @param {boolean} [options.clickable=true] 消息框可否手动点击消除
+ * @param {boolean} [options.preventable=false] 是否阻止点击网页上的其它元素
+ * @param {number} [duration] 消息显示时间（秒），-1为永久显示
  * @example
  * show('<strong>抽取道具或卡片</strong><i>道具<em>+1</em></i>', -1);
  * show({msg: '<strong>抽取神秘盒子</strong><i>KFB<em>+8</em></i>', duration: 20, clickable: false});
  * @returns {jQuery} 消息框对象
  */
-export const show = function ({
-    msg = '',
-    duration = Config.defShowMsgDuration,
-    clickable = true,
-    preventable = false,
-} = {}) {
-    if (arguments.length > 0) {
-        if (typeof arguments[0] === 'string') msg = arguments[0];
-        if (typeof arguments[1] === 'number') duration = arguments[1];
+export const show = function (options, duration) {
+    let settings = {
+        msg: '',
+        duration: Config.defShowMsgDuration,
+        clickable: true,
+        preventable: false,
+    };
+    if ($.type(options) === 'object') {
+        $.extend(settings, options);
+    }
+    else {
+        settings.msg = options;
+        settings.duration = typeof duration === 'undefined' ? Config.defShowMsgDuration : duration;
     }
 
     if ($('.pd_msg').length > 20) destroy();
@@ -37,19 +43,19 @@ export const show = function ({
             }
         }
     }
-    if (preventable && !$('.pd_mask').length) {
+    if (settings.preventable && !$('.pd_mask').length) {
         $('<div class="pd_mask"></div>').appendTo('body');
     }
     if (isFirst) {
         $container = $('<div class="pd_msg_container"></div>').appendTo('body');
     }
 
-    let $msg = $(`<div class="pd_msg">${msg}</div>`).appendTo($container);
+    let $msg = $(`<div class="pd_msg">${settings.msg}</div>`).appendTo($container);
     $msg.on('click', 'a.pd_stop_action', function (e) {
         e.preventDefault();
         $(this).html('正在停止&hellip;').closest('.pd_msg').data('stop', true);
     });
-    if (clickable) {
+    if (settings.clickable) {
         $msg.css('cursor', 'pointer').click(function () {
             $(this).stop(true, true).fadeOut('slow', function () {
                 remove($(this));
@@ -75,8 +81,8 @@ export const show = function ({
         'top': $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0,
         left
     }).fadeIn('slow');
-    if (duration !== -1) {
-        $msg.delay(duration * 1000).fadeOut('slow', function () {
+    if (settings.duration !== -1) {
+        $msg.delay(settings.duration * 1000).fadeOut('slow', function () {
             remove($(this));
         });
     }
@@ -104,7 +110,7 @@ export const remove = function ($msg) {
         $parent.remove();
         $('.pd_mask').remove();
     }
-    else if (!$('#pd_remaining_num').length) {
+    else if (!$('.pd_countdown').length) {
         $('.pd_mask').remove();
     }
 };

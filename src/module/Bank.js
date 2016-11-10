@@ -4,7 +4,7 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
-import {push as pushLog} from './Log';
+import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 import * as Public from './Public';
 
@@ -133,14 +133,14 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit) {
                     );
                 },
                 complete () {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('Bank');
 
                     if (isStop || index === users.length - 1) {
                         if (successNum > 0) {
-                            pushLog('批量转账', `共有\`${successNum}\`名用户转账成功`, {pay: {'KFB': -successMoney}});
+                            Log.push('批量转账', `共有\`${successNum}\`名用户转账成功`, {pay: {'KFB': -successMoney}});
                         }
                         Msg.destroy();
                         let $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("活期存款：")');
@@ -300,7 +300,7 @@ export const addBatchTransferButton = function () {
                     $(document).dequeue('Bank');
                 }
                 Msg.wait(
-                    `<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em id="pd_remaining_num">${users.length}</em></i>` +
+                    `<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` +
                     `<a class="pd_stop_action" href="#">停止操作</a>`
                 );
                 $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');

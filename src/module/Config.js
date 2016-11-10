@@ -2,11 +2,7 @@
 'use strict';
 import Info from './Info';
 import * as Util from './Util';
-import Const from './Const';
-import {
-    read as readLog,
-    write as writeLog,
-} from './Log';
+import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 
 // 保存设置的键值名称
@@ -221,15 +217,15 @@ export const clear = function () {
  * @param {string} storageType 要更改的存储类型
  */
 export const changeStorageType = function (storageType) {
-    readLog();
-    TmpLog.read();
+    let log = Log.read();
+    let tmpLog = TmpLog.read();
     Info.storageType = storageType;
     if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', Info.storageType);
-    if (!Util.deepEqual(Config, Info.w.Config) || !$.isEmptyObject(Info.w.Log)) {
+    if (!Util.deepEqual(Config, Info.w.Config) || !$.isEmptyObject(log)) {
         if (confirm('是否将助手设置和日志转移到对应存储类型中？（对应存储类型中的数据将被覆盖）')) {
             write();
-            writeLog();
-            TmpLog.write();
+            Log.write(log);
+            TmpLog.write(tmpLog);
         }
     }
 };

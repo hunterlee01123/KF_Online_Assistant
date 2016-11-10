@@ -4,7 +4,7 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
-import {push as pushLog} from './Log';
+import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 
 /**
@@ -96,7 +96,7 @@ export const smLevelUpAlert = function () {
         if (diff >= Const.smLevelUpAlertInterval) {
             let date = new Date(data.time);
             writeData(smLevel);
-            pushLog(
+            Log.push(
                 '神秘等级升级',
                 `自\`${Util.getDateString(date)}\`以来，你的神秘等级共上升了\`${smLevel - data.smLevel}\`级 (Lv.\`${data.smLevel}\`->Lv.\`${smLevel}\`)`
             );
@@ -137,7 +137,7 @@ export const smRankChangeAlert = function () {
             let date = new Date(data.time);
             let isUp = smRank < data.smRank;
             writeData(smRank);
-            pushLog(
+            Log.push(
                 '神秘系数排名变化',
                 `自\`${Util.getDateString(date)}\`以来，你的神秘系数排名共\`${isUp ? '上升' : '下降'}\`了\`${Math.abs(smRank - data.smRank)}\`名 ` +
                 `(No.\`${data.smRank}\`->No.\`${smRank}\`)`
@@ -176,7 +176,7 @@ export const showVipSurplusTime = function () {
      */
     let addVipHoursTips = function (hours) {
         $('a[href="kf_growup.php"][title="用户等级和权限"]').parent().after(
-            `<div class="line"></div><div style="width:300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` +
+            `<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` +
             `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`
         );
     };

@@ -334,7 +334,7 @@ const setValue = function () {
 
 /**
  * 获取对话框中字段值的Config对象
- * @returns {Config} 字段值的Config对象
+ * @returns {{}} 字段值的Config对象
  */
 const getValue = function () {
     let options = {};
