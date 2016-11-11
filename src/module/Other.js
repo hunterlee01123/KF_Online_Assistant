@@ -287,120 +287,123 @@ export const addAutoChangeIdColorButton = function () {
 
     let $idColors = $autoChangeIdColor.parent('tr').nextAll('tr').not('tr:last');
     if ($idColors.find('a').length <= 1) return;
-    $(`<form><div id="pd_auto_change_sm_color_btns" style="margin-top: 5px;">
-<label><input id="pd_cfg_auto_change_sm_color_enabled" class="pd_input" type="checkbox"> 自动更换ID颜色</label></div></form>`)
-        .appendTo($autoChangeIdColor)
-        .find('#pd_cfg_auto_change_sm_color_enabled')
-        .click(function () {
-            let $this = $(this);
-            let enabled = $this.prop('checked');
-            if (enabled !== Config.autoChangeSMColorEnabled) {
-                readConfig();
-                Config.autoChangeSMColorEnabled = enabled;
-                writeConfig();
-            }
+    let $area = $(`
+<form>
+<div data-name="autoChangeIdColorBtns" style="margin-top: 5px;">
+  <label><input name="autoChangeIdColorEnabled" class="pd_input" type="checkbox"> 自动更换ID颜色</label>
+</div>
+</form>
+`).appendTo($autoChangeIdColor);
+    $area.find('[name="autoChangeIdColorEnabled"]').click(function () {
+        let $this = $(this);
+        let enabled = $this.prop('checked');
+        if (enabled !== Config.autoChangeIdColorEnabled) {
+            readConfig();
+            Config.autoChangeIdColorEnabled = enabled;
+            writeConfig();
+        }
 
-            if (enabled) {
-                $idColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
-                $(`
-<label>更换顺序
-  <select id="pd_cfg_auto_change_sm_color_type" style="font-size: 12px;">
-    <option value="random">随机</option>
-    <option value="sequence">顺序</option>
+        if (enabled) {
+            $idColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
+            $(`
+<label class="pd_cfg_ml">
+  更换顺序
+  <select name="autoChangeIdColorType" style="font-size: 12px;">
+    <option value="random">随机</option><option value="sequence">顺序</option>
   </select>
-</label>
-<label>每隔 <input id="pd_cfg_auto_change_sm_color_interval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> 小时</label>
-<button>保存</button><button style="margin-left: 3px;">重置</button><br>
-<a href="#">全选</a><a style="margin-left: 7px; margin-right: 10px;" href="#">反选</a>
-<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox"> 选择当前所有可用的ID颜色</label>
+</label>&nbsp;
+<label>每隔 <input name="autoChangeIdColorInterval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> 小时</label>
+<button>保存</button> <button style="margin-left: 3px;">重置</button><br>
+<a class="pd_btn_link" href="#">全选</a> <a class="pd_btn_link" href="#">反选</a>
+<label><input name="changeAllAvailableIdColorEnabled" class="pd_input" type="checkbox"> 选择当前所有可用的ID颜色</label>
 `).insertAfter($this.parent()).filter('button:first').click(function (e) {
-                    e.preventDefault();
-                    let $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
-                    let interval = parseInt($autoChangeSMColorInterval.val());
-                    if (isNaN(interval) || interval <= 0) {
-                        alert('ID颜色更换时间间隔格式不正确');
-                        $autoChangeSMColorInterval.select();
-                        $autoChangeSMColorInterval.focus();
-                        return;
-                    }
-                    let changeAllAvailableSMColorEnabled = $('#pd_cfg_change_all_available_sm_color_enabled').prop('checked');
-                    let customChangeSMColorList = [];
-                    $idColors.find('input[type="checkbox"]:checked').each(function () {
-                        customChangeSMColorList.push(parseInt($(this).val()));
-                    });
-                    if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
-                        alert('必须选择2种或以上的ID颜色');
-                        return;
-                    }
-                    if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
-
-                    let oriInterval = Config.autoChangeSMColorInterval;
-                    readConfig();
-                    Config.autoChangeSMColorType = $('#pd_cfg_auto_change_sm_color_type').val().toLowerCase();
-                    Config.autoChangeSMColorInterval = interval;
-                    Config.changeAllAvailableSMColorEnabled = changeAllAvailableSMColorEnabled;
-                    Config.customAutoChangeSMColorList = customChangeSMColorList;
-                    writeConfig();
-                    if (oriInterval !== Config.autoChangeSMColorInterval)
-                        Util.deleteCookie(Const.autoChangeSMColorCookieName);
-                    alert('设置保存成功');
-                }).end().filter('button:eq(1)').click(function (e) {
-                    e.preventDefault();
-                    readConfig();
-                    Config.autoChangeSMColorEnabled = defConfig.autoChangeSMColorEnabled;
-                    Config.autoChangeSMColorType = defConfig.autoChangeSMColorType;
-                    Config.autoChangeSMColorInterval = defConfig.autoChangeSMColorInterval;
-                    Config.changeAllAvailableSMColorEnabled = defConfig.changeAllAvailableSMColorEnabled;
-                    Config.customAutoChangeSMColorList = defConfig.customAutoChangeSMColorList;
-                    writeConfig();
-                    Util.deleteCookie(Const.autoChangeSMColorCookieName);
-                    TmpLog.deleteValue(Const.prevAutoChangeSMColorIdTmpLogName);
-                    alert('设置已重置');
-                    location.reload();
-                }).end().filter('a').click(function (e) {
-                    e.preventDefault();
-                    if ($idColors.find('input[disabled]').length > 0) {
-                        alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
-                        $('#pd_cfg_change_all_available_sm_color_enabled').focus();
-                        return;
-                    }
-                    if ($(this).is('#pd_auto_change_sm_color_btns > a:first')) {
-                        $idColors.find('input[type="checkbox"]').prop('checked', true);
-                    }
-                    else {
-                        $idColors.find('input[type="checkbox"]').each(function () {
-                            $(this).prop('checked', !$(this).prop('checked'));
-                        });
-                    }
-                });
-
-                $idColors.find('td:has(a)').each(function () {
-                    let $this = $(this);
-                    let matches = /&color=(\d+)/i.exec($this.find('a').attr('href'));
-                    if (matches) $this.append(`<input type="checkbox" class="pd_input" value="${matches[1]}">`);
-                });
-
-                $('#pd_cfg_auto_change_sm_color_type').val(Config.autoChangeSMColorType);
-                $('#pd_cfg_auto_change_sm_color_interval').val(Config.autoChangeSMColorInterval);
-                $('#pd_cfg_change_all_available_sm_color_enabled').click(function () {
-                    $idColors.find('input').prop('disabled', $(this).prop('checked'));
-                }).prop('checked', Config.changeAllAvailableSMColorEnabled).triggerHandler('click');
-                for (let i in Config.customAutoChangeSMColorList) {
-                    $idColors.find(`input[value="${Config.customAutoChangeSMColorList[i]}"]`).prop('checked', true);
+                e.preventDefault();
+                let $autoChangeIdColorInterval = $area.find('[name="autoChangeIdColorInterval"]');
+                let interval = parseInt($autoChangeIdColorInterval.val());
+                if (isNaN(interval) || interval <= 0) {
+                    alert('ID颜色更换时间间隔格式不正确');
+                    $autoChangeIdColorInterval.select();
+                    $autoChangeIdColorInterval.focus();
+                    return;
                 }
+                let changeAllAvailableSMColorEnabled = $area.find('[name="changeAllAvailableIdColorEnabled"]').prop('checked');
+                let customChangeSMColorList = [];
+                $idColors.find('[type="checkbox"]:checked').each(function () {
+                    customChangeSMColorList.push(parseInt($(this).val()));
+                });
+                if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
+                    alert('必须选择2种或以上的ID颜色');
+                    return;
+                }
+                if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
+
+                let oriInterval = Config.autoChangeIdColorInterval;
+                readConfig();
+                Config.autoChangeIdColorType = $area.find('[name="autoChangeIdColorType"]').val().toLowerCase();
+                Config.autoChangeIdColorInterval = interval;
+                Config.changeAllAvailableIdColorEnabled = changeAllAvailableSMColorEnabled;
+                Config.customAutoChangeIdColorList = customChangeSMColorList;
+                writeConfig();
+                if (oriInterval !== Config.autoChangeIdColorInterval)
+                    Util.deleteCookie(Const.autoChangeIdColorCookieName);
+                alert('设置保存成功');
+            }).end().filter('button:eq(1)').click(function (e) {
+                e.preventDefault();
+                readConfig();
+                Config.autoChangeIdColorEnabled = defConfig.autoChangeIdColorEnabled;
+                Config.autoChangeIdColorType = defConfig.autoChangeIdColorType;
+                Config.autoChangeIdColorInterval = defConfig.autoChangeIdColorInterval;
+                Config.changeAllAvailableIdColorEnabled = defConfig.changeAllAvailableIdColorEnabled;
+                Config.customAutoChangeIdColorList = defConfig.customAutoChangeIdColorList;
+                writeConfig();
+                Util.deleteCookie(Const.autoChangeIdColorCookieName);
+                TmpLog.deleteValue(Const.prevAutoChangeSMColorIdTmpLogName);
+                alert('设置已重置');
+                location.reload();
+            }).end().filter('a').click(function (e) {
+                e.preventDefault();
+                if ($idColors.find('input[disabled]').length > 0) {
+                    alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
+                    $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
+                    return;
+                }
+                if ($(this).is('[data-name="autoChangeIdColorBtns"] > a:first')) {
+                    $idColors.find('[type="checkbox"]').prop('checked', true);
+                }
+                else {
+                    $idColors.find('[type="checkbox"]').each(function () {
+                        $(this).prop('checked', !$(this).prop('checked'));
+                    });
+                }
+            });
+
+            $idColors.find('td:has(a)').each(function () {
+                let $this = $(this);
+                let matches = /&color=(\d+)/i.exec($this.find('a').attr('href'));
+                if (matches) $this.append(`<input type="checkbox" class="pd_input" value="${matches[1]}">`);
+            });
+
+            $area.find('[name="autoChangeIdColorType"]').val(Config.autoChangeIdColorType);
+            $area.find('[name="autoChangeIdColorInterval"]').val(Config.autoChangeIdColorInterval);
+            $area.find('[name="changeAllAvailableIdColorEnabled"]').click(function () {
+                $idColors.find('input').prop('disabled', $(this).prop('checked'));
+            }).prop('checked', Config.changeAllAvailableIdColorEnabled).triggerHandler('click');
+            for (let id of Config.customAutoChangeIdColorList) {
+                $idColors.find(`input[value="${id}"]`).prop('checked', true);
             }
-            else {
-                $this.parent().nextAll().remove();
-                $idColors.removeClass('pd_sm_color_select').find('input').remove();
-            }
-        });
+        }
+        else {
+            $this.parent().nextAll().remove();
+            $idColors.removeClass('pd_sm_color_select').find('input').remove();
+        }
+    });
 
     $idColors.on('click', 'td', function (e) {
         if (!$(e.target).is('a')) {
             let $this = $(this);
             if ($this.find('input[disabled]').length > 0) {
                 alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
-                $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
             }
             else if (!$(e.target).is('input')) {
                 $this.find('input').click();
@@ -408,12 +411,12 @@ export const addAutoChangeIdColorButton = function () {
         }
     });
 
-    if (Config.autoChangeSMColorEnabled) {
-        $('#pd_cfg_auto_change_sm_color_enabled').prop('checked', true).triggerHandler('click');
+    if (Config.autoChangeIdColorEnabled) {
+        $area.find('[name="autoChangeIdColorEnabled"]').prop('checked', true).triggerHandler('click');
     }
 
-    $('div[style="float: right; color: #8080c0;"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
-    $('div[style="border-bottom: #8000ff 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
+    $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
+    $('div[style="border-bottom:#8000FF 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
 };
 
 /**

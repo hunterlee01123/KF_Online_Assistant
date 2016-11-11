@@ -49,7 +49,7 @@ export const Config = {
 
     // 是否调整帖子内容宽度，使其保持一致，true：开启；false：关闭
     adjustThreadContentWidthEnabled: false,
-    // 帖子内容字体大小，留空表示使用默认大小，推荐值：14
+    // 帖子内容字体大小，设为0表示使用默认大小，推荐值：14
     threadContentFontSize: 0,
     // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空
     customMySmColor: '',
@@ -148,15 +148,15 @@ export const Config = {
     saveCurrentDepositKfb: 0,
 
     // 是否自动更换ID颜色，true：开启；false：关闭
-    autoChangeSMColorEnabled: false,
+    autoChangeIdColorEnabled: false,
     // 自动更换ID颜色的更换顺序类型，random：随机；sequence：顺序
-    autoChangeSMColorType: 'random',
+    autoChangeIdColorType: 'random',
     // 自动更换ID颜色的时间间隔（小时）
-    autoChangeSMColorInterval: 24,
+    autoChangeIdColorInterval: 24,
     // 是否从当前所有可用的ID颜色中进行更换，true：开启；false：关闭
-    changeAllAvailableSMColorEnabled: true,
-    // 自定义自动更换ID颜色的ID列表，例：[1,8,13,20]
-    customAutoChangeSMColorList: [],
+    changeAllAvailableIdColorEnabled: true,
+    // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
+    customAutoChangeIdColorList: [],
 };
 
 /**

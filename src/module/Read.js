@@ -160,13 +160,14 @@ export const addCopyBuyersListLink = function () {
                 alert('暂时无人购买');
                 return;
             }
-            if ($('#pd_copy_buyer_list').length > 0) return;
+            const dialogName = 'pd_copy_buyer_list';
+            if ($('#' + dialogName).length > 0) return;
             let html = `
 <div class="pd_cfg_main">
   <textarea style="width: 200px; height: 300px; margin: 5px 0;" readonly></textarea>
 </div>`;
-            let $dialog = Dialog.create('pd_copy_buyer_list', '购买人名单', html);
-            Dialog.show('pd_copy_buyer_list');
+            let $dialog = Dialog.create(dialogName, '购买人名单', html);
+            Dialog.show(dialogName);
             $dialog.find('textarea').val(buyerList.join('\n')).select().focus();
         });
 };
@@ -176,19 +177,20 @@ export const addCopyBuyersListLink = function () {
  * @param {string[]} replierList 回帖者名单列表
  */
 export const showStatRepliersDialog = function (replierList) {
+    const dialogName = 'pd_replier_list';
     let html = `
 <div class="pd_cfg_main">
-  <div id="pd_replier_list_filter" style="margin-top: 5px;">
-    <label><input type="checkbox" checked>显示楼层号</label>
-    <label><input type="checkbox">去除重复</label>
-    <label><input type="checkbox">去除楼主</label>
+  <div data-name="replierListFilter" style="margin-top: 5px;">
+    <label><input type="checkbox" checked> 显示楼层号</label>
+    <label><input type="checkbox"> 去除重复</label>
+    <label><input type="checkbox"> 去除楼主</label>
   </div>
-  <div style="color: #ff0000;" id="pd_replier_list_stat"></div>
+  <div style="color: #f00;" id="pd_replier_list_stat"></div>
   <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
 </div>`;
-    let $dialog = Dialog.create('pd_replier_list', '回帖者名单', html);
+    let $dialog = Dialog.create(dialogName, '回帖者名单', html);
 
-    let $filterNodes = $dialog.find('#pd_replier_list_filter input');
+    let $filterNodes = $dialog.find('[data-name="replierListFilter"] input');
     $filterNodes.click(function () {
         let list = [...replierList];
         let isShowFloor = $filterNodes.eq(0).prop('checked'),
@@ -211,9 +213,9 @@ export const showStatRepliersDialog = function (replierList) {
         $dialog.find('textarea').val(content);
         $('#pd_replier_list_stat').html(`共有<b>${num}</b>条项目`);
     });
-    $dialog.find('#pd_replier_list_filter input:first').triggerHandler('click');
+    $dialog.find('[data-name="replierListFilter"] input:first').triggerHandler('click');
 
-    Dialog.show('pd_replier_list');
+    Dialog.show(dialogName);
     $dialog.find('input:first').focus();
 };
 

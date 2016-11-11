@@ -171,7 +171,7 @@ $(function () {
 
     if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
 
-    if (Config.autoChangeSMColorEnabled && !Util.getCookie(Const.autoChangeSMColorCookieName)) Public.changeIdColor();
+    if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) Public.changeIdColor();
 
     if (Config.autoRefreshEnabled && Info.isInHomePage) Public.startAutoRefreshMode();
 

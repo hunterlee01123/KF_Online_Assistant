@@ -74,7 +74,7 @@ export const appendCss = function () {
   .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }
   .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }
   .pd_msg a { font-weight: bold; margin-left: 15px; }
-  .pd_stat i { font-style: normal; margin-right: 3px; }
+  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }
   .pd_stat .pd_notice { margin-left: 5px; }
   .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
   .pd_highlight { color: #ff0000 !important; }
@@ -114,11 +114,6 @@ export const appendCss = function () {
   .pd_verify_tips_conditional { color: #ff9900; }
   .pd_verify_tips_unable { color: #ff0033; }
   .pd_verify_tips_details { cursor: pointer; }
-  #pd_monster_loot_info_panel em { font-style: normal; cursor: help; }
-  #pd_attack_log_content {
-    width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191ff; overflow: auto;
-    line-height: 1.6em; background-color: #fff;
-  }
   .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }
   .pd_usable_num { color: #669933; }
   .pd_used_num { color: #ff0033; }
@@ -137,10 +132,11 @@ export const appendCss = function () {
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
   .readtext img[onclick] { max-width: 550px; }
-  .pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }
-  .pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }
+  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }
+  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_item_type_chk { margin-right: 5px; }
+  .pd_btn_link { margin-left: 4px; margin-right: 4px; }
 
   /* 设置对话框 */
   .pd_cfg_box {
@@ -148,15 +144,14 @@ export const appendCss = function () {
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
     -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
-  .pd_cfg_box h1 {text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px; }
+  .pd_cfg_box h1 {
+    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;
+  }
   .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }
-  #pd_custom_sm_color { width: 360px; }
   .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }
-  .pd_cfg_nav a { margin-left: 10px; }
   .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 50px; overflow: auto; }
   .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }
   .pd_cfg_main legend { font-weight: bold; }
-  .pd_cfg_main label input, .pd_cfg_main legend input, .pd_cfg_main label select { margin: 0 5px; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
   .pd_cfg_main button { vertical-align: middle; }
   .pd_cfg_main .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
@@ -165,11 +160,9 @@ export const appendCss = function () {
   .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }
   .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }
-  .pd_cfg_btns button { width: 80px; margin-left: 5px; }
+  .pd_cfg_btns button { min-width: 80px; }
   .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }
-  #pd_cfg_custom_monster_name_list td input[type="text"] { width: 140px; }
   #pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }
-  #pd_auto_change_sm_color_btns label { margin-right: 10px; }
   .pd_cfg_ml { margin-left: 10px; }
 
   /* 日志对话框 */
@@ -177,11 +170,10 @@ export const appendCss = function () {
   .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }
   .pd_log_nav a { display: inline-block; }
   .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }
-  #pd_log_content { height: 308px; overflow: auto; }
-  #pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }
-  #pd_log_content h3:not(:first-child) { margin-top: 5px; }
-  #pd_log_content p { line-height: 22px; margin: 0; }
-  #pd_log .pd_stat i { display: inline-block; }
+  .pd_log_content { height: 308px; overflow: auto; }
+  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }
+  .pd_log_content h3:not(:first-child) { margin-top: 5px; }
+  .pd_log_content p { line-height: 22px; margin: 0; }
 </style>
 `);
 
@@ -410,12 +402,12 @@ export const getMinRefreshInterval = function () {
     }
 
     let autoChangeSMColorInterval = -1;
-    if (Config.autoChangeSMColorEnabled) {
-        let nextTime = parseInt(Util.getCookie(Const.autoChangeSMColorCookieName));
+    if (Config.autoChangeIdColorEnabled) {
+        let nextTime = parseInt(Util.getCookie(Const.autoChangeIdColorCookieName));
         if (!isNaN(nextTime) && nextTime > 0) {
             autoChangeSMColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
             if (autoChangeSMColorInterval < 0) autoChangeSMColorInterval = 0;
-            if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1)
+            if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1)
                 autoChangeSMColorInterval = -1;
         }
         else autoChangeSMColorInterval = 0;
@@ -530,7 +522,7 @@ export const startAutoRefreshMode = function () {
     let checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
-        if (Config.autoChangeSMColorEnabled && !Util.getCookie(Const.autoChangeSMColorCookieName)) changeIdColor();
+        if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) changeIdColor();
 
         let interval = getMinRefreshInterval();
         if (interval > 0) errorNum = 0;
@@ -930,17 +922,17 @@ export const runCustomScript = function (type = 1) {
  * 更换ID颜色
  */
 export const changeIdColor = function () {
-    if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1) return;
+    if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) return;
     /**
      * 写入Cookie
      */
     let setCookie = function () {
-        let nextTime = Util.getDate(`+${Config.autoChangeSMColorInterval}h`);
-        Util.setCookie(Const.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
+        let nextTime = Util.getDate(`+${Config.autoChangeIdColorInterval}h`);
+        Util.setCookie(Const.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
     console.log('自动更换ID颜色Start');
     $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
-        if (Util.getCookie(Const.autoChangeSMColorCookieName)) return;
+        if (Util.getCookie(Const.autoChangeIdColorCookieName)) return;
         let matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/g);
         if (matches) {
             let safeId = '';
@@ -958,9 +950,9 @@ export const changeIdColor = function () {
             }
 
             let idList = availableIdList;
-            if (!Config.changeAllAvailableSMColorEnabled) {
+            if (!Config.changeAllAvailableIdColorEnabled) {
                 idList = [];
-                for (let id of Config.customAutoChangeSMColorList) {
+                for (let id of Config.customAutoChangeIdColorList) {
                     if (availableIdList.includes(id)) idList.push(id);
                 }
             }
@@ -973,7 +965,7 @@ export const changeIdColor = function () {
             if (isNaN(prevId) || prevId < 0) prevId = 0;
 
             let nextId = 0;
-            if (Config.autoChangeSMColorType.toLowerCase() === 'sequence') {
+            if (Config.autoChangeIdColorType.toLowerCase() === 'sequence') {
                 for (let [i, id] of idList.entries()) {
                     if (id > prevId) {
                         nextId = id;
@@ -1069,7 +1061,7 @@ export const bindSearchTypeSelectMenuClick = function () {
             if (type !== '关键词' && type !== '用户名') $form.attr('action', 'search.php?');
             if (type === '作者') $keyWord.attr('name', 'pwuser');
             else $keyWord.attr('name', 'keyword');
-            let $searchRange = $form.find('input[name="search_range"][value="current"]');
+            let $searchRange = $form.find('[name="searchRange"][value="current"]');
             if ($searchRange.length > 0) {
                 $searchRange.prop('disabled', type === '关键词' || type === '用户名' || !$searchRange.data('enabled'));
             }
@@ -1119,7 +1111,8 @@ export const addSearchDialogLink = function () {
         .filter('a')
         .click(function (e) {
             e.preventDefault();
-            if ($('#pd_search').length > 0) return;
+            const dialogName = 'pd_search';
+            if ($('#' + dialogName).length > 0) return;
             let html = `
 <div class="pd_cfg_main">
   <input name="step" value="2" type="hidden">
@@ -1134,27 +1127,27 @@ export const addSearchDialogLink = function () {
     <div class="pd_search_type" data-type="dialog"><span>标题</span><i>∨</i></div>
     <button class="indloginm" name="submit" type="submit">搜索</button>
   </div>
-  <div style="margin-bottom:8px; line-height:35px;">
-    <label><input name="search_range" type="radio" value="all" checked> 全站 </label>
-    <label><input name="search_range" type="radio" value="current" disabled> 本版</label>
+  <div style="margin-bottom: 8px; line-height: 35px;">
+    <label><input name="searchRange" type="radio" value="all" checked> 全站 </label>
+    <label><input name="searchRange" type="radio" value="current" disabled> 本版</label>
   </div>
 </div>`;
-            let $dialog = Dialog.create('pd_search', '搜索', html);
+            let $dialog = Dialog.create(dialogName, '搜索', html);
 
             $dialog.closest('form').attr({
-                'name': 'pd_search',
+                'name': dialogName,
                 'action': 'search.php?',
                 'method': 'post',
-                'target': '_blank'
+                'target': '_blank',
             }).off('submit');
 
             let fid = parseInt($('input[name="f_fid"]:first, input[name="fid"]:first').val());
             if (fid) {
-                $dialog.find('input[name="search_range"]').click(function () {
+                $dialog.find('[name="searchRange"]').click(function () {
                     let $this = $(this);
                     $dialog.find('input[name="f_fid"]').val($this.val() === 'current' ? fid : 'all');
                 });
-                $dialog.find('input[name="search_range"][value="current"]').prop('disabled', false).data('enabled', true).click();
+                $dialog.find('[name="searchRange"][value="current"]').prop('disabled', false).data('enabled', true).click();
             }
 
             $dialog.keydown(function (e) {
@@ -1165,8 +1158,8 @@ export const addSearchDialogLink = function () {
                 $('.pd_search_type_list').remove();
             });
 
-            Dialog.show('pd_search');
-            $dialog.find('input[name="keyword"]').focus();
+            Dialog.show(dialogName);
+            $dialog.find('[name="keyword"]').focus();
         });
 };
 

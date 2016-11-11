@@ -15,7 +15,8 @@ import * as Item from './Item';
  * 显示日志对话框
  */
 export const show = function () {
-    if ($('#pd_log').length > 0) return;
+    const dialogName = 'pd_log';
+    if ($('#' + dialogName).length > 0) return;
     Dialog.close('pd_config');
     readConfig();
     Func.run('LogDialog.show_before_');
@@ -32,28 +33,28 @@ export const show = function () {
     <legend>日志内容</legend>
     <div>
       <strong>排序方式：</strong>
-      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type" value="time" checked>按时间</label>
-      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type" value="type">按类别</label>
+      <label title="按时间顺序排序"><input type="radio" name="sortType" value="time" checked> 按时间</label>
+      <label title="按日志类别排序"><input type="radio" name="sortType" value="type"> 按类别</label>
     </div>
-    <div class="pd_stat" id="pd_log_content">暂无日志</div>
+    <div class="pd_stat pd_log_content">暂无日志</div>
   </fieldset>
   <fieldset>
     <legend>统计结果</legend>
     <div>
       <strong>统计范围：</strong>
-      <label title="显示当天的统计结果"><input type="radio" name="pd_log_stat_type" value="current" checked>当天</label>
-      <label title="显示距该日N天内的统计结果"><input type="radio" name="pd_log_stat_type" value="custom"></label>
-      <label title="显示距该日N天内的统计结果"><input id="pd_log_stat_days" type="text" style="width: 22px;" maxlength="3">天内</label>
-      <label title="显示全部统计结果"><input type="radio" name="pd_log_stat_type" value="all">全部</label>
+      <label title="显示当天的统计结果"><input type="radio" name="statType" value="current" checked> 当天</label>
+      <label title="显示距该日N天内的统计结果"><input type="radio" name="statType" value="custom"></label>
+      <label title="显示距该日N天内的统计结果"><input name="statDays" type="text" style="width: 22px;" maxlength="3"> 天内</label>
+      <label title="显示全部统计结果"><input type="radio" name="statType" value="all"> 全部</label>
     </div>
-    <div class="pd_stat" id="pd_log_stat">暂无日志</div>
+    <div class="pd_stat" data-name="stat">暂无日志</div>
   </fieldset>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a id="pd_log_im_or_ex_log_dialog" href="#">导入/导出日志</a></span>
-  <button>关闭</button><button>清除日志</button>
+  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
+  <button>关闭</button> <button>清除日志</button>
 </div>`;
-    let $dialog = Dialog.create('pd_log', 'KFOL助手日志', html);
+    let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html);
 
     let log = Log.read();
     let dateList = [];
@@ -84,8 +85,8 @@ export const show = function () {
             curIndex = dateList.length - 1;
         }
         $dialog.find('.pd_log_nav h2').text(dateList[curIndex]);
-        showLogContent(log, dateList[curIndex]);
-        showLogStat(log, dateList[curIndex]);
+        showLogContent(log, dateList[curIndex], $dialog);
+        showLogStat(log, dateList[curIndex], $dialog);
         if (curIndex > 0) {
             $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
             $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
@@ -100,34 +101,34 @@ export const show = function () {
         else {
             $dialog.find('.pd_log_nav > a:gt(1)').removeAttr('title').addClass('pd_disabled_link');
         }
-    }).end().find('input[name="pd_log_sort_type"]').click(function () {
+    }).end().find('[name="sortType"]').click(function () {
         let value = $(this).val();
         if (Config.logSortType !== value) {
             Config.logSortType = value;
             writeConfig();
-            showLogContent(log, dateList[curIndex]);
+            showLogContent(log, dateList[curIndex], $dialog);
         }
-    }).end().find('input[name="pd_log_stat_type"]').click(function () {
+    }).end().find('[name="statType"]').click(function () {
         let value = $(this).val();
         if (Config.logStatType !== value) {
             Config.logStatType = value;
             writeConfig();
-            showLogStat(log, dateList[curIndex]);
+            showLogStat(log, dateList[curIndex], $dialog);
         }
-    }).end().find('#pd_log_stat_days').keyup(function () {
+    }).end().find('[name="statDays"]').keyup(function () {
         let days = parseInt($(this).val());
         if (days > 0 && Config.logStatDays !== days) {
             Config.logStatDays = days;
             writeConfig();
-            $('input[name="pd_log_stat_type"][value="custom"]:not(:checked)').click();
-            showLogStat(log, dateList[curIndex]);
+            $dialog.find('[name="statType"][value="custom"]:not(:checked)').click();
+            showLogStat(log, dateList[curIndex], $dialog);
         }
-    }).end().find('input[name="pd_log_sort_type"][value="{0}"]'.replace('{0}', Config.logSortType)).click()
-        .end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click()
-        .end().find('#pd_log_stat_days').val(Config.logStatDays);
+    }).end().find(`[name="sortType"][value="${Config.logSortType}"]`).click()
+        .end().find(`[name="statType"][value="${Config.logStatType}"]`).click()
+        .end().find('[name="statDays"]').val(Config.logStatDays);
 
     $dialog.find('.pd_cfg_btns > button:first')
-        .click(() => Dialog.close('pd_log'))
+        .click(() => Dialog.close(dialogName))
         .next('button')
         .click(function (e) {
             e.preventDefault();
@@ -138,16 +139,16 @@ export const show = function () {
             }
         });
 
-    $('#pd_log_im_or_ex_log_dialog').click(function (e) {
+    $dialog.find('[data-name="openImOrExLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLogDialog();
     });
 
-    showLogContent(log, dateList[curIndex]);
-    showLogStat(log, dateList[curIndex]);
+    showLogContent(log, dateList[curIndex], $dialog);
+    showLogStat(log, dateList[curIndex], $dialog);
 
-    if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
-    Dialog.show('pd_log');
+    if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '216px');
+    Dialog.show(dialogName);
     $dialog.find('input:first').focus();
     Func.run('LogDialog.show_after_');
 };
@@ -156,10 +157,11 @@ export const show = function () {
  * 显示指定日期的日志内容
  * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
+ * @param {jQuery} $dialog 日志对话框对象
  */
-const showLogContent = function (log, date) {
+const showLogContent = function (log, date, $dialog) {
     if (!Array.isArray(log[date])) return;
-    $('#pd_log_content').html(getLogContent(log, date, Config.logSortType))
+    $dialog.find('.pd_log_content').html(getLogContent(log, date, Config.logSortType))
         .parent().find('legend:first-child').text(`日志内容 (共${log[date].length}项)`);
 };
 
@@ -235,10 +237,11 @@ const getLogContent = function (log, date, logSortType) {
  * 显示指定日期的日志统计结果
  * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
+ * @param {jQuery} $dialog 日志对话框对象
  */
-const showLogStat = function (log, date) {
+const showLogStat = function (log, date, $dialog) {
     if (!Array.isArray(log[date])) return;
-    $('#pd_log_stat').html(getLogStat(log, date, Config.logStatType));
+    $dialog.find('[data-name="stat"]').html(getLogStat(log, date, Config.logStatType));
 };
 
 /**
@@ -392,48 +395,51 @@ const getLogStat = function (log, date, logStatType) {
  * 显示导入或导出日志对话框
  */
 const showImportOrExportLogDialog = function () {
-    if ($('#pd_im_or_ex_log').length > 0) return;
+    const dialogName = 'pd_im_or_ex_log';
+    if ($('#' + dialogName).length > 0) return;
     let log = Log.read();
     let html = `
 <div class="pd_cfg_main">
   <div style="margin-top: 5px;">
-    <label style="color: #f00;"><input type="radio" name="pd_im_or_ex_log_type" value="setting" checked> 导入/导出日志</label>
-    <label style="color: #00f"><input type="radio" name="pd_im_or_ex_log_type" value="text"> 导出日志文本</label>
+    <label style="color: #f00;"><input type="radio" name="logType" value="setting" checked> 导入/导出日志</label>
+    <label style="color: #00f;"><input type="radio" name="logType" value="text"> 导出日志文本</label>
   </div>
-  <div id="pd_im_or_ex_log_setting">
+  <div data-name="logSetting">
     <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
     <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
-    <textarea id="pd_log_setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
+    <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
   </div>
-  <div id="pd_im_or_ex_log_text" style="display: none;">
+  <div data-name="logText" style="display: none;">
     <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可
     <div>
-      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type_2" value="time" checked>按时间</label>
-      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type_2" value="type">按类别</label>
-      <label title="在日志文本里显示每日以及全部数据的统计结果"><input type="checkbox" id="pd_log_show_stat" checked>显示统计</label>
+      <label title="按时间顺序排序"><input type="radio" name="sortType2" value="time" checked> 按时间</label>
+      <label title="按日志类别排序"><input type="radio" name="sortType2" value="type"> 按类别</label>
+      <label title="在日志文本里显示每日以及全部数据的统计结果"><input type="checkbox" name="showStat" checked> 显示统计</label>
     </div>
-    <textarea id="pd_log_text" style="width: 600px; height: 400px;" readonly></textarea>
+    <textarea name="text" style="width: 600px; height: 400px;" readonly></textarea>
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <button data-action="merge">合并日志</button><button data-action="overwrite" style="color: #f00;">覆盖日志</button><button>关闭</button>
+  <button data-action="merge">合并日志</button>
+  <button data-action="overwrite" style="color: #f00;">覆盖日志</button>
+  <button>关闭</button>
 </div>`;
 
-    let $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
-    $dialog.find('[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
-        showLogText(log);
-        $('#pd_log_text').select();
-    }).end().find('[name="pd_im_or_ex_log_type"]').click(function () {
+    let $dialog = Dialog.create(dialogName, '导入或导出日志', html);
+    $dialog.find('[name="sortType2"], [name="showStat"]').click(function () {
+        showLogText(log, $dialog);
+        $dialog.find('[name="text"]').select();
+    }).end().find('[name="logType"]').click(function () {
         let type = $(this).val();
-        $('#pd_im_or_ex_log_' + (type === 'text' ? 'setting' : 'text')).hide();
-        $('#pd_im_or_ex_log_' + (type === 'text' ? 'text' : 'setting')).show();
-        $('#pd_log_' + (type === 'text' ? 'text' : 'setting')).select();
+        $dialog.find(`[data-name="log${type === 'text' ? 'Setting' : 'Text'}"]`).hide();
+        $dialog.find(`[data-name="log${type === 'text' ? 'Text' : 'Setting'}"]`).show();
+        $dialog.find(`[data-name="log${type === 'text' ? 'Text' : 'Setting'}"]`).select();
     }).end().find('.pd_cfg_btns > button').click(function (e) {
         e.preventDefault();
         let action = $(this).data('action');
         if (action === 'merge' || action === 'overwrite') {
             if (!confirm(`是否将文本框中的日志${action === 'overwrite' ? '覆盖' : '合并'}到本地日志？`)) return;
-            let newLog = $.trim($('#pd_log_setting').val());
+            let newLog = $.trim($dialog.find('[name="setting"]').val());
             if (!newLog) return;
             try {
                 newLog = JSON.parse(newLog);
@@ -452,22 +458,23 @@ const showImportOrExportLogDialog = function () {
             location.reload();
         }
         else {
-            return Dialog.close('pd_im_or_ex_log');
+            return Dialog.close(dialogName);
         }
     });
-    Dialog.show('pd_im_or_ex_log');
-    $('#pd_log_setting').val(JSON.stringify(log)).select();
-    $(`input[name="pd_log_sort_type_2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');
+    Dialog.show(dialogName);
+    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
+    $dialog.find(`[name="sortType2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');
     Func.run('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**
  * 显示日志文本
  * @param {{}} log 日志对象
+ * @param {jQuery} $dialog 导入或导出日志对话框对象
  */
-const showLogText = function (log) {
-    let logSortType = $('input[name="pd_log_sort_type_2"]:checked').val();
-    let isShowStat = $('#pd_log_show_stat').prop('checked');
+const showLogText = function (log, $dialog) {
+    let logSortType = $dialog.find('input[name="sortType2"]:checked').val();
+    let isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     let content = '', lastDate = '';
     for (let date of Object.keys(log)) {
         if (!Array.isArray(log[date])) continue;
@@ -489,5 +496,5 @@ const showLogText = function (log) {
     if (content && isShowStat) {
         content += '\n总计：\n' + getLogStat(log, lastDate, 'all').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '');
     }
-    $('#pd_log_text').val(content);
+    $dialog.find('[name="text"]').val(content);
 };

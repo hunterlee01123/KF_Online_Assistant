@@ -60,9 +60,9 @@ export const getDateByTime = function (time) {
 export const getTimezoneDateByTime = function (time, timezoneOffset = Const.forumTimezoneOffset) {
     let date = new Date();
     let [hour, minute, second] = time.split(':');
-    if (typeof hour !== 'undefined') date.setHours(parseInt(hour) + timezoneOffset);
-    if (typeof minute !== 'undefined') date.setMinutes(parseInt(minute));
-    if (typeof second !== 'undefined') date.setSeconds(parseInt(second));
+    if (typeof hour !== 'undefined') date.setUTCHours(parseInt(hour) + timezoneOffset);
+    if (typeof minute !== 'undefined') date.setUTCMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setUTCSeconds(parseInt(second));
     date.setUTCMilliseconds(0);
     let now = new Date();
     if (now.getDate() > date.getDate() || now.getMonth() > date.getMonth() || now.getFullYear() > date.getFullYear()) {

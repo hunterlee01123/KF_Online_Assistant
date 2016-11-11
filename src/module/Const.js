@@ -88,8 +88,8 @@ const Const = {
     fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
     // 存储VIP剩余时间的Cookie名称
     vipSurplusTimeCookieName: 'pd_vip_surplus_time',
-    // 标记已自动更换神秘颜色的Cookie名称
-    autoChangeSMColorCookieName: 'pd_auto_change_sm_color',
+    // 标记已自动更换ID颜色的Cookie名称
+    autoChangeIdColorCookieName: 'pd_auto_change_id_color',
     // 标记已检查过期日志的Cookie名称
     checkOverdueLogCookieName: 'pd_check_overdue_log',
 };

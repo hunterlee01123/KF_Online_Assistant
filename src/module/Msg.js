@@ -3,7 +3,7 @@
 
 /**
  * 显示消息
- * @param {(string|Object)} options 消息或设置对象
+ * @param {string|Object} options 消息或设置对象
  * @param {string} [options.msg] 消息
  * @param {number} [options.duration={@link Config.defShowMsgDuration}] 消息显示时间（秒），-1为永久显示
  * @param {boolean} [options.clickable=true] 消息框可否手动点击消除
