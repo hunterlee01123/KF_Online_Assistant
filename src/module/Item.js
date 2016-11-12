@@ -169,8 +169,7 @@ const getCreditsViaResponse = function (response, itemTypeId) {
         if (/成功！/.test(response)) return {'效果': 1};
     }
     else {
-        let matches = null;
-        matches = /恢复能量增加了\s*(\d+)\s*点/i.exec(response);
+        let matches = /恢复能量增加了\s*(\d+)\s*点/i.exec(response);
         if (matches) return {'能量': parseInt(matches[1])};
         matches = /(\d+)KFB/i.exec(response);
         if (matches) return {'KFB': parseInt(matches[1])};

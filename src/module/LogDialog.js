@@ -1,6 +1,5 @@
 /* 日志对话框模块 */
 'use strict';
-import Info from './Info';
 import * as Util from './Util';
 import * as Dialog from './Dialog';
 import * as Func from './Func';
@@ -17,7 +16,6 @@ import * as Item from './Item';
 export const show = function () {
     const dialogName = 'pd_log';
     if ($('#' + dialogName).length > 0) return;
-    Dialog.close('pd_config');
     readConfig();
     Func.run('LogDialog.show_before_');
     let html = `
@@ -420,8 +418,8 @@ const showImportOrExportLogDialog = function () {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <button data-action="merge">合并日志</button>
-  <button data-action="overwrite" style="color: #f00;">覆盖日志</button>
+  <button name="merge">合并日志</button>
+  <button name="overwrite" style="color: #f00;">覆盖日志</button>
   <button>关闭</button>
 </div>`;
 
@@ -436,9 +434,9 @@ const showImportOrExportLogDialog = function () {
         $dialog.find(`[data-name="log${type === 'text' ? 'Text' : 'Setting'}"]`).select();
     }).end().find('.pd_cfg_btns > button').click(function (e) {
         e.preventDefault();
-        let action = $(this).data('action');
-        if (action === 'merge' || action === 'overwrite') {
-            if (!confirm(`是否将文本框中的日志${action === 'overwrite' ? '覆盖' : '合并'}到本地日志？`)) return;
+        let name = $(this).attr('name');
+        if (name === 'merge' || name === 'overwrite') {
+            if (!confirm(`是否将文本框中的日志${name === 'overwrite' ? '覆盖' : '合并'}到本地日志？`)) return;
             let newLog = $.trim($dialog.find('[name="setting"]').val());
             if (!newLog) return;
             try {
@@ -452,7 +450,8 @@ const showImportOrExportLogDialog = function () {
                 alert('日志有错误');
                 return;
             }
-            if (action === 'merge') log = Log.getMergeLog(log, newLog);
+            if (name === 'merge') log = Log.getMergeLog(log, newLog);
+            else log = newLog;
             Log.write(log);
             alert('日志已导入');
             location.reload();

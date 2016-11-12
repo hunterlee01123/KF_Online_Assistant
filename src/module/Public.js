@@ -547,19 +547,18 @@ export const startAutoRefreshMode = function () {
  * 添加设置和日志对话框的链接
  */
 export const addConfigAndLogDialogLink = function () {
-    let $login = $('a[href^="login.php?action=quit"]:first');
-    $('<a href="#">助手设置</a><span> | </span>').insertBefore($login)
-        .filter('a').click(function (e) {
-        e.preventDefault();
-        showConfigDialog();
-    });
-    if (Config.showLogLinkEnabled) {
-        $('<a href="#">助手日志</a><span> | </span>').insertBefore($login)
-            .filter('a').click(function (e) {
+    $('<a data-name="openConfigDialog" href="#">助手设置</a><span> | </span><a data-name="openLogDialog" href="#">助手日志</a><span> | </span>')
+        .insertBefore($('a[href^="login.php?action=quit"]:first'))
+        .filter('[data-name="openConfigDialog"]')
+        .click(function (e) {
+            e.preventDefault();
+            showConfigDialog();
+        }).end()
+        .filter('[data-name="openLogDialog"]')
+        .click(function (e) {
             e.preventDefault();
             showLogDialog();
         });
-    }
 };
 
 /**
@@ -960,7 +959,7 @@ export const changeIdColor = function () {
                 return;
             }
 
-            let prevId = parseInt(TmpLog.getValue(Const.prevAutoChangeSMColorIdTmpLogName));
+            let prevId = parseInt(TmpLog.getValue(Const.prevAutoChangeIdColorTmpLogName));
             if (isNaN(prevId) || prevId < 0) prevId = 0;
 
             let nextId = 0;
@@ -989,7 +988,7 @@ export const changeIdColor = function () {
                 let {msg} = Util.getResponseMsg(html);
                 if (/等级颜色修改完毕/.test(msg)) {
                     console.log('ID颜色更换为：' + nextId);
-                    TmpLog.setValue(Const.prevAutoChangeSMColorIdTmpLogName, nextId);
+                    TmpLog.setValue(Const.prevAutoChangeIdColorTmpLogName, nextId);
                 }
             });
         }

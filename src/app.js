@@ -49,11 +49,11 @@ $(function () {
     else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         Read.fastGotoFloor();
-        if (Config.adjustThreadContentWidthEnabled) Public.adjustThreadContentWidth();
+        if (Config.adjustThreadContentWidthEnabled) Read.adjustThreadContentWidth();
         Read.adjustThreadContentFontSize();
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
-        if (Config.modifyKFOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customSmColorEnabled) Read.modifySmColor();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
@@ -115,7 +115,7 @@ $(function () {
     }
     else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
-        if (Config.modifyKFOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
     }
     else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
         Other.addMsgSelectButton();

@@ -139,17 +139,17 @@ export const addFollowAndBlockAndMemoUserLink = function () {
         .find('a').each(function () {
         let $this = $(this);
         if ($this.is('a:contains("备注")')) {
-            let memo = '';
-            for (let name in Config.userMemoList) {
+            let str = '';
+            for (let [name, memo] of Util.entries(Config.userMemoList)) {
                 if (name === userName) {
-                    memo = Config.userMemoList[name];
+                    str = memo;
                     break;
                 }
             }
-            if (memo !== '') {
-                $this.text('修改备注').data('memo', memo);
+            if (str !== '') {
+                $this.text('修改备注').data('memo', str);
                 let $info = $('.log1 > tbody > tr:last-child > td:last-child');
-                $info.html(`备注：${memo}<br>${$info.html()}`);
+                $info.html(`备注：${str}<br>${$info.html()}`);
             }
         }
         else {
@@ -361,7 +361,7 @@ export const addAutoChangeIdColorButton = function () {
                 Config.customAutoChangeIdColorList = defConfig.customAutoChangeIdColorList;
                 writeConfig();
                 Util.deleteCookie(Const.autoChangeIdColorCookieName);
-                TmpLog.deleteValue(Const.prevAutoChangeSMColorIdTmpLogName);
+                TmpLog.deleteValue(Const.prevAutoChangeIdColorTmpLogName);
                 alert('设置已重置');
                 location.reload();
             }).end().filter('a').click(function (e) {

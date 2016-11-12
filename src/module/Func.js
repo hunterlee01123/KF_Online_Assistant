@@ -10,8 +10,8 @@ const funcList = new Map();
  * @param {function} func 自定义方法
  */
 export const add = function (name, func) {
-    if (!funcList.has(name)) funcList[name] = [];
-    funcList[name].push(func);
+    if (!funcList.has(name)) funcList.set(name, []);
+    funcList.get(name).push(func);
 };
 
 /**

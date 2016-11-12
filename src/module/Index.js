@@ -80,7 +80,7 @@ export const smLevelUpAlert = function () {
      * @param {number} smLevel 神秘等级
      */
     const writeData = function (smLevel) {
-        TmpLog.setValue(Const.smLevelUpTmpLogName, {time: new Date().getTime(), smLevel: smLevel});
+        TmpLog.setValue(Const.smLevelUpTmpLogName, {time: new Date().getTime(), smLevel});
     };
 
     let data = TmpLog.getValue(Const.smLevelUpTmpLogName);

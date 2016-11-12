@@ -59,7 +59,7 @@ export const Config = {
     // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009cff'},{min:'800',max:'MAX',color:'#ff0000'}]
     customSmColorConfigList: [],
     // 是否将帖子中的绯月其它域名的链接修改为当前域名，true：开启；false：关闭
-    modifyKFOtherDomainEnabled: true,
+    modifyKfOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
@@ -83,8 +83,6 @@ export const Config = {
     animationEffectOffEnabled: false,
     // 日志保存天数
     logSaveDays: 30,
-    // 在页面上方显示助手日志的链接，true：开启；false：关闭
-    showLogLinkEnabled: true,
     // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
     showSearchLinkEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序

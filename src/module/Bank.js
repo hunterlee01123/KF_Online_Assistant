@@ -1,6 +1,5 @@
 /* 银行模块 */
 'use strict';
-import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';

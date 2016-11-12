@@ -81,8 +81,8 @@ const Const = {
     smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
-    // 上一次自动更换神秘颜色的ID的临时日志名称
-    prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
+    // 存储上一次自动更换ID颜色的临时日志名称
+    prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
     // 标记已进行KFB捐款的Cookie名称
     donationCookieName: 'donation',
     // 标记已去除首页已读at高亮提示的Cookie名称

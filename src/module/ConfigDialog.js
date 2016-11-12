@@ -28,10 +28,9 @@ export const show = function () {
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
-    <a class="pd_btn_link" title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除临时数据</a>
-    <a class="pd_btn_link" href="#">运行命令</a>
-    <a class="pd_btn_link" href="#">查看日志</a>
-    <a class="pd_btn_link" href="#">导入/导出设置</a>
+    <a class="pd_btn_link" data-name="clearTmpData" title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除临时数据</a>
+    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">运行命令</a>
+    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">导入/导出设置</a>
   </div>
 
   <div class="pd_cfg_panel" style="margin-bottom: 5px;">
@@ -287,24 +286,21 @@ export const show = function () {
     <i style="color: #666; font-style: normal;">(V${Info.version})</i>
     <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
-  <button>确定</button> <button>取消</button> <button>默认值</button>
+  <button name="ok">确定</button>
+  <button name="cancel">取消</button>
+  <button name="default">默认值</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (Info.isMobile ? ' (For Mobile)' : ''), html);
 
-    $dialog.find('.pd_cfg_btns > button:eq(1)')
-        .click(() => Dialog.close(dialogName))
-        .end()
-        .find('.pd_cfg_btns > button:eq(2)')
-        .click(function (e) {
+    $dialog.find('[name="cancel"]').click(() => Dialog.close(dialogName))
+        .end().find('[name="default"]').click(function (e) {
             e.preventDefault();
             if (confirm('是否重置所有设置？')) {
                 clearConfig();
                 alert('设置已重置');
                 location.reload();
             }
-        }).end()
-        .find('.pd_cfg_nav > a:first-child')
-        .click(function (e) {
+        }).end().find('[data-name="clearTmpData"]').click(function (e) {
             e.preventDefault();
             let type = prompt(
                 '可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据',
@@ -316,18 +312,6 @@ export const show = function () {
                 clearTmpData(type);
                 alert('缓存已清除');
             }
-        }).next('a')
-        .click(function (e) {
-            e.preventDefault();
-            showRunCommandDialog();
-        }).next('a')
-        .click(function (e) {
-            e.preventDefault();
-            showLogDialog();
-        }).next('a')
-        .click(function (e) {
-            e.preventDefault();
-            showImportOrExportSettingDialog();
         });
 
     $dialog.on('click', 'a[data-name^="open"][href="#"]', function (e) {
@@ -335,6 +319,8 @@ export const show = function () {
         let $this = $(this);
         if ($this.hasClass('pd_disabled_link')) return;
         let name = $this.data('name');
+        if (name === 'openRumCommandDialog') showRunCommandDialog();
+        if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
         if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();
         else if (name === 'openUserMemoDialog') showUserMemoDialog();
         else if (name === 'openCustomCssDialog') showCustomCssDialog();
@@ -399,6 +385,7 @@ const setMainConfigValue = function ($dialog) {
         }
     });
     $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
+    $dialog.find('[data-name="customMySmColorSelect"]').val(Config.customMySmColor);
 
     $dialog.find('[data-name="storageType"]').val(Info.storageType);
     if (typeof GM_getValue === 'undefined') $dialog.find('[data-name="storageType"] > option:gt(0)').prop('disabled', true);
@@ -493,7 +480,7 @@ const verifyMainConfig = function ($dialog) {
     let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
-        alert('自定义本人的神秘颜色格式不正确，例：#009CFF');
+        alert('自定义本人的神秘颜色格式不正确，例：#009cff');
         $txtCustomMySmColor.select();
         $txtCustomMySmColor.focus();
         return false;
@@ -670,7 +657,7 @@ const showCustomSmColorDialog = function () {
   <span class="pd_cfg_about"><a href="#">导入/导出配色方案</a></span>
   <button>确定</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html);
+    let $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html, 'min-width: 327px;');
     let $customSmColorList = $dialog.find('[data-name="smColorList"]');
     $dialog.find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
 
@@ -790,7 +777,7 @@ const showCustomSmColorDialog = function () {
 
     Dialog.show(dialogName);
     if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();
-    else $('#pd_cfg_custom_sm_color_add_btns > a:first').focus();
+    else $dialog.find('[data-name="customSmColorAddBtns"] > a:first').focus();
 };
 
 /**
@@ -1144,7 +1131,7 @@ const showBlockUserDialog = function () {
         $dialog.find('.pd_cfg_btns > button:first').click();
     }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        Config.blockUserDefaultType = $dialog.find('[name="blockUserDefaultType"]').val();
+        Config.blockUserDefaultType = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
         Config.blockUserAtTipsEnabled = $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked');
         Config.blockUserForumType = parseInt($dialog.find('[name="blockUserForumType"]').val());
         Config.blockUserFidList = [];
