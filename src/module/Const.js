@@ -1,6 +1,9 @@
 /* 常量模块 */
 'use strict';
 
+// 通用存储数据名称前缀
+const storagePrefix = 'pd_';
+
 /**
  * 常量类
  */
@@ -42,20 +45,20 @@ const Const = {
     // 统计回帖者名单最大能访问的帖子页数
     statRepliersMaxPage: 300,
     // 道具样品ID列表
-    sampleItemIdList: {
-        '零时迷子的碎片': 2257935,
-        '被遗弃的告白信': 2005272,
-        '学校天台的钥匙': 2001303,
-        'TMA最新作压缩包': 1990834,
-        'LOLI的钱包': 1836588,
-        '棒棒糖': 1942370,
-        '蕾米莉亚同人漫画': 1000888,
-        '十六夜同人漫画': 1002668,
-        '档案室钥匙': 1013984,
-        '傲娇LOLI娇蛮音CD': 4621,
-        '整形优惠卷': 1003993,
-        '消逝之药': 1000306,
-    },
+    sampleItemIdList: new Map([
+        ['零时迷子的碎片', 2257935],
+        ['被遗弃的告白信', 2005272],
+        ['学校天台的钥匙', 2001303],
+        ['TMA最新作压缩包', 1990834],
+        ['LOLI的钱包', 1836588],
+        ['棒棒糖', 1942370],
+        ['蕾米莉亚同人漫画', 1000888],
+        ['十六夜同人漫画', 1002668],
+        ['档案室钥匙', 1013984],
+        ['傲娇LOLI娇蛮音CD', 4621],
+        ['整形优惠卷', 1003993],
+        ['消逝之药', 1000306],
+    ]),
     // 定期存款到期期限（天）
     fixedDepositDueTime: 90,
     // 自助评分错标范围百分比
@@ -68,9 +71,11 @@ const Const = {
     customTileSideBarContent: '',
     // 可进行自助评分的版块ID列表
     selfRatingFidList: [41, 67, 92, 127, 68],
+    // 通用存储数据名称前缀
+    storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
-    multiQuoteStorageName: 'pd_multi_quote',
-    // 神秘升级提醒的临时日志名称
+    multiQuoteStorageName: storagePrefix + 'multiQuote',
+    // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
     smRankChangeTmpLogName: 'SmRankChange',
@@ -78,20 +83,20 @@ const Const = {
     fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 上一次自动更换神秘颜色的ID的临时日志名称
     prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
-    // 标记已KFB捐款的Cookie名称
-    donationCookieName: 'pd_donation',
+    // 标记已进行KFB捐款的Cookie名称
+    donationCookieName: 'donation',
     // 标记已去除首页已读at高亮提示的Cookie名称
-    hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
+    hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
-    prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
+    prevReadAtTipsCookieName: 'prevReadAtTips',
     // 标记已进行定期存款到期提醒的Cookie名称
-    fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
+    fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
     // 存储VIP剩余时间的Cookie名称
-    vipSurplusTimeCookieName: 'pd_vip_surplus_time',
+    vipSurplusTimeCookieName: 'vipSurplusTime',
     // 标记已自动更换ID颜色的Cookie名称
-    autoChangeIdColorCookieName: 'pd_auto_change_id_color',
+    autoChangeIdColorCookieName: 'autoChangeIdColor',
     // 标记已检查过期日志的Cookie名称
-    checkOverdueLogCookieName: 'pd_check_overdue_log',
+    checkOverdueLogCookieName: 'checkOverdueLog',
 };
 
 export default Const;

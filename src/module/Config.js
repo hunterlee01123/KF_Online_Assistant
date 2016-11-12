@@ -2,11 +2,12 @@
 'use strict';
 import Info from './Info';
 import * as Util from './Util';
+import Const from './Const';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 
 // 保存设置的键值名称
-const name = 'pd_config';
+const name = Const.storagePrefix + 'config';
 
 /**
  * 配置类

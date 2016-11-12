@@ -5,7 +5,7 @@ import * as Util from './Util';
 import Const from './Const';
 
 // 保存日志的键值名称
-const name = 'pd_log';
+const name = Const.storagePrefix + 'log';
 
 /**
  * 读取日志

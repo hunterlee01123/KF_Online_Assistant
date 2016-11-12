@@ -24,7 +24,7 @@ export const handleAtTips = function () {
     if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
     if (['no_highlight', 'no_highlight_extra', 'hide_box_1', 'at_change_to_cao'].includes(type)) {
         if ($atTips.length > 0) {
-            let cookieText = Util.getCookie(Const.hideMarkReadAtTipsCookieName);
+            let cookieText = Util.getCookie(Const.hideReadAtTipsCookieName);
             let atTipsText = $.trim($atTips.text());
             let matches = /\d+日\d+时\d+分/.exec(atTipsText);
             if (matches) atTipsText = matches[0];
@@ -35,7 +35,7 @@ export const handleAtTips = function () {
                 $atTips.click(function () {
                     let $this = $(this);
                     if ($this.data('disabled')) return;
-                    let cookieText = Util.getCookie(Const.hideMarkReadAtTipsCookieName);
+                    let cookieText = Util.getCookie(Const.hideReadAtTipsCookieName);
                     if (!cookieText) {
                         let curDate = (new Date()).getDate().toString();
                         Util.setCookie(Const.prevReadAtTipsCookieName, curDate.padStart(2, '0') + '日00时00分');
@@ -43,7 +43,7 @@ export const handleAtTips = function () {
                     else if (cookieText !== atTipsText) {
                         Util.setCookie(Const.prevReadAtTipsCookieName, cookieText);
                     }
-                    Util.setCookie(Const.hideMarkReadAtTipsCookieName,
+                    Util.setCookie(Const.hideReadAtTipsCookieName,
                         atTipsText,
                         Util.getDate(`+${Const.hideMarkReadAtTipsExpires}d`)
                     );

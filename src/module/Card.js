@@ -94,8 +94,9 @@ export const addStartBatchModeButton = function () {
                 $(this).next('.pd_card_chk').click();
             }).find('td').has('a').each(function () {
                 let matches = /kf_fw_card_my\.php\?id=(\d+)/.exec($(this).find('a').attr('href'));
-                if (!matches) return;
-                $(this).css('position', 'relative').append(`<input class="pd_card_chk" type="checkbox" value="${matches[1]}">`);
+                if (matches) {
+                    $(this).css('position', 'relative').append(`<input class="pd_card_chk" type="checkbox" value="${matches[1]}">`);
+                }
             });
             let playedCardList = [];
             $('.kf_fw_ig2 > tbody > tr:nth-child(2) > td').each(function () {
@@ -113,58 +114,55 @@ export const addStartBatchModeButton = function () {
                 }
             };
 
-            $this.before('<label><input id="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>' +
-                '<button>每类只保留一张</button><button>全选</button><button>反选</button><br><button>转换为VIP时间</button>')
-                .prev()
-                .click(function () {
-                    Msg.destroy();
-                    let cardList = [];
-                    $cardLines.find('input:checked').each(function () {
-                        cardList.push(parseInt($(this).val()));
-                    });
-                    if (!cardList.length) return;
-                    if (!confirm(`共选择了${cardList.length}张卡片，是否将卡片批量转换为VIP时间？`)) return;
-                    Msg.wait(
-                        `<strong>正在批量转换中&hellip;</strong><i>剩余：<em class="pd_countdown">${cardList.length}</em></i>`+
-                        `<a class="pd_stop_action" href="#">停止操作</a>`
-                    );
-                    convertCardsToVipTime(cardList, safeId);
-                })
-                .prev()
-                .prev()
-                .click(function () {
-                    $cardLines.find('input').each(function () {
-                        $(this).prop('checked', !$(this).prop('checked'));
-                    });
-                    if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
-                })
-                .prev()
-                .click(function () {
-                    $cardLines.find('input').prop('checked', true);
-                    if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
-                })
-                .prev()
-                .click(function () {
-                    $cardLines.find('input').prop('checked', true);
-                    if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
-                    let cardTypeList = new Set();
-                    $cardLines.find('a > img').each(function () {
-                        cardTypeList.add($(this).attr('src'));
-                    });
-                    for (let src of cardTypeList) {
-                        let $cardElems = $cardLines.find('td').has(`img[src="${src}"]`);
-                        let totalNum = $cardElems.length;
-                        let checkedNum = $cardElems.has('input:checked').length;
-                        if (totalNum > 1) {
-                            if (totalNum === checkedNum) {
-                                $cardElems.eq(0).find('input:checked').prop('checked', false);
-                            }
-                        }
-                        else {
-                            $cardElems.find('input:checked').prop('checked', false);
+            let $btns = $(`
+<label><input name="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>
+<button name="selectOnlyOne">每类只保留一张</button>
+<button name="selectAll">全选</button>
+<button name="selectInverse">反选</button><br>
+<button name="convertCardsToVipTime">转换为VIP时间</button>
+`).insertBefore($this);
+            $btns.filter('[name="selectOnlyOne"]').click(function () {
+                $cardLines.find('input').prop('checked', true);
+                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
+                let cardTypeList = new Set();
+                $cardLines.find('a > img').each(function () {
+                    cardTypeList.add($(this).attr('src'));
+                });
+                for (let src of cardTypeList) {
+                    let $cardElems = $cardLines.find('td').has(`img[src="${src}"]`);
+                    let totalNum = $cardElems.length;
+                    let checkedNum = $cardElems.has('input:checked').length;
+                    if (totalNum > 1) {
+                        if (totalNum === checkedNum) {
+                            $cardElems.eq(0).find('input:checked').prop('checked', false);
                         }
                     }
+                    else {
+                        $cardElems.find('input:checked').prop('checked', false);
+                    }
+                }
+            }).end().filter('[name="selectAll"]').click(function () {
+                $cardLines.find('input').prop('checked', true);
+                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
+            }).end().filter('[name="selectInverse"]').click(function () {
+                $cardLines.find('input').each(function () {
+                    $(this).prop('checked', !$(this).prop('checked'));
                 });
+                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
+            }).end().filter('[name="convertCardsToVipTime"]').click(function () {
+                Msg.destroy();
+                let cardList = [];
+                $cardLines.find('input:checked').each(function () {
+                    cardList.push(parseInt($(this).val()));
+                });
+                if (!cardList.length) return;
+                if (!confirm(`共选择了${cardList.length}张卡片，是否将卡片批量转换为VIP时间？`)) return;
+                Msg.wait(
+                    `<strong>正在批量转换中&hellip;</strong><i>剩余：<em class="pd_countdown">${cardList.length}</em></i>` +
+                    `<a class="pd_stop_action" href="#">停止操作</a>`
+                );
+                convertCardsToVipTime(cardList, safeId);
+            });
         }
         else {
             $this.text('开启批量模式');

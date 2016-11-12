@@ -10,7 +10,7 @@ import Const from './Const';
  * @param {?Date} date Cookie有效期，留空则表示有效期为浏览器进程
  * @param {string} prefix Cookie名称前缀
  */
-export const setCookie = function (name, value, date = null, prefix = Info.uid + '_') {
+export const setCookie = function (name, value, date = null, prefix = Info.uid + '_' + Const.storagePrefix) {
     document.cookie = `${prefix}${name}=${encodeURI(value)}${!date ? '' : ';expires=' + date.toUTCString()};path=/;`;
 };
 
@@ -20,7 +20,7 @@ export const setCookie = function (name, value, date = null, prefix = Info.uid +
  * @param {string} prefix Cookie名称前缀
  * @returns {?string} Cookie值
  */
-export const getCookie = function (name, prefix = Info.uid + '_') {
+export const getCookie = function (name, prefix = Info.uid + '_' + Const.storagePrefix) {
     let regex = new RegExp(`(^| )${prefix}${name}=([^;]*)(;|$)`);
     let matches = document.cookie.match(regex);
     if (!matches) return null;
@@ -32,7 +32,7 @@ export const getCookie = function (name, prefix = Info.uid + '_') {
  * @param {string} name Cookie名称
  * @param {string} prefix Cookie名称前缀
  */
-export const deleteCookie = function (name, prefix = Info.uid + '_') {
+export const deleteCookie = function (name, prefix = Info.uid + '_' + Const.storagePrefix) {
     document.cookie = `${prefix}${name}=;expires=${getDate('-1d').toUTCString()};path=/;`;
 };
 

@@ -89,7 +89,7 @@ export const appendCss = function () {
   .pages .pd_fast_goto_page { margin-left: 8px; }
   .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }
   .pd_item_btns { text-align: right; margin-top: 5px;  }
-  .pd_item_btns button, .pd_item_btns input { margin-left: 3px; margin-bottom: 2px; vertical-align: middle; }
+  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
   .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }
   .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }
@@ -104,8 +104,8 @@ export const appendCss = function () {
   .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
   .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
   .pd_user_memo_tips:hover { color: #ddd; }
-  .pd_sm_color_select > td { position: relative; cursor: pointer; }
-  .pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }
+  .pd_id_color_select > td { position: relative; cursor: pointer; }
+  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }
   .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }
   .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }
   #pd_smile_panel img { margin: 3px; cursor: pointer; }

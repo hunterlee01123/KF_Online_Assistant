@@ -51,7 +51,7 @@ export const enhanceLootIndexPage = function () {
 
     $points.on('change', '[type="number"]', function () {
         let $this = $(this);
-        $('#pd_surplus_point').text(propertyList['可分配属性点'] - getCurrentAssignedPoint());
+        $('#pd_surplus_point').text(propertyList.get('可分配属性点') - getCurrentAssignedPoint());
         showNewLootProperty($this, propertyList, itemUsedNumList);
         showSumOfPoint($this);
 
@@ -61,14 +61,14 @@ export const enhanceLootIndexPage = function () {
         skillAttack += parseInt($area.find('[name="s2"]').val()) * 4;
         $('#pd_skill_attack').text(skillAttack);
     }).on('click', '.pd_point_sum', function () {
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint();
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
         if (!surplusPoint) return;
         let $point = $(this).prev('span').prev('[type="number"]');
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
         $point.val(num + surplusPoint).trigger('change');
     }).find('form').submit(function () {
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint();
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
         if (surplusPoint < 0) {
             alert('剩余属性点为负，请重新填写');
             return false;
@@ -111,43 +111,43 @@ const showSumOfPoint = function ($point) {
 
 /**
  * 获取当前的争夺属性
- * @returns {{}} 争夺属性
+ * @returns {Map} 争夺属性
  */
 const getCurrentLootPropertyList = function () {
-    let propertyList = {
-        '攻击力': 0,
-        '最大生命值': 0,
-        '攻击速度': 0,
-        '暴击几率': 0,
-        '技能释放概率': 0,
-        '防御': 0,
-        '可分配属性点': 0,
-    };
+    let propertyList = new Map([
+        ['攻击力', 0],
+        ['最大生命值', 0],
+        ['攻击速度', 0],
+        ['暴击几率', 0],
+        ['技能释放概率', 0],
+        ['防御', 0],
+        ['可分配属性点', 0],
+    ]);
     let html = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html();
     let matches = /攻击力：(\d+)/.exec(html);
-    if (matches) propertyList['攻击力'] = parseInt(matches[1]);
+    if (matches) propertyList.set('攻击力',  parseInt(matches[1]));
     matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
-    if (matches) propertyList['最大生命值'] = parseInt(matches[1]);
+    if (matches) propertyList.set('最大生命值',  parseInt(matches[1]));
     matches = /攻击速度：(\d+)/.exec(html);
-    if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
+    if (matches) propertyList.set('攻击速度',  parseInt(matches[1]));
     matches = /暴击几率：(\d+)%/.exec(html);
-    if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
+    if (matches) propertyList.set('暴击几率',  parseInt(matches[1]));
     matches = /技能释放概率：(\d+)%/.exec(html);
-    if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);
+    if (matches) propertyList.set('技能释放概率',  parseInt(matches[1]));
     matches = /防御：(\d+)%/.exec(html);
-    if (matches) propertyList['防御'] = parseInt(matches[1]);
+    if (matches) propertyList.set('防御',  parseInt(matches[1]));
     matches = /可分配属性点：(\d+)/.exec(html);
-    if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
+    if (matches) propertyList.set('可分配属性点',  parseInt(matches[1]));
     return propertyList;
 };
 
 /**
  * 显示新的争夺属性
  * @param {jQuery} $point 属性字段
- * @param {{}} currentLootProperty 当前的争夺属性
- * @param {{}} itemUsedNumList 道具使用情况对象
+ * @param {Map} propertyList 当前的争夺属性
+ * @param {Map} itemUsedNumList 道具使用情况对象
  */
-const showNewLootProperty = function ($point, currentLootProperty, itemUsedNumList) {
+const showNewLootProperty = function ($point, propertyList, itemUsedNumList) {
     let name = $point.attr('name');
     let num = parseInt($point.val());
     if (isNaN(num) || num < 0) num = 0;
@@ -157,32 +157,32 @@ const showNewLootProperty = function ($point, currentLootProperty, itemUsedNumLi
     switch (name) {
         case 's1':
             newValue = (num + extraNum) * 5;
-            diffValue = newValue - currentLootProperty['攻击力'];
+            diffValue = newValue - propertyList.get('攻击力');
             break;
         case 's2':
-            newValue = (num + extraNum) * 20 + (itemUsedNumList['蕾米莉亚同人漫画'] === 50 ? 700 : 0);
-            diffValue = newValue - currentLootProperty['最大生命值'];
+            newValue = (num + extraNum) * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0);
+            diffValue = newValue - propertyList.get('最大生命值');
             break;
         case 'd1':
-            newValue = (num + extraNum) * 2 + (itemUsedNumList['十六夜同人漫画'] === 50 ? 100 : 0);
-            diffValue = newValue - currentLootProperty['攻击速度'];
+            newValue = (num + extraNum) * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
+            diffValue = newValue - propertyList.get('攻击速度');
             break;
         case 'd2':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 100) * 100);
-            diffValue = newValue - currentLootProperty['暴击几率'];
+            diffValue = newValue - propertyList.get('暴击几率');
             unit = '%';
             break;
         case 'i1':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 120) * 100);
-            diffValue = newValue - currentLootProperty['技能释放概率'];
+            diffValue = newValue - propertyList.get('技能释放概率');
             unit = '%';
             break;
         case 'i2':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 150) * 100);
-            diffValue = newValue - currentLootProperty['防御'];
+            diffValue = newValue - propertyList.get('防御');
             unit = '%';
             break;
     }

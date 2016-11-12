@@ -304,7 +304,7 @@ export const addAutoChangeIdColorButton = function () {
         }
 
         if (enabled) {
-            $idColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
+            $idColors.addClass('pd_id_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
             $(`
 <label class="pd_cfg_ml">
   更换顺序
@@ -394,7 +394,7 @@ export const addAutoChangeIdColorButton = function () {
         }
         else {
             $this.parent().nextAll().remove();
-            $idColors.removeClass('pd_sm_color_select').find('input').remove();
+            $idColors.removeClass('pd_id_color_select').find('input').remove();
         }
     });
 

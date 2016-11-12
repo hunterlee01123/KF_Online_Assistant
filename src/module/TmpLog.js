@@ -4,7 +4,7 @@ import Info from './Info';
 import Const from './Const';
 
 // 保存临时日志的键值名称
-const name = 'pd_tmp_log';
+const name = Const.storagePrefix + 'tmp_log';
 
 /**
  * 读取临时日志
