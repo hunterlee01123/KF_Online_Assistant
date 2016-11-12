@@ -279,11 +279,11 @@ const useItems = function (options, cycle) {
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('使用道具', html);
-                    let matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href=".+?">/i.exec(html);
-                    if (matches && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(html)) {
+                    let {type, msg} = Util.getResponseMsg(html);
+                    if (type === 1 && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(msg)) {
                         successNum++;
                         nextRoundItemIdList.push(itemId);
-                        let credits = getCreditsViaResponse(matches[1], settings.itemTypeId);
+                        let credits = getCreditsViaResponse(msg, settings.itemTypeId);
                         if (credits !== -1) {
                             if ($.isEmptyObject(credits)) stat['无效道具']++;
                             else stat['有效道具']++;
@@ -297,10 +297,10 @@ const useItems = function (options, cycle) {
                     }
                     else {
                         failNum++;
-                        if (/无法再使用/.test(html)) nextRoundItemIdList = [];
+                        if (/无法再使用/.test(msg)) nextRoundItemIdList = [];
                     }
                     $('.pd_result:last').append(
-                        `<li><b>第${index + 1}次：</b>${matches ? matches[1] : '未能获得预期的回应'}</li>`
+                        `<li><b>第${index + 1}次：</b>${msg}</li>`
                     );
                     if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
                         isStop = true;
@@ -447,10 +447,9 @@ const restoreItems = function (options, cycle) {
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('恢复道具', html);
-                    let msg = '';
-                    let matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href=".+?">/i.exec(html);
-                    if (matches) {
-                        if (/该道具已经被恢复/.test(html)) {
+                    let {type, msg} = Util.getResponseMsg(html);
+                    if (type === 1) {
+                        if (/该道具已经被恢复/.test(msg)) {
                             msg = '该道具已经被恢复';
                             successNum++;
                             successEnergyNum += perEnergyNum;
@@ -462,20 +461,14 @@ const restoreItems = function (options, cycle) {
                                 msg += '<span class="pd_notice">（恢复道具成功次数已达到设定上限，恢复操作中止）</span>';
                             }
                         }
-                        else if (/恢复失败/.test(html)) {
+                        else if (/恢复失败/.test(msg)) {
                             msg = '该道具恢复失败';
                             failNum++;
                         }
-                        else if (/你的能量不足以恢复本道具/.test(html)) {
+                        else if (/你的能量不足以恢复本道具/.test(msg)) {
                             isStop = true;
                             msg = '你的能量不足以恢复本道具<span class="pd_notice">（恢复操作中止）</span>';
                         }
-                        else {
-                            msg = matches[1];
-                        }
-                    }
-                    else {
-                        msg = '未能获得预期的回应';
                     }
                     $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                 },
@@ -585,7 +578,7 @@ const cycleUseItems = function (type, options, cycle) {
         Msg.remove($('.pd_msg:first'));
     }
 
-    let showResult = function (type, stat) {
+    const showResult = function (type, stat) {
         let resultStat = '';
         for (let key of Object.keys(stat)) {
             if (type > 0 && (key === '道具' || key === '已使用道具')) continue;
@@ -703,7 +696,8 @@ const convertItemsToEnergy = function (options) {
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('将道具转换为能量', html);
-                    if (/转换为了\s*\d+\s*点能量/.test(html)) {
+                    let {msg} = Util.getResponseMsg(html);
+                    if (/转换为了\s*\d+\s*点能量/.test(msg)) {
                         successNum++;
                     }
                     else failNum++;
@@ -792,7 +786,8 @@ const sellItems = function (options) {
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('出售道具', html);
-                    if (/出售成功/.test(html)) {
+                    let {msg} = Util.getResponseMsg(html);
+                    if (/出售成功/.test(msg)) {
                         successNum++;
                         totalGain += getSellItemGainByLevel(settings.itemLevel);
                     }
@@ -1558,7 +1553,7 @@ const showCurrentUsedItemNum = function (html = '') {
      * 显示数量
      * @param {string} html 恢复道具页面的HTML代码
      */
-    let show = function (html) {
+    const show = function (html) {
         let energyNum = getCurrentEnergyNum(html);
         let introMatches = /(1级道具转换得.+?点能量)。<br/.exec(html);
         if (location.pathname === '/kf_fw_ig_my.php') {
@@ -1609,7 +1604,7 @@ const showCurrentUsableItemNum = function (html = '') {
      * 显示数量
      * @param {string} html 我的道具页面的HTML代码
      */
-    let show = function (html) {
+    const show = function (html) {
         let matches = html.match(/">\d+<\/td><td><a href="kf_fw_ig_my\.php\?lv=/ig);
         if (!matches) return;
         let usableItemNumList = [];
@@ -1755,18 +1750,15 @@ const buyItems = function (options) {
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('购买道具', html);
-                    let msg = '';
-                    let matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
+                    let {msg, url} = Util.getResponseMsg(html);
+                    let matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec(url);
                     if (matches) {
                         successNum++;
                         msg = `获得了<a target="_blank" href="kf_fw_ig_my.php?pro=${matches[1]}" data-id="${matches[1]}">一个道具</a>`;
                     }
-                    else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
+                    else if (/你需要持有该道具两倍市场价的KFB/.test(html)) {
                         msg = '你需要持有该道具两倍市场价的KFB<span class="pd_notice">（购买操作中止）</span>';
                         isStop = true;
-                    }
-                    else {
-                        msg = '未能获得预期的回应';
                     }
                     $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                 },

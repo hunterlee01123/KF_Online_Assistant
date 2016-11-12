@@ -14,12 +14,8 @@ export const handleAtTips = function () {
     let type = Config.atTipsHandleType;
     if (type === 'default') return;
     let $atTips = $('a[href^="guanjianci.php?gjc="]');
-    let noHighlight = function () {
-        $atTips.removeClass('indbox5').addClass('indbox6');
-    };
-    let hideBox = function () {
-        $atTips.parent().next('div.line').addBack().remove();
-    };
+    let noHighlight = () => $atTips.removeClass('indbox5').addClass('indbox6');
+    let hideBox = () => $atTips.parent().next('div.line').addBack().remove();
     let handleBox = noHighlight;
     if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
     if (['no_highlight', 'no_highlight_extra', 'hide_box_1', 'at_change_to_cao'].includes(type)) {
@@ -83,7 +79,7 @@ export const smLevelUpAlert = function () {
      * 写入神秘等级数据
      * @param {number} smLevel 神秘等级
      */
-    let writeData = function (smLevel) {
+    const writeData = function (smLevel) {
         TmpLog.setValue(Const.smLevelUpTmpLogName, {time: new Date().getTime(), smLevel: smLevel});
     };
 
@@ -123,9 +119,7 @@ export const smRankChangeAlert = function () {
      * 写入神秘系数排名数据
      * @param {number} smRank 神秘系数排名
      */
-    let writeData = function (smRank) {
-        TmpLog.setValue(Const.smRankChangeTmpLogName, {time: new Date().getTime(), smRank: smRank});
-    };
+    const writeData = smRank => TmpLog.setValue(Const.smRankChangeTmpLogName, {time: new Date().getTime(), smRank});
 
     let data = TmpLog.getValue(Const.smRankChangeTmpLogName);
     if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
@@ -160,7 +154,7 @@ export const addHomePageThreadFastGotoLink = function () {
     $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         let $this = $(this);
         $this.css('position', 'relative')
-            .prepend('<a class="pd_thread_goto" href="{0}&page=e#a">&raquo;</a>'.replace('{0}', $this.find('a').attr('href')));
+            .prepend(`<a class="pd_thread_goto" href="${$this.find('a').attr('href')}&page=e#a">&raquo;</a>`);
     }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         $(this).css('position', 'static').find('.pd_thread_goto').remove();
     });
@@ -174,8 +168,8 @@ export const showVipSurplusTime = function () {
      * 添加VIP剩余时间的提示
      * @param {number} hours VIP剩余时间（小时）
      */
-    let addVipHoursTips = function (hours) {
-        $('a[href="kf_growup.php"][title="用户等级和权限"]').parent().after(
+    const addVipHoursTips = function (hours) {
+        $('a[href="kf_growup.php"]').parent().after(
             `<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` +
             `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`
         );

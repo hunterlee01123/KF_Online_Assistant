@@ -485,19 +485,25 @@ export const copyText = function ($target, msg = '', $excludeElem = null) {
 /**
  * 获取服务器返回的消息
  * @param {string} html HTML代码
- * @returns {string} 服务器返回的消息
+ * @returns {{type: number, msg: string, url: string}} 服务器返回的消息对象
  */
 export const getResponseMsg = function (html) {
-    let msg = '';
+    let type = 0;
+    let msg = '', url = '';
     let matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href="(.+?)">/i.exec(html);
     if (matches) {
-        msg = `${matches[1]}；跳转地址：${getHostNameUrl()}${matches[2]}`;
+        type = 1;
+        msg = matches[1];
+        url = matches[2];
     }
     else {
         let matches = /操作提示<br\s*\/?>\r\n(.+?)<br\s*\/?>\r\n<a href="javascript:history\.go\(-1\);">返回上一步操作<\/a>/i.exec(html);
-        if (matches) msg = matches[1];
+        if (matches) {
+            type = -1;
+            msg = matches[1];
+        }
     }
-    return msg;
+    return {type, msg: msg ? msg : '未能获得预期的回应', url};
 };
 
 /**

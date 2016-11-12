@@ -1,5 +1,6 @@
 /* 卡片模块 */
 'use strict';
+import * as Util from './Util';
 import Const from './Const';
 import * as Msg from './Msg';
 import * as Log from './Log';
@@ -21,7 +22,8 @@ const convertCardsToVipTime = function (cardList, safeId) {
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);
-                    let matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(html);
+                    let {msg} = Util.getResponseMsg(html);
+                    let matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(msg);
                     if (matches) {
                         successNum++;
                         totalVipTime += parseInt(matches[1]);

@@ -413,11 +413,13 @@ export const handleBuyThreadBtn = function () {
             if (Config.buyThreadViaAjaxEnabled) {
                 let $wait = Msg.wait('正在购买帖子&hellip;');
                 $.get(url, function (html) {
+                    Public.showFormatLog('购买帖子', html);
+                    let {msg} = Util.getResponseMsg(html);
                     Msg.remove($wait);
-                    if (/操作完成/.test(html)) {
+                    if (/操作完成/.test(msg)) {
                         location.reload();
                     }
-                    else if (/您已经购买此帖/.test(html)) {
+                    else if (/您已经购买此帖/.test(msg)) {
                         alert('你已经购买过此帖');
                         location.reload();
                     }
@@ -459,7 +461,7 @@ export const addBatchBuyThreadButton = function () {
                 let url = $this.data('url');
                 let sell = parseInt($this.data('sell'));
                 if (url && !isNaN(sell)) {
-                    threadList.push({url: url, sell: sell});
+                    threadList.push({url, sell});
                     totalSell += sell;
                 }
             });
@@ -467,7 +469,8 @@ export const addBatchBuyThreadButton = function () {
                 alert('请选择要购买的帖子');
                 return;
             }
-            if (confirm(`你共选择了${threadList.length}个帖子，总售价${totalSell.toLocaleString()}KFB，` +
+            if (confirm(
+                    `你共选择了${threadList.length}个帖子，总售价${totalSell.toLocaleString()}KFB，` +
                     `均价${Util.getFixedNumLocStr(totalSell / threadList.length, 2)}KFB，是否批量购买？`
                 )
             ) {
@@ -478,7 +481,7 @@ export const addBatchBuyThreadButton = function () {
                 buyThreads(threadList);
             }
         }).parent().mouseenter(function () {
-        $('<span style="margin-left: 5px;">[<a href="#">全选</a><a style="margin-left: 5px;" href="#">反选</a>]</span>')
+        $('<span style="margin-left: 5px;">[<a class="pd_btn_link" href="#">全选</a><a class="pd_btn_link" href="#">反选</a>]</span>')
             .insertAfter($(this).find('.pd_buy_thread_btn'))
             .find('a:first')
             .click(function (e) {
@@ -505,22 +508,23 @@ export const addBatchBuyThreadButton = function () {
 
 /**
  * 购买指定的一系列帖子
- * @param {Object[]} threadList 购买帖子列表，threadList[n][url]：购买帖子的URL；threadList[n][sell]：购买帖子的售价
+ * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
  */
 export const buyThreads = function (threadList) {
     let successNum = 0, failNum = 0, totalSell = 0;
     $(document).clearQueue('BuyThreads');
-    $.each(threadList, function (index, thread) {
+    $.each(threadList, function (index, {url, sell}) {
         $(document).queue('BuyThreads', function () {
             $.ajax({
                 type: 'GET',
-                url: thread.url + '&t=' + new Date().getTime(),
+                url: url + '&t=' + new Date().getTime(),
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('购买帖子', html);
-                    if (/操作完成/.test(html)) {
+                    let {msg} = Util.getResponseMsg(html);
+                    if (/操作完成/.test(msg)) {
                         successNum++;
-                        totalSell += thread.sell;
+                        totalSell += sell;
                     }
                     else failNum++;
                 },
@@ -626,7 +630,7 @@ export const addMoreSmileLink = function () {
      * 添加表情代码
      * @param {string} id 表情ID
      */
-    let addSmileCode = function (id) {
+    const addSmileCode = function (id) {
         let textArea = $('textarea[name="atc_content"]').get(0);
         if (!textArea) return;
         let code = `[s:${id}]`;

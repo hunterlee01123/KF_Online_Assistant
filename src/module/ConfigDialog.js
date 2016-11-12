@@ -1175,7 +1175,7 @@ const showBlockUserDialog = function () {
      * @param {string} name 用户名
      * @param {number} type 屏蔽类型
      */
-    let addBlockUser = function (name, type) {
+    const addBlockUser = function (name, type) {
         $(`
 <li>
   <input type="checkbox">

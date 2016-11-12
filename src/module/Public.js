@@ -75,7 +75,6 @@ export const appendCss = function () {
   .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }
   .pd_msg a { font-weight: bold; margin-left: 15px; }
   .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }
-  .pd_stat .pd_notice { margin-left: 5px; }
   .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
   .pd_highlight { color: #ff0000 !important; }
   .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }
@@ -137,6 +136,10 @@ export const appendCss = function () {
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_item_type_chk { margin-right: 5px; }
   .pd_btn_link { margin-left: 4px; margin-right: 4px; }
+  hr {
+    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
+    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
+  }
 
   /* 设置对话框 */
   .pd_cfg_box {
@@ -201,9 +204,8 @@ export const preventCloseWindowWhenActioning = function (e) {
  * @param {string} html 回应的HTML源码
  */
 export const showFormatLog = function (msgType, html) {
-    let msg = Util.getResponseMsg(html);
-    if (!msg) msg = '未能获得预期的回应';
-    console.log(`【${msgType}】回应：${msg}`);
+    let {msg, url} = Util.getResponseMsg(html);
+    console.log(`【${msgType}】回应：${msg}${url ? `；跳转地址：${Util.getHostNameUrl()}${url}` : ''}`);
 };
 
 /**
@@ -309,7 +311,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
      * 获取捐款Cookies有效期
      * @returns {Date} Cookies有效期的Date对象
      */
-    let getDonationCookieDate = function () {
+    const getDonationCookieDate = function () {
         let now = new Date();
         let date = Util.getTimezoneDateByTime('02:00:00');
         if (now > date) {
@@ -324,25 +326,26 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
      * 使用指定的KFB捐款
      * @param {number} kfb 指定的KFB
      */
-    let donationSubmit = function (kfb) {
+    const donationSubmit = function (kfb) {
         $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
             Util.setCookie(Const.donationCookieName, 1, getDonationCookieDate());
             showFormatLog(`捐款${kfb}KFB`, html);
+            let {msg} = Util.getResponseMsg(html);
             Msg.remove($wait);
 
-            let msg = `<strong>捐款<em>${kfb}</em>KFB</strong>`;
-            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(html);
+            let msgHtml = `<strong>捐款<em>${kfb}</em>KFB</strong>`;
+            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
             if (!matches) {
-                if (/KFB不足。<br/i.test(html)) {
-                    msg += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
+                if (/KFB不足。/.test(msg)) {
+                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
                 }
                 else return;
             }
             else {
-                msg += `<i>经验值<em>+${matches[1]}</em></i>`;
+                msgHtml += `<i>经验值<em>+${matches[1]}</em></i>`;
                 let gain = {'经验值': parseInt(matches[1])};
                 if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
-                    msg += '<i style="margin-left: 5px;">(补偿期:</i>' +
+                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' +
                         (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${matches[2]}</em>${typeof matches[3] !== 'undefined' ? '' : ')'}</i>` : '') +
                         (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${matches[3]}</em>)</i>` : '');
                     if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
@@ -350,9 +353,9 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
                 }
                 Log.push('捐款', `捐款\`${kfb}\`KFB`, {gain: gain, pay: {'KFB': -kfb}});
             }
-            Msg.show(msg);
+            Msg.show(msgHtml);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Func.run('Public.donation_after_', html);
+            Func.run('Public.donation_after_', msg);
         });
     };
 
@@ -401,29 +404,24 @@ export const getMinRefreshInterval = function () {
         }
     }
 
-    let autoChangeSMColorInterval = -1;
+    let autoChangeIdColorInterval = -1;
     if (Config.autoChangeIdColorEnabled) {
         let nextTime = parseInt(Util.getCookie(Const.autoChangeIdColorCookieName));
         if (!isNaN(nextTime) && nextTime > 0) {
-            autoChangeSMColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
-            if (autoChangeSMColorInterval < 0) autoChangeSMColorInterval = 0;
+            autoChangeIdColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
+            if (autoChangeIdColorInterval < 0) autoChangeIdColorInterval = 0;
             if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1)
-                autoChangeSMColorInterval = -1;
+                autoChangeIdColorInterval = -1;
         }
-        else autoChangeSMColorInterval = 0;
+        else autoChangeIdColorInterval = 0;
     }
 
-    let minArr = [donationInterval, autoChangeSMColorInterval];
-    minArr.sort((a, b) => a > b);
-    let min = -1;
-    for (let num of minArr) {
-        if (num > -1) {
-            min = num;
-            break;
-        }
+    let minArr = [donationInterval, autoChangeIdColorInterval].filter(interval => interval >= 0);
+    if (minArr.length > 0) {
+        let min = Math.min(...minArr);
+        return min > 0 ? min + 1 : 0;
     }
-    if (min <= -1) return -1;
-    else return min > 0 ? min + 1 : 0;
+    else return -1;
 };
 
 /**
@@ -442,7 +440,7 @@ export const startAutoRefreshMode = function () {
      * @param {number} interval 倒计时
      * @returns {string} 经过格式化的倒计时标题
      */
-    let getFormatIntervalTitle = function (type, interval) {
+    const getFormatIntervalTitle = function (type, interval) {
         let textInterval = '';
         let diff = Util.getTimeDiffInfo(Util.getDate('+' + interval + 's').getTime());
         textInterval = diff.hours > 0 ? diff.hours + '时' : '';
@@ -458,12 +456,12 @@ export const startAutoRefreshMode = function () {
      * @param {number} interval 倒计时的时间间隔（秒）
      * @param {boolean} isShowTitle 是否立即显示标题
      */
-    let showRefreshModeTips = function (interval, isShowTitle = false) {
+    const showRefreshModeTips = function (interval, isShowTitle = false) {
         if (titleItvFunc) window.clearInterval(titleItvFunc);
         let showInterval = interval;
         console.log('【定时模式】倒计时：' + getFormatIntervalTitle(1, showInterval));
         if (Config.showRefreshModeTipsType.toLowerCase() !== 'never') {
-            let showIntervalTitle = function () {
+            const showIntervalTitle = function () {
                 document.title = `${oriTitle} (定时: ${getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval)})`;
                 showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
             };
@@ -476,7 +474,7 @@ export const startAutoRefreshMode = function () {
     /**
      * 处理错误
      */
-    let handleError = function () {
+    const handleError = function () {
         let interval = 0, errorText = '';
         $.ajax({
             type: 'GET',
@@ -519,7 +517,7 @@ export const startAutoRefreshMode = function () {
     /**
      * 检查刷新间隔
      */
-    let checkRefreshInterval = function () {
+    const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
         if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) changeIdColor();
@@ -873,7 +871,7 @@ export const autoSaveCurrentDeposit = function (isRead) {
      * 活期存款
      * @param {number} income 当前拥有的KFB
      */
-    let saveCurrentDeposit = function (income) {
+    const saveCurrentDeposit = function (income) {
         if (income < Config.saveCurrentDepositAfterKfb) return;
         let multiple = Math.floor((income - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
         if (income - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb)
@@ -885,7 +883,8 @@ export const autoSaveCurrentDeposit = function (isRead) {
             {action: 'save', btype: 1, savemoney: money},
             function (html) {
                 showFormatLog('自动存款', html);
-                if (/完成存款/.test(html)) {
+                let {msg} = Util.getResponseMsg(html);
+                if (/完成存款/.test(msg)) {
                     Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
                     console.log(`共有${money}KFB已自动存入活期存款`);
                     Msg.show(`共有<em>${money}</em>KFB已自动存入活期存款`);
@@ -926,7 +925,7 @@ export const changeIdColor = function () {
     /**
      * 写入Cookie
      */
-    let setCookie = function () {
+    const setCookie = function () {
         let nextTime = Util.getDate(`+${Config.autoChangeIdColorInterval}h`);
         Util.setCookie(Const.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
@@ -987,7 +986,8 @@ export const changeIdColor = function () {
             $.get(`kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${new Date().getTime()}`, function (html) {
                 setCookie();
                 showFormatLog('自动更换ID颜色', html);
-                if (/等级颜色修改完毕/.test(html)) {
+                let {msg} = Util.getResponseMsg(html);
+                if (/等级颜色修改完毕/.test(msg)) {
                     console.log('ID颜色更换为：' + nextId);
                     TmpLog.setValue(Const.prevAutoChangeSMColorIdTmpLogName, nextId);
                 }

@@ -241,11 +241,15 @@ export const modifyMyPostLink = function () {
  * 在短消息页面添加选择指定短消息的按钮
  */
 export const addMsgSelectButton = function () {
-    $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('input[type="button"][value="全选"]')
+    let $checkeds = $('.thread1 > tbody > tr > td:last-child > [type="checkbox"]');
+    $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('[type="button"][value="全选"]')
         .click(function (e) {
             e.preventDefault();
-            let value = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
+            let value = $.trim(
+                prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除')
+            );
             if (value !== '') {
+                $checkeds.prop('checked', false);
                 let titleArr = value.split('|');
                 $('.thread1 > tbody > tr > td:nth-child(2) > a').each(function () {
                     let $this = $(this);
@@ -262,10 +266,10 @@ export const addMsgSelectButton = function () {
         .prev('td')
         .attr('colspan', 3);
     $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">')
-        .insertAfter('input[type="button"][value="全选"]')
+        .insertAfter('[type="button"][value="全选"]')
         .click(function (e) {
             e.preventDefault();
-            $('.thread1 > tbody > tr > td:last-child > input[type="checkbox"]').each(function () {
+            $checkeds.each(function () {
                 let $this = $(this);
                 $this.prop('checked', !$this.prop('checked'));
             });
@@ -423,7 +427,7 @@ export const addAutoChangeIdColorButton = function () {
  * 同步修改帖子每页楼层数量
  */
 export const syncModifyPerPageFloorNum = function () {
-    let syncConfig = function () {
+    const syncConfig = function () {
         let perPageFloorNum = parseInt($('select[name="p_num"]').val());
         if (isNaN(perPageFloorNum)) return;
         if (!perPageFloorNum) perPageFloorNum = 10;
