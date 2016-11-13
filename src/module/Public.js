@@ -167,6 +167,8 @@ export const appendCss = function () {
   .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }
   #pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }
   .pd_cfg_ml { margin-left: 10px; }
+  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }
+  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }
 
   /* 日志对话框 */
   #pd_log { width: 880px; }
@@ -906,17 +908,6 @@ export const autoSaveCurrentDeposit = function (isRead) {
 };
 
 /**
- * 执行自定义脚本
- * @param {number} type 脚本类型，1：脚本开始时执行；2：脚本结束时执行
- */
-export const runCustomScript = function (type = 1) {
-    let script = '';
-    if (type === 2) script = Config.customScriptEndContent;
-    else script = Config.customScriptStartContent;
-    if (script) runCmd(script);
-};
-
-/**
  * 更换ID颜色
  */
 export const changeIdColor = function () {
@@ -1231,23 +1222,4 @@ export const checkRatingSize = function (title, ratingSize) {
         return {type: 1, titleSize, ratingSize};
     }
     else return {type: 0};
-};
-
-/**
- * 运行命令
- * @param {string} cmd 命令
- * @param {boolean} isOutput 是否在控制台上显示结果
- * @returns {string} 运行结果
- */
-export const runCmd = function (cmd, isOutput = false) {
-    let result = '';
-    try {
-        result = eval(cmd);
-        if (isOutput) console.log(result);
-    }
-    catch (ex) {
-        result = ex;
-        console.log(ex);
-    }
-    return String(result);
 };

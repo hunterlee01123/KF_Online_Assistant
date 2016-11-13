@@ -101,9 +101,11 @@ export const Config = {
     customCssContent: '',
     // 是否执行自定义的脚本，true：开启；false：关闭
     customScriptEnabled: false,
-    // 在脚本开始时执行的自定义脚本内容
+    // 自定义脚本列表
+    customScriptList: [],
+    // 在脚本开始时执行的自定义脚本内容（已废弃）
     customScriptStartContent: '',
-    // 在脚本结束时执行的自定义脚本内容
+    // 在脚本结束时执行的自定义脚本内容（已废弃）
     customScriptEndContent: '',
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',

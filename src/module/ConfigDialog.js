@@ -13,9 +13,8 @@ import {
     normalize as normalizeConfig,
     Config as defConfig,
 } from './Config';
-import {show as showLogDialog} from './LogDialog';
 import * as TmpLog from './TmpLog';
-import * as Public from './Public';
+import * as Script from './Script';
 
 /**
  * 显示设置对话框
@@ -324,7 +323,7 @@ export const show = function () {
         if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();
         else if (name === 'openUserMemoDialog') showUserMemoDialog();
         else if (name === 'openCustomCssDialog') showCustomCssDialog();
-        else if (name === 'openCustomScriptDialog') showCustomScriptDialog();
+        else if (name === 'openCustomScriptDialog') Script.showDialog();
         else if (name === 'openFollowUserDialog') showFollowUserDialog();
         else if (name === 'openBlockUserDialog') showBlockUserDialog();
         else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
@@ -567,7 +566,7 @@ const showRunCommandDialog = function () {
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         let content = $cmd.val();
-        if (content) Public.runCmd(content, true);
+        if (content) Script.runCmd(content, true);
     }).next('button').click(function (e) {
         e.preventDefault();
         $cmd.val('').focus();
@@ -851,49 +850,6 @@ const showCustomCssDialog = function () {
     $content.val(Config.customCssContent);
     Dialog.show(dialogName);
     $content.focus();
-};
-
-/**
- * 显示自定义脚本对话框
- */
-const showCustomScriptDialog = function () {
-    const dialogName = 'pd_custom_script';
-    if ($('#' + dialogName).length > 0) return;
-    let html = `
-<div class="pd_cfg_main">
-  <div style="margin: 5px 0;">
-    <label style="color: #f00;"><input type="radio" name="customScriptType" value="start" checked> 在脚本开始时执行的内容</label>
-    <label style="color: #00f;"><input type="radio" name="customScriptType" value="end"> 在脚本结束时执行的内容</label>
-  </div>
-  <textarea wrap="off" name="customScriptStartContent" style="width: 750px; height: 500px; white-space: pre;"></textarea>
-  <textarea wrap="off" name="customScriptEndContent" style="width: 750px; height: 500px; white-space: pre; display: none;"></textarea>
-</div>
-<div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500968">其他人分享的自定义脚本</a></span>
-  <button>确定</button> <button>取消</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, '自定义脚本', html);
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
-        e.preventDefault();
-        Config.customScriptStartContent = $dialog.find('[name="customScriptStartContent"]').val();
-        Config.customScriptEndContent = $dialog.find('[name="customScriptEndContent"]').val();
-        writeConfig();
-        Dialog.close(dialogName);
-    }).next('button').click(() => Dialog.close(dialogName));
-    $dialog.find('[name="customScriptStartContent"]')
-        .val(Config.customScriptStartContent)
-        .end()
-        .find('[name="customScriptEndContent"]')
-        .val(Config.customScriptEndContent)
-        .end()
-        .find('[name="customScriptType"]')
-        .click(function () {
-            let type = $(this).val();
-            $dialog.find(`[name="customScript${type === 'end' ? 'Start' : 'End'}Content"]`).hide();
-            $dialog.find(`[name="customScript${type === 'end' ? 'End' : 'Start'}Content"]`).show();
-        });
-    Dialog.show(dialogName);
-    $dialog.find('[name="customScriptStartContent"]').focus();
 };
 
 /**

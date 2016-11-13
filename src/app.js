@@ -12,9 +12,10 @@ import * as Bank from './module/Bank';
 import * as Card from './module/Card';
 import * as Item from './module/Item';
 import * as Loot from './module/Loot';
+import * as Script from './module/Script';
 
 // 版本号
-let version = '7.0';
+const version = '7.0';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -29,7 +30,7 @@ $(function () {
     Public.addConfigAndLogDialogLink();
     if (Config.animationEffectOffEnabled) $.fx.off = true;
 
-    if (Config.customScriptEnabled) Public.runCustomScript(1);
+    if (Config.customScriptEnabled) Script.runCustomScript('start');
     Public.repairBbsErrorCode();
     window.addEventListener('beforeunload', Public.preventCloseWindowWhenActioning);
     if (Config.showSearchLinkEnabled) Public.addSearchDialogLink();
@@ -175,7 +176,7 @@ $(function () {
 
     if (Config.autoRefreshEnabled && Info.isInHomePage) Public.startAutoRefreshMode();
 
-    if (Config.customScriptEnabled) Public.runCustomScript(2);
+    if (Config.customScriptEnabled) Script.runCustomScript('end');
 
     let endDate = new Date();
     console.log(`【KF Online助手】加载完毕，加载耗时：${endDate - startDate}ms`);

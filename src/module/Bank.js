@@ -252,7 +252,7 @@ export const addBatchTransferButton = function () {
         if (!matches) return;
         let fee = parseInt(matches[1]) / 100;
         let totalMoney = 0;
-        for (let [userName, money] of users) {
+        for (let [, money] of users) {
             totalMoney += money;
         }
         totalMoney = Math.floor(totalMoney * (1 + fee));
