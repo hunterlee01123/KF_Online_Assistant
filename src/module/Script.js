@@ -27,8 +27,10 @@ const defScriptName = '未命名脚本';
  * @param {string} type 脚本执行时机，start：在脚本开始时执行；end：在脚本结束时执行
  */
 export const runCustomScript = function (type = 'end') {
-    for (let {runAt, content} of Config.customScriptList) {
-        if (runAt === type && content) runCmd(content);
+    for (let {enabled, runAt, content} of Config.customScriptList) {
+        if (enabled && runAt === type && content) {
+            runCmd(content);
+        }
     }
 };
 
@@ -142,12 +144,12 @@ export const showDialog = function () {
         $customScriptList.append(`
 <div class="pd_custom_script_header">
   <input type="checkbox" ${enabled ? 'checked' : ''} title="是否启用此脚本">
-  <a data-name="name" href="#" style="margin-left: 5px;">[${name}]</a>
-  <span data-name="version" style="margin-left: 5px; color: #666; ${!version ? 'display: none;' : ''}">v${version}</span>
+  <a class="pd_custom_script_name" href="#" style="margin-left: 5px;">[${name}]</a>
+  <span data-name="version" style="margin-left: 5px; color: #666;" ${!version ? 'hidden' : ''}>${version}</span>
   <span data-name="runAt" style="margin-left: 5px; color: ${runAt === 'start' ? '#f00' : '#00f'};" title="脚本执行时机">
-    (${runAt === 'start' ? '开始时' : '结束时'})
+    [${runAt === 'start' ? '开始时' : '结束时'}]
   </span>
-  <a data-name="homepage" href="${homepage}" target="_blank" style="margin-left: 5px; ${!version ? 'display: none;' : ''}">[主页]</a>
+  <a data-name="homepage" href="${homepage}" target="_blank" style="margin-left: 5px;" ${!homepage ? 'hidden' : ''}>[主页]</a>
   <a data-name="delete" href="#" style="margin-left: 5px; color: #666;">[删除]</a>
 </div>
 <textarea class="pd_custom_script_content" wrap="off">${content}</textarea>
@@ -179,7 +181,7 @@ export const showDialog = function () {
 `.trim() + '\n' + $content.val()).focus();
     });
 
-    $customScriptList.on('click', '[data-name="name"]', function (e) {
+    $customScriptList.on('click', '.pd_custom_script_name', function (e) {
         e.preventDefault();
         $dialog.find('.pd_custom_script_content').hide();
         $(this).parent().next().show();
@@ -195,10 +197,10 @@ export const showDialog = function () {
         let $this = $(this);
         let {name, version, homepage, runAt} = getScriptMeta($this.val());
         let $header = $this.prev();
-        $header.find('[data-name="name"]').text(`[${name ? name : defScriptName}]`);
-        $header.find('[data-name="version"]').text('v' + version).css('display', version ? 'inline' : 'none');
-        $header.find('[data-name="homepage"]').attr('href', homepage ? homepage : '').css('display', homepage ? 'inline' : 'none');
-        $header.find('[data-name="runAt"]').html(`(${runAt === 'start' ? '开始时' : '结束时'})`)
+        $header.find('.pd_custom_script_name').text(`[${name ? name : defScriptName}]`);
+        $header.find('[data-name="version"]').text(version).prop('hidden', !version);
+        $header.find('[data-name="homepage"]').attr('href', homepage ? homepage : '').prop('hidden', !homepage);
+        $header.find('[data-name="runAt"]').html(`[${runAt === 'start' ? '开始时' : '结束时'}]`)
             .css('color', runAt === 'start' ? '#f00' : '#00f');
     });
 

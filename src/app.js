@@ -135,6 +135,7 @@ $(function () {
     }
     else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
         Other.syncModifyPerPageFloorNum();
+        if (Info.isInMiaolaDomain) Other.addAvatarChangeAlert();
     }
     else if (/\/job\.php\?action=preview$/i.test(location.href)) {
         Post.modifyPostPreviewPage();
@@ -157,11 +158,17 @@ $(function () {
     if (location.pathname === '/post.php') {
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
+        if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
     if (Config.followUserEnabled) Public.followUsers();
     if (Info.isMobile) Public.bindElementTitleClick();
+    if (Info.isInMiaolaDomain) {
+        if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
+            Public.importKfSmileEnhanceExtension();
+        }
+    }
 
     let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && Info.isInHomePage;
     let isDonationStarted = false;

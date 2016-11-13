@@ -163,6 +163,10 @@ export const show = function () {
         <input name="showSelfRatingLinkEnabled" type="checkbox"> 显示自助评分链接
         <span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span>
       </label>
+      <label class="pd_cfg_ml" ${Info.isInMiaolaDomain ? '' : 'hidden'}>
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox"> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
+      </label>
     </fieldset>
   </div>
 
@@ -914,7 +918,7 @@ const showFollowUserDialog = function () {
       <span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span>
     </label><br>
   </div>
-  <ul data-name="followUserList" style="margin-top: 5px; width: 274px; line-height: 24px;"></ul>
+  <ul data-name="followUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>
   <div data-name="followUserBtns" style="margin-top: 5px;">
     <div style="display: inline-block;">
       <a class="pd_btn_link" href="#">全选</a>
@@ -1060,7 +1064,7 @@ const showBlockUserDialog = function () {
       <span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span>
     </label>
   </div>
-  <ul data-name="blockUserList" style="margin-top: 5px; width: 362px; line-height: 24px;"></ul>
+  <ul data-name="blockUserList" style="margin-top: 5px; min-width: 362px; line-height: 24px;"></ul>
   <div data-name="blockUserBtns" style="margin-top: 5px;">
     <div style="display: inline-block;"><a href="#">全选</a><a style="margin-left: 7px;" href="#">反选</a></div>
     <div style="float: right;">

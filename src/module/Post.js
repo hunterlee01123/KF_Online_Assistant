@@ -237,3 +237,15 @@ export const modifyPostPreviewPage = function () {
         'padding': '10px'
     });
 };
+
+/**
+ * 在发帖页面添加更新附件提醒
+ */
+export const addAttachChangeAlert = function () {
+    $(document).on('click', '.abtn[id^="md_"]', function () {
+        if (!$(document).data('attachUpdateAlert')) {
+            alert('本反向代理服务器为了提高性能对图片设置了缓存，更新附件图片后可能需等待最多30分钟才能看到效果');
+            $(document).data('attachUpdateAlert', true);
+        }
+    });
+};

@@ -52,7 +52,7 @@ export const show = function () {
   <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
   <button>关闭</button> <button>清除日志</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html);
+    let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
 
     let log = Log.read();
     let dateList = [];

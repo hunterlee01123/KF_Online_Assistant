@@ -57,7 +57,41 @@ export const checkBrowserType = function () {
 export const appendCss = function () {
     $('head').append(`
 <style>
-  /* 通用 */
+  /* 公共 */
+  .pd_highlight { color: #ff0000 !important; }
+  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }
+  .pd_input, .pd_cfg_main input, .pd_cfg_main select {
+    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;
+  }
+  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }
+  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
+  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
+  .pd_btn_link { margin-left: 4px; margin-right: 4px; }
+  .pd_custom_tips { cursor: help; }
+  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
+  hr {
+    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
+    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
+  }
+  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }
+  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
+  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }
+  .pd_title_tips {
+    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;
+    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;
+  }
+  .pd_search_type {
+    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;
+  }
+  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }
+  .pd_search_type_list {
+    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;
+    text-indent: 13px; cursor: pointer; z-index: 1003;
+  }
+  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
+  
+  /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
   .pd_msg_container { position: ${Info.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1001; }
   .pd_msg {
@@ -74,74 +108,49 @@ export const appendCss = function () {
   .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }
   .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }
   .pd_msg a { font-weight: bold; margin-left: 15px; }
-  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }
-  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
-  .pd_highlight { color: #ff0000 !important; }
-  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }
-  .pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px; }
-  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }
-  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
-  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
+  
+  /* 帖子页面 */
   .readlou .pd_goto_link { color: #000; }
   .readlou .pd_goto_link:hover { color: #51d; }
   .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
   .pages .pd_fast_goto_page { margin-left: 8px; }
   .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }
+  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
+  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
+  .pd_user_memo_tips:hover { color: #ddd; }
+  .readtext img[onclick] { max-width: 550px; }
+  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
+  
+  /* 道具页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
+  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
   .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }
   .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }
+  .pd_usable_num { color: #669933; }
+  .pd_used_num { color: #ff0033; }
+  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }
+  .pd_item_type_chk { margin-right: 5px; }
+  
+  /* 发帖页面 */
+  #pd_smile_panel img { margin: 3px; cursor: pointer; }
+  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
+  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }
+  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }
+  
+  /* 其它页面 */
   .pd_thread_page { margin-left: 5px; }
   .pd_thread_page a { color: #444; padding: 0 3px; }
   .pd_thread_page a:hover { color: #51d; }
   .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }
-  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
   .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }
   .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }
-  .pd_custom_tips { cursor: help; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
-  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
-  .pd_user_memo_tips:hover { color: #ddd; }
   .pd_id_color_select > td { position: relative; cursor: pointer; }
   .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }
-  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }
-  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }
-  #pd_smile_panel img { margin: 3px; cursor: pointer; }
-  .pd_verify_tips { cursor: help; color: #999; }
-  .pd_verify_tips_ok { color: #99cc66; }
-  .pd_verify_tips_conditional { color: #ff9900; }
-  .pd_verify_tips_unable { color: #ff0033; }
-  .pd_verify_tips_details { cursor: pointer; }
-  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }
-  .pd_usable_num { color: #669933; }
-  .pd_used_num { color: #ff0033; }
-  .pd_title_tips {
-    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;
-    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;
-  }
-  .pd_search_type {
-    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;
-  }
-  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: "Microsoft YaHei"; }
-  .pd_search_type_list {
-    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;
-    text-indent: 13px; cursor: pointer; z-index: 1003;
-  }
-  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
-  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
-  .readtext img[onclick] { max-width: 550px; }
-  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }
-  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }
-  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
-  .pd_item_type_chk { margin-right: 5px; }
-  .pd_btn_link { margin-left: 4px; margin-right: 4px; }
-  hr {
-    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
-    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
-  }
 
   /* 设置对话框 */
+  .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
     position: ${Info.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1002;
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
@@ -165,13 +174,10 @@ export const appendCss = function () {
   .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }
   .pd_cfg_btns button { min-width: 80px; }
   .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }
-  #pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }
-  .pd_cfg_ml { margin-left: 10px; }
   .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }
   .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }
 
   /* 日志对话框 */
-  #pd_log { width: 880px; }
   .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }
   .pd_log_nav a { display: inline-block; }
   .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }
@@ -1222,4 +1228,15 @@ export const checkRatingSize = function (title, ratingSize) {
         return {type: 1, titleSize, ratingSize};
     }
     else return {type: 0};
+};
+
+/**
+ * 引入绯月表情增强插件
+ */
+export const importKfSmileEnhanceExtension = function () {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
+    document.body.appendChild(script);
 };

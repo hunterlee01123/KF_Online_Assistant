@@ -444,6 +444,14 @@ export const syncModifyPerPageFloorNum = function () {
 };
 
 /**
+ * 在设置页面添加更换头像提醒
+ */
+export const addAvatarChangeAlert = function () {
+    $('input[name="uploadurl[2]"]')
+        .parent().append('<div class="pd_highlight">本反向代理服务器为了提高性能对图片设置了缓存，更换头像后可能需等待<b>最多30分钟</b>才能看到效果</div>');
+};
+
+/**
  * 高亮自助评分错标文件大小
  */
 export const highlightRatingErrorSize = function () {
