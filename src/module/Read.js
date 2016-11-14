@@ -592,7 +592,8 @@ export const addUserMemo = function () {
  * 添加复制代码的链接
  */
 export const addCopyCodeLink = function () {
-    $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>');
+    $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>')
+        .parent('fieldset').addClass('pd_code_area');
     if (!$('.pd_copy_code').length) return;
     $('#alldiv').on('click', 'a.pd_copy_code', function (e) {
         e.preventDefault();
