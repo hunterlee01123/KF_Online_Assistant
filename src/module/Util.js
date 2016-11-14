@@ -522,6 +522,4 @@ export const entries = function*(obj) {
  * @param {Array} list 指定列表
  * @returns {number} 指定用户在列表中的索引号，-1表示不在该列表中
  */
-export const inFollowOrBlockUserList = function (name, list) {
-    return list.findIndex(elem => elem.name && elem.name === name);
-};
+export const inFollowOrBlockUserList = (name, list) => list.findIndex(data => data.name && data.name === name);

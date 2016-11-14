@@ -51,7 +51,7 @@ export const show = function (options, duration) {
     }
 
     let $msg = $(`<div class="pd_msg">${settings.msg}</div>`).appendTo($container);
-    $msg.on('click', 'a.pd_stop_action', function (e) {
+    $msg.on('click', '.pd_stop_action', function (e) {
         e.preventDefault();
         $(this).html('正在停止&hellip;').closest('.pd_msg').data('stop', true);
     });

@@ -35,7 +35,7 @@ const convertCardsToVipTime = function (cardList, safeId) {
                     failNum++;
                 },
                 complete () {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('ConvertCardsToVipTime');

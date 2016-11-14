@@ -204,8 +204,8 @@ const enhanceLootLog = function () {
     let $log = $('.kf_fw_ig1 > tbody > tr:nth-child(5) > td');
     let matches = $log.html().match(/获得\d+经验和\d+KFB/g);
     let exp = 0, kfb = 0;
-    for (let match of matches) {
-        let logMatches = /获得(\d+)经验和(\d+)KFB/.exec(match);
+    for (let i in matches) {
+        let logMatches = /获得(\d+)经验和(\d+)KFB/.exec(matches[i]);
         exp += parseInt(logMatches[1]);
         kfb += parseInt(logMatches[2]);
     }

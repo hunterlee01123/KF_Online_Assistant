@@ -10,6 +10,7 @@ import {show as showConfigDialog} from './ConfigDialog';
 import * as Log from './Log';
 import {show as showLogDialog} from './LogDialog';
 import * as TmpLog from './TmpLog';
+import * as Read from './Read';
 
 /**
  * 获取Uid和用户名
@@ -120,6 +121,7 @@ export const appendCss = function () {
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
+  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; }
   
   /* 道具页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
@@ -699,7 +701,7 @@ export const blockUsers = function () {
             }
         });
     }
-    if (blockNum > 0) console.log('【屏蔽用户】共有{0}个项目被屏蔽'.replace('{0}', blockNum));
+    if (blockNum > 0) console.log(`【屏蔽用户】共有${blockNum}个帖子被屏蔽`);
 };
 
 /**
@@ -707,6 +709,7 @@ export const blockUsers = function () {
  */
 export const blockThread = function () {
     if (!Config.blockThreadList.length) return;
+
     /**
      * 是否屏蔽帖子
      * @param {string} title 帖子标题
@@ -715,12 +718,11 @@ export const blockThread = function () {
      * @returns {boolean} 是否屏蔽
      */
     const isBlock = function (title, userName, fid = 0) {
-        for (let data of Config.blockThreadList) {
-            let keyWord = data.keyWord;
-            let re = null;
-            if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+        for (let {keyWord, includeUser, excludeUser, includeFid, excludeFid} of Config.blockThreadList) {
+            let regex = null;
+            if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
                 try {
-                    re = eval(keyWord);
+                    regex = eval(keyWord);
                 }
                 catch (ex) {
                     console.log(ex);
@@ -728,26 +730,26 @@ export const blockThread = function () {
                 }
             }
             if (userName) {
-                if (data.includeUser) {
-                    if (!data.includeUser.includes(userName)) continue;
+                if (includeUser) {
+                    if (!includeUser.includes(userName)) continue;
                 }
-                else if (data.excludeUser) {
-                    if (!data.excludeUser.includes(userName)) continue;
+                else if (excludeUser) {
+                    if (excludeUser.includes(userName)) continue;
                 }
             }
             if (fid) {
-                if (data.includeFid) {
-                    if (!data.includeFid.includes(fid)) continue;
+                if (includeFid) {
+                    if (!includeFid.includes(fid)) continue;
                 }
-                else if (data.excludeFid) {
-                    if (data.excludeFid.includes(fid)) continue;
+                else if (excludeFid) {
+                    if (excludeFid.includes(fid)) continue;
                 }
             }
-            if (re) {
-                if (re.test(title)) return true;
+            if (regex) {
+                if (regex.test(title)) return true;
             }
             else {
-                if (title.toLowerCase().indexOf(keyWord.toLowerCase()) > -1) return true;
+                if (title.toLowerCase().includes(keyWord.toLowerCase())) return true;
             }
         }
         return false;
@@ -779,11 +781,10 @@ export const blockThread = function () {
     }
     else if (location.pathname === '/read.php') {
         if (Util.getCurrentThreadPage() !== 1) return;
-        let $threadInfo = $('form[name="delatc"] > div:first > table > tbody');
-        let title = $threadInfo.find('tr:first-child > td > span').text();
+        let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
-        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text() !== '楼主') return;
+        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
@@ -794,7 +795,7 @@ export const blockThread = function () {
             $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
         }
     }
-    if (num > 0) console.log('【屏蔽帖子】共有{0}个帖子被屏蔽'.replace('{0}', num));
+    if (num > 0) console.log(`【屏蔽帖子】共有${num}个帖子被屏蔽`);
 };
 
 /**
@@ -867,9 +868,9 @@ ${Const.customTileSideBarContent}
 
 /**
  * 自动活期存款
- * @param {boolean} [isRead=false] 是否读取个人信息页面以获得当前所拥有KFB的信息
+ * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
  */
-export const autoSaveCurrentDeposit = function (isRead) {
+export const autoSaveCurrentDeposit = function (isRead = false) {
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb))
         return;
     let $kfb = $('a[href="kf_givemekfb.php"]');

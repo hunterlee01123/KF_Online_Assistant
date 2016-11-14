@@ -297,25 +297,25 @@ export const show = function () {
 
     $dialog.find('[name="cancel"]').click(() => Dialog.close(dialogName))
         .end().find('[name="default"]').click(function (e) {
-            e.preventDefault();
-            if (confirm('是否重置所有设置？')) {
-                clearConfig();
-                alert('设置已重置');
-                location.reload();
-            }
-        }).end().find('[data-name="clearTmpData"]').click(function (e) {
-            e.preventDefault();
-            let type = prompt(
-                '可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据',
-                0
-            );
-            if (type === null) return;
-            type = parseInt(type);
-            if (!isNaN(type) && type >= 0) {
-                clearTmpData(type);
-                alert('缓存已清除');
-            }
-        });
+        e.preventDefault();
+        if (confirm('是否重置所有设置？')) {
+            clearConfig();
+            alert('设置已重置');
+            location.reload();
+        }
+    }).end().find('[data-name="clearTmpData"]').click(function (e) {
+        e.preventDefault();
+        let type = prompt(
+            '可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据',
+            0
+        );
+        if (type === null) return;
+        type = parseInt(type);
+        if (!isNaN(type) && type >= 0) {
+            clearTmpData(type);
+            alert('缓存已清除');
+        }
+    });
 
     $dialog.on('click', 'a[data-name^="open"][href="#"]', function (e) {
         e.preventDefault();
@@ -355,7 +355,6 @@ export const show = function () {
         if (storageType !== Info.storageType) {
             changeStorageType(storageType);
             alert('存储类型已修改');
-            Dialog.close(dialogName);
             location.reload();
             return;
         }
@@ -643,7 +642,7 @@ const showCustomSmColorDialog = function () {
   <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">
     <strong>
       示例（<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">常用配色表</a> / 
-      <a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a>）：
+      <a target="_blank" href="read.php?tid=488016">配色方案收集贴</a>）：
     </strong><br>
     <b>等级范围：</b>4-4 <b>颜色：</b><span style="color: #0000ff;">#0000ff</span><br>
     <b>等级范围：</b>10-99 <b>颜色：</b><span style="color: #5ad465;">#5ad465</span><br>
@@ -840,7 +839,7 @@ const showCustomCssDialog = function () {
   <textarea name="customCssContent" wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">其他人分享的CSS规则</a></span>
+  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS规则收集贴</a></span>
   <button>确定</button> <button>取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义CSS', html);
@@ -1029,7 +1028,7 @@ const showFollowUserDialog = function () {
 
     $dialog.find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(1);
+        showCommonImportOrExportConfigDialog('followUser');
     });
 
     Dialog.show(dialogName);
@@ -1198,7 +1197,7 @@ const showBlockUserDialog = function () {
         $('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(2);
+        showCommonImportOrExportConfigDialog('blockUser');
     });
 
     Dialog.show(dialogName);
@@ -1261,7 +1260,7 @@ const showBlockThreadDialog = function () {
             let $txtKeyWord = $this.find('td:first-child > input');
             let keyWord = $txtKeyWord.val();
             if ($.trim(keyWord) === '') return;
-            if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+            if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
                 try {
                     eval(keyWord);
                 }
@@ -1400,7 +1399,7 @@ const showBlockThreadDialog = function () {
         $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(3);
+        showCommonImportOrExportConfigDialog('blockThread');
     });
 
     Dialog.show(dialogName);
@@ -1410,9 +1409,9 @@ const showBlockThreadDialog = function () {
 
 /**
  * 显示通用的导入/导出设置对话框
- * @param {number} type 1：关注用户；2：屏蔽用户；3：屏蔽帖子
+ * @param {string} type 对话框类别，followUser：关注用户；blockUser：屏蔽用户；blockThread：屏蔽帖子；customScript：自定义脚本
  */
-const showCommonImportOrExportConfigDialog = function (type) {
+export const showCommonImportOrExportConfigDialog = function (type) {
     const dialogName = 'pd_common_im_or_ex_config';
     if ($('#pd_common_im_or_ex_config').length > 0) return;
     readConfig();
@@ -1427,10 +1426,25 @@ const showCommonImportOrExportConfigDialog = function (type) {
 <div class="pd_cfg_btns">
   <button>保存</button> <button>取消</button>
 </div>`;
-    let title = '关注用户';
-    if (type === 2) title = '屏蔽用户';
-    else if (type === 3) title = '屏蔽帖子';
+    let title = '';
+    switch (type) {
+        case 'followUser':
+            title = '关注用户';
+            break;
+        case 'blockUser':
+            title = '屏蔽用户';
+            break;
+        case 'blockThread':
+            title = '屏蔽帖子';
+            break;
+        case 'customScript':
+            title = '自定义脚本';
+            break;
+        default:
+            return;
+    }
     let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
+
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
@@ -1447,17 +1461,40 @@ const showCommonImportOrExportConfigDialog = function (type) {
             alert('设置有错误');
             return;
         }
-        if (type === 2) Config.blockUserList = options;
-        else if (type === 3) Config.blockThreadList = options;
-        else Config.followUserList = options;
+        switch (type) {
+            case 'followUser':
+                Config.followUserList = options;
+                break;
+            case 'blockUser':
+                Config.blockUserList = options;
+                break;
+            case 'blockThread':
+                Config.blockThreadList = options;
+                break;
+            case 'customScript':
+                Config.customScriptList = options;
+                break;
+        }
         writeConfig();
         alert('设置已导入');
         location.reload();
     }).next('button').click(() => Dialog.close(dialogName));
     Dialog.show(dialogName);
 
-    let options = Config.followUserList;
-    if (type === 2) options = Config.blockUserList;
-    else if (type === 3) options = Config.blockThreadList;
+    let options = null;
+    switch (type) {
+        case 'followUser':
+            options = Config.followUserList;
+            break;
+        case 'blockUser':
+            options = Config.blockUserList;
+            break;
+        case 'blockThread':
+            options = Config.blockThreadList;
+            break;
+        case 'customScript':
+            options = Config.customScriptList;
+            break;
+    }
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(options)).select();
 };

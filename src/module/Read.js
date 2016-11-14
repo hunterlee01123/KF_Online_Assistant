@@ -276,8 +276,8 @@ export const addStatRepliersLink = function () {
                     timeout: Const.defAjaxTimeout,
                     success (html) {
                         let matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        for (let match of matches) {
-                            let floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(match);
+                        for (let i in matches) {
+                            let floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
                             if (!floorMatches) continue;
                             let floor = parseInt(floorMatches[1]);
                             if (floor < startFloor) continue;
@@ -293,7 +293,7 @@ export const addStatRepliersLink = function () {
                         alert('因连接超时，统计回帖名单操作中止');
                     },
                     complete () {
-                        let $countdown = $('.pd_countdown');
+                        let $countdown = $('.pd_countdown:last');
                         $countdown.text(parseInt($countdown.text()) - 1);
                         isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                         if (isStop) $(document).clearQueue('StatRepliers');
@@ -532,7 +532,7 @@ export const buyThreads = function (threadList) {
                     failNum++;
                 },
                 complete () {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BuyThreads');
@@ -700,7 +700,7 @@ export const parseMediaTag = function () {
             $this.html(
                 html.replace(
                     /\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g,
-                    '<audio src="$1" controls preload="none" style="margin:3px 0;">[你的浏览器不支持audio标签]</audio>'
+                    '<audio src="$1" controls preload="none" style="margin: 3px 0;">[你的浏览器不支持audio标签]</audio>'
                 ).replace(
                     /\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g,
                     `<video src="$1" controls preload="none" style="max-width: ${Config.adjustThreadContentWidthEnabled ? 627 : 820}px; margin:3px 0;">` +
@@ -746,3 +746,12 @@ export const addSelfRatingLink = function () {
         `<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}" title="仅限自助评分测试人员使用">自助评分</a>`
     );
 };
+
+/**
+ * 获取帖子标题
+ * @returns {string} 帖子标题
+ */
+export const getThreadTitle = function () {
+    return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
+};
+

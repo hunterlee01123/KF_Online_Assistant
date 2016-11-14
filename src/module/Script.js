@@ -19,11 +19,12 @@ import * as Bank from './Bank';
 import * as Card from './Card';
 import * as Item from './Item';
 import * as Loot from './Loot';
+import * as ConfigDialog from './ConfigDialog';
 
 // 默认脚本名称
 const defScriptName = '未命名脚本';
 // 脚本meta信息的正则表达式
-const metaRegexp = /\/\/\s*==UserScript==((?:.|\n)+?)\/\/\s*==\/UserScript==/i;
+const metaRegex = /\/\/\s*==UserScript==((?:.|\n)+?)\/\/\s*==\/UserScript==/i;
 
 /**
  * 执行自定义脚本
@@ -69,7 +70,7 @@ const getScriptMeta = function (content) {
         homepage: '',
         author: '',
     };
-    let matches = metaRegexp.exec(content);
+    let matches = metaRegex.exec(content);
     if (!matches) return meta;
     let metaContent = matches[1];
     matches = /@name[ \t]+(.*)/i.exec(metaContent);
@@ -102,7 +103,10 @@ export const showDialog = function (showIndex = null) {
   <div data-name="customScriptList"></div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500968">其他人分享的自定义脚本</a></span>
+  <span class="pd_cfg_about">
+    <a class="pd_btn_link" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
+    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出自定义脚本</a>
+  </span>
   <button name="ok">确定</button> <button name="cancel">取消</button> <button class="pd_highlight" name="clear">清空</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
@@ -183,6 +187,9 @@ export const showDialog = function (showIndex = null) {
 // @description 这是一个未命名脚本
 // ==/UserScript==
 `.trim() + '\n' + $content.val()).focus();
+    }).end().find('[data-name="openImOrExCustomScriptDialog"]').click(function (e) {
+        e.preventDefault();
+        ConfigDialog.showCommonImportOrExportConfigDialog('customScript');
     });
 
     $customScriptList.on('click', '.pd_custom_script_name', function (e) {
@@ -228,7 +235,7 @@ export const handleInstallScriptLink = function () {
         let $area = $this.nextAll('.pd_code_area').eq(0);
         if (!$area.length) return;
         let content = Util.htmlDecode($area.html().replace(/<legend>.+?<\/legend>/i, '')).trim();
-        if (!metaRegexp.test(content)) return;
+        if (!metaRegex.test(content)) return;
         readConfig();
         let meta = getScriptMeta(content);
         let index = Config.customScriptList.findIndex(script => script.name === meta.name && script.author === meta.author);

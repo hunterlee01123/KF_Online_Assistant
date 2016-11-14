@@ -311,7 +311,7 @@ const useItems = function (options, cycle) {
                     failNum++;
                 },
                 complete () {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
@@ -472,7 +472,7 @@ const restoreItems = function (options, cycle) {
                     $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                 },
                 complete () {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('RestoreItems');
@@ -705,7 +705,7 @@ const convertItemsToEnergy = function (options) {
                     failNum++;
                 },
                 complete () {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
@@ -796,7 +796,7 @@ const sellItems = function (options) {
                     failNum++;
                 },
                 complete () {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('SellItems');
@@ -1765,7 +1765,7 @@ const buyItems = function (options) {
                     failNum++;
                 },
                 complete () {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BatchBuyItems');
@@ -1844,7 +1844,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                 url: `kf_fw_ig_my.php?pro=${itemId}&t=${new Date().getTime()}`,
                 timeout: Const.defAjaxTimeout,
                 success (html) {
-                    let $countdown = $('.pd_countdown');
+                    let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let matches = /从商店购买，购买价(\d+)KFB。<br/.exec(html);
                     if (matches) {
