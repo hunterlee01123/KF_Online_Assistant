@@ -4,6 +4,7 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
+import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
 import * as Public from './Public';
 
@@ -1079,47 +1080,6 @@ export const addConvertEnergyAndRestoreItemsButton = function () {
 };
 
 /**
- * 在道具恢复页面上添加批量转换道具为能量和批量恢复道具的链接
- */
-export const addBatchConvertEnergyAndRestoreItemsLink = function () {
-    let $myItems = $('.kf_fw_ig1:last');
-    $myItems.find('tbody > tr').each(function (index) {
-        let $this = $(this);
-        if (index === 0) {
-            $this.find('td').attr('colspan', 6);
-        }
-        else if (index === 1) {
-            $this.find('td:nth-child(2)').attr('width', 200)
-                .next('td').attr('width', 100).wrapInner('<span class="pd_used_num pd_custom_tips" style="color: #000;"></span>')
-                .next('td').attr('width', 130).text('批量恢复')
-                .next('td').attr('width', 160)
-                .before('<td width="160">批量转换</td>');
-        }
-        else {
-            $this.find('td:nth-child(3)')
-                .wrapInner('<span class="pd_used_num pd_custom_tips"></span>')
-                .end()
-                .find('td:nth-child(4)')
-                .html(
-                    `<a class="pd_items_batch_restore ${index === 2 ? 'pd_disabled_link' : ''}" href="#" title="批量恢复指定数量的道具">批量恢复道具</a>`
-                )
-                .after(
-                    `<td><a class="pd_items_batch_convert pd_highlight ${index === 2 ? 'pd_disabled_link' : ''}" href="#" ` +
-                    `title="批量将指定数量的道具转换为能量">批量转换道具为能量</a></td>`
-                );
-            let matches = /lv=(\d+)/i.exec($this.find('td:last-child').find('a').attr('href'));
-            if (matches) $this.data('itemTypeId', parseInt(matches[1]));
-        }
-    });
-    bindItemActionLinksClick($myItems);
-
-    let $itemName = $myItems.find('tbody > tr:gt(1) > td:nth-child(2)');
-    addSampleItemsLink($itemName);
-    showItemUsedInfo($itemName.find('a'));
-    showUsedItemEnergyTips();
-};
-
-/**
  * 添加批量使用和转换指定种类的道具的按钮
  */
 export const addBatchUseAndConvertItemTypesButton = function () {
@@ -1127,6 +1087,10 @@ export const addBatchUseAndConvertItemTypesButton = function () {
     if (!safeId) return;
     $(`
 <div class="pd_item_btns">
+  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~7秒之间），以模拟手动使用和恢复道具">
+    <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}>
+    模拟手动操作道具
+  </label>
   <button title="批量使用指定种类的道具" data-action="useItemTypes">批量使用</button>
   <button class="pd_highlight" title="批量将指定种类的道具转换为能量" data-action="convertItemTypes">批量转换</button>
   <button data-action="selectAll">全选</button>
@@ -1228,7 +1192,16 @@ export const addBatchUseAndConvertItemTypesButton = function () {
                     $(this).prop('checked', !$(this).prop('checked'));
                 });
             }
-        });
+        }).find('[name="simulateManualHandleItemEnabled"]')
+        .click(function () {
+            if (!('_specialAjaxInterval' in Const)) Const._specialAjaxInterval = Const.specialAjaxInterval;
+            let checked = $(this).prop('checked');
+            if (checked) Const.specialAjaxInterval = () => Math.floor(Math.random() * 5000) + 2000;
+            else Const.specialAjaxInterval = Const._specialAjaxInterval;
+            readConfig();
+            Config.simulateManualHandleItemEnabled = checked;
+            writeConfig();
+        }).triggerHandler('click');
 };
 
 /**

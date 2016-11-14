@@ -160,6 +160,9 @@ export const Config = {
     changeAllAvailableIdColorEnabled: true,
     // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
     customAutoChangeIdColorList: [],
+
+    // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
+    simulateManualHandleItemEnabled: false,
 };
 
 /**
