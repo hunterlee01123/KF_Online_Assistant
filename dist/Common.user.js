@@ -11,7 +11,7 @@
 // @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     7.0
+// @version     6.1.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT

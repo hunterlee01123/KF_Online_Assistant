@@ -15,8 +15,6 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Config = require('./module/Config');
 
-var _Log = require('./module/Log');
-
 var _Public = require('./module/Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -53,12 +51,16 @@ var _Loot = require('./module/Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
 
+var _Script = require('./module/Script');
+
+var Script = _interopRequireWildcard(_Script);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-let version = '7.0';
+const version = '7.0';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -68,13 +70,12 @@ $(function () {
     if (!Public.getUidAndUserName()) return;
     Public.addPolyfill();
     (0, _Config.init)();
-    (0, _Log.init)();
     Public.checkBrowserType();
     Public.appendCss();
     Public.addConfigAndLogDialogLink();
     if (Config.animationEffectOffEnabled) $.fx.off = true;
 
-    if (Config.customScriptEnabled) Public.runCustomScript(1);
+    if (Config.customScriptEnabled) Script.runCustomScript('start');
     Public.repairBbsErrorCode();
     window.addEventListener('beforeunload', Public.preventCloseWindowWhenActioning);
     if (Config.showSearchLinkEnabled) Public.addSearchDialogLink();
@@ -93,11 +94,11 @@ $(function () {
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         Read.fastGotoFloor();
-        if (Config.adjustThreadContentWidthEnabled) Public.adjustThreadContentWidth();
+        if (Config.adjustThreadContentWidthEnabled) Read.adjustThreadContentWidth();
         Read.adjustThreadContentFontSize();
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
-        if (Config.modifyKFOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customSmColorEnabled) Read.modifySmColor();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
@@ -111,6 +112,7 @@ $(function () {
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
+        Script.handleInstallScriptLink();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -145,7 +147,7 @@ $(function () {
         Post.removeUnpairedBBCodeInQuoteContent();
     } else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
-        if (Config.modifyKFOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
     } else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
         Other.addMsgSelectButton();
     } else if (/\/profile\.php\?action=show/i.test(location.href)) {
@@ -158,6 +160,7 @@ $(function () {
         Other.highlightUnReadAtTipsMsg();
     } else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
         Other.syncModifyPerPageFloorNum();
+        if (_Info2.default.isInMiaolaDomain) Other.addAvatarChangeAlert();
     } else if (/\/job\.php\?action=preview$/i.test(location.href)) {
         Post.modifyPostPreviewPage();
     } else if (location.pathname === '/search.php') {
@@ -174,11 +177,17 @@ $(function () {
     if (location.pathname === '/post.php') {
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
+        if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
     if (Config.followUserEnabled) Public.followUsers();
     if (_Info2.default.isMobile) Public.bindElementTitleClick();
+    if (_Info2.default.isInMiaolaDomain) {
+        if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
+            Public.importKfSmileEnhanceExtension();
+        }
+    }
 
     let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
     let isDonationStarted = false;
@@ -189,27 +198,24 @@ $(function () {
 
     if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
 
-    if (Config.autoChangeSMColorEnabled && !Util.getCookie(_Const2.default.autoChangeSMColorCookieName)) Public.changeIdColor();
+    if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
 
     if (Config.autoRefreshEnabled && _Info2.default.isInHomePage) Public.startAutoRefreshMode();
 
-    if (Config.customScriptEnabled) Public.runCustomScript(2);
+    if (Config.customScriptEnabled) Script.runCustomScript('end');
 
     let endDate = new Date();
     console.log(`【KF Online助手】加载完毕，加载耗时：${ endDate - startDate }ms`);
 });
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Log":12,"./module/Loot":14,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Util":21}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Loot":14,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/Util":22}],2:[function(require,module,exports){
+/* 银行模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.fixedDepositDueAlert = exports.handleInBankPage = exports.addBatchTransferButton = exports.drawCurrentDeposit = undefined;
-
-var _Info = require('./Info');
-
-var _Info2 = _interopRequireDefault(_Info);
 
 var _Util = require('./Util');
 
@@ -225,6 +231,8 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
@@ -233,9 +241,9 @@ var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 // 最低转账金额
 const minTransferMoney = 20;
@@ -249,8 +257,9 @@ const minTransferMoney = 20;
 const saveCurrentDeposit = function (money, cash, currentDeposit) {
     let $wait = Msg.wait('正在存款中&hellip;');
     $.post('hack.php?H_name=bank', { action: 'save', btype: 1, savemoney: money }, function (html) {
-        if (/完成存款/.test(html)) {
-            Public.showFormatLog('存款', html);
+        Public.showFormatLog('存款', html);
+        let { msg } = Util.getResponseMsg(html);
+        if (/完成存款/.test(msg)) {
             Msg.remove($wait);
             console.log(`共有${ money }KFB存入活期存款`);
             let $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("当前所持：")');
@@ -272,14 +281,15 @@ const saveCurrentDeposit = function (money, cash, currentDeposit) {
 const drawCurrentDeposit = exports.drawCurrentDeposit = function (money) {
     let $wait = Msg.wait('正在取款中&hellip;');
     $.post('hack.php?H_name=bank', { action: 'draw', btype: 1, drawmoney: money }, function (html) {
+        Public.showFormatLog('取款', html);
+        let { msg } = Util.getResponseMsg(html);
         Msg.remove($wait);
-        if (/完成取款/.test(html)) {
-            Public.showFormatLog('取款', html);
+        if (/完成取款/.test(msg)) {
             console.log(`从活期存款中取出了${ money }KFB`);
             Msg.show(`从活期存款中取出了<em>${ money }</em>KFB`, -1);
-        } else if (/取款金额大于您的存款金额/.test(html)) {
+        } else if (/取款金额大于您的存款金额/.test(msg)) {
             Msg.show('取款金额大于当前活期存款金额', -1);
-        } else if (/\d+秒内不允许重新交易/.test(html)) {
+        } else if (/\d+秒内不允许重新交易/.test(msg)) {
             Msg.show('提交速度过快', -1);
         } else {
             Msg.show('取款失败', -1);
@@ -307,48 +317,37 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit) {
                 data: `&action=virement&pwuser=${ Util.getGBKEncodeString(userName) }&to_money=${ money }&memo=${ Util.getGBKEncodeString(msg) }`,
                 success(html) {
                     Public.showFormatLog('批量转账', html);
-                    let msg = '';
-                    if (/完成转帐!<\/span>/.test(html)) {
+                    let { msg } = Util.getResponseMsg(html);
+                    let msgHtml = '';
+                    if (/完成转帐!/.test(msg)) {
                         successNum++;
                         successMoney += money;
-                        msg = `${ userName } <em>+${ money }</em>`;
+                        msgHtml = `${ userName } <em>+${ money }</em>`;
                     } else {
                         failNum++;
-                        let errorMsg = '';
-                        if (/用户<b>.+?<\/b>不存在<br \/>/.test(html)) {
-                            errorMsg = '用户不存在';
-                        } else if (/您的存款不够支付转帐/.test(html)) {
-                            errorMsg = '存款不足';
-                        } else if (/转账额度不足/.test(html)) {
-                            errorMsg = '转账额度不足';
-                        } else if (/当前等级无法使用该功能/.test(html)) {
-                            errorMsg = '当前等级无法使用转账功能';
-                        } else if (/转帐数目填写不正确/.test(html)) {
-                            errorMsg = '转帐金额不正确';
-                        } else if (/自己无法给自己转帐/.test(html)) {
-                            errorMsg = '无法给自己转帐';
-                        } else if (/\d+秒内不允许重新交易/.test(html)) {
-                            errorMsg = '提交速度过快';
-                        } else {
-                            errorMsg = '未能获得预期的回应';
-                        }
-                        msg = `${ userName }:${ money } <span class="pd_notice">(${ errorMsg })</span>`;
+                        if (/用户<b>.+?<\/b>不存在<br\s*\/?>/.test(msg)) msg = '用户不存在';else if (/您的存款不够支付转帐/.test(msg)) msg = '存款不足';else if (/转账额度不足/.test(msg)) msg = '转账额度不足';else if (/当前等级无法使用该功能/.test(msg)) msg = '当前等级无法使用转账功能';else if (/转帐数目填写不正确/.test(msg)) msg = '转帐金额不正确';else if (/自己无法给自己转帐/.test(msg)) msg = '无法给自己转帐';else if (/\d+秒内不允许重新交易/.test(msg)) msg = '提交速度过快';
+                        msgHtml = `${ userName }:${ money } <span class="pd_notice">(${ msg })</span>`;
                     }
-                    $('.pd_result:last').append(`<li>${ msg }</li>`);
+                    $('.pd_result:last').append(`<li>${ msgHtml }</li>`);
                 },
                 error() {
                     failNum++;
-                    $('.pd_result:last').append(`<li>${ userName }:${ money } <span class="pd_notice">(连接超时，转账可能失败，请到` + '<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span></li>');
+                    $('.pd_result:last').append(`
+<li>
+  ${ userName }:${ money }
+  <span class="pd_notice">(连接超时，转账可能失败，请到<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span>
+</li>
+`);
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('Bank');
 
                     if (isStop || index === users.length - 1) {
                         if (successNum > 0) {
-                            (0, _Log.push)('批量转账', `共有\`${ successNum }\`名用户转账成功`, { pay: { 'KFB': -successMoney } });
+                            Log.push('批量转账', `共有\`${ successNum }\`名用户转账成功`, { pay: { 'KFB': -successMoney } });
                         }
                         Msg.destroy();
                         let $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("活期存款：")');
@@ -368,10 +367,11 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit) {
 
 /**
  * 验证批量转账的字段值是否正确
+ * @param {jQuery} $transfer 批量转账区域对象
  * @returns {boolean} 是否正确
  */
-const batchTransferVerify = function () {
-    let $bankUsers = $('#pd_bank_users');
+const batchTransferVerify = function ($transfer) {
+    let $bankUsers = $transfer.find('[name="users"]');
     let users = $bankUsers.val();
     if (!/^\s*\S+\s*$/m.test(users) || /^\s*:/m.test(users) || /:/.test(users) && /:(\D|$)/m.test(users)) {
         alert('用户列表格式不正确');
@@ -385,8 +385,8 @@ const batchTransferVerify = function () {
         $bankUsers.focus();
         return false;
     }
-    let $bankMoney = $('#pd_bank_money');
-    let money = parseInt($.trim($bankMoney.val()));
+    let $bankMoney = $transfer.find('[name="money"]');
+    let money = parseInt($bankMoney.val());
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
             alert('通用转账金额格式不正确');
@@ -409,43 +409,44 @@ const batchTransferVerify = function () {
 const addBatchTransferButton = exports.addBatchTransferButton = function () {
     let html = `
 <tr id="pd_bank_transfer">
-  <td style="vertical-align: top;">使用说明：<br>每行一名用户，<br>如需单独设定金额，<br>可写为“用户名:金额”<br>（注意是<b>英文冒号</b>）<br>
-例子：<br><pre style="border: 1px solid #9999ff; padding: 5px;">张三\n李四:200\n王五:500\n信仰风</pre></td>
+  <td style="vertical-align: top;">
+    使用说明：<br>每行一名用户，<br>如需单独设定金额，<br>可写为“用户名:金额”<br>（注意是<b>英文冒号</b>）<br>例子：<br>
+    <pre style="border: 1px solid #9999ff; padding: 5px;">张三\n李四:200\n王五:500\n信仰风</pre>
+  </td>
   <td>
   <form>
     <div style="display: inline-block;">
       <label>用户列表：<br>
-        <textarea class="pd_textarea" id="pd_bank_users" style="width: 270px; height: 250px;"></textarea>
+        <textarea class="pd_textarea" name="users" style="width: 270px; height: 250px;"></textarea>
       </label>
     </div>
     <div style="display: inline-block; margin-left: 10px;">
       <label>通用转帐金额（如所有用户都已设定单独金额则可留空）：<br>
-        <input class="pd_input" id="pd_bank_money" type="text" style="width: 217px;" maxlength="15">
+        <input class="pd_input" name="money" type="text" style="width: 217px;" maxlength="15">
       </label><br>
       <label style="margin-top: 5px;">转帐附言（可留空）：<br>
-        <textarea class="pd_textarea" id="pd_bank_msg" style="width: 225px; height: 206px;"></textarea>
+        <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>
       </label>
     </div>
     <div>
-      <label><input class="pd_input" type="submit" value="批量转账"></label>
-      <label style="margin-left: 3px;"><input class="pd_input" type="reset" value="重置"></label>
-      <label style="margin-left: 3px;">
-        <input class="pd_input" type="button" value="随机金额" title="为用户列表上的每个用户设定指定范围内的随机金额">
-      </label>
+      <input class="pd_input" type="submit" value="批量转账">
+      <input class="pd_input" type="reset" value="重置">
+      <input class="pd_input" name="random" type="button" value="随机金额" title="为用户列表上的每个用户设定指定范围内的随机金额">
       （活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）
     </div>
   </form>
   </td>
 </tr>`;
-    $(html).appendTo('.bank1 > tbody').find('form').submit(function (e) {
+    let $transfer = $(html).appendTo('.bank1 > tbody');
+    $transfer.find('form').submit(function (e) {
         e.preventDefault();
         Msg.destroy();
-        if (!batchTransferVerify()) return;
-        let commonMoney = parseInt($.trim($('#pd_bank_money').val()));
+        if (!batchTransferVerify($transfer)) return;
+        let commonMoney = parseInt($transfer.find('[name="money"]').val());
         if (!commonMoney) commonMoney = 0;
-        let msg = $('#pd_bank_msg').val();
+        let msg = $transfer.find('[name="msg"]').val();
         let users = [];
-        for (let line of $('#pd_bank_users').val().split('\n')) {
+        for (let line of $transfer.find('[name="users"]').val().split('\n')) {
             line = $.trim(line);
             if (!line) continue;
             if (line.includes(':')) {
@@ -462,7 +463,7 @@ const addBatchTransferButton = exports.addBatchTransferButton = function () {
         if (!matches) return;
         let fee = parseInt(matches[1]) / 100;
         let totalMoney = 0;
-        for (let [userName, money] of users) {
+        for (let [, money] of users) {
             totalMoney += money;
         }
         totalMoney = Math.floor(totalMoney * (1 + fee));
@@ -496,14 +497,14 @@ const addBatchTransferButton = exports.addBatchTransferButton = function () {
                 });
                 $(document).dequeue('Bank');
             }
-            Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ users.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-            $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
+            Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${ users.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+            $transfer.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
             batchTransfer(users, msg, isDeposited, currentDeposit);
         });
-    }).end().find('.pd_input[type="button"]').click(function (e) {
+    }).end().find('[name="random"]').click(function (e) {
         e.preventDefault();
         let userList = [];
-        for (let line of $('#pd_bank_users').val().split('\n')) {
+        for (let line of $transfer.find('[name="users"]').val().split('\n')) {
             line = $.trim(line);
             if (!line) continue;
             userList.push($.trim(line.split(':')[0]));
@@ -529,7 +530,7 @@ const addBatchTransferButton = exports.addBatchTransferButton = function () {
         for (let userName of userList) {
             content += userName + ':' + Math.floor(Math.random() * (max - min + 1) + min) + '\n';
         }
-        $('#pd_bank_users').val(content);
+        $transfer.find('[name="users"]').val(content);
     });
 };
 
@@ -614,13 +615,18 @@ const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
     });
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./TmpLog":20,"./Util":21}],3:[function(require,module,exports){
+},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
+/* 卡片模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.addStartBatchModeButton = undefined;
+
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
 
 var _Const = require('./Const');
 
@@ -632,13 +638,15 @@ var Msg = _interopRequireWildcard(_Msg);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 /**
  * 将指定的一系列卡片转换为VIP时间
@@ -659,7 +667,8 @@ const convertCardsToVipTime = function (cardList, safeId) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);
-                    let matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(html);
+                    let { msg } = Util.getResponseMsg(html);
+                    let matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(msg);
                     if (matches) {
                         successNum++;
                         totalVipTime += parseInt(matches[1]);
@@ -670,14 +679,14 @@ const convertCardsToVipTime = function (cardList, safeId) {
                     failNum++;
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('ConvertCardsToVipTime');
 
                     if (isStop || index === cardList.length - 1) {
                         if (successNum > 0) {
-                            (0, _Log.push)('将卡片转换为VIP时间', `共有\`${ successNum }\`张卡片成功为VIP时间`, {
+                            Log.push('将卡片转换为VIP时间', `共有\`${ successNum }\`张卡片成功为VIP时间`, {
                                 gain: { 'VIP小时': totalVipTime, '能量': totalEnergy },
                                 pay: { '卡片': -successNum }
                             });
@@ -719,8 +728,9 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
                 $(this).next('.pd_card_chk').click();
             }).find('td').has('a').each(function () {
                 let matches = /kf_fw_card_my\.php\?id=(\d+)/.exec($(this).find('a').attr('href'));
-                if (!matches) return;
-                $(this).css('position', 'relative').append(`<input class="pd_card_chk" type="checkbox" value="${ matches[1] }">`);
+                if (matches) {
+                    $(this).css('position', 'relative').append(`<input class="pd_card_chk" type="checkbox" value="${ matches[1] }">`);
+                }
             });
             let playedCardList = [];
             $('.kf_fw_ig2 > tbody > tr:nth-child(2) > td').each(function () {
@@ -738,27 +748,16 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
                 }
             };
 
-            $this.before('<label><input id="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>' + '<button>每类只保留一张</button><button>全选</button><button>反选</button><br><button>转换为VIP时间</button>').prev().click(function () {
-                Msg.destroy();
-                let cardList = [];
-                $cardLines.find('input:checked').each(function () {
-                    cardList.push(parseInt($(this).val()));
-                });
-                if (!cardList.length) return;
-                if (!confirm(`共选择了${ cardList.length }张卡片，是否将卡片批量转换为VIP时间？`)) return;
-                Msg.wait(`<strong>正在批量转换中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ cardList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                convertCardsToVipTime(cardList, safeId);
-            }).prev().prev().click(function () {
-                $cardLines.find('input').each(function () {
-                    $(this).prop('checked', !$(this).prop('checked'));
-                });
-                if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
-            }).prev().click(function () {
+            let $btns = $(`
+<label><input name="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>
+<button name="selectOnlyOne">每类只保留一张</button>
+<button name="selectAll">全选</button>
+<button name="selectInverse">反选</button><br>
+<button name="convertCardsToVipTime">转换为VIP时间</button>
+`).insertBefore($this);
+            $btns.filter('[name="selectOnlyOne"]').click(function () {
                 $cardLines.find('input').prop('checked', true);
-                if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
-            }).prev().click(function () {
-                $cardLines.find('input').prop('checked', true);
-                if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
+                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
                 let cardTypeList = new Set();
                 $cardLines.find('a > img').each(function () {
                     cardTypeList.add($(this).attr('src'));
@@ -775,6 +774,24 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
                         $cardElems.find('input:checked').prop('checked', false);
                     }
                 }
+            }).end().filter('[name="selectAll"]').click(function () {
+                $cardLines.find('input').prop('checked', true);
+                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
+            }).end().filter('[name="selectInverse"]').click(function () {
+                $cardLines.find('input').each(function () {
+                    $(this).prop('checked', !$(this).prop('checked'));
+                });
+                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
+            }).end().filter('[name="convertCardsToVipTime"]').click(function () {
+                Msg.destroy();
+                let cardList = [];
+                $cardLines.find('input:checked').each(function () {
+                    cardList.push(parseInt($(this).val()));
+                });
+                if (!cardList.length) return;
+                if (!confirm(`共选择了${ cardList.length }张卡片，是否将卡片批量转换为VIP时间？`)) return;
+                Msg.wait(`<strong>正在批量转换中&hellip;</strong><i>剩余：<em class="pd_countdown">${ cardList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                convertCardsToVipTime(cardList, safeId);
             });
         } else {
             $this.text('开启批量模式');
@@ -784,7 +801,8 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
     });
 };
 
-},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
+/* 配置模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -806,6 +824,8 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
@@ -815,7 +835,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 保存设置的键值名称
-const name = 'pd_config';
+const name = _Const2.default.storagePrefix + 'config';
 
 /**
  * 配置类
@@ -858,16 +878,16 @@ const Config = exports.Config = {
 
     // 是否调整帖子内容宽度，使其保持一致，true：开启；false：关闭
     adjustThreadContentWidthEnabled: false,
-    // 帖子内容字体大小，留空表示使用默认大小，推荐值：14
+    // 帖子内容字体大小，设为0表示使用默认大小，推荐值：14
     threadContentFontSize: 0,
-    // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空
+    // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空
     customMySmColor: '',
     // 是否开启自定义各等级神秘颜色的功能，（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），true：开启；false：关闭
     customSmColorEnabled: false,
-    // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009CFF'},{min:'800',max:'MAX',color:'#FF0000'}]
+    // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009cff'},{min:'800',max:'MAX',color:'#ff0000'}]
     customSmColorConfigList: [],
     // 是否将帖子中的绯月其它域名的链接修改为当前域名，true：开启；false：关闭
-    modifyKFOtherDomainEnabled: true,
+    modifyKfOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
@@ -884,6 +904,8 @@ const Config = exports.Config = {
     showSelfRatingLinkEnabled: false,
     // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
     buyThreadViaAjaxEnabled: true,
+    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
+    kfSmileEnhanceExtensionEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -891,14 +913,12 @@ const Config = exports.Config = {
     animationEffectOffEnabled: false,
     // 日志保存天数
     logSaveDays: 30,
-    // 在页面上方显示助手日志的链接，true：开启；false：关闭
-    showLogLinkEnabled: true,
     // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
     showSearchLinkEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
     logSortType: 'time',
-    // 日志统计范围类型，cur：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
-    logStatType: 'cur',
+    // 日志统计范围类型，current：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
+    logStatType: 'current',
     // 显示距该日N天内的统计结果（用于日志统计范围）
     logStatDays: 7,
     // 是否为侧边栏添加快捷导航的链接，true：开启；false：关闭
@@ -911,9 +931,11 @@ const Config = exports.Config = {
     customCssContent: '',
     // 是否执行自定义的脚本，true：开启；false：关闭
     customScriptEnabled: false,
-    // 在脚本开始时执行的自定义脚本内容
+    // 自定义脚本列表
+    customScriptList: [],
+    // 在脚本开始时执行的自定义脚本内容（已废弃）
     customScriptStartContent: '',
-    // 在脚本结束时执行的自定义脚本内容
+    // 在脚本结束时执行的自定义脚本内容（已废弃）
     customScriptEndContent: '',
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',
@@ -957,23 +979,25 @@ const Config = exports.Config = {
     saveCurrentDepositKfb: 0,
 
     // 是否自动更换ID颜色，true：开启；false：关闭
-    autoChangeSMColorEnabled: false,
+    autoChangeIdColorEnabled: false,
     // 自动更换ID颜色的更换顺序类型，random：随机；sequence：顺序
-    autoChangeSMColorType: 'random',
+    autoChangeIdColorType: 'random',
     // 自动更换ID颜色的时间间隔（小时）
-    autoChangeSMColorInterval: 24,
+    autoChangeIdColorInterval: 24,
     // 是否从当前所有可用的ID颜色中进行更换，true：开启；false：关闭
-    changeAllAvailableSMColorEnabled: true,
-    // 自定义自动更换ID颜色的ID列表，例：[1,8,13,20]
-    customAutoChangeSMColorList: []
+    changeAllAvailableIdColorEnabled: true,
+    // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
+    customAutoChangeIdColorList: [],
+
+    // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
+    simulateManualHandleItemEnabled: false
 };
 
 /**
  * 初始化
  */
 const init = exports.init = function () {
-    let c = $.extend(true, {}, Config);
-    if (typeof unsafeWindow === 'undefined') window.Config = c;else unsafeWindow.Config = c;
+    _Info2.default.w.Config = $.extend(true, {}, Config);
     if (typeof GM_getValue !== 'undefined') {
         _Info2.default.storageType = GM_getValue('StorageType');
         if (_Info2.default.storageType !== 'ByUid' && _Info2.default.storageType !== 'Global') _Info2.default.storageType = 'Default';
@@ -1018,15 +1042,15 @@ const clear = exports.clear = function () {
  * @param {string} storageType 要更改的存储类型
  */
 const changeStorageType = exports.changeStorageType = function (storageType) {
-    (0, _Log.read)();
-    TmpLog.read();
+    let log = Log.read();
+    let tmpLog = TmpLog.read();
     _Info2.default.storageType = storageType;
     if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', _Info2.default.storageType);
-    if (!Util.deepEqual(Config, _Info2.default.w.Config) || !$.isEmptyObject(_Info2.default.w.Log)) {
+    if (!Util.deepEqual(Config, _Info2.default.w.Config) || !$.isEmptyObject(log)) {
         if (confirm('是否将助手设置和日志转移到对应存储类型中？（对应存储类型中的数据将被覆盖）')) {
             write();
-            (0, _Log.write)();
-            TmpLog.write();
+            Log.write(log);
+            TmpLog.write(tmpLog);
         }
     }
 };
@@ -1039,6 +1063,7 @@ const changeStorageType = exports.changeStorageType = function (storageType) {
 const normalize = exports.normalize = function (options) {
     let settings = {};
     if ($.type(options) !== 'object') return settings;
+    if (typeof options.donationKfb === 'number') options.donationKfb = options.donationKfb.toString();
     for (let [key, value] of Util.entries(options)) {
         if (key in Config && $.type(value) === $.type(Config[key])) {
             settings[key] = value;
@@ -1047,13 +1072,14 @@ const normalize = exports.normalize = function (options) {
     return settings;
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./TmpLog":20,"./Util":21}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":10,"./Log":12,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
+/* 设置对话框模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.show = undefined;
+exports.showCommonImportOrExportConfigDialog = exports.show = undefined;
 
 var _Info = require('./Info');
 
@@ -1077,11 +1103,13 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Config = require('./Config');
 
-var _LogDialog = require('./LogDialog');
-
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1091,149 +1119,264 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * 显示设置对话框
  */
 const show = exports.show = function () {
-    if ($('#pd_config').length > 0) return;
+    const dialogName = 'pdConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     Func.run('ConfigDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
-    <a title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除临时数据</a>
-    <a href="#">运行命令</a>
-    <a href="#">查看日志</a>
-    <a href="#">导入/导出设置</a>
+    <a class="pd_btn_link" data-name="clearTmpData" title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除临时数据</a>
+    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">运行命令</a>
+    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">导入/导出设置</a>
   </div>
 
   <div class="pd_cfg_panel" style="margin-bottom: 5px;">
     <fieldset>
-      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox">定时模式 
-<span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），
-只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span></label></legend>
-      <label>标题提示方案<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">停留一分钟后显示</option>
-<option value="always">总是显示</option><option value="never">不显示</option></select>
-<span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span></label>
+      <legend>
+        <label>
+          <input name="autoRefreshEnabled" type="checkbox"> 定时模式
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
+        </label>
+      </legend>
+      <label>
+        标题提示方案
+        <select name="showRefreshModeTipsType">
+          <option value="auto">停留一分钟后显示</option>
+          <option value="always">总是显示</option>
+          <option value="never">不显示</option>
+        </select>
+        <span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
-      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox">自动KFB捐款</label></legend>
-      <label>KFB捐款额度<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text">
-<span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span></label>
-      <label class="pd_cfg_ml">在<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text">
-之后捐款 <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span></label>
+      <legend>
+        <label><input name="autoDonationEnabled" type="checkbox"> 自动KFB捐款</label>
+      </legend>
+      <label>
+        KFB捐款额度
+        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text">
+        <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        在 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> 之后捐款
+        <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>首页相关</legend>
-      <label>@提醒<select id="pd_cfg_at_tips_handle_type" style="width:130px"><option value="no_highlight">取消已读提醒高亮</option>
-<option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option><option value="hide_box_1">不显示已读提醒的消息框</option>
-<option value="hide_box_2">永不显示消息框</option><option value="default">保持默认</option>
-<option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option></select>
-<span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox">神秘等级升级提醒 
-<span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span></label><br>
-      <label><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox">定期存款到期提醒 
-<span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_sm_rank_change_alert_enabled" type="checkbox">系数排名变化提醒 
-<span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span></label><br>
-      <label><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox">在首页帖子旁显示跳转链接 
-<span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_show_vip_surplus_time_enabled" type="checkbox">显示VIP剩余时间 
-<span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span></label>
+      <label>
+        @提醒
+        <select name="atTipsHandleType" style="width: 130px;">
+          <option value="no_highlight">取消已读提醒高亮</option>
+          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
+          <option value="hide_box_1">不显示已读提醒的消息框</option>
+          <option value="hide_box_2">永不显示消息框</option>
+          <option value="default">保持默认</option>
+          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
+        </select>
+        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
+        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
+        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
+        <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
+        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
+        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>帖子页面相关</legend>
-      <label>帖子每页楼层数量<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>
-<option value="20">20</option><option value="30">30</option></select>
-<span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span></label>
-      <label class="pd_cfg_ml">帖子内容字体大小<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width: 20px;" type="text">px 
-<span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span></label><br>
-      <label><input id="pd_cfg_adjust_thread_content_width_enabled" type="checkbox">调整帖子内容宽度 
-<span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_turn_page_via_keyboard_enabled" type="checkbox">通过左右键翻页 
-<span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span></label><br>
-      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page">自动更换ID颜色 
-<span class="pd_cfg_tips" title="可自动更换ID颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span></label>
-<a id="pd_cfg_auto_change_sm_color_page" class="pd_cfg_ml" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br>
-      <label>自定义本人的神秘颜色<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width: 50px;" type="text">
-<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">
-<span class="pd_cfg_tips" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空">[?]</span></label><br>
-      <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" data-disabled="#pd_cfg_custom_sm_color_dialog">自定义各等级神秘颜色 
-<span class="pd_cfg_tips" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</span></label>
-<a class="pd_cfg_ml" id="pd_cfg_custom_sm_color_dialog" href="#">详细设置&raquo;</a><br>
-      <label><input id="pd_cfg_modify_kf_other_domain_enabled" type="checkbox">将绯月其它域名的链接修改为当前域名 
-<span class="pd_cfg_tips" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</span></label><br>
-      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox">开启多重引用功能 
-<span class="pd_cfg_tips" title="在帖子页面开启多重回复和多重引用功能">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox">显示自助评分链接 
-<span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span></label><br>
-      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" data-disabled="#pd_cfg_user_memo_dialog">显示用户备注 
-<span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span></label>
-<a class="pd_cfg_ml" id="pd_cfg_user_memo_dialog" href="#">详细设置&raquo;</a>
-      <label class="pd_cfg_ml"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox">解析多媒体标签 
-<span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题11】">[?]</span></label><br>
-      <label><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox">开启批量购买帖子功能 
-<span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_buy_thread_via_ajax_enabled" type="checkbox">使用Ajax购买帖子 
-<span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span></label><br>
+      <label>
+        帖子每页楼层数量
+        <select name="perPageFloorNum">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+        </select>
+        <span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        帖子内容字体大小 <input name="threadContentFontSize" maxlength="2" style="width: 20px;" type="text"> px
+        <span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span>
+      </label><br>
+      <label>
+        <input name="adjustThreadContentWidthEnabled" type="checkbox"> 调整帖子内容宽度
+        <span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="turnPageViaKeyboardEnabled" type="checkbox"> 通过左右键翻页
+        <span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span>
+      </label><br>
+      <label>
+        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> 自动更换ID颜色
+        <span class="pd_cfg_tips" title="可自动更换ID颜色，请点击详细设置前往相应页面进行自定义设置">[?]</span>
+      </label>
+      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">详细设置&raquo;</a><br>
+      <label>
+        自定义本人的神秘颜色 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">
+        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">
+        <span class="pd_cfg_tips" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空">[?]</span>
+      </label><br>
+      <label>
+        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> 自定义各等级神秘颜色
+        <span class="pd_cfg_tips" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> 显示用户备注
+        <span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="modifyKfOtherDomainEnabled" type="checkbox"> 将绯月其它域名的链接修改为当前域名
+        <span class="pd_cfg_tips" title="将帖子和短消息中的绯月其它域名的链接修改为当前域名">[?]</span>
+      </label><br>
+      <label>
+        <input name="multiQuoteEnabled" type="checkbox"> 开启多重引用功能
+        <span class="pd_cfg_tips" title="在帖子页面开启多重回复和多重引用功能">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="parseMediaTagEnabled" type="checkbox"> 解析多媒体标签
+        <span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题12】">[?]</span>
+      </label><br>
+      <label>
+        <input name="batchBuyThreadEnabled" type="checkbox"> 开启批量购买帖子功能
+        <span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="buyThreadViaAjaxEnabled" type="checkbox"> 使用Ajax购买帖子
+        <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
+      </label><br>
+      <label>
+        <input name="showSelfRatingLinkEnabled" type="checkbox"> 显示自助评分链接
+        <span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span>
+      </label>
+      <label class="pd_cfg_ml" ${ _Info2.default.isInMiaolaDomain ? '' : 'hidden' }>
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox"> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
+      </label>
     </fieldset>
   </div>
 
   <div class="pd_cfg_panel">
     <fieldset>
       <legend>版块页面相关</legend>
-      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num">
-显示帖子页数快捷链接 <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span></label>
-      <label class="pd_cfg_ml">页数链接最大数量<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text">
-<span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span></label><br>
-      <label><input id="pd_cfg_highlight_new_post_enabled" type="checkbox">高亮今日的新帖 
-<span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span></label>
+      <label>
+        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
+        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" style="width: 25px;" maxlength="4" type="text">
+        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
+      </label><br>
+      <label>
+        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
+        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>其它设置</legend>
-      <label class="pd_highlight">存储类型<select id="pd_cfg_storage_type"><option value="Default">默认</option>
-<option value="ByUid">按uid</option><option value="Global">全局</option></select>
-<span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span></label>
-      <label class="pd_cfg_ml">浏览器类型<select id="pd_cfg_browse_type"><option value="auto">自动检测</option>
-<option value="desktop">桌面版</option><option value="mobile">移动版</option></select>
-<span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
-如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span></label><br>
-      <label><input id="pd_cfg_animation_effect_off_enabled" type="checkbox">禁用动画效果 
-<span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span></label><br>
-      <label>默认的消息显示时间<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width: 30px;" type="text">秒 
-<span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span></label>
-      <label class="pd_cfg_ml">日志保存天数<input id="pd_cfg_log_save_days" maxlength="3" style="width: 25px;" type="text">
-<span class="pd_cfg_tips" title="默认值：${ _Config.Config.logSaveDays }">[?]</span></label><br>
-      <label><input id="pd_cfg_show_log_link_enabled" type="checkbox">显示日志链接 
-<span class="pd_cfg_tips" title="在页面上方显示助手日志的链接">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_show_search_link_enabled" type="checkbox">显示搜索链接 
-<span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span></label><br>
-      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox">为侧边栏添加快捷导航 
-<span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span></label>
-      <label class="pd_cfg_ml"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox">将侧边栏修改为平铺样式 
-<span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span></label><br>
-      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" data-disabled="#pd_cfg_custom_css_dialog">添加自定义CSS 
-<span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span></label>
-<a class="pd_cfg_ml" id="pd_cfg_custom_css_dialog" href="#">详细设置&raquo;</a><br>
-      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" data-disabled="#pd_cfg_custom_script_dialog">执行自定义脚本 
-<span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span></label>
-<a class="pd_cfg_ml" id="pd_cfg_custom_script_dialog" href="#">详细设置&raquo;</a>
+      <label class="pd_highlight">
+        存储类型
+        <select data-name="storageType">
+          <option value="Default">默认</option>
+          <option value="ByUid">按uid</option>
+          <option value="Global">全局</option>
+        </select>
+        <span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        浏览器类型
+        <select name="browseType">
+          <option value="auto">自动检测</option>
+          <option value="desktop">桌面版</option>
+          <option value="mobile">移动版</option>
+        </select>
+        <span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
+如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
+      </label><br>
+      <label>
+        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
+        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
+        <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
+      </label><br>
+      <label>
+        默认的消息显示时间 <input name="defShowMsgDuration" maxlength="5" style="width: 30px;" type="text"> 秒
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        日志保存天数 <input name="logSaveDays" maxlength="3" style="width: 25px;" type="text">
+        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.logSaveDays }">[?]</span>
+      </label><br>
+      <label>
+        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
+        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
+        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
+      </label><br>
+      <label>
+        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
+        <span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
+        <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
     </fieldset>
     <fieldset>
       <legend>关注和屏蔽</legend>
-      <label><input id="pd_cfg_follow_user_enabled" type="checkbox" data-disabled="#pd_cfg_follow_user_dialog">关注用户 
-<span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span></label>
-<a class="pd_cfg_ml" id="pd_cfg_follow_user_dialog" href="#">详细设置&raquo;</a><br>
-      <label><input id="pd_cfg_block_user_enabled" type="checkbox" data-disabled="#pd_cfg_block_user_dialog">屏蔽用户 
-<span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span></label>
-<a class="pd_cfg_ml" id="pd_cfg_block_user_dialog" href="#">详细设置&raquo;</a><br>
-      <label><input id="pd_cfg_block_thread_enabled" type="checkbox" data-disabled="#pd_cfg_block_thread_dialog">屏蔽帖子 
-<span class="pd_cfg_tips" title="开启屏蔽标题包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span></label>
-<a class="pd_cfg_ml" id="pd_cfg_block_thread_dialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> 关注用户
+        <span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> 屏蔽用户
+        <span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> 屏蔽帖子
+        <span class="pd_cfg_tips" title="开启屏蔽标题包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
     </fieldset>
     <fieldset>
-      <legend><label><input id="pd_cfg_auto_save_current_deposit_enabled" type="checkbox">自动活期存款 
-<span class="pd_cfg_tips" title="在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发">[?]</span></label></legend>
-      <label>在当前收入已满<input id="pd_cfg_save_current_deposit_after_kfb" maxlength="10" style="width:45px" type="text">KFB之后 
-<span class="pd_cfg_tips" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</span></label><br>
-      <label>将<input id="pd_cfg_save_current_deposit_kfb" maxlength="10" style="width: 45px;" type="text">KFB存入活期存款 
-<span class="pd_cfg_tips" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</span></label>
+      <legend>
+        <label>
+          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> 自动活期存款
+          <span class="pd_cfg_tips" title="在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发">[?]</span>
+        </label>
+      </legend>
+      <label>
+        在当前收入已满 <input name="saveCurrentDepositAfterKfb" maxlength="10" style="width: 45px;" type="text"> KFB之后
+        <span class="pd_cfg_tips" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</span>
+      </label><br>
+      <label>
+        将 <input name="saveCurrentDepositKfb" maxlength="10" style="width: 45px;" type="text"> KFB存入活期存款
+        <span class="pd_cfg_tips" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</span>
+      </label>
     </fieldset>
   </div>
 </div>
@@ -1244,72 +1387,67 @@ const show = exports.show = function () {
     <i style="color: #666; font-style: normal;">(V${ _Info2.default.version })</i>
     <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
-  <button>确定</button><button>取消</button><button>默认值</button>
+  <button name="ok">确定</button>
+  <button name="cancel">取消</button>
+  <button name="default">默认值</button>
 </div>`;
-    let $dialog = Dialog.create('pd_config', 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
+    let $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
-    $dialog.find('.pd_cfg_btns > button:eq(1)').click(() => Dialog.close('pd_config')).end().find('.pd_cfg_btns > button:eq(2)').click(function (e) {
+    $dialog.find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[name="default"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否重置所有设置？')) {
             (0, _Config.clear)();
             alert('设置已重置');
             location.reload();
         }
-    }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
+    }).end().find('[data-name="clearTmpData"]').click(function (e) {
         e.preventDefault();
-        let type = prompt('可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n' + '请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据', 0);
+        let type = prompt('可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据', 0);
         if (type === null) return;
-        type = parseInt($.trim(type));
+        type = parseInt(type);
         if (!isNaN(type) && type >= 0) {
             clearTmpData(type);
             alert('缓存已清除');
         }
-    }).next('a').click(function (e) {
-        e.preventDefault();
-        showRunCommandDialog();
-    }).next('a').click(function (e) {
-        e.preventDefault();
-        (0, _LogDialog.show)();
-    }).next('a').click(function (e) {
-        e.preventDefault();
-        showImportOrExportSettingDialog();
     });
 
-    $dialog.on('click', 'a[id^="pd_cfg_"][href="#"]', function (e) {
+    $dialog.on('click', 'a[data-name^="open"][href="#"]', function (e) {
         e.preventDefault();
-        if ($(this).hasClass('pd_disabled_link')) return;
-        if (this.id === 'pd_cfg_custom_sm_color_dialog') showCustomSmColorDialog();else if (this.id === 'pd_cfg_user_memo_dialog') showUserMemoDialog();else if (this.id === 'pd_cfg_custom_css_dialog') showCustomCssDialog();else if (this.id === 'pd_cfg_custom_script_dialog') showCustomScriptDialog();else if (this.id === 'pd_cfg_follow_user_dialog') showFollowUserDialog();else if (this.id === 'pd_cfg_block_user_dialog') showBlockUserDialog();else if (this.id === 'pd_cfg_block_thread_dialog') showBlockThreadDialog();
-    }).end().find('#pd_cfg_custom_my_sm_color_select').change(function () {
-        $('#pd_cfg_custom_my_sm_color').val($(this).val().toString().toLowerCase());
-    }).end().find('pd_cfg_custom_my_sm_color').keyup(function () {
-        let customMySmColor = $.trim($(this).val());
-        if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
-            $('pd_cfg_custom_my_sm_color_select').val(customMySmColor.toLowerCase());
-        }
+        let $this = $(this);
+        if ($this.hasClass('pd_disabled_link')) return;
+        let name = $this.data('name');
+        if (name === 'openRumCommandDialog') showRunCommandDialog();
+        if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
+        if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
+    }).end().find('[data-name="customMySmColorSelect"]').change(function () {
+        $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
+    }).end().find('[name="customMySmColor"]').change(function () {
+        let color = $.trim($(this).val());
+        if (/^#[0-9a-fA-F]{6}$/.test(color)) $dialog.find('[data-name="customMySmColorSelect"]').val(color.toLowerCase());
     });
 
-    setValue();
+    setMainConfigValue($dialog);
     $dialog.submit(function (e) {
         e.preventDefault();
         $('.pd_cfg_btns > button:first').click();
     }).end().find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        if (!verify()) return;
+        if (!verifyMainConfig($dialog)) return;
         let oriAutoRefreshEnabled = Config.autoRefreshEnabled;
         (0, _Config.read)();
-        let options = getValue();
+        let options = getMainConfigValue($dialog);
         options = (0, _Config.normalize)(options);
         $.extend(Config, options);
         (0, _Config.write)();
-        let storageType = $('#pd_cfg_storage_type').val();
+        let storageType = $dialog.find('[data-name="storageType"]').val();
         if (storageType !== _Info2.default.storageType) {
+            if (!confirm('是否修改存储类型？')) return;
             (0, _Config.changeStorageType)(storageType);
             alert('存储类型已修改');
-            Dialog.close('pd_config');
             location.reload();
             return;
         }
-        Dialog.close('pd_config');
+        Dialog.close(dialogName);
         if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
             if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
                 location.reload();
@@ -1317,138 +1455,54 @@ const show = exports.show = function () {
         }
     });
 
-    Dialog.show('pd_config');
+    Dialog.show(dialogName);
     $dialog.find('a:first').focus();
     Func.run('ConfigDialog.show_after_');
 };
 
 /**
- * 设置对话框中的字段值
+ * 设置主对话框中的字段值
+ * @param {jQuery} $dialog 助手设置对话框对象
  */
-const setValue = function () {
-    $('#pd_cfg_auto_refresh_enabled').prop('checked', Config.autoRefreshEnabled);
-    $('#pd_cfg_show_refresh_mode_tips_type').val(Config.showRefreshModeTipsType.toLowerCase());
+const setMainConfigValue = function ($dialog) {
+    $dialog.find('input[name], select[name]').each(function () {
+        let $this = $(this);
+        let name = $this.attr('name');
+        if (name in Config) {
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') $this.prop('checked', Config[name] === true);else $this.val(Config[name]);
+        }
+    });
+    $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
+    $dialog.find('[data-name="customMySmColorSelect"]').val(Config.customMySmColor);
 
-    $('#pd_cfg_auto_donation_enabled').prop('checked', Config.autoDonationEnabled);
-    $('#pd_cfg_donation_kfb').val(Config.donationKfb);
-    $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
-
-    $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
-    $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
-    $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
-    $('#pd_cfg_sm_rank_change_alert_enabled').prop('checked', Config.smRankChangeAlertEnabled);
-    $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked', Config.homePageThreadFastGotoLinkEnabled);
-    $('#pd_cfg_show_vip_surplus_time_enabled').prop('checked', Config.showVipSurplusTimeEnabled);
-
-    $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked', Config.showFastGotoThreadPageEnabled);
-    $('#pd_cfg_max_fast_goto_thread_page_num').val(Config.maxFastGotoThreadPageNum);
-    $('#pd_cfg_highlight_new_post_enabled').prop('checked', Config.highlightNewPostEnabled);
-
-    $('#pd_cfg_per_page_floor_num').val(Config.perPageFloorNum);
-    $('#pd_cfg_thread_content_font_size').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
-    $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked', Config.adjustThreadContentWidthEnabled);
-    $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked', Config.turnPageViaKeyboardEnabled);
-    $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked', Config.autoChangeSMColorEnabled);
-    $('#pd_cfg_custom_my_sm_color').val(Config.customMySmColor);
-    if (Config.customMySmColor) $('#pd_cfg_custom_my_sm_color_select').val(Config.customMySmColor);
-    $('#pd_cfg_custom_sm_color_enabled').prop('checked', Config.customSmColorEnabled);
-    $('#pd_cfg_modify_kf_other_domain_enabled').prop('checked', Config.modifyKFOtherDomainEnabled);
-    $('#pd_cfg_multi_quote_enabled').prop('checked', Config.multiQuoteEnabled);
-    $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
-    $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
-    $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
-    $('#pd_cfg_show_self_rating_link_enabled').prop('checked', Config.showSelfRatingLinkEnabled);
-    $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked', Config.buyThreadViaAjaxEnabled);
-
-    $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
-    $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
-    $('#pd_cfg_log_save_days').val(Config.logSaveDays);
-    $('#pd_cfg_browse_type').val(Config.browseType);
-    $('#pd_cfg_show_log_link_enabled').prop('checked', Config.showLogLinkEnabled);
-    $('#pd_cfg_show_search_link_enabled').prop('checked', Config.showSearchLinkEnabled);
-    $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
-    $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
-    $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
-    $('#pd_cfg_custom_script_enabled').prop('checked', Config.customScriptEnabled);
-
-    $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
-    $('#pd_cfg_block_user_enabled').prop('checked', Config.blockUserEnabled);
-    $('#pd_cfg_block_thread_enabled').prop('checked', Config.blockThreadEnabled);
-
-    $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked', Config.autoSaveCurrentDepositEnabled);
-    if (Config.saveCurrentDepositAfterKfb > 0) $('#pd_cfg_save_current_deposit_after_kfb').val(Config.saveCurrentDepositAfterKfb);
-    if (Config.saveCurrentDepositKfb > 0) $('#pd_cfg_save_current_deposit_kfb').val(Config.saveCurrentDepositKfb);
-
-    $('#pd_cfg_storage_type').val(_Info2.default.storageType);
-    if (typeof GM_getValue === 'undefined') $('#pd_cfg_storage_type > option:gt(0)').prop('disabled', true);
+    $dialog.find('[data-name="storageType"]').val(_Info2.default.storageType);
+    if (typeof GM_getValue === 'undefined') $dialog.find('[data-name="storageType"] > option:gt(0)').prop('disabled', true);
 };
 
 /**
- * 获取对话框中字段值的Config对象
- * @returns {Config} 字段值的Config对象
+ * 获取主对话框中字段值的Config对象
+ * @param {jQuery} $dialog 助手设置对话框对象
+ * @returns {{}} 字段值的Config对象
  */
-const getValue = function () {
+const getMainConfigValue = function ($dialog) {
     let options = {};
-    options.autoRefreshEnabled = $('#pd_cfg_auto_refresh_enabled').prop('checked');
-    options.showRefreshModeTipsType = $('#pd_cfg_show_refresh_mode_tips_type').val();
-
-    options.autoDonationEnabled = $('#pd_cfg_auto_donation_enabled').prop('checked');
-    options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
-    options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
-
-    options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
-    options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
-    options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
-    options.smRankChangeAlertEnabled = $('#pd_cfg_sm_rank_change_alert_enabled').prop('checked');
-    options.homePageThreadFastGotoLinkEnabled = $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked');
-    options.showVipSurplusTimeEnabled = $('#pd_cfg_show_vip_surplus_time_enabled').prop('checked');
-
-    options.showFastGotoThreadPageEnabled = $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked');
-    options.maxFastGotoThreadPageNum = parseInt($.trim($('#pd_cfg_max_fast_goto_thread_page_num').val()));
-    options.highlightNewPostEnabled = $('#pd_cfg_highlight_new_post_enabled').prop('checked');
-
-    options.perPageFloorNum = $('#pd_cfg_per_page_floor_num').val();
-    options.threadContentFontSize = parseInt($.trim($('#pd_cfg_thread_content_font_size').val()));
-    options.adjustThreadContentWidthEnabled = $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked');
-    options.turnPageViaKeyboardEnabled = $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked');
-    options.autoChangeSMColorEnabled = $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked');
-    options.customMySmColor = $.trim($('#pd_cfg_custom_my_sm_color').val()).toUpperCase();
-    options.customSmColorEnabled = $('#pd_cfg_custom_sm_color_enabled').prop('checked');
-    options.modifyKFOtherDomainEnabled = $('#pd_cfg_modify_kf_other_domain_enabled').prop('checked');
-    options.multiQuoteEnabled = $('#pd_cfg_multi_quote_enabled').prop('checked');
-    options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
-    options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
-    options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
-    options.showSelfRatingLinkEnabled = $('#pd_cfg_show_self_rating_link_enabled').prop('checked');
-    options.buyThreadViaAjaxEnabled = $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked');
-
-    options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
-    options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
-    options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
-    options.browseType = $('#pd_cfg_browse_type').val();
-    options.showLogLinkEnabled = $('#pd_cfg_show_log_link_enabled').prop('checked');
-    options.showSearchLinkEnabled = $('#pd_cfg_show_search_link_enabled').prop('checked');
-    options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
-    options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
-    options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
-    options.customScriptEnabled = $('#pd_cfg_custom_script_enabled').prop('checked');
-
-    options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
-    options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
-    options.blockThreadEnabled = $('#pd_cfg_block_thread_enabled').prop('checked');
-
-    options.autoSaveCurrentDepositEnabled = $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked');
-    options.saveCurrentDepositAfterKfb = parseInt($.trim($('#pd_cfg_save_current_deposit_after_kfb').val()));
-    options.saveCurrentDepositKfb = parseInt($.trim($('#pd_cfg_save_current_deposit_kfb').val()));
+    $dialog.find('input[name], select[name]').each(function () {
+        let $this = $(this);
+        let name = $this.attr('name');
+        if (name in Config) {
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') options[name] = Boolean($this.prop('checked'));else if (typeof Config[name] === 'number') options[name] = parseInt($this.val());else options[name] = $.trim($this.val());
+        }
+    });
     return options;
 };
 
 /**
- * 验证设置是否正确
+ * 验证主对话框设置是否正确
+ * @param {jQuery} $dialog 助手设置对话框对象
  * @returns {boolean} 是否验证通过
  */
-const verify = function () {
-    let $txtDonationKfb = $('#pd_cfg_donation_kfb');
+const verifyMainConfig = function ($dialog) {
+    let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
     let donationKfb = $.trim($txtDonationKfb.val());
     if (/%$/.test(donationKfb)) {
         if (!/^1?\d?\d%$/.test(donationKfb)) {
@@ -1471,14 +1525,14 @@ const verify = function () {
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > _Const2.default.maxDonationKfb) {
-            alert('KFB捐款额度的取值范围在1-{0}之间'.replace('{0}', _Const2.default.maxDonationKfb));
+            alert(`KFB捐款额度的取值范围在1-${ _Const2.default.maxDonationKfb }之间`);
             $txtDonationKfb.select();
             $txtDonationKfb.focus();
             return false;
         }
     }
 
-    let $txtDonationAfterTime = $('#pd_cfg_donation_after_time');
+    let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
     let donationAfterTime = $.trim($txtDonationAfterTime.val());
     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
         alert('在指定时间之后捐款格式不正确');
@@ -1487,7 +1541,7 @@ const verify = function () {
         return false;
     }
 
-    let $txtMaxFastGotoThreadPageNum = $('#pd_cfg_max_fast_goto_thread_page_num');
+    let $txtMaxFastGotoThreadPageNum = $dialog.find('[name="maxFastGotoThreadPageNum"]');
     let maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());
     if (!$.isNumeric(maxFastGotoThreadPageNum) || parseInt(maxFastGotoThreadPageNum) <= 0) {
         alert('页数链接最大数量格式不正确');
@@ -1496,7 +1550,7 @@ const verify = function () {
         return false;
     }
 
-    let $txtThreadContentFontSize = $('#pd_cfg_thread_content_font_size');
+    let $txtThreadContentFontSize = $dialog.find('[name="threadContentFontSize"]');
     let threadContentFontSize = $.trim($txtThreadContentFontSize.val());
     if (threadContentFontSize && (isNaN(parseInt(threadContentFontSize)) || parseInt(threadContentFontSize) < 0)) {
         alert('帖子内容字体大小格式不正确');
@@ -1505,16 +1559,16 @@ const verify = function () {
         return false;
     }
 
-    let $txtCustomMySmColor = $('#pd_cfg_custom_my_sm_color');
+    let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
-        alert('自定义本人的神秘颜色格式不正确，例：#009CFF');
+        alert('自定义本人的神秘颜色格式不正确，例：#009cff');
         $txtCustomMySmColor.select();
         $txtCustomMySmColor.focus();
         return false;
     }
 
-    let $txtDefShowMsgDuration = $('#pd_cfg_def_show_msg_duration');
+    let $txtDefShowMsgDuration = $dialog.find('[name="defShowMsgDuration"]');
     let defShowMsgDuration = $.trim($txtDefShowMsgDuration.val());
     if (!$.isNumeric(defShowMsgDuration) || parseInt(defShowMsgDuration) < -1) {
         alert('默认的消息显示时间格式不正确');
@@ -1523,7 +1577,7 @@ const verify = function () {
         return false;
     }
 
-    let $txtLogSaveDays = $('#pd_cfg_log_save_days');
+    let $txtLogSaveDays = $dialog.find('[name="logSaveDays"]');
     let logSaveDays = $.trim($txtLogSaveDays.val());
     if (!$.isNumeric(logSaveDays) || parseInt(logSaveDays) < 1) {
         alert('日志保存天数格式不正确');
@@ -1532,8 +1586,8 @@ const verify = function () {
         return false;
     }
 
-    let $txtSaveCurrentDepositAfterKfb = $('#pd_cfg_save_current_deposit_after_kfb');
-    let $txtSaveCurrentDepositKfb = $('#pd_cfg_save_current_deposit_kfb');
+    let $txtSaveCurrentDepositAfterKfb = $dialog.find('[name="saveCurrentDepositAfterKfb"]');
+    let $txtSaveCurrentDepositKfb = $dialog.find('[name="saveCurrentDepositKfb"]');
     let saveCurrentDepositAfterKfb = parseInt($txtSaveCurrentDepositAfterKfb.val());
     let saveCurrentDepositKfb = parseInt($txtSaveCurrentDepositKfb.val());
     if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
@@ -1576,34 +1630,32 @@ const clearTmpData = function (type = 0) {
  * 显示运行命令对话框
  */
 const showRunCommandDialog = function () {
-    if ($('#pd_run_command').length > 0) return;
-    Dialog.close('pd_config');
+    const dialogName = 'pdRunCommandDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Dialog.close('pdConfigDialog');
     let html = `
 <div class="pd_cfg_main">
-  <div style="margin: 5px 0;">运行命令快捷键：<b>Ctrl+Enter</b>；清除命令快捷键：<b>Ctrl+退格键</b><br>
-按<b>F12键</b>可打开浏览器控制台查看消息（需切换至控制台或Console标签）</div>
-  <textarea wrap="off" style="width: 750px; height: 300px; white-space: pre;"></textarea>
+  <div style="margin: 5px 0;">
+    运行命令快捷键：<b>Ctrl+Enter</b>；清除命令快捷键：<b>Ctrl+退格键</b><br>
+    按<b>F12键</b>可打开浏览器控制台查看消息（需切换至控制台或Console标签）
+  </div>
+  <textarea name="cmd" wrap="off" style="width: 750px; height: 300px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button>运行</button><button>清除</button><button>关闭</button>
+  <button>运行</button> <button>清除</button> <button>关闭</button>
 </div>`;
-    let $dialog = Dialog.create('pd_run_command', '运行命令', html);
-    let $textArea = $dialog.find('textarea');
+    let $dialog = Dialog.create(dialogName, '运行命令', html);
+    let $cmd = $dialog.find('[name="cmd"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        let content = $textArea.val();
-        if (!content) return;
-        try {
-            console.log(eval(content));
-        } catch (ex) {
-            console.log(ex);
-        }
+        let content = $cmd.val();
+        if (content) Script.runCmd(content, true);
     }).next('button').click(function (e) {
         e.preventDefault();
-        $textArea.val('').focus();
-    }).next('button').click(() => Dialog.close('pd_run_command'));
-    Dialog.show('pd_run_command');
-    $textArea.keyup(function (e) {
+        $cmd.val('').focus();
+    }).next('button').click(() => Dialog.close(dialogName));
+    Dialog.show(dialogName);
+    $cmd.keyup(function (e) {
         if (e.ctrlKey && e.keyCode === 13) {
             $dialog.find('.pd_cfg_btns > button:first').click();
         } else if (e.ctrlKey && e.keyCode === 8) {
@@ -1616,7 +1668,8 @@ const showRunCommandDialog = function () {
  * 显示导入或导出设置对话框
  */
 const showImportOrExportSettingDialog = function () {
-    if ($('#pd_im_or_ex_setting').length > 0) return;
+    const dialogName = 'pdImOrExSettingDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     let html = `
 <div class="pd_cfg_main">
@@ -1624,16 +1677,17 @@ const showImportOrExportSettingDialog = function () {
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
     <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
   </div>
-  <textarea id="pd_cfg_setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
+  <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button>保存</button><button>取消</button>
+  <button>保存</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create('pd_im_or_ex_setting', '导入或导出设置', html);
+    let $dialog = Dialog.create(dialogName, '导入或导出设置', html);
+    let $setting = $dialog.find('[name="setting"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
-        let options = $.trim($('#pd_cfg_setting').val());
+        let options = $.trim($setting.val());
         if (!options) return;
         try {
             options = JSON.parse(options);
@@ -1650,49 +1704,52 @@ const showImportOrExportSettingDialog = function () {
         (0, _Config.write)();
         alert('设置已导入');
         location.reload();
-    }).next('button').click(() => Dialog.close('pd_im_or_ex_setting'));
-    Dialog.show('pd_im_or_ex_setting');
-    $('#pd_cfg_setting').val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select();
+    }).next('button').click(() => Dialog.close(dialogName));
+    Dialog.show(dialogName);
+    $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select();
 };
 
 /**
  * 显示自定义各等级神秘颜色设置对话框
  */
 const showCustomSmColorDialog = function () {
-    if ($('#pd_custom_sm_color').length > 0) return;
+    const dialogName = 'pdCustomSmColorDialog';
+    if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
   <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">
     <strong>
-      示例（<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">常用配色表</a> /
-      <a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a>）：
+      示例（<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">常用配色表</a> / 
+      <a target="_blank" href="read.php?tid=488016">配色方案收集贴</a>）：
     </strong><br>
     <b>等级范围：</b>4-4 <b>颜色：</b><span style="color: #0000ff;">#0000ff</span><br>
     <b>等级范围：</b>10-99 <b>颜色：</b><span style="color: #5ad465;">#5ad465</span><br>
     <b>等级范围：</b>5000-MAX <b>颜色：</b><span style="color: #ff0000;">#ff0000</span>
   </div>
-  <ul id="pd_cfg_custom_sm_color_list"></ul>
-  <div style="margin-top: 5px;" id="pd_cfg_custom_sm_color_add_btns">
-    <a href="#">增加1个</a><a href="#" style="margin-left: 7px;">增加5个</a><a href="#" style="margin-left: 7px;">清除所有</a>
+  <ul data-name="smColorList"></ul>
+  <div style="margin-top: 5px;" data-name="customSmColorAddBtns">
+    <a class="pd_btn_link" data-action="addOne" href="#">增加1个</a>
+    <a class="pd_btn_link" data-action="addFive" href="#">增加5个</a>
+    <a class="pd_btn_link" data-action="clear" href="#">清除所有</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a href="#">导入/导出配色方案</a></span>
-  <button>确定</button><button>取消</button>
+  <button>确定</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create('pd_custom_sm_color', '自定义各等级神秘颜色', html);
-    let $customSmColorList = $dialog.find('#pd_cfg_custom_sm_color_list');
-    $dialog.find('.pd_cfg_btns > button:last').click(() => Dialog.close('pd_custom_sm_color'));
+    let $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html, 'min-width: 327px;');
+    let $customSmColorList = $dialog.find('[data-name="smColorList"]');
+    $dialog.find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
 
-    $customSmColorList.on('keyup', '.pd_cfg_sm_color', function () {
+    $customSmColorList.on('change', '[name="color"]', function () {
         let $this = $(this);
         let color = $.trim($this.val());
         if (/^#[0-9a-fA-F]{6}$/.test(color)) {
-            $this.next('input[type="color"]').val(color.toLowerCase());
+            $this.next('[type="color"]').val(color.toLowerCase());
         }
-    }).on('change', 'input[type="color"]', function () {
+    }).on('change', '[type="color"]', function () {
         let $this = $(this);
-        $this.prev('input').val($this.val().toString().toLowerCase());
+        $this.prev('[type="text"]').val($this.val().toString().toLowerCase());
     }).on('click', 'a', function (e) {
         e.preventDefault();
         $(this).closest('li').remove();
@@ -1703,32 +1760,34 @@ const showCustomSmColorDialog = function () {
      * @param {string} min 最小神秘等级
      * @param {string} max 最大神秘等级
      * @param {string} color 颜色
-     * @returns {string}
+     * @returns {string} 每列神秘颜色的HTML内容
      */
-    let getSmColorLineHtml = function ({ min = '', max = '', color = '' } = {}) {
+    const getSmColorLineHtml = function ({ min = '', max = '', color = '' } = {}) {
         return `
 <li>
-  <label>等级范围<input class="pd_cfg_sm_min" type="text" maxlength="5" style="width: 30px;" value="${ min }"></label>
-  <label>-<input class="pd_cfg_sm_max" type="text" maxlength="5" style="width: 30px;" value="${ max }"></label>
-  <label>颜色<input class="pd_cfg_sm_color" type="text" maxlength="7" style="width: 50px;" value="${ color }">
-  <input style="margin-left: 0;" type="color" value="${ color }"></label>
+  <label>等级范围 <input name="min" type="text" maxlength="5" style="width: 30px;" value="${ min }"></label>
+  <label>- <input name="max" type="text" maxlength="5" style="width: 30px;" value="${ max }"></label>
+  <label>
+    &nbsp;颜色 <input name="color" type="text" maxlength="7" style="width: 50px;" value="${ color }">
+    <input style="margin-left: 0;" type="color" value="${ color }">
+  </label>
   <a href="#">删除</a>
 </li>`;
     };
 
-    $dialog.find('#pd_cfg_custom_sm_color_add_btns').find('a:lt(2)').click(function (e) {
+    $dialog.find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
         e.preventDefault();
         let num = 1;
-        if ($(this).is('#pd_cfg_custom_sm_color_add_btns > a:eq(1)')) num = 5;
+        if ($(this).is('[data-action="addFive"]')) num = 5;
         for (let i = 1; i <= num; i++) {
             $customSmColorList.append(getSmColorLineHtml());
         }
-        Dialog.show('pd_custom_sm_color');
-    }).end().find('a:last').click(function (e) {
+        Dialog.show(dialogName);
+    }).end().find('[data-action="clear"]').click(function (e) {
         e.preventDefault();
-        if (confirm('是否清除所有设置？')) {
+        if (confirm('是否清除所有颜色？')) {
             $customSmColorList.empty();
-            Dialog.show('pd_custom_sm_color');
+            Dialog.show(dialogName);
         }
     });
 
@@ -1749,7 +1808,7 @@ const showCustomSmColorDialog = function () {
         let verification = true;
         $customSmColorList.find('li').each(function () {
             let $this = $(this);
-            let $txtSmMin = $this.find('.pd_cfg_sm_min');
+            let $txtSmMin = $this.find('[name="min"]');
             let min = $.trim($txtSmMin.val()).toUpperCase();
             if (min === '') return;
             if (!/^(-?\d+|MAX)$/i.test(min)) {
@@ -1759,7 +1818,7 @@ const showCustomSmColorDialog = function () {
                 alert('等级范围格式不正确');
                 return false;
             }
-            let $txtSmMax = $this.find('.pd_cfg_sm_max');
+            let $txtSmMax = $this.find('[name="max"]');
             let max = $.trim($txtSmMax.val()).toUpperCase();
             if (max === '') return;
             if (!/^(-?\d+|MAX)$/i.test(max)) {
@@ -1776,7 +1835,7 @@ const showCustomSmColorDialog = function () {
                 alert('等级范围格式不正确');
                 return false;
             }
-            let $txtSmColor = $this.find('.pd_cfg_sm_color');
+            let $txtSmColor = $this.find('[name="color"]');
             let color = $.trim($txtSmColor.val()).toLowerCase();
             if (color === '') return;
             if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
@@ -1789,24 +1848,23 @@ const showCustomSmColorDialog = function () {
             list.push({ min, max, color });
         });
         if (verification) {
-            list.sort(function (a, b) {
-                return Util.compareSmLevel(a.min, b.min) > 0;
-            });
+            list.sort((a, b) => Util.compareSmLevel(a.min, b.min) > 0);
             Config.customSmColorConfigList = list;
             (0, _Config.write)();
-            Dialog.close('pd_custom_sm_color');
+            Dialog.close(dialogName);
         }
     });
 
-    Dialog.show('pd_custom_sm_color');
-    if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();else $('#pd_cfg_custom_sm_color_add_btns > a:first').focus();
+    Dialog.show(dialogName);
+    if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();else $dialog.find('[data-name="customSmColorAddBtns"] > a:first').focus();
 };
 
 /**
  * 显示导入或导出配色方案对话框
  */
 const showImportOrExportSmColorConfigDialog = function () {
-    if ($('#pd_im_or_ex_sm_color_config').length > 0) return;
+    const dialogName = 'pdImOrExSmColorConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     let html = `
 <div class="pd_cfg_main">
@@ -1814,17 +1872,17 @@ const showImportOrExportSmColorConfigDialog = function () {
     <strong>导入配色方案：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
     <strong>导出配色方案：</strong>复制文本框里的内容并粘贴到文本文件里即可
   </div>
-  <textarea id="pd_cfg_sm_color_config" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
+  <textarea name="smColorConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a></span>
-  <button>保存</button><button>取消</button>
+  <button>保存</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create('pd_im_or_ex_sm_color_config', '导入或导出配色方案', html);
+    let $dialog = Dialog.create(dialogName, '导入或导出配色方案', html);
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
-        let options = $.trim($('#pd_cfg_sm_color_config').val());
+        let options = $.trim($dialog.find('[name="smColorConfig"]').val());
         if (!options) return;
         try {
             options = JSON.parse(options);
@@ -1840,88 +1898,55 @@ const showImportOrExportSmColorConfigDialog = function () {
         (0, _Config.write)();
         alert('配色方案已导入');
         location.reload();
-    }).next('button').click(() => Dialog.close('pd_im_or_ex_sm_color_config'));
-    Dialog.show('pd_im_or_ex_sm_color_config');
-    $dialog.find('#pd_cfg_sm_color_config').val(JSON.stringify(Config.customSmColorConfigList)).select();
+    }).next('button').click(() => Dialog.close(dialogName));
+    Dialog.show(dialogName);
+    $dialog.find('[name="smColorConfig"]').val(JSON.stringify(Config.customSmColorConfigList)).select();
 };
 
 /**
  * 显示自定义CSS对话框
  */
 const showCustomCssDialog = function () {
-    if ($('#pd_custom_css').length > 0) return;
+    const dialogName = 'pdCustomCssDialog';
+    if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
   <strong>自定义CSS内容：</strong><br>
-  <textarea wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>
+  <textarea name="customCssContent" wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">其他人分享的CSS规则</a></span>
-  <button>确定</button><button>取消</button>
-</div>';`;
-    let $dialog = Dialog.create('pd_custom_css', '自定义CSS', html);
-    let $content = $dialog.find('textarea');
+  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS规则收集贴</a></span>
+  <button>确定</button> <button>取消</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '自定义CSS', html);
+    let $content = $dialog.find('[name="customCssContent"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         Config.customCssContent = $.trim($content.val());
         (0, _Config.write)();
-        Dialog.close('pd_custom_css');
-    }).next('button').click(() => Dialog.close('pd_custom_css'));
+        Dialog.close(dialogName);
+    }).next('button').click(() => Dialog.close(dialogName));
     $content.val(Config.customCssContent);
-    Dialog.show('pd_custom_css');
+    Dialog.show(dialogName);
     $content.focus();
-};
-
-/**
- * 显示自定义脚本对话框
- */
-const showCustomScriptDialog = function () {
-    if ($('#pd_custom_script').length > 0) return;
-    let html = `
-<div class="pd_cfg_main">
-  <div style="margin: 5px 0;">
-    <label style="color: #f00;"><input type="radio" name="pd_custom_script_type" value="start" checked> 在脚本开始时执行的内容</label>
-    <label style="color: #00f;"><input type="radio" name="pd_custom_script_type" value="end"> 在脚本结束时执行的内容</label>
-  </div>
-  <textarea wrap="off" id="pd_custom_script_start_content" style="width: 750px; height: 500px; white-space: pre;"></textarea>
-  <textarea wrap="off" id="pd_custom_script_end_content" style="width: 750px; height: 500px; white-space: pre; display: none;"></textarea>
-</div>
-<div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500968">其他人分享的自定义脚本</a></span>
-  <button>确定</button><button>取消</button>
-</div>`;
-    let $dialog = Dialog.create('pd_custom_script', '自定义脚本', html);
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
-        e.preventDefault();
-        Config.customScriptStartContent = $('#pd_custom_script_start_content').val();
-        Config.customScriptEndContent = $('#pd_custom_script_end_content').val();
-        (0, _Config.write)();
-        Dialog.close('pd_custom_script');
-    }).next('button').click(() => Dialog.close('pd_custom_script'));
-    $dialog.find('#pd_custom_script_start_content').val(Config.customScriptStartContent).end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent).end().find('input[name="pd_custom_script_type"]').click(function () {
-        let type = $(this).val();
-        $('#pd_custom_script_' + (type === 'end' ? 'start' : 'end') + '_content').hide();
-        $('#pd_custom_script_' + (type === 'end' ? 'end' : 'start') + '_content').show();
-    });
-    Dialog.show('pd_custom_script');
-    $dialog.find('#pd_custom_script_start_content').focus();
 };
 
 /**
  * 显示用户备注对话框
  */
 const showUserMemoDialog = function () {
-    if ($('#pd_user_memo').length > 0) return;
+    const dialogName = 'pdUserMemoDialog';
+    if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
   按照“用户名:备注”的格式（注意是英文冒号），每行一个<br>
-  <textarea wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>
+  <textarea name="userMemoList" wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button>确定</button><button>取消</button>
+  <button>确定</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create('pd_user_memo', '用户备注', html);
-    let $userMemoList = $dialog.find('textarea');
+    let $dialog = Dialog.create(dialogName, '用户备注', html);
+    let $userMemoList = $dialog.find('[name="userMemoList"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         let content = $.trim($userMemoList.val());
@@ -1939,14 +1964,14 @@ const showUserMemoDialog = function () {
             Config.userMemoList[user.trim()] = memo.trim();
         }
         (0, _Config.write)();
-        Dialog.close('pd_user_memo');
-    }).next('button').click(() => Dialog.close('pd_user_memo'));
+        Dialog.close(dialogName);
+    }).next('button').click(() => Dialog.close(dialogName));
     let content = '';
     for (let [user, memo] of Util.entries(Config.userMemoList)) {
         content += `${ user }:${ memo }\n`;
     }
     $userMemoList.val(content);
-    Dialog.show('pd_user_memo');
+    Dialog.show(dialogName);
     $userMemoList.focus();
 };
 
@@ -1954,38 +1979,48 @@ const showUserMemoDialog = function () {
  * 显示关注用户对话框
  */
 const showFollowUserDialog = function () {
-    if ($('#pd_follow_user').length > 0) return;
+    const dialogName = 'pdFollowUserDialog';
+    if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
   <div style="margin-top: 5px;">
-    <label><input id="pd_cfg_highlight_follow_user_thread_in_hp_enabled" type="checkbox">高亮所关注用户的首页帖子链接 
-<span class="pd_cfg_tips" title="高亮所关注用户在首页下的帖子链接">[?]</span></label><br>
-    <label><input id="pd_cfg_highlight_follow_user_thread_link_enabled" type="checkbox">高亮所关注用户的帖子链接 
-<span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span></label><br>
+    <label>
+      <input name="highlightFollowUserThreadInHpEnabled" type="checkbox"> 高亮所关注用户的首页帖子链接
+      <span class="pd_cfg_tips" title="高亮所关注用户在首页下的帖子链接">[?]</span>
+    </label><br>
+    <label>
+      <input name="highlightFollowUserThreadLinkEnabled" type="checkbox"> 高亮所关注用户的帖子链接
+      <span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span>
+    </label><br>
   </div>
-  <ul id="pd_cfg_follow_user_list" style="margin-top: 5px; width: 274px; line-height: 24px;"></ul>
-  <div id="pd_cfg_follow_user_btns" style="margin-top: 5px;">
-    <div style="display: inline-block;"><a href="#">全选</a><a style="margin-left: 7px;" href="#">反选</a></div>
-    <div style="float: right;"><a style="margin-left: 7px;" href="#">删除</a></div>
+  <ul data-name="followUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>
+  <div data-name="followUserBtns" style="margin-top: 5px;">
+    <div style="display: inline-block;">
+      <a class="pd_btn_link" href="#">全选</a>
+      <a class="pd_btn_link" href="#">反选</a>
+    </div>
+    <div style="float: right;">
+      <a class="pd_btn_link" href="#">删除</a>
+    </div>
   </div>
   <div style="margin-top: 5px;" title="添加多个用户请用英文逗号分隔">
-    <input id="pd_cfg_add_follow_user" style="width: 200px;" type="text">
-    <a style="margin-left: 7px;" href="#">添加</a>
+    <input data-name="addFollowUser" style="width: 200px;" type="text">
+    <a class="pd_btn_link" href="#">添加</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a href="#">导入/导出关注用户</a></span>
-  <button>确定</button><button>取消</button>
+  <button>确定</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create('pd_follow_user', '关注用户', html);
-    let $followUserList = $dialog.find('#pd_cfg_follow_user_list');
+    let $dialog = Dialog.create(dialogName, '关注用户', html);
+    let $followUserList = $dialog.find('[data-name="followUserList"]');
     $dialog.submit(function (e) {
         e.preventDefault();
         $dialog.find('.pd_cfg_btns > button:first').click();
     }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        Config.highlightFollowUserThreadInHPEnabled = $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked');
-        Config.highlightFollowUserThreadLinkEnabled = $('#pd_cfg_highlight_follow_user_thread_link_enabled').prop('checked');
+        Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
+        Config.highlightFollowUserThreadLinkEnabled = $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked');
         Config.followUserList = [];
         $followUserList.find('li').each(function () {
             let $this = $(this);
@@ -1995,18 +2030,24 @@ const showFollowUserDialog = function () {
             }
         });
         (0, _Config.write)();
-        Dialog.close('pd_follow_user');
-    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close('pd_follow_user'));
+        Dialog.close(dialogName);
+    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
 
-    $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
-    $('#pd_cfg_highlight_follow_user_thread_link_enabled').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
+    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
+    $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
 
     /**
      * 添加关注用户
      * @param {string} name 用户名
      */
     const addFollowUser = function (name) {
-        $(`<li><input type="checkbox"><input type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="${ name }">` + `<a style="margin-left: 7px;" href="#">删除</a></li>`).appendTo($followUserList);
+        $(`
+<li>
+  <input type="checkbox">
+  <input type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="${ name }">
+  <a class="pd_btn_link" href="#">删除</a>
+</li>
+`).appendTo($followUserList);
     };
 
     for (let user of Config.followUserList) {
@@ -2018,79 +2059,81 @@ const showFollowUserDialog = function () {
         $(this).parent().remove();
     });
 
-    $('#pd_cfg_follow_user_btns').find('a:first').click(function (e) {
+    $dialog.find('[data-name="followUserBtns"]').find('a:first').click(function (e) {
         e.preventDefault();
-        $followUserList.find('input[type="checkbox"]').prop('checked', true);
+        $followUserList.find('[type="checkbox"]').prop('checked', true);
     }).end().find('a:eq(1)').click(function (e) {
         e.preventDefault();
-        $followUserList.find('input[type="checkbox"]').each(function () {
+        $followUserList.find('[type="checkbox"]').each(function () {
             $(this).prop('checked', !$(this).prop('checked'));
         });
     }).end().find('a:last').click(function (e) {
         e.preventDefault();
-        let $checked = $followUserList.find('li:has(input[type="checkbox"]:checked)');
+        let $checked = $followUserList.find('li:has([type="checkbox"]:checked)');
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show('pd_follow_user');
+            Dialog.show(dialogName);
         }
     });
 
-    $dialog.find('#pd_cfg_add_follow_user').keydown(function (e) {
+    $dialog.find('[data-name="addFollowUser"]').keydown(function (e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             $(this).next('a').click();
         }
     }).next('a').click(function (e) {
         e.preventDefault();
-        for (let name of $.trim($('#pd_cfg_add_follow_user').val()).split(',')) {
+        for (let name of $.trim($dialog.find('[data-name="addFollowUser"]').val()).split(',')) {
             name = $.trim(name);
             if (!name) continue;
             if (Util.inFollowOrBlockUserList(name, Config.followUserList) === -1) {
                 addFollowUser(name);
             }
         }
-        $('#pd_cfg_add_follow_user').val('');
-        Dialog.show('pd_follow_user');
+        $dialog.find('[data-name="addFollowUser"]').val('');
+        Dialog.show(dialogName);
     });
 
     $dialog.find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(1);
+        showCommonImportOrExportConfigDialog('followUser');
     });
 
-    Dialog.show('pd_follow_user');
-    $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').focus();
+    Dialog.show(dialogName);
+    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').focus();
 };
 
 /**
  * 显示屏蔽用户对话框
  */
 const showBlockUserDialog = function () {
-    if ($('#pd_block_user').length > 0) return;
+    const dialogName = 'pdBlockUserDialog';
+    if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
   <div style="margin-top: 5px; line-height: 24px;">
-    <label>默认屏蔽类型
-      <select id="pd_cfg_block_user_default_type">
+    <label>
+      默认屏蔽类型
+      <select name="blockUserDefaultType">
         <option value="0">屏蔽主题和回帖</option><option value="1">仅屏蔽主题</option><option value="2">仅屏蔽回帖</option>
       </select>
     </label>
     <label class="pd_cfg_ml">
-      <input id="pd_cfg_block_user_at_tips_enabled" type="checkbox">屏蔽@提醒 <span class="pd_cfg_tips" title="屏蔽被屏蔽用户的@提醒">[?]</span>
+      <input name="blockUserAtTipsEnabled" type="checkbox">屏蔽@提醒 <span class="pd_cfg_tips" title="屏蔽被屏蔽用户的@提醒">[?]</span>
     </label><br>
     <label>版块屏蔽范围
-      <select id="pd_cfg_block_user_forum_type">
+      <select name="blockUserForumType">
         <option value="0">所有版块</option><option value="1">包括指定版块</option><option value="2">排除指定版块</option>
       </select>
     </label><br>
     <label>版块ID列表
-      <input id="pd_cfg_block_user_fid_list" type="text" style="width: 220px;"> 
+      <input name="blockUserFidList" type="text" style="width: 220px;"> 
       <span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span>
     </label>
   </div>
-  <ul id="pd_cfg_block_user_list" style="margin-top: 5px; width: 362px; line-height: 24px;"></ul>
-  <div id="pd_cfg_block_user_btns" style="margin-top: 5px;">
+  <ul data-name="blockUserList" style="margin-top: 5px; min-width: 362px; line-height: 24px;"></ul>
+  <div data-name="blockUserBtns" style="margin-top: 5px;">
     <div style="display: inline-block;"><a href="#">全选</a><a style="margin-left: 7px;" href="#">反选</a></div>
     <div style="float: right;">
       <a href="#">修改为</a>
@@ -2101,26 +2144,26 @@ const showBlockUserDialog = function () {
     </div>
   </div>
   <div style="margin-top: 5px;" title="添加多个用户请用英文逗号分隔">
-    <input id="pd_cfg_add_block_user" style="width: 200px;" type="text">
+    <input name="addBlockUser" style="width: 200px;" type="text">
     <a style="margin-left: 7px;" href="#">添加</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a href="#">导入/导出屏蔽用户</a></span>
-  <button>确定</button><button>取消</button>
+  <button>确定</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create('pd_block_user', '屏蔽用户', html);
-    let $blockUserList = $dialog.find('#pd_cfg_block_user_list');
+    let $dialog = Dialog.create(dialogName, '屏蔽用户', html);
+    let $blockUserList = $dialog.find('[data-name="blockUserList"]');
     $dialog.submit(function (e) {
         e.preventDefault();
         $dialog.find('.pd_cfg_btns > button:first').click();
     }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        Config.blockUserDefaultType = $('#pd_cfg_block_user_default_type').val();
-        Config.blockUserAtTipsEnabled = $('#pd_cfg_block_user_at_tips_enabled').prop('checked');
-        Config.blockUserForumType = parseInt($('#pd_cfg_block_user_forum_type').val());
+        Config.blockUserDefaultType = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
+        Config.blockUserAtTipsEnabled = $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked');
+        Config.blockUserForumType = parseInt($dialog.find('[name="blockUserForumType"]').val());
         Config.blockUserFidList = [];
-        for (let fid of $.trim($('#pd_cfg_block_user_fid_list').val()).split(',')) {
+        for (let fid of $.trim($dialog.find('[name="blockUserFidList"]').val()).split(',')) {
             fid = parseInt(fid);
             if (!isNaN(fid) && fid > 0) Config.blockUserFidList.push(fid);
         }
@@ -2134,20 +2177,20 @@ const showBlockUserDialog = function () {
             }
         });
         (0, _Config.write)();
-        Dialog.close('pd_block_user');
-    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close('pd_block_user'));
+        Dialog.close(dialogName);
+    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
 
-    $('#pd_cfg_block_user_default_type').val(Config.blockUserDefaultType);
-    $('#pd_cfg_block_user_at_tips_enabled').prop('checked', Config.blockUserAtTipsEnabled);
-    $('#pd_cfg_block_user_forum_type').val(Config.blockUserForumType);
-    $('#pd_cfg_block_user_fid_list').val(Config.blockUserFidList.join(','));
+    $dialog.find('[name="blockUserDefaultType"]').val(Config.blockUserDefaultType);
+    $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked', Config.blockUserAtTipsEnabled);
+    $dialog.find('[name="blockUserForumType"]').val(Config.blockUserForumType);
+    $dialog.find('[name="blockUserFidList"]').val(Config.blockUserFidList.join(','));
 
     /**
      * 添加屏蔽用户
      * @param {string} name 用户名
      * @param {number} type 屏蔽类型
      */
-    let addBlockUser = function (name, type) {
+    const addBlockUser = function (name, type) {
         $(`
 <li>
   <input type="checkbox">
@@ -2168,7 +2211,7 @@ const showBlockUserDialog = function () {
         $(this).parent().remove();
     });
 
-    $('#pd_cfg_block_user_btns').find('a:first').click(function (e) {
+    $dialog.find('[data-name="blockUserBtns"]').find('a:first').click(function (e) {
         e.preventDefault();
         $blockUserList.find('input[type="checkbox"]').prop('checked', true);
     }).end().find('a:eq(1)').click(function (e) {
@@ -2186,59 +2229,61 @@ const showBlockUserDialog = function () {
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show('pd_block_user');
+            Dialog.show(dialogName);
         }
     });
 
-    $dialog.find('#pd_cfg_add_block_user').keydown(function (e) {
+    $dialog.find('[name="addBlockUser"]').keydown(function (e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             $(this).next('a').click();
         }
     }).next('a').click(function (e) {
         e.preventDefault();
-        let type = parseInt($('#pd_cfg_block_user_default_type').val());
-        for (let name of $.trim($('#pd_cfg_add_block_user').val()).split(',')) {
+        let type = parseInt($('[name="blockUserDefaultType"]').val());
+        for (let name of $.trim($dialog.find('[name="addBlockUser"]').val()).split(',')) {
             name = $.trim(name);
             if (!name) continue;
             if (Util.inFollowOrBlockUserList(name, Config.blockUserList) === -1) {
                 addBlockUser(name, type);
             }
         }
-        $('#pd_cfg_add_block_user').val('');
-        Dialog.show('pd_block_user');
+        $dialog.find('[name="addBlockUser"]').val('');
+        Dialog.show(dialogName);
     });
 
-    $dialog.find('#pd_cfg_block_user_forum_type').change(function () {
-        $('#pd_cfg_block_user_fid_list').prop('disabled', parseInt($(this).val()) === 0);
+    $dialog.find('[name="blockUserForumType"]').change(function () {
+        $('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(2);
+        showCommonImportOrExportConfigDialog('blockUser');
     });
 
-    Dialog.show('pd_block_user');
-    $('#pd_cfg_block_user_forum_type').triggerHandler('change');
-    $('#pd_cfg_block_user_default_type').focus();
+    Dialog.show(dialogName);
+    $dialog.find('[name="blockUserForumType"]').triggerHandler('change');
+    $dialog.find('[name="blockUserDefaultType"]').focus();
 };
 
 /**
  * 显示屏蔽帖子对话框
  */
 const showBlockThreadDialog = function () {
-    if ($('#pd_block_thread').length > 0) return;
+    const dialogName = 'pdBlockThreadDialog';
+    if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
   <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">
     标题关键字可使用普通字符串或正则表达式，正则表达式请使用/abc/的格式，例：/关键字A.*关键字B/i<br>
     用户名和版块ID为可选项（多个用户名或版块ID请用英文逗号分隔）<br>
-    <label>默认版块屏蔽范围
-      <select id="pd_cfg_block_thread_def_forum_type">
+    <label>
+      默认版块屏蔽范围
+      <select name="blockThreadDefForumType">
         <option value="0">所有版块</option><option value="1">包括指定版块</option><option value="2">排除指定版块</option>
       </select>
     </label>
-    <label style="margin-left: 5px;">默认版块ID列表<input id="pd_cfg_block_thread_def_fid_list" type="text" style="width: 150px;"></label>
+    <label style="margin-left: 5px;">默认版块ID列表 <input name="blockThreadDefFidList" type="text" style="width: 150px;"></label>
   </div>
-  <table id="pd_cfg_block_thread_list" style="line-height: 22px; text-align: center;">
+  <table data-name="blockThreadList" style="line-height: 22px; text-align: center;">
     <tbody>
       <tr>
         <th style="width: 220px;">标题关键字(必填)</th>
@@ -2250,29 +2295,31 @@ const showBlockThreadDialog = function () {
       </tr>
     </tbody>
   </table>
-  <div style="margin-top: 5px;" id="pd_cfg_block_thread_add_btns">
-    <a href="#">增加1个</a><a href="#" style="margin-left: 7px;">增加5个</a><a href="#" style="margin-left: 7px;">清除所有</a>
+  <div data-name="blockThreadAddBtns" style="margin-top: 5px;">
+    <a class="pd_btn_link" href="#">增加1个</a>
+    <a class="pd_btn_link" href="#">增加5个</a>
+    <a class="pd_btn_link" href="#">清除所有</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a href="#">导入/导出屏蔽帖子</a></span>
-  <button>确定</button><button>取消</button>
+  <button>确定</button> <button>取消</button>
 </div>`;
-    let $dialog = Dialog.create('pd_block_thread', '屏蔽帖子', html, 'width: 768px;');
-    let $blockThreadList = $dialog.find('#pd_cfg_block_thread_list');
+    let $dialog = Dialog.create(dialogName, '屏蔽帖子', html, 'width: 768px;');
+    let $blockThreadList = $dialog.find('[data-name="blockThreadList"]');
 
     /**
      * 验证设置是否正确
      * @returns {boolean} 是否验证通过
      */
-    let verify = function () {
+    const verify = function () {
         let flag = true;
         $blockThreadList.find('tr:gt(0)').each(function () {
             let $this = $(this);
             let $txtKeyWord = $this.find('td:first-child > input');
             let keyWord = $txtKeyWord.val();
             if ($.trim(keyWord) === '') return;
-            if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+            if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
                 try {
                     eval(keyWord);
                 } catch (ex) {
@@ -2293,9 +2340,9 @@ const showBlockThreadDialog = function () {
     }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!verify()) return;
-        Config.blockThreadDefForumType = parseInt($('#pd_cfg_block_thread_def_forum_type').val());
+        Config.blockThreadDefForumType = parseInt($dialog.find('[name="blockThreadDefForumType"]').val());
         Config.blockThreadDefFidList = [];
-        for (let fid of $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(',')) {
+        for (let fid of $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(',')) {
             fid = parseInt(fid);
             if (!isNaN(fid) && fid > 0) Config.blockThreadDefFidList.push(fid);
         }
@@ -2328,8 +2375,8 @@ const showBlockThreadDialog = function () {
             Config.blockThreadList.push(newObj);
         });
         (0, _Config.write)();
-        Dialog.close('pd_block_thread');
-    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close('pd_block_thread'));
+        Dialog.close(dialogName);
+    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
 
     $blockThreadList.on('change', 'select', function () {
         let $this = $(this);
@@ -2347,7 +2394,7 @@ const showBlockThreadDialog = function () {
      * @param {number} fidType 屏蔽范围，0：所有；1：包括；2：排除
      * @param {number[]} fidList 版块ID列表
      */
-    let addBlockThread = function (keyWord, userType, userList, fidType, fidList) {
+    const addBlockThread = function (keyWord, userType, userList, fidType, fidList) {
         $(`
 <tr>
   <td><input type="text" style="width: 208px;" value="${ keyWord }"></td>
@@ -2384,40 +2431,41 @@ const showBlockThreadDialog = function () {
         addBlockThread(keyWord, userType, userList, fidType, fidList);
     }
 
-    $('#pd_cfg_block_thread_add_btns').find('a:lt(2)').click(function (e) {
+    $dialog.find('[data-name="blockThreadAddBtns"]').find('a:lt(2)').click(function (e) {
         e.preventDefault();
         let num = 1;
-        if ($(this).is('#pd_cfg_block_thread_add_btns > a:eq(1)')) num = 5;
+        if ($(this).is('[data-name="blockThreadAddBtns"] > a:eq(1)')) num = 5;
         for (let i = 1; i <= num; i++) {
-            addBlockThread('', 0, [], parseInt($('#pd_cfg_block_thread_def_forum_type').val()), $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','));
+            addBlockThread('', 0, [], parseInt($dialog.find('[name="blockThreadDefForumType"]').val()), $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(','));
         }
-        Dialog.show('pd_block_thread');
+        Dialog.show(dialogName);
     }).end().find('a:last').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有屏蔽关键字？')) {
             $blockThreadList.find('tbody > tr:gt(0)').remove();
-            Dialog.show('pd_block_thread');
+            Dialog.show(dialogName);
         }
     });
 
-    $dialog.find('#pd_cfg_block_thread_def_forum_type').change(function () {
-        $('#pd_cfg_block_thread_def_fid_list').prop('disabled', parseInt($(this).val()) === 0);
+    $dialog.find('[name="blockThreadDefForumType"]').change(function () {
+        $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(3);
+        showCommonImportOrExportConfigDialog('blockThread');
     });
 
-    Dialog.show('pd_block_thread');
-    $('#pd_cfg_block_thread_def_forum_type').val(Config.blockThreadDefForumType).focus().triggerHandler('change');
-    $('#pd_cfg_block_thread_def_fid_list').val(Config.blockThreadDefFidList.join(','));
+    Dialog.show(dialogName);
+    $dialog.find('[name="blockThreadDefForumType"]').val(Config.blockThreadDefForumType).focus().triggerHandler('change');
+    $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
 /**
  * 显示通用的导入/导出设置对话框
- * @param {number} type 1：关注用户；2：屏蔽用户；3：屏蔽帖子
+ * @param {string} type 对话框类别，followUser：关注用户；blockUser：屏蔽用户；blockThread：屏蔽帖子；customScript：自定义脚本
  */
-const showCommonImportOrExportConfigDialog = function (type) {
-    if ($('#pd_common_im_or_ex_config').length > 0) return;
+const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfigDialog = function (type) {
+    const dialogName = 'pdCommonImOrExConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     let html = `
 <div class="pd_cfg_main">
@@ -2425,18 +2473,34 @@ const showCommonImportOrExportConfigDialog = function (type) {
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
     <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
   </div>
-  <textarea id="pd_cfg_common_config" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
+  <textarea name="commonConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button>保存</button><button>取消</button>
+  <button>保存</button> <button>取消</button>
 </div>`;
-    let title = '关注用户';
-    if (type === 2) title = '屏蔽用户';else if (type === 3) title = '屏蔽帖子';
-    let $dialog = Dialog.create('pd_common_im_or_ex_config', `导入或导出${ title }`, html);
+    let title = '';
+    switch (type) {
+        case 'followUser':
+            title = '关注用户';
+            break;
+        case 'blockUser':
+            title = '屏蔽用户';
+            break;
+        case 'blockThread':
+            title = '屏蔽帖子';
+            break;
+        case 'customScript':
+            title = '自定义脚本';
+            break;
+        default:
+            return;
+    }
+    let $dialog = Dialog.create(dialogName, `导入或导出${ title }`, html);
+
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
-        let options = $.trim($('#pd_cfg_common_config').val());
+        let options = $.trim($dialog.find('[name="commonConfig"]').val());
         if (!options) return;
         try {
             options = JSON.parse(options);
@@ -2448,28 +2512,58 @@ const showCommonImportOrExportConfigDialog = function (type) {
             alert('设置有错误');
             return;
         }
-        if (type === 2) Config.blockUserList = options;else if (type === 3) Config.blockThreadList = options;else Config.followUserList = options;
+        switch (type) {
+            case 'followUser':
+                Config.followUserList = options;
+                break;
+            case 'blockUser':
+                Config.blockUserList = options;
+                break;
+            case 'blockThread':
+                Config.blockThreadList = options;
+                break;
+            case 'customScript':
+                Config.customScriptList = options;
+                break;
+        }
         (0, _Config.write)();
         alert('设置已导入');
         location.reload();
-    }).next('button').click(() => Dialog.close('pd_common_im_or_ex_config'));
-    Dialog.show('pd_common_im_or_ex_config');
+    }).next('button').click(() => Dialog.close(dialogName));
+    Dialog.show(dialogName);
 
-    let options = Config.followUserList;
-    if (type === 2) options = Config.blockUserList;else if (type === 3) options = Config.blockThreadList;
-    $dialog.find('#pd_cfg_common_config').val(JSON.stringify(options)).select();
+    let options = null;
+    switch (type) {
+        case 'followUser':
+            options = Config.followUserList;
+            break;
+        case 'blockUser':
+            options = Config.blockUserList;
+            break;
+        case 'blockThread':
+            options = Config.blockThreadList;
+            break;
+        case 'customScript':
+            options = Config.customScriptList;
+            break;
+    }
+    $dialog.find('[name="commonConfig"]').val(JSON.stringify(options)).select();
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./LogDialog":13,"./TmpLog":20,"./Util":21}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+/* 常量模块 */
 'use strict';
 
-/**
- * 配置常量类
- */
+// 通用存储数据名称前缀
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+const storagePrefix = 'pd_';
+
+/**
+ * 常量类
+ */
 const Const = {
     // 开启调试模式，true：开启；false：关闭
     debug: false,
@@ -2508,20 +2602,7 @@ const Const = {
     // 统计回帖者名单最大能访问的帖子页数
     statRepliersMaxPage: 300,
     // 道具样品ID列表
-    sampleItemIdList: {
-        '零时迷子的碎片': 2257935,
-        '被遗弃的告白信': 2005272,
-        '学校天台的钥匙': 2001303,
-        'TMA最新作压缩包': 1990834,
-        'LOLI的钱包': 1836588,
-        '棒棒糖': 1942370,
-        '蕾米莉亚同人漫画': 1000888,
-        '十六夜同人漫画': 1002668,
-        '档案室钥匙': 1013984,
-        '傲娇LOLI娇蛮音CD': 4621,
-        '整形优惠卷': 1003993,
-        '消逝之药': 1000306
-    },
+    sampleItemIdList: new Map([['零时迷子的碎片', 2257935], ['被遗弃的告白信', 2005272], ['学校天台的钥匙', 2001303], ['TMA最新作压缩包', 1990834], ['LOLI的钱包', 1836588], ['棒棒糖', 1942370], ['蕾米莉亚同人漫画', 1000888], ['十六夜同人漫画', 1002668], ['档案室钥匙', 1013984], ['傲娇LOLI娇蛮音CD', 4621], ['整形优惠卷', 1003993], ['消逝之药', 1000306]]),
     // 定期存款到期期限（天）
     fixedDepositDueTime: 90,
     // 自助评分错标范围百分比
@@ -2534,35 +2615,38 @@ const Const = {
     customTileSideBarContent: '',
     // 可进行自助评分的版块ID列表
     selfRatingFidList: [41, 67, 92, 127, 68],
+    // 通用存储数据名称前缀
+    storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
-    multiQuoteStorageName: 'pd_multi_quote',
-    // 神秘升级提醒的临时日志名称
+    multiQuoteStorageName: storagePrefix + 'multiQuote',
+    // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
     smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
-    // 上一次自动更换神秘颜色的ID的临时日志名称
-    prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
-    // 标记已KFB捐款的Cookie名称
-    donationCookieName: 'pd_donation',
+    // 存储上一次自动更换ID颜色的临时日志名称
+    prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
+    // 标记已进行KFB捐款的Cookie名称
+    donationCookieName: 'donation',
     // 标记已去除首页已读at高亮提示的Cookie名称
-    hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
+    hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
-    prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
+    prevReadAtTipsCookieName: 'prevReadAtTips',
     // 标记已进行定期存款到期提醒的Cookie名称
-    fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
+    fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
     // 存储VIP剩余时间的Cookie名称
-    vipSurplusTimeCookieName: 'pd_vip_surplus_time',
-    // 标记已自动更换神秘颜色的Cookie名称
-    autoChangeSMColorCookieName: 'pd_auto_change_sm_color',
+    vipSurplusTimeCookieName: 'vipSurplusTime',
+    // 标记已自动更换ID颜色的Cookie名称
+    autoChangeIdColorCookieName: 'autoChangeIdColor',
     // 标记已检查过期日志的Cookie名称
-    checkOverdueLogCookieName: 'pd_check_overdue_log'
+    checkOverdueLogCookieName: 'checkOverdueLog'
 };
 
 exports.default = Const;
 
 },{}],7:[function(require,module,exports){
+/* 对话框模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2671,7 +2755,8 @@ const close = exports.close = function (id) {
     return false;
 };
 
-},{"./Info":10,"./Public":18,"./Util":21}],8:[function(require,module,exports){
+},{"./Info":10,"./Public":18,"./Util":22}],8:[function(require,module,exports){
+/* 自定义方法模块 */
 'use strict';
 
 // 自定义方法列表
@@ -2687,8 +2772,8 @@ const funcList = new Map();
  * @param {function} func 自定义方法
  */
 const add = exports.add = function (name, func) {
-    if (!funcList.has(name)) funcList[name] = [];
-    funcList[name].push(func);
+    if (!funcList.has(name)) funcList.set(name, []);
+    funcList.get(name).push(func);
 };
 
 /**
@@ -2714,6 +2799,7 @@ const run = exports.run = function (name, data) {
 };
 
 },{}],9:[function(require,module,exports){
+/* 首页模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2739,6 +2825,8 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
@@ -2754,17 +2842,13 @@ const handleAtTips = exports.handleAtTips = function () {
     let type = Config.atTipsHandleType;
     if (type === 'default') return;
     let $atTips = $('a[href^="guanjianci.php?gjc="]');
-    let noHighlight = function () {
-        $atTips.removeClass('indbox5').addClass('indbox6');
-    };
-    let hideBox = function () {
-        $atTips.parent().next('div.line').addBack().remove();
-    };
+    let noHighlight = () => $atTips.removeClass('indbox5').addClass('indbox6');
+    let hideBox = () => $atTips.parent().next('div.line').addBack().remove();
     let handleBox = noHighlight;
     if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
     if (['no_highlight', 'no_highlight_extra', 'hide_box_1', 'at_change_to_cao'].includes(type)) {
         if ($atTips.length > 0) {
-            let cookieText = Util.getCookie(_Const2.default.hideMarkReadAtTipsCookieName);
+            let cookieText = Util.getCookie(_Const2.default.hideReadAtTipsCookieName);
             let atTipsText = $.trim($atTips.text());
             let matches = /\d+日\d+时\d+分/.exec(atTipsText);
             if (matches) atTipsText = matches[0];
@@ -2774,14 +2858,14 @@ const handleAtTips = exports.handleAtTips = function () {
                 $atTips.click(function () {
                     let $this = $(this);
                     if ($this.data('disabled')) return;
-                    let cookieText = Util.getCookie(_Const2.default.hideMarkReadAtTipsCookieName);
+                    let cookieText = Util.getCookie(_Const2.default.hideReadAtTipsCookieName);
                     if (!cookieText) {
                         let curDate = new Date().getDate().toString();
                         Util.setCookie(_Const2.default.prevReadAtTipsCookieName, curDate.padStart(2, '0') + '日00时00分');
                     } else if (cookieText !== atTipsText) {
                         Util.setCookie(_Const2.default.prevReadAtTipsCookieName, cookieText);
                     }
-                    Util.setCookie(_Const2.default.hideMarkReadAtTipsCookieName, atTipsText, Util.getDate(`+${ _Const2.default.hideMarkReadAtTipsExpires }d`));
+                    Util.setCookie(_Const2.default.hideReadAtTipsCookieName, atTipsText, Util.getDate(`+${ _Const2.default.hideMarkReadAtTipsExpires }d`));
                     $this.data('disabled', true);
                     handleBox();
                 });
@@ -2816,8 +2900,8 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
      * 写入神秘等级数据
      * @param {number} smLevel 神秘等级
      */
-    let writeData = function (smLevel) {
-        TmpLog.setValue(_Const2.default.smLevelUpTmpLogName, { time: new Date().getTime(), smLevel: smLevel });
+    const writeData = function (smLevel) {
+        TmpLog.setValue(_Const2.default.smLevelUpTmpLogName, { time: new Date().getTime(), smLevel });
     };
 
     let data = TmpLog.getValue(_Const2.default.smLevelUpTmpLogName);
@@ -2828,7 +2912,7 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
         if (diff >= _Const2.default.smLevelUpAlertInterval) {
             let date = new Date(data.time);
             writeData(smLevel);
-            (0, _Log.push)('神秘等级升级', `自\`${ Util.getDateString(date) }\`以来，你的神秘等级共上升了\`${ smLevel - data.smLevel }\`级 (Lv.\`${ data.smLevel }\`->Lv.\`${ smLevel }\`)`);
+            Log.push('神秘等级升级', `自\`${ Util.getDateString(date) }\`以来，你的神秘等级共上升了\`${ smLevel - data.smLevel }\`级 (Lv.\`${ data.smLevel }\`->Lv.\`${ smLevel }\`)`);
             Msg.show(`自<em>${ Util.getDateString(date) }</em>以来，你的神秘等级共上升了<em>${ smLevel - data.smLevel }</em>级`);
         } else if (diff < 0) {
             writeData(smLevel);
@@ -2850,9 +2934,7 @@ const smRankChangeAlert = exports.smRankChangeAlert = function () {
      * 写入神秘系数排名数据
      * @param {number} smRank 神秘系数排名
      */
-    let writeData = function (smRank) {
-        TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: new Date().getTime(), smRank: smRank });
-    };
+    const writeData = smRank => TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: new Date().getTime(), smRank });
 
     let data = TmpLog.getValue(_Const2.default.smRankChangeTmpLogName);
     if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
@@ -2863,7 +2945,7 @@ const smRankChangeAlert = exports.smRankChangeAlert = function () {
             let date = new Date(data.time);
             let isUp = smRank < data.smRank;
             writeData(smRank);
-            (0, _Log.push)('神秘系数排名变化', `自\`${ Util.getDateString(date) }\`以来，你的神秘系数排名共\`${ isUp ? '上升' : '下降' }\`了\`${ Math.abs(smRank - data.smRank) }\`名 ` + `(No.\`${ data.smRank }\`->No.\`${ smRank }\`)`);
+            Log.push('神秘系数排名变化', `自\`${ Util.getDateString(date) }\`以来，你的神秘系数排名共\`${ isUp ? '上升' : '下降' }\`了\`${ Math.abs(smRank - data.smRank) }\`名 ` + `(No.\`${ data.smRank }\`->No.\`${ smRank }\`)`);
             Msg.show(`自<em>${ Util.getDateString(date) }</em>以来，你的神秘系数排名共<b style="color: ${ isUp ? '#F00' : '#393' }">${ isUp ? '上升' : '下降' }</b>了` + `<em>${ Math.abs(smRank - data.smRank) }</em>名`);
         } else if (diff < 0) {
             writeData(smRank);
@@ -2877,7 +2959,7 @@ const smRankChangeAlert = exports.smRankChangeAlert = function () {
 const addHomePageThreadFastGotoLink = exports.addHomePageThreadFastGotoLink = function () {
     $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         let $this = $(this);
-        $this.css('position', 'relative').prepend('<a class="pd_thread_goto" href="{0}&page=e#a">&raquo;</a>'.replace('{0}', $this.find('a').attr('href')));
+        $this.css('position', 'relative').prepend(`<a class="pd_thread_goto" href="${ $this.find('a').attr('href') }&page=e#a">&raquo;</a>`);
     }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         $(this).css('position', 'static').find('.pd_thread_goto').remove();
     });
@@ -2891,8 +2973,8 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
      * 添加VIP剩余时间的提示
      * @param {number} hours VIP剩余时间（小时）
      */
-    let addVipHoursTips = function (hours) {
-        $('a[href="kf_growup.php"][title="用户等级和权限"]').parent().after(`<div class="line"></div><div style="width:300px;"><a href="kf_vmember.php" class="indbox${ hours > 0 ? 5 : 6 }">VIP会员 ` + `(${ hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限' })</a><div class="c"></div></div>`);
+    const addVipHoursTips = function (hours) {
+        $('a[href="kf_growup.php"]').parent().after(`<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${ hours > 0 ? 5 : 6 }">VIP会员 ` + `(${ hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限' })</a><div class="c"></div></div>`);
     };
 
     let vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
@@ -2915,17 +2997,18 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
  */
 const addSearchTypeSelectBoxInHomePage = exports.addSearchTypeSelectBoxInHomePage = function () {
     let $form = $('form[action="search.php?"]');
-    $form.attr('name', 'pd_search');
+    $form.attr('name', 'pdSearchForm');
     let $keyWord = $form.find('[type="text"][name="keyword"]');
     $keyWord.css('width', '116px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./TmpLog":20,"./Util":21}],10:[function(require,module,exports){
+},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./TmpLog":21,"./Util":22}],10:[function(require,module,exports){
+/* 信息模块 */
 'use strict';
 
 /**
- * KFOL类
+ * 信息类
  */
 
 Object.defineProperty(exports, "__esModule", {
@@ -2940,6 +3023,8 @@ const Info = {
   isInHomePage: location.pathname === '/' || location.pathname === '/index.php',
   // 是否为移动版
   isMobile: false,
+  // 当前域名是否在miaola.info下
+  isInMiaolaDomain: location.host.endsWith('.miaola.info'),
   // 版本号
   version: '',
   // 当前窗口
@@ -2956,12 +3041,13 @@ const Info = {
 exports.default = Info;
 
 },{}],11:[function(require,module,exports){
+/* 道具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyItemDescription = exports.addBatchBuyItemsLink = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addBatchConvertEnergyAndRestoreItemsLink = exports.addConvertEnergyAndRestoreItemsButton = exports.addSellAndUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
+exports.modifyItemDescription = exports.addBatchBuyItemsLink = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addSellAndUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
 
 var _Info = require('./Info');
 
@@ -2979,7 +3065,11 @@ var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
 
+var _Config = require('./Config');
+
 var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
 
 var _Public = require('./Public');
 
@@ -3150,8 +3240,7 @@ const getCreditsViaResponse = function (response, itemTypeId) {
     if (itemTypeId >= 7 && itemTypeId <= 12) {
         if (/成功！/.test(response)) return { '效果': 1 };
     } else {
-        let matches = null;
-        matches = /恢复能量增加了\s*(\d+)\s*点/i.exec(response);
+        let matches = /恢复能量增加了\s*(\d+)\s*点/i.exec(response);
         if (matches) return { '能量': parseInt(matches[1]) };
         matches = /(\d+)KFB/i.exec(response);
         if (matches) return { 'KFB': parseInt(matches[1]) };
@@ -3218,7 +3307,17 @@ const useItems = function (options, cycle) {
     if (cycle) {
         if (cycle.round === 1) {
             console.log(`循环使用道具Start，使用道具数量：${ cycle.itemNum }，有效道具使用次数上限：${ cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制' }，` + `恢复道具成功次数上限：${ cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制' }`);
-            $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li class="pd_stat"><strong>对<em>${ cycle.itemNum }</em>个【Lv.${ settings.itemLevel }：${ settings.itemName }】` + `道具的循环使用开始（当前道具恢复能量<em>${ cycle.totalEnergyNum }</em>点）<br>` + `（有效道具使用次数上限：<em>${ cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制' }</em>，` + `恢复道具成功次数上限：<em>${ cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制' }</em>）</strong></li></ul>`);
+            $('.kf_fw_ig1:last').parent().append(`
+<ul class="pd_result">
+  <li class="pd_stat">
+    <strong>
+    对<em>${ cycle.itemNum }</em>个【Lv.${ settings.itemLevel }：${ settings.itemName }】道具的循环使用开始（当前道具恢复能量<em>${ cycle.totalEnergyNum }</em>点）<br>
+    （有效道具使用次数上限：<em>${ cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制' }</em>，
+    恢复道具成功次数上限：<em>${ cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制' }</em>）
+    </strong>
+  </li>
+</ul>
+`);
         } else {
             $('.pd_result:last').append('<div class="pd_result_sep"></div>');
         }
@@ -3244,11 +3343,11 @@ const useItems = function (options, cycle) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('使用道具', html);
-                    let matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href=".+?">/i.exec(html);
-                    if (matches && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(html)) {
+                    let { type, msg } = Util.getResponseMsg(html);
+                    if (type === 1 && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(msg)) {
                         successNum++;
                         nextRoundItemIdList.push(itemId);
-                        let credits = getCreditsViaResponse(matches[1], settings.itemTypeId);
+                        let credits = getCreditsViaResponse(msg, settings.itemTypeId);
                         if (credits !== -1) {
                             if ($.isEmptyObject(credits)) stat['无效道具']++;else stat['有效道具']++;
                             if (settings.itemTypeId <= 6) {
@@ -3259,9 +3358,9 @@ const useItems = function (options, cycle) {
                         }
                     } else {
                         failNum++;
-                        if (/无法再使用/.test(html)) nextRoundItemIdList = [];
+                        if (/无法再使用/.test(msg)) nextRoundItemIdList = [];
                     }
-                    $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ matches ? matches[1] : '未能获得预期的回应' }</li>`);
+                    $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ msg }</li>`);
                     if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
                         isStop = true;
                         console.log('有效道具使用次数到达设定上限，循环使用操作停止');
@@ -3272,20 +3371,20 @@ const useItems = function (options, cycle) {
                     failNum++;
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
                         $(document).clearQueue('UseItems');
                         if (settings.isTypeBatch) $(document).clearQueue('UseItemTypes');
                     }
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (stat['有效道具'] === 0) delete stat['有效道具'];
                         if (stat['无效道具'] === 0) delete stat['无效道具'];
                         if (!cycle && successNum > 0) {
-                            (0, _Log.push)('使用道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具被使用`, {
+                            Log.push('使用道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具被使用`, {
                                 gain: $.extend({}, stat, { '已使用道具': successNum }),
                                 pay: { '道具': -successNum }
                             });
@@ -3388,10 +3487,9 @@ const restoreItems = function (options, cycle) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('恢复道具', html);
-                    let msg = '';
-                    let matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href=".+?">/i.exec(html);
-                    if (matches) {
-                        if (/该道具已经被恢复/.test(html)) {
+                    let { type, msg } = Util.getResponseMsg(html);
+                    if (type === 1) {
+                        if (/该道具已经被恢复/.test(msg)) {
                             msg = '该道具已经被恢复';
                             successNum++;
                             successEnergyNum += perEnergyNum;
@@ -3400,30 +3498,26 @@ const restoreItems = function (options, cycle) {
                                 isStop = true;
                                 msg += '<span class="pd_notice">（恢复道具成功次数已达到设定上限，恢复操作中止）</span>';
                             }
-                        } else if (/恢复失败/.test(html)) {
+                        } else if (/恢复失败/.test(msg)) {
                             msg = '该道具恢复失败';
                             failNum++;
-                        } else if (/你的能量不足以恢复本道具/.test(html)) {
+                        } else if (/你的能量不足以恢复本道具/.test(msg)) {
                             isStop = true;
                             msg = '你的能量不足以恢复本道具<span class="pd_notice">（恢复操作中止）</span>';
-                        } else {
-                            msg = matches[1];
                         }
-                    } else {
-                        msg = '未能获得预期的回应';
                     }
                     $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ msg }</li>`);
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('RestoreItems');
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (!cycle && (successNum > 0 || failNum > 0)) {
-                            (0, _Log.push)('恢复道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具恢复成功，共有\`${ failNum }\`个道具恢复失败`, {
+                            Log.push('恢复道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具恢复成功，共有\`${ failNum }\`个道具恢复失败`, {
                                 gain: { '道具': successNum },
                                 pay: { '已使用道具': -(successNum + failNum), '能量': -successEnergyNum }
                             });
@@ -3503,7 +3597,7 @@ const cycleUseItems = function (type, options, cycle) {
         Msg.remove($('.pd_msg:first'));
     }
 
-    let showResult = function (type, stat) {
+    const showResult = function (type, stat) {
         let resultStat = '';
         for (let key of Object.keys(stat)) {
             if (type > 0 && (key === '道具' || key === '已使用道具')) continue;
@@ -3512,8 +3606,9 @@ const cycleUseItems = function (type, options, cycle) {
         $('.pd_result:last').append(`
 <li class="pd_result_sep${ type > 0 ? '_inner' : '' }"></li>
 <li class="pd_stat">
-  <strong>${ type > 0 ? '截至目前为止的统计' : `【Lv.${ options.itemLevel }：${ options.itemName }】循环使用最终统计` }
-(当前道具恢复能量<em>${ cycle.totalEnergyNum }</em>点)：</strong>
+  <strong>
+    ${ type > 0 ? '截至目前为止的统计' : `【Lv.${ options.itemLevel }：${ options.itemName }】循环使用最终统计` }（当前道具恢复能量<em>${ cycle.totalEnergyNum }</em>点）：
+  </strong>
 </li>
 <li class="pd_stat">
   ${ type > 0 ? '' : `共进行了<em>${ cycle.round }</em>轮循环：` }
@@ -3527,12 +3622,12 @@ const cycleUseItems = function (type, options, cycle) {
 
     if (type === 1) {
         showResult(type, cycle.stat);
-        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         setTimeout(function () {
             useItems(options, cycle);
         }, cycle.round === 1 ? 500 : typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
     } else if (type === 2) {
-        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         setTimeout(() => restoreItems(options, cycle), typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
     } else {
         if (cycle.stat['道具'] === 0) delete cycle.stat['道具'];
@@ -3546,7 +3641,7 @@ const cycleUseItems = function (type, options, cycle) {
         }
 
         if (cycle.countStat['被使用次数'] > 0) {
-            (0, _Log.push)('循环使用道具', `对\`${ cycle.itemNum }\`个【\`Lv.${ options.itemLevel }：${ options.itemName }\`】道具进行了\`${ cycle.round }\`轮循环使用` + `(被使用次数\`+${ cycle.countStat['被使用次数'] }\`，恢复成功次数\`+${ cycle.countStat['恢复成功次数'] }\`，` + `恢复失败次数\`+${ cycle.countStat['恢复失败次数'] }\`)`, { gain: gain, pay: pay });
+            Log.push('循环使用道具', `对\`${ cycle.itemNum }\`个【\`Lv.${ options.itemLevel }：${ options.itemName }\`】道具进行了\`${ cycle.round }\`轮循环使用` + `(被使用次数\`+${ cycle.countStat['被使用次数'] }\`，恢复成功次数\`+${ cycle.countStat['恢复成功次数'] }\`，` + `恢复失败次数\`+${ cycle.countStat['恢复失败次数'] }\`)`, { gain: gain, pay: pay });
         }
 
         console.log(`共进行了${ cycle.round }轮循环，被使用次数+${ cycle.countStat['被使用次数'] }，恢复成功次数+${ cycle.countStat['恢复成功次数'] }，` + `恢复失败次数+${ cycle.countStat['恢复失败次数'] }，能量${ cycle.stat['能量'] }`);
@@ -3594,7 +3689,8 @@ const convertItemsToEnergy = function (options) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('将道具转换为能量', html);
-                    if (/转换为了\s*\d+\s*点能量/.test(html)) {
+                    let { msg } = Util.getResponseMsg(html);
+                    if (/转换为了\s*\d+\s*点能量/.test(msg)) {
                         successNum++;
                     } else failNum++;
                 },
@@ -3602,19 +3698,19 @@ const convertItemsToEnergy = function (options) {
                     failNum++;
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
                         $(document).clearQueue('ConvertItemsToEnergy');
                         if (settings.isTypeBatch) $(document).clearQueue('ConvertItemTypesToEnergy');
                     }
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         let successEnergyNum = successNum * energyNum;
                         if (successNum > 0) {
-                            (0, _Log.push)('将道具转换为能量', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具成功转换为能量`, { gain: { '能量': successEnergyNum }, pay: { '已使用道具': -successNum } });
+                            Log.push('将道具转换为能量', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具成功转换为能量`, { gain: { '能量': successEnergyNum }, pay: { '已使用道具': -successNum } });
                         }
                         console.log(`共有${ successNum }个道具成功转换为能量${ failNum > 0 ? `，共有${ failNum }个道具转换失败` : '' }，能量+${ successEnergyNum }`);
                         Msg.show(`<strong>共有<em>${ successNum }</em>个道具成功转换为能量${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具转换失败` : '' }</strong>` + `<i>能量<em>+${ successEnergyNum }</em></i>`, -1);
@@ -3666,7 +3762,8 @@ const sellItems = function (options) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('出售道具', html);
-                    if (/出售成功/.test(html)) {
+                    let { msg } = Util.getResponseMsg(html);
+                    if (/出售成功/.test(msg)) {
                         successNum++;
                         totalGain += getSellItemGainByLevel(settings.itemLevel);
                     } else failNum++;
@@ -3675,15 +3772,15 @@ const sellItems = function (options) {
                     failNum++;
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('SellItems');
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (successNum > 0) {
-                            (0, _Log.push)('出售道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具出售成功`, {
+                            Log.push('出售道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具出售成功`, {
                                 gain: { 'KFB': totalGain },
                                 pay: { '道具': -successNum }
                             });
@@ -3724,15 +3821,24 @@ const addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function () 
         $(this).css('width', '163').parent().append(`<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="${ matches[1] }"></td>`);
     });
     $('.kf_fw_ig1 > tbody > tr:lt(2)').find('td').attr('colspan', 5);
-    $('<div class="pd_item_btns"><button title="批量使用指定道具">使用道具</button><button>全选</button><button>反选</button></div>').insertAfter('.kf_fw_ig1').find('button:first-child').click(function () {
+
+    $(`
+<div class="pd_item_btns">
+  ${ itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : '' }
+  ${ itemTypeId > 1 ? '<button name="cycleUseItem" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : '' }
+  <button name="useItem" title="批量使用指定道具">使用道具</button>
+  <button name="selectAll">全选</button>
+  <button name="selectInverse">反选</button>
+</div>
+`).insertAfter('.kf_fw_ig1').find('[name="useItem"]').click(function () {
         Msg.destroy();
         let itemIdList = [];
-        $('.kf_fw_ig1 input[type="checkbox"]:checked').each(function () {
+        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
             itemIdList.push(parseInt($(this).val()));
         });
         if (!itemIdList.length) return;
         if (!confirm(`共选择了${ itemIdList.length }个道具，是否批量使用道具？`)) return;
-        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         useItems({
             type: 2,
             itemIdList: itemIdList,
@@ -3741,84 +3847,79 @@ const addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function () 
             itemTypeId: itemTypeId,
             itemName: itemName
         });
-    }).next().click(function () {
-        $('.kf_fw_ig1 input[type="checkbox"]').prop('checked', true);
-    }).next().click(function () {
-        $('.kf_fw_ig1 input[type="checkbox"]').each(function () {
+    }).end().find('[name="selectAll"]').click(function () {
+        $('.kf_fw_ig1 [type="checkbox"]').prop('checked', true);
+    }).end().find('[name="selectInverse"]').click(function () {
+        $('.kf_fw_ig1 [type="checkbox"]').each(function () {
             $(this).prop('checked', !$(this).prop('checked'));
         });
-    });
-    if (itemTypeId > 1) {
-        $('<button style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>').prependTo('.pd_item_btns').click(function () {
-            Msg.destroy();
-            let itemIdList = [];
-            $('.kf_fw_ig1 input[type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            let value = prompt('你要循环使用多少个道具？\n' + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemIdList.length);
-            if (value === null) return;
-            value = $.trim(value);
-            if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
-                alert('格式不正确');
-                return;
-            }
-            let arr = value.split('|');
-            let num = parseInt(arr[0]),
-                maxEffectiveItemCount = 0,
-                maxSuccessRestoreItemCount = 0;
-            if (!num) return;
-            if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
-            if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
-            Msg.destroy();
+    }).end().find('[name="cycleUseItem"]').click(function () {
+        Msg.destroy();
+        let itemIdList = [];
+        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
+            itemIdList.push(parseInt($(this).val()));
+        });
+        if (!itemIdList.length) return;
+        let value = prompt('你要循环使用多少个道具？\n' + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemIdList.length);
+        if (value === null) return;
+        value = $.trim(value);
+        if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
+            alert('格式不正确');
+            return;
+        }
+        let arr = value.split('|');
+        let num = parseInt(arr[0]),
+            maxEffectiveItemCount = 0,
+            maxSuccessRestoreItemCount = 0;
+        if (!num) return;
+        if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
+        if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
+        Msg.destroy();
 
-            if (num > itemIdList.length) num = itemIdList.length;
-            let tmpItemIdList = [];
-            for (let i = 0; i < num; i++) {
-                tmpItemIdList.push(itemIdList[i]);
-            }
-            itemIdList = tmpItemIdList;
-            Msg.wait('正在获取当前道具相关信息，请稍后&hellip;');
-            $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
-                Msg.destroy();
-                let totalEnergyNum = getCurrentEnergyNum(html);
-                showCurrentUsedItemNum(html);
-                cycleUseItems(1, {
-                    type: 2,
-                    itemIdList: itemIdList,
-                    safeId: safeId,
-                    itemLevel: itemLevel,
-                    itemTypeId: itemTypeId,
-                    itemName: itemName
-                }, {
-                    itemNum: itemIdList.length,
-                    round: 1,
-                    totalEnergyNum: totalEnergyNum,
-                    countStat: {},
-                    stat: {},
-                    maxEffectiveItemCount: maxEffectiveItemCount,
-                    maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
-                });
-            });
-        });
-    }
-    if (itemTypeId >= 7 && itemTypeId <= 12) {
-        $('<button style="color: #f00;" title="批量出售指定道具">出售道具</button>').prependTo('.pd_item_btns').click(function () {
+        if (num > itemIdList.length) num = itemIdList.length;
+        let tmpItemIdList = [];
+        for (let i = 0; i < num; i++) {
+            tmpItemIdList.push(itemIdList[i]);
+        }
+        itemIdList = tmpItemIdList;
+        Msg.wait('正在获取当前道具相关信息，请稍后&hellip;');
+        $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
             Msg.destroy();
-            let itemIdList = [];
-            $('.kf_fw_ig1 input[type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            if (!confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
-            Msg.wait(`<strong>正在出售道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-            sellItems({
+            let totalEnergyNum = getCurrentEnergyNum(html);
+            showCurrentUsedItemNum(html);
+            cycleUseItems(1, {
+                type: 2,
                 itemIdList: itemIdList,
+                safeId: safeId,
                 itemLevel: itemLevel,
+                itemTypeId: itemTypeId,
                 itemName: itemName
+            }, {
+                itemNum: itemIdList.length,
+                round: 1,
+                totalEnergyNum: totalEnergyNum,
+                countStat: {},
+                stat: {},
+                maxEffectiveItemCount: maxEffectiveItemCount,
+                maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
             });
         });
-    }
+    }).end().find('[name="sellItem"]').click(function () {
+        Msg.destroy();
+        let itemIdList = [];
+        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
+            itemIdList.push(parseInt($(this).val()));
+        });
+        if (!itemIdList.length) return;
+        if (!confirm(`共选择了${ itemIdList.length }个道具，是否批量出售道具？`)) return;
+        Msg.wait(`<strong>正在出售道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        sellItems({
+            itemIdList: itemIdList,
+            itemLevel: itemLevel,
+            itemName: itemName
+        });
+    });
+
     showCurrentUsedItemNum();
 };
 
@@ -3841,7 +3942,14 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
         if (!matches) return;
         $(this).css('width', '500').parent().append(`<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="${ matches[1] }"></td>`);
     });
-    $('<div class="pd_item_btns"><button class="pd_highlight" title="批量将指定道具转换为能量">转换能量</button>' + '<button title="批量恢复指定道具">恢复道具</button><button>全选</button><button>反选</button></div>').insertAfter('.kf_fw_ig1:eq(1)').find('button:first-child').click(function () {
+    $(`
+<div class="pd_item_btns">
+  <button class="pd_highlight" name="convertEnergy" title="批量将指定道具转换为能量">转换能量</button>
+  <button name="restoreItem" title="批量恢复指定道具">恢复道具</button>
+  <button name="selectAll">全选</button>
+  <button name="selectInverse">反选</button>
+</div>
+`).insertAfter('.kf_fw_ig1:eq(1)').find('[name="convertEnergy"]').click(function () {
         Msg.destroy();
         let itemIdList = [];
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
@@ -3849,7 +3957,7 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
         });
         if (!itemIdList.length) return;
         if (!confirm(`共选择了${ itemIdList.length }个道具，是否转换为能量？`)) return;
-        Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         convertItemsToEnergy({
             type: 2,
             itemIdList: itemIdList,
@@ -3857,7 +3965,7 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
             itemLevel: itemLevel,
             itemName: itemName
         });
-    }).next().click(function () {
+    }).end().find('[name="restoreItem"]').click(function () {
         Msg.destroy();
         let itemIdList = [];
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
@@ -3871,7 +3979,7 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
             alert('所需恢复能量不足');
             return;
         }
-        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         restoreItems({
             type: 2,
             itemIdList: itemIdList,
@@ -3880,38 +3988,13 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
             itemTypeId: itemTypeId,
             itemName: itemName
         });
-    }).next().click(function () {
+    }).end().find('[name="selectAll"]').click(function () {
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]').prop('checked', true);
-    }).next().click(function () {
+    }).end().find('[name="selectInverse"]').click(function () {
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]').each(function () {
             $(this).prop('checked', !$(this).prop('checked'));
         });
     });
-};
-
-/**
- * 在道具恢复页面上添加批量转换道具为能量和批量恢复道具的链接
- */
-const addBatchConvertEnergyAndRestoreItemsLink = exports.addBatchConvertEnergyAndRestoreItemsLink = function () {
-    let $myItems = $('.kf_fw_ig1:last');
-    $myItems.find('tbody > tr').each(function (index) {
-        let $this = $(this);
-        if (index === 0) {
-            $this.find('td').attr('colspan', 6);
-        } else if (index === 1) {
-            $this.find('td:nth-child(2)').attr('width', 200).next('td').attr('width', 100).wrapInner('<span class="pd_used_num pd_custom_tips" style="color: #000;"></span>').next('td').attr('width', 130).text('批量恢复').next('td').attr('width', 160).before('<td width="160">批量转换</td>');
-        } else {
-            $this.find('td:nth-child(3)').wrapInner('<span class="pd_used_num pd_custom_tips"></span>').end().find('td:nth-child(4)').html(`<a class="pd_items_batch_restore ${ index === 2 ? 'pd_disabled_link' : '' }" href="#" title="批量恢复指定数量的道具">批量恢复道具</a>`).after(`<td><a class="pd_items_batch_convert pd_highlight ${ index === 2 ? 'pd_disabled_link' : '' }" href="#" ` + `title="批量将指定数量的道具转换为能量">批量转换道具为能量</a></td>`);
-            let matches = /lv=(\d+)/i.exec($this.find('td:last-child').find('a').attr('href'));
-            if (matches) $this.data('itemTypeId', parseInt(matches[1]));
-        }
-    });
-    bindItemActionLinksClick($myItems);
-
-    let $itemName = $myItems.find('tbody > tr:gt(1) > td:nth-child(2)');
-    addSampleItemsLink($itemName);
-    showItemUsedInfo($itemName.find('a'));
-    showUsedItemEnergyTips();
 };
 
 /**
@@ -3920,7 +4003,18 @@ const addBatchConvertEnergyAndRestoreItemsLink = exports.addBatchConvertEnergyAn
 const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTypesButton = function () {
     let safeId = Public.getSafeId();
     if (!safeId) return;
-    $('<div class="pd_item_btns"><button title="批量使用指定种类的道具" data-action="useItemTypes">批量使用</button>' + '<button class="pd_highlight" title="批量将指定种类的道具转换为能量" data-action="convertItemTypes">批量转换</button>' + '<button data-action="selectAll">全选</button><button data-action="selectInverse">反选</button></div>').insertAfter('.pd_my_items').on('click', 'button', function () {
+    $(`
+<div class="pd_item_btns">
+  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用和恢复道具（仅限此页面有效）">
+    <input name="simulateManualHandleItemEnabled" type="checkbox" ${ Config.simulateManualHandleItemEnabled ? 'checked' : '' }>
+    模拟手动操作道具
+  </label>
+  <button title="批量使用指定种类的道具" data-action="useItemTypes">批量使用</button>
+  <button class="pd_highlight" title="批量将指定种类的道具转换为能量" data-action="convertItemTypes">批量转换</button>
+  <button data-action="selectAll">全选</button>
+  <button data-action="selectInverse">反选</button>
+</div>
+`).insertAfter('.pd_my_items').on('click', 'button', function () {
         let action = $(this).data('action');
         if (action === 'useItemTypes' || action === 'convertItemTypes') {
             let itemTypeList = [];
@@ -3964,7 +4058,7 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
 
                             if (action === 'useItemTypes') {
                                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                                 useItems({
                                     type: 1,
                                     itemIdList: itemIdList,
@@ -3977,7 +4071,7 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
                                 });
                             } else {
                                 console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                                 convertItemsToEnergy({
                                     type: 1,
                                     itemIdList: itemIdList,
@@ -4004,7 +4098,14 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
                 $(this).prop('checked', !$(this).prop('checked'));
             });
         }
-    });
+    }).find('[name="simulateManualHandleItemEnabled"]').click(function () {
+        if (!('_specialAjaxInterval' in _Const2.default)) _Const2.default._specialAjaxInterval = _Const2.default.specialAjaxInterval;
+        let checked = $(this).prop('checked');
+        if (checked) _Const2.default.specialAjaxInterval = () => Math.floor(Math.random() * 4000) + 2000;else _Const2.default.specialAjaxInterval = _Const2.default._specialAjaxInterval;
+        (0, _Config.read)();
+        Config.simulateManualHandleItemEnabled = checked;
+        (0, _Config.write)();
+    }).triggerHandler('click');
 };
 
 /**
@@ -4042,7 +4143,7 @@ const bindItemActionLinksClick = function ($element) {
                     return;
                 }
                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 useItems({
                     type: 1,
                     itemIdList: itemIdList,
@@ -4122,7 +4223,7 @@ const bindItemActionLinksClick = function ($element) {
                     return;
                 }
                 console.log('批量恢复道具Start，恢复道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 restoreItems({
                     type: 1,
                     itemIdList: itemIdList,
@@ -4148,7 +4249,7 @@ const bindItemActionLinksClick = function ($element) {
                     return;
                 }
                 console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 convertItemsToEnergy({
                     type: 1,
                     itemIdList: itemIdList,
@@ -4289,7 +4390,7 @@ const showCurrentUsedItemNum = function (html = '') {
      * 显示数量
      * @param {string} html 恢复道具页面的HTML代码
      */
-    let show = function (html) {
+    const show = function (html) {
         let energyNum = getCurrentEnergyNum(html);
         let introMatches = /(1级道具转换得.+?点能量)。<br/.exec(html);
         if (location.pathname === '/kf_fw_ig_my.php') {
@@ -4333,7 +4434,7 @@ const showCurrentUsableItemNum = function (html = '') {
      * 显示数量
      * @param {string} html 我的道具页面的HTML代码
      */
-    let show = function (html) {
+    const show = function (html) {
         let matches = html.match(/">\d+<\/td><td><a href="kf_fw_ig_my\.php\?lv=/ig);
         if (!matches) return;
         let usableItemNumList = [];
@@ -4356,21 +4457,14 @@ const showCurrentUsableItemNum = function (html = '') {
 /**
  * 获取道具使用情况
  * @param html 争夺首页的HTML代码
- * @returns {{}} 道具使用情况对象
+ * @returns {Map} 道具使用情况对象
  */
 const getItemUsedInfo = exports.getItemUsedInfo = function (html) {
-    let itemUsedNumList = {
-        '蕾米莉亚同人漫画': 0,
-        '十六夜同人漫画': 0,
-        '档案室钥匙': 0,
-        '傲娇LOLI娇蛮音CD': 0,
-        '消逝之药': 0,
-        '整形优惠卷': 0
-    };
+    let itemUsedNumList = new Map([['蕾米莉亚同人漫画', 0], ['十六夜同人漫画', 0], ['档案室钥匙', 0], ['傲娇LOLI娇蛮音CD', 0], ['消逝之药', 0], ['整形优惠卷', 0]]);
     let matches = /道具：\[(蕾米莉亚同人漫画)：(\d+)]\[(十六夜同人漫画)：(\d+)]\[(档案室钥匙)：(\d+)]\[(傲娇LOLI娇蛮音CD)：(\d+)]\[(消逝之药)：(\d+)]\[(整形优惠卷)：(\d+)]/.exec(html);
     if (matches) {
         for (let i = 1; i < matches.length; i += 2) {
-            itemUsedNumList[matches[i]] = parseInt(matches[i + 1]);
+            itemUsedNumList.set(matches[i], parseInt(matches[i + 1]));
         }
     }
     return itemUsedNumList;
@@ -4388,8 +4482,8 @@ const showItemUsedInfo = function ($links) {
         $links.each(function () {
             let $this = $(this);
             let itemName = $this.text();
-            if (typeof itemUsedNumList[itemName] === 'undefined') return;
-            let usedNum = itemUsedNumList[itemName];
+            if (!itemUsedNumList.has(itemName)) return;
+            let usedNum = itemUsedNumList.get(itemName);
             let maxUsedNum = getMaxUsedNumByName(itemName);
             let nextSuccessPercent = 0;
             if (usedNum > maxUsedNum) nextSuccessPercent = 0;else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
@@ -4409,14 +4503,14 @@ const addSampleItemsLink = function ($nodes) {
         let $this = $(this);
         let itemName = $this.text().trim();
         let itemLevel = getLevelByName(itemName);
-        if (itemName && typeof _Const2.default.sampleItemIdList[itemName] !== 'undefined') {
+        if (itemName && _Const2.default.sampleItemIdList.has(itemName)) {
             let title = '';
             if (itemName !== '零时迷子的碎片') {
                 title = `恢复此道具需${ getRestoreEnergyNumByLevel(itemLevel) }点能量，转换此道具可得${ getGainEnergyNumByLevel(itemLevel) }点能量`;
             } else {
                 title = '此道具不可恢复和转换';
             }
-            $this.html(`<a href="kf_fw_ig_my.php?pro=${ _Const2.default.sampleItemIdList[itemName] }&display=1" title="${ title }">${ itemName }</a>`);
+            $this.html(`<a href="kf_fw_ig_my.php?pro=${ _Const2.default.sampleItemIdList.get(itemName) }&display=1" title="${ title }">${ itemName }</a>`);
         }
     });
 };
@@ -4425,10 +4519,10 @@ const addSampleItemsLink = function ($nodes) {
  * 添加道具样品提示
  */
 const addSampleItemTips = exports.addSampleItemTips = function () {
-    let itemId = parseInt(Util.getUrlParam('pro'));
-    if (isNaN(itemId) || itemId <= 0) return;
-    for (let itemName of Object.keys(_Const2.default.sampleItemIdList)) {
-        if (itemId === _Const2.default.sampleItemIdList[itemName]) {
+    let id = parseInt(Util.getUrlParam('pro'));
+    if (isNaN(id) || id <= 0) return;
+    for (let itemId of _Const2.default.sampleItemIdList.values()) {
+        if (id === itemId) {
             $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').find('span:first').after('<span class="pd_notice" style="margin-left: 5px;">(展示用样品)</span>');
             break;
         }
@@ -4467,16 +4561,14 @@ const buyItems = function (options) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('购买道具', html);
-                    let msg = '';
-                    let matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
+                    let { msg, url } = Util.getResponseMsg(html);
+                    let matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec(url);
                     if (matches) {
                         successNum++;
                         msg = `获得了<a target="_blank" href="kf_fw_ig_my.php?pro=${ matches[1] }" data-id="${ matches[1] }">一个道具</a>`;
-                    } else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
+                    } else if (/你需要持有该道具两倍市场价的KFB/.test(html)) {
                         msg = '你需要持有该道具两倍市场价的KFB<span class="pd_notice">（购买操作中止）</span>';
                         isStop = true;
-                    } else {
-                        msg = '未能获得预期的回应';
                     }
                     $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ msg }</li>`);
                 },
@@ -4484,15 +4576,15 @@ const buyItems = function (options) {
                     failNum++;
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BatchBuyItems');
 
                     if (isStop || index === settings.num - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (successNum > 0) {
-                            (0, _Log.push)('购买道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具购买成功`, { gain: { '道具': successNum } });
+                            Log.push('购买道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具购买成功`, { gain: { '道具': successNum } });
                         }
                         console.log(`共有${ successNum }个【Lv.${ settings.itemLevel }：${ settings.itemName }】道具购买成功` + (failNum > 0 ? `，共有${ failNum }个道具购买失败` : ''));
                         Msg.show(`<strong>共有<em>${ successNum }</em>个【<em>Lv.${ settings.itemLevel }</em>${ settings.itemName }】道具购买成功` + `${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具购买失败` : '' }</strong>`, -1);
@@ -4539,7 +4631,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
         }
     });
     if (!marketPrice) marketPrice = 1;
-    Msg.wait(`<strong>正在统计购买价格中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ totalNum }</em></i>`);
+    Msg.wait(`<strong>正在统计购买价格中&hellip;</strong><i>剩余：<em class="pd_countdown">${ totalNum }</em></i>`);
     $(document).clearQueue('StatBuyItemsPrice');
     $result.find('li > a').each(function (index) {
         let $this = $(this);
@@ -4551,8 +4643,8 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                 url: `kf_fw_ig_my.php?pro=${ itemId }&t=${ new Date().getTime() }`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
                     let matches = /从商店购买，购买价(\d+)KFB。<br/.exec(html);
                     if (matches) {
                         successNum++;
@@ -4574,7 +4666,7 @@ const statBuyItemsPrice = function ($result, itemLevel, itemName) {
                     if (index === totalNum - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            (0, _Log.push)('统计道具购买价格', `共有\`${ successNum }\`个【\`Lv.${ itemLevel }：${ itemName }\`】道具统计成功` + `${ failNum > 0 ? `（共有\`${ failNum }\`个道具未能统计成功）` : '' }，总计价格：\`${ totalPrice.toLocaleString() }\`，` + `平均价格：\`${ successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0 }\`` + `(\`${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%\`)，` + `最低价格：\`${ minPrice.toLocaleString() }\`(\`${ Math.round(minPrice / marketPrice * 100) }%\`)，` + `最高价格：\`${ maxPrice.toLocaleString() }\`(\`${ Math.round(maxPrice / marketPrice * 100) }%\`)`, { pay: { 'KFB': -totalPrice } });
+                            Log.push('统计道具购买价格', `共有\`${ successNum }\`个【\`Lv.${ itemLevel }：${ itemName }\`】道具统计成功` + `${ failNum > 0 ? `（共有\`${ failNum }\`个道具未能统计成功）` : '' }，总计价格：\`${ totalPrice.toLocaleString() }\`，` + `平均价格：\`${ successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0 }\`` + `(\`${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%\`)，` + `最低价格：\`${ minPrice.toLocaleString() }\`(\`${ Math.round(minPrice / marketPrice * 100) }%\`)，` + `最高价格：\`${ maxPrice.toLocaleString() }\`(\`${ Math.round(maxPrice / marketPrice * 100) }%\`)`, { pay: { 'KFB': -totalPrice } });
                         }
                         console.log(`统计道具购买价格（KFB）（共有${ failNum }个道具未能统计成功），统计成功数量：${ successNum }，总计价格：${ totalPrice.toLocaleString() }，` + `平均价格：${ successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0 } ` + `(${ successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0 }%)，最低价格：${ minPrice.toLocaleString() } ` + `(${ Math.round(minPrice / marketPrice * 100) }%)，最高价格：${ maxPrice.toLocaleString() } (${ Math.round(maxPrice / marketPrice * 100) }%)`);
                         $result.append(`
@@ -4633,13 +4725,13 @@ const addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function () {
         let safeId = matches[2];
         let num = parseInt(prompt(`你要批量购买多少个【Lv.${ itemLevel }：${ itemName }】道具？`, 0));
         if (!num || num < 0) return;
-        Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ num }</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ num }</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
         buyItems({ itemTypeId, num, safeId, itemLevel, itemName });
     });
 
     $shop.find('tbody > tr:gt(1) > td:nth-child(4)').each(function () {
         let $this = $(this);
-        let price = parseInt($.trim($this.prev('td').text()));
+        let price = parseInt($this.prev('td').text());
         if (isNaN(price)) return;
         $this.addClass('pd_custom_tips').attr('title', `${ Math.floor(price * 0.5) }~${ price * 2 }（均价：${ Math.floor(price * 1.25) }）`);
     });
@@ -4687,26 +4779,20 @@ const modifyItemDescription = exports.modifyItemDescription = function () {
     let matches = /道具名称：(.+)/.exec($area.find('span:first').text().trim());
     if (!matches) return;
     let itemName = matches[1];
-    let itemDescReplaceList = {
-        '蕾米莉亚同人漫画': ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。'],
-        '十六夜同人漫画': ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。'],
-        '档案室钥匙': ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。'],
-        '傲娇LOLI娇蛮音CD': ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。'],
-        '整形优惠卷': ['暴击几率+3%。上限10。', '在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。'],
-        '消逝之药': ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']
-    };
-    if (itemDescReplaceList[itemName]) {
-        $area.html($area.html().replace(itemDescReplaceList[itemName][0], itemDescReplaceList[itemName][1]));
+    let itemDescReplaceList = new Map([['蕾米莉亚同人漫画', ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。']], ['十六夜同人漫画', ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。']], ['档案室钥匙', ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。']], ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。']], ['整形优惠卷', [['暴击几率+3%。上限10。'], ['在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。']]], ['消逝之药', ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']]]);
+    if (itemDescReplaceList.has(itemName)) {
+        $area.html($area.html().replace(itemDescReplaceList.get(itemName)[0], itemDescReplaceList.get(itemName)[1]));
     }
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./Util":21}],12:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],12:[function(require,module,exports){
+/* 日志模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getMergeLog = exports.push = exports.clear = exports.write = exports.read = exports.init = undefined;
+exports.getMergeLog = exports.push = exports.clear = exports.write = exports.read = undefined;
 
 var _Info = require('./Info');
 
@@ -4725,38 +4811,34 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 保存日志的键值名称
-const name = 'pd_log';
-
-/**
- * 初始化
- */
-const init = exports.init = function () {
-    if (typeof unsafeWindow === 'undefined') window.Log = {};else unsafeWindow.Log = {};
-};
+const name = _Const2.default.storagePrefix + 'log';
 
 /**
  * 读取日志
+ * @returns {{}} 日志对象
  */
 const read = exports.read = function () {
-    _Info2.default.w.Log = {};
+    let log = {};
     let options = null;
     if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') options = GM_getValue(name + '_' + _Info2.default.uid);else options = localStorage.getItem(name + '_' + _Info2.default.uid);
-    if (!options) return;
+    if (!options) return log;
     try {
         options = JSON.parse(options);
     } catch (ex) {
-        return;
+        return log;
     }
-    if (!options || $.type(options) !== 'object') return;
-    _Info2.default.w.Log = options;
-    if (!Util.getCookie(_Const2.default.checkOverdueLogCookieName)) deleteOverdueLog();
+    if (!options || $.type(options) !== 'object') return log;
+    log = options;
+    if (!Util.getCookie(_Const2.default.checkOverdueLogCookieName)) deleteOverdueLog(log);
+    return log;
 };
 
 /**
  * 写入日志
+ * @param {{}} log 日志对象
  */
-const write = exports.write = function () {
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(_Info2.default.w.Log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(_Info2.default.w.Log));
+const write = exports.write = function (log) {
+    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(log));
 };
 
 /**
@@ -4768,18 +4850,19 @@ const clear = exports.clear = function () {
 
 /**
  * 删除过期日志
+ * @param {{}} log 日志对象
  */
-const deleteOverdueLog = function () {
-    let dateList = Util.getObjectKeyList(Log, 1);
+const deleteOverdueLog = function (log) {
+    let dateList = Util.getObjectKeyList(log, 1);
     let overdueDate = Util.getDateString(Util.getDate(`-${ Config.logSaveDays }d`));
     let isDeleted = false;
     for (let date of dateList) {
         if (date <= overdueDate) {
-            delete Log[date];
+            delete log[date];
             isDeleted = true;
         } else break;
     }
-    if (isDeleted) write();
+    if (isDeleted) write(log);
     Util.setCookie(_Const2.default.checkOverdueLogCookieName, 1, Util.getMidnightHourDate(1));
 };
 
@@ -4794,13 +4877,13 @@ const push = exports.push = function (type, action, { gain = null, pay = null } 
     let date = new Date();
     let time = date.getTime();
     let today = Util.getDateString(date);
-    let settings = { time, type, action };
-    if (gain) settings['gain'] = gain;
-    if (pay) settings['pay'] = pay;
-    read();
-    if (!Array.isArray(_Info2.default.w.Log[today])) _Info2.default.w.Log[today] = [];
-    _Info2.default.w.Log[today].push(settings);
-    write();
+    let obj = { time, type, action };
+    if (gain) obj['gain'] = gain;
+    if (pay) obj['pay'] = pay;
+    let log = read();
+    if (!Array.isArray(log[today])) log[today] = [];
+    log[today].push(obj);
+    write(log);
 };
 
 /**
@@ -4825,17 +4908,14 @@ const getMergeLog = exports.getMergeLog = function (log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":10,"./Util":21}],13:[function(require,module,exports){
+},{"./Const":6,"./Info":10,"./Util":22}],13:[function(require,module,exports){
+/* 日志对话框模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.show = undefined;
-
-var _Info = require('./Info');
-
-var _Info2 = _interopRequireDefault(_Info);
 
 var _Util = require('./Util');
 
@@ -4853,20 +4933,20 @@ var _Config = require('./Config');
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * 显示日志对话框
  */
 const show = exports.show = function () {
-    if ($('#pd_log').length > 0) return;
-    Dialog.close('pd_config');
+    const dialogName = 'pdLogDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     Func.run('LogDialog.show_before_');
     let html = `
@@ -4882,34 +4962,34 @@ const show = exports.show = function () {
     <legend>日志内容</legend>
     <div>
       <strong>排序方式：</strong>
-      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type" value="time" checked>按时间</label>
-      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type" value="type">按类别</label>
+      <label title="按时间顺序排序"><input type="radio" name="sortType" value="time" checked> 按时间</label>
+      <label title="按日志类别排序"><input type="radio" name="sortType" value="type"> 按类别</label>
     </div>
-    <div class="pd_stat" id="pd_log_content">暂无日志</div>
+    <div class="pd_stat pd_log_content">暂无日志</div>
   </fieldset>
   <fieldset>
     <legend>统计结果</legend>
     <div>
       <strong>统计范围：</strong>
-      <label title="显示当天的统计结果"><input type="radio" name="pd_log_stat_type" value="cur" checked>当天</label>
-      <label title="显示距该日N天内的统计结果"><input type="radio" name="pd_log_stat_type" value="custom"></label>
-      <label title="显示距该日N天内的统计结果"><input id="pd_log_stat_days" type="text" style="width: 22px;" maxlength="3">天内</label>
-      <label title="显示全部统计结果"><input type="radio" name="pd_log_stat_type" value="all">全部</label>
+      <label title="显示当天的统计结果"><input type="radio" name="statType" value="current" checked> 当天</label>
+      <label title="显示距该日N天内的统计结果"><input type="radio" name="statType" value="custom"></label>
+      <label title="显示距该日N天内的统计结果"><input name="statDays" type="text" style="width: 22px;" maxlength="3"> 天内</label>
+      <label title="显示全部统计结果"><input type="radio" name="statType" value="all"> 全部</label>
     </div>
-    <div class="pd_stat" id="pd_log_stat">暂无日志</div>
+    <div class="pd_stat" data-name="stat">暂无日志</div>
   </fieldset>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a id="pd_log_im_or_ex_log_dialog" href="#">导入/导出日志</a></span>
-  <button>关闭</button><button>清除日志</button>
+  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
+  <button>关闭</button> <button>清除日志</button>
 </div>`;
-    let $dialog = Dialog.create('pd_log', 'KFOL助手日志', html);
+    let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
 
-    (0, _Log.read)();
+    let log = Log.read();
     let dateList = [];
     let curIndex = 0;
-    if (!$.isEmptyObject(Log)) {
-        dateList = Util.getObjectKeyList(Log, 1);
+    if (!$.isEmptyObject(log)) {
+        dateList = Util.getObjectKeyList(log, 1);
         curIndex = dateList.length - 1;
         $dialog.find('.pd_log_nav h2').attr('title', `总共记录了${ dateList.length }天的日志`).text(dateList[curIndex]);
         if (dateList.length > 1) {
@@ -4929,8 +5009,8 @@ const show = exports.show = function () {
             curIndex = dateList.length - 1;
         }
         $dialog.find('.pd_log_nav h2').text(dateList[curIndex]);
-        showLogContent(dateList[curIndex]);
-        showLogStat(dateList[curIndex]);
+        showLogContent(log, dateList[curIndex], $dialog);
+        showLogStat(log, dateList[curIndex], $dialog);
         if (curIndex > 0) {
             $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
             $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
@@ -4943,70 +5023,73 @@ const show = exports.show = function () {
         } else {
             $dialog.find('.pd_log_nav > a:gt(1)').removeAttr('title').addClass('pd_disabled_link');
         }
-    }).end().find('input[name="pd_log_sort_type"]').click(function () {
+    }).end().find('[name="sortType"]').click(function () {
         let value = $(this).val();
         if (Config.logSortType !== value) {
             Config.logSortType = value;
             (0, _Config.write)();
-            showLogContent(dateList[curIndex]);
+            showLogContent(log, dateList[curIndex], $dialog);
         }
-    }).end().find('input[name="pd_log_stat_type"]').click(function () {
+    }).end().find('[name="statType"]').click(function () {
         let value = $(this).val();
         if (Config.logStatType !== value) {
             Config.logStatType = value;
             (0, _Config.write)();
-            showLogStat(dateList[curIndex]);
+            showLogStat(log, dateList[curIndex], $dialog);
         }
-    }).end().find('#pd_log_stat_days').keyup(function () {
-        let days = parseInt($.trim($(this).val()));
+    }).end().find('[name="statDays"]').keyup(function () {
+        let days = parseInt($(this).val());
         if (days > 0 && Config.logStatDays !== days) {
             Config.logStatDays = days;
             (0, _Config.write)();
-            $('input[name="pd_log_stat_type"][value="custom"]:not(:checked)').click();
-            showLogStat(dateList[curIndex]);
+            $dialog.find('[name="statType"][value="custom"]:not(:checked)').click();
+            showLogStat(log, dateList[curIndex], $dialog);
         }
-    }).end().find('input[name="pd_log_sort_type"][value="{0}"]'.replace('{0}', Config.logSortType)).click().end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click().end().find('#pd_log_stat_days').val(Config.logStatDays);
+    }).end().find(`[name="sortType"][value="${ Config.logSortType }"]`).click().end().find(`[name="statType"][value="${ Config.logStatType }"]`).click().end().find('[name="statDays"]').val(Config.logStatDays);
 
-    $dialog.find('.pd_cfg_btns > button:first').click(() => Dialog.close('pd_log')).next('button').click(function (e) {
+    $dialog.find('.pd_cfg_btns > button:first').click(() => Dialog.close(dialogName)).next('button').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有日志？')) {
-            (0, _Log.clear)();
+            Log.clear();
             alert('日志已清除');
             location.reload();
         }
     });
 
-    $('#pd_log_im_or_ex_log_dialog').click(function (e) {
+    $dialog.find('[data-name="openImOrExLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLogDialog();
     });
 
-    showLogContent(dateList[curIndex]);
-    showLogStat(dateList[curIndex]);
+    showLogContent(log, dateList[curIndex], $dialog);
+    showLogStat(log, dateList[curIndex], $dialog);
 
-    if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
-    Dialog.show('pd_log');
+    if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '216px');
+    Dialog.show(dialogName);
     $dialog.find('input:first').focus();
     Func.run('LogDialog.show_after_');
 };
 
 /**
  * 显示指定日期的日志内容
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
+ * @param {jQuery} $dialog 日志对话框对象
  */
-const showLogContent = function (date) {
-    if (!Array.isArray(Log[date])) return;
-    $('#pd_log_content').html(getLogContent(date, Config.logSortType)).parent().find('legend:first-child').text(`日志内容 (共${ Log[date].length }项)`);
+const showLogContent = function (log, date, $dialog) {
+    if (!Array.isArray(log[date])) return;
+    $dialog.find('.pd_log_content').html(getLogContent(log, date, Config.logSortType)).parent().find('legend:first-child').text(`日志内容 (共${ log[date].length }项)`);
 };
 
 /**
  * 获取指定日期的日志内容
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  * @param {string} logSortType 日志内容的排序方式
  * @returns {string} 指定日期的日志内容
  */
-const getLogContent = function (date, logSortType) {
-    let logList = Log[date];
+const getLogContent = function (log, date, logSortType) {
+    let logList = log[date];
     if (logSortType === 'type') {
         const sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type));
@@ -5063,33 +5146,36 @@ const getLogContent = function (date, logSortType) {
 
 /**
  * 显示指定日期的日志统计结果
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
+ * @param {jQuery} $dialog 日志对话框对象
  */
-const showLogStat = function (date) {
-    if (!Array.isArray(Log[date])) return;
-    $('#pd_log_stat').html(getLogStat(date, Config.logStatType));
+const showLogStat = function (log, date, $dialog) {
+    if (!Array.isArray(log[date])) return;
+    $dialog.find('[data-name="stat"]').html(getLogStat(log, date, Config.logStatType));
 };
 
 /**
  * 获取指定日期的日志统计结果
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  * @param {string} logStatType 日志统计范围类型
  * @returns {string} 指定日期的日志统计结果
  */
-const getLogStat = function (date, logStatType) {
-    let log = {};
+const getLogStat = function (log, date, logStatType) {
+    let rangeLog = {};
 
     if (logStatType === 'custom') {
         let minDate = new Date(date);
         minDate.setDate(minDate.getDate() - Config.logStatDays + 1);
         minDate = Util.getDateString(minDate);
-        for (let d of Util.getObjectKeyList(Log, 1)) {
-            if (d >= minDate && d <= date) log[d] = Log[d];
+        for (let d of Util.getObjectKeyList(log, 1)) {
+            if (d >= minDate && d <= date) rangeLog[d] = log[d];
         }
     } else if (logStatType === 'all') {
-        log = Log;
+        rangeLog = log;
     } else {
-        log[date] = Log[date];
+        rangeLog[date] = log[date];
     }
 
     let income = {},
@@ -5108,8 +5194,8 @@ const getLogStat = function (date, logStatType) {
         maxBuyItemPricePercent = 0,
         buyItemStat = {};
     let invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
-    for (let d in log) {
-        for (let { type, action, gain, pay, notStat } of log[d]) {
+    for (let d in rangeLog) {
+        for (let { type, action, gain, pay, notStat } of rangeLog[d]) {
             if (typeof type === 'undefined' || typeof notStat !== 'undefined') continue;
             if ($.type(gain) === 'object') {
                 for (let k of Object.keys(gain)) {
@@ -5216,98 +5302,103 @@ const getLogStat = function (date, logStatType) {
  * 显示导入或导出日志对话框
  */
 const showImportOrExportLogDialog = function () {
-    if ($('#pd_im_or_ex_log').length > 0) return;
-    (0, _Log.read)();
+    const dialogName = 'pdImOrExLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let log = Log.read();
     let html = `
 <div class="pd_cfg_main">
   <div style="margin-top: 5px;">
-    <label style="color: #f00;"><input type="radio" name="pd_im_or_ex_log_type" value="setting" checked> 导入/导出日志</label>
-    <label style="color: #00f"><input type="radio" name="pd_im_or_ex_log_type" value="text"> 导出日志文本</label>
+    <label style="color: #f00;"><input type="radio" name="logType" value="setting" checked> 导入/导出日志</label>
+    <label style="color: #00f;"><input type="radio" name="logType" value="text"> 导出日志文本</label>
   </div>
-  <div id="pd_im_or_ex_log_setting">
+  <div data-name="logSetting">
     <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
     <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
-    <textarea id="pd_log_setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
+    <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
   </div>
-  <div id="pd_im_or_ex_log_text" style="display: none;">
+  <div data-name="logText" style="display: none;">
     <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可
     <div>
-      <label title="按时间顺序排序"><input type="radio" name="pd_log_sort_type_2" value="time" checked>按时间</label>
-      <label title="按日志类别排序"><input type="radio" name="pd_log_sort_type_2" value="type">按类别</label>
-      <label title="在日志文本里显示每日以及全部数据的统计结果"><input type="checkbox" id="pd_log_show_stat" checked>显示统计</label>
+      <label title="按时间顺序排序"><input type="radio" name="sortType2" value="time" checked> 按时间</label>
+      <label title="按日志类别排序"><input type="radio" name="sortType2" value="type"> 按类别</label>
+      <label title="在日志文本里显示每日以及全部数据的统计结果"><input type="checkbox" name="showStat" checked> 显示统计</label>
     </div>
-    <textarea id="pd_log_text" style="width: 600px; height: 400px;" readonly></textarea>
+    <textarea name="text" style="width: 600px; height: 400px;" readonly></textarea>
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <button data-action="merge">合并日志</button><button data-action="overwrite" style="color: #f00;">覆盖日志</button><button>关闭</button>
+  <button name="merge">合并日志</button>
+  <button name="overwrite" style="color: #f00;">覆盖日志</button>
+  <button>关闭</button>
 </div>`;
 
-    let $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
-    $dialog.find('[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
-        showLogText();
-        $('#pd_log_text').select();
-    }).end().find('[name="pd_im_or_ex_log_type"]').click(function () {
+    let $dialog = Dialog.create(dialogName, '导入或导出日志', html);
+    $dialog.find('[name="sortType2"], [name="showStat"]').click(function () {
+        showLogText(log, $dialog);
+        $dialog.find('[name="text"]').select();
+    }).end().find('[name="logType"]').click(function () {
         let type = $(this).val();
-        $('#pd_im_or_ex_log_' + (type === 'text' ? 'setting' : 'text')).hide();
-        $('#pd_im_or_ex_log_' + (type === 'text' ? 'text' : 'setting')).show();
-        $('#pd_log_' + (type === 'text' ? 'text' : 'setting')).select();
+        $dialog.find(`[data-name="log${ type === 'text' ? 'Setting' : 'Text' }"]`).hide();
+        $dialog.find(`[data-name="log${ type === 'text' ? 'Text' : 'Setting' }"]`).show();
+        $dialog.find(`[data-name="log${ type === 'text' ? 'Text' : 'Setting' }"]`).select();
     }).end().find('.pd_cfg_btns > button').click(function (e) {
         e.preventDefault();
-        let action = $(this).data('action');
-        if (action === 'merge' || action === 'overwrite') {
-            if (!confirm(`是否将文本框中的日志${ action === 'overwrite' ? '覆盖' : '合并' }到本地日志？`)) return;
-            let log = $.trim($('#pd_log_setting').val());
-            if (!log) return;
+        let name = $(this).attr('name');
+        if (name === 'merge' || name === 'overwrite') {
+            if (!confirm(`是否将文本框中的日志${ name === 'overwrite' ? '覆盖' : '合并' }到本地日志？`)) return;
+            let newLog = $.trim($dialog.find('[name="setting"]').val());
+            if (!newLog) return;
             try {
-                log = JSON.parse(log);
+                newLog = JSON.parse(newLog);
             } catch (ex) {
                 alert('日志有错误');
                 return;
             }
-            if (!log || $.type(log) !== 'object') {
+            if (!newLog || $.type(newLog) !== 'object') {
                 alert('日志有错误');
                 return;
             }
-            if (action === 'merge') log = (0, _Log.getMergeLog)(Log, log);
-            _Info2.default.w.Log = log;
-            (0, _Log.write)();
+            if (name === 'merge') log = Log.getMergeLog(log, newLog);else log = newLog;
+            Log.write(log);
             alert('日志已导入');
             location.reload();
         } else {
-            return Dialog.close('pd_im_or_ex_log');
+            return Dialog.close(dialogName);
         }
     });
-    Dialog.show('pd_im_or_ex_log');
-    $('#pd_log_setting').val(JSON.stringify(Log)).select();
-    $(`input[name="pd_log_sort_type_2"][value="${ Config.logSortType }"]`).prop('checked', true).triggerHandler('click');
+    Dialog.show(dialogName);
+    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
+    $dialog.find(`[name="sortType2"][value="${ Config.logSortType }"]`).prop('checked', true).triggerHandler('click');
     Func.run('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**
  * 显示日志文本
+ * @param {{}} log 日志对象
+ * @param {jQuery} $dialog 导入或导出日志对话框对象
  */
-const showLogText = function () {
-    let logSortType = $('input[name="pd_log_sort_type_2"]:checked').val();
-    let isShowStat = $('#pd_log_show_stat').prop('checked');
+const showLogText = function (log, $dialog) {
+    let logSortType = $dialog.find('input[name="sortType2"]:checked').val();
+    let isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     let content = '',
         lastDate = '';
-    for (let date of Object.keys(Log)) {
-        if (!Array.isArray(Log[date])) continue;
+    for (let date of Object.keys(log)) {
+        if (!Array.isArray(log[date])) continue;
         if (lastDate > date) lastDate = date;
-        content += `【${ date }】(共${ Log[date].length }项)\n${ logSortType === 'type' ? '' : '\n' }` + getLogContent(date, logSortType).replace(/<h3>/g, '\n').replace(/<\/h3>/g, '\n').replace(/<\/p>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '').replace(/`/g, '');
+        content += `【${ date }】(共${ log[date].length }项)\n${ logSortType === 'type' ? '' : '\n' }` + getLogContent(log, date, logSortType).replace(/<h3>/g, '\n').replace(/<\/h3>/g, '\n').replace(/<\/p>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '').replace(/`/g, '');
         if (isShowStat) {
-            content += `${ '-'.repeat(46) }\n合计：\n${ getLogStat(date, 'cur').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '') }\n`;
+            content += `${ '-'.repeat(46) }\n合计：\n${ getLogStat(log, date, 'current').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '') }\n`;
         }
         content += '='.repeat(46) + '\n';
     }
     if (content && isShowStat) {
-        content += '\n总计：\n' + getLogStat(lastDate, 'all').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '');
+        content += '\n总计：\n' + getLogStat(log, lastDate, 'all').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '');
     }
-    $('#pd_log_text').val(content);
+    $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Func":8,"./Info":10,"./Item":11,"./Log":12,"./Util":21}],14:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Func":8,"./Item":11,"./Log":12,"./Util":22}],14:[function(require,module,exports){
+/* 争夺模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -5321,68 +5412,112 @@ var Item = _interopRequireWildcard(_Item);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+// 争夺首页区域
+let $lootArea;
+// 争夺属性区域
+let $properties;
+// 属性点区域
+let $points;
+// 当前争夺属性
+let propertyList;
+// 附加属性点列表
+let extraPointList;
+// 道具使用情况
+let itemUsedNumList;
+
 /**
  * 增强争夺首页
  */
 const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
-    let $area = $('.kf_fw_ig1');
-    let $properties = $area.find('> tbody > tr:nth-child(3) > td:first-child');
-    let $points = $properties.next('td');
-    let propertyList = getCurrentLootPropertyList();
-    let itemUsedNumList = Item.getItemUsedInfo($area.find('> tbody > tr:nth-child(4) > td').html());
+    $lootArea = $('.kf_fw_ig1:first');
+    $properties = $lootArea.find('> tbody > tr:nth-child(3) > td:first-child');
+    $points = $lootArea.find('> tbody > tr:nth-child(3) > td:nth-child(2)');
+    propertyList = getLootPropertyList();
+    extraPointList = getExtraPointList();
+    itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
+    handlePropertiesArea();
+    handlePointsArea();
+    enhanceLootLog();
+};
 
-    $properties.html($properties.html().replace('技能伤害：攻击伤害+(体质点数*4)', '技能伤害：<span class="pd_custom_tips" id="pd_skill_attack" title="攻击伤害+(体质点数*4)"></span>'));
-    $properties.find('br').each(function (index) {
-        let name = '';
-        switch (index) {
-            case 1:
-                name = 's1';
-                break;
-            case 2:
-                name = 's2';
-                break;
-            case 3:
-                name = 'd1';
-                break;
-            case 4:
-                name = 'd2';
-                break;
-            case 6:
-                name = 'i1';
-                break;
-            case 7:
-                name = 'i2';
-                break;
-        }
-        if (name) {
-            $(this).before(` <span style="color:#777" id="pd_new_${ name }"></span>`);
-        }
-    });
+/**
+ * 处理争夺属性区域
+ */
+const handlePropertiesArea = function () {
+    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：\d+)\s*\(最大(\d+)\)/, '$1 (最大<span id="pdPro_s2" title="原值：$2">$2</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%/, '$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span id="pdNew_d2"></span>').replace(/(技能释放概率：)(\d+)%/, '$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span id="pdNew_i1"></span>').replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击伤害+(体质点数*4)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="攻击伤害+(体质点数*4)"></span>');
+    $properties.html(html);
 
+    $properties.on('click', '[id^="pdPro_"]', function () {
+        let $this = $(this);
+        $this.hide();
+        let name = $this.attr('id').replace('pdPro_', '');
+        let step = 1;
+        if (name === 's1') step = 5;else if (name === 's2') step = 20;else if (name === 'd1') step = 2;
+        $(`<input data-name="${ name }" type="number" value="${ parseInt($this.text()) }" min="1" step="${ step }" ` + `style="width: 65px; margin-right: 5px;" title="${ $this.attr('title') }">`).insertAfter($this).focus().select().blur(function () {
+            let $this = $(this);
+            let name = $this.data('name');
+            let num = parseInt($this.val());
+            if (num > 0) {
+                let newValue = 0;
+                switch (getPointNameByFieldName(name)) {
+                    case '力量':
+                        newValue = Math.round(num / 5) - extraPointList.get('力量');
+                        break;
+                    case '体质':
+                        newValue = Math.round((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
+                        break;
+                    case '敏捷':
+                        newValue = Math.round((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
+                        break;
+                    case '灵活':
+                        newValue = Math.round(100 * num / (100 - num)) - extraPointList.get('灵活');
+                        break;
+                    case '智力':
+                        newValue = Math.round(120 * num / (100 - num)) - extraPointList.get('智力');
+                        break;
+                    case '意志':
+                        newValue = Math.round(150 * num / (100 - num)) - extraPointList.get('意志');
+                        break;
+                }
+                if (!isFinite(newValue) || newValue <= 0) newValue = 1;
+                $points.find(`[name="${ name }"]`).val(newValue).trigger('change');
+            }
+            $this.prev().show().end().remove();
+        }).keyup(function (e) {
+            let $this = $(this);
+            if (e.keyCode === 13) $this.blur();else if (e.keyCode === 27) $this.val('').blur();
+        });
+    }).find('[id^=pdPro_]').css('cursor', 'pointer');
+};
+
+/**
+ * 处理属性点区域
+ */
+const handlePointsArea = function () {
     $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
     $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
-    $points.prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br>');
+    $points.prepend('<span class="pd_highlight">剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $points.on('change', '[type="number"]', function () {
         let $this = $(this);
-        $('#pd_surplus_point').text(propertyList['可分配属性点'] - getCurrentAssignedPoint());
-        showNewLootProperty($this, propertyList, itemUsedNumList);
+        $('#pdSurplusPoint').text(propertyList.get('可分配属性点') - getCurrentAssignedPoint());
+        showNewLootProperty($this);
         showSumOfPoint($this);
 
         let skillAttack = 0;
-        let matches = /\d+/.exec($area.find('[name="s1"]').next('span').next('.pd_point_sum').text());
+        let matches = /\d+/.exec($lootArea.find('[name="s1"]').next('span').next('.pd_point_sum').text());
         if (matches) skillAttack = parseInt(matches[0]) * 5;
-        skillAttack += parseInt($area.find('[name="s2"]').val()) * 4;
-        $('#pd_skill_attack').text(skillAttack);
+        skillAttack += parseInt($lootArea.find('[name="s2"]').val()) * 4;
+        $('#pdSkillAttack').text(skillAttack);
     }).on('click', '.pd_point_sum', function () {
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint();
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
         if (!surplusPoint) return;
         let $point = $(this).prev('span').prev('[type="number"]');
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
         $point.val(num + surplusPoint).trigger('change');
     }).find('form').submit(function () {
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint();
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
         if (surplusPoint < 0) {
             alert('剩余属性点为负，请重新填写');
             return false;
@@ -5390,8 +5525,30 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
             return confirm('你的可分配属性点尚未用完，是否提交？');
         }
     }).find('[type="number"]').trigger('change');
+};
 
-    enhanceLootLog();
+/**
+ * 获取争夺属性列表
+ * @returns {Map} 争夺属性
+ */
+const getLootPropertyList = function () {
+    let propertyList = new Map([['攻击力', 0], ['最大生命值', 0], ['攻击速度', 0], ['暴击几率', 0], ['技能释放概率', 0], ['防御', 0], ['可分配属性点', 0]]);
+    let html = $properties.html();
+    let matches = /攻击力：(\d+)/.exec(html);
+    if (matches) propertyList.set('攻击力', parseInt(matches[1]));
+    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
+    if (matches) propertyList.set('最大生命值', parseInt(matches[1]));
+    matches = /攻击速度：(\d+)/.exec(html);
+    if (matches) propertyList.set('攻击速度', parseInt(matches[1]));
+    matches = /暴击几率：(\d+)%/.exec(html);
+    if (matches) propertyList.set('暴击几率', parseInt(matches[1]));
+    matches = /技能释放概率：(\d+)%/.exec(html);
+    if (matches) propertyList.set('技能释放概率', parseInt(matches[1]));
+    matches = /防御：(\d+)%/.exec(html);
+    if (matches) propertyList.set('防御', parseInt(matches[1]));
+    matches = /可分配属性点：(\d+)/.exec(html);
+    if (matches) propertyList.set('可分配属性点', parseInt(matches[1]));
+    return propertyList;
 };
 
 /**
@@ -5400,7 +5557,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  */
 const getCurrentAssignedPoint = function () {
     let usedPoint = 0;
-    $('.kf_fw_ig1').find('[type="number"]').each(function () {
+    $points.find('[type="number"]').each(function () {
         let point = parseInt($(this).val());
         if (point && point > 0) usedPoint += point;
     });
@@ -5409,6 +5566,7 @@ const getCurrentAssignedPoint = function () {
 
 /**
  * 显示各项属性点的和值
+ * @param {jQuery} $point 属性点字段对象
  */
 const showSumOfPoint = function ($point) {
     let num = parseInt($point.val());
@@ -5422,101 +5580,107 @@ const showSumOfPoint = function ($point) {
 };
 
 /**
- * 获取当前的争夺属性
- * @returns {{}} 争夺属性
+ * 获取附加属性点列表
+ * @returns {Map} 附加属性点列表
  */
-const getCurrentLootPropertyList = function () {
-    let propertyList = {
-        '攻击力': 0,
-        '最大生命值': 0,
-        '攻击速度': 0,
-        '暴击几率': 0,
-        '技能释放概率': 0,
-        '防御': 0,
-        '可分配属性点': 0
-    };
-    let html = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html();
-    let matches = /攻击力：(\d+)/.exec(html);
-    if (matches) propertyList['攻击力'] = parseInt(matches[1]);
-    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
-    if (matches) propertyList['最大生命值'] = parseInt(matches[1]);
-    matches = /攻击速度：(\d+)/.exec(html);
-    if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
-    matches = /暴击几率：(\d+)%/.exec(html);
-    if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
-    matches = /技能释放概率：(\d+)%/.exec(html);
-    if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);
-    matches = /防御：(\d+)%/.exec(html);
-    if (matches) propertyList['防御'] = parseInt(matches[1]);
-    matches = /可分配属性点：(\d+)/.exec(html);
-    if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
-    return propertyList;
+const getExtraPointList = function () {
+    let extraPointList = new Map([['力量', 0], ['体质', 0], ['敏捷', 0], ['灵活', 0], ['智力', 0], ['意志', 0], ['耐力', 0], ['幸运', 0]]);
+    $points.find('[type="text"]').each(function () {
+        let $this = $(this);
+        let name = $this.attr('name');
+        let num = parseInt($this.next('span').text());
+        let key = getPointNameByFieldName(name);
+        if (!isNaN(num) && key) {
+            extraPointList.set(key, num);
+        }
+    });
+    return extraPointList;
+};
+
+/**
+ * 根据字段名称获取属性点名称
+ * @param {string} fieldName 字段名称
+ * @returns {string} 属性点名称
+ */
+const getPointNameByFieldName = function (fieldName) {
+    switch (fieldName) {
+        case 's1':
+            return '力量';
+        case 's2':
+            return '体质';
+        case 'd1':
+            return '敏捷';
+        case 'd2':
+            return '灵活';
+        case 'i1':
+            return '智力';
+        case 'i2':
+            return '意志';
+        case 'p':
+            return '耐力';
+        case 'l':
+            return '幸运';
+        default:
+            return '';
+    }
 };
 
 /**
  * 显示新的争夺属性
- * @param {jQuery} $point 属性字段
- * @param {{}} currentLootProperty 当前的争夺属性
- * @param {{}} itemUsedNumList 道具使用情况对象
+ * @param {jQuery} $point 属性点字段对象
  */
-const showNewLootProperty = function ($point, currentLootProperty, itemUsedNumList) {
+const showNewLootProperty = function ($point) {
     let name = $point.attr('name');
     let num = parseInt($point.val());
     if (isNaN(num) || num < 0) num = 0;
     let oriNum = parseInt($point.get(0).defaultValue);
     let extraNum = parseInt($point.next('span').text());
     let newValue = 0,
-        diffValue = 0,
-        unit = '';
+        diffValue = 0;
     switch (name) {
         case 's1':
             newValue = (num + extraNum) * 5;
-            diffValue = newValue - currentLootProperty['攻击力'];
+            diffValue = newValue - propertyList.get('攻击力');
             break;
         case 's2':
-            newValue = (num + extraNum) * 20 + (itemUsedNumList['蕾米莉亚同人漫画'] === 50 ? 700 : 0);
-            diffValue = newValue - currentLootProperty['最大生命值'];
+            newValue = (num + extraNum) * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0);
+            diffValue = newValue - propertyList.get('最大生命值');
             break;
         case 'd1':
-            newValue = (num + extraNum) * 2 + (itemUsedNumList['十六夜同人漫画'] === 50 ? 100 : 0);
-            diffValue = newValue - currentLootProperty['攻击速度'];
+            newValue = (num + extraNum) * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
+            diffValue = newValue - propertyList.get('攻击速度');
             break;
         case 'd2':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 100) * 100);
-            diffValue = newValue - currentLootProperty['暴击几率'];
-            unit = '%';
+            diffValue = newValue - propertyList.get('暴击几率');
             break;
         case 'i1':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 120) * 100);
-            diffValue = newValue - currentLootProperty['技能释放概率'];
-            unit = '%';
+            diffValue = newValue - propertyList.get('技能释放概率');
             break;
         case 'i2':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 150) * 100);
-            diffValue = newValue - currentLootProperty['防御'];
-            unit = '%';
+            diffValue = newValue - propertyList.get('防御');
             break;
     }
-    if (num !== oriNum) {
-        $('#pd_new_' + name).html(` (<span style="color:#00F">${ newValue }${ unit }</span>|<span style="color:${ diffValue >= 0 ? '#ff0033' : '#339933' }">` + `${ (diffValue >= 0 ? '+' : '') + diffValue }</span>)`);
-    } else {
-        $('#pd_new_' + name).html('');
-    }
+    $('#pdPro_' + name).text(newValue).css('color', num !== oriNum ? '#00f' : '#000');
+
+    if (num !== oriNum) $('#pdNew_' + name).text(`(${ (diffValue >= 0 ? '+' : '') + diffValue })`).css('color', diffValue >= 0 ? '#ff0033' : '#339933');else $('#pdNew_' + name).text('');
 };
 
 /**
  * 增强争夺记录
  */
 const enhanceLootLog = function () {
-    let $log = $('.kf_fw_ig1 > tbody > tr:nth-child(5) > td');
+    let $log = $lootArea.find('> tbody > tr:nth-child(5) > td');
     let matches = $log.html().match(/获得\d+经验和\d+KFB/g);
     let exp = 0,
         kfb = 0;
-    for (let match of matches) {
-        let logMatches = /获得(\d+)经验和(\d+)KFB/.exec(match);
+    for (let i in matches) {
+        let logMatches = /获得(\d+)经验和(\d+)KFB/.exec(matches[i]);
         exp += parseInt(logMatches[1]);
         kfb += parseInt(logMatches[2]);
     }
@@ -5537,39 +5701,38 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
 };
 
 },{"./Item":11}],15:[function(require,module,exports){
+/* 消息模块 */
 'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.destroy = exports.remove = exports.wait = exports.show = undefined;
-
-var _Info = require('./Info');
-
-var _Info2 = _interopRequireDefault(_Info);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * 显示消息
- * @param {string} msg 消息
- * @param {number} duration 消息持续时间（秒），-1为永久显示
- * @param {boolean} clickable 消息框可否手动点击消除
- * @param {boolean} preventable 是否阻止点击网页上的其它元素
+ * @param {string|Object} options 消息或设置对象
+ * @param {string} [options.msg] 消息
+ * @param {number} [options.duration={@link Config.defShowMsgDuration}] 消息显示时间（秒），-1为永久显示
+ * @param {boolean} [options.clickable=true] 消息框可否手动点击消除
+ * @param {boolean} [options.preventable=false] 是否阻止点击网页上的其它元素
+ * @param {number} [duration] 消息显示时间（秒），-1为永久显示
  * @example
  * show('<strong>抽取道具或卡片</strong><i>道具<em>+1</em></i>', -1);
  * show({msg: '<strong>抽取神秘盒子</strong><i>KFB<em>+8</em></i>', duration: 20, clickable: false});
  * @returns {jQuery} 消息框对象
  */
-const show = exports.show = function ({
-    msg = '',
-    duration = Config.defShowMsgDuration,
-    clickable = true,
-    preventable = false
-} = {}) {
-    if (arguments.length > 0) {
-        if (typeof arguments[0] === 'string') msg = arguments[0];
-        if (typeof arguments[1] === 'number') duration = arguments[1];
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+const show = exports.show = function (options, duration) {
+    let settings = {
+        msg: '',
+        duration: Config.defShowMsgDuration,
+        clickable: true,
+        preventable: false
+    };
+    if ($.type(options) === 'object') {
+        $.extend(settings, options);
+    } else {
+        settings.msg = options;
+        settings.duration = typeof duration === 'undefined' ? Config.defShowMsgDuration : duration;
     }
 
     if ($('.pd_msg').length > 20) destroy();
@@ -5586,19 +5749,19 @@ const show = exports.show = function ({
             }
         }
     }
-    if (preventable && !$('.pd_mask').length) {
+    if (settings.preventable && !$('.pd_mask').length) {
         $('<div class="pd_mask"></div>').appendTo('body');
     }
     if (isFirst) {
         $container = $('<div class="pd_msg_container"></div>').appendTo('body');
     }
 
-    let $msg = $(`<div class="pd_msg">${ msg }</div>`).appendTo($container);
-    $msg.on('click', 'a.pd_stop_action', function (e) {
+    let $msg = $(`<div class="pd_msg">${ settings.msg }</div>`).appendTo($container);
+    $msg.on('click', '.pd_stop_action', function (e) {
         e.preventDefault();
         $(this).html('正在停止&hellip;').closest('.pd_msg').data('stop', true);
     });
-    if (clickable) {
+    if (settings.clickable) {
         $msg.css('cursor', 'pointer').click(function () {
             $(this).stop(true, true).fadeOut('slow', function () {
                 remove($(this));
@@ -5624,8 +5787,8 @@ const show = exports.show = function ({
         'top': $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0,
         left
     }).fadeIn('slow');
-    if (duration !== -1) {
-        $msg.delay(duration * 1000).fadeOut('slow', function () {
+    if (settings.duration !== -1) {
+        $msg.delay(settings.duration * 1000).fadeOut('slow', function () {
             remove($(this));
         });
     }
@@ -5652,7 +5815,7 @@ const remove = exports.remove = function ($msg) {
     if (!$('.pd_msg').length) {
         $parent.remove();
         $('.pd_mask').remove();
-    } else if (!$('#pd_remaining_num').length) {
+    } else if (!$('.pd_countdown').length) {
         $('.pd_mask').remove();
     }
 };
@@ -5665,13 +5828,14 @@ const destroy = exports.destroy = function () {
     $('.pd_mask').remove();
 };
 
-},{"./Info":10}],16:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+/* 其它模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyFaq = exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.modifyFaq = exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _Info = require('./Info');
 
@@ -5822,17 +5986,17 @@ const addFollowAndBlockAndMemoUserLink = exports.addFollowAndBlockAndMemoUserLin
     $('<span>[<a href="#">关注用户</a>] [<a href="#">屏蔽用户</a>]</span><br><span>[<a href="#">添加备注</a>]</span><br>').appendTo($('a[href^="message.php?action=write&touid="]').parent()).find('a').each(function () {
         let $this = $(this);
         if ($this.is('a:contains("备注")')) {
-            let memo = '';
-            for (let name in Config.userMemoList) {
+            let str = '';
+            for (let [name, memo] of Util.entries(Config.userMemoList)) {
                 if (name === userName) {
-                    memo = Config.userMemoList[name];
+                    str = memo;
                     break;
                 }
             }
-            if (memo !== '') {
-                $this.text('修改备注').data('memo', memo);
+            if (str !== '') {
+                $this.text('修改备注').data('memo', str);
                 let $info = $('.log1 > tbody > tr:last-child > td:last-child');
-                $info.html(`备注：${ memo }<br>${ $info.html() }`);
+                $info.html(`备注：${ str }<br>${ $info.html() }`);
             }
         } else {
             let str = '关注';
@@ -5918,10 +6082,12 @@ const modifyMyPostLink = exports.modifyMyPostLink = function () {
  * 在短消息页面添加选择指定短消息的按钮
  */
 const addMsgSelectButton = exports.addMsgSelectButton = function () {
-    $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('input[type="button"][value="全选"]').click(function (e) {
+    let $checkeds = $('.thread1 > tbody > tr > td:last-child > [type="checkbox"]');
+    $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('[type="button"][value="全选"]').click(function (e) {
         e.preventDefault();
         let value = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
         if (value !== '') {
+            $checkeds.prop('checked', false);
             let titleArr = value.split('|');
             $('.thread1 > tbody > tr > td:nth-child(2) > a').each(function () {
                 let $this = $(this);
@@ -5933,9 +6099,9 @@ const addMsgSelectButton = exports.addMsgSelectButton = function () {
             });
         }
     }).parent().attr('colspan', 4).prev('td').attr('colspan', 3);
-    $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('input[type="button"][value="全选"]').click(function (e) {
+    $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('[type="button"][value="全选"]').click(function (e) {
         e.preventDefault();
-        $('.thread1 > tbody > tr > td:last-child > input[type="checkbox"]').each(function () {
+        $checkeds.each(function () {
             let $this = $(this);
             $this.prop('checked', !$this.prop('checked'));
         });
@@ -5954,42 +6120,48 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
 
     let $idColors = $autoChangeIdColor.parent('tr').nextAll('tr').not('tr:last');
     if ($idColors.find('a').length <= 1) return;
-    $(`<form><div id="pd_auto_change_sm_color_btns" style="margin-top: 5px;">
-<label><input id="pd_cfg_auto_change_sm_color_enabled" class="pd_input" type="checkbox"> 自动更换ID颜色</label></div></form>`).appendTo($autoChangeIdColor).find('#pd_cfg_auto_change_sm_color_enabled').click(function () {
+    let $area = $(`
+<form>
+<div data-name="autoChangeIdColorBtns" style="margin-top: 5px;">
+  <label><input name="autoChangeIdColorEnabled" class="pd_input" type="checkbox"> 自动更换ID颜色</label>
+</div>
+</form>
+`).appendTo($autoChangeIdColor);
+    $area.find('[name="autoChangeIdColorEnabled"]').click(function () {
         let $this = $(this);
         let enabled = $this.prop('checked');
-        if (enabled !== Config.autoChangeSMColorEnabled) {
+        if (enabled !== Config.autoChangeIdColorEnabled) {
             (0, _Config.read)();
-            Config.autoChangeSMColorEnabled = enabled;
+            Config.autoChangeIdColorEnabled = enabled;
             (0, _Config.write)();
         }
 
         if (enabled) {
-            $idColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
+            $idColors.addClass('pd_id_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
             $(`
-<label>更换顺序
-  <select id="pd_cfg_auto_change_sm_color_type" style="font-size: 12px;">
-    <option value="random">随机</option>
-    <option value="sequence">顺序</option>
+<label class="pd_cfg_ml">
+  更换顺序
+  <select name="autoChangeIdColorType" style="font-size: 12px;">
+    <option value="random">随机</option><option value="sequence">顺序</option>
   </select>
-</label>
-<label>每隔 <input id="pd_cfg_auto_change_sm_color_interval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> 小时</label>
-<button>保存</button><button style="margin-left: 3px;">重置</button><br>
-<a href="#">全选</a><a style="margin-left: 7px; margin-right: 10px;" href="#">反选</a>
-<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox"> 选择当前所有可用的ID颜色</label>
+</label>&nbsp;
+<label>每隔 <input name="autoChangeIdColorInterval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> 小时</label>
+<button>保存</button> <button style="margin-left: 3px;">重置</button><br>
+<a class="pd_btn_link" href="#">全选</a> <a class="pd_btn_link" href="#">反选</a>
+<label><input name="changeAllAvailableIdColorEnabled" class="pd_input" type="checkbox"> 选择当前所有可用的ID颜色</label>
 `).insertAfter($this.parent()).filter('button:first').click(function (e) {
                 e.preventDefault();
-                let $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
-                let interval = parseInt($autoChangeSMColorInterval.val());
+                let $autoChangeIdColorInterval = $area.find('[name="autoChangeIdColorInterval"]');
+                let interval = parseInt($autoChangeIdColorInterval.val());
                 if (isNaN(interval) || interval <= 0) {
                     alert('ID颜色更换时间间隔格式不正确');
-                    $autoChangeSMColorInterval.select();
-                    $autoChangeSMColorInterval.focus();
+                    $autoChangeIdColorInterval.select();
+                    $autoChangeIdColorInterval.focus();
                     return;
                 }
-                let changeAllAvailableSMColorEnabled = $('#pd_cfg_change_all_available_sm_color_enabled').prop('checked');
+                let changeAllAvailableSMColorEnabled = $area.find('[name="changeAllAvailableIdColorEnabled"]').prop('checked');
                 let customChangeSMColorList = [];
-                $idColors.find('input[type="checkbox"]:checked').each(function () {
+                $idColors.find('[type="checkbox"]:checked').each(function () {
                     customChangeSMColorList.push(parseInt($(this).val()));
                 });
                 if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
@@ -5998,39 +6170,39 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
                 }
                 if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
 
-                let oriInterval = Config.autoChangeSMColorInterval;
+                let oriInterval = Config.autoChangeIdColorInterval;
                 (0, _Config.read)();
-                Config.autoChangeSMColorType = $('#pd_cfg_auto_change_sm_color_type').val().toLowerCase();
-                Config.autoChangeSMColorInterval = interval;
-                Config.changeAllAvailableSMColorEnabled = changeAllAvailableSMColorEnabled;
-                Config.customAutoChangeSMColorList = customChangeSMColorList;
+                Config.autoChangeIdColorType = $area.find('[name="autoChangeIdColorType"]').val().toLowerCase();
+                Config.autoChangeIdColorInterval = interval;
+                Config.changeAllAvailableIdColorEnabled = changeAllAvailableSMColorEnabled;
+                Config.customAutoChangeIdColorList = customChangeSMColorList;
                 (0, _Config.write)();
-                if (oriInterval !== Config.autoChangeSMColorInterval) Util.deleteCookie(_Const2.default.autoChangeSMColorCookieName);
+                if (oriInterval !== Config.autoChangeIdColorInterval) Util.deleteCookie(_Const2.default.autoChangeIdColorCookieName);
                 alert('设置保存成功');
             }).end().filter('button:eq(1)').click(function (e) {
                 e.preventDefault();
                 (0, _Config.read)();
-                Config.autoChangeSMColorEnabled = _Config.Config.autoChangeSMColorEnabled;
-                Config.autoChangeSMColorType = _Config.Config.autoChangeSMColorType;
-                Config.autoChangeSMColorInterval = _Config.Config.autoChangeSMColorInterval;
-                Config.changeAllAvailableSMColorEnabled = _Config.Config.changeAllAvailableSMColorEnabled;
-                Config.customAutoChangeSMColorList = _Config.Config.customAutoChangeSMColorList;
+                Config.autoChangeIdColorEnabled = _Config.Config.autoChangeIdColorEnabled;
+                Config.autoChangeIdColorType = _Config.Config.autoChangeIdColorType;
+                Config.autoChangeIdColorInterval = _Config.Config.autoChangeIdColorInterval;
+                Config.changeAllAvailableIdColorEnabled = _Config.Config.changeAllAvailableIdColorEnabled;
+                Config.customAutoChangeIdColorList = _Config.Config.customAutoChangeIdColorList;
                 (0, _Config.write)();
-                Util.deleteCookie(_Const2.default.autoChangeSMColorCookieName);
-                TmpLog.deleteValue(_Const2.default.prevAutoChangeSMColorIdTmpLogName);
+                Util.deleteCookie(_Const2.default.autoChangeIdColorCookieName);
+                TmpLog.deleteValue(_Const2.default.prevAutoChangeIdColorTmpLogName);
                 alert('设置已重置');
                 location.reload();
             }).end().filter('a').click(function (e) {
                 e.preventDefault();
                 if ($idColors.find('input[disabled]').length > 0) {
                     alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
-                    $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                    $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
                     return;
                 }
-                if ($(this).is('#pd_auto_change_sm_color_btns > a:first')) {
-                    $idColors.find('input[type="checkbox"]').prop('checked', true);
+                if ($(this).is('[data-name="autoChangeIdColorBtns"] > a:first')) {
+                    $idColors.find('[type="checkbox"]').prop('checked', true);
                 } else {
-                    $idColors.find('input[type="checkbox"]').each(function () {
+                    $idColors.find('[type="checkbox"]').each(function () {
                         $(this).prop('checked', !$(this).prop('checked'));
                     });
                 }
@@ -6042,17 +6214,17 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
                 if (matches) $this.append(`<input type="checkbox" class="pd_input" value="${ matches[1] }">`);
             });
 
-            $('#pd_cfg_auto_change_sm_color_type').val(Config.autoChangeSMColorType);
-            $('#pd_cfg_auto_change_sm_color_interval').val(Config.autoChangeSMColorInterval);
-            $('#pd_cfg_change_all_available_sm_color_enabled').click(function () {
+            $area.find('[name="autoChangeIdColorType"]').val(Config.autoChangeIdColorType);
+            $area.find('[name="autoChangeIdColorInterval"]').val(Config.autoChangeIdColorInterval);
+            $area.find('[name="changeAllAvailableIdColorEnabled"]').click(function () {
                 $idColors.find('input').prop('disabled', $(this).prop('checked'));
-            }).prop('checked', Config.changeAllAvailableSMColorEnabled).triggerHandler('click');
-            for (let i in Config.customAutoChangeSMColorList) {
-                $idColors.find(`input[value="${ Config.customAutoChangeSMColorList[i] }"]`).prop('checked', true);
+            }).prop('checked', Config.changeAllAvailableIdColorEnabled).triggerHandler('click');
+            for (let id of Config.customAutoChangeIdColorList) {
+                $idColors.find(`input[value="${ id }"]`).prop('checked', true);
             }
         } else {
             $this.parent().nextAll().remove();
-            $idColors.removeClass('pd_sm_color_select').find('input').remove();
+            $idColors.removeClass('pd_id_color_select').find('input').remove();
         }
     });
 
@@ -6061,26 +6233,26 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
             let $this = $(this);
             if ($this.find('input[disabled]').length > 0) {
                 alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
-                $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
             } else if (!$(e.target).is('input')) {
                 $this.find('input').click();
             }
         }
     });
 
-    if (Config.autoChangeSMColorEnabled) {
-        $('#pd_cfg_auto_change_sm_color_enabled').prop('checked', true).triggerHandler('click');
+    if (Config.autoChangeIdColorEnabled) {
+        $area.find('[name="autoChangeIdColorEnabled"]').prop('checked', true).triggerHandler('click');
     }
 
-    $('div[style="float: right; color: #8080c0;"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
-    $('div[style="border-bottom: #8000ff 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
+    $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
+    $('div[style="border-bottom:#8000FF 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
 };
 
 /**
  * 同步修改帖子每页楼层数量
  */
 const syncModifyPerPageFloorNum = exports.syncModifyPerPageFloorNum = function () {
-    let syncConfig = function () {
+    const syncConfig = function () {
         let perPageFloorNum = parseInt($('select[name="p_num"]').val());
         if (isNaN(perPageFloorNum)) return;
         if (!perPageFloorNum) perPageFloorNum = 10;
@@ -6094,6 +6266,13 @@ const syncModifyPerPageFloorNum = exports.syncModifyPerPageFloorNum = function (
         syncConfig();
     });
     syncConfig();
+};
+
+/**
+ * 在设置页面添加更换头像提醒
+ */
+const addAvatarChangeAlert = exports.addAvatarChangeAlert = function () {
+    $('input[name="uploadurl[2]"]').parent().append('<div class="pd_highlight">本反向代理服务器为了提高性能对图片设置了缓存，更换头像后可能需等待<b>最多30分钟</b>才能看到效果</div>');
 };
 
 /**
@@ -6170,13 +6349,14 @@ const modifyFaq = exports.modifyFaq = function () {
     }
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":10,"./Msg":15,"./Public":18,"./TmpLog":20,"./Util":21}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":10,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
+/* 发帖模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Util = require('./Util');
 
@@ -6204,8 +6384,8 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
  */
 const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
     Func.run('Post.handleMultiQuote_before_', type);
-    if (!$('#pd_clear_multi_quote_data').length) {
-        $('<a id="pd_clear_multi_quote_data" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
+    if (!$('#pdClearMultiQuoteData').length) {
+        $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
@@ -6239,7 +6419,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
     let keywords = new Set();
     let content = '';
     if (type === 2) {
-        Msg.wait(`<strong>正在获取引用内容中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ list.length }</em></i>`);
+        Msg.wait(`<strong>正在获取引用内容中&hellip;</strong><i>剩余：<em class="pd_countdown">${ list.length }</em></i>`);
         $(document).clearQueue('MultiQuote');
     }
     $.each(list, function (index, data) {
@@ -6252,8 +6432,8 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
                     if (matches) {
                         content += Util.removeUnpairedBBCodeContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
                     }
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
                     if (index === list.length - 1) {
                         Msg.destroy();
                         $('#textarea').val(content).focus();
@@ -6299,12 +6479,12 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
     if (!textArea) return;
 
     $(`
-<span id="wy_post" title="插入隐藏内容" data-type="hide" style="background-position:0 -280px">插入隐藏内容</span>
-<span id="wy_justifyleft" title="左对齐" data-type="left" style="background-position:0 -360px">左对齐</span>
-<span id="wy_justifycenter" title="居中" data-type="center" style="background-position:0 -380px">居中</span>
-<span id="wy_justifyright" title="右对齐" data-type="right" style="background-position:0 -400px">右对齐</span>
-<span id="wy_subscript" title="下标" data-type="sub" style="background-position:0 -80px">下标</span>
-<span id="wy_superscript" title="上标" data-type="sup" style="background-position:0 -100px">上标</span>
+<span id="wy_post" title="插入隐藏内容" data-type="hide" style="background-position: 0 -280px;">插入隐藏内容</span>
+<span id="wy_justifyleft" title="左对齐" data-type="left" style="background-position: 0 -360px;">左对齐</span>
+<span id="wy_justifycenter" title="居中" data-type="center" style="background-position: 0 -380px;">居中</span>
+<span id="wy_justifyright" title="右对齐" data-type="right" style="background-position: 0 -400px;">右对齐</span>
+<span id="wy_subscript" title="下标" data-type="sub" style="background-position: 0 -80px;">下标</span>
+<span id="wy_superscript" title="上标" data-type="sup" style="background-position: 0 -100px;">上标</span>
 <span class="pd_editor_btn" title="插入飞行文字" data-type="fly">F</span>
 <span class="pd_editor_btn" title="插入HTML5音频" data-type="audio">A</span>
 <span class="pd_editor_btn" title="插入HTML5视频" data-type="video">V</span>
@@ -6312,27 +6492,24 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
         let $this = $(this);
         let type = $this.data('type');
         let text = '';
+        let matches = null;
         switch (type) {
             case 'hide':
                 text = prompt('请输入神秘等级：', 5);
                 break;
             case 'audio':
-                {
-                    text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
-                    let matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
-                    if (matches) text = 'http://music.miaola.info/163/{0}.mp3'.replace('{0}', matches[1]);
-                    matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
-                    if (matches) text = 'http://music.miaola.info/xiami/{0}.mp3'.replace('{0}', matches[1]);
-                }
+                text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
+                matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
+                if (matches) text = `http://music.miaola.info/163/${ matches[1] }.mp3`;
+                matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
+                if (matches) text = `http://music.miaola.info/xiami/${ matches[1] }.mp3`;
                 break;
             case 'video':
-                {
-                    text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
-                    let matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
-                    if (matches) text = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
-                    matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
-                    if (matches) text = 'http://video.miaola.info/youtube/{0}'.replace('{0}', matches[1]);
-                }
+                text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
+                matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
+                if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
+                matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
+                if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
                 break;
         }
         if (text === null) return;
@@ -6391,16 +6568,16 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
 const addExtraOptionInPostPage = exports.addExtraOptionInPostPage = function () {
     $(`
 <div class="pd_post_extra_option">
-  <label><input type="checkbox" id="pd_auto_analyze_url" checked> 自动分析url</label><br>
-  <label><input type="checkbox" name="pd_wind_code_auto_convert" checked> Wind Code自动转换</label>
+  <label><input type="checkbox" name="autoAnalyzeUrl" checked> 自动分析url</label><br>
+  <label><input type="checkbox" name="windCodeAutoConvert" checked> Wind Code自动转换</label>
 </div>
-`).appendTo($('#menu_show').closest('td')).on('click', 'input[type="checkbox"]', function () {
+`).appendTo($('#menu_show').closest('td')).on('click', '[type="checkbox"]', function () {
         let $this = $(this);
-        let inputName = $this.is('#pd_auto_analyze_url') ? 'atc_autourl' : 'atc_convert';
-        $('form[name="FORM"]').find(`input[name="${ inputName }"]`).val($this.prop('checked') ? 1 : 0);
+        let inputName = $this.is('[name="autoAnalyzeUrl"]') ? 'atc_autourl' : 'atc_convert';
+        $('form[name="FORM"]').find(`[name="${ inputName }"]`).val($this.prop('checked') ? 1 : 0);
     });
 
-    $('<input type="button" value="预览帖子" style="margin-left: 7px;">').insertAfter('input[type="submit"][name="Submit"]').click(function (e) {
+    $('<input type="button" value="预览帖子" style="margin-left: 7px;">').insertAfter('[type="submit"][name="Submit"]').click(function (e) {
         e.preventDefault();
         let $form = $('form[name="preview"]');
         $form.find('input[name="atc_content"]').val($('#textarea').val());
@@ -6420,13 +6597,26 @@ const modifyPostPreviewPage = exports.modifyPostPreviewPage = function () {
     });
 };
 
-},{"./Const":6,"./Func":8,"./Msg":15,"./Util":21}],18:[function(require,module,exports){
+/**
+ * 在发帖页面添加更新附件提醒
+ */
+const addAttachChangeAlert = exports.addAttachChangeAlert = function () {
+    $(document).on('click', '.abtn[id^="md_"]', function () {
+        if (!$(document).data('attachUpdateAlert')) {
+            alert('本反向代理服务器为了提高性能对图片设置了缓存，更新附件图片后可能需等待最多30分钟才能看到效果');
+            $(document).data('attachUpdateAlert', true);
+        }
+    });
+};
+
+},{"./Const":6,"./Func":8,"./Msg":15,"./Util":22}],18:[function(require,module,exports){
+/* 公共模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.runCustomScript = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.addConfigAndLogDialogLink = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.importKfSmileEnhanceExtension = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -6456,11 +6646,17 @@ var _ConfigDialog = require('./ConfigDialog');
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _LogDialog = require('./LogDialog');
 
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Read = require('./Read');
+
+var Read = _interopRequireWildcard(_Read);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -6511,7 +6707,41 @@ const checkBrowserType = exports.checkBrowserType = function () {
 const appendCss = exports.appendCss = function () {
     $('head').append(`
 <style>
-  /* 通用 */
+  /* 公共 */
+  .pd_highlight { color: #f00 !important; }
+  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }
+  .pd_input, .pd_cfg_main input, .pd_cfg_main select {
+    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;
+  }
+  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }
+  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
+  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
+  .pd_btn_link { margin-left: 4px; margin-right: 4px; }
+  .pd_custom_tips { cursor: help; }
+  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
+  hr {
+    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
+    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
+  }
+  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }
+  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
+  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }
+  .pd_title_tips {
+    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;
+    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;
+  }
+  .pd_search_type {
+    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;
+  }
+  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }
+  .pd_search_type_list {
+    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;
+    text-indent: 13px; cursor: pointer; z-index: 1003;
+  }
+  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
+  
+  /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
   .pd_msg_container { position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; width: 100%; z-index: 1001; }
   .pd_msg {
@@ -6528,120 +6758,103 @@ const appendCss = exports.appendCss = function () {
   .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }
   .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }
   .pd_msg a { font-weight: bold; margin-left: 15px; }
-  .pd_stat i { font-style: normal; margin-right: 3px; }
-  .pd_stat .pd_notice { margin-left: 5px; }
-  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
-  .pd_highlight { color: #ff0000 !important; }
-  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }
-  .pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px; }
-  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }
-  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
-  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
+  
+  /* 帖子页面 */
   .readlou .pd_goto_link { color: #000; }
   .readlou .pd_goto_link:hover { color: #51d; }
   .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
   .pages .pd_fast_goto_page { margin-left: 8px; }
   .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }
+  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
+  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
+  .pd_user_memo_tips:hover { color: #ddd; }
+  .readtext img[onclick] { max-width: 550px; }
+  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
+  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; }
+  
+  /* 道具页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
-  .pd_item_btns button, .pd_item_btns input { margin-left: 3px; margin-bottom: 2px; vertical-align: middle; }
+  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
+  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
   .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }
   .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }
+  .pd_usable_num { color: #669933; }
+  .pd_used_num { color: #ff0033; }
+  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }
+  .pd_item_type_chk { margin-right: 5px; }
+  
+  /* 发帖页面 */
+  #pdSmilePanel img { margin: 3px; cursor: pointer; }
+  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
+  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }
+  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }
+  
+  /* 其它页面 */
   .pd_thread_page { margin-left: 5px; }
   .pd_thread_page a { color: #444; padding: 0 3px; }
   .pd_thread_page a:hover { color: #51d; }
   .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }
-  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
   .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }
   .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }
-  .pd_custom_tips { cursor: help; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
-  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
-  .pd_user_memo_tips:hover { color: #ddd; }
-  .pd_sm_color_select > td { position: relative; cursor: pointer; }
-  .pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }
-  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }
-  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }
-  #pd_smile_panel img { margin: 3px; cursor: pointer; }
-  .pd_verify_tips { cursor: help; color: #999; }
-  .pd_verify_tips_ok { color: #99cc66; }
-  .pd_verify_tips_conditional { color: #ff9900; }
-  .pd_verify_tips_unable { color: #ff0033; }
-  .pd_verify_tips_details { cursor: pointer; }
-  #pd_monster_loot_info_panel em { font-style: normal; cursor: help; }
-  #pd_attack_log_content {
-    width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191ff; overflow: auto;
-    line-height: 1.6em; background-color: #fff;
-  }
-  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }
-  .pd_usable_num { color: #669933; }
-  .pd_used_num { color: #ff0033; }
-  .pd_title_tips {
-    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;
-    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;
-  }
-  .pd_search_type {
-    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;
-  }
-  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: "Microsoft YaHei"; }
-  .pd_search_type_list {
-    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;
-    text-indent: 13px; cursor: pointer; z-index: 1003;
-  }
-  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
-  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
-  .readtext img[onclick] { max-width: 550px; }
-  .pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }
-  .pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }
-  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
-  .pd_item_type_chk { margin-right: 5px; }
+  .pd_id_color_select > td { position: relative; cursor: pointer; }
+  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }
 
   /* 设置对话框 */
+  .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
     position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; border: 1px solid #9191ff; display: none; z-index: 1002;
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
     -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
-  .pd_cfg_box h1 {text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px; }
+  .pd_cfg_box h1 {
+    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;
+  }
   .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }
-  #pd_custom_sm_color { width: 360px; }
   .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }
-  .pd_cfg_nav a { margin-left: 10px; }
   .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 50px; overflow: auto; }
   .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }
   .pd_cfg_main legend { font-weight: bold; }
-  .pd_cfg_main label input, .pd_cfg_main legend input, .pd_cfg_main label select { margin: 0 5px; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
   .pd_cfg_main button { vertical-align: middle; }
   .pd_cfg_main .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
   .pd_cfg_main .pd_cfg_tips:hover { color: #ff0000; }
-  #pd_config .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
+  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
   .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }
   .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }
-  .pd_cfg_btns button { width: 80px; margin-left: 5px; }
+  .pd_cfg_btns button { min-width: 80px; }
   .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }
-  #pd_cfg_custom_monster_name_list td input[type="text"] { width: 140px; }
-  #pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }
-  #pd_auto_change_sm_color_btns label { margin-right: 10px; }
-  .pd_cfg_ml { margin-left: 10px; }
+  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }
+  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }
 
   /* 日志对话框 */
-  #pd_log { width: 880px; }
   .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }
   .pd_log_nav a { display: inline-block; }
   .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }
-  #pd_log_content { height: 308px; overflow: auto; }
-  #pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }
-  #pd_log_content h3:not(:first-child) { margin-top: 5px; }
-  #pd_log_content p { line-height: 22px; margin: 0; }
-  #pd_log .pd_stat i { display: inline-block; }
+  .pd_log_content { height: 308px; overflow: auto; }
+  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }
+  .pd_log_content h3:not(:first-child) { margin-top: 5px; }
+  .pd_log_content p { line-height: 22px; margin: 0; }
 </style>
 `);
 
     if (Config.customCssEnabled) {
         $('head').append(`<style>${ Config.customCssContent }</style>`);
     }
+};
+
+/**
+ * 添加设置和日志对话框的链接
+ */
+const addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function () {
+    $('<a data-name="openConfigDialog" href="#">助手设置</a><span> | </span><a data-name="openLogDialog" href="#">助手日志</a><span> | </span>').insertBefore($('a[href^="login.php?action=quit"]:first')).filter('[data-name="openConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        (0, _ConfigDialog.show)();
+    }).end().filter('[data-name="openLogDialog"]').click(function (e) {
+        e.preventDefault();
+        (0, _LogDialog.show)();
+    });
 };
 
 /**
@@ -6663,9 +6876,8 @@ const preventCloseWindowWhenActioning = exports.preventCloseWindowWhenActioning 
  * @param {string} html 回应的HTML源码
  */
 const showFormatLog = exports.showFormatLog = function (msgType, html) {
-    let msg = Util.getResponseMsg(html);
-    if (!msg) msg = '未能获得预期的回应';
-    console.log(`【${ msgType }】回应：${ msg }`);
+    let { msg, url } = Util.getResponseMsg(html);
+    console.log(`【${ msgType }】回应：${ msg }${ url ? `；跳转地址：${ Util.getHostNameUrl() }${ url }` : '' }`);
 };
 
 /**
@@ -6770,7 +6982,7 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
      * 获取捐款Cookies有效期
      * @returns {Date} Cookies有效期的Date对象
      */
-    let getDonationCookieDate = function () {
+    const getDonationCookieDate = function () {
         let now = new Date();
         let date = Util.getTimezoneDateByTime('02:00:00');
         if (now > date) {
@@ -6785,31 +6997,32 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
      * 使用指定的KFB捐款
      * @param {number} kfb 指定的KFB
      */
-    let donationSubmit = function (kfb) {
+    const donationSubmit = function (kfb) {
         $.post('kf_growup.php?ok=1', { kfb: kfb }, function (html) {
             Util.setCookie(_Const2.default.donationCookieName, 1, getDonationCookieDate());
             showFormatLog(`捐款${ kfb }KFB`, html);
+            let { msg } = Util.getResponseMsg(html);
             Msg.remove($wait);
 
-            let msg = `<strong>捐款<em>${ kfb }</em>KFB</strong>`;
-            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(html);
+            let msgHtml = `<strong>捐款<em>${ kfb }</em>KFB</strong>`;
+            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
             if (!matches) {
-                if (/KFB不足。<br/i.test(html)) {
-                    msg += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
+                if (/KFB不足。/.test(msg)) {
+                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
                 } else return;
             } else {
-                msg += `<i>经验值<em>+${ matches[1] }</em></i>`;
+                msgHtml += `<i>经验值<em>+${ matches[1] }</em></i>`;
                 let gain = { '经验值': parseInt(matches[1]) };
                 if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
-                    msg += '<i style="margin-left: 5px;">(补偿期:</i>' + (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${ matches[2] }</em>${ typeof matches[3] !== 'undefined' ? '' : ')' }</i>` : '') + (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${ matches[3] }</em>)</i>` : '');
+                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' + (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${ matches[2] }</em>${ typeof matches[3] !== 'undefined' ? '' : ')' }</i>` : '') + (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${ matches[3] }</em>)</i>` : '');
                     if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
                     if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
                 }
-                (0, _Log.push)('捐款', `捐款\`${ kfb }\`KFB`, { gain: gain, pay: { 'KFB': -kfb } });
+                Log.push('捐款', `捐款\`${ kfb }\`KFB`, { gain: gain, pay: { 'KFB': -kfb } });
             }
-            Msg.show(msg);
+            Msg.show(msgHtml);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Func.run('Public.donation_after_', html);
+            Func.run('Public.donation_after_', msg);
         });
     };
 
@@ -6833,7 +7046,7 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
             } else {
                 donationSubmit(parseInt(Config.donationKfb));
             }
-        }, 'html');
+        });
     }
 };
 
@@ -6854,26 +7067,21 @@ const getMinRefreshInterval = exports.getMinRefreshInterval = function () {
         }
     }
 
-    let autoChangeSMColorInterval = -1;
-    if (Config.autoChangeSMColorEnabled) {
-        let nextTime = parseInt(Util.getCookie(_Const2.default.autoChangeSMColorCookieName));
+    let autoChangeIdColorInterval = -1;
+    if (Config.autoChangeIdColorEnabled) {
+        let nextTime = parseInt(Util.getCookie(_Const2.default.autoChangeIdColorCookieName));
         if (!isNaN(nextTime) && nextTime > 0) {
-            autoChangeSMColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
-            if (autoChangeSMColorInterval < 0) autoChangeSMColorInterval = 0;
-            if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1) autoChangeSMColorInterval = -1;
-        } else autoChangeSMColorInterval = 0;
+            autoChangeIdColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
+            if (autoChangeIdColorInterval < 0) autoChangeIdColorInterval = 0;
+            if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) autoChangeIdColorInterval = -1;
+        } else autoChangeIdColorInterval = 0;
     }
 
-    let minArr = [donationInterval, autoChangeSMColorInterval];
-    minArr.sort((a, b) => a > b);
-    let min = -1;
-    for (let num of minArr) {
-        if (num > -1) {
-            min = num;
-            break;
-        }
-    }
-    if (min <= -1) return -1;else return min > 0 ? min + 1 : 0;
+    let minArr = [donationInterval, autoChangeIdColorInterval].filter(interval => interval >= 0);
+    if (minArr.length > 0) {
+        let min = Math.min(...minArr);
+        return min > 0 ? min + 1 : 0;
+    } else return -1;
 };
 
 /**
@@ -6893,7 +7101,7 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
      * @param {number} interval 倒计时
      * @returns {string} 经过格式化的倒计时标题
      */
-    let getFormatIntervalTitle = function (type, interval) {
+    const getFormatIntervalTitle = function (type, interval) {
         let textInterval = '';
         let diff = Util.getTimeDiffInfo(Util.getDate('+' + interval + 's').getTime());
         textInterval = diff.hours > 0 ? diff.hours + '时' : '';
@@ -6906,12 +7114,12 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
      * @param {number} interval 倒计时的时间间隔（秒）
      * @param {boolean} isShowTitle 是否立即显示标题
      */
-    let showRefreshModeTips = function (interval, isShowTitle = false) {
+    const showRefreshModeTips = function (interval, isShowTitle = false) {
         if (titleItvFunc) window.clearInterval(titleItvFunc);
         let showInterval = interval;
         console.log('【定时模式】倒计时：' + getFormatIntervalTitle(1, showInterval));
         if (Config.showRefreshModeTipsType.toLowerCase() !== 'never') {
-            let showIntervalTitle = function () {
+            const showIntervalTitle = function () {
                 document.title = `${ oriTitle } (定时: ${ getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval) })`;
                 showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
             };
@@ -6923,7 +7131,7 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
     /**
      * 处理错误
      */
-    let handleError = function () {
+    const handleError = function () {
         let interval = 0,
             errorText = '';
         $.ajax({
@@ -6965,10 +7173,10 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
     /**
      * 检查刷新间隔
      */
-    let checkRefreshInterval = function () {
+    const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         if (Config.autoDonationEnabled && !Util.getCookie(_Const2.default.donationCookieName)) donation();
-        if (Config.autoChangeSMColorEnabled && !Util.getCookie(_Const2.default.autoChangeSMColorCookieName)) changeIdColor();
+        if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) changeIdColor();
 
         let interval = getMinRefreshInterval();
         if (interval > 0) errorNum = 0;
@@ -6987,23 +7195,6 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
     showRefreshModeTips(interval < 60 ? 60 : interval);
-};
-
-/**
- * 添加设置和日志对话框的链接
- */
-const addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function () {
-    let $login = $('a[href^="login.php?action=quit"]:first');
-    $('<a href="#">助手设置</a><span> | </span>').insertBefore($login).filter('a').click(function (e) {
-        e.preventDefault();
-        (0, _ConfigDialog.show)();
-    });
-    if (Config.showLogLinkEnabled) {
-        $('<a href="#">助手日志</a><span> | </span>').insertBefore($login).filter('a').click(function (e) {
-            e.preventDefault();
-            (0, _LogDialog.show)();
-        });
-    }
 };
 
 /**
@@ -7122,7 +7313,7 @@ const blockUsers = exports.blockUsers = function () {
             }
         });
     }
-    if (blockNum > 0) console.log('【屏蔽用户】共有{0}个项目被屏蔽'.replace('{0}', blockNum));
+    if (blockNum > 0) console.log(`【屏蔽用户】共有${ blockNum }个帖子被屏蔽`);
 };
 
 /**
@@ -7130,6 +7321,7 @@ const blockUsers = exports.blockUsers = function () {
  */
 const blockThread = exports.blockThread = function () {
     if (!Config.blockThreadList.length) return;
+
     /**
      * 是否屏蔽帖子
      * @param {string} title 帖子标题
@@ -7138,35 +7330,34 @@ const blockThread = exports.blockThread = function () {
      * @returns {boolean} 是否屏蔽
      */
     const isBlock = function (title, userName, fid = 0) {
-        for (let data of Config.blockThreadList) {
-            let keyWord = data.keyWord;
-            let re = null;
-            if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+        for (let { keyWord, includeUser, excludeUser, includeFid, excludeFid } of Config.blockThreadList) {
+            let regex = null;
+            if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
                 try {
-                    re = eval(keyWord);
+                    regex = eval(keyWord);
                 } catch (ex) {
                     console.log(ex);
                     continue;
                 }
             }
             if (userName) {
-                if (data.includeUser) {
-                    if (!data.includeUser.includes(userName)) continue;
-                } else if (data.excludeUser) {
-                    if (!data.excludeUser.includes(userName)) continue;
+                if (includeUser) {
+                    if (!includeUser.includes(userName)) continue;
+                } else if (excludeUser) {
+                    if (excludeUser.includes(userName)) continue;
                 }
             }
             if (fid) {
-                if (data.includeFid) {
-                    if (!data.includeFid.includes(fid)) continue;
-                } else if (data.excludeFid) {
-                    if (data.excludeFid.includes(fid)) continue;
+                if (includeFid) {
+                    if (!includeFid.includes(fid)) continue;
+                } else if (excludeFid) {
+                    if (excludeFid.includes(fid)) continue;
                 }
             }
-            if (re) {
-                if (re.test(title)) return true;
+            if (regex) {
+                if (regex.test(title)) return true;
             } else {
-                if (title.toLowerCase().indexOf(keyWord.toLowerCase()) > -1) return true;
+                if (title.toLowerCase().includes(keyWord.toLowerCase())) return true;
             }
         }
         return false;
@@ -7196,11 +7387,10 @@ const blockThread = exports.blockThread = function () {
         });
     } else if (location.pathname === '/read.php') {
         if (Util.getCurrentThreadPage() !== 1) return;
-        let $threadInfo = $('form[name="delatc"] > div:first > table > tbody');
-        let title = $threadInfo.find('tr:first-child > td > span').text();
+        let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
-        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text() !== '楼主') return;
+        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
@@ -7211,7 +7401,7 @@ const blockThread = exports.blockThread = function () {
             $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
         }
     }
-    if (num > 0) console.log('【屏蔽帖子】共有{0}个帖子被屏蔽'.replace('{0}', num));
+    if (num > 0) console.log(`【屏蔽帖子】共有${ num }个帖子被屏蔽`);
 };
 
 /**
@@ -7283,9 +7473,9 @@ ${ _Const2.default.customTileSideBarContent }
 
 /**
  * 自动活期存款
- * @param {boolean} [isRead=false] 是否读取个人信息页面以获得当前所拥有KFB的信息
+ * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
  */
-const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead) {
+const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead = false) {
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) return;
     let $kfb = $('a[href="kf_givemekfb.php"]');
 
@@ -7293,7 +7483,7 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
      * 活期存款
      * @param {number} income 当前拥有的KFB
      */
-    let saveCurrentDeposit = function (income) {
+    const saveCurrentDeposit = function (income) {
         if (income < Config.saveCurrentDepositAfterKfb) return;
         let multiple = Math.floor((income - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
         if (income - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
@@ -7302,8 +7492,9 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
         console.log('自动活期存款Start');
         $.post('hack.php?H_name=bank', { action: 'save', btype: 1, savemoney: money }, function (html) {
             showFormatLog('自动存款', html);
-            if (/完成存款/.test(html)) {
-                (0, _Log.push)('自动存款', `共有\`${ money }\`KFB已自动存入活期存款`);
+            let { msg } = Util.getResponseMsg(html);
+            if (/完成存款/.test(msg)) {
+                Log.push('自动存款', `共有\`${ money }\`KFB已自动存入活期存款`);
                 console.log(`共有${ money }KFB已自动存入活期存款`);
                 Msg.show(`共有<em>${ money }</em>KFB已自动存入活期存款`);
                 if (_Info2.default.isInHomePage) $kfb.text(`拥有${ income - money }KFB`);
@@ -7324,36 +7515,20 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
 };
 
 /**
- * 执行自定义脚本
- * @param {number} type 脚本类型，1：脚本开始时执行；2：脚本结束时执行
- */
-const runCustomScript = exports.runCustomScript = function (type = 1) {
-    let script = '';
-    if (type === 2) script = Config.customScriptEndContent;else script = Config.customScriptStartContent;
-    if (script) {
-        try {
-            eval(script);
-        } catch (ex) {
-            console.log(ex);
-        }
-    }
-};
-
-/**
  * 更换ID颜色
  */
 const changeIdColor = exports.changeIdColor = function () {
-    if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1) return;
+    if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) return;
     /**
      * 写入Cookie
      */
-    let setCookie = function () {
-        let nextTime = Util.getDate(`+${ Config.autoChangeSMColorInterval }h`);
-        Util.setCookie(_Const2.default.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
+    const setCookie = function () {
+        let nextTime = Util.getDate(`+${ Config.autoChangeIdColorInterval }h`);
+        Util.setCookie(_Const2.default.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
     console.log('自动更换ID颜色Start');
     $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
-        if (Util.getCookie(_Const2.default.autoChangeSMColorCookieName)) return;
+        if (Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) return;
         let matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/g);
         if (matches) {
             let safeId = '';
@@ -7371,9 +7546,9 @@ const changeIdColor = exports.changeIdColor = function () {
             }
 
             let idList = availableIdList;
-            if (!Config.changeAllAvailableSMColorEnabled) {
+            if (!Config.changeAllAvailableIdColorEnabled) {
                 idList = [];
-                for (let id of Config.customAutoChangeSMColorList) {
+                for (let id of Config.customAutoChangeIdColorList) {
                     if (availableIdList.includes(id)) idList.push(id);
                 }
             }
@@ -7382,11 +7557,11 @@ const changeIdColor = exports.changeIdColor = function () {
                 return;
             }
 
-            let prevId = parseInt(TmpLog.getValue(_Const2.default.prevAutoChangeSMColorIdTmpLogName));
+            let prevId = parseInt(TmpLog.getValue(_Const2.default.prevAutoChangeIdColorTmpLogName));
             if (isNaN(prevId) || prevId < 0) prevId = 0;
 
             let nextId = 0;
-            if (Config.autoChangeSMColorType.toLowerCase() === 'sequence') {
+            if (Config.autoChangeIdColorType.toLowerCase() === 'sequence') {
                 for (let [i, id] of idList.entries()) {
                     if (id > prevId) {
                         nextId = id;
@@ -7407,9 +7582,10 @@ const changeIdColor = exports.changeIdColor = function () {
             $.get(`kf_growup.php?ok=2&safeid=${ safeId }&color=${ nextId }&t=${ new Date().getTime() }`, function (html) {
                 setCookie();
                 showFormatLog('自动更换ID颜色', html);
-                if (/等级颜色修改完毕/.test(html)) {
+                let { msg } = Util.getResponseMsg(html);
+                if (/等级颜色修改完毕/.test(msg)) {
                     console.log('ID颜色更换为：' + nextId);
-                    TmpLog.setValue(_Const2.default.prevAutoChangeSMColorIdTmpLogName, nextId);
+                    TmpLog.setValue(_Const2.default.prevAutoChangeIdColorTmpLogName, nextId);
                 }
             });
         } else {
@@ -7474,7 +7650,7 @@ const bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = fu
             $menu.find('span').text(type);
             if (type !== '关键词' && type !== '用户名') $form.attr('action', 'search.php?');
             if (type === '作者') $keyWord.attr('name', 'pwuser');else $keyWord.attr('name', 'keyword');
-            let $searchRange = $form.find('input[name="search_range"][value="current"]');
+            let $searchRange = $form.find('[name="searchRange"][value="current"]');
             if ($searchRange.length > 0) {
                 $searchRange.prop('disabled', type === '关键词' || type === '用户名' || !$searchRange.data('enabled'));
             }
@@ -7483,7 +7659,7 @@ const bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = fu
         });
     });
 
-    $(document).on('submit', 'form[name="pd_search"]', function () {
+    $(document).on('submit', 'form[name="pdSearchForm"]', function () {
         let $this = $(this);
         let type = $.trim($this.find('.pd_search_type > span').text());
         if (type === '关键词') {
@@ -7520,7 +7696,8 @@ const makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWord
 const addSearchDialogLink = exports.addSearchDialogLink = function () {
     $('<span> | </span><a href="#">搜索</a>').insertAfter('.topright > a[href="message.php"]').filter('a').click(function (e) {
         e.preventDefault();
-        if ($('#pd_search').length > 0) return;
+        const dialogName = 'pdSearchDialog';
+        if ($('#' + dialogName).length > 0) return;
         let html = `
 <div class="pd_cfg_main">
   <input name="step" value="2" type="hidden">
@@ -7535,15 +7712,15 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
     <div class="pd_search_type" data-type="dialog"><span>标题</span><i>∨</i></div>
     <button class="indloginm" name="submit" type="submit">搜索</button>
   </div>
-  <div style="margin-bottom:8px; line-height:35px;">
-    <label><input name="search_range" type="radio" value="all" checked> 全站 </label>
-    <label><input name="search_range" type="radio" value="current" disabled> 本版</label>
+  <div style="margin-bottom: 8px; line-height: 35px;">
+    <label><input name="searchRange" type="radio" value="all" checked> 全站 </label>
+    <label><input name="searchRange" type="radio" value="current" disabled> 本版</label>
   </div>
 </div>`;
-        let $dialog = Dialog.create('pd_search', '搜索', html);
+        let $dialog = Dialog.create(dialogName, '搜索', html);
 
         $dialog.closest('form').attr({
-            'name': 'pd_search',
+            'name': dialogName,
             'action': 'search.php?',
             'method': 'post',
             'target': '_blank'
@@ -7551,11 +7728,11 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
 
         let fid = parseInt($('input[name="f_fid"]:first, input[name="fid"]:first').val());
         if (fid) {
-            $dialog.find('input[name="search_range"]').click(function () {
+            $dialog.find('[name="searchRange"]').click(function () {
                 let $this = $(this);
                 $dialog.find('input[name="f_fid"]').val($this.val() === 'current' ? fid : 'all');
             });
-            $dialog.find('input[name="search_range"][value="current"]').prop('disabled', false).data('enabled', true).click();
+            $dialog.find('[name="searchRange"][value="current"]').prop('disabled', false).data('enabled', true).click();
         }
 
         $dialog.keydown(function (e) {
@@ -7566,8 +7743,8 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
             $('.pd_search_type_list').remove();
         });
 
-        Dialog.show('pd_search');
-        $dialog.find('input[name="keyword"]').focus();
+        Dialog.show(dialogName);
+        $dialog.find('[name="keyword"]').focus();
     });
 };
 
@@ -7637,13 +7814,25 @@ const checkRatingSize = exports.checkRatingSize = function (title, ratingSize) {
     } else return { type: 0 };
 };
 
-},{"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./TmpLog":20,"./Util":21}],19:[function(require,module,exports){
+/**
+ * 引入绯月表情增强插件
+ */
+const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = function () {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
+    document.body.appendChild(script);
+};
+
+},{"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./Read":19,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+/* 帖子模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSelfRatingLink = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.getThreadTitle = exports.addSelfRatingLink = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -7670,6 +7859,8 @@ var _Const = require('./Const');
 var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
 
 var _Public = require('./Public');
 
@@ -7713,7 +7904,7 @@ const addFloorGotoLink = exports.addFloorGotoLink = function () {
 const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
     $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8"> <span>楼</span></li></form>').prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
         e.preventDefault();
-        let floor = parseInt($.trim($(this).find('input').val()));
+        let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
         location.href = `${ Util.getHostNameUrl }read.php?tid=${ Util.getUrlParam('tid') }&page=${ parseInt(floor / Config.perPageFloorNum) + 1 }&floor=${ floor }`;
     }).find('span').click(function () {
@@ -7820,13 +8011,14 @@ const addCopyBuyersListLink = exports.addCopyBuyersListLink = function () {
             alert('暂时无人购买');
             return;
         }
-        if ($('#pd_copy_buyer_list').length > 0) return;
+        const dialogName = 'pdCopyBuyerListDialog';
+        if ($('#' + dialogName).length > 0) return;
         let html = `
 <div class="pd_cfg_main">
   <textarea style="width: 200px; height: 300px; margin: 5px 0;" readonly></textarea>
 </div>`;
-        let $dialog = Dialog.create('pd_copy_buyer_list', '购买人名单', html);
-        Dialog.show('pd_copy_buyer_list');
+        let $dialog = Dialog.create(dialogName, '购买人名单', html);
+        Dialog.show(dialogName);
         $dialog.find('textarea').val(buyerList.join('\n')).select().focus();
     });
 };
@@ -7836,19 +8028,20 @@ const addCopyBuyersListLink = exports.addCopyBuyersListLink = function () {
  * @param {string[]} replierList 回帖者名单列表
  */
 const showStatRepliersDialog = exports.showStatRepliersDialog = function (replierList) {
+    const dialogName = 'pdReplierListDialog';
     let html = `
 <div class="pd_cfg_main">
-  <div id="pd_replier_list_filter" style="margin-top: 5px;">
-    <label><input type="checkbox" checked>显示楼层号</label>
-    <label><input type="checkbox">去除重复</label>
-    <label><input type="checkbox">去除楼主</label>
+  <div id="pdReplierListFilter" style="margin-top: 5px;">
+    <label><input type="checkbox" checked> 显示楼层号</label>
+    <label><input type="checkbox"> 去除重复</label>
+    <label><input type="checkbox"> 去除楼主</label>
   </div>
-  <div style="color: #ff0000;" id="pd_replier_list_stat"></div>
+  <div style="color: #f00;" id="pdReplierListStat"></div>
   <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
 </div>`;
-    let $dialog = Dialog.create('pd_replier_list', '回帖者名单', html);
+    let $dialog = Dialog.create(dialogName, '回帖者名单', html);
 
-    let $filterNodes = $dialog.find('#pd_replier_list_filter input');
+    let $filterNodes = $dialog.find('#pdReplierListFilter input');
     $filterNodes.click(function () {
         let list = [...replierList];
         let isShowFloor = $filterNodes.eq(0).prop('checked'),
@@ -7869,11 +8062,11 @@ const showStatRepliersDialog = exports.showStatRepliersDialog = function (replie
             num++;
         }
         $dialog.find('textarea').val(content);
-        $('#pd_replier_list_stat').html(`共有<b>${ num }</b>条项目`);
+        $dialog.find('#pdReplierListStat').html(`共有<b>${ num }</b>条项目`);
     });
-    $dialog.find('#pd_replier_list_filter input:first').triggerHandler('click');
+    $dialog.find('#pdReplierListFilter input:first').triggerHandler('click');
 
-    Dialog.show('pd_replier_list');
+    Dialog.show(dialogName);
     $dialog.find('input:first').focus();
 };
 
@@ -7884,7 +8077,7 @@ const addStatRepliersLink = exports.addStatRepliersLink = function () {
     if (Util.getCurrentThreadPage() !== 1) return;
     $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages').find('a').click(function (e) {
         e.preventDefault();
-        if ($('#pd_replier_list').length > 0) return;
+        if ($('#pdReplierListDialog').length > 0) return;
 
         let tid = Util.getUrlParam('tid');
         if (!tid) return;
@@ -7917,7 +8110,7 @@ const addStatRepliersLink = exports.addStatRepliersLink = function () {
             return;
         }
 
-        Msg.wait(`<strong>正在统计回帖名单中&hellip;</strong><i>剩余页数：<em id="pd_remaining_num">${ endPage - startPage + 1 }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在统计回帖名单中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${ endPage - startPage + 1 }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         let isStop = false;
         $(document).clearQueue('StatRepliers');
         let replierList = [];
@@ -7930,8 +8123,8 @@ const addStatRepliersLink = exports.addStatRepliersLink = function () {
                     timeout: _Const2.default.defAjaxTimeout,
                     success(html) {
                         let matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        for (let match of matches) {
-                            let floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(match);
+                        for (let i in matches) {
+                            let floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
                             if (!floorMatches) continue;
                             let floor = parseInt(floorMatches[1]);
                             if (floor < startFloor) continue;
@@ -7947,9 +8140,9 @@ const addStatRepliersLink = exports.addStatRepliersLink = function () {
                         alert('因连接超时，统计回帖名单操作中止');
                     },
                     complete() {
-                        let $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                        let $countdown = $('.pd_countdown:last');
+                        $countdown.text(parseInt($countdown.text()) - 1);
+                        isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                         if (isStop) $(document).clearQueue('StatRepliers');
 
                         if (isStop || index === endPage - 1) {
@@ -8052,10 +8245,12 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
             if (Config.buyThreadViaAjaxEnabled) {
                 let $wait = Msg.wait('正在购买帖子&hellip;');
                 $.get(url, function (html) {
+                    Public.showFormatLog('购买帖子', html);
+                    let { msg } = Util.getResponseMsg(html);
                     Msg.remove($wait);
-                    if (/操作完成/.test(html)) {
+                    if (/操作完成/.test(msg)) {
                         location.reload();
-                    } else if (/您已经购买此帖/.test(html)) {
+                    } else if (/您已经购买此帖/.test(msg)) {
                         alert('你已经购买过此帖');
                         location.reload();
                     } else {
@@ -8090,7 +8285,7 @@ const addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function () {
             let url = $this.data('url');
             let sell = parseInt($this.data('sell'));
             if (url && !isNaN(sell)) {
-                threadList.push({ url: url, sell: sell });
+                threadList.push({ url, sell });
                 totalSell += sell;
             }
         });
@@ -8099,11 +8294,11 @@ const addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function () {
             return;
         }
         if (confirm(`你共选择了${ threadList.length }个帖子，总售价${ totalSell.toLocaleString() }KFB，` + `均价${ Util.getFixedNumLocStr(totalSell / threadList.length, 2) }KFB，是否批量购买？`)) {
-            Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em id="pd_remaining_num">${ threadList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+            Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${ threadList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
             buyThreads(threadList);
         }
     }).parent().mouseenter(function () {
-        $('<span style="margin-left: 5px;">[<a href="#">全选</a><a style="margin-left: 5px;" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn')).find('a:first').click(function (e) {
+        $('<span style="margin-left: 5px;">[<a class="pd_btn_link" href="#">全选</a><a class="pd_btn_link" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn')).find('a:first').click(function (e) {
             e.preventDefault();
             let $buyThread = $('.pd_buy_thread');
             $buyThread.prop('checked', true);
@@ -8125,39 +8320,40 @@ const addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function () {
 
 /**
  * 购买指定的一系列帖子
- * @param {Object[]} threadList 购买帖子列表，threadList[n][url]：购买帖子的URL；threadList[n][sell]：购买帖子的售价
+ * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
  */
 const buyThreads = exports.buyThreads = function (threadList) {
     let successNum = 0,
         failNum = 0,
         totalSell = 0;
     $(document).clearQueue('BuyThreads');
-    $.each(threadList, function (index, thread) {
+    $.each(threadList, function (index, { url, sell }) {
         $(document).queue('BuyThreads', function () {
             $.ajax({
                 type: 'GET',
-                url: thread.url + '&t=' + new Date().getTime(),
+                url: url + '&t=' + new Date().getTime(),
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('购买帖子', html);
-                    if (/操作完成/.test(html)) {
+                    let { msg } = Util.getResponseMsg(html);
+                    if (/操作完成/.test(msg)) {
                         successNum++;
-                        totalSell += thread.sell;
+                        totalSell += sell;
                     } else failNum++;
                 },
                 error() {
                     failNum++;
                 },
                 complete() {
-                    let $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    let isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BuyThreads');
 
                     if (isStop || index === threadList.length - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            (0, _Log.push)('购买帖子', `共有\`${ successNum }\`个帖子购买成功`, { pay: { 'KFB': -totalSell } });
+                            Log.push('购买帖子', `共有\`${ successNum }\`个帖子购买成功`, { pay: { 'KFB': -totalSell } });
                         }
                         console.log(`共有${ successNum }个帖子购买成功，共有${ failNum }个帖子购买失败，KFB-${ totalSell }`);
                         Msg.show(`<strong>共有<em>${ successNum }</em>个帖子购买成功${ failNum > 0 ? `，共有<em>${ failNum }</em>个帖子购买失败` : '' }</strong>` + `<i>KFB<ins>-${ totalSell }</ins></i>`, -1);
@@ -8203,7 +8399,7 @@ const addUserMemo = exports.addUserMemo = function () {
  * 添加复制代码的链接
  */
 const addCopyCodeLink = exports.addCopyCodeLink = function () {
-    $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>');
+    $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>').parent('fieldset').addClass('pd_code_area');
     if (!$('.pd_copy_code').length) return;
     $('#alldiv').on('click', 'a.pd_copy_code', function (e) {
         e.preventDefault();
@@ -8240,7 +8436,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
      * 添加表情代码
      * @param {string} id 表情ID
      */
-    let addSmileCode = function (id) {
+    const addSmileCode = function (id) {
         let textArea = $('textarea[name="atc_content"]').get(0);
         if (!textArea) return;
         let code = `[s:${ id }]`;
@@ -8264,7 +8460,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
     $('<a class="pd_highlight" href="#">[更多]</a>').appendTo($parent).click(function (e) {
         e.preventDefault();
         let $this = $(this);
-        let $panel = $('#pd_smile_panel');
+        let $panel = $('#pdSmilePanel');
         if ($panel.length > 0) {
             $this.text('[更多]');
             $panel.remove();
@@ -8278,7 +8474,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
         for (let i = 0; i < smileImageIdList.length; i++) {
             html += `<img src="${ _Info2.default.w.imgpath }/post/smile/em/em${ smileImageIdList[i] }.gif" alt="[表情]" data-id="${ smileCodeIdList[i] }">`;
         }
-        html = `<div class="pd_panel" id="pd_smile_panel" style="width: 308px; height: 185px;">${ html }</div>`;
+        html = `<div class="pd_panel" id="pdSmilePanel" style="width: 308px; height: 185px;">${ html }</div>`;
 
         let offset = $parent.offset();
         $panel = $(html).appendTo('body');
@@ -8298,7 +8494,7 @@ const parseMediaTag = exports.parseMediaTag = function () {
         let $this = $(this);
         let html = $this.html();
         if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
-            $this.html(html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g, '<audio src="$1" controls preload="none" style="margin:3px 0;">[你的浏览器不支持audio标签]</audio>').replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g, `<video src="$1" controls preload="none" style="max-width: ${ Config.adjustThreadContentWidthEnabled ? 627 : 820 }px; margin:3px 0;">` + `[你的浏览器不支持video标签]</video>`));
+            $this.html(html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g, '<audio src="$1" controls preload="none" style="margin: 3px 0;">[你的浏览器不支持audio标签]</audio>').replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g, `<video src="$1" controls preload="none" style="max-width: ${ Config.adjustThreadContentWidthEnabled ? 627 : 820 }px; margin:3px 0;">` + `[你的浏览器不支持video标签]</video>`));
         }
     });
 };
@@ -8331,7 +8527,327 @@ const addSelfRatingLink = exports.addSelfRatingLink = function () {
     $('a[href^="kf_tidfavor.php?action=favor"]').after(`<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${ safeId }&ptid=${ tid }" title="仅限自助评分测试人员使用">自助评分</a>`);
 };
 
-},{"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./Msg":15,"./Post":17,"./Public":18,"./Util":21}],20:[function(require,module,exports){
+/**
+ * 获取帖子标题
+ * @returns {string} 帖子标题
+ */
+const getThreadTitle = exports.getThreadTitle = function () {
+    return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
+};
+
+},{"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./Msg":15,"./Post":17,"./Public":18,"./Util":22}],20:[function(require,module,exports){
+/* 自定义脚本模块 */
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.handleInstallScriptLink = exports.showDialog = exports.runCmd = exports.runCustomScript = undefined;
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
+
+var _Dialog = require('./Dialog');
+
+var Dialog = _interopRequireWildcard(_Dialog);
+
+var _Config = require('./Config');
+
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
+
+var _Func = require('./Func');
+
+var Func = _interopRequireWildcard(_Func);
+
+var _Const = require('./Const');
+
+var _Const2 = _interopRequireDefault(_Const);
+
+var _Msg = require('./Msg');
+
+var Msg = _interopRequireWildcard(_Msg);
+
+var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
+
+var _TmpLog = require('./TmpLog');
+
+var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Public = require('./Public');
+
+var Public = _interopRequireWildcard(_Public);
+
+var _Index = require('./Index');
+
+var Index = _interopRequireWildcard(_Index);
+
+var _Read = require('./Read');
+
+var Read = _interopRequireWildcard(_Read);
+
+var _Post = require('./Post');
+
+var Post = _interopRequireWildcard(_Post);
+
+var _Other = require('./Other');
+
+var Other = _interopRequireWildcard(_Other);
+
+var _Bank = require('./Bank');
+
+var Bank = _interopRequireWildcard(_Bank);
+
+var _Card = require('./Card');
+
+var Card = _interopRequireWildcard(_Card);
+
+var _Item = require('./Item');
+
+var Item = _interopRequireWildcard(_Item);
+
+var _Loot = require('./Loot');
+
+var Loot = _interopRequireWildcard(_Loot);
+
+var _ConfigDialog = require('./ConfigDialog');
+
+var ConfigDialog = _interopRequireWildcard(_ConfigDialog);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// 默认脚本名称
+const defScriptName = '未命名脚本';
+// 脚本meta信息的正则表达式
+const metaRegex = /\/\/\s*==UserScript==((?:.|\n)+?)\/\/\s*==\/UserScript==/i;
+
+/**
+ * 执行自定义脚本
+ * @param {string} type 脚本执行时机，start：在脚本开始时执行；end：在脚本结束时执行
+ */
+const runCustomScript = exports.runCustomScript = function (type = 'end') {
+    for (let { enabled, trigger, content } of Config.customScriptList) {
+        if (enabled && trigger === type && content) {
+            runCmd(content);
+        }
+    }
+};
+
+/**
+ * 运行命令
+ * @param {string} cmd 命令
+ * @param {boolean} isOutput 是否在控制台上显示结果
+ * @returns {string} 运行结果
+ */
+const runCmd = exports.runCmd = function (cmd, isOutput = false) {
+    let result = '';
+    try {
+        result = eval(cmd);
+        if (isOutput) console.log(result);
+    } catch (ex) {
+        result = ex;
+        console.log(ex);
+    }
+    return String(result);
+};
+
+/**
+ * 获取脚本meta信息
+ * @param {string} content 脚本内容
+ * @returns {{}} 脚本meta信息
+ */
+const getScriptMeta = function (content) {
+    let meta = {
+        name: defScriptName,
+        version: '',
+        trigger: 'end',
+        homepage: '',
+        author: ''
+    };
+    let matches = metaRegex.exec(content);
+    if (!matches) return meta;
+    let metaContent = matches[1];
+    matches = /@name[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.name = matches[1];
+    matches = /@version[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.version = matches[1];
+    matches = /@trigger[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.trigger = matches[1].toLowerCase() === 'start' ? 'start' : 'end';
+    matches = /@homepage[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.homepage = matches[1];
+    matches = /@author[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.author = matches[1];
+    return meta;
+};
+
+/**
+ * 显示自定义脚本对话框
+ * @param {?number} showIndex 要显示的脚本的序号（-1表示最后一个）
+ */
+const showDialog = exports.showDialog = function (showIndex = null) {
+    const dialogName = 'pdCustomScriptDialog';
+    if ($('#' + dialogName).length > 0) return;
+    (0, _Config.read)();
+    let html = `
+<div class="pd_cfg_main">
+  <div style="margin-top: 5px;">
+    <a class="pd_highlight pd_btn_link" data-name="addNewScript" href="#">添加新脚本</a>
+    <a class="pd_btn_link" data-name="insertSample" href="#">插入范例</a>
+  </div>
+  <div data-name="customScriptList"></div>
+</div>
+<div class="pd_cfg_btns">
+  <span class="pd_cfg_about">
+    <a class="pd_btn_link" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
+    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出自定义脚本</a>
+  </span>
+  <button name="ok">确定</button> <button name="cancel">取消</button> <button class="pd_highlight" name="clear">清空</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
+    let $customScriptList = $dialog.find('[data-name="customScriptList"]');
+
+    $dialog.find('[name="ok"]').click(function (e) {
+        e.preventDefault();
+        Config.customScriptList = [];
+        $customScriptList.find('.pd_custom_script_content').each(function () {
+            let $this = $(this);
+            let content = $this.val();
+            if (!$.trim(content)) return;
+            let enabled = $this.prev().find('[type="checkbox"]').prop('checked');
+            Config.customScriptList.push($.extend(getScriptMeta(content), { enabled, content }));
+        });
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+    }).end().find('[name="clear"]').click(function (e) {
+        e.preventDefault();
+        if (confirm('是否清空所有脚本？')) {
+            $customScriptList.html('');
+            Dialog.show(dialogName);
+        }
+    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
+
+    /**
+     * 添加自定义脚本
+     * @param {boolean} enabled 是否启用脚本
+     * @param {string} name 脚本名称
+     * @param {string} version 版本号
+     * @param {url} homepage 首页
+     * @param {string} trigger 脚本执行时机
+     * @param {string} content 脚本内容
+     */
+    const addCustomScript = function ({
+        enabled = true,
+        name = defScriptName,
+        version = '',
+        homepage = '',
+        trigger = 'end',
+        content = ''
+    } = {}) {
+        $customScriptList.append(`
+<div class="pd_custom_script_header">
+  <input type="checkbox" ${ enabled ? 'checked' : '' } title="是否启用此脚本">
+  <a class="pd_custom_script_name" href="#" style="margin-left: 5px;">[${ name }]</a>
+  <span data-name="version" style="margin-left: 5px; color: #666;" ${ !version ? 'hidden' : '' }>${ version }</span>
+  <span data-name="trigger" style="margin-left: 5px; color: ${ trigger === 'start' ? '#f00' : '#00f' };" title="脚本执行时机">
+    [${ trigger === 'start' ? '开始时' : '结束时' }]
+  </span>
+  <a data-name="homepage" href="${ homepage }" target="_blank" style="margin-left: 5px;" ${ !homepage ? 'hidden' : '' }>[主页]</a>
+  <a data-name="delete" href="#" style="margin-left: 5px; color: #666;">[删除]</a>
+</div>
+<textarea class="pd_custom_script_content" wrap="off">${ content }</textarea>
+`);
+    };
+
+    for (let data of Config.customScriptList) {
+        addCustomScript(data);
+    }
+
+    $dialog.find('[data-name="addNewScript"]').click(function (e) {
+        e.preventDefault();
+        $customScriptList.find('.pd_custom_script_content').hide();
+        addCustomScript();
+        $customScriptList.find('.pd_custom_script_content:last').show().focus();
+        Dialog.show(dialogName);
+    }).end().find('[data-name="insertSample"]').click(function (e) {
+        e.preventDefault();
+        let $content = $customScriptList.find('.pd_custom_script_content:visible');
+        $content.val(`
+// ==UserScript==
+// @name        ${ defScriptName }
+// @version     1.0
+// @author      ${ _Info2.default.userName }
+// @trigger     end
+// @homepage    read.php?tid=500968&spid=12318348
+// @description 这是一个未命名脚本
+// ==/UserScript==
+`.trim() + '\n' + $content.val()).focus();
+    }).end().find('[data-name="openImOrExCustomScriptDialog"]').click(function (e) {
+        e.preventDefault();
+        ConfigDialog.showCommonImportOrExportConfigDialog('customScript');
+    });
+
+    $customScriptList.on('click', '.pd_custom_script_name', function (e) {
+        e.preventDefault();
+        $dialog.find('.pd_custom_script_content').hide();
+        $(this).parent().next().show().focus();
+        Dialog.show(dialogName);
+    }).on('click', '[data-name="delete"]', function (e) {
+        e.preventDefault();
+        if (!confirm('是否删除此脚本？')) return;
+        let $header = $(this).closest('.pd_custom_script_header');
+        $header.next().remove();
+        $header.remove();
+        Dialog.show(dialogName);
+    }).on('change', '.pd_custom_script_content', function () {
+        let $this = $(this);
+        let { name, version, homepage, trigger } = getScriptMeta($this.val());
+        let $header = $this.prev();
+        $header.find('.pd_custom_script_name').text(`[${ name ? name : defScriptName }]`);
+        $header.find('[data-name="version"]').text(version).prop('hidden', !version);
+        $header.find('[data-name="homepage"]').attr('href', homepage ? homepage : '').prop('hidden', !homepage);
+        $header.find('[data-name="trigger"]').html(`[${ trigger === 'start' ? '开始时' : '结束时' }]`).css('color', trigger === 'start' ? '#f00' : '#00f');
+    });
+
+    Dialog.show(dialogName);
+    if (typeof showIndex === 'number') {
+        $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
+    } else {
+        $dialog.find('a:first').focus();
+    }
+};
+
+/**
+ * 处理安装自定义脚本按钮
+ */
+const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
+    $(document).on('click', 'a[href$="#install-script"]', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        let $area = $this.nextAll('.pd_code_area').eq(0);
+        if (!$area.length) return;
+        let content = Util.htmlDecode($area.html().replace(/<legend>.+?<\/legend>/i, '')).trim();
+        if (!metaRegex.test(content)) return;
+        (0, _Config.read)();
+        let meta = getScriptMeta(content);
+        let index = Config.customScriptList.findIndex(script => script.name === meta.name && script.author === meta.author);
+        let type = index > -1 ? 1 : 0;
+        if (!confirm(`是否${ type === 1 ? '更新' : '安装' }此脚本？`)) return;
+        let script = $.extend(meta, { enabled: true, content });
+        if (type === 1) Config.customScriptList[index] = script;else Config.customScriptList.push(script);
+        (0, _Config.write)();
+        Dialog.close('pdCustomScriptDialog');
+        showDialog(index);
+    });
+};
+
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Index":9,"./Info":10,"./Item":11,"./Log":12,"./Loot":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+/* 临时日志模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8350,24 +8866,23 @@ var _Const2 = _interopRequireDefault(_Const);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 保存临时日志的键值名称
-const name = 'pd_tmp_log';
-// 临时日志对象
-let log = {};
+const name = _Const2.default.storagePrefix + 'tmp_log';
 
 /**
  * 读取临时日志
+ * @returns {{}} 临时日志对象
  */
 const read = exports.read = function () {
-    log = {};
+    let log = {};
     let options = null;
     if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') options = GM_getValue(name + '_' + _Info2.default.uid);else options = localStorage.getItem(name + '_' + _Info2.default.uid);
-    if (!options) return;
+    if (!options) return log;
     try {
         options = JSON.parse(options);
     } catch (ex) {
-        return;
+        return log;
     }
-    if (!options || $.type(options) !== 'object') return;
+    if (!options || $.type(options) !== 'object') return log;
     let allowKeys = [];
     for (let k in _Const2.default) {
         if (k.endsWith('TmpLogName')) allowKeys.push(_Const2.default[k]);
@@ -8376,12 +8891,13 @@ const read = exports.read = function () {
         if (!allowKeys.includes(k)) delete options[k];
     }
     log = options;
+    return log;
 };
 
 /**
  * 写入临时日志
  */
-const write = exports.write = function () {
+const write = exports.write = function (log) {
     if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(log));
 };
 
@@ -8398,7 +8914,7 @@ const clear = exports.clear = function () {
  * @returns {*} 日志内容
  */
 const getValue = exports.getValue = function (key) {
-    read();
+    let log = read();
     return key in log ? log[key] : null;
 };
 
@@ -8408,9 +8924,9 @@ const getValue = exports.getValue = function (key) {
  * @param {*} value 日志内容
  */
 const setValue = exports.setValue = function (key, value) {
-    read();
+    let log = read();
     log[key] = value;
-    write();
+    write(log);
 };
 
 /**
@@ -8418,14 +8934,15 @@ const setValue = exports.setValue = function (key, value) {
  * @param {string} key 日志名称
  */
 const deleteValue = exports.deleteValue = function (key) {
-    read();
+    let log = read();
     if (key in log) {
         delete log[key];
-        write();
+        write(log);
     }
 };
 
-},{"./Const":6,"./Info":10}],21:[function(require,module,exports){
+},{"./Const":6,"./Info":10}],22:[function(require,module,exports){
+/* 工具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8450,7 +8967,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param {?Date} date Cookie有效期，留空则表示有效期为浏览器进程
  * @param {string} prefix Cookie名称前缀
  */
-const setCookie = exports.setCookie = function (name, value, date = null, prefix = _Info2.default.uid + '_') {
+const setCookie = exports.setCookie = function (name, value, date = null, prefix = _Info2.default.uid + '_' + _Const2.default.storagePrefix) {
     document.cookie = `${ prefix }${ name }=${ encodeURI(value) }${ !date ? '' : ';expires=' + date.toUTCString() };path=/;`;
 };
 
@@ -8460,7 +8977,7 @@ const setCookie = exports.setCookie = function (name, value, date = null, prefix
  * @param {string} prefix Cookie名称前缀
  * @returns {?string} Cookie值
  */
-const getCookie = exports.getCookie = function (name, prefix = _Info2.default.uid + '_') {
+const getCookie = exports.getCookie = function (name, prefix = _Info2.default.uid + '_' + _Const2.default.storagePrefix) {
     let regex = new RegExp(`(^| )${ prefix }${ name }=([^;]*)(;|$)`);
     let matches = document.cookie.match(regex);
     if (!matches) return null;else return decodeURI(matches[2]);
@@ -8471,7 +8988,7 @@ const getCookie = exports.getCookie = function (name, prefix = _Info2.default.ui
  * @param {string} name Cookie名称
  * @param {string} prefix Cookie名称前缀
  */
-const deleteCookie = exports.deleteCookie = function (name, prefix = _Info2.default.uid + '_') {
+const deleteCookie = exports.deleteCookie = function (name, prefix = _Info2.default.uid + '_' + _Const2.default.storagePrefix) {
     document.cookie = `${ prefix }${ name }=;expires=${ getDate('-1d').toUTCString() };path=/;`;
 };
 
@@ -8499,9 +9016,9 @@ const getDateByTime = exports.getDateByTime = function (time) {
 const getTimezoneDateByTime = exports.getTimezoneDateByTime = function (time, timezoneOffset = _Const2.default.forumTimezoneOffset) {
     let date = new Date();
     let [hour, minute, second] = time.split(':');
-    if (typeof hour !== 'undefined') date.setHours(parseInt(hour) + timezoneOffset);
-    if (typeof minute !== 'undefined') date.setMinutes(parseInt(minute));
-    if (typeof second !== 'undefined') date.setSeconds(parseInt(second));
+    if (typeof hour !== 'undefined') date.setUTCHours(parseInt(hour) + timezoneOffset);
+    if (typeof minute !== 'undefined') date.setUTCMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setUTCSeconds(parseInt(second));
     date.setUTCMilliseconds(0);
     let now = new Date();
     if (now.getDate() > date.getDate() || now.getMonth() > date.getMonth() || now.getFullYear() > date.getFullYear()) {
@@ -8625,10 +9142,10 @@ const getTimeDiffInfo = exports.getTimeDiffInfo = function (timestamp) {
  * @returns {?boolean} 是否处于规定时间段内，返回null表示规定时间段格式不正确
  */
 const isBetweenInTimeRange = exports.isBetweenInTimeRange = function (time, range) {
-    let rangeArr = range.split('-');
-    if (rangeArr.length !== 2) return null;
-    let start = getDateByTime(rangeArr[0]);
-    let end = getDateByTime(rangeArr[1]);
+    let [range1, range2] = range.split('-');
+    if (typeof range2 === 'undefined') return null;
+    let start = getDateByTime(range1);
+    let end = getDateByTime(range2);
     if (end < start) {
         if (time > end) end.setDate(end.getDate() + 1);else start.setDate(start.getDate() - 1);
     }
@@ -8900,18 +9417,25 @@ const copyText = exports.copyText = function ($target, msg = '', $excludeElem = 
 /**
  * 获取服务器返回的消息
  * @param {string} html HTML代码
- * @returns {string} 服务器返回的消息
+ * @returns {{type: number, msg: string, url: string}} 服务器返回的消息对象
  */
 const getResponseMsg = exports.getResponseMsg = function (html) {
-    let msg = '';
+    let type = 0;
+    let msg = '',
+        url = '';
     let matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href="(.+?)">/i.exec(html);
     if (matches) {
-        msg = `${ matches[1] }；跳转地址：${ getHostNameUrl() }${ matches[2] }`;
+        type = 1;
+        msg = matches[1];
+        url = matches[2];
     } else {
         let matches = /操作提示<br\s*\/?>\r\n(.+?)<br\s*\/?>\r\n<a href="javascript:history\.go\(-1\);">返回上一步操作<\/a>/i.exec(html);
-        if (matches) msg = matches[1];
+        if (matches) {
+            type = -1;
+            msg = matches[1];
+        }
     }
-    return msg;
+    return { type, msg: msg ? msg : '未能获得预期的回应', url };
 };
 
 /**
@@ -8930,8 +9454,6 @@ const entries = exports.entries = function* (obj) {
  * @param {Array} list 指定列表
  * @returns {number} 指定用户在列表中的索引号，-1表示不在该列表中
  */
-const inFollowOrBlockUserList = exports.inFollowOrBlockUserList = function (name, list) {
-    return list.findIndex(elem => elem.name && elem.name === name);
-};
+const inFollowOrBlockUserList = exports.inFollowOrBlockUserList = (name, list) => list.findIndex(data => data.name && data.name === name);
 
 },{"./Const":6,"./Info":10}]},{},[1]);

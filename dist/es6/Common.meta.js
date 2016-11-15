@@ -8,7 +8,6 @@
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js
 // @include     http://*2dkf.com/*
-// @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
 // @version     7.0

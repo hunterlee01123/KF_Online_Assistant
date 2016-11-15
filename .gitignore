@@ -3,5 +3,7 @@ node_modules/
 wiki/
 vps/
 push.sh
+copy.bat
 build.bat
+buildCustomScripts.bat
 myGulpFile.js

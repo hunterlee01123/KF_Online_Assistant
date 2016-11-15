@@ -7,10 +7,9 @@
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js
-// @require     https://cdn.css.net/libs/babel-polyfill/6.16.0/polyfill.min.js
+// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.16.0
 // @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
 // @include     http://*2dkf.com/*
-// @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
 // @version     7.0
@@ -38,8 +37,6 @@ var _Const = require('./module/Const');
 var _Const2 = _interopRequireDefault(_Const);
 
 var _Config = require('./module/Config');
-
-var _Log = require('./module/Log');
 
 var _Public = require('./module/Public');
 
@@ -77,6 +74,10 @@ var _Loot = require('./module/Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
 
+var _Script = require('./module/Script');
+
+var Script = _interopRequireWildcard(_Script);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -92,13 +93,12 @@ $(function () {
     if (!Public.getUidAndUserName()) return;
     Public.addPolyfill();
     (0, _Config.init)();
-    (0, _Log.init)();
     Public.checkBrowserType();
     Public.appendCss();
     Public.addConfigAndLogDialogLink();
     if (Config.animationEffectOffEnabled) $.fx.off = true;
 
-    if (Config.customScriptEnabled) Public.runCustomScript(1);
+    if (Config.customScriptEnabled) Script.runCustomScript('start');
     Public.repairBbsErrorCode();
     window.addEventListener('beforeunload', Public.preventCloseWindowWhenActioning);
     if (Config.showSearchLinkEnabled) Public.addSearchDialogLink();
@@ -117,11 +117,11 @@ $(function () {
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         Read.fastGotoFloor();
-        if (Config.adjustThreadContentWidthEnabled) Public.adjustThreadContentWidth();
+        if (Config.adjustThreadContentWidthEnabled) Read.adjustThreadContentWidth();
         Read.adjustThreadContentFontSize();
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
-        if (Config.modifyKFOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customSmColorEnabled) Read.modifySmColor();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
@@ -135,6 +135,7 @@ $(function () {
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
+        Script.handleInstallScriptLink();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -169,7 +170,7 @@ $(function () {
         Post.removeUnpairedBBCodeInQuoteContent();
     } else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
-        if (Config.modifyKFOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
     } else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
         Other.addMsgSelectButton();
     } else if (/\/profile\.php\?action=show/i.test(location.href)) {
@@ -182,6 +183,7 @@ $(function () {
         Other.highlightUnReadAtTipsMsg();
     } else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
         Other.syncModifyPerPageFloorNum();
+        if (_Info2.default.isInMiaolaDomain) Other.addAvatarChangeAlert();
     } else if (/\/job\.php\?action=preview$/i.test(location.href)) {
         Post.modifyPostPreviewPage();
     } else if (location.pathname === '/search.php') {
@@ -198,11 +200,17 @@ $(function () {
     if (location.pathname === '/post.php') {
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
+        if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
     if (Config.followUserEnabled) Public.followUsers();
     if (_Info2.default.isMobile) Public.bindElementTitleClick();
+    if (_Info2.default.isInMiaolaDomain) {
+        if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
+            Public.importKfSmileEnhanceExtension();
+        }
+    }
 
     var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
     var isDonationStarted = false;
@@ -213,17 +221,18 @@ $(function () {
 
     if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
 
-    if (Config.autoChangeSMColorEnabled && !Util.getCookie(_Const2.default.autoChangeSMColorCookieName)) Public.changeIdColor();
+    if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
 
     if (Config.autoRefreshEnabled && _Info2.default.isInHomePage) Public.startAutoRefreshMode();
 
-    if (Config.customScriptEnabled) Public.runCustomScript(2);
+    if (Config.customScriptEnabled) Script.runCustomScript('end');
 
     var endDate = new Date();
     console.log('\u3010KF Online\u52A9\u624B\u3011\u52A0\u8F7D\u5B8C\u6BD5\uFF0C\u52A0\u8F7D\u8017\u65F6\uFF1A' + (endDate - startDate) + 'ms');
 });
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Log":12,"./module/Loot":14,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Util":21}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Loot":14,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/Util":22}],2:[function(require,module,exports){
+/* 银行模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -232,10 +241,6 @@ Object.defineProperty(exports, "__esModule", {
 exports.fixedDepositDueAlert = exports.handleInBankPage = exports.addBatchTransferButton = exports.drawCurrentDeposit = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _Info = require('./Info');
-
-var _Info2 = _interopRequireDefault(_Info);
 
 var _Util = require('./Util');
 
@@ -251,6 +256,8 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
@@ -259,9 +266,9 @@ var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 // 最低转账金额
 var minTransferMoney = 20;
@@ -275,8 +282,12 @@ var minTransferMoney = 20;
 var saveCurrentDeposit = function saveCurrentDeposit(money, cash, currentDeposit) {
     var $wait = Msg.wait('正在存款中&hellip;');
     $.post('hack.php?H_name=bank', { action: 'save', btype: 1, savemoney: money }, function (html) {
-        if (/完成存款/.test(html)) {
-            Public.showFormatLog('存款', html);
+        Public.showFormatLog('存款', html);
+
+        var _Util$getResponseMsg = Util.getResponseMsg(html),
+            msg = _Util$getResponseMsg.msg;
+
+        if (/完成存款/.test(msg)) {
             Msg.remove($wait);
             console.log('\u5171\u6709' + money + 'KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
             var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("当前所持：")');
@@ -298,14 +309,18 @@ var saveCurrentDeposit = function saveCurrentDeposit(money, cash, currentDeposit
 var drawCurrentDeposit = exports.drawCurrentDeposit = function drawCurrentDeposit(money) {
     var $wait = Msg.wait('正在取款中&hellip;');
     $.post('hack.php?H_name=bank', { action: 'draw', btype: 1, drawmoney: money }, function (html) {
+        Public.showFormatLog('取款', html);
+
+        var _Util$getResponseMsg2 = Util.getResponseMsg(html),
+            msg = _Util$getResponseMsg2.msg;
+
         Msg.remove($wait);
-        if (/完成取款/.test(html)) {
-            Public.showFormatLog('取款', html);
+        if (/完成取款/.test(msg)) {
             console.log('\u4ECE\u6D3B\u671F\u5B58\u6B3E\u4E2D\u53D6\u51FA\u4E86' + money + 'KFB');
             Msg.show('\u4ECE\u6D3B\u671F\u5B58\u6B3E\u4E2D\u53D6\u51FA\u4E86<em>' + money + '</em>KFB', -1);
-        } else if (/取款金额大于您的存款金额/.test(html)) {
+        } else if (/取款金额大于您的存款金额/.test(msg)) {
             Msg.show('取款金额大于当前活期存款金额', -1);
-        } else if (/\d+秒内不允许重新交易/.test(html)) {
+        } else if (/\d+秒内不允许重新交易/.test(msg)) {
             Msg.show('提交速度过快', -1);
         } else {
             Msg.show('取款失败', -1);
@@ -337,48 +352,35 @@ var batchTransfer = function batchTransfer(users, msg, isDeposited, currentDepos
                 data: '&action=virement&pwuser=' + Util.getGBKEncodeString(userName) + '&to_money=' + money + '&memo=' + Util.getGBKEncodeString(msg),
                 success: function success(html) {
                     Public.showFormatLog('批量转账', html);
-                    var msg = '';
-                    if (/完成转帐!<\/span>/.test(html)) {
+
+                    var _Util$getResponseMsg3 = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg3.msg;
+
+                    var msgHtml = '';
+                    if (/完成转帐!/.test(msg)) {
                         successNum++;
                         successMoney += money;
-                        msg = userName + ' <em>+' + money + '</em>';
+                        msgHtml = userName + ' <em>+' + money + '</em>';
                     } else {
                         failNum++;
-                        var errorMsg = '';
-                        if (/用户<b>.+?<\/b>不存在<br \/>/.test(html)) {
-                            errorMsg = '用户不存在';
-                        } else if (/您的存款不够支付转帐/.test(html)) {
-                            errorMsg = '存款不足';
-                        } else if (/转账额度不足/.test(html)) {
-                            errorMsg = '转账额度不足';
-                        } else if (/当前等级无法使用该功能/.test(html)) {
-                            errorMsg = '当前等级无法使用转账功能';
-                        } else if (/转帐数目填写不正确/.test(html)) {
-                            errorMsg = '转帐金额不正确';
-                        } else if (/自己无法给自己转帐/.test(html)) {
-                            errorMsg = '无法给自己转帐';
-                        } else if (/\d+秒内不允许重新交易/.test(html)) {
-                            errorMsg = '提交速度过快';
-                        } else {
-                            errorMsg = '未能获得预期的回应';
-                        }
-                        msg = userName + ':' + money + ' <span class="pd_notice">(' + errorMsg + ')</span>';
+                        if (/用户<b>.+?<\/b>不存在<br\s*\/?>/.test(msg)) msg = '用户不存在';else if (/您的存款不够支付转帐/.test(msg)) msg = '存款不足';else if (/转账额度不足/.test(msg)) msg = '转账额度不足';else if (/当前等级无法使用该功能/.test(msg)) msg = '当前等级无法使用转账功能';else if (/转帐数目填写不正确/.test(msg)) msg = '转帐金额不正确';else if (/自己无法给自己转帐/.test(msg)) msg = '无法给自己转帐';else if (/\d+秒内不允许重新交易/.test(msg)) msg = '提交速度过快';
+                        msgHtml = userName + ':' + money + ' <span class="pd_notice">(' + msg + ')</span>';
                     }
-                    $('.pd_result:last').append('<li>' + msg + '</li>');
+                    $('.pd_result:last').append('<li>' + msgHtml + '</li>');
                 },
                 error: function error() {
                     failNum++;
-                    $('.pd_result:last').append('<li>' + userName + ':' + money + ' <span class="pd_notice">(\u8FDE\u63A5\u8D85\u65F6\uFF0C\u8F6C\u8D26\u53EF\u80FD\u5931\u8D25\uFF0C\u8BF7\u5230' + '<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span></li>');
+                    $('.pd_result:last').append('\n<li>\n  ' + userName + ':' + money + '\n  <span class="pd_notice">(\u8FDE\u63A5\u8D85\u65F6\uFF0C\u8F6C\u8D26\u53EF\u80FD\u5931\u8D25\uFF0C\u8BF7\u5230<a target="_blank" href="hack.php?H_name=bank&action=log">\u94F6\u884C\u65E5\u5FD7</a>\u91CC\u8FDB\u884C\u786E\u8BA4)</span>\n</li>\n');
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    var isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('Bank');
 
                     if (isStop || index === users.length - 1) {
                         if (successNum > 0) {
-                            (0, _Log.push)('批量转账', '\u5171\u6709`' + successNum + '`\u540D\u7528\u6237\u8F6C\u8D26\u6210\u529F', { pay: { 'KFB': -successMoney } });
+                            Log.push('批量转账', '\u5171\u6709`' + successNum + '`\u540D\u7528\u6237\u8F6C\u8D26\u6210\u529F', { pay: { 'KFB': -successMoney } });
                         }
                         Msg.destroy();
                         var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("活期存款：")');
@@ -400,10 +402,11 @@ var batchTransfer = function batchTransfer(users, msg, isDeposited, currentDepos
 
 /**
  * 验证批量转账的字段值是否正确
+ * @param {jQuery} $transfer 批量转账区域对象
  * @returns {boolean} 是否正确
  */
-var batchTransferVerify = function batchTransferVerify() {
-    var $bankUsers = $('#pd_bank_users');
+var batchTransferVerify = function batchTransferVerify($transfer) {
+    var $bankUsers = $transfer.find('[name="users"]');
     var users = $bankUsers.val();
     if (!/^\s*\S+\s*$/m.test(users) || /^\s*:/m.test(users) || /:/.test(users) && /:(\D|$)/m.test(users)) {
         alert('用户列表格式不正确');
@@ -417,8 +420,8 @@ var batchTransferVerify = function batchTransferVerify() {
         $bankUsers.focus();
         return false;
     }
-    var $bankMoney = $('#pd_bank_money');
-    var money = parseInt($.trim($bankMoney.val()));
+    var $bankMoney = $transfer.find('[name="money"]');
+    var money = parseInt($bankMoney.val());
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
             alert('通用转账金额格式不正确');
@@ -439,21 +442,22 @@ var batchTransferVerify = function batchTransferVerify() {
  * 添加批量转账的按钮
  */
 var addBatchTransferButton = exports.addBatchTransferButton = function addBatchTransferButton() {
-    var html = '\n<tr id="pd_bank_transfer">\n  <td style="vertical-align: top;">\u4F7F\u7528\u8BF4\u660E\uFF1A<br>\u6BCF\u884C\u4E00\u540D\u7528\u6237\uFF0C<br>\u5982\u9700\u5355\u72EC\u8BBE\u5B9A\u91D1\u989D\uFF0C<br>\u53EF\u5199\u4E3A\u201C\u7528\u6237\u540D:\u91D1\u989D\u201D<br>\uFF08\u6CE8\u610F\u662F<b>\u82F1\u6587\u5192\u53F7</b>\uFF09<br>\n\u4F8B\u5B50\uFF1A<br><pre style="border: 1px solid #9999ff; padding: 5px;">\u5F20\u4E09\n\u674E\u56DB:200\n\u738B\u4E94:500\n\u4FE1\u4EF0\u98CE</pre></td>\n  <td>\n  <form>\n    <div style="display: inline-block;">\n      <label>\u7528\u6237\u5217\u8868\uFF1A<br>\n        <textarea class="pd_textarea" id="pd_bank_users" style="width: 270px; height: 250px;"></textarea>\n      </label>\n    </div>\n    <div style="display: inline-block; margin-left: 10px;">\n      <label>\u901A\u7528\u8F6C\u5E10\u91D1\u989D\uFF08\u5982\u6240\u6709\u7528\u6237\u90FD\u5DF2\u8BBE\u5B9A\u5355\u72EC\u91D1\u989D\u5219\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <input class="pd_input" id="pd_bank_money" type="text" style="width: 217px;" maxlength="15">\n      </label><br>\n      <label style="margin-top: 5px;">\u8F6C\u5E10\u9644\u8A00\uFF08\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <textarea class="pd_textarea" id="pd_bank_msg" style="width: 225px; height: 206px;"></textarea>\n      </label>\n    </div>\n    <div>\n      <label><input class="pd_input" type="submit" value="\u6279\u91CF\u8F6C\u8D26"></label>\n      <label style="margin-left: 3px;"><input class="pd_input" type="reset" value="\u91CD\u7F6E"></label>\n      <label style="margin-left: 3px;">\n        <input class="pd_input" type="button" value="\u968F\u673A\u91D1\u989D" title="\u4E3A\u7528\u6237\u5217\u8868\u4E0A\u7684\u6BCF\u4E2A\u7528\u6237\u8BBE\u5B9A\u6307\u5B9A\u8303\u56F4\u5185\u7684\u968F\u673A\u91D1\u989D">\n      </label>\n      \uFF08\u6D3B\u671F\u5B58\u6B3E\u4E0D\u8DB3\u65F6\uFF0C\u5C06\u81EA\u52A8\u8FDB\u884C\u5B58\u6B3E\uFF1B\u6279\u91CF\u8F6C\u8D26\u91D1\u989D\u4E0D\u4F1A\u4ECE\u5B9A\u671F\u5B58\u6B3E\u4E2D\u6263\u9664\uFF09\n    </div>\n  </form>\n  </td>\n</tr>';
-    $(html).appendTo('.bank1 > tbody').find('form').submit(function (e) {
+    var html = '\n<tr id="pd_bank_transfer">\n  <td style="vertical-align: top;">\n    \u4F7F\u7528\u8BF4\u660E\uFF1A<br>\u6BCF\u884C\u4E00\u540D\u7528\u6237\uFF0C<br>\u5982\u9700\u5355\u72EC\u8BBE\u5B9A\u91D1\u989D\uFF0C<br>\u53EF\u5199\u4E3A\u201C\u7528\u6237\u540D:\u91D1\u989D\u201D<br>\uFF08\u6CE8\u610F\u662F<b>\u82F1\u6587\u5192\u53F7</b>\uFF09<br>\u4F8B\u5B50\uFF1A<br>\n    <pre style="border: 1px solid #9999ff; padding: 5px;">\u5F20\u4E09\n\u674E\u56DB:200\n\u738B\u4E94:500\n\u4FE1\u4EF0\u98CE</pre>\n  </td>\n  <td>\n  <form>\n    <div style="display: inline-block;">\n      <label>\u7528\u6237\u5217\u8868\uFF1A<br>\n        <textarea class="pd_textarea" name="users" style="width: 270px; height: 250px;"></textarea>\n      </label>\n    </div>\n    <div style="display: inline-block; margin-left: 10px;">\n      <label>\u901A\u7528\u8F6C\u5E10\u91D1\u989D\uFF08\u5982\u6240\u6709\u7528\u6237\u90FD\u5DF2\u8BBE\u5B9A\u5355\u72EC\u91D1\u989D\u5219\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <input class="pd_input" name="money" type="text" style="width: 217px;" maxlength="15">\n      </label><br>\n      <label style="margin-top: 5px;">\u8F6C\u5E10\u9644\u8A00\uFF08\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>\n      </label>\n    </div>\n    <div>\n      <input class="pd_input" type="submit" value="\u6279\u91CF\u8F6C\u8D26">\n      <input class="pd_input" type="reset" value="\u91CD\u7F6E">\n      <input class="pd_input" name="random" type="button" value="\u968F\u673A\u91D1\u989D" title="\u4E3A\u7528\u6237\u5217\u8868\u4E0A\u7684\u6BCF\u4E2A\u7528\u6237\u8BBE\u5B9A\u6307\u5B9A\u8303\u56F4\u5185\u7684\u968F\u673A\u91D1\u989D">\n      \uFF08\u6D3B\u671F\u5B58\u6B3E\u4E0D\u8DB3\u65F6\uFF0C\u5C06\u81EA\u52A8\u8FDB\u884C\u5B58\u6B3E\uFF1B\u6279\u91CF\u8F6C\u8D26\u91D1\u989D\u4E0D\u4F1A\u4ECE\u5B9A\u671F\u5B58\u6B3E\u4E2D\u6263\u9664\uFF09\n    </div>\n  </form>\n  </td>\n</tr>';
+    var $transfer = $(html).appendTo('.bank1 > tbody');
+    $transfer.find('form').submit(function (e) {
         e.preventDefault();
         Msg.destroy();
-        if (!batchTransferVerify()) return;
-        var commonMoney = parseInt($.trim($('#pd_bank_money').val()));
+        if (!batchTransferVerify($transfer)) return;
+        var commonMoney = parseInt($transfer.find('[name="money"]').val());
         if (!commonMoney) commonMoney = 0;
-        var msg = $('#pd_bank_msg').val();
+        var msg = $transfer.find('[name="msg"]').val();
         var users = [];
         var _iteratorNormalCompletion = true;
         var _didIteratorError = false;
         var _iteratorError = undefined;
 
         try {
-            for (var _iterator = $('#pd_bank_users').val().split('\n')[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            for (var _iterator = $transfer.find('[name="users"]').val().split('\n')[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                 var line = _step.value;
 
                 line = $.trim(line);
@@ -498,7 +502,6 @@ var addBatchTransferButton = exports.addBatchTransferButton = function addBatchT
         try {
             for (var _iterator2 = users[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                 var _step2$value = _slicedToArray(_step2.value, 2),
-                    _userName = _step2$value[0],
                     _money = _step2$value[1];
 
                 totalMoney += _money;
@@ -549,11 +552,11 @@ var addBatchTransferButton = exports.addBatchTransferButton = function addBatchT
                 });
                 $(document).dequeue('Bank');
             }
-            Msg.wait('<strong>\u6B63\u5728\u6279\u91CF\u8F6C\u8D26\u4E2D\uFF0C\u8BF7\u8010\u5FC3\u7B49\u5F85&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + users.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-            $('#pd_bank_transfer > td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
+            Msg.wait('<strong>\u6B63\u5728\u6279\u91CF\u8F6C\u8D26\u4E2D\uFF0C\u8BF7\u8010\u5FC3\u7B49\u5F85&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + users.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+            $transfer.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
             batchTransfer(users, msg, isDeposited, currentDeposit);
         });
-    }).end().find('.pd_input[type="button"]').click(function (e) {
+    }).end().find('[name="random"]').click(function (e) {
         e.preventDefault();
         var userList = [];
         var _iteratorNormalCompletion3 = true;
@@ -561,7 +564,7 @@ var addBatchTransferButton = exports.addBatchTransferButton = function addBatchT
         var _iteratorError3 = undefined;
 
         try {
-            for (var _iterator3 = $('#pd_bank_users').val().split('\n')[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            for (var _iterator3 = $transfer.find('[name="users"]').val().split('\n')[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                 var line = _step3.value;
 
                 line = $.trim(line);
@@ -626,7 +629,7 @@ var addBatchTransferButton = exports.addBatchTransferButton = function addBatchT
             }
         }
 
-        $('#pd_bank_users').val(content);
+        $transfer.find('[name="users"]').val(content);
     });
 };
 
@@ -711,13 +714,18 @@ var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositD
     });
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./TmpLog":20,"./Util":21}],3:[function(require,module,exports){
+},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
+/* 卡片模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.addStartBatchModeButton = undefined;
+
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
 
 var _Const = require('./Const');
 
@@ -729,13 +737,15 @@ var Msg = _interopRequireWildcard(_Msg);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 /**
  * 将指定的一系列卡片转换为VIP时间
@@ -756,7 +766,11 @@ var convertCardsToVipTime = function convertCardsToVipTime(cardList, safeId) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);
-                    var matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(html);
+
+                    var _Util$getResponseMsg = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg.msg;
+
+                    var matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(msg);
                     if (matches) {
                         successNum++;
                         totalVipTime += parseInt(matches[1]);
@@ -767,14 +781,14 @@ var convertCardsToVipTime = function convertCardsToVipTime(cardList, safeId) {
                     failNum++;
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    var isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('ConvertCardsToVipTime');
 
                     if (isStop || index === cardList.length - 1) {
                         if (successNum > 0) {
-                            (0, _Log.push)('将卡片转换为VIP时间', '\u5171\u6709`' + successNum + '`\u5F20\u5361\u7247\u6210\u529F\u4E3AVIP\u65F6\u95F4', {
+                            Log.push('将卡片转换为VIP时间', '\u5171\u6709`' + successNum + '`\u5F20\u5361\u7247\u6210\u529F\u4E3AVIP\u65F6\u95F4', {
                                 gain: { 'VIP小时': totalVipTime, '能量': totalEnergy },
                                 pay: { '卡片': -successNum }
                             });
@@ -817,8 +831,9 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
                     $(this).next('.pd_card_chk').click();
                 }).find('td').has('a').each(function () {
                     var matches = /kf_fw_card_my\.php\?id=(\d+)/.exec($(this).find('a').attr('href'));
-                    if (!matches) return;
-                    $(this).css('position', 'relative').append('<input class="pd_card_chk" type="checkbox" value="' + matches[1] + '">');
+                    if (matches) {
+                        $(this).css('position', 'relative').append('<input class="pd_card_chk" type="checkbox" value="' + matches[1] + '">');
+                    }
                 });
                 var playedCardList = [];
                 $('.kf_fw_ig2 > tbody > tr:nth-child(2) > td').each(function () {
@@ -857,27 +872,10 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
                     }
                 };
 
-                $this.before('<label><input id="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>' + '<button>每类只保留一张</button><button>全选</button><button>反选</button><br><button>转换为VIP时间</button>').prev().click(function () {
-                    Msg.destroy();
-                    var cardList = [];
-                    $cardLines.find('input:checked').each(function () {
-                        cardList.push(parseInt($(this).val()));
-                    });
-                    if (!cardList.length) return;
-                    if (!confirm('\u5171\u9009\u62E9\u4E86' + cardList.length + '\u5F20\u5361\u7247\uFF0C\u662F\u5426\u5C06\u5361\u7247\u6279\u91CF\u8F6C\u6362\u4E3AVIP\u65F6\u95F4\uFF1F')) return;
-                    Msg.wait('<strong>\u6B63\u5728\u6279\u91CF\u8F6C\u6362\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + cardList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-                    convertCardsToVipTime(cardList, safeId);
-                }).prev().prev().click(function () {
-                    $cardLines.find('input').each(function () {
-                        $(this).prop('checked', !$(this).prop('checked'));
-                    });
-                    if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
-                }).prev().click(function () {
+                var $btns = $('\n<label><input name="uncheckPlayedCard" type="checkbox" checked> \u4E0D\u9009\u5DF2\u51FA\u6218\u7684\u5361\u7247</label>\n<button name="selectOnlyOne">\u6BCF\u7C7B\u53EA\u4FDD\u7559\u4E00\u5F20</button>\n<button name="selectAll">\u5168\u9009</button>\n<button name="selectInverse">\u53CD\u9009</button><br>\n<button name="convertCardsToVipTime">\u8F6C\u6362\u4E3AVIP\u65F6\u95F4</button>\n').insertBefore($this);
+                $btns.filter('[name="selectOnlyOne"]').click(function () {
                     $cardLines.find('input').prop('checked', true);
-                    if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
-                }).prev().click(function () {
-                    $cardLines.find('input').prop('checked', true);
-                    if ($('#uncheckPlayedCard').prop('checked')) uncheckPlayedCard();
+                    if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
                     var cardTypeList = new Set();
                     $cardLines.find('a > img').each(function () {
                         cardTypeList.add($(this).attr('src'));
@@ -915,6 +913,24 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
                             }
                         }
                     }
+                }).end().filter('[name="selectAll"]').click(function () {
+                    $cardLines.find('input').prop('checked', true);
+                    if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
+                }).end().filter('[name="selectInverse"]').click(function () {
+                    $cardLines.find('input').each(function () {
+                        $(this).prop('checked', !$(this).prop('checked'));
+                    });
+                    if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
+                }).end().filter('[name="convertCardsToVipTime"]').click(function () {
+                    Msg.destroy();
+                    var cardList = [];
+                    $cardLines.find('input:checked').each(function () {
+                        cardList.push(parseInt($(this).val()));
+                    });
+                    if (!cardList.length) return;
+                    if (!confirm('\u5171\u9009\u62E9\u4E86' + cardList.length + '\u5F20\u5361\u7247\uFF0C\u662F\u5426\u5C06\u5361\u7247\u6279\u91CF\u8F6C\u6362\u4E3AVIP\u65F6\u95F4\uFF1F')) return;
+                    Msg.wait('<strong>\u6B63\u5728\u6279\u91CF\u8F6C\u6362\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + cardList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+                    convertCardsToVipTime(cardList, safeId);
                 });
             })();
         } else {
@@ -925,13 +941,16 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
     });
 };
 
-},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
+/* 配置模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.normalize = exports.changeStorageType = exports.clear = exports.write = exports.read = exports.init = exports.Config = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _Info = require('./Info');
 
@@ -947,6 +966,8 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
@@ -956,7 +977,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 保存设置的键值名称
-var name = 'pd_config';
+var name = _Const2.default.storagePrefix + 'config';
 
 /**
  * 配置类
@@ -999,16 +1020,16 @@ var Config = exports.Config = {
 
     // 是否调整帖子内容宽度，使其保持一致，true：开启；false：关闭
     adjustThreadContentWidthEnabled: false,
-    // 帖子内容字体大小，留空表示使用默认大小，推荐值：14
+    // 帖子内容字体大小，设为0表示使用默认大小，推荐值：14
     threadContentFontSize: 0,
-    // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009CFF，如无需求可留空
+    // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空
     customMySmColor: '',
     // 是否开启自定义各等级神秘颜色的功能，（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），true：开启；false：关闭
     customSmColorEnabled: false,
-    // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009CFF'},{min:'800',max:'MAX',color:'#FF0000'}]
+    // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009cff'},{min:'800',max:'MAX',color:'#ff0000'}]
     customSmColorConfigList: [],
     // 是否将帖子中的绯月其它域名的链接修改为当前域名，true：开启；false：关闭
-    modifyKFOtherDomainEnabled: true,
+    modifyKfOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
@@ -1025,6 +1046,8 @@ var Config = exports.Config = {
     showSelfRatingLinkEnabled: false,
     // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
     buyThreadViaAjaxEnabled: true,
+    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
+    kfSmileEnhanceExtensionEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1032,14 +1055,12 @@ var Config = exports.Config = {
     animationEffectOffEnabled: false,
     // 日志保存天数
     logSaveDays: 30,
-    // 在页面上方显示助手日志的链接，true：开启；false：关闭
-    showLogLinkEnabled: true,
     // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
     showSearchLinkEnabled: true,
     // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
     logSortType: 'time',
-    // 日志统计范围类型，cur：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
-    logStatType: 'cur',
+    // 日志统计范围类型，current：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
+    logStatType: 'current',
     // 显示距该日N天内的统计结果（用于日志统计范围）
     logStatDays: 7,
     // 是否为侧边栏添加快捷导航的链接，true：开启；false：关闭
@@ -1052,9 +1073,11 @@ var Config = exports.Config = {
     customCssContent: '',
     // 是否执行自定义的脚本，true：开启；false：关闭
     customScriptEnabled: false,
-    // 在脚本开始时执行的自定义脚本内容
+    // 自定义脚本列表
+    customScriptList: [],
+    // 在脚本开始时执行的自定义脚本内容（已废弃）
     customScriptStartContent: '',
-    // 在脚本结束时执行的自定义脚本内容
+    // 在脚本结束时执行的自定义脚本内容（已废弃）
     customScriptEndContent: '',
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',
@@ -1098,23 +1121,25 @@ var Config = exports.Config = {
     saveCurrentDepositKfb: 0,
 
     // 是否自动更换ID颜色，true：开启；false：关闭
-    autoChangeSMColorEnabled: false,
+    autoChangeIdColorEnabled: false,
     // 自动更换ID颜色的更换顺序类型，random：随机；sequence：顺序
-    autoChangeSMColorType: 'random',
+    autoChangeIdColorType: 'random',
     // 自动更换ID颜色的时间间隔（小时）
-    autoChangeSMColorInterval: 24,
+    autoChangeIdColorInterval: 24,
     // 是否从当前所有可用的ID颜色中进行更换，true：开启；false：关闭
-    changeAllAvailableSMColorEnabled: true,
-    // 自定义自动更换ID颜色的ID列表，例：[1,8,13,20]
-    customAutoChangeSMColorList: []
+    changeAllAvailableIdColorEnabled: true,
+    // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
+    customAutoChangeIdColorList: [],
+
+    // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
+    simulateManualHandleItemEnabled: false
 };
 
 /**
  * 初始化
  */
 var init = exports.init = function init() {
-    var c = $.extend(true, {}, Config);
-    if (typeof unsafeWindow === 'undefined') window.Config = c;else unsafeWindow.Config = c;
+    window.Config = $.extend(true, {}, Config);
     if (typeof GM_getValue !== 'undefined') {
         _Info2.default.storageType = GM_getValue('StorageType');
         if (_Info2.default.storageType !== 'ByUid' && _Info2.default.storageType !== 'Global') _Info2.default.storageType = 'Default';
@@ -1136,14 +1161,14 @@ var read = exports.read = function read() {
     }
     if (!options || $.type(options) !== 'object' || $.isEmptyObject(options)) return;
     options = normalize(options);
-    _Info2.default.w.Config = $.extend(true, {}, Config, options);
+    window.Config = $.extend(true, {}, Config, options);
 };
 
 /**
  * 写入设置
  */
 var write = exports.write = function write() {
-    var options = Util.getDifferenceSetOfObject(Config, _Info2.default.w.Config);
+    var options = Util.getDifferenceSetOfObject(Config, window.Config);
     if (_Info2.default.storageType === 'ByUid') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(options));else if (_Info2.default.storageType === 'Global') GM_setValue(name, JSON.stringify(options));else localStorage.setItem(name, JSON.stringify(options));
 };
 
@@ -1159,346 +1184,68 @@ var clear = exports.clear = function clear() {
  * @param {string} storageType 要更改的存储类型
  */
 var changeStorageType = exports.changeStorageType = function changeStorageType(storageType) {
-    (0, _Log.read)();
-    TmpLog.read();
+    var log = Log.read();
+    var tmpLog = TmpLog.read();
     _Info2.default.storageType = storageType;
     if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', _Info2.default.storageType);
-    if (!Util.deepEqual(Config, _Info2.default.w.Config) || !$.isEmptyObject(_Info2.default.w.Log)) {
+    if (!Util.deepEqual(Config, window.Config) || !$.isEmptyObject(log)) {
         if (confirm('是否将助手设置和日志转移到对应存储类型中？（对应存储类型中的数据将被覆盖）')) {
             write();
-            (0, _Log.write)();
-            TmpLog.write();
+            Log.write(log);
+            TmpLog.write(tmpLog);
         }
     }
 };
 
 /**
  * 获取经过规范化的Config对象
- * @param {Config} options 待处理的Config对象
- * @returns {Config} 经过规范化的Config对象
+ * @param {{}} options 待处理的Config对象
+ * @returns {{}} 经过规范化的Config对象
  */
 var normalize = exports.normalize = function normalize(options) {
     var settings = {};
     if ($.type(options) !== 'object') return settings;
+    if (typeof options.donationKfb === 'number') options.donationKfb = options.donationKfb.toString();
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
 
-    if (typeof options.autoRefreshEnabled !== 'undefined') {
-        settings.autoRefreshEnabled = typeof options.autoRefreshEnabled === 'boolean' ? options.autoRefreshEnabled : Config.autoRefreshEnabled;
-    }
-    if (typeof options.showRefreshModeTipsType !== 'undefined') {
-        var showRefreshModeTipsType = $.trim(options.showRefreshModeTipsType).toLowerCase();
-        var allowTypes = ['auto', 'always', 'never'];
-        if (showRefreshModeTipsType !== '' && $.inArray(showRefreshModeTipsType, allowTypes) > -1) settings.showRefreshModeTipsType = showRefreshModeTipsType;else settings.showRefreshModeTipsType = Config.showRefreshModeTipsType;
-    }
+    try {
+        for (var _iterator = Util.entries(options)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var _step$value = _slicedToArray(_step.value, 2),
+                key = _step$value[0],
+                value = _step$value[1];
 
-    if (typeof options.autoDonationEnabled !== 'undefined') {
-        settings.autoDonationEnabled = typeof options.autoDonationEnabled === 'boolean' ? options.autoDonationEnabled : Config.autoDonationEnabled;
-    }
-    if (typeof options.donationKfb !== 'undefined') {
-        var donationKfb = options.donationKfb;
-        if ($.isNumeric(donationKfb) && donationKfb > 0 && donationKfb <= _Const2.default.maxDonationKfb) settings.donationKfb = parseInt(donationKfb).toString();else if (/^1?\d?\d%$/.test(donationKfb) && parseInt(donationKfb) > 0 && parseInt(donationKfb) <= 100) settings.donationKfb = parseInt(donationKfb) + '%';else settings.donationKfb = Config.donationKfb;
-    }
-    if (typeof options.donationAfterTime !== 'undefined') {
-        var donationAfterTime = options.donationAfterTime;
-        if (/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) settings.donationAfterTime = donationAfterTime;else settings.donationAfterTime = Config.donationAfterTime;
-    }
-
-    if (typeof options.atTipsHandleType !== 'undefined') {
-        var atTipsHandleType = $.trim(options.atTipsHandleType).toLowerCase();
-        var _allowTypes = ['no_highlight', 'no_highlight_extra', 'hide_box_1', 'hide_box_2', 'default', 'at_change_to_cao'];
-        if (atTipsHandleType !== '' && $.inArray(atTipsHandleType, _allowTypes) > -1) settings.atTipsHandleType = atTipsHandleType;else settings.atTipsHandleType = Config.atTipsHandleType;
-    }
-    if (typeof options.smLevelUpAlertEnabled !== 'undefined') {
-        settings.smLevelUpAlertEnabled = typeof options.smLevelUpAlertEnabled === 'boolean' ? options.smLevelUpAlertEnabled : Config.smLevelUpAlertEnabled;
-    }
-    if (typeof options.fixedDepositDueAlertEnabled !== 'undefined') {
-        settings.fixedDepositDueAlertEnabled = typeof options.fixedDepositDueAlertEnabled === 'boolean' ? options.fixedDepositDueAlertEnabled : Config.fixedDepositDueAlertEnabled;
-    }
-    if (typeof options.smRankChangeAlertEnabled !== 'undefined') {
-        settings.smRankChangeAlertEnabled = typeof options.smRankChangeAlertEnabled === 'boolean' ? options.smRankChangeAlertEnabled : Config.smRankChangeAlertEnabled;
-    }
-    if (typeof options.homePageThreadFastGotoLinkEnabled !== 'undefined') {
-        settings.homePageThreadFastGotoLinkEnabled = typeof options.homePageThreadFastGotoLinkEnabled === 'boolean' ? options.homePageThreadFastGotoLinkEnabled : Config.homePageThreadFastGotoLinkEnabled;
-    }
-    if (typeof options.showVipSurplusTimeEnabled !== 'undefined') {
-        settings.showVipSurplusTimeEnabled = typeof options.showVipSurplusTimeEnabled === 'boolean' ? options.showVipSurplusTimeEnabled : Config.showVipSurplusTimeEnabled;
-    }
-
-    if (typeof options.showFastGotoThreadPageEnabled !== 'undefined') {
-        settings.showFastGotoThreadPageEnabled = typeof options.showFastGotoThreadPageEnabled === 'boolean' ? options.showFastGotoThreadPageEnabled : Config.showFastGotoThreadPageEnabled;
-    }
-    if (typeof options.maxFastGotoThreadPageNum !== 'undefined') {
-        var maxFastGotoThreadPageNum = parseInt(options.maxFastGotoThreadPageNum);
-        if (!isNaN(maxFastGotoThreadPageNum) && maxFastGotoThreadPageNum > 0) settings.maxFastGotoThreadPageNum = maxFastGotoThreadPageNum;else settings.maxFastGotoThreadPageNum = Config.maxFastGotoThreadPageNum;
-    }
-    if (typeof options.highlightNewPostEnabled !== 'undefined') {
-        settings.highlightNewPostEnabled = typeof options.highlightNewPostEnabled === 'boolean' ? options.highlightNewPostEnabled : Config.highlightNewPostEnabled;
-    }
-
-    if (typeof options.perPageFloorNum !== 'undefined') {
-        var perPageFloorNum = parseInt(options.perPageFloorNum);
-        if ($.inArray(perPageFloorNum, [10, 20, 30]) > -1) settings.perPageFloorNum = perPageFloorNum;else settings.perPageFloorNum = Config.perPageFloorNum;
-    }
-    if (typeof options.threadContentFontSize !== 'undefined') {
-        var threadContentFontSize = parseInt(options.threadContentFontSize);
-        if (threadContentFontSize > 0) settings.threadContentFontSize = threadContentFontSize;else settings.threadContentFontSize = Config.threadContentFontSize;
-    }
-    if (typeof options.adjustThreadContentWidthEnabled !== 'undefined') {
-        settings.adjustThreadContentWidthEnabled = typeof options.adjustThreadContentWidthEnabled === 'boolean' ? options.adjustThreadContentWidthEnabled : Config.adjustThreadContentWidthEnabled;
-    }
-    if (typeof options.turnPageViaKeyboardEnabled !== 'undefined') {
-        settings.turnPageViaKeyboardEnabled = typeof options.turnPageViaKeyboardEnabled === 'boolean' ? options.turnPageViaKeyboardEnabled : Config.turnPageViaKeyboardEnabled;
-    }
-    if (typeof options.customMySmColor !== 'undefined') {
-        var customMySmColor = options.customMySmColor;
-        if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) settings.customMySmColor = customMySmColor;else settings.customMySmColor = Config.customMySmColor;
-    }
-    if (typeof options.customSmColorEnabled !== 'undefined') {
-        settings.customSmColorEnabled = typeof options.customSmColorEnabled === 'boolean' ? options.customSmColorEnabled : Config.customSmColorEnabled;
-    }
-    if (typeof options.customSmColorConfigList !== 'undefined') {
-        var customSmColorConfigList = options.customSmColorConfigList;
-        if ($.isArray(customSmColorConfigList)) {
-            settings.customSmColorConfigList = [];
-            $.each(customSmColorConfigList, function (index, data) {
-                if ($.type(data) === 'object' && $.type(data.min) === 'string' && $.type(data.max) === 'string' && $.type(data.color) === 'string' && /^(-?\d+|MAX)$/i.test(data.min) && /^(-?\d+|MAX)$/i.test(data.max) && /^#[0-9a-fA-F]{6}$/.test(data.color) && Util.compareSmLevel(data.min, data.max) <= 0) {
-                    settings.customSmColorConfigList.push(data);
-                }
-            });
-        } else settings.customSmColorConfigList = Config.customSmColorConfigList;
-    }
-    if (typeof options.modifyKFOtherDomainEnabled !== 'undefined') {
-        settings.modifyKFOtherDomainEnabled = typeof options.modifyKFOtherDomainEnabled === 'boolean' ? options.modifyKFOtherDomainEnabled : Config.modifyKFOtherDomainEnabled;
-    }
-    if (typeof options.multiQuoteEnabled !== 'undefined') {
-        settings.multiQuoteEnabled = typeof options.multiQuoteEnabled === 'boolean' ? options.multiQuoteEnabled : Config.multiQuoteEnabled;
-    }
-    if (typeof options.batchBuyThreadEnabled !== 'undefined') {
-        settings.batchBuyThreadEnabled = typeof options.batchBuyThreadEnabled === 'boolean' ? options.batchBuyThreadEnabled : Config.batchBuyThreadEnabled;
-    }
-    if (typeof options.userMemoEnabled !== 'undefined') {
-        settings.userMemoEnabled = typeof options.userMemoEnabled === 'boolean' ? options.userMemoEnabled : Config.userMemoEnabled;
-    }
-    if (typeof options.userMemoList !== 'undefined') {
-        if ($.type(options.userMemoList) === 'object') {
-            settings.userMemoList = {};
-            for (var user in options.userMemoList) {
-                var memo = $.trim(options.userMemoList[user]);
-                if (memo) settings.userMemoList[user] = memo;
+            if (key in Config && $.type(value) === $.type(Config[key])) {
+                settings[key] = value;
             }
-        } else settings.userMemoList = Config.userMemoList;
-    }
-    if (typeof options.parseMediaTagEnabled !== 'undefined') {
-        settings.parseMediaTagEnabled = typeof options.parseMediaTagEnabled === 'boolean' ? options.parseMediaTagEnabled : Config.parseMediaTagEnabled;
-    }
-    if (typeof options.showSelfRatingLinkEnabled !== 'undefined') {
-        settings.showSelfRatingLinkEnabled = typeof options.showSelfRatingLinkEnabled === 'boolean' ? options.showSelfRatingLinkEnabled : Config.showSelfRatingLinkEnabled;
-    }
-    if (typeof options.buyThreadViaAjaxEnabled !== 'undefined') {
-        settings.buyThreadViaAjaxEnabled = typeof options.buyThreadViaAjaxEnabled === 'boolean' ? options.buyThreadViaAjaxEnabled : Config.buyThreadViaAjaxEnabled;
-    }
-
-    if (typeof options.defShowMsgDuration !== 'undefined') {
-        var defShowMsgDuration = parseInt(options.defShowMsgDuration);
-        if (!isNaN(defShowMsgDuration) && defShowMsgDuration >= -1) settings.defShowMsgDuration = defShowMsgDuration;else settings.defShowMsgDuration = Config.defShowMsgDuration;
-    }
-    if (typeof options.animationEffectOffEnabled !== 'undefined') {
-        settings.animationEffectOffEnabled = typeof options.animationEffectOffEnabled === 'boolean' ? options.animationEffectOffEnabled : Config.animationEffectOffEnabled;
-    }
-    if (typeof options.logSaveDays !== 'undefined') {
-        var logSaveDays = parseInt(options.logSaveDays);
-        if (logSaveDays > 0) settings.logSaveDays = logSaveDays;else settings.logSaveDays = Config.logSaveDays;
-    }
-    if (typeof options.browseType !== 'undefined') {
-        if ($.inArray(options.browseType.toLowerCase(), ['auto', 'desktop', 'mobile']) > -1) settings.browseType = options.browseType.toLowerCase();else settings.browseType = Config.options.browseType;
-    }
-    if (typeof options.showLogLinkEnabled !== 'undefined') {
-        settings.showLogLinkEnabled = typeof options.showLogLinkEnabled === 'boolean' ? options.showLogLinkEnabled : Config.showLogLinkEnabled;
-    }
-    if (typeof options.showSearchLinkEnabled !== 'undefined') {
-        settings.showSearchLinkEnabled = typeof options.showSearchLinkEnabled === 'boolean' ? options.showSearchLinkEnabled : Config.showSearchLinkEnabled;
-    }
-    if (typeof options.logSortType !== 'undefined') {
-        var logSortType = $.trim(options.logSortType).toLowerCase();
-        var _allowTypes2 = ['time', 'type'];
-        if (logSortType !== '' && $.inArray(logSortType, _allowTypes2) > -1) settings.logSortType = logSortType;else settings.logSortType = Config.logSortType;
-    }
-    if (typeof options.logStatType !== 'undefined') {
-        var logStatType = $.trim(options.logStatType).toLowerCase();
-        var _allowTypes3 = ['cur', 'custom', 'all'];
-        if (logStatType !== '' && $.inArray(logStatType, _allowTypes3) > -1) settings.logStatType = logStatType;else settings.logStatType = Config.logStatType;
-    }
-    if (typeof options.logStatDays !== 'undefined') {
-        var logStatDays = parseInt(options.logStatDays);
-        if (logStatDays > 0) settings.logStatDays = logStatDays;else settings.logStatDays = Config.logStatDays;
-    }
-    if (typeof options.addSideBarFastNavEnabled !== 'undefined') {
-        settings.addSideBarFastNavEnabled = typeof options.addSideBarFastNavEnabled === 'boolean' ? options.addSideBarFastNavEnabled : Config.addSideBarFastNavEnabled;
-    }
-    if (typeof options.modifySideBarEnabled !== 'undefined') {
-        settings.modifySideBarEnabled = typeof options.modifySideBarEnabled === 'boolean' ? options.modifySideBarEnabled : Config.modifySideBarEnabled;
-    }
-    if (typeof options.customCssEnabled !== 'undefined') {
-        settings.customCssEnabled = typeof options.customCssEnabled === 'boolean' ? options.customCssEnabled : Config.customCssEnabled;
-    }
-    if (typeof options.customCssContent !== 'undefined') {
-        var customCssContent = $.trim(options.customCssContent);
-        if (customCssContent !== '') settings.customCssContent = customCssContent;else settings.customCssContent = Config.customCssContent;
-    }
-    if (typeof options.customScriptEnabled !== 'undefined') {
-        settings.customScriptEnabled = typeof options.customScriptEnabled === 'boolean' ? options.customScriptEnabled : Config.customScriptEnabled;
-    }
-    if (typeof options.customScriptStartContent !== 'undefined') {
-        if (typeof options.customScriptStartContent === 'string') settings.customScriptStartContent = options.customScriptStartContent;else settings.customScriptStartContent = Config.customScriptStartContent;
-    }
-    if (typeof options.customScriptEndContent !== 'undefined') {
-        if (typeof options.customScriptEndContent === 'string') settings.customScriptEndContent = options.customScriptEndContent;else settings.customScriptEndContent = Config.customScriptEndContent;
-    }
-
-    if (typeof options.followUserEnabled !== 'undefined') {
-        settings.followUserEnabled = typeof options.followUserEnabled === 'boolean' ? options.followUserEnabled : Config.followUserEnabled;
-    }
-    if (typeof options.highlightFollowUserThreadInHPEnabled !== 'undefined') {
-        settings.highlightFollowUserThreadInHPEnabled = typeof options.highlightFollowUserThreadInHPEnabled === 'boolean' ? options.highlightFollowUserThreadInHPEnabled : Config.highlightFollowUserThreadInHPEnabled;
-    }
-    if (typeof options.highlightFollowUserThreadLinkEnabled !== 'undefined') {
-        settings.highlightFollowUserThreadLinkEnabled = typeof options.highlightFollowUserThreadLinkEnabled === 'boolean' ? options.highlightFollowUserThreadLinkEnabled : Config.highlightFollowUserThreadLinkEnabled;
-    }
-    if (typeof options.followUserList !== 'undefined') {
-        if ($.isArray(options.followUserList)) {
-            settings.followUserList = [];
-            for (var i in options.followUserList) {
-                var _user = options.followUserList[i];
-                if ($.type(_user) === 'object' && $.type(_user.name) === 'string') {
-                    var _name = $.trim(_user.name);
-                    if (_name) settings.followUserList.push({ name: _name });
-                } else if ($.type(_user) === 'string') {
-                    var _name2 = $.trim(_user);
-                    if (_name2) settings.followUserList.push({ name: _name2 });
-                }
+        }
+    } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
             }
-        } else settings.followUserList = Config.followUserList;
-    }
-
-    if (typeof options.blockUserEnabled !== 'undefined') {
-        settings.blockUserEnabled = typeof options.blockUserEnabled === 'boolean' ? options.blockUserEnabled : Config.blockUserEnabled;
-    }
-    if (typeof options.blockUserDefaultType !== 'undefined') {
-        var blockUserDefaultType = parseInt(options.blockUserDefaultType);
-        if (!isNaN(blockUserDefaultType) && blockUserDefaultType >= 0 && blockUserDefaultType <= 2) settings.blockUserDefaultType = blockUserDefaultType;else settings.blockUserDefaultType = Config.blockUserDefaultType;
-    }
-    if (typeof options.blockUserAtTipsEnabled !== 'undefined') {
-        settings.blockUserAtTipsEnabled = typeof options.blockUserAtTipsEnabled === 'boolean' ? options.blockUserAtTipsEnabled : Config.blockUserAtTipsEnabled;
-    }
-    if (typeof options.blockUserForumType !== 'undefined') {
-        var blockUserForumType = parseInt(options.blockUserForumType);
-        if (!isNaN(blockUserForumType) && blockUserForumType >= 0 && blockUserForumType <= 2) settings.blockUserForumType = blockUserForumType;else settings.blockUserForumType = Config.blockUserForumType;
-    }
-    if (typeof options.blockUserFidList !== 'undefined') {
-        if ($.isArray(options.blockUserFidList)) {
-            settings.blockUserFidList = [];
-            for (var _i in options.blockUserFidList) {
-                var fid = parseInt(options.blockUserFidList[_i]);
-                if (!isNaN(fid) && fid > 0) settings.blockUserFidList.push(fid);
+        } finally {
+            if (_didIteratorError) {
+                throw _iteratorError;
             }
-        } else settings.blockUserFidList = Config.blockUserFidList;
-    }
-    if (typeof options.blockUserList !== 'undefined') {
-        if ($.isArray(options.blockUserList)) {
-            settings.blockUserList = [];
-            for (var _i2 in options.blockUserList) {
-                var _user2 = options.blockUserList[_i2];
-                if ($.type(_user2) === 'object' && $.type(_user2.name) === 'string' && $.type(_user2.type) === 'number') {
-                    var type = _user2.type;
-                    if (type < 0 || type > 2) type = Config.blockUserDefaultType;
-                    var _name3 = $.trim(_user2.name);
-                    if (_name3) settings.blockUserList.push({ name: _name3, type: type });
-                } else if ($.type(_user2) === 'string') {
-                    var _name4 = $.trim(_user2);
-                    if (_name4) settings.blockUserList.push({ name: _name4, type: Config.blockUserDefaultType });
-                }
-            }
-        } else settings.blockUserList = Config.blockUserList;
-    }
-    if (typeof options.blockThreadEnabled !== 'undefined') {
-        settings.blockThreadEnabled = typeof options.blockThreadEnabled === 'boolean' ? options.blockThreadEnabled : Config.blockThreadEnabled;
-    }
-    if (typeof options.blockThreadDefForumType !== 'undefined') {
-        var blockThreadDefForumType = parseInt(options.blockThreadDefForumType);
-        if (!isNaN(blockThreadDefForumType) && blockThreadDefForumType >= 0 && blockThreadDefForumType <= 2) settings.blockThreadDefForumType = blockThreadDefForumType;else settings.blockThreadDefForumType = Config.blockThreadDefForumType;
-    }
-    if (typeof options.blockThreadDefFidList !== 'undefined') {
-        if ($.isArray(options.blockThreadDefFidList)) {
-            settings.blockThreadDefFidList = [];
-            for (var _i3 in options.blockThreadDefFidList) {
-                var _fid = parseInt(options.blockThreadDefFidList[_i3]);
-                if (!isNaN(_fid) && _fid > 0) settings.blockThreadDefFidList.push(_fid);
-            }
-        } else settings.blockThreadDefFidList = Config.blockThreadDefFidList;
-    }
-    if (typeof options.blockThreadList !== 'undefined') {
-        if ($.isArray(options.blockThreadList)) {
-            settings.blockThreadList = [];
-            for (var _i4 in options.blockThreadList) {
-                var obj = options.blockThreadList[_i4];
-                if ($.type(obj) === 'object' && $.type(obj.keyWord) === 'string' && $.trim(obj.keyWord) !== '') {
-                    var newObj = { keyWord: obj.keyWord };
-                    if ($.isArray(obj.includeUser) && obj.includeUser.length > 0) newObj.includeUser = obj.includeUser;else if ($.isArray(obj.excludeUser) && obj.excludeUser.length > 0) newObj.excludeUser = obj.excludeUser;else if ($.isArray(obj.userName) && obj.userName.length > 0) newObj.includeUser = obj.userName;
-                    if ($.isArray(obj.includeFid) && obj.includeFid.length > 0) newObj.includeFid = obj.includeFid;else if ($.isArray(obj.excludeFid) && obj.excludeFid.length > 0) newObj.excludeFid = obj.excludeFid;
-                    settings.blockThreadList.push(newObj);
-                }
-            }
-        } else settings.blockThreadList = Config.blockThreadList;
-    }
-
-    if (typeof options.autoSaveCurrentDepositEnabled !== 'undefined') {
-        settings.autoSaveCurrentDepositEnabled = typeof options.autoSaveCurrentDepositEnabled === 'boolean' ? options.autoSaveCurrentDepositEnabled : Config.autoSaveCurrentDepositEnabled;
-    }
-    if (typeof options.saveCurrentDepositAfterKfb !== 'undefined') {
-        var saveCurrentDepositAfterKfb = parseInt(options.saveCurrentDepositAfterKfb);
-        if (saveCurrentDepositAfterKfb > 0) settings.saveCurrentDepositAfterKfb = saveCurrentDepositAfterKfb;else settings.saveCurrentDepositAfterKfb = Config.saveCurrentDepositAfterKfb;
-    }
-    if (typeof options.saveCurrentDepositKfb !== 'undefined') {
-        var saveCurrentDepositKfb = parseInt(options.saveCurrentDepositKfb);
-        if (saveCurrentDepositKfb > 0 && saveCurrentDepositKfb <= settings.saveCurrentDepositAfterKfb) settings.saveCurrentDepositKfb = saveCurrentDepositKfb;else settings.saveCurrentDepositKfb = Config.saveCurrentDepositKfb;
-    }
-
-    if (typeof options.autoChangeSMColorEnabled !== 'undefined') {
-        settings.autoChangeSMColorEnabled = typeof options.autoChangeSMColorEnabled === 'boolean' ? options.autoChangeSMColorEnabled : Config.autoChangeSMColorEnabled;
-    }
-    if (typeof options.autoChangeSMColorType !== 'undefined') {
-        var autoChangeSMColorType = $.trim(options.autoChangeSMColorType).toLowerCase();
-        var _allowTypes4 = ['random', 'sequence'];
-        if (autoChangeSMColorType !== '' && $.inArray(autoChangeSMColorType, _allowTypes4) > -1) settings.autoChangeSMColorType = autoChangeSMColorType;else settings.autoChangeSMColorType = Config.autoChangeSMColorType;
-    }
-    if (typeof options.autoChangeSMColorInterval !== 'undefined') {
-        var autoChangeSMColorInterval = parseInt(options.autoChangeSMColorInterval);
-        if (!isNaN(autoChangeSMColorInterval) && autoChangeSMColorInterval > 0) settings.autoChangeSMColorInterval = autoChangeSMColorInterval;else settings.autoChangeSMColorInterval = Config.autoChangeSMColorInterval;
-    }
-    if (typeof options.changeAllAvailableSMColorEnabled !== 'undefined') {
-        settings.changeAllAvailableSMColorEnabled = typeof options.changeAllAvailableSMColorEnabled === 'boolean' ? options.changeAllAvailableSMColorEnabled : Config.changeAllAvailableSMColorEnabled;
-    }
-    if (typeof options.customAutoChangeSMColorList !== 'undefined') {
-        if ($.isArray(options.customAutoChangeSMColorList)) {
-            settings.customAutoChangeSMColorList = [];
-            for (var _i5 in options.customAutoChangeSMColorList) {
-                var id = parseInt(options.customAutoChangeSMColorList[_i5]);
-                if (!isNaN(id) && id >= 1 && id <= 20) {
-                    settings.customAutoChangeSMColorList.push(id);
-                }
-            }
-        } else settings.customAutoChangeSMColorList = Config.customAutoChangeSMColorList;
+        }
     }
 
     return settings;
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./TmpLog":20,"./Util":21}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":10,"./Log":12,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
+/* 设置对话框模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.show = undefined;
+exports.showCommonImportOrExportConfigDialog = exports.show = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -1516,17 +1263,21 @@ var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
 
 var _Config = require('./Config');
 
-var _LogDialog = require('./LogDialog');
-
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1536,76 +1287,70 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * 显示设置对话框
  */
 var show = exports.show = function show() {
-    if ($('#pd_config').length > 0) return;
+    var dialogName = 'pdConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    (0, _Func.run)('ConfigDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a href="#">\u67E5\u770B\u65E5\u5FD7</a>\n    <a href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend><label><input id="pd_cfg_auto_refresh_enabled" type="checkbox">\u5B9A\u65F6\u6A21\u5F0F \n<span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u6350\u6B3E\u3001\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\uFF0C\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span></label></legend>\n      <label>\u6807\u9898\u63D0\u793A\u65B9\u6848<select id="pd_cfg_show_refresh_mode_tips_type"><option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n<option value="always">\u603B\u662F\u663E\u793A</option><option value="never">\u4E0D\u663E\u793A</option></select>\n<span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span></label>\n    </fieldset>\n    <fieldset>\n      <legend><label><input id="pd_cfg_auto_donation_enabled" type="checkbox">\u81EA\u52A8KFB\u6350\u6B3E</label></legend>\n      <label>KFB\u6350\u6B3E\u989D\u5EA6<input id="pd_cfg_donation_kfb" maxlength="4" style="width:32px" type="text">\n<span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span></label>\n      <label class="pd_cfg_ml">\u5728<input id="pd_cfg_donation_after_time" maxlength="8" style="width:55px" type="text">\n\u4E4B\u540E\u6350\u6B3E <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u6350\u6B3E\uFF0824\u5C0F\u65F6\u5236\uFF09\uFF0C\u4F8B\uFF1A22:30:00\uFF08\u6CE8\u610F\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u9519\u8FC7\u6350\u6B3E\uFF09">[?]</span></label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>@\u63D0\u9192<select id="pd_cfg_at_tips_handle_type" style="width:130px"><option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n<option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option><option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n<option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option><option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n<option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option></select>\n<span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_sm_level_up_alert_enabled" type="checkbox">\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192 \n<span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span></label><br>\n      <label><input id="pd_cfg_fixed_deposit_due_alert_enabled" type="checkbox">\u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192 \n<span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_sm_rank_change_alert_enabled" type="checkbox">\u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192 \n<span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span></label><br>\n      <label><input id="pd_cfg_home_page_thread_fast_goto_link_enabled" type="checkbox">\u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5 \n<span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_show_vip_surplus_time_enabled" type="checkbox">\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4 \n<span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span></label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF<select id="pd_cfg_per_page_floor_num"><option value="10">10</option>\n<option value="20">20</option><option value="30">30</option></select>\n<span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86KF\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span></label>\n      <label class="pd_cfg_ml">\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F<input id="pd_cfg_thread_content_font_size" maxlength="2" style="width: 20px;" type="text">px \n<span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span></label><br>\n      <label><input id="pd_cfg_adjust_thread_content_width_enabled" type="checkbox">\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6 \n<span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_turn_page_via_keyboard_enabled" type="checkbox">\u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875 \n<span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span></label><br>\n      <label><input id="pd_cfg_auto_change_sm_color_enabled_2" type="checkbox" data-disabled="#pd_cfg_auto_change_sm_color_page">\u81EA\u52A8\u66F4\u6362ID\u989C\u8272 \n<span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span></label>\n<a id="pd_cfg_auto_change_sm_color_page" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272<input id="pd_cfg_custom_my_sm_color" maxlength="7" style="width: 50px;" type="text">\n<input style="margin-left:0" type="color" id="pd_cfg_custom_my_sm_color_select">\n<span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009CFF\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span></label><br>\n      <label><input id="pd_cfg_custom_sm_color_enabled" type="checkbox" data-disabled="#pd_cfg_custom_sm_color_dialog">\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272 \n<span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span></label>\n<a class="pd_cfg_ml" id="pd_cfg_custom_sm_color_dialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label><input id="pd_cfg_modify_kf_other_domain_enabled" type="checkbox">\u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D \n<span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span></label><br>\n      <label><input id="pd_cfg_multi_quote_enabled" type="checkbox">\u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD \n<span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_show_self_rating_link_enabled" type="checkbox">\u663E\u793A\u81EA\u52A9\u8BC4\u5206\u94FE\u63A5 \n<span class="pd_cfg_tips" title="\u5728\u7B26\u5408\u6761\u4EF6\u7684\u5E16\u5B50\u9875\u9762\u663E\u793A\u81EA\u52A9\u8BC4\u5206\u7684\u94FE\u63A5\uFF08\u4EC5\u9650\u81EA\u52A9\u8BC4\u5206\u6D4B\u8BD5\u4EBA\u5458\u4F7F\u7528\uFF09">[?]</span></label><br>\n      <label><input id="pd_cfg_user_memo_enabled" type="checkbox" data-disabled="#pd_cfg_user_memo_dialog">\u663E\u793A\u7528\u6237\u5907\u6CE8 \n<span class="pd_cfg_tips" title="\u663E\u793A\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span></label>\n<a class="pd_cfg_ml" id="pd_cfg_user_memo_dialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n      <label class="pd_cfg_ml"><input id="pd_cfg_parse_media_tag_enabled" type="checkbox">\u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E \n<span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989811\u3011">[?]</span></label><br>\n      <label><input id="pd_cfg_batch_buy_thread_enabled" type="checkbox">\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u529F\u80FD \n<span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u7684\u529F\u80FD">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_buy_thread_via_ajax_enabled" type="checkbox">\u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50 \n<span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span></label><br>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label><input id="pd_cfg_show_fast_goto_thread_page_enabled" type="checkbox" data-disabled="#pd_cfg_max_fast_goto_thread_page_num">\n\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5 <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span></label>\n      <label class="pd_cfg_ml">\u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF<input id="pd_cfg_max_fast_goto_thread_page_num" style="width:25px" maxlength="4" type="text">\n<span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span></label><br>\n      <label><input id="pd_cfg_highlight_new_post_enabled" type="checkbox">\u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16 \n<span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span></label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\u5B58\u50A8\u7C7B\u578B<select id="pd_cfg_storage_type"><option value="Default">\u9ED8\u8BA4</option>\n<option value="ByUid">\u6309uid</option><option value="Global">\u5168\u5C40</option></select>\n<span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span></label>\n      <label class="pd_cfg_ml">\u6D4F\u89C8\u5668\u7C7B\u578B<select id="pd_cfg_browse_type"><option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n<option value="desktop">\u684C\u9762\u7248</option><option value="mobile">\u79FB\u52A8\u7248</option></select>\n<span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span></label><br>\n      <label><input id="pd_cfg_animation_effect_off_enabled" type="checkbox">\u7981\u7528\u52A8\u753B\u6548\u679C \n<span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span></label><br>\n      <label>\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4<input id="pd_cfg_def_show_msg_duration" maxlength="5" style="width: 30px;" type="text">\u79D2 \n<span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span></label>\n      <label class="pd_cfg_ml">\u65E5\u5FD7\u4FDD\u5B58\u5929\u6570<input id="pd_cfg_log_save_days" maxlength="3" style="width:25px" type="text">\n<span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span></label><br>\n      <label><input id="pd_cfg_show_log_link_enabled" type="checkbox">\u663E\u793A\u65E5\u5FD7\u94FE\u63A5 \n<span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u52A9\u624B\u65E5\u5FD7\u7684\u94FE\u63A5">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_show_search_link_enabled" type="checkbox">\u663E\u793A\u641C\u7D22\u94FE\u63A5 \n<span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span></label><br>\n      <label><input id="pd_cfg_add_side_bar_fast_nav_enabled" type="checkbox">\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A \n<span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span></label>\n      <label class="pd_cfg_ml"><input id="pd_cfg_modify_side_bar_enabled" type="checkbox">\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F \n<span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span></label><br>\n      <label><input id="pd_cfg_custom_css_enabled" type="checkbox" data-disabled="#pd_cfg_custom_css_dialog">\u6DFB\u52A0\u81EA\u5B9A\u4E49CSS \n<span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span></label>\n<a class="pd_cfg_ml" id="pd_cfg_custom_css_dialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label><input id="pd_cfg_custom_script_enabled" type="checkbox" data-disabled="#pd_cfg_custom_script_dialog">\u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C \n<span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span></label>\n<a class="pd_cfg_ml" id="pd_cfg_custom_script_dialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label><input id="pd_cfg_follow_user_enabled" type="checkbox" data-disabled="#pd_cfg_follow_user_dialog">\u5173\u6CE8\u7528\u6237 \n<span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span></label>\n<a class="pd_cfg_ml" id="pd_cfg_follow_user_dialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label><input id="pd_cfg_block_user_enabled" type="checkbox" data-disabled="#pd_cfg_block_user_dialog">\u5C4F\u853D\u7528\u6237 \n<span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span></label>\n<a class="pd_cfg_ml" id="pd_cfg_block_user_dialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label><input id="pd_cfg_block_thread_enabled" type="checkbox" data-disabled="#pd_cfg_block_thread_dialog">\u5C4F\u853D\u5E16\u5B50 \n<span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span></label>\n<a class="pd_cfg_ml" id="pd_cfg_block_thread_dialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend><label><input id="pd_cfg_auto_save_current_deposit_enabled" type="checkbox">\u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E \n<span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span></label></legend>\n      <label>\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1<input id="pd_cfg_save_current_deposit_after_kfb" maxlength="10" style="width:45px" type="text">KFB\u4E4B\u540E \n<span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span></label><br>\n      <label>\u5C06<input id="pd_cfg_save_current_deposit_kfb" maxlength="10" style="width:45px" type="text">KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E \n<span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span></label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color:#666;font-style:normal">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button><button>\u9ED8\u8BA4\u503C</button>\n</div>';
-    var $dialog = Dialog.create('pd_config', 'KF Online助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
+    Func.run('ConfigDialog.show_before_');
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoRefreshEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u6350\u6B3E\u3001\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\uFF0C\u53EA\u5728\u8BBA\u575B\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showRefreshModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoDonationEnabled" type="checkbox"> \u81EA\u52A8KFB\u6350\u6B3E</label>\n      </legend>\n      <label>\n        KFB\u6350\u6B3E\u989D\u5EA6\n        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text">\n        <span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5728 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> \u4E4B\u540E\u6350\u6B3E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u6350\u6B3E\uFF0824\u5C0F\u65F6\u5236\uFF09\uFF0C\u4F8B\uFF1A22:30:00\uFF08\u6CE8\u610F\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u9519\u8FC7\u6350\u6B3E\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 130px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86KF\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" maxlength="2" style="width: 20px;" type="text"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u663E\u793A\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="batchBuyThreadEnabled" type="checkbox"> \u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u7684\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="buyThreadViaAjaxEnabled" type="checkbox"> \u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSelfRatingLinkEnabled" type="checkbox"> \u663E\u793A\u81EA\u52A9\u8BC4\u5206\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7B26\u5408\u6761\u4EF6\u7684\u5E16\u5B50\u9875\u9762\u663E\u793A\u81EA\u52A9\u8BC4\u5206\u7684\u94FE\u63A5\uFF08\u4EC5\u9650\u81EA\u52A9\u8BC4\u5206\u6D4B\u8BD5\u4EBA\u5458\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml" ' + (_Info2.default.isInMiaolaDomain ? '' : 'hidden') + '>\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox"> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" style="width: 25px;" maxlength="4" type="text">\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" maxlength="5" style="width: 30px;" type="text"> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" maxlength="3" style="width: 25px;" type="text">\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSideBarFastNavEnabled" type="checkbox"> \u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\n        <span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" maxlength="10" style="width: 45px;" type="text"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" maxlength="10" style="width: 45px;" type="text"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button name="ok">\u786E\u5B9A</button>\n  <button name="cancel">\u53D6\u6D88</button>\n  <button name="default">\u9ED8\u8BA4\u503C</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
-    $dialog.find('.pd_cfg_btns > button:eq(1)').click(function () {
-        return Dialog.close('pd_config');
-    }).end().find('.pd_cfg_btns > button:eq(2)').click(function (e) {
+    $dialog.find('[name="cancel"]').click(function () {
+        return Dialog.close(dialogName);
+    }).end().find('[name="default"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否重置所有设置？')) {
             (0, _Config.clear)();
             alert('设置已重置');
             location.reload();
         }
-    }).end().find('.pd_cfg_nav > a:first-child').click(function (e) {
+    }).end().find('[data-name="clearTmpData"]').click(function (e) {
         e.preventDefault();
-        var type = prompt('可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n' + '请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据', 0);
+        var type = prompt('可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据', 0);
         if (type === null) return;
-        type = parseInt($.trim(type));
+        type = parseInt(type);
         if (!isNaN(type) && type >= 0) {
             clearTmpData(type);
             alert('缓存已清除');
         }
-    }).next('a').click(function (e) {
-        e.preventDefault();
-        showRunCommandDialog();
-    }).next('a').click(function (e) {
-        e.preventDefault();
-        (0, _LogDialog.show)();
-    }).next('a').click(function (e) {
-        e.preventDefault();
-        showImportOrExportSettingDialog();
     });
 
-    $dialog.on('click', 'a[id^="pd_cfg_"][href="#"]', function (e) {
+    $dialog.on('click', 'a[data-name^="open"][href="#"]', function (e) {
         e.preventDefault();
-        if ($(this).hasClass('pd_disabled_link')) return;
-        if (this.id === 'pd_cfg_custom_sm_color_dialog') showCustomSmColorDialog();else if (this.id === 'pd_cfg_user_memo_dialog') showUserMemoDialog();else if (this.id === 'pd_cfg_custom_css_dialog') showCustomCssDialog();else if (this.id === 'pd_cfg_custom_script_dialog') showCustomScriptDialog();else if (this.id === 'pd_cfg_follow_user_dialog') showFollowUserDialog();else if (this.id === 'pd_cfg_block_user_dialog') showBlockUserDialog();else if (this.id === 'pd_cfg_block_thread_dialog') showBlockThreadDialog();
-    }).end().find('#pd_cfg_custom_my_sm_color_select').change(function () {
-        $('#pd_cfg_custom_my_sm_color').val($(this).val().toString().toUpperCase());
-    }).end().find('pd_cfg_custom_my_sm_color').keyup(function () {
-        var customMySmColor = $.trim($(this).val());
-        if (/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
-            $('pd_cfg_custom_my_sm_color_select').val(customMySmColor.toUpperCase());
-        }
+        var $this = $(this);
+        if ($this.hasClass('pd_disabled_link')) return;
+        var name = $this.data('name');
+        if (name === 'openRumCommandDialog') showRunCommandDialog();
+        if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
+        if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
+    }).end().find('[data-name="customMySmColorSelect"]').change(function () {
+        $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
+    }).end().find('[name="customMySmColor"]').change(function () {
+        var color = $.trim($(this).val());
+        if (/^#[0-9a-fA-F]{6}$/.test(color)) $dialog.find('[data-name="customMySmColorSelect"]').val(color.toLowerCase());
     });
 
-    setValue();
+    setMainConfigValue($dialog);
     $dialog.submit(function (e) {
         e.preventDefault();
         $('.pd_cfg_btns > button:first').click();
     }).end().find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        if (!verify()) return;
+        if (!verifyMainConfig($dialog)) return;
         var oriAutoRefreshEnabled = Config.autoRefreshEnabled;
         (0, _Config.read)();
-        var options = getValue();
+        var options = getMainConfigValue($dialog);
         options = (0, _Config.normalize)(options);
         $.extend(Config, options);
         (0, _Config.write)();
-        var storageType = $('#pd_cfg_storage_type').val();
+        var storageType = $dialog.find('[data-name="storageType"]').val();
         if (storageType !== _Info2.default.storageType) {
+            if (!confirm('是否修改存储类型？')) return;
             (0, _Config.changeStorageType)(storageType);
             alert('存储类型已修改');
-            Dialog.close('pd_config');
             location.reload();
             return;
         }
-        Dialog.close('pd_config');
+        Dialog.close(dialogName);
         if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
             if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
                 location.reload();
@@ -1613,138 +1358,54 @@ var show = exports.show = function show() {
         }
     });
 
-    Dialog.show('pd_config');
+    Dialog.show(dialogName);
     $dialog.find('a:first').focus();
-    (0, _Func.run)('ConfigDialog.show_after_');
+    Func.run('ConfigDialog.show_after_');
 };
 
 /**
- * 设置对话框中的字段值
+ * 设置主对话框中的字段值
+ * @param {jQuery} $dialog 助手设置对话框对象
  */
-var setValue = function setValue() {
-    $('#pd_cfg_auto_refresh_enabled').prop('checked', Config.autoRefreshEnabled);
-    $('#pd_cfg_show_refresh_mode_tips_type').val(Config.showRefreshModeTipsType.toLowerCase());
+var setMainConfigValue = function setMainConfigValue($dialog) {
+    $dialog.find('input[name], select[name]').each(function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        if (name in Config) {
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') $this.prop('checked', Config[name] === true);else $this.val(Config[name]);
+        }
+    });
+    $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
+    $dialog.find('[data-name="customMySmColorSelect"]').val(Config.customMySmColor);
 
-    $('#pd_cfg_auto_donation_enabled').prop('checked', Config.autoDonationEnabled);
-    $('#pd_cfg_donation_kfb').val(Config.donationKfb);
-    $('#pd_cfg_donation_after_time').val(Config.donationAfterTime);
-
-    $('#pd_cfg_at_tips_handle_type').val(Config.atTipsHandleType.toLowerCase());
-    $('#pd_cfg_sm_level_up_alert_enabled').prop('checked', Config.smLevelUpAlertEnabled);
-    $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked', Config.fixedDepositDueAlertEnabled);
-    $('#pd_cfg_sm_rank_change_alert_enabled').prop('checked', Config.smRankChangeAlertEnabled);
-    $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked', Config.homePageThreadFastGotoLinkEnabled);
-    $('#pd_cfg_show_vip_surplus_time_enabled').prop('checked', Config.showVipSurplusTimeEnabled);
-
-    $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked', Config.showFastGotoThreadPageEnabled);
-    $('#pd_cfg_max_fast_goto_thread_page_num').val(Config.maxFastGotoThreadPageNum);
-    $('#pd_cfg_highlight_new_post_enabled').prop('checked', Config.highlightNewPostEnabled);
-
-    $('#pd_cfg_per_page_floor_num').val(Config.perPageFloorNum);
-    $('#pd_cfg_thread_content_font_size').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
-    $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked', Config.adjustThreadContentWidthEnabled);
-    $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked', Config.turnPageViaKeyboardEnabled);
-    $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked', Config.autoChangeSMColorEnabled);
-    $('#pd_cfg_custom_my_sm_color').val(Config.customMySmColor);
-    if (Config.customMySmColor) $('#pd_cfg_custom_my_sm_color_select').val(Config.customMySmColor);
-    $('#pd_cfg_custom_sm_color_enabled').prop('checked', Config.customSmColorEnabled);
-    $('#pd_cfg_modify_kf_other_domain_enabled').prop('checked', Config.modifyKFOtherDomainEnabled);
-    $('#pd_cfg_multi_quote_enabled').prop('checked', Config.multiQuoteEnabled);
-    $('#pd_cfg_batch_buy_thread_enabled').prop('checked', Config.batchBuyThreadEnabled);
-    $('#pd_cfg_user_memo_enabled').prop('checked', Config.userMemoEnabled);
-    $('#pd_cfg_parse_media_tag_enabled').prop('checked', Config.parseMediaTagEnabled);
-    $('#pd_cfg_show_self_rating_link_enabled').prop('checked', Config.showSelfRatingLinkEnabled);
-    $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked', Config.buyThreadViaAjaxEnabled);
-
-    $('#pd_cfg_def_show_msg_duration').val(Config.defShowMsgDuration);
-    $('#pd_cfg_animation_effect_off_enabled').prop('checked', Config.animationEffectOffEnabled);
-    $('#pd_cfg_log_save_days').val(Config.logSaveDays);
-    $('#pd_cfg_browse_type').val(Config.browseType);
-    $('#pd_cfg_show_log_link_enabled').prop('checked', Config.showLogLinkEnabled);
-    $('#pd_cfg_show_search_link_enabled').prop('checked', Config.showSearchLinkEnabled);
-    $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked', Config.addSideBarFastNavEnabled);
-    $('#pd_cfg_modify_side_bar_enabled').prop('checked', Config.modifySideBarEnabled);
-    $('#pd_cfg_custom_css_enabled').prop('checked', Config.customCssEnabled);
-    $('#pd_cfg_custom_script_enabled').prop('checked', Config.customScriptEnabled);
-
-    $('#pd_cfg_follow_user_enabled').prop('checked', Config.followUserEnabled);
-    $('#pd_cfg_block_user_enabled').prop('checked', Config.blockUserEnabled);
-    $('#pd_cfg_block_thread_enabled').prop('checked', Config.blockThreadEnabled);
-
-    $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked', Config.autoSaveCurrentDepositEnabled);
-    if (Config.saveCurrentDepositAfterKfb > 0) $('#pd_cfg_save_current_deposit_after_kfb').val(Config.saveCurrentDepositAfterKfb);
-    if (Config.saveCurrentDepositKfb > 0) $('#pd_cfg_save_current_deposit_kfb').val(Config.saveCurrentDepositKfb);
-
-    $('#pd_cfg_storage_type').val(_Info2.default.storageType);
-    if (typeof GM_getValue === 'undefined') $('#pd_cfg_storage_type > option:gt(0)').prop('disabled', true);
+    $dialog.find('[data-name="storageType"]').val(_Info2.default.storageType);
+    if (typeof GM_getValue === 'undefined') $dialog.find('[data-name="storageType"] > option:gt(0)').prop('disabled', true);
 };
 
 /**
- * 获取对话框中字段值的Config对象
- * @returns {Config} 字段值的Config对象
+ * 获取主对话框中字段值的Config对象
+ * @param {jQuery} $dialog 助手设置对话框对象
+ * @returns {{}} 字段值的Config对象
  */
-var getValue = function getValue() {
+var getMainConfigValue = function getMainConfigValue($dialog) {
     var options = {};
-    options.autoRefreshEnabled = $('#pd_cfg_auto_refresh_enabled').prop('checked');
-    options.showRefreshModeTipsType = $('#pd_cfg_show_refresh_mode_tips_type').val();
-
-    options.autoDonationEnabled = $('#pd_cfg_auto_donation_enabled').prop('checked');
-    options.donationKfb = $.trim($('#pd_cfg_donation_kfb').val());
-    options.donationAfterTime = $('#pd_cfg_donation_after_time').val();
-
-    options.atTipsHandleType = $('#pd_cfg_at_tips_handle_type').val();
-    options.smLevelUpAlertEnabled = $('#pd_cfg_sm_level_up_alert_enabled').prop('checked');
-    options.fixedDepositDueAlertEnabled = $('#pd_cfg_fixed_deposit_due_alert_enabled').prop('checked');
-    options.smRankChangeAlertEnabled = $('#pd_cfg_sm_rank_change_alert_enabled').prop('checked');
-    options.homePageThreadFastGotoLinkEnabled = $('#pd_cfg_home_page_thread_fast_goto_link_enabled').prop('checked');
-    options.showVipSurplusTimeEnabled = $('#pd_cfg_show_vip_surplus_time_enabled').prop('checked');
-
-    options.showFastGotoThreadPageEnabled = $('#pd_cfg_show_fast_goto_thread_page_enabled').prop('checked');
-    options.maxFastGotoThreadPageNum = parseInt($.trim($('#pd_cfg_max_fast_goto_thread_page_num').val()));
-    options.highlightNewPostEnabled = $('#pd_cfg_highlight_new_post_enabled').prop('checked');
-
-    options.perPageFloorNum = $('#pd_cfg_per_page_floor_num').val();
-    options.threadContentFontSize = parseInt($.trim($('#pd_cfg_thread_content_font_size').val()));
-    options.adjustThreadContentWidthEnabled = $('#pd_cfg_adjust_thread_content_width_enabled').prop('checked');
-    options.turnPageViaKeyboardEnabled = $('#pd_cfg_turn_page_via_keyboard_enabled').prop('checked');
-    options.autoChangeSMColorEnabled = $('#pd_cfg_auto_change_sm_color_enabled_2').prop('checked');
-    options.customMySmColor = $.trim($('#pd_cfg_custom_my_sm_color').val()).toUpperCase();
-    options.customSmColorEnabled = $('#pd_cfg_custom_sm_color_enabled').prop('checked');
-    options.modifyKFOtherDomainEnabled = $('#pd_cfg_modify_kf_other_domain_enabled').prop('checked');
-    options.multiQuoteEnabled = $('#pd_cfg_multi_quote_enabled').prop('checked');
-    options.batchBuyThreadEnabled = $('#pd_cfg_batch_buy_thread_enabled').prop('checked');
-    options.userMemoEnabled = $('#pd_cfg_user_memo_enabled').prop('checked');
-    options.parseMediaTagEnabled = $('#pd_cfg_parse_media_tag_enabled').prop('checked');
-    options.showSelfRatingLinkEnabled = $('#pd_cfg_show_self_rating_link_enabled').prop('checked');
-    options.buyThreadViaAjaxEnabled = $('#pd_cfg_buy_thread_via_ajax_enabled').prop('checked');
-
-    options.defShowMsgDuration = parseInt($.trim($('#pd_cfg_def_show_msg_duration').val()));
-    options.animationEffectOffEnabled = $('#pd_cfg_animation_effect_off_enabled').prop('checked');
-    options.logSaveDays = parseInt($.trim($('#pd_cfg_log_save_days').val()));
-    options.browseType = $('#pd_cfg_browse_type').val();
-    options.showLogLinkEnabled = $('#pd_cfg_show_log_link_enabled').prop('checked');
-    options.showSearchLinkEnabled = $('#pd_cfg_show_search_link_enabled').prop('checked');
-    options.addSideBarFastNavEnabled = $('#pd_cfg_add_side_bar_fast_nav_enabled').prop('checked');
-    options.modifySideBarEnabled = $('#pd_cfg_modify_side_bar_enabled').prop('checked');
-    options.customCssEnabled = $('#pd_cfg_custom_css_enabled').prop('checked');
-    options.customScriptEnabled = $('#pd_cfg_custom_script_enabled').prop('checked');
-
-    options.followUserEnabled = $('#pd_cfg_follow_user_enabled').prop('checked');
-    options.blockUserEnabled = $('#pd_cfg_block_user_enabled').prop('checked');
-    options.blockThreadEnabled = $('#pd_cfg_block_thread_enabled').prop('checked');
-
-    options.autoSaveCurrentDepositEnabled = $('#pd_cfg_auto_save_current_deposit_enabled').prop('checked');
-    options.saveCurrentDepositAfterKfb = parseInt($.trim($('#pd_cfg_save_current_deposit_after_kfb').val()));
-    options.saveCurrentDepositKfb = parseInt($.trim($('#pd_cfg_save_current_deposit_kfb').val()));
+    $dialog.find('input[name], select[name]').each(function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        if (name in Config) {
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') options[name] = Boolean($this.prop('checked'));else if (typeof Config[name] === 'number') options[name] = parseInt($this.val());else options[name] = $.trim($this.val());
+        }
+    });
     return options;
 };
 
 /**
- * 验证设置是否正确
+ * 验证主对话框设置是否正确
+ * @param {jQuery} $dialog 助手设置对话框对象
  * @returns {boolean} 是否验证通过
  */
-var verify = function verify() {
-    var $txtDonationKfb = $('#pd_cfg_donation_kfb');
+var verifyMainConfig = function verifyMainConfig($dialog) {
+    var $txtDonationKfb = $dialog.find('[name="donationKfb"]');
     var donationKfb = $.trim($txtDonationKfb.val());
     if (/%$/.test(donationKfb)) {
         if (!/^1?\d?\d%$/.test(donationKfb)) {
@@ -1767,14 +1428,14 @@ var verify = function verify() {
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > _Const2.default.maxDonationKfb) {
-            alert('KFB捐款额度的取值范围在1-{0}之间'.replace('{0}', _Const2.default.maxDonationKfb));
+            alert('KFB\u6350\u6B3E\u989D\u5EA6\u7684\u53D6\u503C\u8303\u56F4\u57281-' + _Const2.default.maxDonationKfb + '\u4E4B\u95F4');
             $txtDonationKfb.select();
             $txtDonationKfb.focus();
             return false;
         }
     }
 
-    var $txtDonationAfterTime = $('#pd_cfg_donation_after_time');
+    var $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
     var donationAfterTime = $.trim($txtDonationAfterTime.val());
     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
         alert('在指定时间之后捐款格式不正确');
@@ -1783,7 +1444,7 @@ var verify = function verify() {
         return false;
     }
 
-    var $txtMaxFastGotoThreadPageNum = $('#pd_cfg_max_fast_goto_thread_page_num');
+    var $txtMaxFastGotoThreadPageNum = $dialog.find('[name="maxFastGotoThreadPageNum"]');
     var maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());
     if (!$.isNumeric(maxFastGotoThreadPageNum) || parseInt(maxFastGotoThreadPageNum) <= 0) {
         alert('页数链接最大数量格式不正确');
@@ -1792,7 +1453,7 @@ var verify = function verify() {
         return false;
     }
 
-    var $txtThreadContentFontSize = $('#pd_cfg_thread_content_font_size');
+    var $txtThreadContentFontSize = $dialog.find('[name="threadContentFontSize"]');
     var threadContentFontSize = $.trim($txtThreadContentFontSize.val());
     if (threadContentFontSize && (isNaN(parseInt(threadContentFontSize)) || parseInt(threadContentFontSize) < 0)) {
         alert('帖子内容字体大小格式不正确');
@@ -1801,16 +1462,16 @@ var verify = function verify() {
         return false;
     }
 
-    var $txtCustomMySmColor = $('#pd_cfg_custom_my_sm_color');
+    var $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     var customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
-        alert('自定义本人的神秘颜色格式不正确，例：#009CFF');
+        alert('自定义本人的神秘颜色格式不正确，例：#009cff');
         $txtCustomMySmColor.select();
         $txtCustomMySmColor.focus();
         return false;
     }
 
-    var $txtDefShowMsgDuration = $('#pd_cfg_def_show_msg_duration');
+    var $txtDefShowMsgDuration = $dialog.find('[name="defShowMsgDuration"]');
     var defShowMsgDuration = $.trim($txtDefShowMsgDuration.val());
     if (!$.isNumeric(defShowMsgDuration) || parseInt(defShowMsgDuration) < -1) {
         alert('默认的消息显示时间格式不正确');
@@ -1819,7 +1480,7 @@ var verify = function verify() {
         return false;
     }
 
-    var $txtLogSaveDays = $('#pd_cfg_log_save_days');
+    var $txtLogSaveDays = $dialog.find('[name="logSaveDays"]');
     var logSaveDays = $.trim($txtLogSaveDays.val());
     if (!$.isNumeric(logSaveDays) || parseInt(logSaveDays) < 1) {
         alert('日志保存天数格式不正确');
@@ -1828,8 +1489,8 @@ var verify = function verify() {
         return false;
     }
 
-    var $txtSaveCurrentDepositAfterKfb = $('#pd_cfg_save_current_deposit_after_kfb');
-    var $txtSaveCurrentDepositKfb = $('#pd_cfg_save_current_deposit_kfb');
+    var $txtSaveCurrentDepositAfterKfb = $dialog.find('[name="saveCurrentDepositAfterKfb"]');
+    var $txtSaveCurrentDepositKfb = $dialog.find('[name="saveCurrentDepositKfb"]');
     var saveCurrentDepositAfterKfb = parseInt($txtSaveCurrentDepositAfterKfb.val());
     var saveCurrentDepositKfb = parseInt($txtSaveCurrentDepositKfb.val());
     if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
@@ -1874,28 +1535,24 @@ var clearTmpData = function clearTmpData() {
  * 显示运行命令对话框
  */
 var showRunCommandDialog = function showRunCommandDialog() {
-    if ($('#pd_run_command').length > 0) return;
-    Dialog.close('pd_config');
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\u8FD0\u884C\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+Enter</b>\uFF1B\u6E05\u9664\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+\u9000\u683C\u952E</b><br>\n\u6309<b>F12\u952E</b>\u53EF\u6253\u5F00\u6D4F\u89C8\u5668\u63A7\u5236\u53F0\u67E5\u770B\u6D88\u606F\uFF08\u9700\u5207\u6362\u81F3\u63A7\u5236\u53F0\u6216Console\u6807\u7B7E\uFF09</div>\n  <textarea wrap="off" style="width: 750px; height: 300px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u8FD0\u884C</button><button>\u6E05\u9664</button><button>\u5173\u95ED</button>\n</div>';
-    var $dialog = Dialog.create('pd_run_command', '运行命令', html);
-    var $textArea = $dialog.find('textarea');
+    var dialogName = 'pdRunCommandDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Dialog.close('pdConfigDialog');
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\n    \u8FD0\u884C\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+Enter</b>\uFF1B\u6E05\u9664\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+\u9000\u683C\u952E</b><br>\n    \u6309<b>F12\u952E</b>\u53EF\u6253\u5F00\u6D4F\u89C8\u5668\u63A7\u5236\u53F0\u67E5\u770B\u6D88\u606F\uFF08\u9700\u5207\u6362\u81F3\u63A7\u5236\u53F0\u6216Console\u6807\u7B7E\uFF09\n  </div>\n  <textarea name="cmd" wrap="off" style="width: 750px; height: 300px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u8FD0\u884C</button> <button>\u6E05\u9664</button> <button>\u5173\u95ED</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '运行命令', html);
+    var $cmd = $dialog.find('[name="cmd"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        var content = $textArea.val();
-        if (!content) return;
-        try {
-            console.log(eval(content));
-        } catch (ex) {
-            console.log(ex);
-        }
+        var content = $cmd.val();
+        if (content) Script.runCmd(content, true);
     }).next('button').click(function (e) {
         e.preventDefault();
-        $textArea.val('').focus();
+        $cmd.val('').focus();
     }).next('button').click(function () {
-        return Dialog.close('pd_run_command');
+        return Dialog.close(dialogName);
     });
-    Dialog.show('pd_run_command');
-    $textArea.keyup(function (e) {
+    Dialog.show(dialogName);
+    $cmd.keyup(function (e) {
         if (e.ctrlKey && e.keyCode === 13) {
             $dialog.find('.pd_cfg_btns > button:first').click();
         } else if (e.ctrlKey && e.keyCode === 8) {
@@ -1908,14 +1565,16 @@ var showRunCommandDialog = function showRunCommandDialog() {
  * 显示导入或导出设置对话框
  */
 var showImportOrExportSettingDialog = function showImportOrExportSettingDialog() {
-    if ($('#pd_im_or_ex_setting').length > 0) return;
+    var dialogName = 'pdImOrExSettingDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea id="pd_cfg_setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u4FDD\u5B58</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_im_or_ex_setting', '导入或导出设置', html);
+    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u4FDD\u5B58</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '导入或导出设置', html);
+    var $setting = $dialog.find('[name="setting"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
-        var options = $.trim($('#pd_cfg_setting').val());
+        var options = $.trim($setting.val());
         if (!options) return;
         try {
             options = JSON.parse(options);
@@ -1928,38 +1587,39 @@ var showImportOrExportSettingDialog = function showImportOrExportSettingDialog()
             return;
         }
         options = (0, _Config.normalize)(options);
-        _Info2.default.w.Config = $.extend(true, {}, _Config.Config, options);
+        window.Config = $.extend(true, {}, _Config.Config, options);
         (0, _Config.write)();
         alert('设置已导入');
         location.reload();
     }).next('button').click(function () {
-        return Dialog.close('pd_im_or_ex_setting');
+        return Dialog.close(dialogName);
     });
-    Dialog.show('pd_im_or_ex_setting');
-    $('#pd_cfg_setting').val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select();
+    Dialog.show(dialogName);
+    $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select();
 };
 
 /**
  * 显示自定义各等级神秘颜色设置对话框
  */
 var showCustomSmColorDialog = function showCustomSmColorDialog() {
-    if ($('#pd_custom_sm_color').length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    <strong>\n      \u793A\u4F8B\uFF08<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">\u5E38\u7528\u914D\u8272\u8868</a> /\n      <a target="_blank" href="read.php?tid=488016">\u5176\u4ED6\u4EBA\u5206\u4EAB\u7684\u914D\u8272\u65B9\u6848</a>\uFF09\uFF1A\n    </strong><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>4-4 <b>\u989C\u8272\uFF1A</b><span style="color: #0000ff;">#0000ff</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>10-99 <b>\u989C\u8272\uFF1A</b><span style="color: #5ad465;">#5ad465</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>5000-MAX <b>\u989C\u8272\uFF1A</b><span style="color: #ff0000;">#ff0000</span>\n  </div>\n  <ul id="pd_cfg_custom_sm_color_list"></ul>\n  <div style="margin-top: 5px;" id="pd_cfg_custom_sm_color_add_btns">\n    <a href="#">\u589E\u52A01\u4E2A</a><a href="#" style="margin-left: 7px;">\u589E\u52A05\u4E2A</a><a href="#" style="margin-left: 7px;">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u914D\u8272\u65B9\u6848</a></span>\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_custom_sm_color', '自定义各等级神秘颜色', html);
-    var $customSmColorList = $dialog.find('#pd_cfg_custom_sm_color_list');
+    var dialogName = 'pdCustomSmColorDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    <strong>\n      \u793A\u4F8B\uFF08<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">\u5E38\u7528\u914D\u8272\u8868</a> / \n      <a target="_blank" href="read.php?tid=488016">\u914D\u8272\u65B9\u6848\u6536\u96C6\u8D34</a>\uFF09\uFF1A\n    </strong><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>4-4 <b>\u989C\u8272\uFF1A</b><span style="color: #0000ff;">#0000ff</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>10-99 <b>\u989C\u8272\uFF1A</b><span style="color: #5ad465;">#5ad465</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>5000-MAX <b>\u989C\u8272\uFF1A</b><span style="color: #ff0000;">#ff0000</span>\n  </div>\n  <ul data-name="smColorList"></ul>\n  <div style="margin-top: 5px;" data-name="customSmColorAddBtns">\n    <a class="pd_btn_link" data-action="addOne" href="#">\u589E\u52A01\u4E2A</a>\n    <a class="pd_btn_link" data-action="addFive" href="#">\u589E\u52A05\u4E2A</a>\n    <a class="pd_btn_link" data-action="clear" href="#">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u914D\u8272\u65B9\u6848</a></span>\n  <button>\u786E\u5B9A</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html, 'min-width: 327px;');
+    var $customSmColorList = $dialog.find('[data-name="smColorList"]');
     $dialog.find('.pd_cfg_btns > button:last').click(function () {
-        return Dialog.close('pd_custom_sm_color');
+        return Dialog.close(dialogName);
     });
 
-    $customSmColorList.on('keyup', '.pd_cfg_sm_color', function () {
+    $customSmColorList.on('change', '[name="color"]', function () {
         var $this = $(this);
         var color = $.trim($this.val());
         if (/^#[0-9a-fA-F]{6}$/.test(color)) {
-            $this.next('input[type="color"]').val(color.toLowerCase());
+            $this.next('[type="color"]').val(color.toLowerCase());
         }
-    }).on('change', 'input[type="color"]', function () {
+    }).on('change', '[type="color"]', function () {
         var $this = $(this);
-        $this.prev('input').val($this.val().toString().toLowerCase());
+        $this.prev('[type="text"]').val($this.val().toString().toLowerCase());
     }).on('click', 'a', function (e) {
         e.preventDefault();
         $(this).closest('li').remove();
@@ -1970,7 +1630,7 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
      * @param {string} min 最小神秘等级
      * @param {string} max 最大神秘等级
      * @param {string} color 颜色
-     * @returns {string}
+     * @returns {string} 每列神秘颜色的HTML内容
      */
     var getSmColorLineHtml = function getSmColorLineHtml() {
         var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -1981,22 +1641,22 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
             _ref$color = _ref.color,
             color = _ref$color === undefined ? '' : _ref$color;
 
-        return '\n<li>\n  <label>\u7B49\u7EA7\u8303\u56F4<input class="pd_cfg_sm_min" type="text" maxlength="5" style="width: 30px;" value="' + min + '"></label>\n  <label>-<input class="pd_cfg_sm_max" type="text" maxlength="5" style="width: 30px;" value="' + max + '"></label>\n  <label>\u989C\u8272<input class="pd_cfg_sm_color" type="text" maxlength="7" style="width: 50px;" value="' + color + '">\n  <input style="margin-left: 0;" type="color" value="' + color + '"></label>\n  <a href="#">\u5220\u9664</a>\n</li>';
+        return '\n<li>\n  <label>\u7B49\u7EA7\u8303\u56F4 <input name="min" type="text" maxlength="5" style="width: 30px;" value="' + min + '"></label>\n  <label>- <input name="max" type="text" maxlength="5" style="width: 30px;" value="' + max + '"></label>\n  <label>\n    &nbsp;\u989C\u8272 <input name="color" type="text" maxlength="7" style="width: 50px;" value="' + color + '">\n    <input style="margin-left: 0;" type="color" value="' + color + '">\n  </label>\n  <a href="#">\u5220\u9664</a>\n</li>';
     };
 
-    $dialog.find('#pd_cfg_custom_sm_color_add_btns').find('a:lt(2)').click(function (e) {
+    $dialog.find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
         e.preventDefault();
         var num = 1;
-        if ($(this).is('#pd_cfg_custom_sm_color_add_btns > a:eq(1)')) num = 5;
+        if ($(this).is('[data-action="addFive"]')) num = 5;
         for (var i = 1; i <= num; i++) {
             $customSmColorList.append(getSmColorLineHtml());
         }
-        Dialog.show('pd_custom_sm_color');
-    }).end().find('a:last').click(function (e) {
+        Dialog.show(dialogName);
+    }).end().find('[data-action="clear"]').click(function (e) {
         e.preventDefault();
-        if (confirm('是否清除所有设置？')) {
+        if (confirm('是否清除所有颜色？')) {
             $customSmColorList.empty();
-            Dialog.show('pd_custom_sm_color');
+            Dialog.show(dialogName);
         }
     });
 
@@ -2039,7 +1699,7 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
         var verification = true;
         $customSmColorList.find('li').each(function () {
             var $this = $(this);
-            var $txtSmMin = $this.find('.pd_cfg_sm_min');
+            var $txtSmMin = $this.find('[name="min"]');
             var min = $.trim($txtSmMin.val()).toUpperCase();
             if (min === '') return;
             if (!/^(-?\d+|MAX)$/i.test(min)) {
@@ -2049,7 +1709,7 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
                 alert('等级范围格式不正确');
                 return false;
             }
-            var $txtSmMax = $this.find('.pd_cfg_sm_max');
+            var $txtSmMax = $this.find('[name="max"]');
             var max = $.trim($txtSmMax.val()).toUpperCase();
             if (max === '') return;
             if (!/^(-?\d+|MAX)$/i.test(max)) {
@@ -2066,7 +1726,7 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
                 alert('等级范围格式不正确');
                 return false;
             }
-            var $txtSmColor = $this.find('.pd_cfg_sm_color');
+            var $txtSmColor = $this.find('[name="color"]');
             var color = $.trim($txtSmColor.val()).toLowerCase();
             if (color === '') return;
             if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
@@ -2084,26 +1744,27 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
             });
             Config.customSmColorConfigList = list;
             (0, _Config.write)();
-            Dialog.close('pd_custom_sm_color');
+            Dialog.close(dialogName);
         }
     });
 
-    Dialog.show('pd_custom_sm_color');
-    if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();else $('#pd_cfg_custom_sm_color_add_btns > a:first').focus();
+    Dialog.show(dialogName);
+    if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();else $dialog.find('[data-name="customSmColorAddBtns"] > a:first').focus();
 };
 
 /**
  * 显示导入或导出配色方案对话框
  */
 var showImportOrExportSmColorConfigDialog = function showImportOrExportSmColorConfigDialog() {
-    if ($('#pd_im_or_ex_sm_color_config').length > 0) return;
+    var dialogName = 'pdImOrExSmColorConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u914D\u8272\u65B9\u6848\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u914D\u8272\u65B9\u6848\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea id="pd_cfg_sm_color_config" style="width: 420px; height: 200px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=488016">\u5176\u4ED6\u4EBA\u5206\u4EAB\u7684\u914D\u8272\u65B9\u6848</a></span>\n  <button>\u4FDD\u5B58</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_im_or_ex_sm_color_config', '导入或导出配色方案', html);
+    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u914D\u8272\u65B9\u6848\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u914D\u8272\u65B9\u6848\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea name="smColorConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=488016">\u5176\u4ED6\u4EBA\u5206\u4EAB\u7684\u914D\u8272\u65B9\u6848</a></span>\n  <button>\u4FDD\u5B58</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '导入或导出配色方案', html);
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
-        var options = $.trim($('#pd_cfg_sm_color_config').val());
+        var options = $.trim($dialog.find('[name="smColorConfig"]').val());
         if (!options) return;
         try {
             options = JSON.parse(options);
@@ -2120,66 +1781,43 @@ var showImportOrExportSmColorConfigDialog = function showImportOrExportSmColorCo
         alert('配色方案已导入');
         location.reload();
     }).next('button').click(function () {
-        return Dialog.close('pd_im_or_ex_sm_color_config');
+        return Dialog.close(dialogName);
     });
-    Dialog.show('pd_im_or_ex_sm_color_config');
-    $dialog.find('#pd_cfg_sm_color_config').val(JSON.stringify(Config.customSmColorConfigList)).select();
+    Dialog.show(dialogName);
+    $dialog.find('[name="smColorConfig"]').val(JSON.stringify(Config.customSmColorConfigList)).select();
 };
 
 /**
  * 显示自定义CSS对话框
  */
 var showCustomCssDialog = function showCustomCssDialog() {
-    if ($('#pd_custom_css').length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <strong>\u81EA\u5B9A\u4E49CSS\u5185\u5BB9\uFF1A</strong><br>\n  <textarea wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">\u5176\u4ED6\u4EBA\u5206\u4EAB\u7684CSS\u89C4\u5219</a></span>\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button>\n</div>\';';
-    var $dialog = Dialog.create('pd_custom_css', '自定义CSS', html);
-    var $content = $dialog.find('textarea');
+    var dialogName = 'pdCustomCssDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var html = '\n<div class="pd_cfg_main">\n  <strong>\u81EA\u5B9A\u4E49CSS\u5185\u5BB9\uFF1A</strong><br>\n  <textarea name="customCssContent" wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS\u89C4\u5219\u6536\u96C6\u8D34</a></span>\n  <button>\u786E\u5B9A</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '自定义CSS', html);
+    var $content = $dialog.find('[name="customCssContent"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         Config.customCssContent = $.trim($content.val());
         (0, _Config.write)();
-        Dialog.close('pd_custom_css');
+        Dialog.close(dialogName);
     }).next('button').click(function () {
-        return Dialog.close('pd_custom_css');
+        return Dialog.close(dialogName);
     });
     $content.val(Config.customCssContent);
-    Dialog.show('pd_custom_css');
+    Dialog.show(dialogName);
     $content.focus();
-};
-
-/**
- * 显示自定义脚本对话框
- */
-var showCustomScriptDialog = function showCustomScriptDialog() {
-    if ($('#pd_custom_script').length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\n    <label style="color: #f00;"><input type="radio" name="pd_custom_script_type" value="start" checked> \u5728\u811A\u672C\u5F00\u59CB\u65F6\u6267\u884C\u7684\u5185\u5BB9</label>\n    <label style="color: #00f;"><input type="radio" name="pd_custom_script_type" value="end"> \u5728\u811A\u672C\u7ED3\u675F\u65F6\u6267\u884C\u7684\u5185\u5BB9</label>\n  </div>\n  <textarea wrap="off" id="pd_custom_script_start_content" style="width: 750px; height: 500px; white-space: pre;"></textarea>\n  <textarea wrap="off" id="pd_custom_script_end_content" style="width: 750px; height: 500px; white-space: pre; display: none;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500968">\u5176\u4ED6\u4EBA\u5206\u4EAB\u7684\u81EA\u5B9A\u4E49\u811A\u672C</a></span>\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_custom_script', '自定义脚本', html);
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
-        e.preventDefault();
-        Config.customScriptStartContent = $('#pd_custom_script_start_content').val();
-        Config.customScriptEndContent = $('#pd_custom_script_end_content').val();
-        (0, _Config.write)();
-        Dialog.close('pd_custom_script');
-    }).next('button').click(function () {
-        return Dialog.close('pd_custom_script');
-    });
-    $dialog.find('#pd_custom_script_start_content').val(Config.customScriptStartContent).end().find('#pd_custom_script_end_content').val(Config.customScriptEndContent).end().find('input[name="pd_custom_script_type"]').click(function () {
-        var type = $(this).val();
-        $('#pd_custom_script_' + (type === 'end' ? 'start' : 'end') + '_content').hide();
-        $('#pd_custom_script_' + (type === 'end' ? 'end' : 'start') + '_content').show();
-    });
-    Dialog.show('pd_custom_script');
-    $dialog.find('#pd_custom_script_start_content').focus();
 };
 
 /**
  * 显示用户备注对话框
  */
 var showUserMemoDialog = function showUserMemoDialog() {
-    if ($('#pd_user_memo').length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  \u6309\u7167\u201C\u7528\u6237\u540D:\u5907\u6CE8\u201D\u7684\u683C\u5F0F\uFF08\u6CE8\u610F\u662F\u82F1\u6587\u5192\u53F7\uFF09\uFF0C\u6BCF\u884C\u4E00\u4E2A<br>\n  <textarea wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_user_memo', '用户备注', html);
-    var $userMemoList = $dialog.find('textarea');
+    var dialogName = 'pdUserMemoDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var html = '\n<div class="pd_cfg_main">\n  \u6309\u7167\u201C\u7528\u6237\u540D:\u5907\u6CE8\u201D\u7684\u683C\u5F0F\uFF08\u6CE8\u610F\u662F\u82F1\u6587\u5192\u53F7\uFF09\uFF0C\u6BCF\u884C\u4E00\u4E2A<br>\n  <textarea name="userMemoList" wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u786E\u5B9A</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '用户备注', html);
+    var $userMemoList = $dialog.find('[name="userMemoList"]');
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         var content = $.trim($userMemoList.val());
@@ -2225,9 +1863,9 @@ var showUserMemoDialog = function showUserMemoDialog() {
         }
 
         (0, _Config.write)();
-        Dialog.close('pd_user_memo');
+        Dialog.close(dialogName);
     }).next('button').click(function () {
-        return Dialog.close('pd_user_memo');
+        return Dialog.close(dialogName);
     });
     var content = '';
     var _iteratorNormalCompletion3 = true;
@@ -2258,7 +1896,7 @@ var showUserMemoDialog = function showUserMemoDialog() {
     }
 
     $userMemoList.val(content);
-    Dialog.show('pd_user_memo');
+    Dialog.show(dialogName);
     $userMemoList.focus();
 };
 
@@ -2266,17 +1904,18 @@ var showUserMemoDialog = function showUserMemoDialog() {
  * 显示关注用户对话框
  */
 var showFollowUserDialog = function showFollowUserDialog() {
-    if ($('#pd_follow_user').length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label><input id="pd_cfg_highlight_follow_user_thread_in_hp_enabled" type="checkbox">\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u9996\u9875\u5E16\u5B50\u94FE\u63A5 \n<span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u9996\u9875\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span></label><br>\n    <label><input id="pd_cfg_highlight_follow_user_thread_link_enabled" type="checkbox">\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u5E16\u5B50\u94FE\u63A5 \n<span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u7248\u5757\u9875\u9762\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span></label><br>\n  </div>\n  <ul id="pd_cfg_follow_user_list" style="margin-top: 5px; width: 274px; line-height: 24px;"></ul>\n  <div id="pd_cfg_follow_user_btns" style="margin-top: 5px;">\n    <div style="display: inline-block;"><a href="#">\u5168\u9009</a><a style="margin-left: 7px;" href="#">\u53CD\u9009</a></div>\n    <div style="float: right;"><a style="margin-left: 7px;" href="#">\u5220\u9664</a></div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input id="pd_cfg_add_follow_user" style="width: 200px;" type="text">\n    <a style="margin-left: 7px;" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u5173\u6CE8\u7528\u6237</a></span>\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_follow_user', '关注用户', html);
-    var $followUserList = $dialog.find('#pd_cfg_follow_user_list');
+    var dialogName = 'pdFollowUserDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label>\n      <input name="highlightFollowUserThreadInHpEnabled" type="checkbox"> \u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u9996\u9875\u5E16\u5B50\u94FE\u63A5\n      <span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u9996\u9875\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span>\n    </label><br>\n    <label>\n      <input name="highlightFollowUserThreadLinkEnabled" type="checkbox"> \u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u5E16\u5B50\u94FE\u63A5\n      <span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u7248\u5757\u9875\u9762\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span>\n    </label><br>\n  </div>\n  <ul data-name="followUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>\n  <div data-name="followUserBtns" style="margin-top: 5px;">\n    <div style="display: inline-block;">\n      <a class="pd_btn_link" href="#">\u5168\u9009</a>\n      <a class="pd_btn_link" href="#">\u53CD\u9009</a>\n    </div>\n    <div style="float: right;">\n      <a class="pd_btn_link" href="#">\u5220\u9664</a>\n    </div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input data-name="addFollowUser" style="width: 200px;" type="text">\n    <a class="pd_btn_link" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u5173\u6CE8\u7528\u6237</a></span>\n  <button>\u786E\u5B9A</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '关注用户', html);
+    var $followUserList = $dialog.find('[data-name="followUserList"]');
     $dialog.submit(function (e) {
         e.preventDefault();
         $dialog.find('.pd_cfg_btns > button:first').click();
     }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        Config.highlightFollowUserThreadInHPEnabled = $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked');
-        Config.highlightFollowUserThreadLinkEnabled = $('#pd_cfg_highlight_follow_user_thread_link_enabled').prop('checked');
+        Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
+        Config.highlightFollowUserThreadLinkEnabled = $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked');
         Config.followUserList = [];
         $followUserList.find('li').each(function () {
             var $this = $(this);
@@ -2286,20 +1925,20 @@ var showFollowUserDialog = function showFollowUserDialog() {
             }
         });
         (0, _Config.write)();
-        Dialog.close('pd_follow_user');
+        Dialog.close(dialogName);
     }).end().find('.pd_cfg_btns > button:last').click(function () {
-        return Dialog.close('pd_follow_user');
+        return Dialog.close(dialogName);
     });
 
-    $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
-    $('#pd_cfg_highlight_follow_user_thread_link_enabled').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
+    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
+    $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
 
     /**
      * 添加关注用户
      * @param {string} name 用户名
      */
     var addFollowUser = function addFollowUser(name) {
-        $('<li><input type="checkbox"><input type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="' + name + '">' + '<a style="margin-left: 7px;" href="#">\u5220\u9664</a></li>').appendTo($followUserList);
+        $('\n<li>\n  <input type="checkbox">\n  <input type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="' + name + '">\n  <a class="pd_btn_link" href="#">\u5220\u9664</a>\n</li>\n').appendTo($followUserList);
     };
 
     var _iteratorNormalCompletion4 = true;
@@ -2332,25 +1971,25 @@ var showFollowUserDialog = function showFollowUserDialog() {
         $(this).parent().remove();
     });
 
-    $('#pd_cfg_follow_user_btns').find('a:first').click(function (e) {
+    $dialog.find('[data-name="followUserBtns"]').find('a:first').click(function (e) {
         e.preventDefault();
-        $followUserList.find('input[type="checkbox"]').prop('checked', true);
+        $followUserList.find('[type="checkbox"]').prop('checked', true);
     }).end().find('a:eq(1)').click(function (e) {
         e.preventDefault();
-        $followUserList.find('input[type="checkbox"]').each(function () {
+        $followUserList.find('[type="checkbox"]').each(function () {
             $(this).prop('checked', !$(this).prop('checked'));
         });
     }).end().find('a:last').click(function (e) {
         e.preventDefault();
-        var $checked = $followUserList.find('li:has(input[type="checkbox"]:checked)');
+        var $checked = $followUserList.find('li:has([type="checkbox"]:checked)');
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show('pd_follow_user');
+            Dialog.show(dialogName);
         }
     });
 
-    $dialog.find('#pd_cfg_add_follow_user').keydown(function (e) {
+    $dialog.find('[data-name="addFollowUser"]').keydown(function (e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             $(this).next('a').click();
@@ -2362,7 +2001,7 @@ var showFollowUserDialog = function showFollowUserDialog() {
         var _iteratorError5 = undefined;
 
         try {
-            for (var _iterator5 = $.trim($('#pd_cfg_add_follow_user').val()).split(',')[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            for (var _iterator5 = $.trim($dialog.find('[data-name="addFollowUser"]').val()).split(',')[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                 var name = _step5.value;
 
                 name = $.trim(name);
@@ -2386,42 +2025,43 @@ var showFollowUserDialog = function showFollowUserDialog() {
             }
         }
 
-        $('#pd_cfg_add_follow_user').val('');
-        Dialog.show('pd_follow_user');
+        $dialog.find('[data-name="addFollowUser"]').val('');
+        Dialog.show(dialogName);
     });
 
     $dialog.find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(1);
+        showCommonImportOrExportConfigDialog('followUser');
     });
 
-    Dialog.show('pd_follow_user');
-    $('#pd_cfg_highlight_follow_user_thread_in_hp_enabled').focus();
+    Dialog.show(dialogName);
+    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').focus();
 };
 
 /**
  * 显示屏蔽用户对话框
  */
 var showBlockUserDialog = function showBlockUserDialog() {
-    if ($('#pd_block_user').length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px; line-height: 24px;">\n    <label>\u9ED8\u8BA4\u5C4F\u853D\u7C7B\u578B\n      <select id="pd_cfg_block_user_default_type">\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n    </label>\n    <label class="pd_cfg_ml">\n      <input id="pd_cfg_block_user_at_tips_enabled" type="checkbox">\u5C4F\u853D@\u63D0\u9192 <span class="pd_cfg_tips" title="\u5C4F\u853D\u88AB\u5C4F\u853D\u7528\u6237\u7684@\u63D0\u9192">[?]</span>\n    </label><br>\n    <label>\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select id="pd_cfg_block_user_forum_type">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label><br>\n    <label>\u7248\u5757ID\u5217\u8868\n      <input id="pd_cfg_block_user_fid_list" type="text" style="width: 220px;"> \n      <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span>\n    </label>\n  </div>\n  <ul id="pd_cfg_block_user_list" style="margin-top: 5px; width: 362px; line-height: 24px;"></ul>\n  <div id="pd_cfg_block_user_btns" style="margin-top: 5px;">\n    <div style="display: inline-block;"><a href="#">\u5168\u9009</a><a style="margin-left: 7px;" href="#">\u53CD\u9009</a></div>\n    <div style="float: right;">\n      <a href="#">\u4FEE\u6539\u4E3A</a>\n      <select style="margin-left: 7px;">\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n      <a style="margin-left: 7px;" href="#">\u5220\u9664</a>\n    </div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input id="pd_cfg_add_block_user" style="width: 200px;" type="text">\n    <a style="margin-left: 7px;" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u7528\u6237</a></span>\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_block_user', '屏蔽用户', html);
-    var $blockUserList = $dialog.find('#pd_cfg_block_user_list');
+    var dialogName = 'pdBlockUserDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px; line-height: 24px;">\n    <label>\n      \u9ED8\u8BA4\u5C4F\u853D\u7C7B\u578B\n      <select name="blockUserDefaultType">\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n    </label>\n    <label class="pd_cfg_ml">\n      <input name="blockUserAtTipsEnabled" type="checkbox">\u5C4F\u853D@\u63D0\u9192 <span class="pd_cfg_tips" title="\u5C4F\u853D\u88AB\u5C4F\u853D\u7528\u6237\u7684@\u63D0\u9192">[?]</span>\n    </label><br>\n    <label>\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select name="blockUserForumType">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label><br>\n    <label>\u7248\u5757ID\u5217\u8868\n      <input name="blockUserFidList" type="text" style="width: 220px;"> \n      <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span>\n    </label>\n  </div>\n  <ul data-name="blockUserList" style="margin-top: 5px; min-width: 362px; line-height: 24px;"></ul>\n  <div data-name="blockUserBtns" style="margin-top: 5px;">\n    <div style="display: inline-block;"><a href="#">\u5168\u9009</a><a style="margin-left: 7px;" href="#">\u53CD\u9009</a></div>\n    <div style="float: right;">\n      <a href="#">\u4FEE\u6539\u4E3A</a>\n      <select style="margin-left: 7px;">\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n      <a style="margin-left: 7px;" href="#">\u5220\u9664</a>\n    </div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input name="addBlockUser" style="width: 200px;" type="text">\n    <a style="margin-left: 7px;" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u7528\u6237</a></span>\n  <button>\u786E\u5B9A</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '屏蔽用户', html);
+    var $blockUserList = $dialog.find('[data-name="blockUserList"]');
     $dialog.submit(function (e) {
         e.preventDefault();
         $dialog.find('.pd_cfg_btns > button:first').click();
     }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
-        Config.blockUserDefaultType = $('#pd_cfg_block_user_default_type').val();
-        Config.blockUserAtTipsEnabled = $('#pd_cfg_block_user_at_tips_enabled').prop('checked');
-        Config.blockUserForumType = parseInt($('#pd_cfg_block_user_forum_type').val());
+        Config.blockUserDefaultType = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
+        Config.blockUserAtTipsEnabled = $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked');
+        Config.blockUserForumType = parseInt($dialog.find('[name="blockUserForumType"]').val());
         Config.blockUserFidList = [];
         var _iteratorNormalCompletion6 = true;
         var _didIteratorError6 = false;
         var _iteratorError6 = undefined;
 
         try {
-            for (var _iterator6 = $.trim($('#pd_cfg_block_user_fid_list').val()).split(',')[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            for (var _iterator6 = $.trim($dialog.find('[name="blockUserFidList"]').val()).split(',')[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                 var fid = _step6.value;
 
                 fid = parseInt(fid);
@@ -2452,15 +2092,15 @@ var showBlockUserDialog = function showBlockUserDialog() {
             }
         });
         (0, _Config.write)();
-        Dialog.close('pd_block_user');
+        Dialog.close(dialogName);
     }).end().find('.pd_cfg_btns > button:last').click(function () {
-        return Dialog.close('pd_block_user');
+        return Dialog.close(dialogName);
     });
 
-    $('#pd_cfg_block_user_default_type').val(Config.blockUserDefaultType);
-    $('#pd_cfg_block_user_at_tips_enabled').prop('checked', Config.blockUserAtTipsEnabled);
-    $('#pd_cfg_block_user_forum_type').val(Config.blockUserForumType);
-    $('#pd_cfg_block_user_fid_list').val(Config.blockUserFidList.join(','));
+    $dialog.find('[name="blockUserDefaultType"]').val(Config.blockUserDefaultType);
+    $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked', Config.blockUserAtTipsEnabled);
+    $dialog.find('[name="blockUserForumType"]').val(Config.blockUserForumType);
+    $dialog.find('[name="blockUserFidList"]').val(Config.blockUserFidList.join(','));
 
     /**
      * 添加屏蔽用户
@@ -2501,7 +2141,7 @@ var showBlockUserDialog = function showBlockUserDialog() {
         $(this).parent().remove();
     });
 
-    $('#pd_cfg_block_user_btns').find('a:first').click(function (e) {
+    $dialog.find('[data-name="blockUserBtns"]').find('a:first').click(function (e) {
         e.preventDefault();
         $blockUserList.find('input[type="checkbox"]').prop('checked', true);
     }).end().find('a:eq(1)').click(function (e) {
@@ -2519,24 +2159,24 @@ var showBlockUserDialog = function showBlockUserDialog() {
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show('pd_block_user');
+            Dialog.show(dialogName);
         }
     });
 
-    $dialog.find('#pd_cfg_add_block_user').keydown(function (e) {
+    $dialog.find('[name="addBlockUser"]').keydown(function (e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             $(this).next('a').click();
         }
     }).next('a').click(function (e) {
         e.preventDefault();
-        var type = parseInt($('#pd_cfg_block_user_default_type').val());
+        var type = parseInt($('[name="blockUserDefaultType"]').val());
         var _iteratorNormalCompletion8 = true;
         var _didIteratorError8 = false;
         var _iteratorError8 = undefined;
 
         try {
-            for (var _iterator8 = $.trim($('#pd_cfg_add_block_user').val()).split(',')[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            for (var _iterator8 = $.trim($dialog.find('[name="addBlockUser"]').val()).split(',')[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
                 var name = _step8.value;
 
                 name = $.trim(name);
@@ -2560,30 +2200,31 @@ var showBlockUserDialog = function showBlockUserDialog() {
             }
         }
 
-        $('#pd_cfg_add_block_user').val('');
-        Dialog.show('pd_block_user');
+        $dialog.find('[name="addBlockUser"]').val('');
+        Dialog.show(dialogName);
     });
 
-    $dialog.find('#pd_cfg_block_user_forum_type').change(function () {
-        $('#pd_cfg_block_user_fid_list').prop('disabled', parseInt($(this).val()) === 0);
+    $dialog.find('[name="blockUserForumType"]').change(function () {
+        $('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(2);
+        showCommonImportOrExportConfigDialog('blockUser');
     });
 
-    Dialog.show('pd_block_user');
-    $('#pd_cfg_block_user_forum_type').triggerHandler('change');
-    $('#pd_cfg_block_user_default_type').focus();
+    Dialog.show(dialogName);
+    $dialog.find('[name="blockUserForumType"]').triggerHandler('change');
+    $dialog.find('[name="blockUserDefaultType"]').focus();
 };
 
 /**
  * 显示屏蔽帖子对话框
  */
 var showBlockThreadDialog = function showBlockThreadDialog() {
-    if ($('#pd_block_thread').length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    \u6807\u9898\u5173\u952E\u5B57\u53EF\u4F7F\u7528\u666E\u901A\u5B57\u7B26\u4E32\u6216\u6B63\u5219\u8868\u8FBE\u5F0F\uFF0C\u6B63\u5219\u8868\u8FBE\u5F0F\u8BF7\u4F7F\u7528/abc/\u7684\u683C\u5F0F\uFF0C\u4F8B\uFF1A/\u5173\u952E\u5B57A.*\u5173\u952E\u5B57B/i<br>\n    \u7528\u6237\u540D\u548C\u7248\u5757ID\u4E3A\u53EF\u9009\u9879\uFF08\u591A\u4E2A\u7528\u6237\u540D\u6216\u7248\u5757ID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09<br>\n    <label>\u9ED8\u8BA4\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select id="pd_cfg_block_thread_def_forum_type">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label>\n    <label style="margin-left: 5px;">\u9ED8\u8BA4\u7248\u5757ID\u5217\u8868<input id="pd_cfg_block_thread_def_fid_list" type="text" style="width: 150px;"></label>\n  </div>\n  <table id="pd_cfg_block_thread_list" style="line-height: 22px; text-align: center;">\n    <tbody>\n      <tr>\n        <th style="width: 220px;">\u6807\u9898\u5173\u952E\u5B57(\u5FC5\u586B)</th>\n        <th style="width: 62px;">\u5C4F\u853D\u7528\u6237</th>\n        <th style="width: 200px;">\u7528\u6237\u540D <span class="pd_cfg_tips" title="\u591A\u4E2A\u7528\u6237\u540D\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 62px;">\u5C4F\u853D\u8303\u56F4</th>\n        <th style="width: 132px;">\u7248\u5757ID <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 35px;"></th>\n      </tr>\n    </tbody>\n  </table>\n  <div style="margin-top: 5px;" id="pd_cfg_block_thread_add_btns">\n    <a href="#">\u589E\u52A01\u4E2A</a><a href="#" style="margin-left: 7px;">\u589E\u52A05\u4E2A</a><a href="#" style="margin-left: 7px;">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u5E16\u5B50</a></span>\n  <button>\u786E\u5B9A</button><button>\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create('pd_block_thread', '屏蔽帖子', html, 'width: 768px;');
-    var $blockThreadList = $dialog.find('#pd_cfg_block_thread_list');
+    var dialogName = 'pdBlockThreadDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    \u6807\u9898\u5173\u952E\u5B57\u53EF\u4F7F\u7528\u666E\u901A\u5B57\u7B26\u4E32\u6216\u6B63\u5219\u8868\u8FBE\u5F0F\uFF0C\u6B63\u5219\u8868\u8FBE\u5F0F\u8BF7\u4F7F\u7528/abc/\u7684\u683C\u5F0F\uFF0C\u4F8B\uFF1A/\u5173\u952E\u5B57A.*\u5173\u952E\u5B57B/i<br>\n    \u7528\u6237\u540D\u548C\u7248\u5757ID\u4E3A\u53EF\u9009\u9879\uFF08\u591A\u4E2A\u7528\u6237\u540D\u6216\u7248\u5757ID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09<br>\n    <label>\n      \u9ED8\u8BA4\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select name="blockThreadDefForumType">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label>\n    <label style="margin-left: 5px;">\u9ED8\u8BA4\u7248\u5757ID\u5217\u8868 <input name="blockThreadDefFidList" type="text" style="width: 150px;"></label>\n  </div>\n  <table data-name="blockThreadList" style="line-height: 22px; text-align: center;">\n    <tbody>\n      <tr>\n        <th style="width: 220px;">\u6807\u9898\u5173\u952E\u5B57(\u5FC5\u586B)</th>\n        <th style="width: 62px;">\u5C4F\u853D\u7528\u6237</th>\n        <th style="width: 200px;">\u7528\u6237\u540D <span class="pd_cfg_tips" title="\u591A\u4E2A\u7528\u6237\u540D\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 62px;">\u5C4F\u853D\u8303\u56F4</th>\n        <th style="width: 132px;">\u7248\u5757ID <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 35px;"></th>\n      </tr>\n    </tbody>\n  </table>\n  <div data-name="blockThreadAddBtns" style="margin-top: 5px;">\n    <a class="pd_btn_link" href="#">\u589E\u52A01\u4E2A</a>\n    <a class="pd_btn_link" href="#">\u589E\u52A05\u4E2A</a>\n    <a class="pd_btn_link" href="#">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u5E16\u5B50</a></span>\n  <button>\u786E\u5B9A</button> <button>\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '屏蔽帖子', html, 'width: 768px;');
+    var $blockThreadList = $dialog.find('[data-name="blockThreadList"]');
 
     /**
      * 验证设置是否正确
@@ -2596,7 +2237,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
             var $txtKeyWord = $this.find('td:first-child > input');
             var keyWord = $txtKeyWord.val();
             if ($.trim(keyWord) === '') return;
-            if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+            if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
                 try {
                     eval(keyWord);
                 } catch (ex) {
@@ -2617,14 +2258,14 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
     }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!verify()) return;
-        Config.blockThreadDefForumType = parseInt($('#pd_cfg_block_thread_def_forum_type').val());
+        Config.blockThreadDefForumType = parseInt($dialog.find('[name="blockThreadDefForumType"]').val());
         Config.blockThreadDefFidList = [];
         var _iteratorNormalCompletion9 = true;
         var _didIteratorError9 = false;
         var _iteratorError9 = undefined;
 
         try {
-            for (var _iterator9 = $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(',')[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            for (var _iterator9 = $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(',')[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
                 var fid = _step9.value;
 
                 fid = parseInt(fid);
@@ -2718,9 +2359,9 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
             Config.blockThreadList.push(newObj);
         });
         (0, _Config.write)();
-        Dialog.close('pd_block_thread');
+        Dialog.close(dialogName);
     }).end().find('.pd_cfg_btns > button:last').click(function () {
-        return Dialog.close('pd_block_thread');
+        return Dialog.close(dialogName);
     });
 
     $blockThreadList.on('change', 'select', function () {
@@ -2792,49 +2433,66 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
         }
     }
 
-    $('#pd_cfg_block_thread_add_btns').find('a:lt(2)').click(function (e) {
+    $dialog.find('[data-name="blockThreadAddBtns"]').find('a:lt(2)').click(function (e) {
         e.preventDefault();
         var num = 1;
-        if ($(this).is('#pd_cfg_block_thread_add_btns > a:eq(1)')) num = 5;
+        if ($(this).is('[data-name="blockThreadAddBtns"] > a:eq(1)')) num = 5;
         for (var i = 1; i <= num; i++) {
-            addBlockThread('', 0, [], parseInt($('#pd_cfg_block_thread_def_forum_type').val()), $.trim($('#pd_cfg_block_thread_def_fid_list').val()).split(','));
+            addBlockThread('', 0, [], parseInt($dialog.find('[name="blockThreadDefForumType"]').val()), $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(','));
         }
-        Dialog.show('pd_block_thread');
+        Dialog.show(dialogName);
     }).end().find('a:last').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有屏蔽关键字？')) {
             $blockThreadList.find('tbody > tr:gt(0)').remove();
-            Dialog.show('pd_block_thread');
+            Dialog.show(dialogName);
         }
     });
 
-    $dialog.find('#pd_cfg_block_thread_def_forum_type').change(function () {
-        $('#pd_cfg_block_thread_def_fid_list').prop('disabled', parseInt($(this).val()) === 0);
+    $dialog.find('[name="blockThreadDefForumType"]').change(function () {
+        $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('.pd_cfg_about > a').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog(3);
+        showCommonImportOrExportConfigDialog('blockThread');
     });
 
-    Dialog.show('pd_block_thread');
-    $('#pd_cfg_block_thread_def_forum_type').val(Config.blockThreadDefForumType).focus().triggerHandler('change');
-    $('#pd_cfg_block_thread_def_fid_list').val(Config.blockThreadDefFidList.join(','));
+    Dialog.show(dialogName);
+    $dialog.find('[name="blockThreadDefForumType"]').val(Config.blockThreadDefForumType).focus().triggerHandler('change');
+    $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
 /**
  * 显示通用的导入/导出设置对话框
- * @param {number} type 1：关注用户；2：屏蔽用户；3：屏蔽帖子
+ * @param {string} type 对话框类别，followUser：关注用户；blockUser：屏蔽用户；blockThread：屏蔽帖子；customScript：自定义脚本
  */
-var showCommonImportOrExportConfigDialog = function showCommonImportOrExportConfigDialog(type) {
-    if ($('#pd_common_im_or_ex_config').length > 0) return;
+var showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfigDialog = function showCommonImportOrExportConfigDialog(type) {
+    var dialogName = 'pdCommonImOrExConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea id="pd_cfg_common_config" style="width: 420px; height: 200px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u4FDD\u5B58</button><button>\u53D6\u6D88</button>\n</div>';
-    var title = '关注用户';
-    if (type === 2) title = '屏蔽用户';else if (type === 3) title = '屏蔽帖子';
-    var $dialog = Dialog.create('pd_common_im_or_ex_config', '\u5BFC\u5165\u6216\u5BFC\u51FA' + title, html);
+    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea name="commonConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button>\u4FDD\u5B58</button> <button>\u53D6\u6D88</button>\n</div>';
+    var title = '';
+    switch (type) {
+        case 'followUser':
+            title = '关注用户';
+            break;
+        case 'blockUser':
+            title = '屏蔽用户';
+            break;
+        case 'blockThread':
+            title = '屏蔽帖子';
+            break;
+        case 'customScript':
+            title = '自定义脚本';
+            break;
+        default:
+            return;
+    }
+    var $dialog = Dialog.create(dialogName, '\u5BFC\u5165\u6216\u5BFC\u51FA' + title, html);
+
     $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
-        var options = $.trim($('#pd_cfg_common_config').val());
+        var options = $.trim($dialog.find('[name="commonConfig"]').val());
         if (!options) return;
         try {
             options = JSON.parse(options);
@@ -2846,30 +2504,60 @@ var showCommonImportOrExportConfigDialog = function showCommonImportOrExportConf
             alert('设置有错误');
             return;
         }
-        if (type === 2) Config.blockUserList = options;else if (type === 3) Config.blockThreadList = options;else Config.followUserList = options;
+        switch (type) {
+            case 'followUser':
+                Config.followUserList = options;
+                break;
+            case 'blockUser':
+                Config.blockUserList = options;
+                break;
+            case 'blockThread':
+                Config.blockThreadList = options;
+                break;
+            case 'customScript':
+                Config.customScriptList = options;
+                break;
+        }
         (0, _Config.write)();
         alert('设置已导入');
         location.reload();
     }).next('button').click(function () {
-        return Dialog.close('pd_common_im_or_ex_config');
+        return Dialog.close(dialogName);
     });
-    Dialog.show('pd_common_im_or_ex_config');
+    Dialog.show(dialogName);
 
-    var options = Config.followUserList;
-    if (type === 2) options = Config.blockUserList;else if (type === 3) options = Config.blockThreadList;
-    $dialog.find('#pd_cfg_common_config').val(JSON.stringify(options)).select();
+    var options = null;
+    switch (type) {
+        case 'followUser':
+            options = Config.followUserList;
+            break;
+        case 'blockUser':
+            options = Config.blockUserList;
+            break;
+        case 'blockThread':
+            options = Config.blockThreadList;
+            break;
+        case 'customScript':
+            options = Config.customScriptList;
+            break;
+    }
+    $dialog.find('[name="commonConfig"]').val(JSON.stringify(options)).select();
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./LogDialog":13,"./TmpLog":20,"./Util":21}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+/* 常量模块 */
 'use strict';
 
-/**
- * 配置常量类
- */
+// 通用存储数据名称前缀
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+var storagePrefix = 'pd_';
+
+/**
+ * 常量类
+ */
 var Const = {
     // 开启调试模式，true：开启；false：关闭
     debug: false,
@@ -2910,20 +2598,7 @@ var Const = {
     // 统计回帖者名单最大能访问的帖子页数
     statRepliersMaxPage: 300,
     // 道具样品ID列表
-    sampleItemIdList: {
-        '零时迷子的碎片': 2257935,
-        '被遗弃的告白信': 2005272,
-        '学校天台的钥匙': 2001303,
-        'TMA最新作压缩包': 1990834,
-        'LOLI的钱包': 1836588,
-        '棒棒糖': 1942370,
-        '蕾米莉亚同人漫画': 1000888,
-        '十六夜同人漫画': 1002668,
-        '档案室钥匙': 1013984,
-        '傲娇LOLI娇蛮音CD': 4621,
-        '整形优惠卷': 1003993,
-        '消逝之药': 1000306
-    },
+    sampleItemIdList: new Map([['零时迷子的碎片', 2257935], ['被遗弃的告白信', 2005272], ['学校天台的钥匙', 2001303], ['TMA最新作压缩包', 1990834], ['LOLI的钱包', 1836588], ['棒棒糖', 1942370], ['蕾米莉亚同人漫画', 1000888], ['十六夜同人漫画', 1002668], ['档案室钥匙', 1013984], ['傲娇LOLI娇蛮音CD', 4621], ['整形优惠卷', 1003993], ['消逝之药', 1000306]]),
     // 定期存款到期期限（天）
     fixedDepositDueTime: 90,
     // 自助评分错标范围百分比
@@ -2936,35 +2611,38 @@ var Const = {
     customTileSideBarContent: '',
     // 可进行自助评分的版块ID列表
     selfRatingFidList: [41, 67, 92, 127, 68],
+    // 通用存储数据名称前缀
+    storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
-    multiQuoteStorageName: 'pd_multi_quote',
-    // 神秘升级提醒的临时日志名称
+    multiQuoteStorageName: storagePrefix + 'multiQuote',
+    // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
     smRankChangeTmpLogName: 'SmRankChange',
     // 定期存款到期时间的临时日志名称
     fixedDepositDueTmpLogName: 'FixedDepositDue',
-    // 上一次自动更换神秘颜色的ID的临时日志名称
-    prevAutoChangeSMColorIdTmpLogName: 'PrevAutoChangeSMColorId',
-    // 标记已KFB捐款的Cookie名称
-    donationCookieName: 'pd_donation',
+    // 存储上一次自动更换ID颜色的临时日志名称
+    prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
+    // 标记已进行KFB捐款的Cookie名称
+    donationCookieName: 'donation',
     // 标记已去除首页已读at高亮提示的Cookie名称
-    hideMarkReadAtTipsCookieName: 'pd_hide_mark_read_at_tips',
+    hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
-    prevReadAtTipsCookieName: 'pd_prev_read_at_tips',
+    prevReadAtTipsCookieName: 'prevReadAtTips',
     // 标记已进行定期存款到期提醒的Cookie名称
-    fixedDepositDueAlertCookieName: 'pd_fixed_deposit_due_alert',
+    fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
     // 存储VIP剩余时间的Cookie名称
-    vipSurplusTimeCookieName: 'pd_vip_surplus_time',
-    // 标记已自动更换神秘颜色的Cookie名称
-    autoChangeSMColorCookieName: 'pd_auto_change_sm_color',
+    vipSurplusTimeCookieName: 'vipSurplusTime',
+    // 标记已自动更换ID颜色的Cookie名称
+    autoChangeIdColorCookieName: 'autoChangeIdColor',
     // 标记已检查过期日志的Cookie名称
-    checkOverdueLogCookieName: 'pd_check_overdue_log'
+    checkOverdueLogCookieName: 'checkOverdueLog'
 };
 
 exports.default = Const;
 
 },{}],7:[function(require,module,exports){
+/* 对话框模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3012,7 +2690,7 @@ var create = exports.create = function create(id, title, content) {
         }
     }).find('h1 > span').click(function () {
         return close(id);
-    }).end().find('legend input[type="checkbox"]').click(function () {
+    }).end().find('legend [type="checkbox"]').click(function () {
         var $this = $(this);
         var checked = $this.prop('checked');
         if (Util.isOpera() || Util.isEdge()) $this.closest('fieldset').find('input, select, textarea, button').not('legend input').prop('disabled', !checked);else $this.closest('fieldset').prop('disabled', !checked);
@@ -3043,23 +2721,19 @@ var create = exports.create = function create(id, title, content) {
 var show = exports.show = function show(id) {
     var $box = $('#' + id);
     if (!$box.length) return;
-    $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80).end().find('legend input[type="checkbox"]').each(function () {
+    $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80).end().find('legend [type="checkbox"]').each(function () {
         $(this).triggerHandler('click');
     }).end().find('input[data-disabled]').each(function () {
         $(this).triggerHandler('click');
     });
     var boxWidth = $box.width(),
-        windowWidth = $(window).width(),
-        windowHeight = $(window).height();
-    if (_Info2.default.isMobile && windowHeight > 1000) windowHeight /= 2;
-    var scrollTop = $(window).scrollTop();
-    if (scrollTop < windowHeight / 2) scrollTop = 0;
-    var left = windowWidth / 2 + (_Info2.default.isMobile ? $(window).scrollLeft() / 3 : 0) - boxWidth / 2;
+        windowWidth = $(window).width();
+    var left = windowWidth / 2 - boxWidth / 2;
     if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
     if (left < 0) left = 0;
-    var top = windowHeight / 2 + (_Info2.default.isMobile ? scrollTop : 0) - $box.height() / 2;
+    var top = $(window).height() / 2 - $box.height() / 2;
     if (top < 0) top = 0;
-    $box.css({ 'top': top, 'left': left }).fadeIn('fast');
+    $box.css({ top: top, left: left }).fadeIn('fast');
 };
 
 /**
@@ -3077,7 +2751,8 @@ var close = exports.close = function close(id) {
     return false;
 };
 
-},{"./Info":10,"./Public":18,"./Util":21}],8:[function(require,module,exports){
+},{"./Info":10,"./Public":18,"./Util":22}],8:[function(require,module,exports){
+/* 自定义方法模块 */
 'use strict';
 
 // 自定义方法列表
@@ -3093,8 +2768,8 @@ var funcList = new Map();
  * @param {function} func 自定义方法
  */
 var add = exports.add = function add(name, func) {
-    if (!funcList.has(name)) funcList[name] = [];
-    funcList[name].push(func);
+    if (!funcList.has(name)) funcList.set(name, []);
+    funcList.get(name).push(func);
 };
 
 /**
@@ -3142,6 +2817,7 @@ var run = exports.run = function run(name, data) {
 };
 
 },{}],9:[function(require,module,exports){
+/* 首页模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3167,6 +2843,8 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
@@ -3183,17 +2861,17 @@ var handleAtTips = exports.handleAtTips = function handleAtTips() {
     if (type === 'default') return;
     var $atTips = $('a[href^="guanjianci.php?gjc="]');
     var noHighlight = function noHighlight() {
-        $atTips.removeClass('indbox5').addClass('indbox6');
+        return $atTips.removeClass('indbox5').addClass('indbox6');
     };
     var hideBox = function hideBox() {
-        $atTips.parent().next('div.line').addBack().remove();
+        return $atTips.parent().next('div.line').addBack().remove();
     };
     var handleBox = noHighlight;
     if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
     if (['no_highlight', 'no_highlight_extra', 'hide_box_1', 'at_change_to_cao'].includes(type)) {
         if ($atTips.length > 0) {
             (function () {
-                var cookieText = Util.getCookie(_Const2.default.hideMarkReadAtTipsCookieName);
+                var cookieText = Util.getCookie(_Const2.default.hideReadAtTipsCookieName);
                 var atTipsText = $.trim($atTips.text());
                 var matches = /\d+日\d+时\d+分/.exec(atTipsText);
                 if (matches) atTipsText = matches[0];
@@ -3203,14 +2881,14 @@ var handleAtTips = exports.handleAtTips = function handleAtTips() {
                     $atTips.click(function () {
                         var $this = $(this);
                         if ($this.data('disabled')) return;
-                        var cookieText = Util.getCookie(_Const2.default.hideMarkReadAtTipsCookieName);
+                        var cookieText = Util.getCookie(_Const2.default.hideReadAtTipsCookieName);
                         if (!cookieText) {
-                            var curDate = new Date().getDate();
-                            Util.setCookie(_Const2.default.prevReadAtTipsCookieName, (curDate < 10 ? '0' + curDate : curDate) + '日00时00分');
+                            var curDate = new Date().getDate().toString();
+                            Util.setCookie(_Const2.default.prevReadAtTipsCookieName, curDate.padStart(2, '0') + '日00时00分');
                         } else if (cookieText !== atTipsText) {
                             Util.setCookie(_Const2.default.prevReadAtTipsCookieName, cookieText);
                         }
-                        Util.setCookie(_Const2.default.hideMarkReadAtTipsCookieName, atTipsText, Util.getDate('+' + _Const2.default.hideMarkReadAtTipsExpires + 'd'));
+                        Util.setCookie(_Const2.default.hideReadAtTipsCookieName, atTipsText, Util.getDate('+' + _Const2.default.hideMarkReadAtTipsExpires + 'd'));
                         $this.data('disabled', true);
                         handleBox();
                     });
@@ -3220,7 +2898,7 @@ var handleAtTips = exports.handleAtTips = function handleAtTips() {
                 }
             })();
         } else if (!$atTips.length && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
-            var html = '<div style="width: 300px;"><a class="indbox6" href="guanjianci.php?gjc=' + _Info2.default.userName + '" target="_blank">\n\u6700\u8FD1\u65E0\u4EBA' + (type === 'at_change_to_cao' ? '艹' : '@') + '\u4F60</a><br><div class="line"></div><div class="c"></div></div><div class="line"></div>';
+            var html = '\n<div style="width: 300px;">\n  <a class="indbox6" href="guanjianci.php?gjc=' + _Info2.default.userName + '" target="_blank">\u6700\u8FD1\u65E0\u4EBA' + (type === 'at_change_to_cao' ? '艹' : '@') + '\u4F60</a><br>\n  <div class="line"></div>\n  <div class="c"></div>\n</div>\n<div class="line"></div>';
             $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
         }
     } else if (type === 'hide_box_2') {
@@ -3252,7 +2930,7 @@ var smLevelUpAlert = exports.smLevelUpAlert = function smLevelUpAlert() {
         if (diff >= _Const2.default.smLevelUpAlertInterval) {
             var date = new Date(data.time);
             writeData(smLevel);
-            (0, _Log.push)('神秘等级升级', '\u81EA`' + Util.getDateString(date) + '`\u4EE5\u6765\uFF0C\u4F60\u7684\u795E\u79D8\u7B49\u7EA7\u5171\u4E0A\u5347\u4E86`' + (smLevel - data.smLevel) + '`\u7EA7 (Lv.`' + data.smLevel + '`->Lv.`' + smLevel + '`)');
+            Log.push('神秘等级升级', '\u81EA`' + Util.getDateString(date) + '`\u4EE5\u6765\uFF0C\u4F60\u7684\u795E\u79D8\u7B49\u7EA7\u5171\u4E0A\u5347\u4E86`' + (smLevel - data.smLevel) + '`\u7EA7 (Lv.`' + data.smLevel + '`->Lv.`' + smLevel + '`)');
             Msg.show('\u81EA<em>' + Util.getDateString(date) + '</em>\u4EE5\u6765\uFF0C\u4F60\u7684\u795E\u79D8\u7B49\u7EA7\u5171\u4E0A\u5347\u4E86<em>' + (smLevel - data.smLevel) + '</em>\u7EA7');
         } else if (diff < 0) {
             writeData(smLevel);
@@ -3275,7 +2953,7 @@ var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert()
      * @param {number} smRank 神秘系数排名
      */
     var writeData = function writeData(smRank) {
-        TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: new Date().getTime(), smRank: smRank });
+        return TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: new Date().getTime(), smRank: smRank });
     };
 
     var data = TmpLog.getValue(_Const2.default.smRankChangeTmpLogName);
@@ -3287,7 +2965,7 @@ var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert()
             var date = new Date(data.time);
             var isUp = smRank < data.smRank;
             writeData(smRank);
-            (0, _Log.push)('神秘系数排名变化', '\u81EA`' + Util.getDateString(date) + '`\u4EE5\u6765\uFF0C\u4F60\u7684\u795E\u79D8\u7CFB\u6570\u6392\u540D\u5171`' + (isUp ? '上升' : '下降') + '`\u4E86`' + Math.abs(smRank - data.smRank) + '`\u540D ' + ('(No.`' + data.smRank + '`->No.`' + smRank + '`)'));
+            Log.push('神秘系数排名变化', '\u81EA`' + Util.getDateString(date) + '`\u4EE5\u6765\uFF0C\u4F60\u7684\u795E\u79D8\u7CFB\u6570\u6392\u540D\u5171`' + (isUp ? '上升' : '下降') + '`\u4E86`' + Math.abs(smRank - data.smRank) + '`\u540D ' + ('(No.`' + data.smRank + '`->No.`' + smRank + '`)'));
             Msg.show('\u81EA<em>' + Util.getDateString(date) + '</em>\u4EE5\u6765\uFF0C\u4F60\u7684\u795E\u79D8\u7CFB\u6570\u6392\u540D\u5171<b style="color: ' + (isUp ? '#F00' : '#393') + '">' + (isUp ? '上升' : '下降') + '</b>\u4E86' + ('<em>' + Math.abs(smRank - data.smRank) + '</em>\u540D'));
         } else if (diff < 0) {
             writeData(smRank);
@@ -3301,7 +2979,7 @@ var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert()
 var addHomePageThreadFastGotoLink = exports.addHomePageThreadFastGotoLink = function addHomePageThreadFastGotoLink() {
     $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         var $this = $(this);
-        $this.css('position', 'relative').prepend('<a class="pd_thread_goto" href="{0}&page=e#a">&raquo;</a>'.replace('{0}', $this.find('a').attr('href')));
+        $this.css('position', 'relative').prepend('<a class="pd_thread_goto" href="' + $this.find('a').attr('href') + '&page=e#a">&raquo;</a>');
     }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         $(this).css('position', 'static').find('.pd_thread_goto').remove();
     });
@@ -3316,7 +2994,7 @@ var showVipSurplusTime = exports.showVipSurplusTime = function showVipSurplusTim
      * @param {number} hours VIP剩余时间（小时）
      */
     var addVipHoursTips = function addVipHoursTips(hours) {
-        $('a[href="kf_growup.php"][title="用户等级和权限"]').parent().after('<div class="line"></div><div style="width:300px;"><a href="kf_vmember.php" class="indbox' + (hours > 0 ? 5 : 6) + '">VIP\u4F1A\u5458 ' + ('(' + (hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限') + ')</a><div class="c"></div></div>'));
+        $('a[href="kf_growup.php"]').parent().after('<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox' + (hours > 0 ? 5 : 6) + '">VIP\u4F1A\u5458 ' + ('(' + (hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限') + ')</a><div class="c"></div></div>'));
     };
 
     var vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
@@ -3339,17 +3017,18 @@ var showVipSurplusTime = exports.showVipSurplusTime = function showVipSurplusTim
  */
 var addSearchTypeSelectBoxInHomePage = exports.addSearchTypeSelectBoxInHomePage = function addSearchTypeSelectBoxInHomePage() {
     var $form = $('form[action="search.php?"]');
-    $form.attr('name', 'pd_search');
+    $form.attr('name', 'pdSearchForm');
     var $keyWord = $form.find('[type="text"][name="keyword"]');
     $keyWord.css('width', '116px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./TmpLog":20,"./Util":21}],10:[function(require,module,exports){
+},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./TmpLog":21,"./Util":22}],10:[function(require,module,exports){
+/* 信息模块 */
 'use strict';
 
 /**
- * KFOL类
+ * 信息类
  */
 
 Object.defineProperty(exports, "__esModule", {
@@ -3364,6 +3043,8 @@ var Info = {
   isInHomePage: location.pathname === '/' || location.pathname === '/index.php',
   // 是否为移动版
   isMobile: false,
+  // 当前域名是否在miaola.info下
+  isInMiaolaDomain: location.host.endsWith('.miaola.info'),
   // 版本号
   version: '',
   // 当前窗口
@@ -3380,12 +3061,13 @@ var Info = {
 exports.default = Info;
 
 },{}],11:[function(require,module,exports){
+/* 道具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyItemDescription = exports.addBatchBuyItemsLink = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addBatchConvertEnergyAndRestoreItemsLink = exports.addConvertEnergyAndRestoreItemsButton = exports.addSellAndUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
+exports.modifyItemDescription = exports.addBatchBuyItemsLink = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addSellAndUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
@@ -3405,7 +3087,11 @@ var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
 
+var _Config = require('./Config');
+
 var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
 
 var _Public = require('./Public');
 
@@ -3576,8 +3262,7 @@ var getCreditsViaResponse = function getCreditsViaResponse(response, itemTypeId)
     if (itemTypeId >= 7 && itemTypeId <= 12) {
         if (/成功！/.test(response)) return { '效果': 1 };
     } else {
-        var matches = null;
-        matches = /恢复能量增加了\s*(\d+)\s*点/i.exec(response);
+        var matches = /恢复能量增加了\s*(\d+)\s*点/i.exec(response);
         if (matches) return { '能量': parseInt(matches[1]) };
         matches = /(\d+)KFB/i.exec(response);
         if (matches) return { 'KFB': parseInt(matches[1]) };
@@ -3646,7 +3331,7 @@ var useItems = function useItems(options, cycle) {
     if (cycle) {
         if (cycle.round === 1) {
             console.log('\u5FAA\u73AF\u4F7F\u7528\u9053\u5177Start\uFF0C\u4F7F\u7528\u9053\u5177\u6570\u91CF\uFF1A' + cycle.itemNum + '\uFF0C\u6709\u6548\u9053\u5177\u4F7F\u7528\u6B21\u6570\u4E0A\u9650\uFF1A' + (cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制') + '\uFF0C' + ('\u6062\u590D\u9053\u5177\u6210\u529F\u6B21\u6570\u4E0A\u9650\uFF1A' + (cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制')));
-            $('.kf_fw_ig1:last').parent().append('<ul class="pd_result"><li class="pd_stat"><strong>\u5BF9<em>' + cycle.itemNum + '</em>\u4E2A\u3010Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '\u3011' + ('\u9053\u5177\u7684\u5FAA\u73AF\u4F7F\u7528\u5F00\u59CB\uFF08\u5F53\u524D\u9053\u5177\u6062\u590D\u80FD\u91CF<em>' + cycle.totalEnergyNum + '</em>\u70B9\uFF09<br>') + ('\uFF08\u6709\u6548\u9053\u5177\u4F7F\u7528\u6B21\u6570\u4E0A\u9650\uFF1A<em>' + (cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制') + '</em>\uFF0C') + ('\u6062\u590D\u9053\u5177\u6210\u529F\u6B21\u6570\u4E0A\u9650\uFF1A<em>' + (cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制') + '</em>\uFF09</strong></li></ul>'));
+            $('.kf_fw_ig1:last').parent().append('\n<ul class="pd_result">\n  <li class="pd_stat">\n    <strong>\n    \u5BF9<em>' + cycle.itemNum + '</em>\u4E2A\u3010Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '\u3011\u9053\u5177\u7684\u5FAA\u73AF\u4F7F\u7528\u5F00\u59CB\uFF08\u5F53\u524D\u9053\u5177\u6062\u590D\u80FD\u91CF<em>' + cycle.totalEnergyNum + '</em>\u70B9\uFF09<br>\n    \uFF08\u6709\u6548\u9053\u5177\u4F7F\u7528\u6B21\u6570\u4E0A\u9650\uFF1A<em>' + (cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制') + '</em>\uFF0C\n    \u6062\u590D\u9053\u5177\u6210\u529F\u6B21\u6570\u4E0A\u9650\uFF1A<em>' + (cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制') + '</em>\uFF09\n    </strong>\n  </li>\n</ul>\n');
         } else {
             $('.pd_result:last').append('<div class="pd_result_sep"></div>');
         }
@@ -3672,11 +3357,15 @@ var useItems = function useItems(options, cycle) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('使用道具', html);
-                    var matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href=".+?">/i.exec(html);
-                    if (matches && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(html)) {
+
+                    var _Util$getResponseMsg = Util.getResponseMsg(html),
+                        type = _Util$getResponseMsg.type,
+                        msg = _Util$getResponseMsg.msg;
+
+                    if (type === 1 && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(msg)) {
                         successNum++;
                         nextRoundItemIdList.push(itemId);
-                        var credits = getCreditsViaResponse(matches[1], settings.itemTypeId);
+                        var credits = getCreditsViaResponse(msg, settings.itemTypeId);
                         if (credits !== -1) {
                             if ($.isEmptyObject(credits)) stat['无效道具']++;else stat['有效道具']++;
                             if (settings.itemTypeId <= 6) {
@@ -3708,9 +3397,9 @@ var useItems = function useItems(options, cycle) {
                         }
                     } else {
                         failNum++;
-                        if (/无法再使用/.test(html)) nextRoundItemIdList = [];
+                        if (/无法再使用/.test(msg)) nextRoundItemIdList = [];
                     }
-                    $('.pd_result:last').append('<li><b>\u7B2C' + (index + 1) + '\u6B21\uFF1A</b>' + (matches ? matches[1] : '未能获得预期的回应') + '</li>');
+                    $('.pd_result:last').append('<li><b>\u7B2C' + (index + 1) + '\u6B21\uFF1A</b>' + msg + '</li>');
                     if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
                         isStop = true;
                         console.log('有效道具使用次数到达设定上限，循环使用操作停止');
@@ -3721,20 +3410,20 @@ var useItems = function useItems(options, cycle) {
                     failNum++;
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
                         $(document).clearQueue('UseItems');
                         if (settings.isTypeBatch) $(document).clearQueue('UseItemTypes');
                     }
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (stat['有效道具'] === 0) delete stat['有效道具'];
                         if (stat['无效道具'] === 0) delete stat['无效道具'];
                         if (!cycle && successNum > 0) {
-                            (0, _Log.push)('使用道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u88AB\u4F7F\u7528', {
+                            Log.push('使用道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u88AB\u4F7F\u7528', {
                                 gain: $.extend({}, stat, { '已使用道具': successNum }),
                                 pay: { '道具': -successNum }
                             });
@@ -3861,10 +3550,13 @@ var restoreItems = function restoreItems(options, cycle) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('恢复道具', html);
-                    var msg = '';
-                    var matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href=".+?">/i.exec(html);
-                    if (matches) {
-                        if (/该道具已经被恢复/.test(html)) {
+
+                    var _Util$getResponseMsg2 = Util.getResponseMsg(html),
+                        type = _Util$getResponseMsg2.type,
+                        msg = _Util$getResponseMsg2.msg;
+
+                    if (type === 1) {
+                        if (/该道具已经被恢复/.test(msg)) {
                             msg = '该道具已经被恢复';
                             successNum++;
                             successEnergyNum += perEnergyNum;
@@ -3873,30 +3565,26 @@ var restoreItems = function restoreItems(options, cycle) {
                                 isStop = true;
                                 msg += '<span class="pd_notice">（恢复道具成功次数已达到设定上限，恢复操作中止）</span>';
                             }
-                        } else if (/恢复失败/.test(html)) {
+                        } else if (/恢复失败/.test(msg)) {
                             msg = '该道具恢复失败';
                             failNum++;
-                        } else if (/你的能量不足以恢复本道具/.test(html)) {
+                        } else if (/你的能量不足以恢复本道具/.test(msg)) {
                             isStop = true;
                             msg = '你的能量不足以恢复本道具<span class="pd_notice">（恢复操作中止）</span>';
-                        } else {
-                            msg = matches[1];
                         }
-                    } else {
-                        msg = '未能获得预期的回应';
                     }
                     $('.pd_result:last').append('<li><b>\u7B2C' + (index + 1) + '\u6B21\uFF1A</b>' + msg + '</li>');
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('RestoreItems');
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (!cycle && (successNum > 0 || failNum > 0)) {
-                            (0, _Log.push)('恢复道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u6062\u590D\u6210\u529F\uFF0C\u5171\u6709`' + failNum + '`\u4E2A\u9053\u5177\u6062\u590D\u5931\u8D25', {
+                            Log.push('恢复道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u6062\u590D\u6210\u529F\uFF0C\u5171\u6709`' + failNum + '`\u4E2A\u9053\u5177\u6062\u590D\u5931\u8D25', {
                                 gain: { '道具': successNum },
                                 pay: { '已使用道具': -(successNum + failNum), '能量': -successEnergyNum }
                             });
@@ -4006,17 +3694,17 @@ var cycleUseItems = function cycleUseItems(type, options, cycle) {
             }
         }
 
-        $('.pd_result:last').append('\n<li class="pd_result_sep' + (type > 0 ? '_inner' : '') + '"></li>\n<li class="pd_stat">\n  <strong>' + (type > 0 ? '截至目前为止的统计' : '\u3010Lv.' + options.itemLevel + '\uFF1A' + options.itemName + '\u3011\u5FAA\u73AF\u4F7F\u7528\u6700\u7EC8\u7EDF\u8BA1') + '\n(\u5F53\u524D\u9053\u5177\u6062\u590D\u80FD\u91CF<em>' + cycle.totalEnergyNum + '</em>\u70B9)\uFF1A</strong>\n</li>\n<li class="pd_stat">\n  ' + (type > 0 ? '' : '\u5171\u8FDB\u884C\u4E86<em>' + cycle.round + '</em>\u8F6E\u5FAA\u73AF\uFF1A') + '\n  <i>\u88AB\u4F7F\u7528\u6B21\u6570<em>+' + cycle.countStat['被使用次数'] + '</em></i>\n  <i>\u6062\u590D\u6210\u529F\u6B21\u6570<em>+' + cycle.countStat['恢复成功次数'] + '</em></i>\n  <i>\u6062\u590D\u5931\u8D25\u6B21\u6570<em>+' + cycle.countStat['恢复失败次数'] + '</em></i>\n</li>\n<li class="pd_stat">' + resultStat + '</li>\n');
+        $('.pd_result:last').append('\n<li class="pd_result_sep' + (type > 0 ? '_inner' : '') + '"></li>\n<li class="pd_stat">\n  <strong>\n    ' + (type > 0 ? '截至目前为止的统计' : '\u3010Lv.' + options.itemLevel + '\uFF1A' + options.itemName + '\u3011\u5FAA\u73AF\u4F7F\u7528\u6700\u7EC8\u7EDF\u8BA1') + '\uFF08\u5F53\u524D\u9053\u5177\u6062\u590D\u80FD\u91CF<em>' + cycle.totalEnergyNum + '</em>\u70B9\uFF09\uFF1A\n  </strong>\n</li>\n<li class="pd_stat">\n  ' + (type > 0 ? '' : '\u5171\u8FDB\u884C\u4E86<em>' + cycle.round + '</em>\u8F6E\u5FAA\u73AF\uFF1A') + '\n  <i>\u88AB\u4F7F\u7528\u6B21\u6570<em>+' + cycle.countStat['被使用次数'] + '</em></i>\n  <i>\u6062\u590D\u6210\u529F\u6B21\u6570<em>+' + cycle.countStat['恢复成功次数'] + '</em></i>\n  <i>\u6062\u590D\u5931\u8D25\u6B21\u6570<em>+' + cycle.countStat['恢复失败次数'] + '</em></i>\n</li>\n<li class="pd_stat">' + resultStat + '</li>\n');
     };
 
     if (type === 1) {
         showResult(type, cycle.stat);
-        Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + options.itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + options.itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         setTimeout(function () {
             useItems(options, cycle);
         }, cycle.round === 1 ? 500 : typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
     } else if (type === 2) {
-        Msg.wait('<strong>\u6B63\u5728\u6062\u590D\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + options.itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        Msg.wait('<strong>\u6B63\u5728\u6062\u590D\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + options.itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         setTimeout(function () {
             return restoreItems(options, cycle);
         }, typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
@@ -4032,7 +3720,7 @@ var cycleUseItems = function cycleUseItems(type, options, cycle) {
         }
 
         if (cycle.countStat['被使用次数'] > 0) {
-            (0, _Log.push)('循环使用道具', '\u5BF9`' + cycle.itemNum + '`\u4E2A\u3010`Lv.' + options.itemLevel + '\uFF1A' + options.itemName + '`\u3011\u9053\u5177\u8FDB\u884C\u4E86`' + cycle.round + '`\u8F6E\u5FAA\u73AF\u4F7F\u7528' + ('(\u88AB\u4F7F\u7528\u6B21\u6570`+' + cycle.countStat['被使用次数'] + '`\uFF0C\u6062\u590D\u6210\u529F\u6B21\u6570`+' + cycle.countStat['恢复成功次数'] + '`\uFF0C') + ('\u6062\u590D\u5931\u8D25\u6B21\u6570`+' + cycle.countStat['恢复失败次数'] + '`)'), { gain: gain, pay: pay });
+            Log.push('循环使用道具', '\u5BF9`' + cycle.itemNum + '`\u4E2A\u3010`Lv.' + options.itemLevel + '\uFF1A' + options.itemName + '`\u3011\u9053\u5177\u8FDB\u884C\u4E86`' + cycle.round + '`\u8F6E\u5FAA\u73AF\u4F7F\u7528' + ('(\u88AB\u4F7F\u7528\u6B21\u6570`+' + cycle.countStat['被使用次数'] + '`\uFF0C\u6062\u590D\u6210\u529F\u6B21\u6570`+' + cycle.countStat['恢复成功次数'] + '`\uFF0C') + ('\u6062\u590D\u5931\u8D25\u6B21\u6570`+' + cycle.countStat['恢复失败次数'] + '`)'), { gain: gain, pay: pay });
         }
 
         console.log('\u5171\u8FDB\u884C\u4E86' + cycle.round + '\u8F6E\u5FAA\u73AF\uFF0C\u88AB\u4F7F\u7528\u6B21\u6570+' + cycle.countStat['被使用次数'] + '\uFF0C\u6062\u590D\u6210\u529F\u6B21\u6570+' + cycle.countStat['恢复成功次数'] + '\uFF0C' + ('\u6062\u590D\u5931\u8D25\u6B21\u6570+' + cycle.countStat['恢复失败次数'] + '\uFF0C\u80FD\u91CF' + cycle.stat['能量']));
@@ -4080,7 +3768,11 @@ var convertItemsToEnergy = function convertItemsToEnergy(options) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('将道具转换为能量', html);
-                    if (/转换为了\s*\d+\s*点能量/.test(html)) {
+
+                    var _Util$getResponseMsg3 = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg3.msg;
+
+                    if (/转换为了\s*\d+\s*点能量/.test(msg)) {
                         successNum++;
                     } else failNum++;
                 },
@@ -4088,19 +3780,19 @@ var convertItemsToEnergy = function convertItemsToEnergy(options) {
                     failNum++;
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    var isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) {
                         $(document).clearQueue('ConvertItemsToEnergy');
                         if (settings.isTypeBatch) $(document).clearQueue('ConvertItemTypesToEnergy');
                     }
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         var successEnergyNum = successNum * energyNum;
                         if (successNum > 0) {
-                            (0, _Log.push)('将道具转换为能量', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u6210\u529F\u8F6C\u6362\u4E3A\u80FD\u91CF', { gain: { '能量': successEnergyNum }, pay: { '已使用道具': -successNum } });
+                            Log.push('将道具转换为能量', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u6210\u529F\u8F6C\u6362\u4E3A\u80FD\u91CF', { gain: { '能量': successEnergyNum }, pay: { '已使用道具': -successNum } });
                         }
                         console.log('\u5171\u6709' + successNum + '\u4E2A\u9053\u5177\u6210\u529F\u8F6C\u6362\u4E3A\u80FD\u91CF' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u8F6C\u6362\u5931\u8D25' : '') + '\uFF0C\u80FD\u91CF+' + successEnergyNum);
                         Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u6210\u529F\u8F6C\u6362\u4E3A\u80FD\u91CF' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u9053\u5177\u8F6C\u6362\u5931\u8D25' : '') + '</strong>' + ('<i>\u80FD\u91CF<em>+' + successEnergyNum + '</em></i>'), -1);
@@ -4154,7 +3846,11 @@ var sellItems = function sellItems(options) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('出售道具', html);
-                    if (/出售成功/.test(html)) {
+
+                    var _Util$getResponseMsg4 = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg4.msg;
+
+                    if (/出售成功/.test(msg)) {
                         successNum++;
                         totalGain += getSellItemGainByLevel(settings.itemLevel);
                     } else failNum++;
@@ -4163,15 +3859,15 @@ var sellItems = function sellItems(options) {
                     failNum++;
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    var isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('SellItems');
 
                     if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (successNum > 0) {
-                            (0, _Log.push)('出售道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', {
+                            Log.push('出售道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', {
                                 gain: { 'KFB': totalGain },
                                 pay: { '道具': -successNum }
                             });
@@ -4214,15 +3910,16 @@ var addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function addSe
         $(this).css('width', '163').parent().append('<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="' + matches[1] + '"></td>');
     });
     $('.kf_fw_ig1 > tbody > tr:lt(2)').find('td').attr('colspan', 5);
-    $('<div class="pd_item_btns"><button title="批量使用指定道具">使用道具</button><button>全选</button><button>反选</button></div>').insertAfter('.kf_fw_ig1').find('button:first-child').click(function () {
+
+    $('\n<div class="pd_item_btns">\n  ' + (itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : '') + '\n  ' + (itemTypeId > 1 ? '<button name="cycleUseItem" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : '') + '\n  <button name="useItem" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177">\u4F7F\u7528\u9053\u5177</button>\n  <button name="selectAll">\u5168\u9009</button>\n  <button name="selectInverse">\u53CD\u9009</button>\n</div>\n').insertAfter('.kf_fw_ig1').find('[name="useItem"]').click(function () {
         Msg.destroy();
         var itemIdList = [];
-        $('.kf_fw_ig1 input[type="checkbox"]:checked').each(function () {
+        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
             itemIdList.push(parseInt($(this).val()));
         });
         if (!itemIdList.length) return;
         if (!confirm('\u5171\u9009\u62E9\u4E86' + itemIdList.length + '\u4E2A\u9053\u5177\uFF0C\u662F\u5426\u6279\u91CF\u4F7F\u7528\u9053\u5177\uFF1F')) return;
-        Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         useItems({
             type: 2,
             itemIdList: itemIdList,
@@ -4231,84 +3928,79 @@ var addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function addSe
             itemTypeId: itemTypeId,
             itemName: itemName
         });
-    }).next().click(function () {
-        $('.kf_fw_ig1 input[type="checkbox"]').prop('checked', true);
-    }).next().click(function () {
-        $('.kf_fw_ig1 input[type="checkbox"]').each(function () {
+    }).end().find('[name="selectAll"]').click(function () {
+        $('.kf_fw_ig1 [type="checkbox"]').prop('checked', true);
+    }).end().find('[name="selectInverse"]').click(function () {
+        $('.kf_fw_ig1 [type="checkbox"]').each(function () {
             $(this).prop('checked', !$(this).prop('checked'));
         });
-    });
-    if (itemTypeId > 1) {
-        $('<button style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>').prependTo('.pd_item_btns').click(function () {
-            Msg.destroy();
-            var itemIdList = [];
-            $('.kf_fw_ig1 input[type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            var value = prompt('你要循环使用多少个道具？\n' + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemIdList.length);
-            if (value === null) return;
-            value = $.trim(value);
-            if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
-                alert('格式不正确');
-                return;
-            }
-            var arr = value.split('|');
-            var num = parseInt(arr[0]),
-                maxEffectiveItemCount = 0,
-                maxSuccessRestoreItemCount = 0;
-            if (!num) return;
-            if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
-            if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
-            Msg.destroy();
+    }).end().find('[name="cycleUseItem"]').click(function () {
+        Msg.destroy();
+        var itemIdList = [];
+        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
+            itemIdList.push(parseInt($(this).val()));
+        });
+        if (!itemIdList.length) return;
+        var value = prompt('你要循环使用多少个道具？\n' + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemIdList.length);
+        if (value === null) return;
+        value = $.trim(value);
+        if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
+            alert('格式不正确');
+            return;
+        }
+        var arr = value.split('|');
+        var num = parseInt(arr[0]),
+            maxEffectiveItemCount = 0,
+            maxSuccessRestoreItemCount = 0;
+        if (!num) return;
+        if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
+        if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
+        Msg.destroy();
 
-            if (num > itemIdList.length) num = itemIdList.length;
-            var tmpItemIdList = [];
-            for (var i = 0; i < num; i++) {
-                tmpItemIdList.push(itemIdList[i]);
-            }
-            itemIdList = tmpItemIdList;
-            Msg.wait('正在获取当前道具相关信息，请稍后&hellip;');
-            $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
-                Msg.destroy();
-                var totalEnergyNum = getCurrentEnergyNum(html);
-                showCurrentUsedItemNum(html);
-                cycleUseItems(1, {
-                    type: 2,
-                    itemIdList: itemIdList,
-                    safeId: safeId,
-                    itemLevel: itemLevel,
-                    itemTypeId: itemTypeId,
-                    itemName: itemName
-                }, {
-                    itemNum: itemIdList.length,
-                    round: 1,
-                    totalEnergyNum: totalEnergyNum,
-                    countStat: {},
-                    stat: {},
-                    maxEffectiveItemCount: maxEffectiveItemCount,
-                    maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
-                });
-            });
-        });
-    }
-    if (itemTypeId >= 7 && itemTypeId <= 12) {
-        $('<button style="color: #f00;" title="批量出售指定道具">出售道具</button>').prependTo('.pd_item_btns').click(function () {
+        if (num > itemIdList.length) num = itemIdList.length;
+        var tmpItemIdList = [];
+        for (var i = 0; i < num; i++) {
+            tmpItemIdList.push(itemIdList[i]);
+        }
+        itemIdList = tmpItemIdList;
+        Msg.wait('正在获取当前道具相关信息，请稍后&hellip;');
+        $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
             Msg.destroy();
-            var itemIdList = [];
-            $('.kf_fw_ig1 input[type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            if (!confirm('共选择了{0}个道具，是否批量出售道具？'.replace('{0}', itemIdList.length))) return;
-            Msg.wait('<strong>\u6B63\u5728\u51FA\u552E\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-            sellItems({
+            var totalEnergyNum = getCurrentEnergyNum(html);
+            showCurrentUsedItemNum(html);
+            cycleUseItems(1, {
+                type: 2,
                 itemIdList: itemIdList,
+                safeId: safeId,
                 itemLevel: itemLevel,
+                itemTypeId: itemTypeId,
                 itemName: itemName
+            }, {
+                itemNum: itemIdList.length,
+                round: 1,
+                totalEnergyNum: totalEnergyNum,
+                countStat: {},
+                stat: {},
+                maxEffectiveItemCount: maxEffectiveItemCount,
+                maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
             });
         });
-    }
+    }).end().find('[name="sellItem"]').click(function () {
+        Msg.destroy();
+        var itemIdList = [];
+        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
+            itemIdList.push(parseInt($(this).val()));
+        });
+        if (!itemIdList.length) return;
+        if (!confirm('\u5171\u9009\u62E9\u4E86' + itemIdList.length + '\u4E2A\u9053\u5177\uFF0C\u662F\u5426\u6279\u91CF\u51FA\u552E\u9053\u5177\uFF1F')) return;
+        Msg.wait('<strong>\u6B63\u5728\u51FA\u552E\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        sellItems({
+            itemIdList: itemIdList,
+            itemLevel: itemLevel,
+            itemName: itemName
+        });
+    });
+
     showCurrentUsedItemNum();
 };
 
@@ -4331,7 +4023,7 @@ var addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestoreIt
         if (!matches) return;
         $(this).css('width', '500').parent().append('<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="' + matches[1] + '"></td>');
     });
-    $('<div class="pd_item_btns"><button class="pd_highlight" title="批量将指定道具转换为能量">转换能量</button>' + '<button title="批量恢复指定道具">恢复道具</button><button>全选</button><button>反选</button></div>').insertAfter('.kf_fw_ig1:eq(1)').find('button:first-child').click(function () {
+    $('\n<div class="pd_item_btns">\n  <button class="pd_highlight" name="convertEnergy" title="\u6279\u91CF\u5C06\u6307\u5B9A\u9053\u5177\u8F6C\u6362\u4E3A\u80FD\u91CF">\u8F6C\u6362\u80FD\u91CF</button>\n  <button name="restoreItem" title="\u6279\u91CF\u6062\u590D\u6307\u5B9A\u9053\u5177">\u6062\u590D\u9053\u5177</button>\n  <button name="selectAll">\u5168\u9009</button>\n  <button name="selectInverse">\u53CD\u9009</button>\n</div>\n').insertAfter('.kf_fw_ig1:eq(1)').find('[name="convertEnergy"]').click(function () {
         Msg.destroy();
         var itemIdList = [];
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
@@ -4339,7 +4031,7 @@ var addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestoreIt
         });
         if (!itemIdList.length) return;
         if (!confirm('\u5171\u9009\u62E9\u4E86' + itemIdList.length + '\u4E2A\u9053\u5177\uFF0C\u662F\u5426\u8F6C\u6362\u4E3A\u80FD\u91CF\uFF1F')) return;
-        Msg.wait('<strong>\u6B63\u5728\u8F6C\u6362\u80FD\u91CF\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        Msg.wait('<strong>\u6B63\u5728\u8F6C\u6362\u80FD\u91CF\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         convertItemsToEnergy({
             type: 2,
             itemIdList: itemIdList,
@@ -4347,7 +4039,7 @@ var addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestoreIt
             itemLevel: itemLevel,
             itemName: itemName
         });
-    }).next().click(function () {
+    }).end().find('[name="restoreItem"]').click(function () {
         Msg.destroy();
         var itemIdList = [];
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
@@ -4361,7 +4053,7 @@ var addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestoreIt
             alert('所需恢复能量不足');
             return;
         }
-        Msg.wait('<strong>\u6B63\u5728\u6062\u590D\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        Msg.wait('<strong>\u6B63\u5728\u6062\u590D\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         restoreItems({
             type: 2,
             itemIdList: itemIdList,
@@ -4370,38 +4062,13 @@ var addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestoreIt
             itemTypeId: itemTypeId,
             itemName: itemName
         });
-    }).next().click(function () {
+    }).end().find('[name="selectAll"]').click(function () {
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]').prop('checked', true);
-    }).next().click(function () {
+    }).end().find('[name="selectInverse"]').click(function () {
         $('.kf_fw_ig1:eq(1) input[type="checkbox"]').each(function () {
             $(this).prop('checked', !$(this).prop('checked'));
         });
     });
-};
-
-/**
- * 在道具恢复页面上添加批量转换道具为能量和批量恢复道具的链接
- */
-var addBatchConvertEnergyAndRestoreItemsLink = exports.addBatchConvertEnergyAndRestoreItemsLink = function addBatchConvertEnergyAndRestoreItemsLink() {
-    var $myItems = $('.kf_fw_ig1:last');
-    $myItems.find('tbody > tr').each(function (index) {
-        var $this = $(this);
-        if (index === 0) {
-            $this.find('td').attr('colspan', 6);
-        } else if (index === 1) {
-            $this.find('td:nth-child(2)').attr('width', 200).next('td').attr('width', 100).wrapInner('<span class="pd_used_num pd_custom_tips" style="color: #000;"></span>').next('td').attr('width', 130).text('批量恢复').next('td').attr('width', 160).before('<td width="160">批量转换</td>');
-        } else {
-            $this.find('td:nth-child(3)').wrapInner('<span class="pd_used_num pd_custom_tips"></span>').end().find('td:nth-child(4)').html('<a class="pd_items_batch_restore ' + (index === 2 ? 'pd_disabled_link' : '') + '" href="#" title="\u6279\u91CF\u6062\u590D\u6307\u5B9A\u6570\u91CF\u7684\u9053\u5177">\u6279\u91CF\u6062\u590D\u9053\u5177</a>').after('<td><a class="pd_items_batch_convert pd_highlight ' + (index === 2 ? 'pd_disabled_link' : '') + '" href="#" ' + 'title="\u6279\u91CF\u5C06\u6307\u5B9A\u6570\u91CF\u7684\u9053\u5177\u8F6C\u6362\u4E3A\u80FD\u91CF">\u6279\u91CF\u8F6C\u6362\u9053\u5177\u4E3A\u80FD\u91CF</a></td>');
-            var matches = /lv=(\d+)/i.exec($this.find('td:last-child').find('a').attr('href'));
-            if (matches) $this.data('itemTypeId', parseInt(matches[1]));
-        }
-    });
-    bindItemActionLinksClick($myItems);
-
-    var $itemName = $myItems.find('tbody > tr:gt(1) > td:nth-child(2)');
-    addSampleItemsLink($itemName);
-    showItemUsedInfo($itemName.find('a'));
-    showUsedItemEnergyTips();
 };
 
 /**
@@ -4410,7 +4077,7 @@ var addBatchConvertEnergyAndRestoreItemsLink = exports.addBatchConvertEnergyAndR
 var addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTypesButton = function addBatchUseAndConvertItemTypesButton() {
     var safeId = Public.getSafeId();
     if (!safeId) return;
-    $('<div class="pd_item_btns"><button title="批量使用指定种类的道具" data-action="useItemTypes">批量使用</button>' + '<button class="pd_highlight" title="批量将指定种类的道具转换为能量" data-action="convertItemTypes">批量转换</button>' + '<button data-action="selectAll">全选</button><button data-action="selectInverse">反选</button></div>').insertAfter('.pd_my_items').on('click', 'button', function () {
+    $('\n<div class="pd_item_btns">\n  <label style="margin-right: 5px;" title="\u5EF6\u957F\u9053\u5177\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57282~6\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u548C\u6062\u590D\u9053\u5177\uFF08\u4EC5\u9650\u6B64\u9875\u9762\u6709\u6548\uFF09">\n    <input name="simulateManualHandleItemEnabled" type="checkbox" ' + (Config.simulateManualHandleItemEnabled ? 'checked' : '') + '>\n    \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\u9053\u5177\n  </label>\n  <button title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u79CD\u7C7B\u7684\u9053\u5177" data-action="useItemTypes">\u6279\u91CF\u4F7F\u7528</button>\n  <button class="pd_highlight" title="\u6279\u91CF\u5C06\u6307\u5B9A\u79CD\u7C7B\u7684\u9053\u5177\u8F6C\u6362\u4E3A\u80FD\u91CF" data-action="convertItemTypes">\u6279\u91CF\u8F6C\u6362</button>\n  <button data-action="selectAll">\u5168\u9009</button>\n  <button data-action="selectInverse">\u53CD\u9009</button>\n</div>\n').insertAfter('.pd_my_items').on('click', 'button', function () {
         var action = $(this).data('action');
         if (action === 'useItemTypes' || action === 'convertItemTypes') {
             var _ret = function () {
@@ -4459,7 +4126,7 @@ var addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemType
 
                                 if (action === 'useItemTypes') {
                                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                                    Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+                                    Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
                                     useItems({
                                         type: 1,
                                         itemIdList: itemIdList,
@@ -4472,7 +4139,7 @@ var addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemType
                                     });
                                 } else {
                                     console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                                    Msg.wait('<strong>\u6B63\u5728\u8F6C\u6362\u80FD\u91CF\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+                                    Msg.wait('<strong>\u6B63\u5728\u8F6C\u6362\u80FD\u91CF\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
                                     convertItemsToEnergy({
                                         type: 1,
                                         itemIdList: itemIdList,
@@ -4502,7 +4169,16 @@ var addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemType
                 $(this).prop('checked', !$(this).prop('checked'));
             });
         }
-    });
+    }).find('[name="simulateManualHandleItemEnabled"]').click(function () {
+        if (!('_specialAjaxInterval' in _Const2.default)) _Const2.default._specialAjaxInterval = _Const2.default.specialAjaxInterval;
+        var checked = $(this).prop('checked');
+        if (checked) _Const2.default.specialAjaxInterval = function () {
+            return Math.floor(Math.random() * 4000) + 2000;
+        };else _Const2.default.specialAjaxInterval = _Const2.default._specialAjaxInterval;
+        (0, _Config.read)();
+        Config.simulateManualHandleItemEnabled = checked;
+        (0, _Config.write)();
+    }).triggerHandler('click');
 };
 
 /**
@@ -4543,7 +4219,7 @@ var bindItemActionLinksClick = function bindItemActionLinksClick($element) {
                         return;
                     }
                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                    Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+                    Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
                     useItems({
                         type: 1,
                         itemIdList: itemIdList,
@@ -4639,7 +4315,7 @@ var bindItemActionLinksClick = function bindItemActionLinksClick($element) {
                         return;
                     }
                     console.log('批量恢复道具Start，恢复道具数量：' + itemIdList.length);
-                    Msg.wait('<strong>\u6B63\u5728\u6062\u590D\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+                    Msg.wait('<strong>\u6B63\u5728\u6062\u590D\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
                     restoreItems({
                         type: 1,
                         itemIdList: itemIdList,
@@ -4671,7 +4347,7 @@ var bindItemActionLinksClick = function bindItemActionLinksClick($element) {
                         return;
                     }
                     console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                    Msg.wait('<strong>\u6B63\u5728\u8F6C\u6362\u80FD\u91CF\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+                    Msg.wait('<strong>\u6B63\u5728\u8F6C\u6362\u80FD\u91CF\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
                     convertItemsToEnergy({
                         type: 1,
                         itemIdList: itemIdList,
@@ -4883,21 +4559,14 @@ var showCurrentUsableItemNum = function showCurrentUsableItemNum() {
 /**
  * 获取道具使用情况
  * @param html 争夺首页的HTML代码
- * @returns {{}} 道具使用情况对象
+ * @returns {Map} 道具使用情况对象
  */
 var getItemUsedInfo = exports.getItemUsedInfo = function getItemUsedInfo(html) {
-    var itemUsedNumList = {
-        '蕾米莉亚同人漫画': 0,
-        '十六夜同人漫画': 0,
-        '档案室钥匙': 0,
-        '傲娇LOLI娇蛮音CD': 0,
-        '消逝之药': 0,
-        '整形优惠卷': 0
-    };
+    var itemUsedNumList = new Map([['蕾米莉亚同人漫画', 0], ['十六夜同人漫画', 0], ['档案室钥匙', 0], ['傲娇LOLI娇蛮音CD', 0], ['消逝之药', 0], ['整形优惠卷', 0]]);
     var matches = /道具：\[(蕾米莉亚同人漫画)：(\d+)]\[(十六夜同人漫画)：(\d+)]\[(档案室钥匙)：(\d+)]\[(傲娇LOLI娇蛮音CD)：(\d+)]\[(消逝之药)：(\d+)]\[(整形优惠卷)：(\d+)]/.exec(html);
     if (matches) {
         for (var i = 1; i < matches.length; i += 2) {
-            itemUsedNumList[matches[i]] = parseInt(matches[i + 1]);
+            itemUsedNumList.set(matches[i], parseInt(matches[i + 1]));
         }
     }
     return itemUsedNumList;
@@ -4915,8 +4584,8 @@ var showItemUsedInfo = function showItemUsedInfo($links) {
         $links.each(function () {
             var $this = $(this);
             var itemName = $this.text();
-            if (typeof itemUsedNumList[itemName] === 'undefined') return;
-            var usedNum = itemUsedNumList[itemName];
+            if (!itemUsedNumList.has(itemName)) return;
+            var usedNum = itemUsedNumList.get(itemName);
             var maxUsedNum = getMaxUsedNumByName(itemName);
             var nextSuccessPercent = 0;
             if (usedNum > maxUsedNum) nextSuccessPercent = 0;else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
@@ -4936,14 +4605,14 @@ var addSampleItemsLink = function addSampleItemsLink($nodes) {
         var $this = $(this);
         var itemName = $this.text().trim();
         var itemLevel = getLevelByName(itemName);
-        if (itemName && typeof _Const2.default.sampleItemIdList[itemName] !== 'undefined') {
+        if (itemName && _Const2.default.sampleItemIdList.has(itemName)) {
             var title = '';
             if (itemName !== '零时迷子的碎片') {
                 title = '\u6062\u590D\u6B64\u9053\u5177\u9700' + getRestoreEnergyNumByLevel(itemLevel) + '\u70B9\u80FD\u91CF\uFF0C\u8F6C\u6362\u6B64\u9053\u5177\u53EF\u5F97' + getGainEnergyNumByLevel(itemLevel) + '\u70B9\u80FD\u91CF';
             } else {
                 title = '此道具不可恢复和转换';
             }
-            $this.html('<a href="kf_fw_ig_my.php?pro=' + _Const2.default.sampleItemIdList[itemName] + '&display=1" title="' + title + '">' + itemName + '</a>');
+            $this.html('<a href="kf_fw_ig_my.php?pro=' + _Const2.default.sampleItemIdList.get(itemName) + '&display=1" title="' + title + '">' + itemName + '</a>');
         }
     });
 };
@@ -4952,17 +4621,17 @@ var addSampleItemsLink = function addSampleItemsLink($nodes) {
  * 添加道具样品提示
  */
 var addSampleItemTips = exports.addSampleItemTips = function addSampleItemTips() {
-    var itemId = parseInt(Util.getUrlParam('pro'));
-    if (isNaN(itemId) || itemId <= 0) return;
+    var id = parseInt(Util.getUrlParam('pro'));
+    if (isNaN(id) || id <= 0) return;
     var _iteratorNormalCompletion4 = true;
     var _didIteratorError4 = false;
     var _iteratorError4 = undefined;
 
     try {
-        for (var _iterator4 = Object.keys(_Const2.default.sampleItemIdList)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-            var itemName = _step4.value;
+        for (var _iterator4 = _Const2.default.sampleItemIdList.values()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var itemId = _step4.value;
 
-            if (itemId === _Const2.default.sampleItemIdList[itemName]) {
+            if (id === itemId) {
                 $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').find('span:first').after('<span class="pd_notice" style="margin-left: 5px;">(展示用样品)</span>');
                 break;
             }
@@ -5015,16 +4684,18 @@ var buyItems = function buyItems(options) {
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('购买道具', html);
-                    var msg = '';
-                    var matches = /<a href="kf_fw_ig_my\.php\?pro=(\d+)">/i.exec(html);
+
+                    var _Util$getResponseMsg5 = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg5.msg,
+                        url = _Util$getResponseMsg5.url;
+
+                    var matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec(url);
                     if (matches) {
                         successNum++;
                         msg = '\u83B7\u5F97\u4E86<a target="_blank" href="kf_fw_ig_my.php?pro=' + matches[1] + '" data-id="' + matches[1] + '">\u4E00\u4E2A\u9053\u5177</a>';
-                    } else if (/你需要持有该道具两倍市场价的KFB/i.test(html)) {
+                    } else if (/你需要持有该道具两倍市场价的KFB/.test(html)) {
                         msg = '你需要持有该道具两倍市场价的KFB<span class="pd_notice">（购买操作中止）</span>';
                         isStop = true;
-                    } else {
-                        msg = '未能获得预期的回应';
                     }
                     $('.pd_result:last').append('<li><b>\u7B2C' + (index + 1) + '\u6B21\uFF1A</b>' + msg + '</li>');
                 },
@@ -5032,15 +4703,15 @@ var buyItems = function buyItems(options) {
                     failNum++;
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BatchBuyItems');
 
                     if (isStop || index === settings.num - 1) {
-                        Msg.remove($remainingNum.closest('.pd_msg'));
+                        Msg.remove($countdown.closest('.pd_msg'));
                         if (successNum > 0) {
-                            (0, _Log.push)('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum } });
+                            Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum } });
                         }
                         console.log('\u5171\u6709' + successNum + '\u4E2A\u3010Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '\u3011\u9053\u5177\u8D2D\u4E70\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u8D2D\u4E70\u5931\u8D25' : ''));
                         Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010<em>Lv.' + settings.itemLevel + '</em>' + settings.itemName + '\u3011\u9053\u5177\u8D2D\u4E70\u6210\u529F' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u9053\u5177\u8D2D\u4E70\u5931\u8D25' : '') + '</strong>'), -1);
@@ -5089,7 +4760,7 @@ var statBuyItemsPrice = function statBuyItemsPrice($result, itemLevel, itemName)
         }
     });
     if (!marketPrice) marketPrice = 1;
-    Msg.wait('<strong>\u6B63\u5728\u7EDF\u8BA1\u8D2D\u4E70\u4EF7\u683C\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + totalNum + '</em></i>');
+    Msg.wait('<strong>\u6B63\u5728\u7EDF\u8BA1\u8D2D\u4E70\u4EF7\u683C\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + totalNum + '</em></i>');
     $(document).clearQueue('StatBuyItemsPrice');
     $result.find('li > a').each(function (index) {
         var $this = $(this);
@@ -5101,8 +4772,8 @@ var statBuyItemsPrice = function statBuyItemsPrice($result, itemLevel, itemName)
                 url: 'kf_fw_ig_my.php?pro=' + itemId + '&t=' + new Date().getTime(),
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
                     var matches = /从商店购买，购买价(\d+)KFB。<br/.exec(html);
                     if (matches) {
                         successNum++;
@@ -5124,10 +4795,10 @@ var statBuyItemsPrice = function statBuyItemsPrice($result, itemLevel, itemName)
                     if (index === totalNum - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            (0, _Log.push)('统计道具购买价格', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u7EDF\u8BA1\u6210\u529F' + ((failNum > 0 ? '\uFF08\u5171\u6709`' + failNum + '`\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09' : '') + '\uFF0C\u603B\u8BA1\u4EF7\u683C\uFF1A`' + totalPrice.toLocaleString() + '`\uFF0C') + ('\u5E73\u5747\u4EF7\u683C\uFF1A`' + (successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0) + '`') + ('(`' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%`)\uFF0C') + ('\u6700\u4F4E\u4EF7\u683C\uFF1A`' + minPrice.toLocaleString() + '`(`' + Math.round(minPrice / marketPrice * 100) + '%`)\uFF0C') + ('\u6700\u9AD8\u4EF7\u683C\uFF1A`' + maxPrice.toLocaleString() + '`(`' + Math.round(maxPrice / marketPrice * 100) + '%`)'), { pay: { 'KFB': -totalPrice } });
+                            Log.push('统计道具购买价格', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u7EDF\u8BA1\u6210\u529F' + ((failNum > 0 ? '\uFF08\u5171\u6709`' + failNum + '`\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09' : '') + '\uFF0C\u603B\u8BA1\u4EF7\u683C\uFF1A`' + totalPrice.toLocaleString() + '`\uFF0C') + ('\u5E73\u5747\u4EF7\u683C\uFF1A`' + (successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0) + '`') + ('(`' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%`)\uFF0C') + ('\u6700\u4F4E\u4EF7\u683C\uFF1A`' + minPrice.toLocaleString() + '`(`' + Math.round(minPrice / marketPrice * 100) + '%`)\uFF0C') + ('\u6700\u9AD8\u4EF7\u683C\uFF1A`' + maxPrice.toLocaleString() + '`(`' + Math.round(maxPrice / marketPrice * 100) + '%`)'), { pay: { 'KFB': -totalPrice } });
                         }
-                        console.log('\u7EDF\u8BA1\u9053\u5177\u8D2D\u4E70\u4EF7\u683C\uFF08KFB\uFF09\uFF08\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09\uFF0C\u7EDF\u8BA1\u6210\u529F\u6570\u91CF\uFF1A' + successNum + '\uFF0C\u603B\u8BA1\u4EF7\u683C\uFF1A' + totalPrice.toLocaleString() + '\uFF0C' + ('\u5E73\u5747\u4EF7\u683C\uFF1A' + (successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0) + ' ') + ('(' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%)\uFF0C\u6700\u4F4E\u4EF7\u683C\uFF1A' + minPrice.toLocaleString() + ' ') + ('(' + Math.round(minPrice / marketPrice * 100) + '%)\uFF0C\u6700\u9AD8\u4EF7\u683C\uFF1A' + maxPrice.toLocaleString() + ' (' + Math.round(maxPrice / marketPrice * 100) + '%)'));
-                        $result.append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C' + (failNum > 0 ? '<span class="pd_notice">\uFF08\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09</span>' : '') + '\uFF1A</b><br>\n  <i>\u7EDF\u8BA1\u6210\u529F\u6570\u91CF\uFF1A<em>' + successNum + '</em></i>\n  <i>\u603B\u8BA1\u4EF7\u683C\uFF1A<em>' + totalPrice.toLocaleString() + '</em></i>\n  <i>\u5E73\u5747\u4EF7\u683C\uFF1A<em>' + (successNum > 0 ? Util.getFixedNumberLocaleString(totalPrice / successNum, 2) : 0) + ' \n(' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%)</em></i>\n  <i>\u6700\u4F4E\u4EF7\u683C\uFF1A<em>' + minPrice.toLocaleString() + ' (' + Math.round(minPrice / marketPrice * 100) + '%)</em></i>\n  <i>\u6700\u9AD8\u4EF7\u683C\uFF1A<em>' + maxPrice.toLocaleString() + ' (' + Math.round(maxPrice / marketPrice * 100) + '%)</em></i>\n</li>\n');
+                        console.log('\u7EDF\u8BA1\u9053\u5177\u8D2D\u4E70\u4EF7\u683C\uFF08KFB\uFF09\uFF08\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09\uFF0C\u7EDF\u8BA1\u6210\u529F\u6570\u91CF\uFF1A' + successNum + '\uFF0C\u603B\u8BA1\u4EF7\u683C\uFF1A' + totalPrice.toLocaleString() + '\uFF0C' + ('\u5E73\u5747\u4EF7\u683C\uFF1A' + (successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0) + ' ') + ('(' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%)\uFF0C\u6700\u4F4E\u4EF7\u683C\uFF1A' + minPrice.toLocaleString() + ' ') + ('(' + Math.round(minPrice / marketPrice * 100) + '%)\uFF0C\u6700\u9AD8\u4EF7\u683C\uFF1A' + maxPrice.toLocaleString() + ' (' + Math.round(maxPrice / marketPrice * 100) + '%)'));
+                        $result.append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C' + (failNum > 0 ? '<span class="pd_notice">\uFF08\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09</span>' : '') + '\uFF1A</b><br>\n  <i>\u7EDF\u8BA1\u6210\u529F\u6570\u91CF\uFF1A<em>' + successNum + '</em></i>\n  <i>\u603B\u8BA1\u4EF7\u683C\uFF1A<em>' + totalPrice.toLocaleString() + '</em></i>\n  <i>\u5E73\u5747\u4EF7\u683C\uFF1A<em>' + (successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0) + ' \n(' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%)</em></i>\n  <i>\u6700\u4F4E\u4EF7\u683C\uFF1A<em>' + minPrice.toLocaleString() + ' (' + Math.round(minPrice / marketPrice * 100) + '%)</em></i>\n  <i>\u6700\u9AD8\u4EF7\u683C\uFF1A<em>' + maxPrice.toLocaleString() + ' (' + Math.round(maxPrice / marketPrice * 100) + '%)</em></i>\n</li>\n');
                     } else {
                         setTimeout(function () {
                             return $(document).dequeue('StatBuyItemsPrice');
@@ -5175,13 +4846,13 @@ var addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function addBatchBuyIt
         var safeId = matches[2];
         var num = parseInt(prompt('\u4F60\u8981\u6279\u91CF\u8D2D\u4E70\u591A\u5C11\u4E2A\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011\u9053\u5177\uFF1F', 0));
         if (!num || num < 0) return;
-        Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         buyItems({ itemTypeId: itemTypeId, num: num, safeId: safeId, itemLevel: itemLevel, itemName: itemName });
     });
 
     $shop.find('tbody > tr:gt(1) > td:nth-child(4)').each(function () {
         var $this = $(this);
-        var price = parseInt($.trim($this.prev('td').text()));
+        var price = parseInt($this.prev('td').text());
         if (isNaN(price)) return;
         $this.addClass('pd_custom_tips').attr('title', Math.floor(price * 0.5) + '~' + price * 2 + '\uFF08\u5747\u4EF7\uFF1A' + Math.floor(price * 1.25) + '\uFF09');
     });
@@ -5229,26 +4900,20 @@ var modifyItemDescription = exports.modifyItemDescription = function modifyItemD
     var matches = /道具名称：(.+)/.exec($area.find('span:first').text().trim());
     if (!matches) return;
     var itemName = matches[1];
-    var itemDescReplaceList = {
-        '蕾米莉亚同人漫画': ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。'],
-        '十六夜同人漫画': ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。'],
-        '档案室钥匙': ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。'],
-        '傲娇LOLI娇蛮音CD': ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。'],
-        '整形优惠卷': ['暴击几率+3%。上限10。', '在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。'],
-        '消逝之药': ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']
-    };
-    if (itemDescReplaceList[itemName]) {
-        $area.html($area.html().replace(itemDescReplaceList[itemName][0], itemDescReplaceList[itemName][1]));
+    var itemDescReplaceList = new Map([['蕾米莉亚同人漫画', ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。']], ['十六夜同人漫画', ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。']], ['档案室钥匙', ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。']], ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。']], ['整形优惠卷', [['暴击几率+3%。上限10。'], ['在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。']]], ['消逝之药', ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']]]);
+    if (itemDescReplaceList.has(itemName)) {
+        $area.html($area.html().replace(itemDescReplaceList.get(itemName)[0], itemDescReplaceList.get(itemName)[1]));
     }
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./Util":21}],12:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],12:[function(require,module,exports){
+/* 日志模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getMergeLog = exports.push = exports.clear = exports.write = exports.read = exports.init = undefined;
+exports.getMergeLog = exports.push = exports.clear = exports.write = exports.read = undefined;
 
 var _Info = require('./Info');
 
@@ -5267,38 +4932,34 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 保存日志的键值名称
-var name = 'pd_log';
-
-/**
- * 初始化
- */
-var init = exports.init = function init() {
-    if (typeof unsafeWindow === 'undefined') window.Log = {};else unsafeWindow.Log = {};
-};
+var name = _Const2.default.storagePrefix + 'log';
 
 /**
  * 读取日志
+ * @returns {{}} 日志对象
  */
 var read = exports.read = function read() {
-    _Info2.default.w.Log = {};
+    var log = {};
     var options = null;
     if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') options = GM_getValue(name + '_' + _Info2.default.uid);else options = localStorage.getItem(name + '_' + _Info2.default.uid);
-    if (!options) return;
+    if (!options) return log;
     try {
         options = JSON.parse(options);
     } catch (ex) {
-        return;
+        return log;
     }
-    if (!options || $.type(options) !== 'object') return;
-    _Info2.default.w.Log = options;
-    if (!Util.getCookie(_Const2.default.checkOverdueLogCookieName)) deleteOverdueLog();
+    if (!options || $.type(options) !== 'object') return log;
+    log = options;
+    if (!Util.getCookie(_Const2.default.checkOverdueLogCookieName)) deleteOverdueLog(log);
+    return log;
 };
 
 /**
  * 写入日志
+ * @param {{}} log 日志对象
  */
-var write = exports.write = function write() {
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(_Info2.default.w.Log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(_Info2.default.w.Log));
+var write = exports.write = function write(log) {
+    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(log));
 };
 
 /**
@@ -5310,9 +4971,10 @@ var clear = exports.clear = function clear() {
 
 /**
  * 删除过期日志
+ * @param {{}} log 日志对象
  */
-var deleteOverdueLog = function deleteOverdueLog() {
-    var dateList = Util.getObjectKeyList(Log, 1);
+var deleteOverdueLog = function deleteOverdueLog(log) {
+    var dateList = Util.getObjectKeyList(log, 1);
     var overdueDate = Util.getDateString(Util.getDate('-' + Config.logSaveDays + 'd'));
     var isDeleted = false;
     var _iteratorNormalCompletion = true;
@@ -5324,7 +4986,7 @@ var deleteOverdueLog = function deleteOverdueLog() {
             var date = _step.value;
 
             if (date <= overdueDate) {
-                delete Log[date];
+                delete log[date];
                 isDeleted = true;
             } else break;
         }
@@ -5343,7 +5005,7 @@ var deleteOverdueLog = function deleteOverdueLog() {
         }
     }
 
-    if (isDeleted) write();
+    if (isDeleted) write(log);
     Util.setCookie(_Const2.default.checkOverdueLogCookieName, 1, Util.getMidnightHourDate(1));
 };
 
@@ -5364,13 +5026,13 @@ var push = exports.push = function push(type, action) {
     var date = new Date();
     var time = date.getTime();
     var today = Util.getDateString(date);
-    var settings = { time: time, type: type, action: action };
-    if (gain) settings['gain'] = gain;
-    if (pay) settings['pay'] = pay;
-    read();
-    if (!Array.isArray(_Info2.default.w.Log[today])) _Info2.default.w.Log[today] = [];
-    _Info2.default.w.Log[today].push(settings);
-    write();
+    var obj = { time: time, type: type, action: action };
+    if (gain) obj['gain'] = gain;
+    if (pay) obj['pay'] = pay;
+    var log = read();
+    if (!Array.isArray(log[today])) log[today] = [];
+    log[today].push(obj);
+    write(log);
 };
 
 /**
@@ -5427,17 +5089,14 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":10,"./Util":21}],13:[function(require,module,exports){
+},{"./Const":6,"./Info":10,"./Util":22}],13:[function(require,module,exports){
+/* 日志对话框模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.show = undefined;
-
-var _Info = require('./Info');
-
-var _Info2 = _interopRequireDefault(_Info);
 
 var _Util = require('./Util');
 
@@ -5449,9 +5108,13 @@ var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Config = require('./Config');
 
 var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
 
 var _Item = require('./Item');
 
@@ -5459,24 +5122,22 @@ var Item = _interopRequireWildcard(_Item);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * 显示日志对话框
  */
 var show = exports.show = function show() {
-    if ($('#pd_log').length > 0) return;
-    Dialog.close('pd_config');
+    var dialogName = 'pdLogDialog';
+    if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    (0, _Func.run)('LogDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_log_nav">\n    <a class="pd_disabled_link" href="#">&lt;&lt;</a>\n    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&lt;</a>\n    <h2 class="pd_custom_tips">\u6682\u65E0\u65E5\u5FD7</h2>\n    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&gt;</a>\n    <a class="pd_disabled_link" href="#">&gt;&gt;</a>\n  </div>\n  <fieldset>\n    <legend>\u65E5\u5FD7\u5185\u5BB9</legend>\n    <div>\n      <strong>\u6392\u5E8F\u65B9\u5F0F\uFF1A</strong>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="pd_log_sort_type" value="time" checked>\u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="pd_log_sort_type" value="type">\u6309\u7C7B\u522B</label>\n    </div>\n    <div class="pd_stat" id="pd_log_content">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n  <fieldset>\n    <legend>\u7EDF\u8BA1\u7ED3\u679C</legend>\n    <div>\n      <strong>\u7EDF\u8BA1\u8303\u56F4\uFF1A</strong>\n      <label title="\u663E\u793A\u5F53\u5929\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="pd_log_stat_type" value="cur" checked>\u5F53\u5929</label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="pd_log_stat_type" value="custom"></label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input id="pd_log_stat_days" type="text" style="width: 22px;" maxlength="3">\u5929\u5185</label>\n      <label title="\u663E\u793A\u5168\u90E8\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="pd_log_stat_type" value="all">\u5168\u90E8</label>\n    </div>\n    <div class="pd_stat" id="pd_log_stat">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a id="pd_log_im_or_ex_log_dialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</a></span>\n  <button>\u5173\u95ED</button><button>\u6E05\u9664\u65E5\u5FD7</button>\n</div>';
-    var $dialog = Dialog.create('pd_log', 'KF Online助手日志', html);
+    Func.run('LogDialog.show_before_');
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_log_nav">\n    <a class="pd_disabled_link" href="#">&lt;&lt;</a>\n    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&lt;</a>\n    <h2 class="pd_custom_tips">\u6682\u65E0\u65E5\u5FD7</h2>\n    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&gt;</a>\n    <a class="pd_disabled_link" href="#">&gt;&gt;</a>\n  </div>\n  <fieldset>\n    <legend>\u65E5\u5FD7\u5185\u5BB9</legend>\n    <div>\n      <strong>\u6392\u5E8F\u65B9\u5F0F\uFF1A</strong>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="sortType" value="time" checked> \u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="sortType" value="type"> \u6309\u7C7B\u522B</label>\n    </div>\n    <div class="pd_stat pd_log_content">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n  <fieldset>\n    <legend>\u7EDF\u8BA1\u7ED3\u679C</legend>\n    <div>\n      <strong>\u7EDF\u8BA1\u8303\u56F4\uFF1A</strong>\n      <label title="\u663E\u793A\u5F53\u5929\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="current" checked> \u5F53\u5929</label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="custom"></label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input name="statDays" type="text" style="width: 22px;" maxlength="3"> \u5929\u5185</label>\n      <label title="\u663E\u793A\u5168\u90E8\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="all"> \u5168\u90E8</label>\n    </div>\n    <div class="pd_stat" data-name="stat">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</a></span>\n  <button>\u5173\u95ED</button> <button>\u6E05\u9664\u65E5\u5FD7</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
 
-    (0, _Log.read)();
+    var log = Log.read();
     var dateList = [];
     var curIndex = 0;
-    if (!$.isEmptyObject(Log)) {
-        dateList = Util.getObjectKeyList(Log, 1);
+    if (!$.isEmptyObject(log)) {
+        dateList = Util.getObjectKeyList(log, 1);
         curIndex = dateList.length - 1;
         $dialog.find('.pd_log_nav h2').attr('title', '\u603B\u5171\u8BB0\u5F55\u4E86' + dateList.length + '\u5929\u7684\u65E5\u5FD7').text(dateList[curIndex]);
         if (dateList.length > 1) {
@@ -5496,8 +5157,8 @@ var show = exports.show = function show() {
             curIndex = dateList.length - 1;
         }
         $dialog.find('.pd_log_nav h2').text(dateList[curIndex]);
-        showLogContent(dateList[curIndex]);
-        showLogStat(dateList[curIndex]);
+        showLogContent(log, dateList[curIndex], $dialog);
+        showLogStat(log, dateList[curIndex], $dialog);
         if (curIndex > 0) {
             $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
             $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
@@ -5510,72 +5171,75 @@ var show = exports.show = function show() {
         } else {
             $dialog.find('.pd_log_nav > a:gt(1)').removeAttr('title').addClass('pd_disabled_link');
         }
-    }).end().find('input[name="pd_log_sort_type"]').click(function () {
+    }).end().find('[name="sortType"]').click(function () {
         var value = $(this).val();
         if (Config.logSortType !== value) {
             Config.logSortType = value;
             (0, _Config.write)();
-            showLogContent(dateList[curIndex]);
+            showLogContent(log, dateList[curIndex], $dialog);
         }
-    }).end().find('input[name="pd_log_stat_type"]').click(function () {
+    }).end().find('[name="statType"]').click(function () {
         var value = $(this).val();
         if (Config.logStatType !== value) {
             Config.logStatType = value;
             (0, _Config.write)();
-            showLogStat(dateList[curIndex]);
+            showLogStat(log, dateList[curIndex], $dialog);
         }
-    }).end().find('#pd_log_stat_days').keyup(function () {
-        var days = parseInt($.trim($(this).val()));
+    }).end().find('[name="statDays"]').keyup(function () {
+        var days = parseInt($(this).val());
         if (days > 0 && Config.logStatDays !== days) {
             Config.logStatDays = days;
             (0, _Config.write)();
-            $('input[name="pd_log_stat_type"][value="custom"]:not(:checked)').click();
-            showLogStat(dateList[curIndex]);
+            $dialog.find('[name="statType"][value="custom"]:not(:checked)').click();
+            showLogStat(log, dateList[curIndex], $dialog);
         }
-    }).end().find('input[name="pd_log_sort_type"][value="{0}"]'.replace('{0}', Config.logSortType)).click().end().find('input[name="pd_log_stat_type"][value="{0}"]'.replace('{0}', Config.logStatType)).click().end().find('#pd_log_stat_days').val(Config.logStatDays);
+    }).end().find('[name="sortType"][value="' + Config.logSortType + '"]').click().end().find('[name="statType"][value="' + Config.logStatType + '"]').click().end().find('[name="statDays"]').val(Config.logStatDays);
 
     $dialog.find('.pd_cfg_btns > button:first').click(function () {
-        return Dialog.close('pd_log');
+        return Dialog.close(dialogName);
     }).next('button').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有日志？')) {
-            (0, _Log.clear)();
+            Log.clear();
             alert('日志已清除');
             location.reload();
         }
     });
 
-    $('#pd_log_im_or_ex_log_dialog').click(function (e) {
+    $dialog.find('[data-name="openImOrExLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLogDialog();
     });
 
-    showLogContent(dateList[curIndex]);
-    showLogStat(dateList[curIndex]);
+    showLogContent(log, dateList[curIndex], $dialog);
+    showLogStat(log, dateList[curIndex], $dialog);
 
-    if ($(window).height() <= 750) $dialog.find('#pd_log_content').css('height', '216px');
-    Dialog.show('pd_log');
+    if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '216px');
+    Dialog.show(dialogName);
     $dialog.find('input:first').focus();
-    (0, _Func.run)('LogDialog.show_after_');
+    Func.run('LogDialog.show_after_');
 };
 
 /**
  * 显示指定日期的日志内容
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
+ * @param {jQuery} $dialog 日志对话框对象
  */
-var showLogContent = function showLogContent(date) {
-    if (!Array.isArray(Log[date])) return;
-    $('#pd_log_content').html(getLogContent(date, Config.logSortType)).parent().find('legend:first-child').text('\u65E5\u5FD7\u5185\u5BB9 (\u5171' + Log[date].length + '\u9879)');
+var showLogContent = function showLogContent(log, date, $dialog) {
+    if (!Array.isArray(log[date])) return;
+    $dialog.find('.pd_log_content').html(getLogContent(log, date, Config.logSortType)).parent().find('legend:first-child').text('\u65E5\u5FD7\u5185\u5BB9 (\u5171' + log[date].length + '\u9879)');
 };
 
 /**
  * 获取指定日期的日志内容
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  * @param {string} logSortType 日志内容的排序方式
  * @returns {string} 指定日期的日志内容
  */
-var getLogContent = function getLogContent(date, logSortType) {
-    var logList = Log[date];
+var getLogContent = function getLogContent(log, date, logSortType) {
+    var logList = log[date];
     if (logSortType === 'type') {
         (function () {
             var sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
@@ -5748,21 +5412,24 @@ var getLogContent = function getLogContent(date, logSortType) {
 
 /**
  * 显示指定日期的日志统计结果
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
+ * @param {jQuery} $dialog 日志对话框对象
  */
-var showLogStat = function showLogStat(date) {
-    if (!Array.isArray(Log[date])) return;
-    $('#pd_log_stat').html(getLogStat(date, Config.logStatType));
+var showLogStat = function showLogStat(log, date, $dialog) {
+    if (!Array.isArray(log[date])) return;
+    $dialog.find('[data-name="stat"]').html(getLogStat(log, date, Config.logStatType));
 };
 
 /**
  * 获取指定日期的日志统计结果
+ * @param {{}} log 日志对象
  * @param {string} date 日志对象关键字
  * @param {string} logStatType 日志统计范围类型
  * @returns {string} 指定日期的日志统计结果
  */
-var getLogStat = function getLogStat(date, logStatType) {
-    var log = {};
+var getLogStat = function getLogStat(log, date, logStatType) {
+    var rangeLog = {};
 
     if (logStatType === 'custom') {
         var minDate = new Date(date);
@@ -5773,10 +5440,10 @@ var getLogStat = function getLogStat(date, logStatType) {
         var _iteratorError6 = undefined;
 
         try {
-            for (var _iterator6 = Util.getObjectKeyList(Log, 1)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            for (var _iterator6 = Util.getObjectKeyList(log, 1)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                 var d = _step6.value;
 
-                if (d >= minDate && d <= date) log[d] = Log[d];
+                if (d >= minDate && d <= date) rangeLog[d] = log[d];
             }
         } catch (err) {
             _didIteratorError6 = true;
@@ -5793,9 +5460,9 @@ var getLogStat = function getLogStat(date, logStatType) {
             }
         }
     } else if (logStatType === 'all') {
-        log = Log;
+        rangeLog = log;
     } else {
-        log[date] = Log[date];
+        rangeLog[date] = log[date];
     }
 
     var income = {},
@@ -5814,13 +5481,13 @@ var getLogStat = function getLogStat(date, logStatType) {
         maxBuyItemPricePercent = 0,
         buyItemStat = {};
     var invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
-    for (var _d in log) {
+    for (var _d in rangeLog) {
         var _iteratorNormalCompletion7 = true;
         var _didIteratorError7 = false;
         var _iteratorError7 = undefined;
 
         try {
-            for (var _iterator7 = log[_d][Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            for (var _iterator7 = rangeLog[_d][Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
                 var _step7$value = _step7.value,
                     type = _step7$value.type,
                     action = _step7$value.action,
@@ -6096,7 +5763,7 @@ var getLogStat = function getLogStat(date, logStatType) {
             var _key3 = _step15.value;
 
             var item = buyItemStat[_key3];
-            buyItemStatContent += '<i class="pd_custom_tips" title="\u603B\u4EF7\uFF1A' + item['总计价格'].toLocaleString() + '\uFF0C' + ('\u5E73\u5747\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + (item['道具数量'] > 0 ? Util.getFixedNumberLocaleString(item['总计价格比例'] / item['道具数量'], 2) : 0) + '%\uFF0C') + ('\u6700\u4F4E\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + item['最低价格比例'] + '%\uFF0C\u6700\u9AD8\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + item['最高价格比例'] + '%">' + _key3 + '<em>+' + item['道具数量'] + '</em></i> ');
+            buyItemStatContent += '<i class="pd_custom_tips" title="\u603B\u4EF7\uFF1A' + item['总计价格'].toLocaleString() + '\uFF0C' + ('\u5E73\u5747\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + (item['道具数量'] > 0 ? Util.getFixedNumLocStr(item['总计价格比例'] / item['道具数量'], 2) : 0) + '%\uFF0C') + ('\u6700\u4F4E\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + item['最低价格比例'] + '%\uFF0C\u6700\u9AD8\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + item['最高价格比例'] + '%">' + _key3 + '<em>+' + item['道具数量'] + '</em></i> ');
         }
     } catch (err) {
         _didIteratorError15 = true;
@@ -6113,7 +5780,7 @@ var getLogStat = function getLogStat(date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemTotalNum + '</em></i> ' + ('<i>\u9053\u5177\u4EF7\u683C<span class="pd_stat_extra"><em title="\u9053\u5177\u603B\u4EF7">+' + buyItemTotalPrice.toLocaleString() + '</em>') + ('(<em title="\u5E73\u5747\u4EF7\u683C\u6BD4\u4F8B">' + (buyItemTotalNum > 0 ? Util.getFixedNumberLocaleString(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0) + '%</em>|') + ('<em title="\u6700\u4F4E\u4EF7\u683C\u6BD4\u4F8B">' + minBuyItemPricePercent + '%</em>|<em title="\u6700\u9AD8\u4EF7\u683C\u6BD4\u4F8B">' + maxBuyItemPricePercent + '%</em>)</span></i> ' + buyItemStatContent);
+    content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemTotalNum + '</em></i> ' + ('<i>\u9053\u5177\u4EF7\u683C<span class="pd_stat_extra"><em title="\u9053\u5177\u603B\u4EF7">+' + buyItemTotalPrice.toLocaleString() + '</em>') + ('(<em title="\u5E73\u5747\u4EF7\u683C\u6BD4\u4F8B">' + (buyItemTotalNum > 0 ? Util.getFixedNumLocStr(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0) + '%</em>|') + ('<em title="\u6700\u4F4E\u4EF7\u683C\u6BD4\u4F8B">' + minBuyItemPricePercent + '%</em>|<em title="\u6700\u9AD8\u4EF7\u683C\u6BD4\u4F8B">' + maxBuyItemPricePercent + '%</em>)</span></i> ' + buyItemStatContent);
 
     return content;
 };
@@ -6122,57 +5789,59 @@ var getLogStat = function getLogStat(date, logStatType) {
  * 显示导入或导出日志对话框
  */
 var showImportOrExportLogDialog = function showImportOrExportLogDialog() {
-    if ($('#pd_im_or_ex_log').length > 0) return;
-    (0, _Log.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label style="color: #f00;"><input type="radio" name="pd_im_or_ex_log_type" value="setting" checked> \u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</label>\n    <label style="color: #00f"><input type="radio" name="pd_im_or_ex_log_type" value="text"> \u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</label>\n  </div>\n  <div id="pd_im_or_ex_log_setting">\n    <strong>\u5BFC\u5165\u65E5\u5FD7\uFF1A</strong>\u5C06\u65E5\u5FD7\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF<br>\n    <textarea id="pd_log_setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n  </div>\n  <div id="pd_im_or_ex_log_text" style="display: none;">\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</strong>\uFF1A\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n    <div>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="pd_log_sort_type_2" value="time" checked>\u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="pd_log_sort_type_2" value="type">\u6309\u7C7B\u522B</label>\n      <label title="\u5728\u65E5\u5FD7\u6587\u672C\u91CC\u663E\u793A\u6BCF\u65E5\u4EE5\u53CA\u5168\u90E8\u6570\u636E\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="checkbox" id="pd_log_show_stat" checked>\u663E\u793A\u7EDF\u8BA1</label>\n    </div>\n    <textarea id="pd_log_text" style="width: 600px; height: 400px;" readonly></textarea>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button data-action="merge">\u5408\u5E76\u65E5\u5FD7</button><button data-action="overwrite" style="color: #f00;">\u8986\u76D6\u65E5\u5FD7</button><button>\u5173\u95ED</button>\n</div>';
+    var dialogName = 'pdImOrExLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var log = Log.read();
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label style="color: #f00;"><input type="radio" name="logType" value="setting" checked> \u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</label>\n    <label style="color: #00f;"><input type="radio" name="logType" value="text"> \u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</label>\n  </div>\n  <div data-name="logSetting">\n    <strong>\u5BFC\u5165\u65E5\u5FD7\uFF1A</strong>\u5C06\u65E5\u5FD7\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF<br>\n    <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n  </div>\n  <div data-name="logText" style="display: none;">\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</strong>\uFF1A\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n    <div>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="sortType2" value="time" checked> \u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="sortType2" value="type"> \u6309\u7C7B\u522B</label>\n      <label title="\u5728\u65E5\u5FD7\u6587\u672C\u91CC\u663E\u793A\u6BCF\u65E5\u4EE5\u53CA\u5168\u90E8\u6570\u636E\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="checkbox" name="showStat" checked> \u663E\u793A\u7EDF\u8BA1</label>\n    </div>\n    <textarea name="text" style="width: 600px; height: 400px;" readonly></textarea>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="merge">\u5408\u5E76\u65E5\u5FD7</button>\n  <button name="overwrite" style="color: #f00;">\u8986\u76D6\u65E5\u5FD7</button>\n  <button>\u5173\u95ED</button>\n</div>';
 
-    var $dialog = Dialog.create('pd_im_or_ex_log', '导入或导出日志', html);
-    $dialog.find('[name="pd_log_sort_type_2"], #pd_log_show_stat').click(function () {
-        showLogText();
-        $('#pd_log_text').select();
-    }).end().find('[name="pd_im_or_ex_log_type"]').click(function () {
+    var $dialog = Dialog.create(dialogName, '导入或导出日志', html);
+    $dialog.find('[name="sortType2"], [name="showStat"]').click(function () {
+        showLogText(log, $dialog);
+        $dialog.find('[name="text"]').select();
+    }).end().find('[name="logType"]').click(function () {
         var type = $(this).val();
-        $('#pd_im_or_ex_log_' + (type === 'text' ? 'setting' : 'text')).hide();
-        $('#pd_im_or_ex_log_' + (type === 'text' ? 'text' : 'setting')).show();
-        $('#pd_log_' + (type === 'text' ? 'text' : 'setting')).select();
+        $dialog.find('[data-name="log' + (type === 'text' ? 'Setting' : 'Text') + '"]').hide();
+        $dialog.find('[data-name="log' + (type === 'text' ? 'Text' : 'Setting') + '"]').show();
+        $dialog.find('[data-name="log' + (type === 'text' ? 'Text' : 'Setting') + '"]').select();
     }).end().find('.pd_cfg_btns > button').click(function (e) {
         e.preventDefault();
-        var action = $(this).data('action');
-        if (action === 'merge' || action === 'overwrite') {
-            if (!confirm('\u662F\u5426\u5C06\u6587\u672C\u6846\u4E2D\u7684\u65E5\u5FD7' + (action === 'overwrite' ? '覆盖' : '合并') + '\u5230\u672C\u5730\u65E5\u5FD7\uFF1F')) return;
-            var log = $.trim($('#pd_log_setting').val());
-            if (!log) return;
+        var name = $(this).attr('name');
+        if (name === 'merge' || name === 'overwrite') {
+            if (!confirm('\u662F\u5426\u5C06\u6587\u672C\u6846\u4E2D\u7684\u65E5\u5FD7' + (name === 'overwrite' ? '覆盖' : '合并') + '\u5230\u672C\u5730\u65E5\u5FD7\uFF1F')) return;
+            var newLog = $.trim($dialog.find('[name="setting"]').val());
+            if (!newLog) return;
             try {
-                log = JSON.parse(log);
+                newLog = JSON.parse(newLog);
             } catch (ex) {
                 alert('日志有错误');
                 return;
             }
-            if (!log || $.type(log) !== 'object') {
+            if (!newLog || $.type(newLog) !== 'object') {
                 alert('日志有错误');
                 return;
             }
-            if (action === 'merge') log = (0, _Log.getMergeLog)(Log, log);
-            _Info2.default.w.Log = log;
-            (0, _Log.write)();
+            if (name === 'merge') log = Log.getMergeLog(log, newLog);else log = newLog;
+            Log.write(log);
             alert('日志已导入');
             location.reload();
         } else {
-            return Dialog.close('pd_im_or_ex_log');
+            return Dialog.close(dialogName);
         }
     });
-    Dialog.show('pd_im_or_ex_log');
-    $('#pd_log_setting').val(JSON.stringify(Log)).select();
-    $('input[name="pd_log_sort_type_2"][value="' + Config.logSortType + '"]').prop('checked', true).triggerHandler('click');
-    (0, _Func.run)('LogDialog.showImportOrExportLogDialog_after_');
+    Dialog.show(dialogName);
+    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
+    $dialog.find('[name="sortType2"][value="' + Config.logSortType + '"]').prop('checked', true).triggerHandler('click');
+    Func.run('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**
  * 显示日志文本
+ * @param {{}} log 日志对象
+ * @param {jQuery} $dialog 导入或导出日志对话框对象
  */
-var showLogText = function showLogText() {
-    var logSortType = $('input[name="pd_log_sort_type_2"]:checked').val();
-    var isShowStat = $('#pd_log_show_stat').prop('checked');
+var showLogText = function showLogText(log, $dialog) {
+    var logSortType = $dialog.find('input[name="sortType2"]:checked').val();
+    var isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     var content = '',
         lastDate = '';
     var _iteratorNormalCompletion16 = true;
@@ -6180,14 +5849,14 @@ var showLogText = function showLogText() {
     var _iteratorError16 = undefined;
 
     try {
-        for (var _iterator16 = Object.keys(Log)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+        for (var _iterator16 = Object.keys(log)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
             var date = _step16.value;
 
-            if (!Array.isArray(Log[date])) continue;
+            if (!Array.isArray(log[date])) continue;
             if (lastDate > date) lastDate = date;
-            content += '\u3010' + date + '\u3011(\u5171' + Log[date].length + '\u9879)\n' + (logSortType === 'type' ? '' : '\n') + getLogContent(date, logSortType).replace(/<h3>/g, '\n').replace(/<\/h3>/g, '\n').replace(/<\/p>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '').replace(/`/g, '');
+            content += '\u3010' + date + '\u3011(\u5171' + log[date].length + '\u9879)\n' + (logSortType === 'type' ? '' : '\n') + getLogContent(log, date, logSortType).replace(/<h3>/g, '\n').replace(/<\/h3>/g, '\n').replace(/<\/p>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '').replace(/`/g, '');
             if (isShowStat) {
-                content += '-'.repeat(46) + '\n\u5408\u8BA1\uFF1A\n' + getLogStat(date, 'cur').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '') + '\n';
+                content += '-'.repeat(46) + '\n\u5408\u8BA1\uFF1A\n' + getLogStat(log, date, 'current').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '') + '\n';
             }
             content += '='.repeat(46) + '\n';
         }
@@ -6207,12 +5876,13 @@ var showLogText = function showLogText() {
     }
 
     if (content && isShowStat) {
-        content += '\n总计：\n' + getLogStat(lastDate, 'all').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '');
+        content += '\n总计：\n' + getLogStat(log, lastDate, 'all').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '');
     }
-    $('#pd_log_text').val(content);
+    $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Func":8,"./Info":10,"./Item":11,"./Log":12,"./Util":21}],14:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Func":8,"./Item":11,"./Log":12,"./Util":22}],14:[function(require,module,exports){
+/* 争夺模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -6226,68 +5896,112 @@ var Item = _interopRequireWildcard(_Item);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+// 争夺首页区域
+var $lootArea = void 0;
+// 争夺属性区域
+var $properties = void 0;
+// 属性点区域
+var $points = void 0;
+// 当前争夺属性
+var propertyList = void 0;
+// 附加属性点列表
+var extraPointList = void 0;
+// 道具使用情况
+var itemUsedNumList = void 0;
+
 /**
  * 增强争夺首页
  */
 var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIndexPage() {
-    var $area = $('.kf_fw_ig1');
-    var $properties = $area.find('> tbody > tr:nth-child(3) > td:first-child');
-    var $points = $properties.next('td');
-    var propertyList = getCurrentLootPropertyList();
-    var itemUsedNumList = Item.getItemUsedInfo($area.find('> tbody > tr:nth-child(4) > td').html());
+    $lootArea = $('.kf_fw_ig1:first');
+    $properties = $lootArea.find('> tbody > tr:nth-child(3) > td:first-child');
+    $points = $lootArea.find('> tbody > tr:nth-child(3) > td:nth-child(2)');
+    propertyList = getLootPropertyList();
+    extraPointList = getExtraPointList();
+    itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
+    handlePropertiesArea();
+    handlePointsArea();
+    enhanceLootLog();
+};
 
-    $properties.html($properties.html().replace('技能伤害：攻击伤害+(体质点数*4)', '技能伤害：<span class="pd_custom_tips" id="pd_skill_attack" title="攻击伤害+(体质点数*4)"></span>'));
-    $properties.find('br').each(function (index) {
-        var name = '';
-        switch (index) {
-            case 1:
-                name = 's1';
-                break;
-            case 2:
-                name = 's2';
-                break;
-            case 3:
-                name = 'd1';
-                break;
-            case 4:
-                name = 'd2';
-                break;
-            case 6:
-                name = 'i1';
-                break;
-            case 7:
-                name = 'i2';
-                break;
-        }
-        if (name) {
-            $(this).before(' <span style="color:#777" id="pd_new_' + name + '"></span>');
-        }
-    });
+/**
+ * 处理争夺属性区域
+ */
+var handlePropertiesArea = function handlePropertiesArea() {
+    var html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：\d+)\s*\(最大(\d+)\)/, '$1 (最大<span id="pdPro_s2" title="原值：$2">$2</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%/, '$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span id="pdNew_d2"></span>').replace(/(技能释放概率：)(\d+)%/, '$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span id="pdNew_i1"></span>').replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击伤害+(体质点数*4)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="攻击伤害+(体质点数*4)"></span>');
+    $properties.html(html);
 
+    $properties.on('click', '[id^="pdPro_"]', function () {
+        var $this = $(this);
+        $this.hide();
+        var name = $this.attr('id').replace('pdPro_', '');
+        var step = 1;
+        if (name === 's1') step = 5;else if (name === 's2') step = 20;else if (name === 'd1') step = 2;
+        $('<input data-name="' + name + '" type="number" value="' + parseInt($this.text()) + '" min="1" step="' + step + '" ' + ('style="width: 65px; margin-right: 5px;" title="' + $this.attr('title') + '">')).insertAfter($this).focus().select().blur(function () {
+            var $this = $(this);
+            var name = $this.data('name');
+            var num = parseInt($this.val());
+            if (num > 0) {
+                var newValue = 0;
+                switch (getPointNameByFieldName(name)) {
+                    case '力量':
+                        newValue = Math.round(num / 5) - extraPointList.get('力量');
+                        break;
+                    case '体质':
+                        newValue = Math.round((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
+                        break;
+                    case '敏捷':
+                        newValue = Math.round((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
+                        break;
+                    case '灵活':
+                        newValue = Math.round(100 * num / (100 - num)) - extraPointList.get('灵活');
+                        break;
+                    case '智力':
+                        newValue = Math.round(120 * num / (100 - num)) - extraPointList.get('智力');
+                        break;
+                    case '意志':
+                        newValue = Math.round(150 * num / (100 - num)) - extraPointList.get('意志');
+                        break;
+                }
+                if (!isFinite(newValue) || newValue <= 0) newValue = 1;
+                $points.find('[name="' + name + '"]').val(newValue).trigger('change');
+            }
+            $this.prev().show().end().remove();
+        }).keyup(function (e) {
+            var $this = $(this);
+            if (e.keyCode === 13) $this.blur();else if (e.keyCode === 27) $this.val('').blur();
+        });
+    }).find('[id^=pdPro_]').css('cursor', 'pointer');
+};
+
+/**
+ * 处理属性点区域
+ */
+var handlePointsArea = function handlePointsArea() {
     $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
     $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
-    $points.prepend('<span class="pd_highlight">剩余属性点：<span id="pd_surplus_point"></span></span><br>');
+    $points.prepend('<span class="pd_highlight">剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $points.on('change', '[type="number"]', function () {
         var $this = $(this);
-        $('#pd_surplus_point').text(propertyList['可分配属性点'] - getCurrentAssignedPoint());
-        showNewLootProperty($this, propertyList, itemUsedNumList);
+        $('#pdSurplusPoint').text(propertyList.get('可分配属性点') - getCurrentAssignedPoint());
+        showNewLootProperty($this);
         showSumOfPoint($this);
 
         var skillAttack = 0;
-        var matches = /\d+/.exec($area.find('[name="s1"]').next('span').next('.pd_point_sum').text());
+        var matches = /\d+/.exec($lootArea.find('[name="s1"]').next('span').next('.pd_point_sum').text());
         if (matches) skillAttack = parseInt(matches[0]) * 5;
-        skillAttack += parseInt($area.find('[name="s2"]').val()) * 4;
-        $('#pd_skill_attack').text(skillAttack);
+        skillAttack += parseInt($lootArea.find('[name="s2"]').val()) * 4;
+        $('#pdSkillAttack').text(skillAttack);
     }).on('click', '.pd_point_sum', function () {
-        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint();
+        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
         if (!surplusPoint) return;
         var $point = $(this).prev('span').prev('[type="number"]');
         var num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
         $point.val(num + surplusPoint).trigger('change');
     }).find('form').submit(function () {
-        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint();
+        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
         if (surplusPoint < 0) {
             alert('剩余属性点为负，请重新填写');
             return false;
@@ -6295,8 +6009,30 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
             return confirm('你的可分配属性点尚未用完，是否提交？');
         }
     }).find('[type="number"]').trigger('change');
+};
 
-    enhanceLootLog();
+/**
+ * 获取争夺属性列表
+ * @returns {Map} 争夺属性
+ */
+var getLootPropertyList = function getLootPropertyList() {
+    var propertyList = new Map([['攻击力', 0], ['最大生命值', 0], ['攻击速度', 0], ['暴击几率', 0], ['技能释放概率', 0], ['防御', 0], ['可分配属性点', 0]]);
+    var html = $properties.html();
+    var matches = /攻击力：(\d+)/.exec(html);
+    if (matches) propertyList.set('攻击力', parseInt(matches[1]));
+    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
+    if (matches) propertyList.set('最大生命值', parseInt(matches[1]));
+    matches = /攻击速度：(\d+)/.exec(html);
+    if (matches) propertyList.set('攻击速度', parseInt(matches[1]));
+    matches = /暴击几率：(\d+)%/.exec(html);
+    if (matches) propertyList.set('暴击几率', parseInt(matches[1]));
+    matches = /技能释放概率：(\d+)%/.exec(html);
+    if (matches) propertyList.set('技能释放概率', parseInt(matches[1]));
+    matches = /防御：(\d+)%/.exec(html);
+    if (matches) propertyList.set('防御', parseInt(matches[1]));
+    matches = /可分配属性点：(\d+)/.exec(html);
+    if (matches) propertyList.set('可分配属性点', parseInt(matches[1]));
+    return propertyList;
 };
 
 /**
@@ -6305,7 +6041,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
  */
 var getCurrentAssignedPoint = function getCurrentAssignedPoint() {
     var usedPoint = 0;
-    $('.kf_fw_ig1').find('[type="number"]').each(function () {
+    $points.find('[type="number"]').each(function () {
         var point = parseInt($(this).val());
         if (point && point > 0) usedPoint += point;
     });
@@ -6314,6 +6050,7 @@ var getCurrentAssignedPoint = function getCurrentAssignedPoint() {
 
 /**
  * 显示各项属性点的和值
+ * @param {jQuery} $point 属性点字段对象
  */
 var showSumOfPoint = function showSumOfPoint($point) {
     var num = parseInt($point.val());
@@ -6327,126 +6064,110 @@ var showSumOfPoint = function showSumOfPoint($point) {
 };
 
 /**
- * 获取当前的争夺属性
- * @returns {{}} 争夺属性
+ * 获取附加属性点列表
+ * @returns {Map} 附加属性点列表
  */
-var getCurrentLootPropertyList = function getCurrentLootPropertyList() {
-    var propertyList = {
-        '攻击力': 0,
-        '最大生命值': 0,
-        '攻击速度': 0,
-        '暴击几率': 0,
-        '技能释放概率': 0,
-        '防御': 0,
-        '可分配属性点': 0
-    };
-    var html = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:first-child').html();
-    var matches = /攻击力：(\d+)/.exec(html);
-    if (matches) propertyList['攻击力'] = parseInt(matches[1]);
-    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
-    if (matches) propertyList['最大生命值'] = parseInt(matches[1]);
-    matches = /攻击速度：(\d+)/.exec(html);
-    if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
-    matches = /暴击几率：(\d+)%/.exec(html);
-    if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
-    matches = /技能释放概率：(\d+)%/.exec(html);
-    if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);
-    matches = /防御：(\d+)%/.exec(html);
-    if (matches) propertyList['防御'] = parseInt(matches[1]);
-    matches = /可分配属性点：(\d+)/.exec(html);
-    if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
-    return propertyList;
+var getExtraPointList = function getExtraPointList() {
+    var extraPointList = new Map([['力量', 0], ['体质', 0], ['敏捷', 0], ['灵活', 0], ['智力', 0], ['意志', 0], ['耐力', 0], ['幸运', 0]]);
+    $points.find('[type="text"]').each(function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        var num = parseInt($this.next('span').text());
+        var key = getPointNameByFieldName(name);
+        if (!isNaN(num) && key) {
+            extraPointList.set(key, num);
+        }
+    });
+    return extraPointList;
+};
+
+/**
+ * 根据字段名称获取属性点名称
+ * @param {string} fieldName 字段名称
+ * @returns {string} 属性点名称
+ */
+var getPointNameByFieldName = function getPointNameByFieldName(fieldName) {
+    switch (fieldName) {
+        case 's1':
+            return '力量';
+        case 's2':
+            return '体质';
+        case 'd1':
+            return '敏捷';
+        case 'd2':
+            return '灵活';
+        case 'i1':
+            return '智力';
+        case 'i2':
+            return '意志';
+        case 'p':
+            return '耐力';
+        case 'l':
+            return '幸运';
+        default:
+            return '';
+    }
 };
 
 /**
  * 显示新的争夺属性
- * @param {jQuery} $point 属性字段
- * @param {{}} currentLootProperty 当前的争夺属性
- * @param {{}} itemUsedNumList 道具使用情况对象
+ * @param {jQuery} $point 属性点字段对象
  */
-var showNewLootProperty = function showNewLootProperty($point, currentLootProperty, itemUsedNumList) {
+var showNewLootProperty = function showNewLootProperty($point) {
     var name = $point.attr('name');
     var num = parseInt($point.val());
     if (isNaN(num) || num < 0) num = 0;
     var oriNum = parseInt($point.get(0).defaultValue);
     var extraNum = parseInt($point.next('span').text());
     var newValue = 0,
-        diffValue = 0,
-        unit = '';
+        diffValue = 0;
     switch (name) {
         case 's1':
             newValue = (num + extraNum) * 5;
-            diffValue = newValue - currentLootProperty['攻击力'];
+            diffValue = newValue - propertyList.get('攻击力');
             break;
         case 's2':
-            newValue = (num + extraNum) * 20 + (itemUsedNumList['蕾米莉亚同人漫画'] === 50 ? 700 : 0);
-            diffValue = newValue - currentLootProperty['最大生命值'];
+            newValue = (num + extraNum) * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0);
+            diffValue = newValue - propertyList.get('最大生命值');
             break;
         case 'd1':
-            newValue = (num + extraNum) * 2 + (itemUsedNumList['十六夜同人漫画'] === 50 ? 100 : 0);
-            diffValue = newValue - currentLootProperty['攻击速度'];
+            newValue = (num + extraNum) * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
+            diffValue = newValue - propertyList.get('攻击速度');
             break;
         case 'd2':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 100) * 100);
-            diffValue = newValue - currentLootProperty['暴击几率'];
-            unit = '%';
+            diffValue = newValue - propertyList.get('暴击几率');
             break;
         case 'i1':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 120) * 100);
-            diffValue = newValue - currentLootProperty['技能释放概率'];
-            unit = '%';
+            diffValue = newValue - propertyList.get('技能释放概率');
             break;
         case 'i2':
             newValue = num + extraNum;
             newValue = Math.round(newValue / (newValue + 150) * 100);
-            diffValue = newValue - currentLootProperty['防御'];
-            unit = '%';
+            diffValue = newValue - propertyList.get('防御');
             break;
     }
-    if (num !== oriNum) {
-        $('#pd_new_' + name).html(' (<span style="color:#00F">' + newValue + unit + '</span>|<span style="color:' + (diffValue >= 0 ? '#ff0033' : '#339933') + '">' + ((diffValue >= 0 ? '+' : '') + diffValue + '</span>)'));
-    } else {
-        $('#pd_new_' + name).html('');
-    }
+    $('#pdPro_' + name).text(newValue).css('color', num !== oriNum ? '#00f' : '#000');
+
+    if (num !== oriNum) $('#pdNew_' + name).text('(' + ((diffValue >= 0 ? '+' : '') + diffValue) + ')').css('color', diffValue >= 0 ? '#ff0033' : '#339933');else $('#pdNew_' + name).text('');
 };
 
 /**
  * 增强争夺记录
  */
 var enhanceLootLog = function enhanceLootLog() {
-    var $log = $('.kf_fw_ig1 > tbody > tr:nth-child(5) > td');
+    var $log = $lootArea.find('> tbody > tr:nth-child(5) > td');
     var matches = $log.html().match(/获得\d+经验和\d+KFB/g);
     var exp = 0,
         kfb = 0;
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-        for (var _iterator = matches[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var match = _step.value;
-
-            var logMatches = /获得(\d+)经验和(\d+)KFB/.exec(match);
-            exp += parseInt(logMatches[1]);
-            kfb += parseInt(logMatches[2]);
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-            }
-        } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
-            }
-        }
+    for (var i in matches) {
+        var logMatches = /获得(\d+)经验和(\d+)KFB/.exec(matches[i]);
+        exp += parseInt(logMatches[1]);
+        kfb += parseInt(logMatches[2]);
     }
-
     if (exp || kfb) {
         $log.prepend('<b class="pd_stat">\u4F60\u603B\u5171\u83B7\u5F97\u4E86<em>' + exp.toLocaleString() + '</em>\u7ECF\u9A8C\u548C<em>' + kfb.toLocaleString() + '</em>KFB</b><br>');
     }
@@ -6464,44 +6185,38 @@ var addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function addUser
 };
 
 },{"./Item":11}],15:[function(require,module,exports){
+/* 消息模块 */
 'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.destroy = exports.remove = exports.wait = exports.show = undefined;
-
-var _Info = require('./Info');
-
-var _Info2 = _interopRequireDefault(_Info);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * 显示消息
- * @param {string} msg 消息
- * @param {number} duration 消息持续时间（秒），-1为永久显示
- * @param {boolean} clickable 消息框可否手动点击消除
- * @param {boolean} preventable 是否阻止点击网页上的其它元素
+ * @param {string|Object} options 消息或设置对象
+ * @param {string} [options.msg] 消息
+ * @param {number} [options.duration={@link Config.defShowMsgDuration}] 消息显示时间（秒），-1为永久显示
+ * @param {boolean} [options.clickable=true] 消息框可否手动点击消除
+ * @param {boolean} [options.preventable=false] 是否阻止点击网页上的其它元素
+ * @param {number} [duration] 消息显示时间（秒），-1为永久显示
  * @example
  * show('<strong>抽取道具或卡片</strong><i>道具<em>+1</em></i>', -1);
  * show({msg: '<strong>抽取神秘盒子</strong><i>KFB<em>+8</em></i>', duration: 20, clickable: false});
  * @returns {jQuery} 消息框对象
  */
-var show = exports.show = function show() {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$msg = _ref.msg,
-        msg = _ref$msg === undefined ? '' : _ref$msg,
-        _ref$duration = _ref.duration,
-        duration = _ref$duration === undefined ? Config.defShowMsgDuration : _ref$duration,
-        _ref$clickable = _ref.clickable,
-        clickable = _ref$clickable === undefined ? true : _ref$clickable,
-        _ref$preventable = _ref.preventable,
-        preventable = _ref$preventable === undefined ? false : _ref$preventable;
 
-    if (arguments.length > 0) {
-        if (typeof arguments[0] === 'string') msg = arguments[0];
-        if (typeof arguments[1] === 'number') duration = arguments[1];
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var show = exports.show = function show(options, duration) {
+    var settings = {
+        msg: '',
+        duration: Config.defShowMsgDuration,
+        clickable: true,
+        preventable: false
+    };
+    if ($.type(options) === 'object') {
+        $.extend(settings, options);
+    } else {
+        settings.msg = options;
+        settings.duration = typeof duration === 'undefined' ? Config.defShowMsgDuration : duration;
     }
 
     if ($('.pd_msg').length > 20) destroy();
@@ -6518,18 +6233,19 @@ var show = exports.show = function show() {
             }
         }
     }
-    if (preventable && !$('.pd_mask').length) {
+    if (settings.preventable && !$('.pd_mask').length) {
         $('<div class="pd_mask"></div>').appendTo('body');
     }
     if (isFirst) {
         $container = $('<div class="pd_msg_container"></div>').appendTo('body');
     }
-    var $msg = $('<div class="pd_msg">' + msg + '</div>').appendTo($container);
-    $msg.on('click', 'a.pd_stop_action', function (e) {
+
+    var $msg = $('<div class="pd_msg">' + settings.msg + '</div>').appendTo($container);
+    $msg.on('click', '.pd_stop_action', function (e) {
         e.preventDefault();
         $(this).html('正在停止&hellip;').closest('.pd_msg').data('stop', true);
     });
-    if (clickable) {
+    if (settings.clickable) {
         $msg.css('cursor', 'pointer').click(function () {
             $(this).stop(true, true).fadeOut('slow', function () {
                 remove($(this));
@@ -6538,18 +6254,15 @@ var show = exports.show = function show() {
             e.stopPropagation();
         });
     }
-    var windowWidth = $(window).width(),
-        windowHeight = $(window).height();
+
+    var windowWidth = $(window).width();
     var popTipsWidth = $msg.outerWidth(),
         popTipsHeight = $msg.outerHeight();
-    if (_Info2.default.isMobile && windowHeight > 1000) windowHeight /= 2;
-    var scrollTop = $(window).scrollTop();
-    if (scrollTop < windowHeight / 2) scrollTop = 0;
-    var left = windowWidth / 2 + (_Info2.default.isMobile ? $(window).scrollLeft() / 3 : 0) - popTipsWidth / 2;
+    var left = windowWidth / 2 - popTipsWidth / 2;
     if (left + popTipsWidth > windowWidth) left = windowWidth - popTipsWidth - 20;
     if (left < 0) left = 0;
     if (isFirst) {
-        $container.css('top', windowHeight / 2 + (_Info2.default.isMobile ? scrollTop : 0) - popTipsHeight / 2);
+        $container.css('top', $(window).height() / 2 - popTipsHeight / 2);
     } else {
         $container.stop(false, true).animate({ 'top': '-=' + popTipsHeight / 1.75 });
     }
@@ -6558,8 +6271,8 @@ var show = exports.show = function show() {
         'top': $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0,
         left: left
     }).fadeIn('slow');
-    if (duration !== -1) {
-        $msg.delay(duration * 1000).fadeOut('slow', function () {
+    if (settings.duration !== -1) {
+        $msg.delay(settings.duration * 1000).fadeOut('slow', function () {
             remove($(this));
         });
     }
@@ -6588,7 +6301,7 @@ var remove = exports.remove = function remove($msg) {
     if (!$('.pd_msg').length) {
         $parent.remove();
         $('.pd_mask').remove();
-    } else if (!$('#pd_remaining_num').length) {
+    } else if (!$('.pd_countdown').length) {
         $('.pd_mask').remove();
     }
 };
@@ -6601,13 +6314,16 @@ var destroy = exports.destroy = function destroy() {
     $('.pd_mask').remove();
 };
 
-},{"./Info":10}],16:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+/* 其它模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyFaq = exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.modifyFaq = exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _Info = require('./Info');
 
@@ -6760,27 +6476,51 @@ var addFollowAndBlockAndMemoUserLink = exports.addFollowAndBlockAndMemoUserLink 
     $('<span>[<a href="#">关注用户</a>] [<a href="#">屏蔽用户</a>]</span><br><span>[<a href="#">添加备注</a>]</span><br>').appendTo($('a[href^="message.php?action=write&touid="]').parent()).find('a').each(function () {
         var $this = $(this);
         if ($this.is('a:contains("备注")')) {
-            var memo = '';
-            for (var name in Config.userMemoList) {
-                if (name === userName) {
-                    memo = Config.userMemoList[name];
-                    break;
+            var str = '';
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = Util.entries(Config.userMemoList)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var _step$value = _slicedToArray(_step.value, 2),
+                        name = _step$value[0],
+                        memo = _step$value[1];
+
+                    if (name === userName) {
+                        str = memo;
+                        break;
+                    }
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
                 }
             }
-            if (memo !== '') {
-                $this.text('修改备注').data('memo', memo);
+
+            if (str !== '') {
+                $this.text('修改备注').data('memo', str);
                 var $info = $('.log1 > tbody > tr:last-child > td:last-child');
-                $info.html('\u5907\u6CE8\uFF1A' + memo + '<br>' + $info.html());
+                $info.html('\u5907\u6CE8\uFF1A' + str + '<br>' + $info.html());
             }
         } else {
-            var str = '关注';
+            var _str = '关注';
             var userList = Config.followUserList;
             if ($this.text().indexOf('屏蔽') > -1) {
-                str = '屏蔽';
+                _str = '屏蔽';
                 userList = Config.blockUserList;
             }
             if (Util.inFollowOrBlockUserList(userName, userList) > -1) {
-                $this.addClass('pd_highlight').text('解除' + str);
+                $this.addClass('pd_highlight').text('解除' + _str);
             }
         }
     }).click(function (e) {
@@ -6856,37 +6596,39 @@ var modifyMyPostLink = exports.modifyMyPostLink = function modifyMyPostLink() {
  * 在短消息页面添加选择指定短消息的按钮
  */
 var addMsgSelectButton = exports.addMsgSelectButton = function addMsgSelectButton() {
-    $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('input[type="button"][value="全选"]').click(function (e) {
+    var $checkeds = $('.thread1 > tbody > tr > td:last-child > [type="checkbox"]');
+    $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('[type="button"][value="全选"]').click(function (e) {
         e.preventDefault();
         var value = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
         if (value !== '') {
             (function () {
+                $checkeds.prop('checked', false);
                 var titleArr = value.split('|');
                 $('.thread1 > tbody > tr > td:nth-child(2) > a').each(function () {
                     var $this = $(this);
-                    var _iteratorNormalCompletion = true;
-                    var _didIteratorError = false;
-                    var _iteratorError = undefined;
+                    var _iteratorNormalCompletion2 = true;
+                    var _didIteratorError2 = false;
+                    var _iteratorError2 = undefined;
 
                     try {
-                        for (var _iterator = titleArr[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                            var title = _step.value;
+                        for (var _iterator2 = titleArr[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                            var title = _step2.value;
 
                             if ($this.text().toLowerCase().includes(title.toLowerCase())) {
                                 $this.closest('tr').find('td:last-child > input[type="checkbox"]').prop('checked', true);
                             }
                         }
                     } catch (err) {
-                        _didIteratorError = true;
-                        _iteratorError = err;
+                        _didIteratorError2 = true;
+                        _iteratorError2 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion && _iterator.return) {
-                                _iterator.return();
+                            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                                _iterator2.return();
                             }
                         } finally {
-                            if (_didIteratorError) {
-                                throw _iteratorError;
+                            if (_didIteratorError2) {
+                                throw _iteratorError2;
                             }
                         }
                     }
@@ -6894,9 +6636,9 @@ var addMsgSelectButton = exports.addMsgSelectButton = function addMsgSelectButto
             })();
         }
     }).parent().attr('colspan', 4).prev('td').attr('colspan', 3);
-    $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('input[type="button"][value="全选"]').click(function (e) {
+    $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('[type="button"][value="全选"]').click(function (e) {
         e.preventDefault();
-        $('.thread1 > tbody > tr > td:last-child > input[type="checkbox"]').each(function () {
+        $checkeds.each(function () {
             var $this = $(this);
             $this.prop('checked', !$this.prop('checked'));
         });
@@ -6915,30 +6657,31 @@ var addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function a
 
     var $idColors = $autoChangeIdColor.parent('tr').nextAll('tr').not('tr:last');
     if ($idColors.find('a').length <= 1) return;
-    $('<form><div id="pd_auto_change_sm_color_btns" style="margin-top: 5px;">\n<label><input id="pd_cfg_auto_change_sm_color_enabled" class="pd_input" type="checkbox"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272</label></div></form>').appendTo($autoChangeIdColor).find('#pd_cfg_auto_change_sm_color_enabled').click(function () {
+    var $area = $('\n<form>\n<div data-name="autoChangeIdColorBtns" style="margin-top: 5px;">\n  <label><input name="autoChangeIdColorEnabled" class="pd_input" type="checkbox"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272</label>\n</div>\n</form>\n').appendTo($autoChangeIdColor);
+    $area.find('[name="autoChangeIdColorEnabled"]').click(function () {
         var $this = $(this);
         var enabled = $this.prop('checked');
-        if (enabled !== Config.autoChangeSMColorEnabled) {
+        if (enabled !== Config.autoChangeIdColorEnabled) {
             (0, _Config.read)();
-            Config.autoChangeSMColorEnabled = enabled;
+            Config.autoChangeIdColorEnabled = enabled;
             (0, _Config.write)();
         }
 
         if (enabled) {
-            $idColors.addClass('pd_sm_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
-            $('\n<label>\u66F4\u6362\u987A\u5E8F\n  <select id="pd_cfg_auto_change_sm_color_type" style="font-size: 12px;">\n    <option value="random">\u968F\u673A</option>\n    <option value="sequence">\u987A\u5E8F</option>\n  </select>\n</label>\n<label>\u6BCF\u9694 <input id="pd_cfg_auto_change_sm_color_interval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> \u5C0F\u65F6</label>\n<button>\u4FDD\u5B58</button><button style="margin-left: 3px;">\u91CD\u7F6E</button><br>\n<a href="#">\u5168\u9009</a><a style="margin-left: 7px; margin-right: 10px;" href="#">\u53CD\u9009</a>\n<label><input id="pd_cfg_change_all_available_sm_color_enabled" class="pd_input" type="checkbox"> \u9009\u62E9\u5F53\u524D\u6240\u6709\u53EF\u7528\u7684ID\u989C\u8272</label>\n').insertAfter($this.parent()).filter('button:first').click(function (e) {
+            $idColors.addClass('pd_id_color_select').find('td:not(:has(a))').css('cursor', 'not-allowed');
+            $('\n<label class="pd_cfg_ml">\n  \u66F4\u6362\u987A\u5E8F\n  <select name="autoChangeIdColorType" style="font-size: 12px;">\n    <option value="random">\u968F\u673A</option><option value="sequence">\u987A\u5E8F</option>\n  </select>\n</label>&nbsp;\n<label>\u6BCF\u9694 <input name="autoChangeIdColorInterval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> \u5C0F\u65F6</label>\n<button>\u4FDD\u5B58</button> <button style="margin-left: 3px;">\u91CD\u7F6E</button><br>\n<a class="pd_btn_link" href="#">\u5168\u9009</a> <a class="pd_btn_link" href="#">\u53CD\u9009</a>\n<label><input name="changeAllAvailableIdColorEnabled" class="pd_input" type="checkbox"> \u9009\u62E9\u5F53\u524D\u6240\u6709\u53EF\u7528\u7684ID\u989C\u8272</label>\n').insertAfter($this.parent()).filter('button:first').click(function (e) {
                 e.preventDefault();
-                var $autoChangeSMColorInterval = $('#pd_cfg_auto_change_sm_color_interval');
-                var interval = parseInt($autoChangeSMColorInterval.val());
+                var $autoChangeIdColorInterval = $area.find('[name="autoChangeIdColorInterval"]');
+                var interval = parseInt($autoChangeIdColorInterval.val());
                 if (isNaN(interval) || interval <= 0) {
                     alert('ID颜色更换时间间隔格式不正确');
-                    $autoChangeSMColorInterval.select();
-                    $autoChangeSMColorInterval.focus();
+                    $autoChangeIdColorInterval.select();
+                    $autoChangeIdColorInterval.focus();
                     return;
                 }
-                var changeAllAvailableSMColorEnabled = $('#pd_cfg_change_all_available_sm_color_enabled').prop('checked');
+                var changeAllAvailableSMColorEnabled = $area.find('[name="changeAllAvailableIdColorEnabled"]').prop('checked');
                 var customChangeSMColorList = [];
-                $idColors.find('input[type="checkbox"]:checked').each(function () {
+                $idColors.find('[type="checkbox"]:checked').each(function () {
                     customChangeSMColorList.push(parseInt($(this).val()));
                 });
                 if (!changeAllAvailableSMColorEnabled && customChangeSMColorList.length <= 1) {
@@ -6947,39 +6690,39 @@ var addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function a
                 }
                 if (customChangeSMColorList.length <= 1) customChangeSMColorList = [];
 
-                var oriInterval = Config.autoChangeSMColorInterval;
+                var oriInterval = Config.autoChangeIdColorInterval;
                 (0, _Config.read)();
-                Config.autoChangeSMColorType = $('#pd_cfg_auto_change_sm_color_type').val().toLowerCase();
-                Config.autoChangeSMColorInterval = interval;
-                Config.changeAllAvailableSMColorEnabled = changeAllAvailableSMColorEnabled;
-                Config.customAutoChangeSMColorList = customChangeSMColorList;
+                Config.autoChangeIdColorType = $area.find('[name="autoChangeIdColorType"]').val().toLowerCase();
+                Config.autoChangeIdColorInterval = interval;
+                Config.changeAllAvailableIdColorEnabled = changeAllAvailableSMColorEnabled;
+                Config.customAutoChangeIdColorList = customChangeSMColorList;
                 (0, _Config.write)();
-                if (oriInterval !== Config.autoChangeSMColorInterval) Util.deleteCookie(_Const2.default.autoChangeSMColorCookieName);
+                if (oriInterval !== Config.autoChangeIdColorInterval) Util.deleteCookie(_Const2.default.autoChangeIdColorCookieName);
                 alert('设置保存成功');
             }).end().filter('button:eq(1)').click(function (e) {
                 e.preventDefault();
                 (0, _Config.read)();
-                Config.autoChangeSMColorEnabled = _Config.Config.autoChangeSMColorEnabled;
-                Config.autoChangeSMColorType = _Config.Config.autoChangeSMColorType;
-                Config.autoChangeSMColorInterval = _Config.Config.autoChangeSMColorInterval;
-                Config.changeAllAvailableSMColorEnabled = _Config.Config.changeAllAvailableSMColorEnabled;
-                Config.customAutoChangeSMColorList = _Config.Config.customAutoChangeSMColorList;
+                Config.autoChangeIdColorEnabled = _Config.Config.autoChangeIdColorEnabled;
+                Config.autoChangeIdColorType = _Config.Config.autoChangeIdColorType;
+                Config.autoChangeIdColorInterval = _Config.Config.autoChangeIdColorInterval;
+                Config.changeAllAvailableIdColorEnabled = _Config.Config.changeAllAvailableIdColorEnabled;
+                Config.customAutoChangeIdColorList = _Config.Config.customAutoChangeIdColorList;
                 (0, _Config.write)();
-                Util.deleteCookie(_Const2.default.autoChangeSMColorCookieName);
-                TmpLog.deleteValue(_Const2.default.prevAutoChangeSMColorIdTmpLogName);
+                Util.deleteCookie(_Const2.default.autoChangeIdColorCookieName);
+                TmpLog.deleteValue(_Const2.default.prevAutoChangeIdColorTmpLogName);
                 alert('设置已重置');
                 location.reload();
             }).end().filter('a').click(function (e) {
                 e.preventDefault();
                 if ($idColors.find('input[disabled]').length > 0) {
                     alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
-                    $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                    $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
                     return;
                 }
-                if ($(this).is('#pd_auto_change_sm_color_btns > a:first')) {
-                    $idColors.find('input[type="checkbox"]').prop('checked', true);
+                if ($(this).is('[data-name="autoChangeIdColorBtns"] > a:first')) {
+                    $idColors.find('[type="checkbox"]').prop('checked', true);
                 } else {
-                    $idColors.find('input[type="checkbox"]').each(function () {
+                    $idColors.find('[type="checkbox"]').each(function () {
                         $(this).prop('checked', !$(this).prop('checked'));
                     });
                 }
@@ -6991,17 +6734,38 @@ var addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function a
                 if (matches) $this.append('<input type="checkbox" class="pd_input" value="' + matches[1] + '">');
             });
 
-            $('#pd_cfg_auto_change_sm_color_type').val(Config.autoChangeSMColorType);
-            $('#pd_cfg_auto_change_sm_color_interval').val(Config.autoChangeSMColorInterval);
-            $('#pd_cfg_change_all_available_sm_color_enabled').click(function () {
+            $area.find('[name="autoChangeIdColorType"]').val(Config.autoChangeIdColorType);
+            $area.find('[name="autoChangeIdColorInterval"]').val(Config.autoChangeIdColorInterval);
+            $area.find('[name="changeAllAvailableIdColorEnabled"]').click(function () {
                 $idColors.find('input').prop('disabled', $(this).prop('checked'));
-            }).prop('checked', Config.changeAllAvailableSMColorEnabled).triggerHandler('click');
-            for (var i in Config.customAutoChangeSMColorList) {
-                $idColors.find('input[value="' + Config.customAutoChangeSMColorList[i] + '"]').prop('checked', true);
+            }).prop('checked', Config.changeAllAvailableIdColorEnabled).triggerHandler('click');
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
+            var _iteratorError3 = undefined;
+
+            try {
+                for (var _iterator3 = Config.customAutoChangeIdColorList[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var id = _step3.value;
+
+                    $idColors.find('input[value="' + id + '"]').prop('checked', true);
+                }
+            } catch (err) {
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                        _iterator3.return();
+                    }
+                } finally {
+                    if (_didIteratorError3) {
+                        throw _iteratorError3;
+                    }
+                }
             }
         } else {
             $this.parent().nextAll().remove();
-            $idColors.removeClass('pd_sm_color_select').find('input').remove();
+            $idColors.removeClass('pd_id_color_select').find('input').remove();
         }
     });
 
@@ -7010,19 +6774,19 @@ var addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function a
             var $this = $(this);
             if ($this.find('input[disabled]').length > 0) {
                 alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
-                $('#pd_cfg_change_all_available_sm_color_enabled').focus();
+                $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
             } else if (!$(e.target).is('input')) {
                 $this.find('input').click();
             }
         }
     });
 
-    if (Config.autoChangeSMColorEnabled) {
-        $('#pd_cfg_auto_change_sm_color_enabled').prop('checked', true).triggerHandler('click');
+    if (Config.autoChangeIdColorEnabled) {
+        $area.find('[name="autoChangeIdColorEnabled"]').prop('checked', true).triggerHandler('click');
     }
 
-    $('div[style="float: right; color: #8080c0;"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
-    $('div[style="border-bottom: #8000ff 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
+    $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
+    $('div[style="border-bottom:#8000FF 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
 };
 
 /**
@@ -7043,6 +6807,13 @@ var syncModifyPerPageFloorNum = exports.syncModifyPerPageFloorNum = function syn
         syncConfig();
     });
     syncConfig();
+};
+
+/**
+ * 在设置页面添加更换头像提醒
+ */
+var addAvatarChangeAlert = exports.addAvatarChangeAlert = function addAvatarChangeAlert() {
+    $('input[name="uploadurl[2]"]').parent().append('<div class="pd_highlight">本反向代理服务器为了提高性能对图片设置了缓存，更换头像后可能需等待<b>最多30分钟</b>才能看到效果</div>');
 };
 
 /**
@@ -7115,13 +6886,14 @@ var modifyFaq = exports.modifyFaq = function modifyFaq() {
     }
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":10,"./Msg":15,"./Public":18,"./TmpLog":20,"./Util":21}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":10,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
+/* 发帖模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Util = require('./Util');
 
@@ -7132,6 +6904,8 @@ var _Msg = require('./Msg');
 var Msg = _interopRequireWildcard(_Msg);
 
 var _Func = require('./Func');
+
+var Func = _interopRequireWildcard(_Func);
 
 var _Const = require('./Const');
 
@@ -7150,9 +6924,9 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
     var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 
-    (0, _Func.run)('Post.handleMultiQuote_before_', type);
-    if (!$('#pd_clear_multi_quote_data').length) {
-        $('<a id="pd_clear_multi_quote_data" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
+    Func.run('Post.handleMultiQuote_before_', type);
+    if (!$('#pdClearMultiQuoteData').length) {
+        $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
@@ -7229,7 +7003,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
     var keywords = new Set();
     var content = '';
     if (type === 2) {
-        Msg.wait('<strong>\u6B63\u5728\u83B7\u53D6\u5F15\u7528\u5185\u5BB9\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + list.length + '</em></i>');
+        Msg.wait('<strong>\u6B63\u5728\u83B7\u53D6\u5F15\u7528\u5185\u5BB9\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + list.length + '</em></i>');
         $(document).clearQueue('MultiQuote');
     }
     $.each(list, function (index, data) {
@@ -7240,10 +7014,10 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
                 $.get('post.php?action=quote&fid=' + fid + '&tid=' + tid + '&pid=' + data.pid + '&article=' + data.floor + '&t=' + new Date().getTime(), function (html) {
                     var matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                     if (matches) {
-                        content += Util.getRemoveUnpairedBBCodeQuoteContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
+                        content += Util.removeUnpairedBBCodeContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
                     }
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
                     if (index === list.length - 1) {
                         Msg.destroy();
                         $('#textarea').val(content).focus();
@@ -7263,7 +7037,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
     if (type === 2) $(document).dequeue('MultiQuote');else $('textarea[name="atc_content"]').val(content).focus();
-    (0, _Func.run)('Post.handleMultiQuote_after_', type);
+    Func.run('Post.handleMultiQuote_after_', type);
 };
 
 /**
@@ -7274,7 +7048,7 @@ var removeUnpairedBBCodeInQuoteContent = exports.removeUnpairedBBCodeInQuoteCont
     var content = $content.val();
     var matches = /\[quote\](.|\r|\n)+?\[\/quote\]/.exec(content);
     if (matches) {
-        var workedContent = Util.getRemoveUnpairedBBCodeQuoteContent(matches[0]);
+        var workedContent = Util.removeUnpairedBBCodeContent(matches[0]);
         if (matches[0] !== workedContent) {
             $content.val(content.replace(matches[0], workedContent));
         }
@@ -7288,31 +7062,28 @@ var addExtraPostEditorButton = exports.addExtraPostEditorButton = function addEx
     var textArea = $('textarea[name="atc_content"]').get(0);
     if (!textArea) return;
 
-    $('\n<span id="wy_post" title="\u63D2\u5165\u9690\u85CF\u5185\u5BB9" data-type="hide" style="background-position:0 -280px">\u63D2\u5165\u9690\u85CF\u5185\u5BB9</span>\n<span id="wy_justifyleft" title="\u5DE6\u5BF9\u9F50" data-type="left" style="background-position:0 -360px">\u5DE6\u5BF9\u9F50</span>\n<span id="wy_justifycenter" title="\u5C45\u4E2D" data-type="center" style="background-position:0 -380px">\u5C45\u4E2D</span>\n<span id="wy_justifyright" title="\u53F3\u5BF9\u9F50" data-type="right" style="background-position:0 -400px">\u53F3\u5BF9\u9F50</span>\n<span id="wy_subscript" title="\u4E0B\u6807" data-type="sub" style="background-position:0 -80px">\u4E0B\u6807</span>\n<span id="wy_superscript" title="\u4E0A\u6807" data-type="sup" style="background-position:0 -100px">\u4E0A\u6807</span>\n<span class="pd_editor_btn" title="\u63D2\u5165\u98DE\u884C\u6587\u5B57" data-type="fly">F</span>\n<span class="pd_editor_btn" title="\u63D2\u5165HTML5\u97F3\u9891" data-type="audio">A</span>\n<span class="pd_editor_btn" title="\u63D2\u5165HTML5\u89C6\u9891" data-type="video">V</span>\n').appendTo('#editor-button .editor-button').click(function () {
+    $('\n<span id="wy_post" title="\u63D2\u5165\u9690\u85CF\u5185\u5BB9" data-type="hide" style="background-position: 0 -280px;">\u63D2\u5165\u9690\u85CF\u5185\u5BB9</span>\n<span id="wy_justifyleft" title="\u5DE6\u5BF9\u9F50" data-type="left" style="background-position: 0 -360px;">\u5DE6\u5BF9\u9F50</span>\n<span id="wy_justifycenter" title="\u5C45\u4E2D" data-type="center" style="background-position: 0 -380px;">\u5C45\u4E2D</span>\n<span id="wy_justifyright" title="\u53F3\u5BF9\u9F50" data-type="right" style="background-position: 0 -400px;">\u53F3\u5BF9\u9F50</span>\n<span id="wy_subscript" title="\u4E0B\u6807" data-type="sub" style="background-position: 0 -80px;">\u4E0B\u6807</span>\n<span id="wy_superscript" title="\u4E0A\u6807" data-type="sup" style="background-position: 0 -100px;">\u4E0A\u6807</span>\n<span class="pd_editor_btn" title="\u63D2\u5165\u98DE\u884C\u6587\u5B57" data-type="fly">F</span>\n<span class="pd_editor_btn" title="\u63D2\u5165HTML5\u97F3\u9891" data-type="audio">A</span>\n<span class="pd_editor_btn" title="\u63D2\u5165HTML5\u89C6\u9891" data-type="video">V</span>\n').appendTo('#editor-button .editor-button').click(function () {
         var $this = $(this);
         var type = $this.data('type');
         var text = '';
+        var matches = null;
         switch (type) {
             case 'hide':
                 text = prompt('请输入神秘等级：', 5);
                 break;
             case 'audio':
-                {
-                    text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
-                    var matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
-                    if (matches) text = 'http://music.miaola.info/163/{0}.mp3'.replace('{0}', matches[1]);
-                    matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
-                    if (matches) text = 'http://music.miaola.info/xiami/{0}.mp3'.replace('{0}', matches[1]);
-                }
+                text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
+                matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
+                if (matches) text = 'http://music.miaola.info/163/' + matches[1] + '.mp3';
+                matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
+                if (matches) text = 'http://music.miaola.info/xiami/' + matches[1] + '.mp3';
                 break;
             case 'video':
-                {
-                    text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
-                    var _matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
-                    if (_matches) text = 'http://video.miaola.info/youtube/{0}'.replace('{0}', _matches[1]);
-                    _matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
-                    if (_matches) text = 'http://video.miaola.info/youtube/{0}'.replace('{0}', _matches[1]);
-                }
+                text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
+                matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
+                if (matches) text = 'http://video.miaola.info/youtube/' + matches[1];
+                matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
+                if (matches) text = 'http://video.miaola.info/youtube/' + matches[1];
                 break;
         }
         if (text === null) return;
@@ -7369,13 +7140,13 @@ var addExtraPostEditorButton = exports.addExtraPostEditorButton = function addEx
  * 在发帖页面上添加额外的选项
  */
 var addExtraOptionInPostPage = exports.addExtraOptionInPostPage = function addExtraOptionInPostPage() {
-    $('\n<div class="pd_post_extra_option">\n  <label><input type="checkbox" id="pd_auto_analyze_url" checked> \u81EA\u52A8\u5206\u6790url</label><br>\n  <label><input type="checkbox" name="pd_wind_code_auto_convert" checked> Wind Code\u81EA\u52A8\u8F6C\u6362</label>\n</div>\n').appendTo($('#menu_show').closest('td')).on('click', 'input[type="checkbox"]', function () {
+    $('\n<div class="pd_post_extra_option">\n  <label><input type="checkbox" name="autoAnalyzeUrl" checked> \u81EA\u52A8\u5206\u6790url</label><br>\n  <label><input type="checkbox" name="windCodeAutoConvert" checked> Wind Code\u81EA\u52A8\u8F6C\u6362</label>\n</div>\n').appendTo($('#menu_show').closest('td')).on('click', '[type="checkbox"]', function () {
         var $this = $(this);
-        var inputName = $this.is('#pd_auto_analyze_url') ? 'atc_autourl' : 'atc_convert';
-        $('form[name="FORM"]').find('input[name="' + inputName + '"]').val($this.prop('checked') ? 1 : 0);
+        var inputName = $this.is('[name="autoAnalyzeUrl"]') ? 'atc_autourl' : 'atc_convert';
+        $('form[name="FORM"]').find('[name="' + inputName + '"]').val($this.prop('checked') ? 1 : 0);
     });
 
-    $('<input type="button" value="预览帖子" style="margin-left: 7px;">').insertAfter('input[type="submit"][name="Submit"]').click(function (e) {
+    $('<input type="button" value="预览帖子" style="margin-left: 7px;">').insertAfter('[type="submit"][name="Submit"]').click(function (e) {
         e.preventDefault();
         var $form = $('form[name="preview"]');
         $form.find('input[name="atc_content"]').val($('#textarea').val());
@@ -7395,13 +7166,26 @@ var modifyPostPreviewPage = exports.modifyPostPreviewPage = function modifyPostP
     });
 };
 
-},{"./Const":6,"./Func":8,"./Msg":15,"./Util":21}],18:[function(require,module,exports){
+/**
+ * 在发帖页面添加更新附件提醒
+ */
+var addAttachChangeAlert = exports.addAttachChangeAlert = function addAttachChangeAlert() {
+    $(document).on('click', '.abtn[id^="md_"]', function () {
+        if (!$(document).data('attachUpdateAlert')) {
+            alert('本反向代理服务器为了提高性能对图片设置了缓存，更新附件图片后可能需等待最多30分钟才能看到效果');
+            $(document).data('attachUpdateAlert', true);
+        }
+    });
+};
+
+},{"./Const":6,"./Func":8,"./Msg":15,"./Util":22}],18:[function(require,module,exports){
+/* 公共模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.runCustomScript = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.addConfigAndLogDialogLink = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.importKfSmileEnhanceExtension = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -7425,6 +7209,8 @@ var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
@@ -7433,15 +7219,23 @@ var _ConfigDialog = require('./ConfigDialog');
 
 var _Log = require('./Log');
 
+var Log = _interopRequireWildcard(_Log);
+
 var _LogDialog = require('./LogDialog');
 
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
 
+var _Read = require('./Read');
+
+var Read = _interopRequireWildcard(_Read);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 /**
  * 获取Uid和用户名
@@ -7486,11 +7280,24 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u901A\u7528 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1001; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  .pd_stat i { font-style: normal; margin-right: 3px; }\n  .pd_stat .pd_notice { margin-left: 5px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_highlight { color: #ff0000 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select { vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px; }\n  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pages .pd_fast_goto_page { margin-left: 8px; }\n  .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-left: 3px; margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .pd_sm_color_select > td { position: relative; cursor: pointer; }\n  .pd_sm_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  #pd_smile_panel img { margin: 3px; cursor: pointer; }\n  .pd_verify_tips { cursor: help; color: #999; }\n  .pd_verify_tips_ok { color: #99cc66; }\n  .pd_verify_tips_conditional { color: #ff9900; }\n  .pd_verify_tips_unable { color: #ff0033; }\n  .pd_verify_tips_details { cursor: pointer; }\n  #pd_monster_loot_info_panel em { font-style: normal; cursor: help; }\n  #pd_attack_log_content {\n    width: 850px; min-height: 160px; max-height: 500px; margin: 5px 0; padding: 5px; border: 1px solid #9191ff; overflow: auto;\n    line-height: 1.6em; background-color: #fff;\n  }\n  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: "Microsoft YaHei"; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .readtext img[onclick] { max-width: 550px; }\n  .pd_post_extra_option { text-align:left; margin-top:5px; margin-left:5px; }\n  .pd_post_extra_option input { vertical-align:middle; height:auto; margin-right:0; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_item_type_chk { margin-right: 5px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px; }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  #pd_custom_sm_color { width: 360px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_nav a { margin-left: 10px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main label input, .pd_cfg_main legend input, .pd_cfg_main label select { margin: 0 5px; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_main .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_main .pd_cfg_tips:hover { color: #ff0000; }\n  #pd_config .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { width: 80px; margin-left: 5px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  #pd_cfg_custom_monster_name_list td input[type="text"] { width: 140px; }\n  #pd_cfg_follow_user_list, #pd_cfg_block_user_list { max-height: 480px; overflow: auto; }\n  #pd_auto_change_sm_color_btns label { margin-right: 10px; }\n  .pd_cfg_ml { margin-left: 10px; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  #pd_log { width: 880px; }\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  #pd_log_content { height: 308px; overflow: auto; }\n  #pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  #pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  #pd_log_content p { line-height: 22px; margin: 0; }\n  #pd_log .pd_stat i { display: inline-block; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1001; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pages .pd_fast_goto_page { margin-left: 8px; }\n  .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_main .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_main .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 308px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');
     }
+};
+
+/**
+ * 添加设置和日志对话框的链接
+ */
+var addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function addConfigAndLogDialogLink() {
+    $('<a data-name="openConfigDialog" href="#">助手设置</a><span> | </span><a data-name="openLogDialog" href="#">助手日志</a><span> | </span>').insertBefore($('a[href^="login.php?action=quit"]:first')).filter('[data-name="openConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        (0, _ConfigDialog.show)();
+    }).end().filter('[data-name="openLogDialog"]').click(function (e) {
+        e.preventDefault();
+        (0, _LogDialog.show)();
+    });
 };
 
 /**
@@ -7512,9 +7319,11 @@ var preventCloseWindowWhenActioning = exports.preventCloseWindowWhenActioning = 
  * @param {string} html 回应的HTML源码
  */
 var showFormatLog = exports.showFormatLog = function showFormatLog(msgType, html) {
-    var msg = Util.getResponseMsg(html);
-    if (!msg) msg = '未能获得预期的回应';
-    console.log('\u3010' + msgType + '\u3011\u56DE\u5E94\uFF1A' + msg);
+    var _Util$getResponseMsg = Util.getResponseMsg(html),
+        msg = _Util$getResponseMsg.msg,
+        url = _Util$getResponseMsg.url;
+
+    console.log('\u3010' + msgType + '\u3011\u56DE\u5E94\uFF1A' + msg + (url ? '\uFF1B\u8DF3\u8F6C\u5730\u5740\uFF1A' + Util.getHostNameUrl() + url : ''));
 };
 
 /**
@@ -7528,7 +7337,6 @@ var addPolyfill = exports.addPolyfill = function addPolyfill() {
             if (this == null) {
                 throw new TypeError('Array.prototype.includes called on null or undefined');
             }
-
             var O = Object(this);
             var len = parseInt(O.length) || 0;
             if (len === 0) return false;
@@ -7553,6 +7361,56 @@ var addPolyfill = exports.addPolyfill = function addPolyfill() {
             return false;
         };
     }
+    if (!String.prototype.padStart) {
+        String.prototype.padStart = function padStart(maxLength) {
+            var fillString = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ' ';
+
+            var O = Object(this);
+            var S = String(O);
+            var intMaxLength = parseInt(maxLength) || 0;
+            var stringLength = parseInt(S.length) || 0;
+            if (intMaxLength <= stringLength) return S;
+            var filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') return S;
+            var fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                var fLen = filler.length;
+                var remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            var truncatedStringFiller = filler.slice(0, fillLen);
+            return truncatedStringFiller + S;
+        };
+    }
+    if (!String.prototype.padEnd) {
+        String.prototype.padEnd = function padEnd(maxLength) {
+            var fillString = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ' ';
+
+            var O = Object(this);
+            var S = String(O);
+            var intMaxLength = parseInt(maxLength) || 0;
+            var stringLength = parseInt(S.length) || 0;
+            if (intMaxLength <= stringLength) return S;
+            var filler = typeof fillString === 'undefined' ? ' ' : String(fillString);
+            if (filler === '') return S;
+            var fillLen = intMaxLength - stringLength;
+            while (filler.length < fillLen) {
+                var fLen = filler.length;
+                var remainingCodeUnits = fillLen - fLen;
+                if (fLen > remainingCodeUnits) {
+                    filler += filler.slice(0, remainingCodeUnits);
+                } else {
+                    filler += filler;
+                }
+            }
+            var truncatedStringFiller = filler.slice(0, fillLen);
+            return S + truncatedStringFiller;
+        };
+    }
 };
 
 /**
@@ -7568,7 +7426,7 @@ var donation = exports.donation = function donation() {
         if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
         return;
     }
-    (0, _Func.run)('Public.donation_before_');
+    Func.run('Public.donation_before_');
     console.log('KFB捐款Start');
     var $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
 
@@ -7595,27 +7453,31 @@ var donation = exports.donation = function donation() {
         $.post('kf_growup.php?ok=1', { kfb: kfb }, function (html) {
             Util.setCookie(_Const2.default.donationCookieName, 1, getDonationCookieDate());
             showFormatLog('\u6350\u6B3E' + kfb + 'KFB', html);
+
+            var _Util$getResponseMsg2 = Util.getResponseMsg(html),
+                msg = _Util$getResponseMsg2.msg;
+
             Msg.remove($wait);
 
-            var msg = '<strong>\u6350\u6B3E<em>' + kfb + '</em>KFB</strong>';
-            var matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(html);
+            var msgHtml = '<strong>\u6350\u6B3E<em>' + kfb + '</em>KFB</strong>';
+            var matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
             if (!matches) {
-                if (/KFB不足。<br/i.test(html)) {
-                    msg += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
+                if (/KFB不足。/.test(msg)) {
+                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
                 } else return;
             } else {
-                msg += '<i>\u7ECF\u9A8C\u503C<em>+' + matches[1] + '</em></i>';
+                msgHtml += '<i>\u7ECF\u9A8C\u503C<em>+' + matches[1] + '</em></i>';
                 var gain = { '经验值': parseInt(matches[1]) };
                 if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
-                    msg += '<i style="margin-left: 5px;">(补偿期:</i>' + (typeof matches[2] !== 'undefined' ? '<i>KFB<em>+' + matches[2] + '</em>' + (typeof matches[3] !== 'undefined' ? '' : ')') + '</i>' : '') + (typeof matches[3] !== 'undefined' ? '<i>\u7ECF\u9A8C\u503C<em>+' + matches[3] + '</em>)</i>' : '');
+                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' + (typeof matches[2] !== 'undefined' ? '<i>KFB<em>+' + matches[2] + '</em>' + (typeof matches[3] !== 'undefined' ? '' : ')') + '</i>' : '') + (typeof matches[3] !== 'undefined' ? '<i>\u7ECF\u9A8C\u503C<em>+' + matches[3] + '</em>)</i>' : '');
                     if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
                     if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
                 }
-                (0, _Log.push)('捐款', '\u6350\u6B3E`' + kfb + '`KFB', { gain: gain, pay: { 'KFB': -kfb } });
+                Log.push('捐款', '\u6350\u6B3E`' + kfb + '`KFB', { gain: gain, pay: { 'KFB': -kfb } });
             }
-            Msg.show(msg);
+            Msg.show(msgHtml);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            (0, _Func.run)('Public.donation_after_', html);
+            Func.run('Public.donation_after_', msg);
         });
     };
 
@@ -7639,7 +7501,7 @@ var donation = exports.donation = function donation() {
             } else {
                 donationSubmit(parseInt(Config.donationKfb));
             }
-        }, 'html');
+        });
     }
 };
 
@@ -7660,50 +7522,23 @@ var getMinRefreshInterval = exports.getMinRefreshInterval = function getMinRefre
         }
     }
 
-    var autoChangeSMColorInterval = -1;
-    if (Config.autoChangeSMColorEnabled) {
-        var nextTime = parseInt(Util.getCookie(_Const2.default.autoChangeSMColorCookieName));
+    var autoChangeIdColorInterval = -1;
+    if (Config.autoChangeIdColorEnabled) {
+        var nextTime = parseInt(Util.getCookie(_Const2.default.autoChangeIdColorCookieName));
         if (!isNaN(nextTime) && nextTime > 0) {
-            autoChangeSMColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
-            if (autoChangeSMColorInterval < 0) autoChangeSMColorInterval = 0;
-            if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1) autoChangeSMColorInterval = -1;
-        } else autoChangeSMColorInterval = 0;
+            autoChangeIdColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
+            if (autoChangeIdColorInterval < 0) autoChangeIdColorInterval = 0;
+            if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) autoChangeIdColorInterval = -1;
+        } else autoChangeIdColorInterval = 0;
     }
 
-    var minArr = [donationInterval, autoChangeSMColorInterval];
-    minArr.sort(function (a, b) {
-        return a > b;
+    var minArr = [donationInterval, autoChangeIdColorInterval].filter(function (interval) {
+        return interval >= 0;
     });
-    var min = -1;
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-        for (var _iterator = minArr[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var num = _step.value;
-
-            if (num > -1) {
-                min = num;
-                break;
-            }
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-            }
-        } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
-            }
-        }
-    }
-
-    if (min <= -1) return -1;else return min > 0 ? min + 1 : 0;
+    if (minArr.length > 0) {
+        var min = Math.min.apply(Math, _toConsumableArray(minArr));
+        return min > 0 ? min + 1 : 0;
+    } else return -1;
 };
 
 /**
@@ -7800,7 +7635,7 @@ var startAutoRefreshMode = exports.startAutoRefreshMode = function startAutoRefr
     var checkRefreshInterval = function checkRefreshInterval() {
         Msg.remove($('.pd_refresh_notice').parent());
         if (Config.autoDonationEnabled && !Util.getCookie(_Const2.default.donationCookieName)) donation();
-        if (Config.autoChangeSMColorEnabled && !Util.getCookie(_Const2.default.autoChangeSMColorCookieName)) changeIdColor();
+        if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) changeIdColor();
 
         var interval = getMinRefreshInterval();
         if (interval > 0) errorNum = 0;
@@ -7819,23 +7654,6 @@ var startAutoRefreshMode = exports.startAutoRefreshMode = function startAutoRefr
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
     showRefreshModeTips(interval < 60 ? 60 : interval);
-};
-
-/**
- * 添加设置和日志对话框的链接
- */
-var addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function addConfigAndLogDialogLink() {
-    var $login = $('a[href^="login.php?action=quit"]:first');
-    $('<a href="#">助手设置</a><span> | </span>').insertBefore($login).filter('a').click(function (e) {
-        e.preventDefault();
-        (0, _ConfigDialog.show)();
-    });
-    if (Config.showLogLinkEnabled) {
-        $('<a href="#">助手日志</a><span> | </span>').insertBefore($login).filter('a').click(function (e) {
-            e.preventDefault();
-            (0, _LogDialog.show)();
-        });
-    }
 };
 
 /**
@@ -7941,13 +7759,13 @@ var blockUsers = exports.blockUsers = function blockUsers() {
             $('.readtext fieldset:has(legend:contains("Quote:"))').each(function () {
                 var $this = $(this);
                 var text = $this.text();
-                var _iteratorNormalCompletion2 = true;
-                var _didIteratorError2 = false;
-                var _iteratorError2 = undefined;
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
 
                 try {
-                    for (var _iterator2 = Config.blockUserList[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                        var data = _step2.value;
+                    for (var _iterator = Config.blockUserList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var data = _step.value;
 
                         if (data.type === 1) continue;
                         try {
@@ -7959,16 +7777,16 @@ var blockUsers = exports.blockUsers = function blockUsers() {
                         } catch (ex) {}
                     }
                 } catch (err) {
-                    _didIteratorError2 = true;
-                    _iteratorError2 = err;
+                    _didIteratorError = true;
+                    _iteratorError = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                            _iterator2.return();
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
                         }
                     } finally {
-                        if (_didIteratorError2) {
-                            throw _iteratorError2;
+                        if (_didIteratorError) {
+                            throw _iteratorError;
                         }
                     }
                 }
@@ -7985,7 +7803,7 @@ var blockUsers = exports.blockUsers = function blockUsers() {
             }
         });
     }
-    if (blockNum > 0) console.log('【屏蔽用户】共有{0}个项目被屏蔽'.replace('{0}', blockNum));
+    if (blockNum > 0) console.log('\u3010\u5C4F\u853D\u7528\u6237\u3011\u5171\u6709' + blockNum + '\u4E2A\u5E16\u5B50\u88AB\u5C4F\u853D');
 };
 
 /**
@@ -7993,6 +7811,7 @@ var blockUsers = exports.blockUsers = function blockUsers() {
  */
 var blockThread = exports.blockThread = function blockThread() {
     if (!Config.blockThreadList.length) return;
+
     /**
      * 是否屏蔽帖子
      * @param {string} title 帖子标题
@@ -8002,55 +7821,59 @@ var blockThread = exports.blockThread = function blockThread() {
      */
     var isBlock = function isBlock(title, userName) {
         var fid = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
 
         try {
-            for (var _iterator3 = Config.blockThreadList[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                var data = _step3.value;
+            for (var _iterator2 = Config.blockThreadList[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var _step2$value = _step2.value,
+                    keyWord = _step2$value.keyWord,
+                    includeUser = _step2$value.includeUser,
+                    excludeUser = _step2$value.excludeUser,
+                    includeFid = _step2$value.includeFid,
+                    excludeFid = _step2$value.excludeFid;
 
-                var keyWord = data.keyWord;
-                var re = null;
-                if (/^\/.+\/[gimy]*$/.test(keyWord)) {
+                var regex = null;
+                if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
                     try {
-                        re = eval(keyWord);
+                        regex = eval(keyWord);
                     } catch (ex) {
                         console.log(ex);
                         continue;
                     }
                 }
                 if (userName) {
-                    if (data.includeUser) {
-                        if (!data.includeUser.includes(userName)) continue;
-                    } else if (data.excludeUser) {
-                        if (!data.excludeUser.includes(userName)) continue;
+                    if (includeUser) {
+                        if (!includeUser.includes(userName)) continue;
+                    } else if (excludeUser) {
+                        if (excludeUser.includes(userName)) continue;
                     }
                 }
                 if (fid) {
-                    if (data.includeFid) {
-                        if (!data.includeFid.includes(fid)) continue;
-                    } else if (data.excludeFid) {
-                        if (data.excludeFid.includes(fid)) continue;
+                    if (includeFid) {
+                        if (!includeFid.includes(fid)) continue;
+                    } else if (excludeFid) {
+                        if (excludeFid.includes(fid)) continue;
                     }
                 }
-                if (re) {
-                    if (re.test(title)) return true;
+                if (regex) {
+                    if (regex.test(title)) return true;
                 } else {
-                    if (title.toLowerCase().indexOf(keyWord.toLowerCase()) > -1) return true;
+                    if (title.toLowerCase().includes(keyWord.toLowerCase())) return true;
                 }
             }
         } catch (err) {
-            _didIteratorError3 = true;
-            _iteratorError3 = err;
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                    _iterator3.return();
+                if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                    _iterator2.return();
                 }
             } finally {
-                if (_didIteratorError3) {
-                    throw _iteratorError3;
+                if (_didIteratorError2) {
+                    throw _iteratorError2;
                 }
             }
         }
@@ -8088,11 +7911,10 @@ var blockThread = exports.blockThread = function blockThread() {
         if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
     } else if (location.pathname === '/read.php') {
         if (Util.getCurrentThreadPage() !== 1) return;
-        var $threadInfo = $('form[name="delatc"] > div:first > table > tbody');
-        var title = $threadInfo.find('tr:first-child > td > span').text();
+        var title = Read.getThreadTitle();
         if (!title) return;
         var $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
-        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text() !== '楼主') return;
+        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         var userName = $userName.text();
         if (!userName) return;
         var _fid2 = parseInt($('input[name="fid"]:first').val());
@@ -8103,7 +7925,7 @@ var blockThread = exports.blockThread = function blockThread() {
             $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
         }
     }
-    if (num > 0) console.log('【屏蔽帖子】共有{0}个帖子被屏蔽'.replace('{0}', num));
+    if (num > 0) console.log('\u3010\u5C4F\u853D\u5E16\u5B50\u3011\u5171\u6709' + num + '\u4E2A\u5E16\u5B50\u88AB\u5C4F\u853D');
 };
 
 /**
@@ -8130,9 +7952,11 @@ var addFastNavForSideBar = exports.addFastNavForSideBar = function addFastNavFor
 
 /**
  * 自动活期存款
- * @param {boolean} [isRead=false] 是否读取个人信息页面以获得当前所拥有KFB的信息
+ * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
  */
-var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveCurrentDeposit(isRead) {
+var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveCurrentDeposit() {
+    var isRead = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) return;
     var $kfb = $('a[href="kf_givemekfb.php"]');
 
@@ -8149,8 +7973,12 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
         console.log('自动活期存款Start');
         $.post('hack.php?H_name=bank', { action: 'save', btype: 1, savemoney: money }, function (html) {
             showFormatLog('自动存款', html);
-            if (/完成存款/.test(html)) {
-                (0, _Log.push)('自动存款', '\u5171\u6709`' + money + '`KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
+
+            var _Util$getResponseMsg3 = Util.getResponseMsg(html),
+                msg = _Util$getResponseMsg3.msg;
+
+            if (/完成存款/.test(msg)) {
+                Log.push('自动存款', '\u5171\u6709`' + money + '`KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
                 console.log('\u5171\u6709' + money + 'KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
                 Msg.show('\u5171\u6709<em>' + money + '</em>KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
                 if (_Info2.default.isInHomePage) $kfb.text('\u62E5\u6709' + (income - money) + 'KFB');
@@ -8171,38 +7999,20 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
 };
 
 /**
- * 执行自定义脚本
- * @param {number} type 脚本类型，1：脚本开始时执行；2：脚本结束时执行
- */
-var runCustomScript = exports.runCustomScript = function runCustomScript() {
-    var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-
-    var script = '';
-    if (type === 2) script = Config.customScriptEndContent;else script = Config.customScriptStartContent;
-    if (script) {
-        try {
-            eval(script);
-        } catch (ex) {
-            console.log(ex);
-        }
-    }
-};
-
-/**
  * 更换ID颜色
  */
 var changeIdColor = exports.changeIdColor = function changeIdColor() {
-    if (!Config.changeAllAvailableSMColorEnabled && Config.customAutoChangeSMColorList.length <= 1) return;
+    if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) return;
     /**
      * 写入Cookie
      */
     var setCookie = function setCookie() {
-        var nextTime = Util.getDate('+' + Config.autoChangeSMColorInterval + 'h');
-        Util.setCookie(_Const2.default.autoChangeSMColorCookieName, nextTime.getTime(), nextTime);
+        var nextTime = Util.getDate('+' + Config.autoChangeIdColorInterval + 'h');
+        Util.setCookie(_Const2.default.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
     console.log('自动更换ID颜色Start');
     $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
-        if (Util.getCookie(_Const2.default.autoChangeSMColorCookieName)) return;
+        if (Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) return;
         var matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/g);
         if (matches) {
             var _ret3 = function () {
@@ -8223,17 +8033,59 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
                 }
 
                 var idList = availableIdList;
-                if (!Config.changeAllAvailableSMColorEnabled) {
+                if (!Config.changeAllAvailableIdColorEnabled) {
                     idList = [];
+                    var _iteratorNormalCompletion3 = true;
+                    var _didIteratorError3 = false;
+                    var _iteratorError3 = undefined;
+
+                    try {
+                        for (var _iterator3 = Config.customAutoChangeIdColorList[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                            var id = _step3.value;
+
+                            if (availableIdList.includes(id)) idList.push(id);
+                        }
+                    } catch (err) {
+                        _didIteratorError3 = true;
+                        _iteratorError3 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                                _iterator3.return();
+                            }
+                        } finally {
+                            if (_didIteratorError3) {
+                                throw _iteratorError3;
+                            }
+                        }
+                    }
+                }
+                if (idList.length <= 1) {
+                    setCookie();
+                    return {
+                        v: void 0
+                    };
+                }
+
+                var prevId = parseInt(TmpLog.getValue(_Const2.default.prevAutoChangeIdColorTmpLogName));
+                if (isNaN(prevId) || prevId < 0) prevId = 0;
+
+                var nextId = 0;
+                if (Config.autoChangeIdColorType.toLowerCase() === 'sequence') {
                     var _iteratorNormalCompletion4 = true;
                     var _didIteratorError4 = false;
                     var _iteratorError4 = undefined;
 
                     try {
-                        for (var _iterator4 = Config.customAutoChangeSMColorList[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                            var id = _step4.value;
+                        for (var _iterator4 = idList.entries()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                            var _step4$value = _slicedToArray(_step4.value, 2),
+                                _i = _step4$value[0],
+                                _id = _step4$value[1];
 
-                            if (availableIdList.includes(id)) idList.push(id);
+                            if (_id > prevId) {
+                                nextId = _id;
+                                break;
+                            }
                         }
                     } catch (err) {
                         _didIteratorError4 = true;
@@ -8249,19 +8101,9 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
                             }
                         }
                     }
-                }
-                if (idList.length <= 1) {
-                    setCookie();
-                    return {
-                        v: void 0
-                    };
-                }
 
-                var prevId = parseInt(TmpLog.getValue(_Const2.default.prevAutoChangeSMColorIdTmpLogName));
-                if (isNaN(prevId) || prevId < 0) prevId = 0;
-
-                var nextId = 0;
-                if (Config.autoChangeSMColorType.toLowerCase() === 'sequence') {
+                    if (nextId === 0) nextId = idList[0];
+                } else {
                     var _iteratorNormalCompletion5 = true;
                     var _didIteratorError5 = false;
                     var _iteratorError5 = undefined;
@@ -8269,11 +8111,11 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
                     try {
                         for (var _iterator5 = idList.entries()[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                             var _step5$value = _slicedToArray(_step5.value, 2),
-                                _i = _step5$value[0],
-                                _id = _step5$value[1];
+                                _i2 = _step5$value[0],
+                                _id2 = _step5$value[1];
 
-                            if (_id > prevId) {
-                                nextId = _id;
+                            if (_id2 === prevId) {
+                                idList.splice(_i2, 1);
                                 break;
                             }
                         }
@@ -8292,47 +8134,19 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
                         }
                     }
 
-                    if (nextId === 0) nextId = idList[0];
-                } else {
-                    var _iteratorNormalCompletion6 = true;
-                    var _didIteratorError6 = false;
-                    var _iteratorError6 = undefined;
-
-                    try {
-                        for (var _iterator6 = idList.entries()[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                            var _step6$value = _slicedToArray(_step6.value, 2),
-                                _i2 = _step6$value[0],
-                                _id2 = _step6$value[1];
-
-                            if (_id2 === prevId) {
-                                idList.splice(_i2, 1);
-                                break;
-                            }
-                        }
-                    } catch (err) {
-                        _didIteratorError6 = true;
-                        _iteratorError6 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                                _iterator6.return();
-                            }
-                        } finally {
-                            if (_didIteratorError6) {
-                                throw _iteratorError6;
-                            }
-                        }
-                    }
-
                     nextId = idList[Math.floor(Math.random() * idList.length)];
                 }
 
                 $.get('kf_growup.php?ok=2&safeid=' + safeId + '&color=' + nextId + '&t=' + new Date().getTime(), function (html) {
                     setCookie();
                     showFormatLog('自动更换ID颜色', html);
-                    if (/等级颜色修改完毕/.test(html)) {
+
+                    var _Util$getResponseMsg4 = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg4.msg;
+
+                    if (/等级颜色修改完毕/.test(msg)) {
                         console.log('ID颜色更换为：' + nextId);
-                        TmpLog.setValue(_Const2.default.prevAutoChangeSMColorIdTmpLogName, nextId);
+                        TmpLog.setValue(_Const2.default.prevAutoChangeIdColorTmpLogName, nextId);
                     }
                 });
             }();
@@ -8400,7 +8214,7 @@ var bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = func
             $menu.find('span').text(type);
             if (type !== '关键词' && type !== '用户名') $form.attr('action', 'search.php?');
             if (type === '作者') $keyWord.attr('name', 'pwuser');else $keyWord.attr('name', 'keyword');
-            var $searchRange = $form.find('input[name="search_range"][value="current"]');
+            var $searchRange = $form.find('[name="searchRange"][value="current"]');
             if ($searchRange.length > 0) {
                 $searchRange.prop('disabled', type === '关键词' || type === '用户名' || !$searchRange.data('enabled'));
             }
@@ -8409,7 +8223,7 @@ var bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = func
         });
     });
 
-    $(document).on('submit', 'form[name="pd_search"]', function () {
+    $(document).on('submit', 'form[name="pdSearchForm"]', function () {
         var $this = $(this);
         var type = $.trim($this.find('.pd_search_type > span').text());
         if (type === '关键词') {
@@ -8446,12 +8260,13 @@ var makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWordAv
 var addSearchDialogLink = exports.addSearchDialogLink = function addSearchDialogLink() {
     $('<span> | </span><a href="#">搜索</a>').insertAfter('.topright > a[href="message.php"]').filter('a').click(function (e) {
         e.preventDefault();
-        if ($('#pd_search').length > 0) return;
-        var html = '\n<div class="pd_cfg_main">\n  <input name="step" value="2" type="hidden">\n  <input name="method" value="AND" type="hidden">\n  <input name="sch_area" value="0" type="hidden">\n  <input name="s_type" value="forum" type="hidden">\n  <input name="f_fid" value="all" type="hidden">\n  <input name="orderway" value="lastpost" type="hidden">\n  <input name="asc" value="DESC" type="hidden">\n  <div style="margin-top: 15px;">\n    <input class="pd_input" name="keyword" type="search" style="float: left; width: 175px; line-height: 26px;" placeholder="\u5173\u952E\u5B57">\n    <div class="pd_search_type" data-type="dialog"><span>\u6807\u9898</span><i>\u2228</i></div>\n    <button class="indloginm" name="submit" type="submit">\u641C\u7D22</button>\n  </div>\n  <div style="margin-bottom:8px; line-height:35px;">\n    <label><input name="search_range" type="radio" value="all" checked> \u5168\u7AD9 </label>\n    <label><input name="search_range" type="radio" value="current" disabled> \u672C\u7248</label>\n  </div>\n</div>';
-        var $dialog = Dialog.create('pd_search', '搜索', html);
+        var dialogName = 'pdSearchDialog';
+        if ($('#' + dialogName).length > 0) return;
+        var html = '\n<div class="pd_cfg_main">\n  <input name="step" value="2" type="hidden">\n  <input name="method" value="AND" type="hidden">\n  <input name="sch_area" value="0" type="hidden">\n  <input name="s_type" value="forum" type="hidden">\n  <input name="f_fid" value="all" type="hidden">\n  <input name="orderway" value="lastpost" type="hidden">\n  <input name="asc" value="DESC" type="hidden">\n  <div style="margin-top: 15px;">\n    <input class="pd_input" name="keyword" type="search" style="float: left; width: 175px; line-height: 26px;" placeholder="\u5173\u952E\u5B57">\n    <div class="pd_search_type" data-type="dialog"><span>\u6807\u9898</span><i>\u2228</i></div>\n    <button class="indloginm" name="submit" type="submit">\u641C\u7D22</button>\n  </div>\n  <div style="margin-bottom: 8px; line-height: 35px;">\n    <label><input name="searchRange" type="radio" value="all" checked> \u5168\u7AD9 </label>\n    <label><input name="searchRange" type="radio" value="current" disabled> \u672C\u7248</label>\n  </div>\n</div>';
+        var $dialog = Dialog.create(dialogName, '搜索', html);
 
         $dialog.closest('form').attr({
-            'name': 'pd_search',
+            'name': dialogName,
             'action': 'search.php?',
             'method': 'post',
             'target': '_blank'
@@ -8459,11 +8274,11 @@ var addSearchDialogLink = exports.addSearchDialogLink = function addSearchDialog
 
         var fid = parseInt($('input[name="f_fid"]:first, input[name="fid"]:first').val());
         if (fid) {
-            $dialog.find('input[name="search_range"]').click(function () {
+            $dialog.find('[name="searchRange"]').click(function () {
                 var $this = $(this);
                 $dialog.find('input[name="f_fid"]').val($this.val() === 'current' ? fid : 'all');
             });
-            $dialog.find('input[name="search_range"][value="current"]').prop('disabled', false).data('enabled', true).click();
+            $dialog.find('[name="searchRange"][value="current"]').prop('disabled', false).data('enabled', true).click();
         }
 
         $dialog.keydown(function (e) {
@@ -8474,8 +8289,8 @@ var addSearchDialogLink = exports.addSearchDialogLink = function addSearchDialog
             $('.pd_search_type_list').remove();
         });
 
-        Dialog.show('pd_search');
-        $dialog.find('input[name="keyword"]').focus();
+        Dialog.show(dialogName);
+        $dialog.find('[name="keyword"]').focus();
     });
 };
 
@@ -8545,13 +8360,25 @@ var checkRatingSize = exports.checkRatingSize = function checkRatingSize(title, 
     } else return { type: 0 };
 };
 
-},{"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./TmpLog":20,"./Util":21}],19:[function(require,module,exports){
+/**
+ * 引入绯月表情增强插件
+ */
+var importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = function importKfSmileEnhanceExtension() {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
+    document.body.appendChild(script);
+};
+
+},{"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./Read":19,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+/* 帖子模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSelfRatingLink = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.getThreadTitle = exports.addSelfRatingLink = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -8573,11 +8400,15 @@ var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Func = require('./Func');
 
+var Func = _interopRequireWildcard(_Func);
+
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
 
 var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
 
 var _Public = require('./Public');
 
@@ -8623,7 +8454,7 @@ var addFloorGotoLink = exports.addFloorGotoLink = function addFloorGotoLink() {
 var addFastGotoFloorInput = exports.addFastGotoFloorInput = function addFastGotoFloorInput() {
     $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8"> <span>楼</span></li></form>').prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
         e.preventDefault();
-        var floor = parseInt($.trim($(this).find('input').val()));
+        var floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
         location.href = Util.getHostNameUrl + 'read.php?tid=' + Util.getUrlParam('tid') + '&page=' + (parseInt(floor / Config.perPageFloorNum) + 1) + '&floor=' + floor;
     }).find('span').click(function () {
@@ -8744,10 +8575,11 @@ var addCopyBuyersListLink = exports.addCopyBuyersListLink = function addCopyBuye
             alert('暂时无人购买');
             return;
         }
-        if ($('#pd_copy_buyer_list').length > 0) return;
+        var dialogName = 'pdCopyBuyerListDialog';
+        if ($('#' + dialogName).length > 0) return;
         var html = '\n<div class="pd_cfg_main">\n  <textarea style="width: 200px; height: 300px; margin: 5px 0;" readonly></textarea>\n</div>';
-        var $dialog = Dialog.create('pd_copy_buyer_list', '购买人名单', html);
-        Dialog.show('pd_copy_buyer_list');
+        var $dialog = Dialog.create(dialogName, '购买人名单', html);
+        Dialog.show(dialogName);
         $dialog.find('textarea').val(buyerList.join('\n')).select().focus();
     });
 };
@@ -8757,10 +8589,11 @@ var addCopyBuyersListLink = exports.addCopyBuyersListLink = function addCopyBuye
  * @param {string[]} replierList 回帖者名单列表
  */
 var showStatRepliersDialog = exports.showStatRepliersDialog = function showStatRepliersDialog(replierList) {
-    var html = '\n<div class="pd_cfg_main">\n  <div id="pd_replier_list_filter" style="margin-top: 5px;">\n    <label><input type="checkbox" checked>\u663E\u793A\u697C\u5C42\u53F7</label>\n    <label><input type="checkbox">\u53BB\u9664\u91CD\u590D</label>\n    <label><input type="checkbox">\u53BB\u9664\u697C\u4E3B</label>\n  </div>\n  <div style="color: #ff0000;" id="pd_replier_list_stat"></div>\n  <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>\n</div>';
-    var $dialog = Dialog.create('pd_replier_list', '回帖者名单', html);
+    var dialogName = 'pdReplierListDialog';
+    var html = '\n<div class="pd_cfg_main">\n  <div id="pdReplierListFilter" style="margin-top: 5px;">\n    <label><input type="checkbox" checked> \u663E\u793A\u697C\u5C42\u53F7</label>\n    <label><input type="checkbox"> \u53BB\u9664\u91CD\u590D</label>\n    <label><input type="checkbox"> \u53BB\u9664\u697C\u4E3B</label>\n  </div>\n  <div style="color: #f00;" id="pdReplierListStat"></div>\n  <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>\n</div>';
+    var $dialog = Dialog.create(dialogName, '回帖者名单', html);
 
-    var $filterNodes = $dialog.find('#pd_replier_list_filter input');
+    var $filterNodes = $dialog.find('#pdReplierListFilter input');
     $filterNodes.click(function () {
         var list = [].concat(_toConsumableArray(replierList));
         var isShowFloor = $filterNodes.eq(0).prop('checked'),
@@ -8811,11 +8644,11 @@ var showStatRepliersDialog = exports.showStatRepliersDialog = function showStatR
         }
 
         $dialog.find('textarea').val(content);
-        $('#pd_replier_list_stat').html('\u5171\u6709<b>' + num + '</b>\u6761\u9879\u76EE');
+        $dialog.find('#pdReplierListStat').html('\u5171\u6709<b>' + num + '</b>\u6761\u9879\u76EE');
     });
-    $dialog.find('#pd_replier_list_filter input:first').triggerHandler('click');
+    $dialog.find('#pdReplierListFilter input:first').triggerHandler('click');
 
-    Dialog.show('pd_replier_list');
+    Dialog.show(dialogName);
     $dialog.find('input:first').focus();
 };
 
@@ -8826,7 +8659,7 @@ var addStatRepliersLink = exports.addStatRepliersLink = function addStatRepliers
     if (Util.getCurrentThreadPage() !== 1) return;
     $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages').find('a').click(function (e) {
         e.preventDefault();
-        if ($('#pd_replier_list').length > 0) return;
+        if ($('#pdReplierListDialog').length > 0) return;
 
         var tid = Util.getUrlParam('tid');
         if (!tid) return;
@@ -8859,7 +8692,7 @@ var addStatRepliersLink = exports.addStatRepliersLink = function addStatRepliers
             return;
         }
 
-        Msg.wait('<strong>\u6B63\u5728\u7EDF\u8BA1\u56DE\u5E16\u540D\u5355\u4E2D&hellip;</strong><i>\u5269\u4F59\u9875\u6570\uFF1A<em id="pd_remaining_num">' + (endPage - startPage + 1) + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        Msg.wait('<strong>\u6B63\u5728\u7EDF\u8BA1\u56DE\u5E16\u540D\u5355\u4E2D&hellip;</strong><i>\u5269\u4F59\u9875\u6570\uFF1A<em class="pd_countdown">' + (endPage - startPage + 1) + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         var isStop = false;
         $(document).clearQueue('StatRepliers');
         var replierList = [];
@@ -8872,37 +8705,16 @@ var addStatRepliersLink = exports.addStatRepliersLink = function addStatRepliers
                     timeout: _Const2.default.defAjaxTimeout,
                     success: function success(html) {
                         var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        var _iteratorNormalCompletion3 = true;
-                        var _didIteratorError3 = false;
-                        var _iteratorError3 = undefined;
-
-                        try {
-                            for (var _iterator3 = matches[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                                var match = _step3.value;
-
-                                var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(match);
-                                if (!floorMatches) continue;
-                                var floor = parseInt(floorMatches[1]);
-                                if (floor < startFloor) continue;
-                                if (floor > endFloor) {
-                                    isStop = true;
-                                    break;
-                                }
-                                replierList[floor] = floorMatches[2];
+                        for (var i in matches) {
+                            var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
+                            if (!floorMatches) continue;
+                            var floor = parseInt(floorMatches[1]);
+                            if (floor < startFloor) continue;
+                            if (floor > endFloor) {
+                                isStop = true;
+                                break;
                             }
-                        } catch (err) {
-                            _didIteratorError3 = true;
-                            _iteratorError3 = err;
-                        } finally {
-                            try {
-                                if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                                    _iterator3.return();
-                                }
-                            } finally {
-                                if (_didIteratorError3) {
-                                    throw _iteratorError3;
-                                }
-                            }
+                            replierList[floor] = floorMatches[2];
                         }
                     },
                     error: function error() {
@@ -8910,9 +8722,9 @@ var addStatRepliersLink = exports.addStatRepliersLink = function addStatRepliers
                         alert('因连接超时，统计回帖名单操作中止');
                     },
                     complete: function complete() {
-                        var $remainingNum = $('#pd_remaining_num');
-                        $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                        isStop = isStop || $remainingNum.closest('.pd_msg').data('stop');
+                        var $countdown = $('.pd_countdown:last');
+                        $countdown.text(parseInt($countdown.text()) - 1);
+                        isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                         if (isStop) $(document).clearQueue('StatRepliers');
 
                         if (isStop || index === endPage - 1) {
@@ -9018,10 +8830,15 @@ var handleBuyThreadBtn = exports.handleBuyThreadBtn = function handleBuyThreadBt
                 (function () {
                     var $wait = Msg.wait('正在购买帖子&hellip;');
                     $.get(url, function (html) {
+                        Public.showFormatLog('购买帖子', html);
+
+                        var _Util$getResponseMsg = Util.getResponseMsg(html),
+                            msg = _Util$getResponseMsg.msg;
+
                         Msg.remove($wait);
-                        if (/操作完成/.test(html)) {
+                        if (/操作完成/.test(msg)) {
                             location.reload();
-                        } else if (/您已经购买此帖/.test(html)) {
+                        } else if (/您已经购买此帖/.test(msg)) {
                             alert('你已经购买过此帖');
                             location.reload();
                         } else {
@@ -9065,12 +8882,12 @@ var addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function addBatc
             alert('请选择要购买的帖子');
             return;
         }
-        if (confirm('\u4F60\u5171\u9009\u62E9\u4E86' + threadList.length + '\u4E2A\u5E16\u5B50\uFF0C\u603B\u552E\u4EF7' + totalSell.toLocaleString() + 'KFB\uFF0C' + ('\u5747\u4EF7' + Util.getFixedNumberLocaleString(totalSell / threadList.length, 2) + 'KFB\uFF0C\u662F\u5426\u6279\u91CF\u8D2D\u4E70\uFF1F'))) {
-            Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u5E16\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em id="pd_remaining_num">' + threadList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        if (confirm('\u4F60\u5171\u9009\u62E9\u4E86' + threadList.length + '\u4E2A\u5E16\u5B50\uFF0C\u603B\u552E\u4EF7' + totalSell.toLocaleString() + 'KFB\uFF0C' + ('\u5747\u4EF7' + Util.getFixedNumLocStr(totalSell / threadList.length, 2) + 'KFB\uFF0C\u662F\u5426\u6279\u91CF\u8D2D\u4E70\uFF1F'))) {
+            Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u5E16\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + threadList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
             buyThreads(threadList);
         }
     }).parent().mouseenter(function () {
-        $('<span style="margin-left: 5px;">[<a href="#">全选</a><a style="margin-left: 5px;" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn')).find('a:first').click(function (e) {
+        $('<span style="margin-left: 5px;">[<a class="pd_btn_link" href="#">全选</a><a class="pd_btn_link" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn')).find('a:first').click(function (e) {
             e.preventDefault();
             var $buyThread = $('.pd_buy_thread');
             $buyThread.prop('checked', true);
@@ -9092,43 +8909,50 @@ var addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function addBatc
 
 /**
  * 购买指定的一系列帖子
- * @param {Object[]} threadList 购买帖子列表，threadList[n][url]：购买帖子的URL；threadList[n][sell]：购买帖子的售价
+ * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
  */
 var buyThreads = exports.buyThreads = function buyThreads(threadList) {
     var successNum = 0,
         failNum = 0,
         totalSell = 0;
     $(document).clearQueue('BuyThreads');
-    $.each(threadList, function (index, thread) {
+    $.each(threadList, function (index, _ref) {
+        var url = _ref.url,
+            sell = _ref.sell;
+
         $(document).queue('BuyThreads', function () {
             $.ajax({
                 type: 'GET',
-                url: thread.url + '&t=' + new Date().getTime(),
+                url: url + '&t=' + new Date().getTime(),
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('购买帖子', html);
-                    if (/操作完成/.test(html)) {
+
+                    var _Util$getResponseMsg2 = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg2.msg;
+
+                    if (/操作完成/.test(msg)) {
                         successNum++;
-                        totalSell += thread.sell;
+                        totalSell += sell;
                     } else failNum++;
                 },
                 error: function error() {
                     failNum++;
                 },
                 complete: function complete() {
-                    var $remainingNum = $('#pd_remaining_num');
-                    $remainingNum.text(parseInt($remainingNum.text()) - 1);
-                    var isStop = $remainingNum.closest('.pd_msg').data('stop');
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    var isStop = $countdown.closest('.pd_msg').data('stop');
                     if (isStop) $(document).clearQueue('BuyThreads');
 
                     if (isStop || index === threadList.length - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            (0, _Log.push)('购买帖子', '\u5171\u6709`' + successNum + '`\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F', { pay: { 'KFB': -totalSell } });
+                            Log.push('购买帖子', '\u5171\u6709`' + successNum + '`\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F', { pay: { 'KFB': -totalSell } });
                         }
                         console.log('\u5171\u6709' + successNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F\uFF0C\u5171\u6709' + failNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25\uFF0CKFB-' + totalSell);
                         Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25' : '') + '</strong>' + ('<i>KFB<ins>-' + totalSell + '</ins></i>'), -1);
-                        (0, _Func.run)('Read.buyThreads_after_', threadList);
+                        Func.run('Read.buyThreads_after_', threadList);
                     } else {
                         setTimeout(function () {
                             return $(document).dequeue('BuyThreads');
@@ -9150,13 +8974,13 @@ var addUserMemo = exports.addUserMemo = function addUserMemo() {
         var $this = $(this);
         var userName = $this.text().trim();
         var memo = '';
-        var _iteratorNormalCompletion4 = true;
-        var _didIteratorError4 = false;
-        var _iteratorError4 = undefined;
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
 
         try {
-            for (var _iterator4 = Object.keys(Config.userMemoList)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                var name = _step4.value;
+            for (var _iterator3 = Object.keys(Config.userMemoList)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                var name = _step3.value;
 
                 if (name === userName) {
                     memo = Config.userMemoList[name];
@@ -9164,16 +8988,16 @@ var addUserMemo = exports.addUserMemo = function addUserMemo() {
                 }
             }
         } catch (err) {
-            _didIteratorError4 = true;
-            _iteratorError4 = err;
+            _didIteratorError3 = true;
+            _iteratorError3 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                    _iterator4.return();
+                if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                    _iterator3.return();
                 }
             } finally {
-                if (_didIteratorError4) {
-                    throw _iteratorError4;
+                if (_didIteratorError3) {
+                    throw _iteratorError3;
                 }
             }
         }
@@ -9194,7 +9018,7 @@ var addUserMemo = exports.addUserMemo = function addUserMemo() {
  * 添加复制代码的链接
  */
 var addCopyCodeLink = exports.addCopyCodeLink = function addCopyCodeLink() {
-    $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>');
+    $('.readtext fieldset > legend:contains("Copy code")').html('<a class="pd_copy_code" href="#">复制代码</a>').parent('fieldset').addClass('pd_code_area');
     if (!$('.pd_copy_code').length) return;
     $('#alldiv').on('click', 'a.pd_copy_code', function (e) {
         e.preventDefault();
@@ -9252,7 +9076,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
     $('<a class="pd_highlight" href="#">[更多]</a>').appendTo($parent).click(function (e) {
         e.preventDefault();
         var $this = $(this);
-        var $panel = $('#pd_smile_panel');
+        var $panel = $('#pdSmilePanel');
         if ($panel.length > 0) {
             $this.text('[更多]');
             $panel.remove();
@@ -9266,7 +9090,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
         for (var i = 0; i < smileImageIdList.length; i++) {
             html += '<img src="' + _Info2.default.w.imgpath + '/post/smile/em/em' + smileImageIdList[i] + '.gif" alt="[\u8868\u60C5]" data-id="' + smileCodeIdList[i] + '">';
         }
-        html = '<div class="pd_panel" id="pd_smile_panel" style="width: 308px; height: 185px;">' + html + '</div>';
+        html = '<div class="pd_panel" id="pdSmilePanel" style="width: 308px; height: 185px;">' + html + '</div>';
 
         var offset = $parent.offset();
         $panel = $(html).appendTo('body');
@@ -9274,7 +9098,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
             var id = $(this).data('id');
             if (id) addSmileCode(id);
         });
-        (0, _Func.run)('Read.addMoreSmileLink_after_click_');
+        Func.run('Read.addMoreSmileLink_after_click_');
     });
 };
 
@@ -9286,7 +9110,7 @@ var parseMediaTag = exports.parseMediaTag = function parseMediaTag() {
         var $this = $(this);
         var html = $this.html();
         if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
-            $this.html(html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g, '<audio src="$1" controls preload="none" style="margin:3px 0;">[你的浏览器不支持audio标签]</audio>').replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g, '<video src="$1" controls preload="none" style="max-width: ' + (Config.adjustThreadContentWidthEnabled ? 627 : 820) + 'px; margin:3px 0;">' + '[\u4F60\u7684\u6D4F\u89C8\u5668\u4E0D\u652F\u6301video\u6807\u7B7E]</video>'));
+            $this.html(html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g, '<audio src="$1" controls preload="none" style="margin: 3px 0;">[你的浏览器不支持audio标签]</audio>').replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g, '<video src="$1" controls preload="none" style="max-width: ' + (Config.adjustThreadContentWidthEnabled ? 627 : 820) + 'px; margin:3px 0;">' + '[\u4F60\u7684\u6D4F\u89C8\u5668\u4E0D\u652F\u6301video\u6807\u7B7E]</video>'));
         }
     });
 };
@@ -9319,7 +9143,359 @@ var addSelfRatingLink = exports.addSelfRatingLink = function addSelfRatingLink()
     $('a[href^="kf_tidfavor.php?action=favor"]').after('<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=' + safeId + '&ptid=' + tid + '" title="\u4EC5\u9650\u81EA\u52A9\u8BC4\u5206\u6D4B\u8BD5\u4EBA\u5458\u4F7F\u7528">\u81EA\u52A9\u8BC4\u5206</a>');
 };
 
-},{"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./Msg":15,"./Post":17,"./Public":18,"./Util":21}],20:[function(require,module,exports){
+/**
+ * 获取帖子标题
+ * @returns {string} 帖子标题
+ */
+var getThreadTitle = exports.getThreadTitle = function getThreadTitle() {
+    return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
+};
+
+},{"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./Msg":15,"./Post":17,"./Public":18,"./Util":22}],20:[function(require,module,exports){
+/* 自定义脚本模块 */
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.handleInstallScriptLink = exports.showDialog = exports.runCmd = exports.runCustomScript = undefined;
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
+
+var _Dialog = require('./Dialog');
+
+var Dialog = _interopRequireWildcard(_Dialog);
+
+var _Config = require('./Config');
+
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
+
+var _Func = require('./Func');
+
+var Func = _interopRequireWildcard(_Func);
+
+var _Const = require('./Const');
+
+var _Const2 = _interopRequireDefault(_Const);
+
+var _Msg = require('./Msg');
+
+var Msg = _interopRequireWildcard(_Msg);
+
+var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
+
+var _TmpLog = require('./TmpLog');
+
+var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Public = require('./Public');
+
+var Public = _interopRequireWildcard(_Public);
+
+var _Index = require('./Index');
+
+var Index = _interopRequireWildcard(_Index);
+
+var _Read = require('./Read');
+
+var Read = _interopRequireWildcard(_Read);
+
+var _Post = require('./Post');
+
+var Post = _interopRequireWildcard(_Post);
+
+var _Other = require('./Other');
+
+var Other = _interopRequireWildcard(_Other);
+
+var _Bank = require('./Bank');
+
+var Bank = _interopRequireWildcard(_Bank);
+
+var _Card = require('./Card');
+
+var Card = _interopRequireWildcard(_Card);
+
+var _Item = require('./Item');
+
+var Item = _interopRequireWildcard(_Item);
+
+var _Loot = require('./Loot');
+
+var Loot = _interopRequireWildcard(_Loot);
+
+var _ConfigDialog = require('./ConfigDialog');
+
+var ConfigDialog = _interopRequireWildcard(_ConfigDialog);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// 默认脚本名称
+var defScriptName = '未命名脚本';
+// 脚本meta信息的正则表达式
+var metaRegex = /\/\/\s*==UserScript==((?:.|\n)+?)\/\/\s*==\/UserScript==/i;
+
+/**
+ * 执行自定义脚本
+ * @param {string} type 脚本执行时机，start：在脚本开始时执行；end：在脚本结束时执行
+ */
+var runCustomScript = exports.runCustomScript = function runCustomScript() {
+    var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'end';
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+
+    try {
+        for (var _iterator = Config.customScriptList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var _step$value = _step.value,
+                enabled = _step$value.enabled,
+                trigger = _step$value.trigger,
+                content = _step$value.content;
+
+            if (enabled && trigger === type && content) {
+                runCmd(content);
+            }
+        }
+    } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+            }
+        } finally {
+            if (_didIteratorError) {
+                throw _iteratorError;
+            }
+        }
+    }
+};
+
+/**
+ * 运行命令
+ * @param {string} cmd 命令
+ * @param {boolean} isOutput 是否在控制台上显示结果
+ * @returns {string} 运行结果
+ */
+var runCmd = exports.runCmd = function runCmd(cmd) {
+    var isOutput = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+    var result = '';
+    try {
+        result = eval(cmd);
+        if (isOutput) console.log(result);
+    } catch (ex) {
+        result = ex;
+        console.log(ex);
+    }
+    return String(result);
+};
+
+/**
+ * 获取脚本meta信息
+ * @param {string} content 脚本内容
+ * @returns {{}} 脚本meta信息
+ */
+var getScriptMeta = function getScriptMeta(content) {
+    var meta = {
+        name: defScriptName,
+        version: '',
+        trigger: 'end',
+        homepage: '',
+        author: ''
+    };
+    var matches = metaRegex.exec(content);
+    if (!matches) return meta;
+    var metaContent = matches[1];
+    matches = /@name[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.name = matches[1];
+    matches = /@version[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.version = matches[1];
+    matches = /@trigger[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.trigger = matches[1].toLowerCase() === 'start' ? 'start' : 'end';
+    matches = /@homepage[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.homepage = matches[1];
+    matches = /@author[ \t]+(.*)/i.exec(metaContent);
+    if (matches) meta.author = matches[1];
+    return meta;
+};
+
+/**
+ * 显示自定义脚本对话框
+ * @param {?number} showIndex 要显示的脚本的序号（-1表示最后一个）
+ */
+var showDialog = exports.showDialog = function showDialog() {
+    var showIndex = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+    var dialogName = 'pdCustomScriptDialog';
+    if ($('#' + dialogName).length > 0) return;
+    (0, _Config.read)();
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <a class="pd_highlight pd_btn_link" data-name="addNewScript" href="#">\u6DFB\u52A0\u65B0\u811A\u672C</a>\n    <a class="pd_btn_link" data-name="insertSample" href="#">\u63D2\u5165\u8303\u4F8B</a>\n  </div>\n  <div data-name="customScriptList"></div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a class="pd_btn_link" href="read.php?tid=500968" target="_blank">\u81EA\u5B9A\u4E49\u811A\u672C\u6536\u96C6\u8D34</a>\n    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u81EA\u5B9A\u4E49\u811A\u672C</a>\n  </span>\n  <button name="ok">\u786E\u5B9A</button> <button name="cancel">\u53D6\u6D88</button> <button class="pd_highlight" name="clear">\u6E05\u7A7A</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
+    var $customScriptList = $dialog.find('[data-name="customScriptList"]');
+
+    $dialog.find('[name="ok"]').click(function (e) {
+        e.preventDefault();
+        Config.customScriptList = [];
+        $customScriptList.find('.pd_custom_script_content').each(function () {
+            var $this = $(this);
+            var content = $this.val();
+            if (!$.trim(content)) return;
+            var enabled = $this.prev().find('[type="checkbox"]').prop('checked');
+            Config.customScriptList.push($.extend(getScriptMeta(content), { enabled: enabled, content: content }));
+        });
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+    }).end().find('[name="clear"]').click(function (e) {
+        e.preventDefault();
+        if (confirm('是否清空所有脚本？')) {
+            $customScriptList.html('');
+            Dialog.show(dialogName);
+        }
+    }).end().find('[name="cancel"]').click(function () {
+        return Dialog.close(dialogName);
+    });
+
+    /**
+     * 添加自定义脚本
+     * @param {boolean} enabled 是否启用脚本
+     * @param {string} name 脚本名称
+     * @param {string} version 版本号
+     * @param {url} homepage 首页
+     * @param {string} trigger 脚本执行时机
+     * @param {string} content 脚本内容
+     */
+    var addCustomScript = function addCustomScript() {
+        var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            _ref$enabled = _ref.enabled,
+            enabled = _ref$enabled === undefined ? true : _ref$enabled,
+            _ref$name = _ref.name,
+            name = _ref$name === undefined ? defScriptName : _ref$name,
+            _ref$version = _ref.version,
+            version = _ref$version === undefined ? '' : _ref$version,
+            _ref$homepage = _ref.homepage,
+            homepage = _ref$homepage === undefined ? '' : _ref$homepage,
+            _ref$trigger = _ref.trigger,
+            trigger = _ref$trigger === undefined ? 'end' : _ref$trigger,
+            _ref$content = _ref.content,
+            content = _ref$content === undefined ? '' : _ref$content;
+
+        $customScriptList.append('\n<div class="pd_custom_script_header">\n  <input type="checkbox" ' + (enabled ? 'checked' : '') + ' title="\u662F\u5426\u542F\u7528\u6B64\u811A\u672C">\n  <a class="pd_custom_script_name" href="#" style="margin-left: 5px;">[' + name + ']</a>\n  <span data-name="version" style="margin-left: 5px; color: #666;" ' + (!version ? 'hidden' : '') + '>' + version + '</span>\n  <span data-name="trigger" style="margin-left: 5px; color: ' + (trigger === 'start' ? '#f00' : '#00f') + ';" title="\u811A\u672C\u6267\u884C\u65F6\u673A">\n    [' + (trigger === 'start' ? '开始时' : '结束时') + ']\n  </span>\n  <a data-name="homepage" href="' + homepage + '" target="_blank" style="margin-left: 5px;" ' + (!homepage ? 'hidden' : '') + '>[\u4E3B\u9875]</a>\n  <a data-name="delete" href="#" style="margin-left: 5px; color: #666;">[\u5220\u9664]</a>\n</div>\n<textarea class="pd_custom_script_content" wrap="off">' + content + '</textarea>\n');
+    };
+
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+        for (var _iterator2 = Config.customScriptList[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var data = _step2.value;
+
+            addCustomScript(data);
+        }
+    } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                _iterator2.return();
+            }
+        } finally {
+            if (_didIteratorError2) {
+                throw _iteratorError2;
+            }
+        }
+    }
+
+    $dialog.find('[data-name="addNewScript"]').click(function (e) {
+        e.preventDefault();
+        $customScriptList.find('.pd_custom_script_content').hide();
+        addCustomScript();
+        $customScriptList.find('.pd_custom_script_content:last').show().focus();
+        Dialog.show(dialogName);
+    }).end().find('[data-name="insertSample"]').click(function (e) {
+        e.preventDefault();
+        var $content = $customScriptList.find('.pd_custom_script_content:visible');
+        $content.val(('\n// ==UserScript==\n// @name        ' + defScriptName + '\n// @version     1.0\n// @author      ' + _Info2.default.userName + '\n// @trigger     end\n// @homepage    read.php?tid=500968&spid=12318348\n// @description \u8FD9\u662F\u4E00\u4E2A\u672A\u547D\u540D\u811A\u672C\n// ==/UserScript==\n').trim() + '\n' + $content.val()).focus();
+    }).end().find('[data-name="openImOrExCustomScriptDialog"]').click(function (e) {
+        e.preventDefault();
+        ConfigDialog.showCommonImportOrExportConfigDialog('customScript');
+    });
+
+    $customScriptList.on('click', '.pd_custom_script_name', function (e) {
+        e.preventDefault();
+        $dialog.find('.pd_custom_script_content').hide();
+        $(this).parent().next().show().focus();
+        Dialog.show(dialogName);
+    }).on('click', '[data-name="delete"]', function (e) {
+        e.preventDefault();
+        if (!confirm('是否删除此脚本？')) return;
+        var $header = $(this).closest('.pd_custom_script_header');
+        $header.next().remove();
+        $header.remove();
+        Dialog.show(dialogName);
+    }).on('change', '.pd_custom_script_content', function () {
+        var $this = $(this);
+
+        var _getScriptMeta = getScriptMeta($this.val()),
+            name = _getScriptMeta.name,
+            version = _getScriptMeta.version,
+            homepage = _getScriptMeta.homepage,
+            trigger = _getScriptMeta.trigger;
+
+        var $header = $this.prev();
+        $header.find('.pd_custom_script_name').text('[' + (name ? name : defScriptName) + ']');
+        $header.find('[data-name="version"]').text(version).prop('hidden', !version);
+        $header.find('[data-name="homepage"]').attr('href', homepage ? homepage : '').prop('hidden', !homepage);
+        $header.find('[data-name="trigger"]').html('[' + (trigger === 'start' ? '开始时' : '结束时') + ']').css('color', trigger === 'start' ? '#f00' : '#00f');
+    });
+
+    Dialog.show(dialogName);
+    if (typeof showIndex === 'number') {
+        $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
+    } else {
+        $dialog.find('a:first').focus();
+    }
+};
+
+/**
+ * 处理安装自定义脚本按钮
+ */
+var handleInstallScriptLink = exports.handleInstallScriptLink = function handleInstallScriptLink() {
+    $(document).on('click', 'a[href$="#install-script"]', function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var $area = $this.nextAll('.pd_code_area').eq(0);
+        if (!$area.length) return;
+        var content = Util.htmlDecode($area.html().replace(/<legend>.+?<\/legend>/i, '')).trim();
+        if (!metaRegex.test(content)) return;
+        (0, _Config.read)();
+        var meta = getScriptMeta(content);
+        var index = Config.customScriptList.findIndex(function (script) {
+            return script.name === meta.name && script.author === meta.author;
+        });
+        var type = index > -1 ? 1 : 0;
+        if (!confirm('\u662F\u5426' + (type === 1 ? '更新' : '安装') + '\u6B64\u811A\u672C\uFF1F')) return;
+        var script = $.extend(meta, { enabled: true, content: content });
+        if (type === 1) Config.customScriptList[index] = script;else Config.customScriptList.push(script);
+        (0, _Config.write)();
+        Dialog.close('pdCustomScriptDialog');
+        showDialog(index);
+    });
+};
+
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Index":9,"./Info":10,"./Item":11,"./Log":12,"./Loot":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+/* 临时日志模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -9338,24 +9514,23 @@ var _Const2 = _interopRequireDefault(_Const);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 保存临时日志的键值名称
-var name = 'pd_tmp_log';
-// 临时日志对象
-var log = {};
+var name = _Const2.default.storagePrefix + 'tmp_log';
 
 /**
  * 读取临时日志
+ * @returns {{}} 临时日志对象
  */
 var read = exports.read = function read() {
-    log = {};
+    var log = {};
     var options = null;
     if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') options = GM_getValue(name + '_' + _Info2.default.uid);else options = localStorage.getItem(name + '_' + _Info2.default.uid);
-    if (!options) return;
+    if (!options) return log;
     try {
         options = JSON.parse(options);
     } catch (ex) {
-        return;
+        return log;
     }
-    if (!options || $.type(options) !== 'object') return;
+    if (!options || $.type(options) !== 'object') return log;
     var allowKeys = [];
     for (var k in _Const2.default) {
         if (k.endsWith('TmpLogName')) allowKeys.push(_Const2.default[k]);
@@ -9386,12 +9561,13 @@ var read = exports.read = function read() {
     }
 
     log = options;
+    return log;
 };
 
 /**
  * 写入临时日志
  */
-var write = exports.write = function write() {
+var write = exports.write = function write(log) {
     if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(log));
 };
 
@@ -9408,7 +9584,7 @@ var clear = exports.clear = function clear() {
  * @returns {*} 日志内容
  */
 var getValue = exports.getValue = function getValue(key) {
-    read();
+    var log = read();
     return key in log ? log[key] : null;
 };
 
@@ -9418,9 +9594,9 @@ var getValue = exports.getValue = function getValue(key) {
  * @param {*} value 日志内容
  */
 var setValue = exports.setValue = function setValue(key, value) {
-    read();
+    var log = read();
     log[key] = value;
-    write();
+    write(log);
 };
 
 /**
@@ -9428,20 +9604,21 @@ var setValue = exports.setValue = function setValue(key, value) {
  * @param {string} key 日志名称
  */
 var deleteValue = exports.deleteValue = function deleteValue(key) {
-    read();
+    var log = read();
     if (key in log) {
         delete log[key];
-        write();
+        write(log);
     }
 };
 
-},{"./Const":6,"./Info":10}],21:[function(require,module,exports){
+},{"./Const":6,"./Info":10}],22:[function(require,module,exports){
+/* 工具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.getRemoveUnpairedBBCodeQuoteContent = exports.getFixedNumberLocaleString = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -9464,7 +9641,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 var setCookie = exports.setCookie = function setCookie(name, value) {
     var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-    var prefix = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : _Info2.default.uid + '_';
+    var prefix = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : _Info2.default.uid + '_' + _Const2.default.storagePrefix;
 
     document.cookie = '' + prefix + name + '=' + encodeURI(value) + (!date ? '' : ';expires=' + date.toUTCString()) + ';path=/;';
 };
@@ -9476,7 +9653,7 @@ var setCookie = exports.setCookie = function setCookie(name, value) {
  * @returns {?string} Cookie值
  */
 var getCookie = exports.getCookie = function getCookie(name) {
-    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Info2.default.uid + '_';
+    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Info2.default.uid + '_' + _Const2.default.storagePrefix;
 
     var regex = new RegExp('(^| )' + prefix + name + '=([^;]*)(;|$)');
     var matches = document.cookie.match(regex);
@@ -9489,7 +9666,7 @@ var getCookie = exports.getCookie = function getCookie(name) {
  * @param {string} prefix Cookie名称前缀
  */
 var deleteCookie = exports.deleteCookie = function deleteCookie(name) {
-    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Info2.default.uid + '_';
+    var prefix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Info2.default.uid + '_' + _Const2.default.storagePrefix;
 
     document.cookie = '' + prefix + name + '=;expires=' + getDate('-1d').toUTCString() + ';path=/;';
 };
@@ -9501,10 +9678,16 @@ var deleteCookie = exports.deleteCookie = function deleteCookie(name) {
  */
 var getDateByTime = exports.getDateByTime = function getDateByTime(time) {
     var date = new Date();
-    var timeArr = time.split(':');
-    if (timeArr[0]) date.setHours(parseInt(timeArr[0]));
-    if (timeArr[1]) date.setMinutes(parseInt(timeArr[1]));
-    if (timeArr[2]) date.setSeconds(parseInt(timeArr[2]));
+
+    var _time$split = time.split(':'),
+        _time$split2 = _slicedToArray(_time$split, 3),
+        hour = _time$split2[0],
+        minute = _time$split2[1],
+        second = _time$split2[2];
+
+    if (typeof hour !== 'undefined') date.setHours(parseInt(hour));
+    if (typeof minute !== 'undefined') date.setMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setSeconds(parseInt(second));
     date.setMilliseconds(0);
     return date;
 };
@@ -9519,10 +9702,16 @@ var getTimezoneDateByTime = exports.getTimezoneDateByTime = function getTimezone
     var timezoneOffset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Const2.default.forumTimezoneOffset;
 
     var date = new Date();
-    var timeArr = time.split(':');
-    if (timeArr[0]) date.setUTCHours(parseInt(timeArr[0]) + timezoneOffset);
-    if (timeArr[1]) date.setUTCMinutes(parseInt(timeArr[1]));
-    if (timeArr[2]) date.setUTCSeconds(parseInt(timeArr[2]));
+
+    var _time$split3 = time.split(':'),
+        _time$split4 = _slicedToArray(_time$split3, 3),
+        hour = _time$split4[0],
+        minute = _time$split4[1],
+        second = _time$split4[2];
+
+    if (typeof hour !== 'undefined') date.setUTCHours(parseInt(hour) + timezoneOffset);
+    if (typeof minute !== 'undefined') date.setUTCMinutes(parseInt(minute));
+    if (typeof second !== 'undefined') date.setUTCSeconds(parseInt(second));
     date.setUTCMilliseconds(0);
     var now = new Date();
     if (now.getDate() > date.getDate() || now.getMonth() > date.getMonth() || now.getFullYear() > date.getFullYear()) {
@@ -9601,9 +9790,9 @@ var getDateString = exports.getDateString = function getDateString(date) {
     var separator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '-';
 
     date = date ? date : new Date();
-    var month = date.getMonth() + 1;
-    var day = date.getDate();
-    return date.getFullYear() + separator + (month < 10 ? '0' + month : month) + separator + (day < 10 ? '0' + day : day);
+    var month = (date.getMonth() + 1).toString();
+    var day = date.getDate().toString();
+    return date.getFullYear() + separator + month.padStart(2, '0') + separator + day.padStart(2, '0');
 };
 
 /**
@@ -9618,10 +9807,10 @@ var getTimeString = exports.getTimeString = function getTimeString() {
     var separator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ':';
     var isShowSecond = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
-    var hour = date.getHours();
-    var minute = date.getMinutes();
-    var second = date.getSeconds();
-    return (hour < 10 ? '0' + hour : hour) + separator + (minute < 10 ? '0' + minute : minute) + (isShowSecond ? separator : '') + (isShowSecond ? second < 10 ? '0' + second : second : '');
+    var hour = date.getHours().toString();
+    var minute = date.getMinutes().toString();
+    var second = date.getSeconds().toString();
+    return hour.padStart(2, '0') + separator + minute.padStart(2, '0') + (isShowSecond ? separator : '') + (isShowSecond ? second.padStart(2, '0') : '');
 };
 
 /**
@@ -9652,10 +9841,14 @@ var getTimeDiffInfo = exports.getTimeDiffInfo = function getTimeDiffInfo(timesta
  * @returns {?boolean} 是否处于规定时间段内，返回null表示规定时间段格式不正确
  */
 var isBetweenInTimeRange = exports.isBetweenInTimeRange = function isBetweenInTimeRange(time, range) {
-    var rangeArr = range.split('-');
-    if (rangeArr.length !== 2) return null;
-    var start = getDateByTime(rangeArr[0]);
-    var end = getDateByTime(rangeArr[1]);
+    var _range$split = range.split('-'),
+        _range$split2 = _slicedToArray(_range$split, 2),
+        range1 = _range$split2[0],
+        range2 = _range$split2[1];
+
+    if (typeof range2 === 'undefined') return null;
+    var start = getDateByTime(range1);
+    var end = getDateByTime(range2);
     if (end < start) {
         if (time > end) end.setDate(end.getDate() + 1);else start.setDate(start.getDate() - 1);
     }
@@ -9843,7 +10036,7 @@ var getCurrentThreadPage = exports.getCurrentThreadPage = function getCurrentThr
  * @param {number} digit 指定小数位
  * @returns {string} 指定小数位的本地字符串
  */
-var getFixedNumberLocaleString = exports.getFixedNumberLocaleString = function getFixedNumberLocaleString(num) {
+var getFixedNumLocStr = exports.getFixedNumLocStr = function getFixedNumLocStr(num) {
     var digit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
     var _num$toFixed$split = num.toFixed(digit).split('.'),
@@ -9858,11 +10051,11 @@ var getFixedNumberLocaleString = exports.getFixedNumberLocaleString = function g
 };
 
 /**
- * 获取去除了不配对BBCode的引用内容
+ * 去除不配对的BBCode
  * @param {string} content 引用内容
- * @returns {string} 去除了不配对BBCode的引用内容
+ * @returns {string} 去除了不配对BBCode的内容
  */
-var getRemoveUnpairedBBCodeQuoteContent = exports.getRemoveUnpairedBBCodeQuoteContent = function getRemoveUnpairedBBCodeQuoteContent(content) {
+var removeUnpairedBBCodeContent = exports.removeUnpairedBBCodeContent = function removeUnpairedBBCodeContent(content) {
     var startCodeList = [/\[color=.+?\]/g, /\[backcolor=.+?\]/g, /\[size=.+?\]/g, /\[font=.+?\]/g, /\[align=.+?\]/g, /\[b\]/g, /\[i\]/g, /\[u\]/g, /\[strike\]/g, /\[sup\]/g, /\[sub\]/g];
     var endCodeList = [/\[\/color\]/g, /\[\/backcolor\]/g, /\[\/size\]/g, /\[\/font\]/g, /\[\/align\]/g, /\[\/b\]/g, /\[\/i\]/g, /\[\/u\]/g, /\[\/strike\]/g, /\[\/sup\]/g, /\[\/sub\]/g];
     for (var i = 0; i < startCodeList.length; i++) {
@@ -9952,18 +10145,25 @@ var copyText = exports.copyText = function copyText($target) {
 /**
  * 获取服务器返回的消息
  * @param {string} html HTML代码
- * @returns {string} 服务器返回的消息
+ * @returns {{type: number, msg: string, url: string}} 服务器返回的消息对象
  */
 var getResponseMsg = exports.getResponseMsg = function getResponseMsg(html) {
-    var msg = '';
+    var type = 0;
+    var msg = '',
+        url = '';
     var matches = /<span style=".+?">(.+?)<\/span><br\s*\/?><a href="(.+?)">/i.exec(html);
     if (matches) {
-        msg = matches[1] + '\uFF1B\u8DF3\u8F6C\u5730\u5740\uFF1A' + getHostNameUrl() + matches[2];
+        type = 1;
+        msg = matches[1];
+        url = matches[2];
     } else {
         var _matches = /操作提示<br\s*\/?>\r\n(.+?)<br\s*\/?>\r\n<a href="javascript:history\.go\(-1\);">返回上一步操作<\/a>/i.exec(html);
-        if (_matches) msg = _matches[1];
+        if (_matches) {
+            type = -1;
+            msg = _matches[1];
+        }
     }
-    return msg;
+    return { type: type, msg: msg ? msg : '未能获得预期的回应', url: url };
 };
 
 /**
@@ -10047,8 +10247,8 @@ var entries = exports.entries = regeneratorRuntime.mark(function entries(obj) {
  * @returns {number} 指定用户在列表中的索引号，-1表示不在该列表中
  */
 var inFollowOrBlockUserList = exports.inFollowOrBlockUserList = function inFollowOrBlockUserList(name, list) {
-    return list.findIndex(function (elem) {
-        return elem.name && elem.name === name;
+    return list.findIndex(function (data) {
+        return data.name && data.name === name;
     });
 };
 

@@ -4,7 +4,8 @@
   "description": "KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-scripts": "cd scripts && babel es6 -d es5"
   },
   "keywords": [
     "KFOL",
@@ -21,6 +22,7 @@
   },
   "homepage": "https://github.com/miaolapd/KF_Online_Assistant",
   "devDependencies": {
+    "babel-cli": "^6.18.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.18.0",
     "babel-preset-es2015": "^6.18.0",
     "babel-preset-es2016": "^6.16.0",

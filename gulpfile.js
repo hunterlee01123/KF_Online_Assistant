@@ -24,7 +24,10 @@ const fullEditionName = 'Full';
 const forFirefoxEditionName = 'ForFirefox';
 const scriptExt = '.user.js';
 const metaExt = '.meta.js';
+
 const metaContentRegex = /(\/\/ ==UserScript==(?:.|\r|\n)+?\/\/ ==\/UserScript==)(?:.|\r|\n)+/;
+const polyfillUrl = 'https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.16.0';
+const jQueryUrl = 'https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4';
 
 const getBundler = function () {
     return browserify({entries: [srcPath + appFileName]})
@@ -35,7 +38,7 @@ const compileEs6 = function (bundler) {
     return bundler.bundle()
         .on('error', gutil.log.bind(gutil, 'Compile es6 Script Error:\n'))
         .pipe(source(appFileName))
-        //.pipe(buffer())
+        .pipe(buffer())
         .pipe(gulp.dest(distPath + es6Path));
 };
 
@@ -45,7 +48,7 @@ const compileEs5 = function () {
         .bundle()
         .on('error', gutil.log.bind(gutil, 'Compile es5 Script Error:\n'))
         .pipe(source(appFileName))
-        //.pipe(buffer())
+        .pipe(buffer())
         .pipe(gulp.dest(distPath + es5Path));
 };
 
@@ -58,7 +61,7 @@ const buildCommonEdition = function (isEs6 = false) {
             `// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Common.meta.js\n` +
             `// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Common.user.js`
         ))
-        .pipe(replace(/\/\/ @pd-require\n/, !isEs6 ? '// @require     https://cdn.css.net/libs/babel-polyfill/6.16.0/polyfill.min.js\n' : ''))
+        .pipe(replace(/\/\/ @pd-require\n/, !isEs6 ? `// @require     ${polyfillUrl}\n` : ''))
         .pipe(gulp.dest(distPath + path))
         .pipe(replace(metaContentRegex, '$1'))
         .pipe(rename(commonEditionName + metaExt))
@@ -74,7 +77,7 @@ const buildFullEdition = function (isEs6 = false) {
             `// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Full.meta.js\n` +
             `// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Full.user.js`
         ))
-        .pipe(replace(/\/\/ @pd-require\n/, !isEs6 ? '// @require     https://cdn.css.net/libs/babel-polyfill/6.16.0/polyfill.min.js\n' : ''))
+        .pipe(replace(/\/\/ @pd-require\n/, !isEs6 ? `// @require     ${polyfillUrl}\n` : ''))
         .pipe(replace(/(\/\/ @grant\s+)none/, '$1GM_getValue\n$1GM_setValue\n$1GM_deleteValue'))
         .pipe(replace(/(\/\/ @include-jquery\s+true)/, '$1\n// @use-greasemonkey true'))
         .pipe(gulp.dest(distPath + path))
@@ -95,10 +98,10 @@ const buildForFirefoxEdition = function (isEs6 = false) {
         .pipe(replace(/(\/\/ @grant\s+)none/, '$1GM_getValue\n$1GM_setValue\n$1GM_deleteValue'))
         .pipe(replace(
             /\/\/ @pd-require\n/,
-            (!isEs6 ? '// @require     https://cdn.css.net/libs/babel-polyfill/6.16.0/polyfill.min.js\n' : '') +
-            '// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4\n'
+            (!isEs6 ? `// @require     ${polyfillUrl}\n` : '') + `// @require     ${jQueryUrl}\n`
         ))
         .pipe(replace(/(\/\/ @include-jquery\s+true)/, '$1\n// @use-greasemonkey true'))
+        .pipe(replace(/\b_Info2\.default\.w\.Config\b/g, 'window.Config'))
         .pipe(gulp.dest(distPath + path))
         .pipe(replace(metaContentRegex, '$1'))
         .pipe(rename(forFirefoxEditionName + metaExt))

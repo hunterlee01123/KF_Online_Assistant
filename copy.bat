@@ -1,1 +1,1 @@
-copy /Y "D:\My Projects\KF_Online_Assistant\dist\es6\Common.user.js" "Z:\Firefox Profiles\wulali\gm_scripts\KF_OnlineÖúÊÖ\Common-babel.user.js"
+copy /Y "D:\My Projects\KF_Online_Assistant\dist\es6\Common.user.js" "Z:\Firefox Profiles\wulali\gm_scripts\KF_OnlineÖúÊÖ\Common.user.js"

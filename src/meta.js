@@ -8,7 +8,6 @@
 // @pd-update-url-placeholder
 // @pd-require
 // @include     http://*2dkf.com/*
-// @include     http://*ddgal.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
 // @version     7.0

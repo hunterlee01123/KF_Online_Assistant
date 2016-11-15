@@ -86,13 +86,16 @@ export const show = function () {
         <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
         <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
       </label>
-      <label class="pd_cfg_ml"><input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
+      <label class="pd_cfg_ml">
+        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
         <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
       </label><br>
-      <label><input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
+      <label>
+        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
         <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
       </label>
-      <label class="pd_cfg_ml"><input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
+      <label class="pd_cfg_ml">
+        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
         <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
       </label>
     </fieldset>
@@ -149,7 +152,7 @@ export const show = function () {
       </label>
       <label class="pd_cfg_ml">
         <input name="parseMediaTagEnabled" type="checkbox"> 解析多媒体标签
-        <span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题11】">[?]</span>
+        <span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题12】">[?]</span>
       </label><br>
       <label>
         <input name="batchBuyThreadEnabled" type="checkbox"> 开启批量购买帖子功能
@@ -208,6 +211,10 @@ export const show = function () {
 如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
       </label><br>
       <label>
+        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
+        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
         <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
         <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
       </label><br>
@@ -218,14 +225,6 @@ export const show = function () {
       <label class="pd_cfg_ml">
         日志保存天数 <input name="logSaveDays" maxlength="3" style="width: 25px;" type="text">
         <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
-      </label><br>
-      <label>
-        <input name="showLogLinkEnabled" type="checkbox"> 显示日志链接
-        <span class="pd_cfg_tips" title="在页面上方显示助手日志的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
-        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
       </label><br>
       <label>
         <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
@@ -353,6 +352,7 @@ export const show = function () {
         writeConfig();
         let storageType = $dialog.find('[data-name="storageType"]').val();
         if (storageType !== Info.storageType) {
+            if (!confirm('是否修改存储类型？')) return;
             changeStorageType(storageType);
             alert('存储类型已修改');
             location.reload();

@@ -196,6 +196,24 @@ export const appendCss = function () {
 };
 
 /**
+ * 添加设置和日志对话框的链接
+ */
+export const addConfigAndLogDialogLink = function () {
+    $('<a data-name="openConfigDialog" href="#">助手设置</a><span> | </span><a data-name="openLogDialog" href="#">助手日志</a><span> | </span>')
+        .insertBefore($('a[href^="login.php?action=quit"]:first'))
+        .filter('[data-name="openConfigDialog"]')
+        .click(function (e) {
+            e.preventDefault();
+            showConfigDialog();
+        }).end()
+        .filter('[data-name="openLogDialog"]')
+        .click(function (e) {
+            e.preventDefault();
+            showLogDialog();
+        });
+};
+
+/**
  * 在操作进行时阻止关闭页面
  * @param e
  * @returns {string} 提示消息
@@ -551,24 +569,6 @@ export const startAutoRefreshMode = function () {
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
     showRefreshModeTips(interval < 60 ? 60 : interval);
-};
-
-/**
- * 添加设置和日志对话框的链接
- */
-export const addConfigAndLogDialogLink = function () {
-    $('<a data-name="openConfigDialog" href="#">助手设置</a><span> | </span><a data-name="openLogDialog" href="#">助手日志</a><span> | </span>')
-        .insertBefore($('a[href^="login.php?action=quit"]:first'))
-        .filter('[data-name="openConfigDialog"]')
-        .click(function (e) {
-            e.preventDefault();
-            showConfigDialog();
-        }).end()
-        .filter('[data-name="openLogDialog"]')
-        .click(function (e) {
-            e.preventDefault();
-            showLogDialog();
-        });
 };
 
 /**

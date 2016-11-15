@@ -169,9 +169,7 @@ export const Config = {
  * 初始化
  */
 export const init = function () {
-    let c = $.extend(true, {}, Config);
-    if (typeof unsafeWindow === 'undefined') window.Config = c;
-    else unsafeWindow.Config = c;
+    Info.w.Config = $.extend(true, {}, Config);
     if (typeof GM_getValue !== 'undefined') {
         Info.storageType = GM_getValue('StorageType');
         if (Info.storageType !== 'ByUid' && Info.storageType !== 'Global') Info.storageType = 'Default';
