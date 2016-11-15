@@ -196,7 +196,7 @@ export const showVipSurplusTime = function () {
  */
 export const addSearchTypeSelectBoxInHomePage = function () {
     let $form = $('form[action="search.php?"]');
-    $form.attr('name', 'pd_search');
+    $form.attr('name', 'pdSearchForm');
     let $keyWord = $form.find('[type="text"][name="keyword"]');
     $keyWord.css('width', '116px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);

@@ -91,7 +91,7 @@ const getScriptMeta = function (content) {
  * @param {?number} showIndex 要显示的脚本的序号（-1表示最后一个）
  */
 export const showDialog = function (showIndex = null) {
-    const dialogName = 'pd_custom_script';
+    const dialogName = 'pdCustomScriptDialog';
     if ($('#' + dialogName).length > 0) return;
     readConfig();
     let html = `
@@ -245,7 +245,7 @@ export const handleInstallScriptLink = function () {
         if (type === 1) Config.customScriptList[index] = script;
         else Config.customScriptList.push(script);
         writeConfig();
-        Dialog.close('pd_custom_script');
+        Dialog.close('pdCustomScriptDialog');
         showDialog(index);
     });
 };

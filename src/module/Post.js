@@ -11,8 +11,8 @@ import Const from './Const';
  */
 export const handleMultiQuote = function (type = 1) {
     Func.run('Post.handleMultiQuote_before_', type);
-    if (!$('#pd_clear_multi_quote_data').length) {
-        $('<a id="pd_clear_multi_quote_data" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
+    if (!$('#pdClearMultiQuoteData').length) {
+        $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
             .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
             e.preventDefault();
             localStorage.removeItem(Const.multiQuoteStorageName);

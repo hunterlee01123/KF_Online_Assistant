@@ -20,7 +20,7 @@ import * as Script from './Script';
  * 显示设置对话框
  */
 export const show = function () {
-    const dialogName = 'pd_config';
+    const dialogName = 'pdConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     readConfig();
     Func.run('ConfigDialog.show_before_');
@@ -550,9 +550,9 @@ const clearTmpData = function (type = 0) {
  * 显示运行命令对话框
  */
 const showRunCommandDialog = function () {
-    const dialogName = 'pd_run_command';
+    const dialogName = 'pdRunCommandDialog';
     if ($('#' + dialogName).length > 0) return;
-    Dialog.close('pd_config');
+    Dialog.close('pdConfigDialog');
     let html = `
 <div class="pd_cfg_main">
   <div style="margin: 5px 0;">
@@ -589,8 +589,8 @@ const showRunCommandDialog = function () {
  * 显示导入或导出设置对话框
  */
 const showImportOrExportSettingDialog = function () {
-    const dialogName = 'pd_im_or_ex_setting';
-    if ($('#pd_im_or_ex_setting' + dialogName).length > 0) return;
+    const dialogName = 'pdImOrExSettingDialog';
+    if ($('#' + dialogName).length > 0) return;
     readConfig();
     let html = `
 <div class="pd_cfg_main">
@@ -635,7 +635,7 @@ const showImportOrExportSettingDialog = function () {
  * 显示自定义各等级神秘颜色设置对话框
  */
 const showCustomSmColorDialog = function () {
-    const dialogName = 'pd_custom_sm_color';
+    const dialogName = 'pdCustomSmColorDialog';
     if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
@@ -786,7 +786,7 @@ const showCustomSmColorDialog = function () {
  * 显示导入或导出配色方案对话框
  */
 const showImportOrExportSmColorConfigDialog = function () {
-    const dialogName = 'pd_im_or_ex_sm_color_config';
+    const dialogName = 'pdImOrExSmColorConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     readConfig();
     let html = `
@@ -831,7 +831,7 @@ const showImportOrExportSmColorConfigDialog = function () {
  * 显示自定义CSS对话框
  */
 const showCustomCssDialog = function () {
-    const dialogName = 'pd_custom_css';
+    const dialogName = 'pdCustomCssDialog';
     if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
@@ -859,7 +859,7 @@ const showCustomCssDialog = function () {
  * 显示用户备注对话框
  */
 const showUserMemoDialog = function () {
-    const dialogName = 'pd_user_memo';
+    const dialogName = 'pdUserMemoDialog';
     if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
@@ -903,7 +903,7 @@ const showUserMemoDialog = function () {
  * 显示关注用户对话框
  */
 const showFollowUserDialog = function () {
-    const dialogName = 'pd_follow_user';
+    const dialogName = 'pdFollowUserDialog';
     if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
@@ -1039,7 +1039,7 @@ const showFollowUserDialog = function () {
  * 显示屏蔽用户对话框
  */
 const showBlockUserDialog = function () {
-    const dialogName = 'pd_block_user';
+    const dialogName = 'pdBlockUserDialog';
     if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
@@ -1209,7 +1209,7 @@ const showBlockUserDialog = function () {
  * 显示屏蔽帖子对话框
  */
 const showBlockThreadDialog = function () {
-    const dialogName = 'pd_block_thread';
+    const dialogName = 'pdBlockThreadDialog';
     if ($('#' + dialogName).length > 0) return;
     let html = `
 <div class="pd_cfg_main">
@@ -1412,8 +1412,8 @@ const showBlockThreadDialog = function () {
  * @param {string} type 对话框类别，followUser：关注用户；blockUser：屏蔽用户；blockThread：屏蔽帖子；customScript：自定义脚本
  */
 export const showCommonImportOrExportConfigDialog = function (type) {
-    const dialogName = 'pd_common_im_or_ex_config';
-    if ($('#pd_common_im_or_ex_config').length > 0) return;
+    const dialogName = 'pdCommonImOrExConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
     readConfig();
     let html = `
 <div class="pd_cfg_main">

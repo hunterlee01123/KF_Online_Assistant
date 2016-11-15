@@ -14,7 +14,7 @@ import * as Item from './Item';
  * 显示日志对话框
  */
 export const show = function () {
-    const dialogName = 'pd_log';
+    const dialogName = 'pdLogDialog';
     if ($('#' + dialogName).length > 0) return;
     readConfig();
     Func.run('LogDialog.show_before_');
@@ -393,7 +393,7 @@ const getLogStat = function (log, date, logStatType) {
  * 显示导入或导出日志对话框
  */
 const showImportOrExportLogDialog = function () {
-    const dialogName = 'pd_im_or_ex_log';
+    const dialogName = 'pdImOrExLogDialog';
     if ($('#' + dialogName).length > 0) return;
     let log = Log.read();
     let html = `

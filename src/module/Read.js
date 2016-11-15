@@ -160,7 +160,7 @@ export const addCopyBuyersListLink = function () {
                 alert('暂时无人购买');
                 return;
             }
-            const dialogName = 'pd_copy_buyer_list';
+            const dialogName = 'pdCopyBuyerListDialog';
             if ($('#' + dialogName).length > 0) return;
             let html = `
 <div class="pd_cfg_main">
@@ -177,20 +177,20 @@ export const addCopyBuyersListLink = function () {
  * @param {string[]} replierList 回帖者名单列表
  */
 export const showStatRepliersDialog = function (replierList) {
-    const dialogName = 'pd_replier_list';
+    const dialogName = 'pdReplierListDialog';
     let html = `
 <div class="pd_cfg_main">
-  <div data-name="replierListFilter" style="margin-top: 5px;">
+  <div id="pdReplierListFilter" style="margin-top: 5px;">
     <label><input type="checkbox" checked> 显示楼层号</label>
     <label><input type="checkbox"> 去除重复</label>
     <label><input type="checkbox"> 去除楼主</label>
   </div>
-  <div style="color: #f00;" id="pd_replier_list_stat"></div>
+  <div style="color: #f00;" id="pdReplierListStat"></div>
   <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
 </div>`;
     let $dialog = Dialog.create(dialogName, '回帖者名单', html);
 
-    let $filterNodes = $dialog.find('[data-name="replierListFilter"] input');
+    let $filterNodes = $dialog.find('#pdReplierListFilter input');
     $filterNodes.click(function () {
         let list = [...replierList];
         let isShowFloor = $filterNodes.eq(0).prop('checked'),
@@ -211,9 +211,9 @@ export const showStatRepliersDialog = function (replierList) {
             num++;
         }
         $dialog.find('textarea').val(content);
-        $('#pd_replier_list_stat').html(`共有<b>${num}</b>条项目`);
+        $dialog.find('#pdReplierListStat').html(`共有<b>${num}</b>条项目`);
     });
-    $dialog.find('[data-name="replierListFilter"] input:first').triggerHandler('click');
+    $dialog.find('#pdReplierListFilter input:first').triggerHandler('click');
 
     Dialog.show(dialogName);
     $dialog.find('input:first').focus();
@@ -227,7 +227,7 @@ export const addStatRepliersLink = function () {
     $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages')
         .find('a').click(function (e) {
         e.preventDefault();
-        if ($('#pd_replier_list').length > 0) return;
+        if ($('#pdReplierListDialog').length > 0) return;
 
         let tid = Util.getUrlParam('tid');
         if (!tid) return;
@@ -658,7 +658,7 @@ export const addMoreSmileLink = function () {
         .click(function (e) {
             e.preventDefault();
             let $this = $(this);
-            let $panel = $('#pd_smile_panel');
+            let $panel = $('#pdSmilePanel');
             if ($panel.length > 0) {
                 $this.text('[更多]');
                 $panel.remove();
@@ -675,7 +675,7 @@ export const addMoreSmileLink = function () {
             for (let i = 0; i < smileImageIdList.length; i++) {
                 html += `<img src="${Info.w.imgpath}/post/smile/em/em${smileImageIdList[i]}.gif" alt="[表情]" data-id="${smileCodeIdList[i]}">`;
             }
-            html = `<div class="pd_panel" id="pd_smile_panel" style="width: 308px; height: 185px;">${html}</div>`;
+            html = `<div class="pd_panel" id="pdSmilePanel" style="width: 308px; height: 185px;">${html}</div>`;
 
             let offset = $parent.offset();
             $panel = $(html).appendTo('body');

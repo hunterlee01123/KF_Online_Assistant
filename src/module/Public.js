@@ -59,7 +59,7 @@ export const appendCss = function () {
     $('head').append(`
 <style>
   /* 公共 */
-  .pd_highlight { color: #ff0000 !important; }
+  .pd_highlight { color: #f00 !important; }
   .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }
   .pd_input, .pd_cfg_main input, .pd_cfg_main select {
     vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;
@@ -136,7 +136,7 @@ export const appendCss = function () {
   .pd_item_type_chk { margin-right: 5px; }
   
   /* 发帖页面 */
-  #pd_smile_panel img { margin: 3px; cursor: pointer; }
+  #pdSmilePanel img { margin: 3px; cursor: pointer; }
   .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
   .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }
   .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }
@@ -170,7 +170,7 @@ export const appendCss = function () {
   .pd_cfg_main button { vertical-align: middle; }
   .pd_cfg_main .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
   .pd_cfg_main .pd_cfg_tips:hover { color: #ff0000; }
-  #pd_config .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
+  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
   .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }
   .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }
@@ -1067,7 +1067,7 @@ export const bindSearchTypeSelectMenuClick = function () {
         });
     });
 
-    $(document).on('submit', 'form[name="pd_search"]', function () {
+    $(document).on('submit', 'form[name="pdSearchForm"]', function () {
         let $this = $(this);
         let type = $.trim($this.find('.pd_search_type > span').text());
         if (type === '关键词') {
@@ -1108,7 +1108,7 @@ export const addSearchDialogLink = function () {
         .filter('a')
         .click(function (e) {
             e.preventDefault();
-            const dialogName = 'pd_search';
+            const dialogName = 'pdSearchDialog';
             if ($('#' + dialogName).length > 0) return;
             let html = `
 <div class="pd_cfg_main">
