@@ -4,12 +4,12 @@ KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能
 ## 脚本下载地址
 __注：初次安装请先阅读安装方法__  
 __以下3个版本仅在数据存储类型的支持程度方面有所区别（在其它功能上并无区别），关于各存储类型的区别详见【[常见问题1](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#1)】__  
-__关于es5和es6版本的区别请参见【[常见问题2](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#2)】（如实在不清楚应该安装哪个版本，请一律安装es5版本）__  
-1. __全功能版：__[[es5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Full.user.js)] [[es6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.user.js)]  
+__关于ES5和ES6版本的区别请参见【[常见问题2](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#2)】（如实在不清楚应该安装哪个版本，请一律安装ES5版本）__  
+1. __全功能版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Full.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.user.js)]  
 可使用全部的存储类型（默认、按uid、全局）__（Firefox桌面版无法使用）__  
-2. __通用版：__ [[es5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js)] [[es6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js)]  
+2. __通用版：__ [[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js)]  
 仅能使用默认的存储类型，所有浏览器通用 __（如全功能版无法使用，请安装此版本）__  
-3. __For Firefox版：__[[es5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[es6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
+3. __For Firefox版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
 Firefox桌面版专用（安卓版请安装全功能版），引入了一个额外的jQuery脚本，可使用全部的存储类型，__代价是脚本初始化用时将翻倍，如只使用默认存储类型的话，建议安装通用版__
 
 ## 安装方法
