@@ -68,7 +68,7 @@ $(function () {
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
-        Script.handleInstallScriptLink();
+        if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();

@@ -1,5 +1,6 @@
 /* 自定义方法模块 */
 'use strict';
+import * as Script from './Script';
 
 // 自定义方法列表
 const funcList = new Map();
@@ -18,7 +19,6 @@ export const add = function (name, func) {
  * 执行自定义方法
  * @param {string} name 自定义方法名称
  * @param {*} [data] 自定义方法参数
- * @returns {boolean} 是否执行了自定义方法
  */
 export const run = function (name, data) {
     if (funcList.has(name)) {
@@ -29,11 +29,8 @@ export const run = function (name, data) {
                 }
                 catch (ex) {
                     console.log(ex);
-                    return false;
                 }
             }
         }
-        return true;
     }
-    else return false;
 };

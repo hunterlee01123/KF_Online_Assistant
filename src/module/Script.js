@@ -42,19 +42,21 @@ export const runCustomScript = function (type = 'end') {
  * 运行命令
  * @param {string} cmd 命令
  * @param {boolean} isOutput 是否在控制台上显示结果
- * @returns {string} 运行结果
+ * @returns {{result: boolean, response: string}} result：是否执行成功；response：执行结果
  */
 export const runCmd = function (cmd, isOutput = false) {
-    let result = '';
+    let result = true;
+    let response = '';
     try {
-        result = eval(cmd);
-        if (isOutput) console.log(result);
+        response = eval(cmd);
+        if (isOutput) console.log(response);
     }
     catch (ex) {
-        result = ex;
+        result = false;
+        response = ex;
         console.log(ex);
     }
-    return String(result);
+    return {result, response: String(response)};
 };
 
 /**

@@ -166,8 +166,8 @@ export const show = function () {
         <input name="showSelfRatingLinkEnabled" type="checkbox"> 显示自助评分链接
         <span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span>
       </label>
-      <label class="pd_cfg_ml" ${Info.isInMiaolaDomain ? '' : 'hidden'}>
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox"> 开启绯月表情增强插件
+      <label class="pd_cfg_ml">
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>

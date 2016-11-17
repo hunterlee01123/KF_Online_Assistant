@@ -128,24 +128,25 @@ export const addExtraPostEditorButton = function () {
         let $this = $(this);
         let type = $this.data('type');
         let text = '';
-        let matches = null;
         switch (type) {
             case 'hide':
                 text = prompt('请输入神秘等级：', 5);
                 break;
-            case 'audio':
+            case 'audio': {
                 text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
-                matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
+                let matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
                 if (matches) text = `http://music.miaola.info/163/${matches[1]}.mp3`;
                 matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
                 if (matches) text = `http://music.miaola.info/xiami/${matches[1]}.mp3`;
+            }
                 break;
-            case 'video':
+            case 'video': {
                 text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
-                matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
+                let matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
                 if (matches) text = `http://video.miaola.info/youtube/${matches[1]}`;
                 matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
                 if (matches) text = `http://video.miaola.info/youtube/${matches[1]}`;
+            }
                 break;
         }
         if (text === null) return;
