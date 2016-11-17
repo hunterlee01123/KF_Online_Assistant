@@ -64,7 +64,7 @@ export const appendCss = function () {
   .pd_input, .pd_cfg_main input, .pd_cfg_main select {
     vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;
   }
-  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }
+  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 22px; line-height: 22px; }
   .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
   .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
   .pd_btn_link { margin-left: 4px; margin-right: 4px; }
@@ -168,8 +168,8 @@ export const appendCss = function () {
   .pd_cfg_main legend { font-weight: bold; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
   .pd_cfg_main button { vertical-align: middle; }
-  .pd_cfg_main .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
-  .pd_cfg_main .pd_cfg_tips:hover { color: #ff0000; }
+  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
+  .pd_cfg_tips:hover { color: #ff0000; }
   #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
   .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }

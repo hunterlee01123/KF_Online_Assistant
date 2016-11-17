@@ -23,7 +23,7 @@ export const Config = {
     // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    donationAfterTime: '00:05:00',
+    donationAfterTime: '00:30:00',
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -83,16 +83,8 @@ export const Config = {
     defShowMsgDuration: -1,
     // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
     animationEffectOffEnabled: false,
-    // 日志保存天数
-    logSaveDays: 30,
     // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
     showSearchLinkEnabled: true,
-    // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
-    logSortType: 'time',
-    // 日志统计范围类型，current：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
-    logStatType: 'current',
-    // 显示距该日N天内的统计结果（用于日志统计范围）
-    logStatDays: 7,
     // 是否为侧边栏添加快捷导航的链接，true：开启；false：关闭
     addSideBarFastNavEnabled: true,
     // 是否将侧边栏修改为和手机相同的平铺样式，true：开启；false：关闭
@@ -150,6 +142,15 @@ export const Config = {
     // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
     saveCurrentDepositKfb: 0,
 
+    // 日志保存天数
+    logSaveDays: 30,
+    // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
+    logSortType: 'time',
+    // 日志统计范围类型，current：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
+    logStatType: 'current',
+    // 显示距该日N天内的统计结果（用于日志统计范围）
+    logStatDays: 7,
+
     // 是否自动更换ID颜色，true：开启；false：关闭
     autoChangeIdColorEnabled: false,
     // 自动更换ID颜色的更换顺序类型，random：随机；sequence：顺序
@@ -163,6 +164,9 @@ export const Config = {
 
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
+
+    // 争夺每层分配点数列表
+    lootLevelPointList: {},
 };
 
 /**

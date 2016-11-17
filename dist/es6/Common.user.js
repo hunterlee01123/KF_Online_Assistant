@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     7.0
+// @version     7.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -130,7 +130,7 @@ $(function () {
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
-        Script.handleInstallScriptLink();
+        if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -869,7 +869,7 @@ const Config = exports.Config = {
     // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
     donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    donationAfterTime: '00:05:00',
+    donationAfterTime: '00:30:00',
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -929,16 +929,8 @@ const Config = exports.Config = {
     defShowMsgDuration: -1,
     // 是否禁用jQuery的动画效果（推荐在配置较差的机器上使用），true：开启；false：关闭
     animationEffectOffEnabled: false,
-    // 日志保存天数
-    logSaveDays: 30,
     // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
     showSearchLinkEnabled: true,
-    // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
-    logSortType: 'time',
-    // 日志统计范围类型，current：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
-    logStatType: 'current',
-    // 显示距该日N天内的统计结果（用于日志统计范围）
-    logStatDays: 7,
     // 是否为侧边栏添加快捷导航的链接，true：开启；false：关闭
     addSideBarFastNavEnabled: true,
     // 是否将侧边栏修改为和手机相同的平铺样式，true：开启；false：关闭
@@ -996,6 +988,15 @@ const Config = exports.Config = {
     // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
     saveCurrentDepositKfb: 0,
 
+    // 日志保存天数
+    logSaveDays: 30,
+    // 日志内容的排序方式，time：按时间顺序排序；type：按日志类别排序
+    logSortType: 'time',
+    // 日志统计范围类型，current：显示当天统计结果；custom：显示距该日N天内的统计结果；all：显示全部统计结果
+    logStatType: 'current',
+    // 显示距该日N天内的统计结果（用于日志统计范围）
+    logStatDays: 7,
+
     // 是否自动更换ID颜色，true：开启；false：关闭
     autoChangeIdColorEnabled: false,
     // 自动更换ID颜色的更换顺序类型，random：随机；sequence：顺序
@@ -1008,7 +1009,10 @@ const Config = exports.Config = {
     customAutoChangeIdColorList: [],
 
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
-    simulateManualHandleItemEnabled: false
+    simulateManualHandleItemEnabled: false,
+
+    // 争夺每层分配点数列表
+    lootLevelPointList: {}
 };
 
 /**
@@ -1283,8 +1287,8 @@ const show = exports.show = function () {
         <input name="showSelfRatingLinkEnabled" type="checkbox"> 显示自助评分链接
         <span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span>
       </label>
-      <label class="pd_cfg_ml" ${ _Info2.default.isInMiaolaDomain ? '' : 'hidden' }>
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox"> 开启绯月表情增强插件
+      <label class="pd_cfg_ml">
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>
@@ -2777,11 +2781,18 @@ const close = exports.close = function (id) {
 /* 自定义方法模块 */
 'use strict';
 
-// 自定义方法列表
-
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.run = exports.add = undefined;
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+// 自定义方法列表
 const funcList = new Map();
 
 /**
@@ -2798,7 +2809,6 @@ const add = exports.add = function (name, func) {
  * 执行自定义方法
  * @param {string} name 自定义方法名称
  * @param {*} [data] 自定义方法参数
- * @returns {boolean} 是否执行了自定义方法
  */
 const run = exports.run = function (name, data) {
     if (funcList.has(name)) {
@@ -2808,15 +2818,13 @@ const run = exports.run = function (name, data) {
                     func(data);
                 } catch (ex) {
                     console.log(ex);
-                    return false;
                 }
             }
         }
-        return true;
-    } else return false;
+    }
 };
 
-},{}],9:[function(require,module,exports){
+},{"./Script":20}],9:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
@@ -5424,6 +5432,16 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.addUserLinkInPkListPage = exports.enhanceLootIndexPage = undefined;
 
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
+
+var _Dialog = require('./Dialog');
+
+var Dialog = _interopRequireWildcard(_Dialog);
+
+var _Config = require('./Config');
+
 var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
@@ -5455,6 +5473,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
     handlePropertiesArea();
     handlePointsArea();
+    addLevelPointListSelect();
     enhanceLootLog();
 };
 
@@ -5462,8 +5481,9 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  * 处理争夺属性区域
  */
 const handlePropertiesArea = function () {
-    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：\d+)\s*\(最大(\d+)\)/, '$1 (最大<span id="pdPro_s2" title="原值：$2">$2</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%/, '$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span id="pdNew_d2"></span>').replace(/(技能释放概率：)(\d+)%/, '$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span id="pdNew_i1"></span>').replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击伤害+(体质点数*4)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="攻击伤害+(体质点数*4)"></span>');
-    $properties.html(html);
+    let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
+    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：\d+)\s*\(最大(\d+)\)/, '$1 (最大<span id="pdPro_s2" title="原值：$2">$2</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_d2"></span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_i1"></span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击伤害+(体质点数*6)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="攻击伤害+(体质点数*6)"></span>');
+    $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
         let $this = $(this);
@@ -5476,29 +5496,7 @@ const handlePropertiesArea = function () {
             let name = $this.data('name');
             let num = parseInt($this.val());
             if (num > 0) {
-                let newValue = 0;
-                switch (getPointNameByFieldName(name)) {
-                    case '力量':
-                        newValue = Math.round(num / 5) - extraPointList.get('力量');
-                        break;
-                    case '体质':
-                        newValue = Math.round((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
-                        break;
-                    case '敏捷':
-                        newValue = Math.round((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
-                        break;
-                    case '灵活':
-                        newValue = Math.round(100 * num / (100 - num)) - extraPointList.get('灵活');
-                        break;
-                    case '智力':
-                        newValue = Math.round(120 * num / (100 - num)) - extraPointList.get('智力');
-                        break;
-                    case '意志':
-                        newValue = Math.round(150 * num / (100 - num)) - extraPointList.get('意志');
-                        break;
-                }
-                if (!isFinite(newValue) || newValue <= 0) newValue = 1;
-                $points.find(`[name="${ name }"]`).val(newValue).trigger('change');
+                $points.find(`[name="${ name }"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
             }
             $this.prev().show().end().remove();
         }).keyup(function (e) {
@@ -5514,28 +5512,23 @@ const handlePropertiesArea = function () {
 const handlePointsArea = function () {
     $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
     $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
-    $points.prepend('<span class="pd_highlight">剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $points.on('change', '[type="number"]', function () {
         let $this = $(this);
-        $('#pdSurplusPoint').text(propertyList.get('可分配属性点') - getCurrentAssignedPoint());
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        $('#pdSurplusPoint').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000').css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
         showNewLootProperty($this);
         showSumOfPoint($this);
-
-        let skillAttack = 0;
-        let matches = /\d+/.exec($lootArea.find('[name="s1"]').next('span').next('.pd_point_sum').text());
-        if (matches) skillAttack = parseInt(matches[0]) * 5;
-        skillAttack += parseInt($lootArea.find('[name="s2"]').val()) * 4;
-        $('#pdSkillAttack').text(skillAttack);
+        $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()), parseInt($lootArea.find('[name="s2"]').val())));
     }).on('click', '.pd_point_sum', function () {
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
         if (!surplusPoint) return;
         let $point = $(this).prev('span').prev('[type="number"]');
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
         $point.val(num + surplusPoint).trigger('change');
     }).find('form').submit(function () {
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint();
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
         if (surplusPoint < 0) {
             alert('剩余属性点为负，请重新填写');
             return false;
@@ -5571,16 +5564,25 @@ const getLootPropertyList = function () {
 
 /**
  * 获取当前已分配的属性点
+ * @param {jQuery} $points 属性点字段对象
  * @returns {number} 当前已分配的属性点
  */
-const getCurrentAssignedPoint = function () {
+const getCurrentAssignedPoint = function ($points) {
     let usedPoint = 0;
-    $points.find('[type="number"]').each(function () {
+    $points.each(function () {
         let point = parseInt($(this).val());
         if (point && point > 0) usedPoint += point;
     });
     return usedPoint;
 };
+
+/**
+ * 获取技能伤害的值
+ * @param {number} s1 力量
+ * @param {number} s2 体质
+ * @returns {number} 技能伤害的值
+ */
+const getSkillAttack = (s1, s2) => (s1 + extraPointList.get('力量')) * 5 + s2 * 6;
 
 /**
  * 显示各项属性点的和值
@@ -5644,49 +5646,357 @@ const getPointNameByFieldName = function (fieldName) {
 };
 
 /**
+ * 根据属性点名称获取字段名称
+ * @param {string} pointName 属性点名称
+ * @returns {string} 字段名称
+ */
+const getFieldNameByPointName = function (pointName) {
+    switch (pointName) {
+        case '力量':
+            return 's1';
+        case '体质':
+            return 's2';
+        case '敏捷':
+            return 'd1';
+        case '灵活':
+            return 'd2';
+        case '智力':
+            return 'i1';
+        case '意志':
+            return 'i2';
+        case '耐力':
+            return 'p';
+        case '幸运':
+            return 'l';
+        default:
+            return '';
+    }
+};
+
+/**
  * 显示新的争夺属性
  * @param {jQuery} $point 属性点字段对象
  */
 const showNewLootProperty = function ($point) {
     let name = $point.attr('name');
-    let num = parseInt($point.val());
-    if (isNaN(num) || num < 0) num = 0;
-    let oriNum = parseInt($point.get(0).defaultValue);
-    let extraNum = parseInt($point.next('span').text());
-    let newValue = 0,
+    let pointName = getPointNameByFieldName(name);
+    let point = parseInt($point.val());
+    if (isNaN(point) || point < 0) point = 0;
+    let oriPoint = parseInt($point.get(0).defaultValue);
+    let newValue = getPropertyByPoint(pointName, point),
         diffValue = 0;
-    switch (name) {
-        case 's1':
-            newValue = (num + extraNum) * 5;
+    switch (pointName) {
+        case '力量':
             diffValue = newValue - propertyList.get('攻击力');
             break;
-        case 's2':
-            newValue = (num + extraNum) * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0);
+        case '体质':
             diffValue = newValue - propertyList.get('最大生命值');
             break;
-        case 'd1':
-            newValue = (num + extraNum) * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
+        case '敏捷':
             diffValue = newValue - propertyList.get('攻击速度');
             break;
-        case 'd2':
-            newValue = num + extraNum;
-            newValue = Math.round(newValue / (newValue + 100) * 100);
+        case '灵活':
             diffValue = newValue - propertyList.get('暴击几率');
             break;
-        case 'i1':
-            newValue = num + extraNum;
-            newValue = Math.round(newValue / (newValue + 120) * 100);
+        case '智力':
             diffValue = newValue - propertyList.get('技能释放概率');
             break;
-        case 'i2':
-            newValue = num + extraNum;
-            newValue = Math.round(newValue / (newValue + 150) * 100);
+        case '意志':
             diffValue = newValue - propertyList.get('防御');
             break;
     }
-    $('#pdPro_' + name).text(newValue).css('color', num !== oriNum ? '#00f' : '#000');
+    $('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
 
-    if (num !== oriNum) $('#pdNew_' + name).text(`(${ (diffValue >= 0 ? '+' : '') + diffValue })`).css('color', diffValue >= 0 ? '#ff0033' : '#339933');else $('#pdNew_' + name).text('');
+    if (point !== oriPoint) $('#pdNew_' + name).text(`(${ (diffValue >= 0 ? '+' : '') + diffValue })`).css('color', diffValue >= 0 ? '#ff0033' : '#339933');else $('#pdNew_' + name).text('');
+};
+
+/**
+ * 根据指定的属性点获得相应争夺属性的值
+ * @param pointName 属性点名称
+ * @param point 属性点的值
+ * @returns {number} 争夺属性的值
+ */
+const getPropertyByPoint = function (pointName, point) {
+    let extraPoint = extraPointList.get(pointName);
+    if (!extraPoint) extraPoint = 0;
+    let value = 0;
+    switch (pointName) {
+        case '力量':
+            value = (point + extraPoint) * 5;
+            break;
+        case '体质':
+            value = (point + extraPoint) * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0);
+            break;
+        case '敏捷':
+            value = (point + extraPoint) * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
+            break;
+        case '灵活':
+            value = point + extraPoint;
+            value = Math.round(value / (value + 100) * 100);
+            break;
+        case '智力':
+            value = point + extraPoint;
+            value = Math.round(value / (value + 90) * 100);
+            break;
+        case '意志':
+            value = point + extraPoint;
+            value = Math.round(value / (value + 150) * 100);
+            break;
+    }
+    return value;
+};
+
+/**
+ * 根据指定的争夺属性获得相应属性点的值
+ * @param pointName 属性点名称
+ * @param num 争夺属性的值
+ * @returns {number} 属性点的值
+ */
+const getPointByProperty = function (pointName, num) {
+    let value = 0;
+    switch (pointName) {
+        case '力量':
+            value = Math.round(num / 5) - extraPointList.get('力量');
+            break;
+        case '体质':
+            value = Math.round((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
+            break;
+        case '敏捷':
+            value = Math.round((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
+            break;
+        case '灵活':
+            value = Math.round(100 * num / (100 - num)) - extraPointList.get('灵活');
+            break;
+        case '智力':
+            value = Math.round(90 * num / (100 - num)) - extraPointList.get('智力');
+            break;
+        case '意志':
+            value = Math.round(150 * num / (100 - num)) - extraPointList.get('意志');
+            break;
+    }
+    if (!isFinite(value) || value <= 0) value = 1;
+    return value;
+};
+
+/**
+ * 添加每层属性点列表选择框
+ */
+const addLevelPointListSelect = function () {
+    let pointListHtml = '';
+    for (let level of Object.keys(Config.lootLevelPointList)) {
+        pointListHtml += `<option value="${ level }">第${ level }层</option>`;
+    }
+    $(`
+<select id="pdLevelPointListSelect" style="margin: 5px 0;" hidden>
+  <option>属性点分配方案</option>
+  <option value="0">默认</option>
+  <option class="pd_highlight" value="edit">编辑&hellip;</option>
+  ${ pointListHtml }
+</select><br hidden>
+`).prependTo($points).change(function () {
+        let level = $(this).val();
+        if (level === '0') {
+            $points.find('[type="number"]').each(function () {
+                $(this).val(this.defaultValue);
+            }).trigger('change');
+        } else if (level === 'edit') {
+            //showLevelPointListConfigDialog();
+            this.selectedIndex = 0;
+        } else if ($.isNumeric(level)) {
+            let points = Config.lootLevelPointList[parseInt(level)];
+            if (typeof points !== 'object') return;
+            $points.find('[type="number"]').each(function () {
+                let $this = $(this);
+                $this.val(points[getPointNameByFieldName($this.attr('name'))]);
+            }).trigger('change');
+        }
+    });
+};
+
+/**
+ * 显示每层属性点分配设置对话框
+ */
+const showLevelPointListConfigDialog = function () {
+    const dialogName = 'pdLevelPointListConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
+    (0, _Config.read)();
+    let html = `
+<div class="pd_cfg_main">
+  <table id="pdLevelPointList" style="text-align: center;">
+    <tbody>
+      <tr><th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th><th></th></tr>
+    </tbody>
+  </table>
+  <hr>
+  <div style="float: left; line-height: 27px;">
+    <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+    <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
+    <a class="pd_btn_link pd_highlight" data-name="add" href="#">增加</a>
+  </div>
+  <div data-id="modifyArea" style="float: right;">
+    <input name="s1" type="text" maxlength="4" title="力量" placeholder="力量" style="width: 35px;">
+    <input name="s2" type="text" maxlength="4" title="体质" placeholder="体质" style="width: 35px;">
+    <input name="d1" type="text" maxlength="4" title="敏捷" placeholder="敏捷" style="width: 35px;">
+    <input name="d2" type="text" maxlength="4" title="灵活" placeholder="灵活" style="width: 35px;">
+    <input name="i1" type="text" maxlength="4" title="智力" placeholder="智力" style="width: 35px;">
+    <input name="i2" type="text" maxlength="4" title="意志" placeholder="意志" style="width: 35px;">
+    <button type="button" name="modify">修改</button>
+    <span class="pd_cfg_tips" title="">[?]</span>
+  </div>
+</div>
+<div class="pd_cfg_btns">
+  <span class="pd_cfg_about"><a href="#">导入/导出分配设置</a></span>
+  <button type="submit">确定</button>
+  <button type="button" name="cancel">取消</button>
+  <button type="button" class="pd_highlight" name="clear">清空</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '每层属性点分配设置', html);
+    let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
+
+    /**
+     * 添加每层属性点分配的HTML
+     * @param {number} level 层数
+     * @param {{}} points 属性点对象
+     */
+    const addLevelPointHtml = function (level, points) {
+        $(`
+<tr>
+  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
+  <td style="text-align: left;">
+    <label style="margin-right: 8px;">第 <input name="level" type="text" value="${ level ? level : '' }" style="width: 30px;"> 层</label>
+  </td>
+  <td><input name="s1" type="number" min="1" max="999" value="${ points['力量'] }" style="width: 50px;"></td>
+  <td><input name="s2" type="number" min="1" max="999" value="${ points['体质'] }" style="width: 50px;"></td>
+  <td><input name="d1" type="number" min="1" max="999" value="${ points['敏捷'] }" style="width: 50px;"></td>
+  <td><input name="d2" type="number" min="1" max="999" value="${ points['灵活'] }" style="width: 50px;"></td>
+  <td><input name="i1" type="number" min="1" max="999" value="${ points['智力'] }" style="width: 50px;"></td>
+  <td><input name="i2" type="number" min="1" max="999" value="${ points['意志'] }" style="width: 50px;"></td>
+  <td><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="pd_custom_tips pd_highlight" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
+  <td title="攻击力">攻：<span data-id="pro_s1" style="cursor: pointer;">0</span></td>
+  <td title="最大生命值">命：<span data-id="pro_s2" style="cursor: pointer;">0</span></td>
+  <td title="攻击速度">速：<span data-id="pro_d1" style="cursor: pointer;">0</span></td>
+  <td title="暴击几率">暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>%</td>
+  <td title="技能释放概率">技：<span data-id="pro_i1" style="cursor: pointer;">0</span>%</td>
+  <td title="防御减伤">防：<span data-id="pro_i2" style="cursor: pointer;">0</span>%</td>
+  <td class="pd_custom_tips" title="技能伤害：攻击伤害+(体质点数*6)">技伤：<span data-id="skillAttack">0</span></td>
+</tr>
+`).appendTo($levelPointList).find('[type="number"]').trigger('change');
+    };
+
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        (0, _Config.read)();
+        Config.lootLevelPointList = {};
+        let prevPoints = {};
+        let isError = false,
+            isSurplus = false;
+        $levelPointList.find('tr:gt(0)').each(function () {
+            let $this = $(this);
+            if (!$this.find('input').length) return;
+            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('[type="number"]'));
+            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) isError = true;
+
+            let level = parseInt($this.find('[name="level"]').val());
+            if (!level || level < 0) return;
+            let points = {};
+            for (let elem of Array.from($this.find('[type="number"]'))) {
+                let $elem = $(elem);
+                let point = parseInt($elem.val());
+                if (!point || point < 0) return;
+                points[getPointNameByFieldName($elem.attr('name'))] = point;
+            }
+            if (Util.deepEqual(prevPoints, points)) return;
+            Config.lootLevelPointList[level] = points;
+            prevPoints = points;
+        });
+        if (isSurplus) {
+            if (!confirm('部分层数的可分配属性点尚未用完，是否提交？')) return;
+        }
+        if (isError) {
+            alert('部分层数的剩余属性点为负，请重新填写');
+            return;
+        }
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+    }).find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="add"]').click(function (e) {
+        e.preventDefault();
+        addLevelPointHtml(0, { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 });
+        Dialog.show(dialogName);
+    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[name="clear"]').click(function () {
+        if (!confirm('是否清空所有属性点分配设置？')) return;
+        $levelPointList.find('tr:gt(0)').remove();
+        Dialog.show(dialogName);
+    });
+
+    $levelPointList.on('click', '[data-name="delete"]', function (e) {
+        e.preventDefault();
+        let $line = $(this).closest('tr');
+        $line.next('tr').remove().end().remove();
+        Dialog.show(dialogName);
+    }).on('change', '[type="number"]', function () {
+        let $this = $(this);
+        let name = $this.attr('name');
+        let point = parseInt($this.val());
+        if (!point || point < 0) return;
+        let $points = $this.closest('tr');
+        let $properties = $points.next('tr');
+        $properties.find(`[data-id="pro_${ name }"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point)).end().find('[data-id="surplusPoint"]').text(propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'))).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val())));
+    }).on('click', '[data-id^="pro_"]', function () {
+        let $this = $(this);
+        let name = $this.data('id').replace('pro_', '');
+        let num = parseInt(prompt('请输入数值：', $this.text()));
+        if (!num || num < 0) return;
+        $this.closest('tr').prev('tr').find(`[name="${ name }"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+    });
+
+    $dialog.find('[data-id="modifyArea"]').on('keydown', '[type="text"]', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            $(this).closest('div').find('[name="modify"]').click();
+        }
+    }).find('[name="modify"]').click(function () {
+        let $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length) return;
+        let data = {};
+        $dialog.find('[data-id="modifyArea"] [type="text"]').each(function () {
+            let $this = $(this);
+            let name = $this.attr('name');
+            let value = $.trim($this.val());
+            if (!value) return;
+            let matches = /^(-|\+)?(\d+)$/.exec(value);
+            if (!matches) {
+                alert('格式不正确');
+                $this.select().focus();
+            }
+            data[name] = {};
+            if (typeof matches[1] !== 'undefined') data[name].action = matches[1] === '+' ? 'add' : 'minus';else data[name].action = 'equal';
+            data[name].value = parseInt(matches[2]);
+        });
+        $checked.each(function () {
+            let $points = $(this).closest('tr');
+            $points.find('[type="number"]').each(function () {
+                let $this = $(this);
+                let name = $this.attr('name');
+                if (!(name in data)) return;
+                if (data[name].action !== 'equal') {
+                    let point = parseInt($this.val());
+                    if (!point || point < 0) point = 0;
+                    $this.val(point + (data[name].action === 'add' ? data[name].value : -data[name].value));
+                } else $this.val(data[name].value);
+            }).trigger('change');
+        });
+    });
+
+    for (let [level, points] of Util.entries(Config.lootLevelPointList)) {
+        addLevelPointHtml(level, points);
+    }
+
+    Dialog.show(dialogName);
+    $dialog.find('input:first').focus();
 };
 
 /**
@@ -5718,7 +6028,7 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
     });
 };
 
-},{"./Item":11}],15:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":11,"./Util":22}],15:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -6510,24 +6820,27 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
         let $this = $(this);
         let type = $this.data('type');
         let text = '';
-        let matches = null;
         switch (type) {
             case 'hide':
                 text = prompt('请输入神秘等级：', 5);
                 break;
             case 'audio':
-                text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
-                matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
-                if (matches) text = `http://music.miaola.info/163/${ matches[1] }.mp3`;
-                matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
-                if (matches) text = `http://music.miaola.info/xiami/${ matches[1] }.mp3`;
+                {
+                    text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
+                    let matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
+                    if (matches) text = `http://music.miaola.info/163/${ matches[1] }.mp3`;
+                    matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
+                    if (matches) text = `http://music.miaola.info/xiami/${ matches[1] }.mp3`;
+                }
                 break;
             case 'video':
-                text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
-                matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
-                if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
-                matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
-                if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
+                {
+                    text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
+                    let matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
+                    if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
+                    matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
+                    if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
+                }
                 break;
         }
         if (text === null) return;
@@ -6731,7 +7044,7 @@ const appendCss = exports.appendCss = function () {
   .pd_input, .pd_cfg_main input, .pd_cfg_main select {
     vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;
   }
-  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 18px; line-height: 18px; }
+  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 22px; line-height: 22px; }
   .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
   .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
   .pd_btn_link { margin-left: 4px; margin-right: 4px; }
@@ -6835,8 +7148,8 @@ const appendCss = exports.appendCss = function () {
   .pd_cfg_main legend { font-weight: bold; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
   .pd_cfg_main button { vertical-align: middle; }
-  .pd_cfg_main .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
-  .pd_cfg_main .pd_cfg_tips:hover { color: #ff0000; }
+  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
+  .pd_cfg_tips:hover { color: #ff0000; }
   #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
   .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }
@@ -8661,18 +8974,20 @@ const runCustomScript = exports.runCustomScript = function (type = 'end') {
  * 运行命令
  * @param {string} cmd 命令
  * @param {boolean} isOutput 是否在控制台上显示结果
- * @returns {string} 运行结果
+ * @returns {{result: boolean, response: string}} result：是否执行成功；response：执行结果
  */
 const runCmd = exports.runCmd = function (cmd, isOutput = false) {
-    let result = '';
+    let result = true;
+    let response = '';
     try {
-        result = eval(cmd);
-        if (isOutput) console.log(result);
+        response = eval(cmd);
+        if (isOutput) console.log(response);
     } catch (ex) {
-        result = ex;
+        result = false;
+        response = ex;
         console.log(ex);
     }
-    return String(result);
+    return { result, response: String(response) };
 };
 
 /**
@@ -8966,7 +9281,7 @@ const deleteValue = exports.deleteValue = function (key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -9473,5 +9788,28 @@ const entries = exports.entries = function* (obj) {
  * @returns {number} 指定用户在列表中的索引号，-1表示不在该列表中
  */
 const inFollowOrBlockUserList = exports.inFollowOrBlockUserList = (name, list) => list.findIndex(data => data.name && data.name === name);
+
+/**
+ * 全选
+ * @param {jQuery} $nodes 想要全选的节点的jQuery对象
+ * @returns {boolean} 返回false
+ */
+const selectAll = exports.selectAll = function ($nodes) {
+    $nodes.prop('checked', true);
+    return false;
+};
+
+/**
+ * 反选
+ * @param {jQuery} $nodes 想要反选的节点的jQuery对象
+ * @returns {boolean} 返回false
+ */
+const selectInverse = exports.selectInverse = function ($nodes) {
+    $nodes.each(function () {
+        let $this = $(this);
+        $this.prop('checked', !$this.prop('checked'));
+    });
+    return false;
+};
 
 },{"./Const":6,"./Info":10}]},{},[1]);

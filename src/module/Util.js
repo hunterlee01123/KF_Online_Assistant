@@ -523,3 +523,26 @@ export const entries = function*(obj) {
  * @returns {number} 指定用户在列表中的索引号，-1表示不在该列表中
  */
 export const inFollowOrBlockUserList = (name, list) => list.findIndex(data => data.name && data.name === name);
+
+/**
+ * 全选
+ * @param {jQuery} $nodes 想要全选的节点的jQuery对象
+ * @returns {boolean} 返回false
+ */
+export const selectAll = function ($nodes) {
+    $nodes.prop('checked', true);
+    return false;
+};
+
+/**
+ * 反选
+ * @param {jQuery} $nodes 想要反选的节点的jQuery对象
+ * @returns {boolean} 返回false
+ */
+export const selectInverse = function ($nodes) {
+    $nodes.each(function () {
+        let $this = $(this);
+        $this.prop('checked', !$this.prop('checked'));
+    });
+    return false;
+};
