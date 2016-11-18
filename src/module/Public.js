@@ -6,6 +6,7 @@ import * as Msg from './Msg';
 import * as Dialog from './Dialog';
 import * as Func from './Func';
 import Const from './Const';
+import {read as readConfig, write as writeConfig} from './Config';
 import {show as showConfigDialog} from './ConfigDialog';
 import * as Log from './Log';
 import {show as showLogDialog} from './LogDialog';
@@ -163,7 +164,7 @@ export const appendCss = function () {
   }
   .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }
   .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }
-  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 50px; overflow: auto; }
+  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }
   .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }
   .pd_cfg_main legend { font-weight: bold; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
@@ -183,7 +184,7 @@ export const appendCss = function () {
   .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }
   .pd_log_nav a { display: inline-block; }
   .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }
-  .pd_log_content { height: 308px; overflow: auto; }
+  .pd_log_content { height: 242px; overflow: auto; }
   .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }
   .pd_log_content h3:not(:first-child) { margin-top: 5px; }
   .pd_log_content p { line-height: 22px; margin: 0; }
@@ -933,7 +934,7 @@ export const changeIdColor = function () {
         if (matches) {
             let safeId = '';
             let safeIdMatches = /safeid=(\w+)&/i.exec(matches[0]);
-            if (safeIdMatches)safeId = safeIdMatches[1];
+            if (safeIdMatches) safeId = safeIdMatches[1];
             if (!safeId) {
                 setCookie();
                 return;
@@ -1004,8 +1005,10 @@ export const changeIdColor = function () {
 export const showElementTitleTips = function (e, title) {
     $('.pd_title_tips').remove();
     if (!title || !e.originalEvent) return;
-    $(`<div class="pd_title_tips">${title}</div>`).appendTo('body')
-        .css('left', e.originalEvent.pageX - 20).css('top', e.originalEvent.pageY + 15);
+    $(`<div class="pd_title_tips">${title.replace(/\n/g, '<br>')}</div>`)
+        .appendTo('body')
+        .css('left', e.originalEvent.pageX - 20)
+        .css('top', e.originalEvent.pageY + 15);
 };
 
 /**
@@ -1235,9 +1238,60 @@ export const checkRatingSize = function (title, ratingSize) {
  * 引入绯月表情增强插件
  */
 export const importKfSmileEnhanceExtension = function () {
-    var script = document.createElement('script');
+    let script = document.createElement('script');
     script.type = 'text/javascript';
     script.charset = 'utf-8';
     script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
     document.body.appendChild(script);
+};
+
+/**
+ * 显示通用的导入/导出设置对话框
+ * @param {string} title 对话框标题
+ * @param {string} configName 设置名称
+ * @param {?function} [callback] 回调方法
+ */
+export const showCommonImportOrExportConfigDialog = function (title, configName, callback) {
+    const dialogName = 'pdCommonImOrExConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
+    readConfig();
+    let html = `
+<div class="pd_cfg_main">
+  <div>
+    <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
+    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
+  </div>
+  <textarea name="commonConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
+</div>
+<div class="pd_cfg_btns">
+  <span class="pd_cfg_about"></span>
+  <button type="submit">保存</button>
+  <button name="cancel" type="button">取消</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
+
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        if (!confirm('是否导入文本框中的设置？')) return;
+        let options = $.trim($dialog.find('[name="commonConfig"]').val());
+        if (!options) return;
+        try {
+            options = JSON.parse(options);
+        }
+        catch (ex) {
+            alert('设置有错误');
+            return;
+        }
+        if (!options || !Array.isArray(options)) {
+            alert('设置有错误');
+            return;
+        }
+        Config[configName] = options;
+        writeConfig();
+        alert('设置已导入');
+        location.reload();
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    Dialog.show(dialogName);
+    $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
+    if (typeof callback === 'function') callback($dialog);
 };

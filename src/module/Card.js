@@ -112,19 +112,19 @@ export const addStartBatchModeButton = function () {
              */
             const uncheckPlayedCard = function () {
                 for (let id of playedCardList) {
-                    $cardLines.find('td').has(`a[href="kf_fw_card_my.php?id=${id}"]`).find('input:checked').prop('checked', false);
+                    $cardLines.find('td').has(`a[href="kf_fw_card_my.php?id=${id}"]`).find('[type="checkbox"]').prop('checked', false);
                 }
             };
 
             let $btns = $(`
 <label><input name="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>
-<button name="selectOnlyOne">每类只保留一张</button>
-<button name="selectAll">全选</button>
-<button name="selectInverse">反选</button><br>
-<button name="convertCardsToVipTime">转换为VIP时间</button>
+<button name="selectOnlyOne" type="button">每类只保留一张</button>
+<button name="selectAll" type="button">全选</button>
+<button name="selectInverse" type="button">反选</button><br>
+<button name="convertCardsToVipTime" type="button">转换为VIP时间</button>
 `).insertBefore($this);
             $btns.filter('[name="selectOnlyOne"]').click(function () {
-                $cardLines.find('input').prop('checked', true);
+                Util.selectAll($cardLines.find('[type="checkbox"]'));
                 if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
                 let cardTypeList = new Set();
                 $cardLines.find('a > img').each(function () {
@@ -133,28 +133,26 @@ export const addStartBatchModeButton = function () {
                 for (let src of cardTypeList) {
                     let $cardElems = $cardLines.find('td').has(`img[src="${src}"]`);
                     let totalNum = $cardElems.length;
-                    let checkedNum = $cardElems.has('input:checked').length;
+                    let checkedNum = $cardElems.has('[type="checkbox"]:checked').length;
                     if (totalNum > 1) {
                         if (totalNum === checkedNum) {
-                            $cardElems.eq(0).find('input:checked').prop('checked', false);
+                            $cardElems.eq(0).find('[type="checkbox"]:checked').prop('checked', false);
                         }
                     }
                     else {
-                        $cardElems.find('input:checked').prop('checked', false);
+                        $cardElems.find('[type="checkbox"]:checked').prop('checked', false);
                     }
                 }
             }).end().filter('[name="selectAll"]').click(function () {
-                $cardLines.find('input').prop('checked', true);
+                Util.selectAll($cardLines.find('[type="checkbox"]'));
                 if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
             }).end().filter('[name="selectInverse"]').click(function () {
-                $cardLines.find('input').each(function () {
-                    $(this).prop('checked', !$(this).prop('checked'));
-                });
+                Util.selectInverse($cardLines.find('[type="checkbox"]'));
                 if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
             }).end().filter('[name="convertCardsToVipTime"]').click(function () {
                 Msg.destroy();
                 let cardList = [];
-                $cardLines.find('input:checked').each(function () {
+                $cardLines.find('[type="checkbox"]:checked').each(function () {
                     cardList.push(parseInt($(this).val()));
                 });
                 if (!cardList.length) return;

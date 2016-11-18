@@ -50,7 +50,8 @@ export const show = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
-  <button>关闭</button> <button>清除日志</button>
+  <button name="close" type="button">关闭</button>
+  <button name="clear" type="button">清除日志</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
 
@@ -125,9 +126,8 @@ export const show = function () {
         .end().find(`[name="statType"][value="${Config.logStatType}"]`).click()
         .end().find('[name="statDays"]').val(Config.logStatDays);
 
-    $dialog.find('.pd_cfg_btns > button:first')
-        .click(() => Dialog.close(dialogName))
-        .next('button')
+    $dialog.find('[name="close"]').click(() => Dialog.close(dialogName))
+        .end().find('[name="clear"]')
         .click(function (e) {
             e.preventDefault();
             if (confirm('是否清除所有日志？')) {
@@ -135,17 +135,16 @@ export const show = function () {
                 alert('日志已清除');
                 location.reload();
             }
+        }).end().find('[data-name="openImOrExLogDialog"]')
+        .click(function (e) {
+            e.preventDefault();
+            showImportOrExportLogDialog();
         });
-
-    $dialog.find('[data-name="openImOrExLogDialog"]').click(function (e) {
-        e.preventDefault();
-        showImportOrExportLogDialog();
-    });
 
     showLogContent(log, dateList[curIndex], $dialog);
     showLogStat(log, dateList[curIndex], $dialog);
 
-    if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '216px');
+    if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
     $dialog.find('input:first').focus();
     Func.run('LogDialog.show_after_');
@@ -418,9 +417,9 @@ const showImportOrExportLogDialog = function () {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <button name="merge">合并日志</button>
-  <button name="overwrite" style="color: #f00;">覆盖日志</button>
-  <button>关闭</button>
+  <button name="merge" type="button">合并日志</button>
+  <button name="overwrite" type="button" style="color: #f00;">覆盖日志</button>
+  <button name="close" type="button">关闭</button>
 </div>`;
 
     let $dialog = Dialog.create(dialogName, '导入或导出日志', html);
@@ -432,34 +431,30 @@ const showImportOrExportLogDialog = function () {
         $dialog.find(`[data-name="log${type === 'text' ? 'Setting' : 'Text'}"]`).hide();
         $dialog.find(`[data-name="log${type === 'text' ? 'Text' : 'Setting'}"]`).show();
         $dialog.find(`[data-name="log${type === 'text' ? 'Text' : 'Setting'}"]`).select();
-    }).end().find('.pd_cfg_btns > button').click(function (e) {
+    }).end().find('[name="merge"], [name="overwrite"]').click(function (e) {
         e.preventDefault();
         let name = $(this).attr('name');
-        if (name === 'merge' || name === 'overwrite') {
-            if (!confirm(`是否将文本框中的日志${name === 'overwrite' ? '覆盖' : '合并'}到本地日志？`)) return;
-            let newLog = $.trim($dialog.find('[name="setting"]').val());
-            if (!newLog) return;
-            try {
-                newLog = JSON.parse(newLog);
-            }
-            catch (ex) {
-                alert('日志有错误');
-                return;
-            }
-            if (!newLog || $.type(newLog) !== 'object') {
-                alert('日志有错误');
-                return;
-            }
-            if (name === 'merge') log = Log.getMergeLog(log, newLog);
-            else log = newLog;
-            Log.write(log);
-            alert('日志已导入');
-            location.reload();
+        if (!confirm(`是否将文本框中的日志${name === 'overwrite' ? '覆盖' : '合并'}到本地日志？`)) return;
+        let newLog = $.trim($dialog.find('[name="setting"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
         }
-        else {
-            return Dialog.close(dialogName);
+        catch (ex) {
+            alert('日志有错误');
+            return;
         }
-    });
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert('日志有错误');
+            return;
+        }
+        if (name === 'merge') log = Log.getMergeLog(log, newLog);
+        else log = newLog;
+        Log.write(log);
+        alert('日志已导入');
+        location.reload();
+    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+
     Dialog.show(dialogName);
     $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find(`[name="sortType2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');

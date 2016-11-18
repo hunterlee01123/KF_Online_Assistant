@@ -3,6 +3,7 @@
 import * as Util from './Util';
 import * as Dialog from './Dialog';
 import {read as readConfig, write as writeConfig} from './Config';
+import * as Public from './Public';
 import * as Item from './Item';
 
 // 争夺首页区域
@@ -77,7 +78,7 @@ const handlePropertiesArea = function () {
                 }
                 $this.prev().show().end().remove();
             })
-            .keyup(function (e) {
+            .keydown(function (e) {
                 let $this = $(this);
                 if (e.keyCode === 13) $this.blur();
                 else if (e.keyCode === 27) $this.val('').blur();
@@ -383,20 +384,15 @@ const getPointByProperty = function (pointName, num) {
 };
 
 /**
- * 添加每层属性点列表选择框
+ * 添加每层属性点分配方案选择框
  */
 const addLevelPointListSelect = function () {
-    let pointListHtml = '';
-    for (let level of Object.keys(Config.lootLevelPointList)) {
-        pointListHtml += `<option value="${level}">第${level}层</option>`;
-    }
     $(`
-<select id="pdLevelPointListSelect" style="margin: 5px 0;" hidden>
+<select id="pdLevelPointListSelect" style="margin: 5px 0;">
   <option>属性点分配方案</option>
+  <option value="edit" style="color: #00f;">编辑&hellip;</option>
   <option value="0">默认</option>
-  <option class="pd_highlight" value="edit">编辑&hellip;</option>
-  ${pointListHtml}
-</select><br hidden>
+</select><br>
 `).prependTo($points).change(function () {
         let level = $(this).val();
         if (level === '0') {
@@ -405,7 +401,7 @@ const addLevelPointListSelect = function () {
             }).trigger('change');
         }
         else if (level === 'edit') {
-            //showLevelPointListConfigDialog();
+            showLevelPointListConfigDialog();
             this.selectedIndex = 0;
         }
         else if ($.isNumeric(level)) {
@@ -417,6 +413,19 @@ const addLevelPointListSelect = function () {
             }).trigger('change');
         }
     });
+    setLevelPointListSelect(Config.lootLevelPointList);
+};
+
+/**
+ * 设置每层属性点分配方案选择框
+ * @param {{}} lootLevelPointList 每层属性点分配列表
+ */
+const setLevelPointListSelect = function (lootLevelPointList) {
+    let pointListHtml = '';
+    for (let level of Object.keys(lootLevelPointList)) {
+        pointListHtml += `<option value="${level}">第${level}层</option>`;
+    }
+    $('#pdLevelPointListSelect').find('option:gt(2)').remove().end().append(pointListHtml);
 };
 
 /**
@@ -451,7 +460,7 @@ const showLevelPointListConfigDialog = function () {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a href="#">导入/导出分配设置</a></span>
+  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配设置</a></span>
   <button type="submit">确定</button>
   <button type="button" name="cancel">取消</button>
   <button type="button" class="pd_highlight" name="clear">清空</button>
@@ -469,19 +478,21 @@ const showLevelPointListConfigDialog = function () {
 <tr>
   <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
   <td style="text-align: left;">
-    <label style="margin-right: 8px;">第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层</label>
+    <label style="margin-right: 8px;">
+      第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;" required> 层
+    </label>
   </td>
-  <td><input name="s1" type="number" min="1" max="999" value="${points['力量']}" style="width: 50px;"></td>
-  <td><input name="s2" type="number" min="1" max="999" value="${points['体质']}" style="width: 50px;"></td>
-  <td><input name="d1" type="number" min="1" max="999" value="${points['敏捷']}" style="width: 50px;"></td>
-  <td><input name="d2" type="number" min="1" max="999" value="${points['灵活']}" style="width: 50px;"></td>
-  <td><input name="i1" type="number" min="1" max="999" value="${points['智力']}" style="width: 50px;"></td>
-  <td><input name="i2" type="number" min="1" max="999" value="${points['意志']}" style="width: 50px;"></td>
+  <td><input name="s1" type="number" min="1" max="999" value="${points['力量']}" style="width: 50px;" required></td>
+  <td><input name="s2" type="number" min="1" max="999" value="${points['体质']}" style="width: 50px;" required></td>
+  <td><input name="d1" type="number" min="1" max="999" value="${points['敏捷']}" style="width: 50px;" required></td>
+  <td><input name="d2" type="number" min="1" max="999" value="${points['灵活']}" style="width: 50px;" required></td>
+  <td><input name="i1" type="number" min="1" max="999" value="${points['智力']}" style="width: 50px;" required></td>
+  <td><input name="i2" type="number" min="1" max="999" value="${points['意志']}" style="width: 50px;" required></td>
   <td><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
   <td></td>
-  <td class="pd_custom_tips pd_highlight" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
+  <td class="pd_custom_tips" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
   <td title="攻击力">攻：<span data-id="pro_s1" style="cursor: pointer;">0</span></td>
   <td title="最大生命值">命：<span data-id="pro_s2" style="cursor: pointer;">0</span></td>
   <td title="攻击速度">速：<span data-id="pro_d1" style="cursor: pointer;">0</span></td>
@@ -528,6 +539,7 @@ const showLevelPointListConfigDialog = function () {
         }
         writeConfig();
         Dialog.close(dialogName);
+        setLevelPointListSelect(Config.lootLevelPointList);
     }).find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]')))
         .end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')))
         .end().find('[data-name="add"]')
@@ -541,6 +553,10 @@ const showLevelPointListConfigDialog = function () {
             if (!confirm('是否清空所有属性点分配设置？')) return;
             $levelPointList.find('tr:gt(0)').remove();
             Dialog.show(dialogName);
+        }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]')
+        .click(function (e) {
+            e.preventDefault();
+            Public.showCommonImportOrExportConfigDialog('每层属性点分配设置', 'lootLevelPointList');
         });
 
     $levelPointList.on('click', '[data-name="delete"]', function (e) {
@@ -553,14 +569,16 @@ const showLevelPointListConfigDialog = function () {
         let name = $this.attr('name');
         let point = parseInt($this.val());
         if (!point || point < 0) return;
+
         let $points = $this.closest('tr');
         let $properties = $points.next('tr');
         $properties.find(`[data-id="pro_${name}"]`)
             .text(getPropertyByPoint(getPointNameByFieldName(name), point))
-            .end().find('[data-id="surplusPoint"]')
-            .text(propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]')))
             .end().find('[data-id="skillAttack"]')
             .text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val())));
+
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         let $this = $(this);
         let name = $this.data('id').replace('pro_', '');

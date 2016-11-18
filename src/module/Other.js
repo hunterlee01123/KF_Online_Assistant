@@ -265,15 +265,10 @@ export const addMsgSelectButton = function () {
         .attr('colspan', 4)
         .prev('td')
         .attr('colspan', 3);
+
     $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">')
         .insertAfter('[type="button"][value="全选"]')
-        .click(function (e) {
-            e.preventDefault();
-            $checkeds.each(function () {
-                let $this = $(this);
-                $this.prop('checked', !$this.prop('checked'));
-            });
-        });
+        .click(() => Util.selectInverse($checkeds));
 };
 
 /**
@@ -317,11 +312,12 @@ export const addAutoChangeIdColorButton = function () {
   </select>
 </label>&nbsp;
 <label>每隔 <input name="autoChangeIdColorInterval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> 小时</label>
-<button>保存</button> <button style="margin-left: 3px;">重置</button><br>
-<a class="pd_btn_link" href="#">全选</a> <a class="pd_btn_link" href="#">反选</a>
+<button name="save" type="button">保存</button>
+<button name="reset" type="button" style="margin-left: 3px;">重置</button><br>
+<a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+<a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
 <label><input name="changeAllAvailableIdColorEnabled" class="pd_input" type="checkbox"> 选择当前所有可用的ID颜色</label>
-`).insertAfter($this.parent()).filter('button:first').click(function (e) {
-                e.preventDefault();
+`).insertAfter($this.parent()).filter('[name="save"]').click(function () {
                 let $autoChangeIdColorInterval = $area.find('[name="autoChangeIdColorInterval"]');
                 let interval = parseInt($autoChangeIdColorInterval.val());
                 if (isNaN(interval) || interval <= 0) {
@@ -351,8 +347,7 @@ export const addAutoChangeIdColorButton = function () {
                 if (oriInterval !== Config.autoChangeIdColorInterval)
                     Util.deleteCookie(Const.autoChangeIdColorCookieName);
                 alert('设置保存成功');
-            }).end().filter('button:eq(1)').click(function (e) {
-                e.preventDefault();
+            }).end().filter('[name="reset"]').click(function () {
                 readConfig();
                 Config.autoChangeIdColorEnabled = defConfig.autoChangeIdColorEnabled;
                 Config.autoChangeIdColorType = defConfig.autoChangeIdColorType;
@@ -364,21 +359,15 @@ export const addAutoChangeIdColorButton = function () {
                 TmpLog.deleteValue(Const.prevAutoChangeIdColorTmpLogName);
                 alert('设置已重置');
                 location.reload();
-            }).end().filter('a').click(function (e) {
+            }).end().filter('[data-name="selectAll"], [data-name="selectInverse"]').click(function (e) {
                 e.preventDefault();
                 if ($idColors.find('input[disabled]').length > 0) {
                     alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
                     $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
                     return;
                 }
-                if ($(this).is('[data-name="autoChangeIdColorBtns"] > a:first')) {
-                    $idColors.find('[type="checkbox"]').prop('checked', true);
-                }
-                else {
-                    $idColors.find('[type="checkbox"]').each(function () {
-                        $(this).prop('checked', !$(this).prop('checked'));
-                    });
-                }
+                if ($(this).is('[data-name="selectAll"]')) Util.selectAll($idColors.find('[type="checkbox"]'));
+                else Util.selectInverse($idColors.find('[type="checkbox"]'));
             });
 
             $idColors.find('td:has(a)').each(function () {

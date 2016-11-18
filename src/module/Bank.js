@@ -195,7 +195,7 @@ const batchTransferVerify = function ($transfer) {
  * 添加批量转账的按钮
  */
 export const addBatchTransferButton = function () {
-    let html = `
+    let $area = $(`
 <tr id="pd_bank_transfer">
   <td style="vertical-align: top;">
     使用说明：<br>每行一名用户，<br>如需单独设定金额，<br>可写为“用户名:金额”<br>（注意是<b>英文冒号</b>）<br>例子：<br>
@@ -217,24 +217,25 @@ export const addBatchTransferButton = function () {
       </label>
     </div>
     <div>
-      <input class="pd_input" type="submit" value="批量转账">
-      <input class="pd_input" type="reset" value="重置">
-      <input class="pd_input" name="random" type="button" value="随机金额" title="为用户列表上的每个用户设定指定范围内的随机金额">
+      <button type="submit">批量转账</button>
+      <button type="reset">重置</button>
+      <button name="random" type="button" title="为用户列表上的每个用户设定指定范围内的随机金额">随机金额</button>
       （活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）
     </div>
   </form>
   </td>
-</tr>`;
-    let $transfer = $(html).appendTo('.bank1 > tbody');
-    $transfer.find('form').submit(function (e) {
+</tr>
+`).appendTo('.bank1 > tbody');
+
+    $area.find('form').submit(function (e) {
         e.preventDefault();
         Msg.destroy();
-        if (!batchTransferVerify($transfer)) return;
-        let commonMoney = parseInt($transfer.find('[name="money"]').val());
+        if (!batchTransferVerify($area)) return;
+        let commonMoney = parseInt($area.find('[name="money"]').val());
         if (!commonMoney) commonMoney = 0;
-        let msg = $transfer.find('[name="msg"]').val();
+        let msg = $area.find('[name="msg"]').val();
         let users = [];
-        for (let line of $transfer.find('[name="users"]').val().split('\n')) {
+        for (let line of $area.find('[name="users"]').val().split('\n')) {
             line = $.trim(line);
             if (!line) continue;
             if (line.includes(':')) {
@@ -289,13 +290,12 @@ export const addBatchTransferButton = function () {
                 `<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` +
                 `<a class="pd_stop_action" href="#">停止操作</a>`
             );
-            $transfer.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
+            $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
             batchTransfer(users, msg, isDeposited, currentDeposit);
         });
-    }).end().find('[name="random"]').click(function (e) {
-        e.preventDefault();
+    }).find('[name="random"]').click(function () {
         let userList = [];
-        for (let line of $transfer.find('[name="users"]').val().split('\n')) {
+        for (let line of $area.find('[name="users"]').val().split('\n')) {
             line = $.trim(line);
             if (!line) continue;
             userList.push($.trim(line.split(':')[0]));
@@ -320,7 +320,7 @@ export const addBatchTransferButton = function () {
         for (let userName of userList) {
             content += userName + ':' + Math.floor(Math.random() * (max - min + 1) + min) + '\n';
         }
-        $transfer.find('[name="users"]').val(content);
+        $area.find('[name="users"]').val(content);
     });
 };
 

@@ -481,16 +481,20 @@ export const addBatchBuyThreadButton = function () {
                 buyThreads(threadList);
             }
         }).parent().mouseenter(function () {
-        $('<span style="margin-left: 5px;">[<a class="pd_btn_link" href="#">全选</a><a class="pd_btn_link" href="#">反选</a>]</span>')
-            .insertAfter($(this).find('.pd_buy_thread_btn'))
-            .find('a:first')
+        $(`
+<span style="margin-left: 5px;">
+  [<a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+  <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>]
+</span>
+`).insertAfter($(this).find('.pd_buy_thread_btn'))
+            .find('[data-name="selectAll"]')
             .click(function (e) {
                 e.preventDefault();
                 let $buyThread = $('.pd_buy_thread');
                 $buyThread.prop('checked', true);
                 alert(`共选择了${$buyThread.length}项`);
             })
-            .next('a')
+            .end().find('[data-name="selectInverse"]')
             .click(function (e) {
                 e.preventDefault();
                 let totalNum = 0;

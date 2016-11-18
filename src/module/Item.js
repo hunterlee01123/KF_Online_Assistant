@@ -865,11 +865,11 @@ export const addSellAndUseItemsButton = function () {
 
     $(`
 <div class="pd_item_btns">
-  ${itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : ''}
-  ${itemTypeId > 1 ? '<button name="cycleUseItem" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : ''}
-  <button name="useItem" title="批量使用指定道具">使用道具</button>
-  <button name="selectAll">全选</button>
-  <button name="selectInverse">反选</button>
+  ${itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" type="button" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : ''}
+  ${itemTypeId > 1 ? '<button name="cycleUseItem" type="button" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : ''}
+  <button name="useItem" type="button" title="批量使用指定道具">使用道具</button>
+  <button name="selectAll" type="button">全选</button>
+  <button name="selectInverse" type="button">反选</button>
 </div>
 `).insertAfter('.kf_fw_ig1')
         .find('[name="useItem"]')
@@ -894,20 +894,9 @@ export const addSellAndUseItemsButton = function () {
                 itemName: itemName,
             });
         })
-        .end()
-        .find('[name="selectAll"]')
-        .click(function () {
-            $('.kf_fw_ig1 [type="checkbox"]').prop('checked', true);
-        })
-        .end()
-        .find('[name="selectInverse"]')
-        .click(function () {
-            $('.kf_fw_ig1 [type="checkbox"]').each(function () {
-                $(this).prop('checked', !$(this).prop('checked'));
-            });
-        })
-        .end()
-        .find('[name="cycleUseItem"]')
+        .end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1 [type="checkbox"]')))
+        .end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1 [type="checkbox"]')))
+        .end().find('[name="cycleUseItem"]')
         .click(function () {
             Msg.destroy();
             let itemIdList = [];
@@ -1009,10 +998,10 @@ export const addConvertEnergyAndRestoreItemsButton = function () {
     });
     $(`
 <div class="pd_item_btns">
-  <button class="pd_highlight" name="convertEnergy" title="批量将指定道具转换为能量">转换能量</button>
-  <button name="restoreItem" title="批量恢复指定道具">恢复道具</button>
-  <button name="selectAll">全选</button>
-  <button name="selectInverse">反选</button>
+  <button class="pd_highlight" name="convertEnergy" type="button" title="批量将指定道具转换为能量">转换能量</button>
+  <button name="restoreItem" type="button" title="批量恢复指定道具">恢复道具</button>
+  <button name="selectAll" type="button">全选</button>
+  <button name="selectInverse" type="button">反选</button>
 </div>
 `).insertAfter('.kf_fw_ig1:eq(1)')
         .find('[name="convertEnergy"]')
@@ -1065,18 +1054,8 @@ export const addConvertEnergyAndRestoreItemsButton = function () {
                 itemName: itemName,
             });
         })
-        .end()
-        .find('[name="selectAll"]')
-        .click(function () {
-            $('.kf_fw_ig1:eq(1) input[type="checkbox"]').prop('checked', true);
-        })
-        .end()
-        .find('[name="selectInverse"]')
-        .click(function () {
-            $('.kf_fw_ig1:eq(1) input[type="checkbox"]').each(function () {
-                $(this).prop('checked', !$(this).prop('checked'));
-            });
-        });
+        .end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1:eq(1) input[type="checkbox"]')))
+        .end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1:eq(1) input[type="checkbox"]')));
 };
 
 /**
@@ -1091,15 +1070,15 @@ export const addBatchUseAndConvertItemTypesButton = function () {
     <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}>
     模拟手动操作道具
   </label>
-  <button title="批量使用指定种类的道具" data-action="useItemTypes">批量使用</button>
-  <button class="pd_highlight" title="批量将指定种类的道具转换为能量" data-action="convertItemTypes">批量转换</button>
-  <button data-action="selectAll">全选</button>
-  <button data-action="selectInverse">反选</button>
+  <button name="useItemTypes" type="button" title="批量使用指定种类的道具">批量使用</button>
+  <button class="pd_highlight" name="convertItemTypes" type="button" title="批量将指定种类的道具转换为能量">批量转换</button>
+  <button name="selectAll" type="button">全选</button>
+  <button name="selectInverse" type="button">反选</button>
 </div>
 `).insertAfter('.pd_my_items')
         .on('click', 'button', function () {
-            let action = $(this).data('action');
-            if (action === 'useItemTypes' || action === 'convertItemTypes') {
+            let name = $(this).attr('name');
+            if (name === 'useItemTypes' || name === 'convertItemTypes') {
                 let itemTypeList = [];
                 $('.pd_item_type_chk:checked').each(function () {
                     let $itemLine = $(this).closest('tr'),
@@ -1107,9 +1086,9 @@ export const addBatchUseAndConvertItemTypesButton = function () {
                         itemTypeId = parseInt($itemLine.data('itemTypeId')),
                         itemName = $itemLine.find('td:nth-child(2) > a').text();
                     if (isNaN(itemTypeId) || itemTypeId <= 0) return;
-                    if (action === 'convertItemTypes' && itemTypeId === 1) return;
+                    if (name === 'convertItemTypes' && itemTypeId === 1) return;
                     let itemListUrl = $itemLine.find('td:last-child')
-                            .find(action === 'useItemTypes' ? 'a:first-child' : 'a:last-child')
+                            .find(name === 'useItemTypes' ? 'a:first-child' : 'a:last-child')
                             .attr('href') + '&t=' + new Date().getTime();
                     itemTypeList.push({
                         itemTypeId: itemTypeId,
@@ -1120,15 +1099,15 @@ export const addBatchUseAndConvertItemTypesButton = function () {
                     });
                 });
                 if (!itemTypeList.length) return;
-                let num = parseInt(prompt(`在指定种类道具中你要${action === 'useItemTypes' ? '使用' : '转换'}多少个道具？（0表示不限制）`, 0));
+                let num = parseInt(prompt(`在指定种类道具中你要${name === 'useItemTypes' ? '使用' : '转换'}多少个道具？（0表示不限制）`, 0));
                 if (isNaN(num) || num < 0) return;
                 Msg.destroy();
 
-                let queueName = action === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
+                let queueName = name === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
                 $(document).clearQueue(queueName);
                 $.each(itemTypeList, function (index, data) {
                     $(document).queue(queueName, function () {
-                        let $wait = Msg.wait(`正在获取本种类${action === 'useItemTypes' ? '未' : '已'}使用道具列表，请稍后&hellip;`);
+                        let $wait = Msg.wait(`正在获取本种类${name === 'useItemTypes' ? '未' : '已'}使用道具列表，请稍后&hellip;`);
                         $.ajax({
                             type: 'GET',
                             url: data.itemListUrl,
@@ -1141,7 +1120,7 @@ export const addBatchUseAndConvertItemTypesButton = function () {
                                     return;
                                 }
 
-                                if (action === 'useItemTypes') {
+                                if (name === 'useItemTypes') {
                                     console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
                                     Msg.wait(
                                         `<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
@@ -1184,13 +1163,11 @@ export const addBatchUseAndConvertItemTypesButton = function () {
                 });
                 $(document).dequeue(queueName);
             }
-            else if (action === 'selectAll') {
-                $('.pd_item_type_chk').prop('checked', true);
+            else if (name === 'selectAll') {
+                Util.selectAll($('.pd_item_type_chk'));
             }
-            else if (action === 'selectInverse') {
-                $('.pd_item_type_chk').each(function () {
-                    $(this).prop('checked', !$(this).prop('checked'));
-                });
+            else if (name === 'selectInverse') {
+                Util.selectInverse($('.pd_item_type_chk'));
             }
         }).find('[name="simulateManualHandleItemEnabled"]')
         .click(function () {

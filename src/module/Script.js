@@ -109,12 +109,14 @@ export const showDialog = function (showIndex = null) {
     <a class="pd_btn_link" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
     <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出自定义脚本</a>
   </span>
-  <button name="ok">确定</button> <button name="cancel">取消</button> <button class="pd_highlight" name="clear">清空</button>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
+  <button class="pd_highlight" name="clear" type="button">清空</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
     let $customScriptList = $dialog.find('[data-name="customScriptList"]');
 
-    $dialog.find('[name="ok"]').click(function (e) {
+    $dialog.submit(function (e) {
         e.preventDefault();
         Config.customScriptList = [];
         $customScriptList.find('.pd_custom_script_content').each(function () {
@@ -191,7 +193,7 @@ export const showDialog = function (showIndex = null) {
 `.trim() + '\n' + $content.val()).focus();
     }).end().find('[data-name="openImOrExCustomScriptDialog"]').click(function (e) {
         e.preventDefault();
-        ConfigDialog.showCommonImportOrExportConfigDialog('customScript');
+        Public.showCommonImportOrExportConfigDialog('自定义脚本', 'customScriptList');
     });
 
     $customScriptList.on('click', '.pd_custom_script_name', function (e) {
