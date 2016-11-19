@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     7.0.2
+// @version     8.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue

@@ -48,8 +48,8 @@ const Const = {
     },
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval () {
-        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 1000) + 2000; // 慢速情况
-        else return Math.floor(Math.random() * 200) + 200; // 正常情况
+        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 3000; // 慢速情况
+        else return Math.floor(Math.random() * 100) + 200; // 正常情况
     },
 
     // 购买帖子提醒的最低售价（KFB）

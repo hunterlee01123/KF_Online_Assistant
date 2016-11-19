@@ -112,7 +112,7 @@ export const show = function () {
         <span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        帖子内容字体大小 <input name="threadContentFontSize" maxlength="2" style="width: 20px;" type="text"> px
+        帖子内容字体大小 <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px
         <span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span>
       </label><br>
       <label>
@@ -182,7 +182,7 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        页数链接最大数量 <input name="maxFastGotoThreadPageNum" style="width: 25px;" maxlength="4" type="text">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
         <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
       </label><br>
       <label>
@@ -212,20 +212,20 @@ export const show = function () {
 如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
       </label><br>
       <label>
+        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
+        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
+      </label><br>
+      <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
         <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
         <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
-      </label><br>
-      <label>
-        默认的消息显示时间 <input name="defShowMsgDuration" maxlength="5" style="width: 30px;" type="text"> 秒
-        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        日志保存天数 <input name="logSaveDays" maxlength="3" style="width: 25px;" type="text">
-        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
       </label><br>
       <label>
         <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
@@ -272,11 +272,11 @@ export const show = function () {
         </label>
       </legend>
       <label>
-        在当前收入已满 <input name="saveCurrentDepositAfterKfb" maxlength="10" style="width: 45px;" type="text"> KFB之后
+        在当前收入已满 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB之后
         <span class="pd_cfg_tips" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</span>
       </label><br>
       <label>
-        将 <input name="saveCurrentDepositKfb" maxlength="10" style="width: 45px;" type="text"> KFB存入活期存款
+        将 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB存入活期存款
         <span class="pd_cfg_tips" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</span>
       </label>
     </fieldset>

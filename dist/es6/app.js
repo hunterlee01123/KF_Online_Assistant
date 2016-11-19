@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '7.0.2';
+const version = '8.0';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -407,7 +407,7 @@ const batchTransferVerify = function ($transfer) {
  * 添加批量转账的按钮
  */
 const addBatchTransferButton = exports.addBatchTransferButton = function () {
-    let html = `
+    let $area = $(`
 <tr id="pd_bank_transfer">
   <td style="vertical-align: top;">
     使用说明：<br>每行一名用户，<br>如需单独设定金额，<br>可写为“用户名:金额”<br>（注意是<b>英文冒号</b>）<br>例子：<br>
@@ -429,24 +429,25 @@ const addBatchTransferButton = exports.addBatchTransferButton = function () {
       </label>
     </div>
     <div>
-      <input class="pd_input" type="submit" value="批量转账">
-      <input class="pd_input" type="reset" value="重置">
-      <input class="pd_input" name="random" type="button" value="随机金额" title="为用户列表上的每个用户设定指定范围内的随机金额">
+      <button type="submit">批量转账</button>
+      <button type="reset">重置</button>
+      <button name="random" type="button" title="为用户列表上的每个用户设定指定范围内的随机金额">随机金额</button>
       （活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）
     </div>
   </form>
   </td>
-</tr>`;
-    let $transfer = $(html).appendTo('.bank1 > tbody');
-    $transfer.find('form').submit(function (e) {
+</tr>
+`).appendTo('.bank1 > tbody');
+
+    $area.find('form').submit(function (e) {
         e.preventDefault();
         Msg.destroy();
-        if (!batchTransferVerify($transfer)) return;
-        let commonMoney = parseInt($transfer.find('[name="money"]').val());
+        if (!batchTransferVerify($area)) return;
+        let commonMoney = parseInt($area.find('[name="money"]').val());
         if (!commonMoney) commonMoney = 0;
-        let msg = $transfer.find('[name="msg"]').val();
+        let msg = $area.find('[name="msg"]').val();
         let users = [];
-        for (let line of $transfer.find('[name="users"]').val().split('\n')) {
+        for (let line of $area.find('[name="users"]').val().split('\n')) {
             line = $.trim(line);
             if (!line) continue;
             if (line.includes(':')) {
@@ -498,13 +499,12 @@ const addBatchTransferButton = exports.addBatchTransferButton = function () {
                 $(document).dequeue('Bank');
             }
             Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${ users.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-            $transfer.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
+            $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
             batchTransfer(users, msg, isDeposited, currentDeposit);
         });
-    }).end().find('[name="random"]').click(function (e) {
-        e.preventDefault();
+    }).find('[name="random"]').click(function () {
         let userList = [];
-        for (let line of $transfer.find('[name="users"]').val().split('\n')) {
+        for (let line of $area.find('[name="users"]').val().split('\n')) {
             line = $.trim(line);
             if (!line) continue;
             userList.push($.trim(line.split(':')[0]));
@@ -530,7 +530,7 @@ const addBatchTransferButton = exports.addBatchTransferButton = function () {
         for (let userName of userList) {
             content += userName + ':' + Math.floor(Math.random() * (max - min + 1) + min) + '\n';
         }
-        $transfer.find('[name="users"]').val(content);
+        $area.find('[name="users"]').val(content);
     });
 };
 
@@ -744,19 +744,19 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
              */
             const uncheckPlayedCard = function () {
                 for (let id of playedCardList) {
-                    $cardLines.find('td').has(`a[href="kf_fw_card_my.php?id=${ id }"]`).find('input:checked').prop('checked', false);
+                    $cardLines.find('td').has(`a[href="kf_fw_card_my.php?id=${ id }"]`).find('[type="checkbox"]').prop('checked', false);
                 }
             };
 
             let $btns = $(`
 <label><input name="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>
-<button name="selectOnlyOne">每类只保留一张</button>
-<button name="selectAll">全选</button>
-<button name="selectInverse">反选</button><br>
-<button name="convertCardsToVipTime">转换为VIP时间</button>
+<button name="selectOnlyOne" type="button">每类只保留一张</button>
+<button name="selectAll" type="button">全选</button>
+<button name="selectInverse" type="button">反选</button><br>
+<button name="convertCardsToVipTime" type="button">转换为VIP时间</button>
 `).insertBefore($this);
             $btns.filter('[name="selectOnlyOne"]').click(function () {
-                $cardLines.find('input').prop('checked', true);
+                Util.selectAll($cardLines.find('[type="checkbox"]'));
                 if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
                 let cardTypeList = new Set();
                 $cardLines.find('a > img').each(function () {
@@ -765,27 +765,25 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
                 for (let src of cardTypeList) {
                     let $cardElems = $cardLines.find('td').has(`img[src="${ src }"]`);
                     let totalNum = $cardElems.length;
-                    let checkedNum = $cardElems.has('input:checked').length;
+                    let checkedNum = $cardElems.has('[type="checkbox"]:checked').length;
                     if (totalNum > 1) {
                         if (totalNum === checkedNum) {
-                            $cardElems.eq(0).find('input:checked').prop('checked', false);
+                            $cardElems.eq(0).find('[type="checkbox"]:checked').prop('checked', false);
                         }
                     } else {
-                        $cardElems.find('input:checked').prop('checked', false);
+                        $cardElems.find('[type="checkbox"]:checked').prop('checked', false);
                     }
                 }
             }).end().filter('[name="selectAll"]').click(function () {
-                $cardLines.find('input').prop('checked', true);
+                Util.selectAll($cardLines.find('[type="checkbox"]'));
                 if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
             }).end().filter('[name="selectInverse"]').click(function () {
-                $cardLines.find('input').each(function () {
-                    $(this).prop('checked', !$(this).prop('checked'));
-                });
+                Util.selectInverse($cardLines.find('[type="checkbox"]'));
                 if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
             }).end().filter('[name="convertCardsToVipTime"]').click(function () {
                 Msg.destroy();
                 let cardList = [];
-                $cardLines.find('input:checked').each(function () {
+                $cardLines.find('[type="checkbox"]:checked').each(function () {
                     cardList.push(parseInt($(this).val()));
                 });
                 if (!cardList.length) return;
@@ -993,8 +991,12 @@ const Config = exports.Config = {
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
 
-    // 争夺每层分配点数列表
-    lootLevelPointList: {}
+    // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
+    levelPointList: {},
+    // 是否在攻击时自动修改争夺各层点数分配方案，true：开启；false：关闭
+    autoChangeLevelPointsEnabled: false,
+    // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
+    slowAttackEnabled: false
 };
 
 /**
@@ -1083,7 +1085,7 @@ const normalize = exports.normalize = function (options) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showCommonImportOrExportConfigDialog = exports.show = undefined;
+exports.show = undefined;
 
 var _Info = require('./Info');
 
@@ -1110,6 +1112,10 @@ var _Config = require('./Config');
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Public = require('./Public');
+
+var Public = _interopRequireWildcard(_Public);
 
 var _Script = require('./Script');
 
@@ -1214,7 +1220,7 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        帖子内容字体大小 <input name="threadContentFontSize" maxlength="2" style="width: 20px;" type="text"> px
+        帖子内容字体大小 <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px
         <span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span>
       </label><br>
       <label>
@@ -1284,7 +1290,7 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        页数链接最大数量 <input name="maxFastGotoThreadPageNum" style="width: 25px;" maxlength="4" type="text">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
         <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
       </label><br>
       <label>
@@ -1314,20 +1320,20 @@ const show = exports.show = function () {
 如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
       </label><br>
       <label>
+        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
+        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.logSaveDays }">[?]</span>
+      </label><br>
+      <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
         <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
         <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
-      </label><br>
-      <label>
-        默认的消息显示时间 <input name="defShowMsgDuration" maxlength="5" style="width: 30px;" type="text"> 秒
-        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        日志保存天数 <input name="logSaveDays" maxlength="3" style="width: 25px;" type="text">
-        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.logSaveDays }">[?]</span>
       </label><br>
       <label>
         <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
@@ -1374,11 +1380,11 @@ const show = exports.show = function () {
         </label>
       </legend>
       <label>
-        在当前收入已满 <input name="saveCurrentDepositAfterKfb" maxlength="10" style="width: 45px;" type="text"> KFB之后
+        在当前收入已满 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB之后
         <span class="pd_cfg_tips" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</span>
       </label><br>
       <label>
-        将 <input name="saveCurrentDepositKfb" maxlength="10" style="width: 45px;" type="text"> KFB存入活期存款
+        将 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB存入活期存款
         <span class="pd_cfg_tips" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</span>
       </label>
     </fieldset>
@@ -1391,14 +1397,36 @@ const show = exports.show = function () {
     <i style="color: #666; font-style: normal;">(V${ _Info2.default.version })</i>
     <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
-  <button name="ok">确定</button>
-  <button name="cancel">取消</button>
-  <button name="default">默认值</button>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
+  <button name="default" type="button">默认值</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
-    $dialog.find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[name="default"]').click(function (e) {
+    $dialog.submit(function (e) {
         e.preventDefault();
+        if (!verifyMainConfig($dialog)) return;
+        let oriAutoRefreshEnabled = Config.autoRefreshEnabled;
+        (0, _Config.read)();
+        let options = getMainConfigValue($dialog);
+        options = (0, _Config.normalize)(options);
+        $.extend(Config, options);
+        (0, _Config.write)();
+        let storageType = $dialog.find('[data-name="storageType"]').val();
+        if (storageType !== _Info2.default.storageType) {
+            if (!confirm('是否修改存储类型？')) return;
+            (0, _Config.changeStorageType)(storageType);
+            alert('存储类型已修改');
+            location.reload();
+            return;
+        }
+        Dialog.close(dialogName);
+        if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
+            if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
+                location.reload();
+            }
+        }
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[name="default"]').click(function () {
         if (confirm('是否重置所有设置？')) {
             (0, _Config.clear)();
             alert('设置已重置');
@@ -1431,33 +1459,6 @@ const show = exports.show = function () {
     });
 
     setMainConfigValue($dialog);
-    $dialog.submit(function (e) {
-        e.preventDefault();
-        $('.pd_cfg_btns > button:first').click();
-    }).end().find('.pd_cfg_btns > button:first').click(function (e) {
-        e.preventDefault();
-        if (!verifyMainConfig($dialog)) return;
-        let oriAutoRefreshEnabled = Config.autoRefreshEnabled;
-        (0, _Config.read)();
-        let options = getMainConfigValue($dialog);
-        options = (0, _Config.normalize)(options);
-        $.extend(Config, options);
-        (0, _Config.write)();
-        let storageType = $dialog.find('[data-name="storageType"]').val();
-        if (storageType !== _Info2.default.storageType) {
-            if (!confirm('是否修改存储类型？')) return;
-            (0, _Config.changeStorageType)(storageType);
-            alert('存储类型已修改');
-            location.reload();
-            return;
-        }
-        Dialog.close(dialogName);
-        if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
-            if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
-                location.reload();
-            }
-        }
-    });
 
     Dialog.show(dialogName);
     $dialog.find('a:first').focus();
@@ -1646,24 +1647,27 @@ const showRunCommandDialog = function () {
   <textarea name="cmd" wrap="off" style="width: 750px; height: 300px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button>运行</button> <button>清除</button> <button>关闭</button>
+  <button type="submit">运行</button>
+  <button name="clear" type="button">清除</button>
+  <button name="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '运行命令', html);
     let $cmd = $dialog.find('[name="cmd"]');
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+
+    $dialog.submit(function (e) {
         e.preventDefault();
         let content = $cmd.val();
         if (content) Script.runCmd(content, true);
-    }).next('button').click(function (e) {
-        e.preventDefault();
+    }).end().find('[name="clear"]').click(function () {
         $cmd.val('').focus();
-    }).next('button').click(() => Dialog.close(dialogName));
+    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+
     Dialog.show(dialogName);
-    $cmd.keyup(function (e) {
+    $cmd.keydown(function (e) {
         if (e.ctrlKey && e.keyCode === 13) {
-            $dialog.find('.pd_cfg_btns > button:first').click();
+            $dialog.submit();
         } else if (e.ctrlKey && e.keyCode === 8) {
-            $dialog.find('.pd_cfg_btns > button:eq(1)').click();
+            $dialog.find('[name="clear"]').click();
         }
     }).focus();
 };
@@ -1684,11 +1688,12 @@ const showImportOrExportSettingDialog = function () {
   <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button>保存</button> <button>取消</button>
+  <button type="submit">保存</button>
+  <button name="cancel" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '导入或导出设置', html);
     let $setting = $dialog.find('[name="setting"]');
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+    $dialog.submit(function (e) {
         e.preventDefault();
         if (!confirm('是否导入文本框中的设置？')) return;
         let options = $.trim($setting.val());
@@ -1708,7 +1713,7 @@ const showImportOrExportSettingDialog = function () {
         (0, _Config.write)();
         alert('设置已导入');
         location.reload();
-    }).next('button').click(() => Dialog.close(dialogName));
+    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
     Dialog.show(dialogName);
     $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select();
 };
@@ -1738,12 +1743,12 @@ const showCustomSmColorDialog = function () {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a href="#">导入/导出配色方案</a></span>
-  <button>确定</button> <button>取消</button>
+  <span class="pd_cfg_about"><a data-name="openImOrExCustomSmColorConfigDialog" href="#">导入/导出配色方案</a></span>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html, 'min-width: 327px;');
     let $customSmColorList = $dialog.find('[data-name="smColorList"]');
-    $dialog.find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
 
     $customSmColorList.on('change', '[name="color"]', function () {
         let $this = $(this);
@@ -1778,27 +1783,6 @@ const showCustomSmColorDialog = function () {
   <a href="#">删除</a>
 </li>`;
     };
-
-    $dialog.find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
-        e.preventDefault();
-        let num = 1;
-        if ($(this).is('[data-action="addFive"]')) num = 5;
-        for (let i = 1; i <= num; i++) {
-            $customSmColorList.append(getSmColorLineHtml());
-        }
-        Dialog.show(dialogName);
-    }).end().find('[data-action="clear"]').click(function (e) {
-        e.preventDefault();
-        if (confirm('是否清除所有颜色？')) {
-            $customSmColorList.empty();
-            Dialog.show(dialogName);
-        }
-    });
-
-    $dialog.find('.pd_cfg_about > a').click(function (e) {
-        e.preventDefault();
-        showImportOrExportSmColorConfigDialog();
-    });
 
     let smColorHtml = '';
     for (let data of Config.customSmColorConfigList) {
@@ -1857,54 +1841,27 @@ const showCustomSmColorDialog = function () {
             (0, _Config.write)();
             Dialog.close(dialogName);
         }
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
+        e.preventDefault();
+        let num = 1;
+        if ($(this).is('[data-action="addFive"]')) num = 5;
+        for (let i = 1; i <= num; i++) {
+            $customSmColorList.append(getSmColorLineHtml());
+        }
+        Dialog.show(dialogName);
+    }).end().find('[data-action="clear"]').click(function (e) {
+        e.preventDefault();
+        if (confirm('是否清除所有颜色？')) {
+            $customSmColorList.empty();
+            Dialog.show(dialogName);
+        }
+    }).end().find('[data-name="openImOrExCustomSmColorConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('配色方案', 'customSmColorConfigList', $dialog => $dialog.find('.pd_cfg_about').append('<a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a>'));
     });
 
     Dialog.show(dialogName);
     if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();else $dialog.find('[data-name="customSmColorAddBtns"] > a:first').focus();
-};
-
-/**
- * 显示导入或导出配色方案对话框
- */
-const showImportOrExportSmColorConfigDialog = function () {
-    const dialogName = 'pdImOrExSmColorConfigDialog';
-    if ($('#' + dialogName).length > 0) return;
-    (0, _Config.read)();
-    let html = `
-<div class="pd_cfg_main">
-  <div>
-    <strong>导入配色方案：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
-    <strong>导出配色方案：</strong>复制文本框里的内容并粘贴到文本文件里即可
-  </div>
-  <textarea name="smColorConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
-</div>
-<div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a></span>
-  <button>保存</button> <button>取消</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, '导入或导出配色方案', html);
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
-        e.preventDefault();
-        if (!confirm('是否导入文本框中的设置？')) return;
-        let options = $.trim($dialog.find('[name="smColorConfig"]').val());
-        if (!options) return;
-        try {
-            options = JSON.parse(options);
-        } catch (ex) {
-            alert('配色方案有错误');
-            return;
-        }
-        if (!options || !Array.isArray(options)) {
-            alert('配色方案有错误');
-            return;
-        }
-        Config.customSmColorConfigList = options;
-        (0, _Config.write)();
-        alert('配色方案已导入');
-        location.reload();
-    }).next('button').click(() => Dialog.close(dialogName));
-    Dialog.show(dialogName);
-    $dialog.find('[name="smColorConfig"]').val(JSON.stringify(Config.customSmColorConfigList)).select();
 };
 
 /**
@@ -1920,16 +1877,17 @@ const showCustomCssDialog = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS规则收集贴</a></span>
-  <button>确定</button> <button>取消</button>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义CSS', html);
     let $content = $dialog.find('[name="customCssContent"]');
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+    $dialog.submit(function (e) {
         e.preventDefault();
         Config.customCssContent = $.trim($content.val());
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).next('button').click(() => Dialog.close(dialogName));
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
     $content.val(Config.customCssContent);
     Dialog.show(dialogName);
     $content.focus();
@@ -1947,11 +1905,12 @@ const showUserMemoDialog = function () {
   <textarea name="userMemoList" wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button>确定</button> <button>取消</button>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '用户备注', html);
     let $userMemoList = $dialog.find('[name="userMemoList"]');
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
+    $dialog.submit(function (e) {
         e.preventDefault();
         let content = $.trim($userMemoList.val());
         Config.userMemoList = {};
@@ -1969,7 +1928,7 @@ const showUserMemoDialog = function () {
         }
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).next('button').click(() => Dialog.close(dialogName));
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
     let content = '';
     for (let [user, memo] of Util.entries(Config.userMemoList)) {
         content += `${ user }:${ memo }\n`;
@@ -1997,31 +1956,29 @@ const showFollowUserDialog = function () {
       <span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span>
     </label><br>
   </div>
-  <ul data-name="followUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>
-  <div data-name="followUserBtns" style="margin-top: 5px;">
+  <ul id="pdFollowUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>
+  <div style="margin-top: 5px;">
     <div style="display: inline-block;">
-      <a class="pd_btn_link" href="#">全选</a>
-      <a class="pd_btn_link" href="#">反选</a>
+      <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+      <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
     </div>
     <div style="float: right;">
-      <a class="pd_btn_link" href="#">删除</a>
+      <a class="pd_btn_link" data-name="deleteSelect" href="#">删除</a>
     </div>
   </div>
   <div style="margin-top: 5px;" title="添加多个用户请用英文逗号分隔">
-    <input data-name="addFollowUser" style="width: 200px;" type="text">
-    <a class="pd_btn_link" href="#">添加</a>
+    <input name="addFollowUser" style="width: 200px;" type="text">
+    <a class="pd_btn_link" data-name="add" href="#">添加</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a href="#">导入/导出关注用户</a></span>
-  <button>确定</button> <button>取消</button>
+  <span class="pd_cfg_about"><a data-name="openImOrExFollowUserListDialog" href="#">导入/导出关注用户</a></span>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '关注用户', html);
-    let $followUserList = $dialog.find('[data-name="followUserList"]');
+    let $followUserList = $dialog.find('#pdFollowUserList');
     $dialog.submit(function (e) {
-        e.preventDefault();
-        $dialog.find('.pd_cfg_btns > button:first').click();
-    }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
         Config.highlightFollowUserThreadLinkEnabled = $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked');
@@ -2035,7 +1992,7 @@ const showFollowUserDialog = function () {
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
 
     $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
     $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
@@ -2049,7 +2006,7 @@ const showFollowUserDialog = function () {
 <li>
   <input type="checkbox">
   <input type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="${ name }">
-  <a class="pd_btn_link" href="#">删除</a>
+  <a class="pd_btn_link" data-name="delete" href="#">删除</a>
 </li>
 `).appendTo($followUserList);
     };
@@ -2058,20 +2015,12 @@ const showFollowUserDialog = function () {
         addFollowUser(user.name);
     }
 
-    $followUserList.on('click', 'a', function (e) {
+    $followUserList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         $(this).parent().remove();
     });
 
-    $dialog.find('[data-name="followUserBtns"]').find('a:first').click(function (e) {
-        e.preventDefault();
-        $followUserList.find('[type="checkbox"]').prop('checked', true);
-    }).end().find('a:eq(1)').click(function (e) {
-        e.preventDefault();
-        $followUserList.find('[type="checkbox"]').each(function () {
-            $(this).prop('checked', !$(this).prop('checked'));
-        });
-    }).end().find('a:last').click(function (e) {
+    $dialog.find('[data-name="selectAll"]').click(() => Util.selectAll($followUserList.find('[type="checkbox"]'))).end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($followUserList.find('[type="checkbox"]'))).end().find('[data-name="deleteSelect"]').click(function (e) {
         e.preventDefault();
         let $checked = $followUserList.find('li:has([type="checkbox"]:checked)');
         if (!$checked.length) return;
@@ -2081,27 +2030,27 @@ const showFollowUserDialog = function () {
         }
     });
 
-    $dialog.find('[data-name="addFollowUser"]').keydown(function (e) {
+    $dialog.find('[name="addFollowUser"]').keydown(function (e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             $(this).next('a').click();
         }
-    }).next('a').click(function (e) {
+    }).end().find('[data-name="add"]').click(function (e) {
         e.preventDefault();
-        for (let name of $.trim($dialog.find('[data-name="addFollowUser"]').val()).split(',')) {
+        for (let name of $.trim($dialog.find('[name="addFollowUser"]').val()).split(',')) {
             name = $.trim(name);
             if (!name) continue;
             if (Util.inFollowOrBlockUserList(name, Config.followUserList) === -1) {
                 addFollowUser(name);
             }
         }
-        $dialog.find('[data-name="addFollowUser"]').val('');
+        $dialog.find('[name="addFollowUser"]').val('');
         Dialog.show(dialogName);
     });
 
-    $dialog.find('.pd_cfg_about > a').click(function (e) {
+    $dialog.find('[data-name="openImOrExFollowUserListDialog"]').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog('followUser');
+        Public.showCommonImportOrExportConfigDialog('关注用户', 'followUserList');
     });
 
     Dialog.show(dialogName);
@@ -2136,32 +2085,33 @@ const showBlockUserDialog = function () {
       <span class="pd_cfg_tips" title="版块URL中的fid参数，多个ID请用英文逗号分隔">[?]</span>
     </label>
   </div>
-  <ul data-name="blockUserList" style="margin-top: 5px; min-width: 362px; line-height: 24px;"></ul>
-  <div data-name="blockUserBtns" style="margin-top: 5px;">
-    <div style="display: inline-block;"><a href="#">全选</a><a style="margin-left: 7px;" href="#">反选</a></div>
+  <ul id="pdBlockUserList" style="margin-top: 5px; min-width: 362px; line-height: 24px;"></ul>
+  <div style="margin-top: 5px;">
+    <div style="display: inline-block;">
+      <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+      <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
+    </div>
     <div style="float: right;">
-      <a href="#">修改为</a>
-      <select style="margin-left: 7px;">
+      <a class="pd_btn_link" data-name="modify" href="#">修改为</a>
+      <select>
         <option value="0">屏蔽主题和回帖</option><option value="1">仅屏蔽主题</option><option value="2">仅屏蔽回帖</option>
       </select>
-      <a style="margin-left: 7px;" href="#">删除</a>
+      <a class="pd_btn_link" data-name="deleteSelect" href="#">删除</a>
     </div>
   </div>
   <div style="margin-top: 5px;" title="添加多个用户请用英文逗号分隔">
     <input name="addBlockUser" style="width: 200px;" type="text">
-    <a style="margin-left: 7px;" href="#">添加</a>
+    <a class="pd_btn_link" data-name="add" href="#">添加</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a href="#">导入/导出屏蔽用户</a></span>
-  <button>确定</button> <button>取消</button>
+  <span class="pd_cfg_about"><a data-name="openImOrExBlockUserListDialog" href="#">导入/导出屏蔽用户</a></span>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '屏蔽用户', html);
-    let $blockUserList = $dialog.find('[data-name="blockUserList"]');
+    let $blockUserList = $dialog.find('#pdBlockUserList');
     $dialog.submit(function (e) {
-        e.preventDefault();
-        $dialog.find('.pd_cfg_btns > button:first').click();
-    }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         Config.blockUserDefaultType = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
         Config.blockUserAtTipsEnabled = $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked');
@@ -2182,7 +2132,7 @@ const showBlockUserDialog = function () {
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
 
     $dialog.find('[name="blockUserDefaultType"]').val(Config.blockUserDefaultType);
     $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked', Config.blockUserAtTipsEnabled);
@@ -2202,7 +2152,7 @@ const showBlockUserDialog = function () {
   <select style="margin-left: 5px;">
     <option value="0">屏蔽主题和回帖</option><option value="1">仅屏蔽主题</option><option value="2">仅屏蔽回帖</option>
   </select>
-  <a style="margin-left: 7px;" href="#">删除</a>
+  <a class="pd_btn_link" data-name="delete" href="#">删除</a>
 </li>`).appendTo($blockUserList).find('select').val(type);
     };
 
@@ -2210,26 +2160,18 @@ const showBlockUserDialog = function () {
         addBlockUser(user.name, user.type);
     }
 
-    $blockUserList.on('click', 'a', function (e) {
+    $blockUserList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         $(this).parent().remove();
     });
 
-    $dialog.find('[data-name="blockUserBtns"]').find('a:first').click(function (e) {
-        e.preventDefault();
-        $blockUserList.find('input[type="checkbox"]').prop('checked', true);
-    }).end().find('a:eq(1)').click(function (e) {
-        e.preventDefault();
-        $blockUserList.find('input[type="checkbox"]').each(function () {
-            $(this).prop('checked', !$(this).prop('checked'));
-        });
-    }).end().find('a:eq(2)').click(function (e) {
+    $dialog.find('[data-name="selectAll"]').click(() => Util.selectAll($blockUserList.find('input[type="checkbox"]'))).end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($blockUserList.find('input[type="checkbox"]'))).end().find('[data-name="modify"]').click(function (e) {
         e.preventDefault();
         let value = $(this).next('select').val();
-        $blockUserList.find('li:has(input[type="checkbox"]:checked) > select').val(value);
-    }).end().find('a:last').click(function (e) {
+        $blockUserList.find('li:has([type="checkbox"]:checked) > select').val(value);
+    }).end().find('[data-name="deleteSelect"]').click(function (e) {
         e.preventDefault();
-        let $checked = $blockUserList.find('li:has(input[type="checkbox"]:checked)');
+        let $checked = $blockUserList.find('li:has([type="checkbox"]:checked)');
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
@@ -2242,7 +2184,7 @@ const showBlockUserDialog = function () {
             e.preventDefault();
             $(this).next('a').click();
         }
-    }).next('a').click(function (e) {
+    }).end().find('[data-name="add"]').click(function (e) {
         e.preventDefault();
         let type = parseInt($('[name="blockUserDefaultType"]').val());
         for (let name of $.trim($dialog.find('[name="addBlockUser"]').val()).split(',')) {
@@ -2258,9 +2200,9 @@ const showBlockUserDialog = function () {
 
     $dialog.find('[name="blockUserForumType"]').change(function () {
         $('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
-    }).end().find('.pd_cfg_about > a').click(function (e) {
+    }).end().find('[data-name="openImOrExBlockUserListDialog"]').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog('blockUser');
+        Public.showCommonImportOrExportConfigDialog('屏蔽用户', 'blockUserList');
     });
 
     Dialog.show(dialogName);
@@ -2277,7 +2219,7 @@ const showBlockThreadDialog = function () {
     let html = `
 <div class="pd_cfg_main">
   <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">
-    标题关键字可使用普通字符串或正则表达式，正则表达式请使用/abc/的格式，例：/关键字A.*关键字B/i<br>
+    标题关键字可使用普通字符串或正则表达式，正则表达式请使用<code>/abc/</code>的格式，例：<code>/关键字A.*关键字B/i</code><br>
     用户名和版块ID为可选项（多个用户名或版块ID请用英文逗号分隔）<br>
     <label>
       默认版块屏蔽范围
@@ -2287,7 +2229,7 @@ const showBlockThreadDialog = function () {
     </label>
     <label style="margin-left: 5px;">默认版块ID列表 <input name="blockThreadDefFidList" type="text" style="width: 150px;"></label>
   </div>
-  <table data-name="blockThreadList" style="line-height: 22px; text-align: center;">
+  <table id="pdBlockThreadList" style="line-height: 22px; text-align: center;">
     <tbody>
       <tr>
         <th style="width: 220px;">标题关键字(必填)</th>
@@ -2300,17 +2242,18 @@ const showBlockThreadDialog = function () {
     </tbody>
   </table>
   <div data-name="blockThreadAddBtns" style="margin-top: 5px;">
-    <a class="pd_btn_link" href="#">增加1个</a>
-    <a class="pd_btn_link" href="#">增加5个</a>
-    <a class="pd_btn_link" href="#">清除所有</a>
+    <a class="pd_btn_link" data-name="addOne" href="#">增加1个</a>
+    <a class="pd_btn_link" data-name="addFive" href="#">增加5个</a>
+    <a class="pd_btn_link" data-name="clear" href="#">清除所有</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a href="#">导入/导出屏蔽帖子</a></span>
-  <button>确定</button> <button>取消</button>
+  <span class="pd_cfg_about"><a data-name="openImOrExBlockThreadListDialog" href="#">导入/导出屏蔽帖子</a></span>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '屏蔽帖子', html, 'width: 768px;');
-    let $blockThreadList = $dialog.find('[data-name="blockThreadList"]');
+    let $blockThreadList = $dialog.find('#pdBlockThreadList');
 
     /**
      * 验证设置是否正确
@@ -2339,9 +2282,6 @@ const showBlockThreadDialog = function () {
     };
 
     $dialog.submit(function (e) {
-        e.preventDefault();
-        $dialog.find('.pd_cfg_btns > button:first').click();
-    }).find('.pd_cfg_btns > button:first').click(function (e) {
         e.preventDefault();
         if (!verify()) return;
         Config.blockThreadDefForumType = parseInt($dialog.find('[name="blockThreadDefForumType"]').val());
@@ -2380,12 +2320,12 @@ const showBlockThreadDialog = function () {
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).end().find('.pd_cfg_btns > button:last').click(() => Dialog.close(dialogName));
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
 
     $blockThreadList.on('change', 'select', function () {
         let $this = $(this);
         $this.parent('td').next('td').find('input').prop('disabled', parseInt($this.val()) === 0);
-    }).on('click', 'td > a', function (e) {
+    }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         $(this).closest('tr').remove();
     });
@@ -2406,7 +2346,7 @@ const showBlockThreadDialog = function () {
   <td><input type="text" style="width: 188px;" value="${ userList.join(',') }" ${ userType === 0 ? 'disabled' : '' }></td>
   <td><select><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>
   <td><input type="text" style="width: 120px;" value="${ fidList.join(',') }" ${ fidType === 0 ? 'disabled' : '' }></td>
-  <td><a href="#">删除</a></td>
+  <td><a href="#" data-name="delete">删除</a></td>
 </tr>
 `).appendTo($blockThreadList).find('td:nth-child(2) > select').val(userType).end().find('td:nth-child(4) > select').val(fidType);
     };
@@ -2435,15 +2375,15 @@ const showBlockThreadDialog = function () {
         addBlockThread(keyWord, userType, userList, fidType, fidList);
     }
 
-    $dialog.find('[data-name="blockThreadAddBtns"]').find('a:lt(2)').click(function (e) {
+    $dialog.find('[data-name="addOne"], [data-name="addFive"]').click(function (e) {
         e.preventDefault();
         let num = 1;
-        if ($(this).is('[data-name="blockThreadAddBtns"] > a:eq(1)')) num = 5;
+        if ($(this).is('[data-name="addFive"]')) num = 5;
         for (let i = 1; i <= num; i++) {
             addBlockThread('', 0, [], parseInt($dialog.find('[name="blockThreadDefForumType"]').val()), $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(','));
         }
         Dialog.show(dialogName);
-    }).end().find('a:last').click(function (e) {
+    }).end().find('[data-name="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有屏蔽关键字？')) {
             $blockThreadList.find('tbody > tr:gt(0)').remove();
@@ -2453,9 +2393,9 @@ const showBlockThreadDialog = function () {
 
     $dialog.find('[name="blockThreadDefForumType"]').change(function () {
         $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
-    }).end().find('.pd_cfg_about > a').click(function (e) {
+    }).end().find('[data-name="openImOrExBlockThreadListDialog"]').click(function (e) {
         e.preventDefault();
-        showCommonImportOrExportConfigDialog('blockThread');
+        Public.showCommonImportOrExportConfigDialog('屏蔽帖子', 'blockThreadList');
     });
 
     Dialog.show(dialogName);
@@ -2463,98 +2403,7 @@ const showBlockThreadDialog = function () {
     $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
-/**
- * 显示通用的导入/导出设置对话框
- * @param {string} type 对话框类别，followUser：关注用户；blockUser：屏蔽用户；blockThread：屏蔽帖子；customScript：自定义脚本
- */
-const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfigDialog = function (type) {
-    const dialogName = 'pdCommonImOrExConfigDialog';
-    if ($('#' + dialogName).length > 0) return;
-    (0, _Config.read)();
-    let html = `
-<div class="pd_cfg_main">
-  <div>
-    <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
-    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
-  </div>
-  <textarea name="commonConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
-</div>
-<div class="pd_cfg_btns">
-  <button>保存</button> <button>取消</button>
-</div>`;
-    let title = '';
-    switch (type) {
-        case 'followUser':
-            title = '关注用户';
-            break;
-        case 'blockUser':
-            title = '屏蔽用户';
-            break;
-        case 'blockThread':
-            title = '屏蔽帖子';
-            break;
-        case 'customScript':
-            title = '自定义脚本';
-            break;
-        default:
-            return;
-    }
-    let $dialog = Dialog.create(dialogName, `导入或导出${ title }`, html);
-
-    $dialog.find('.pd_cfg_btns > button:first').click(function (e) {
-        e.preventDefault();
-        if (!confirm('是否导入文本框中的设置？')) return;
-        let options = $.trim($dialog.find('[name="commonConfig"]').val());
-        if (!options) return;
-        try {
-            options = JSON.parse(options);
-        } catch (ex) {
-            alert('设置有错误');
-            return;
-        }
-        if (!options || !Array.isArray(options)) {
-            alert('设置有错误');
-            return;
-        }
-        switch (type) {
-            case 'followUser':
-                Config.followUserList = options;
-                break;
-            case 'blockUser':
-                Config.blockUserList = options;
-                break;
-            case 'blockThread':
-                Config.blockThreadList = options;
-                break;
-            case 'customScript':
-                Config.customScriptList = options;
-                break;
-        }
-        (0, _Config.write)();
-        alert('设置已导入');
-        location.reload();
-    }).next('button').click(() => Dialog.close(dialogName));
-    Dialog.show(dialogName);
-
-    let options = null;
-    switch (type) {
-        case 'followUser':
-            options = Config.followUserList;
-            break;
-        case 'blockUser':
-            options = Config.blockUserList;
-            break;
-        case 'blockThread':
-            options = Config.blockThreadList;
-            break;
-        case 'customScript':
-            options = Config.customScriptList;
-            break;
-    }
-    $dialog.find('[name="commonConfig"]').val(JSON.stringify(options)).select();
-};
-
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2571,10 +2420,12 @@ const storagePrefix = 'pd_';
 const Const = {
     // 开启调试模式，true：开启；false：关闭
     debug: false,
+
     // UTC时间与论坛时间之间的时差（小时）
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
+
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
     actionFinishRetryInterval: 30,
     // 在连接超时的情况下获取剩余时间失败后的重试间隔（分钟），用于定时模式
@@ -2589,26 +2440,34 @@ const Const = {
     smRankChangeAlertInterval: 22,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
+    // 定期存款到期期限（天）
+    fixedDepositDueTime: 90,
+
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用、恢复、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval() {
-        return Math.floor(Math.random() * 150) + 200;
+        if (Config.simulateManualHandleItemEnabled) return Math.floor(Math.random() * 4000) + 2000; // 模拟手动时的情况
+        else return Math.floor(Math.random() * 150) + 200; // 正常情况
     },
     // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
     cycleUseItemsFirstAjaxInterval() {
         return Math.floor(Math.random() * 250) + 2000;
     },
+    // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
+    lootAttackInterval() {
+        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 3000; // 慢速情况
+        else return Math.floor(Math.random() * 100) + 200; // 正常情况
+    },
+
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
     // 统计回帖者名单最大能访问的帖子页数
     statRepliersMaxPage: 300,
     // 道具样品ID列表
     sampleItemIdList: new Map([['零时迷子的碎片', 2257935], ['被遗弃的告白信', 2005272], ['学校天台的钥匙', 2001303], ['TMA最新作压缩包', 1990834], ['LOLI的钱包', 1836588], ['棒棒糖', 1942370], ['蕾米莉亚同人漫画', 1000888], ['十六夜同人漫画', 1002668], ['档案室钥匙', 1013984], ['傲娇LOLI娇蛮音CD', 4621], ['整形优惠卷', 1003993], ['消逝之药', 1000306]]),
-    // 定期存款到期期限（天）
-    fixedDepositDueTime: 90,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义侧边栏导航内容
@@ -2619,6 +2478,7 @@ const Const = {
     customTileSideBarContent: '',
     // 可进行自助评分的版块ID列表
     selfRatingFidList: [41, 67, 92, 127, 68],
+
     // 通用存储数据名称前缀
     storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
@@ -2631,6 +2491,7 @@ const Const = {
     fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
+
     // 标记已进行KFB捐款的Cookie名称
     donationCookieName: 'donation',
     // 标记已去除首页已读at高亮提示的Cookie名称
@@ -3491,7 +3352,7 @@ const restoreItems = function (options, cycle) {
         $(document).queue('RestoreItems', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_ig_doit.php?renew=${ settings.safeId }&id=${ itemId }&t=${ new Date().getTime() }`,
+                url: `kf_fw_ig_doit.php?renew=${ settings.safeId }&id=${ itemId }1&t=${ new Date().getTime() }`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('恢复道具', html);
@@ -3832,11 +3693,11 @@ const addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function () 
 
     $(`
 <div class="pd_item_btns">
-  ${ itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : '' }
-  ${ itemTypeId > 1 ? '<button name="cycleUseItem" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : '' }
-  <button name="useItem" title="批量使用指定道具">使用道具</button>
-  <button name="selectAll">全选</button>
-  <button name="selectInverse">反选</button>
+  ${ itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" type="button" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : '' }
+  ${ itemTypeId > 1 ? '<button name="cycleUseItem" type="button" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : '' }
+  <button name="useItem" type="button" title="批量使用指定道具">使用道具</button>
+  <button name="selectAll" type="button">全选</button>
+  <button name="selectInverse" type="button">反选</button>
 </div>
 `).insertAfter('.kf_fw_ig1').find('[name="useItem"]').click(function () {
         Msg.destroy();
@@ -3855,13 +3716,7 @@ const addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function () 
             itemTypeId: itemTypeId,
             itemName: itemName
         });
-    }).end().find('[name="selectAll"]').click(function () {
-        $('.kf_fw_ig1 [type="checkbox"]').prop('checked', true);
-    }).end().find('[name="selectInverse"]').click(function () {
-        $('.kf_fw_ig1 [type="checkbox"]').each(function () {
-            $(this).prop('checked', !$(this).prop('checked'));
-        });
-    }).end().find('[name="cycleUseItem"]').click(function () {
+    }).end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1 [type="checkbox"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1 [type="checkbox"]'))).end().find('[name="cycleUseItem"]').click(function () {
         Msg.destroy();
         let itemIdList = [];
         $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
@@ -3952,10 +3807,10 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
     });
     $(`
 <div class="pd_item_btns">
-  <button class="pd_highlight" name="convertEnergy" title="批量将指定道具转换为能量">转换能量</button>
-  <button name="restoreItem" title="批量恢复指定道具">恢复道具</button>
-  <button name="selectAll">全选</button>
-  <button name="selectInverse">反选</button>
+  <button class="pd_highlight" name="convertEnergy" type="button" title="批量将指定道具转换为能量">转换能量</button>
+  <button name="restoreItem" type="button" title="批量恢复指定道具">恢复道具</button>
+  <button name="selectAll" type="button">全选</button>
+  <button name="selectInverse" type="button">反选</button>
 </div>
 `).insertAfter('.kf_fw_ig1:eq(1)').find('[name="convertEnergy"]').click(function () {
         Msg.destroy();
@@ -3996,13 +3851,7 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
             itemTypeId: itemTypeId,
             itemName: itemName
         });
-    }).end().find('[name="selectAll"]').click(function () {
-        $('.kf_fw_ig1:eq(1) input[type="checkbox"]').prop('checked', true);
-    }).end().find('[name="selectInverse"]').click(function () {
-        $('.kf_fw_ig1:eq(1) input[type="checkbox"]').each(function () {
-            $(this).prop('checked', !$(this).prop('checked'));
-        });
-    });
+    }).end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1:eq(1) input[type="checkbox"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1:eq(1) input[type="checkbox"]')));
 };
 
 /**
@@ -4013,18 +3862,18 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
     if (!safeId) return;
     $(`
 <div class="pd_item_btns">
-  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用和恢复道具（仅限此页面有效）">
+  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用和恢复道具">
     <input name="simulateManualHandleItemEnabled" type="checkbox" ${ Config.simulateManualHandleItemEnabled ? 'checked' : '' }>
     模拟手动操作道具
   </label>
-  <button title="批量使用指定种类的道具" data-action="useItemTypes">批量使用</button>
-  <button class="pd_highlight" title="批量将指定种类的道具转换为能量" data-action="convertItemTypes">批量转换</button>
-  <button data-action="selectAll">全选</button>
-  <button data-action="selectInverse">反选</button>
+  <button name="useItemTypes" type="button" title="批量使用指定种类的道具">批量使用</button>
+  <button class="pd_highlight" name="convertItemTypes" type="button" title="批量将指定种类的道具转换为能量">批量转换</button>
+  <button name="selectAll" type="button">全选</button>
+  <button name="selectInverse" type="button">反选</button>
 </div>
 `).insertAfter('.pd_my_items').on('click', 'button', function () {
-        let action = $(this).data('action');
-        if (action === 'useItemTypes' || action === 'convertItemTypes') {
+        let name = $(this).attr('name');
+        if (name === 'useItemTypes' || name === 'convertItemTypes') {
             let itemTypeList = [];
             $('.pd_item_type_chk:checked').each(function () {
                 let $itemLine = $(this).closest('tr'),
@@ -4032,8 +3881,8 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
                     itemTypeId = parseInt($itemLine.data('itemTypeId')),
                     itemName = $itemLine.find('td:nth-child(2) > a').text();
                 if (isNaN(itemTypeId) || itemTypeId <= 0) return;
-                if (action === 'convertItemTypes' && itemTypeId === 1) return;
-                let itemListUrl = $itemLine.find('td:last-child').find(action === 'useItemTypes' ? 'a:first-child' : 'a:last-child').attr('href') + '&t=' + new Date().getTime();
+                if (name === 'convertItemTypes' && itemTypeId === 1) return;
+                let itemListUrl = $itemLine.find('td:last-child').find(name === 'useItemTypes' ? 'a:first-child' : 'a:last-child').attr('href') + '&t=' + new Date().getTime();
                 itemTypeList.push({
                     itemTypeId: itemTypeId,
                     itemLevel: itemLevel,
@@ -4043,15 +3892,15 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
                 });
             });
             if (!itemTypeList.length) return;
-            let num = parseInt(prompt(`在指定种类道具中你要${ action === 'useItemTypes' ? '使用' : '转换' }多少个道具？（0表示不限制）`, 0));
+            let num = parseInt(prompt(`在指定种类道具中你要${ name === 'useItemTypes' ? '使用' : '转换' }多少个道具？（0表示不限制）`, 0));
             if (isNaN(num) || num < 0) return;
             Msg.destroy();
 
-            let queueName = action === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
+            let queueName = name === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
             $(document).clearQueue(queueName);
             $.each(itemTypeList, function (index, data) {
                 $(document).queue(queueName, function () {
-                    let $wait = Msg.wait(`正在获取本种类${ action === 'useItemTypes' ? '未' : '已' }使用道具列表，请稍后&hellip;`);
+                    let $wait = Msg.wait(`正在获取本种类${ name === 'useItemTypes' ? '未' : '已' }使用道具列表，请稍后&hellip;`);
                     $.ajax({
                         type: 'GET',
                         url: data.itemListUrl,
@@ -4064,7 +3913,7 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
                                 return;
                             }
 
-                            if (action === 'useItemTypes') {
+                            if (name === 'useItemTypes') {
                                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
                                 Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                                 useItems({
@@ -4099,20 +3948,18 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
                 });
             });
             $(document).dequeue(queueName);
-        } else if (action === 'selectAll') {
-            $('.pd_item_type_chk').prop('checked', true);
-        } else if (action === 'selectInverse') {
-            $('.pd_item_type_chk').each(function () {
-                $(this).prop('checked', !$(this).prop('checked'));
-            });
+        } else if (name === 'selectAll') {
+            Util.selectAll($('.pd_item_type_chk'));
+        } else if (name === 'selectInverse') {
+            Util.selectInverse($('.pd_item_type_chk'));
         }
     }).find('[name="simulateManualHandleItemEnabled"]').click(function () {
-        if (!('_specialAjaxInterval' in _Const2.default)) _Const2.default._specialAjaxInterval = _Const2.default.specialAjaxInterval;
         let checked = $(this).prop('checked');
-        if (checked) _Const2.default.specialAjaxInterval = () => Math.floor(Math.random() * 4000) + 2000;else _Const2.default.specialAjaxInterval = _Const2.default._specialAjaxInterval;
-        (0, _Config.read)();
-        Config.simulateManualHandleItemEnabled = checked;
-        (0, _Config.write)();
+        if (Config.simulateManualHandleItemEnabled !== checked) {
+            (0, _Config.read)();
+            Config.simulateManualHandleItemEnabled = checked;
+            (0, _Config.write)();
+        }
     }).triggerHandler('click');
 };
 
@@ -4989,7 +4836,8 @@ const show = exports.show = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
-  <button>关闭</button> <button>清除日志</button>
+  <button name="close" type="button">关闭</button>
+  <button name="clear" type="button">清除日志</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
 
@@ -5055,16 +4903,14 @@ const show = exports.show = function () {
         }
     }).end().find(`[name="sortType"][value="${ Config.logSortType }"]`).click().end().find(`[name="statType"][value="${ Config.logStatType }"]`).click().end().find('[name="statDays"]').val(Config.logStatDays);
 
-    $dialog.find('.pd_cfg_btns > button:first').click(() => Dialog.close(dialogName)).next('button').click(function (e) {
+    $dialog.find('[name="close"]').click(() => Dialog.close(dialogName)).end().find('[name="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有日志？')) {
             Log.clear();
             alert('日志已清除');
             location.reload();
         }
-    });
-
-    $dialog.find('[data-name="openImOrExLogDialog"]').click(function (e) {
+    }).end().find('[data-name="openImOrExLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLogDialog();
     });
@@ -5072,7 +4918,7 @@ const show = exports.show = function () {
     showLogContent(log, dateList[curIndex], $dialog);
     showLogStat(log, dateList[curIndex], $dialog);
 
-    if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '216px');
+    if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
     $dialog.find('input:first').focus();
     Func.run('LogDialog.show_after_');
@@ -5335,9 +5181,9 @@ const showImportOrExportLogDialog = function () {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <button name="merge">合并日志</button>
-  <button name="overwrite" style="color: #f00;">覆盖日志</button>
-  <button>关闭</button>
+  <button name="merge" type="button">合并日志</button>
+  <button name="overwrite" type="button" style="color: #f00;">覆盖日志</button>
+  <button name="close" type="button">关闭</button>
 </div>`;
 
     let $dialog = Dialog.create(dialogName, '导入或导出日志', html);
@@ -5349,31 +5195,28 @@ const showImportOrExportLogDialog = function () {
         $dialog.find(`[data-name="log${ type === 'text' ? 'Setting' : 'Text' }"]`).hide();
         $dialog.find(`[data-name="log${ type === 'text' ? 'Text' : 'Setting' }"]`).show();
         $dialog.find(`[data-name="log${ type === 'text' ? 'Text' : 'Setting' }"]`).select();
-    }).end().find('.pd_cfg_btns > button').click(function (e) {
+    }).end().find('[name="merge"], [name="overwrite"]').click(function (e) {
         e.preventDefault();
         let name = $(this).attr('name');
-        if (name === 'merge' || name === 'overwrite') {
-            if (!confirm(`是否将文本框中的日志${ name === 'overwrite' ? '覆盖' : '合并' }到本地日志？`)) return;
-            let newLog = $.trim($dialog.find('[name="setting"]').val());
-            if (!newLog) return;
-            try {
-                newLog = JSON.parse(newLog);
-            } catch (ex) {
-                alert('日志有错误');
-                return;
-            }
-            if (!newLog || $.type(newLog) !== 'object') {
-                alert('日志有错误');
-                return;
-            }
-            if (name === 'merge') log = Log.getMergeLog(log, newLog);else log = newLog;
-            Log.write(log);
-            alert('日志已导入');
-            location.reload();
-        } else {
-            return Dialog.close(dialogName);
+        if (!confirm(`是否将文本框中的日志${ name === 'overwrite' ? '覆盖' : '合并' }到本地日志？`)) return;
+        let newLog = $.trim($dialog.find('[name="setting"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
+        } catch (ex) {
+            alert('日志有错误');
+            return;
         }
-    });
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert('日志有错误');
+            return;
+        }
+        if (name === 'merge') log = Log.getMergeLog(log, newLog);else log = newLog;
+        Log.write(log);
+        alert('日志已导入');
+        location.reload();
+    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+
     Dialog.show(dialogName);
     $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find(`[name="sortType2"][value="${ Config.logSortType }"]`).prop('checked', true).triggerHandler('click');
@@ -5418,15 +5261,29 @@ var _Util = require('./Util');
 
 var Util = _interopRequireWildcard(_Util);
 
+var _Msg = require('./Msg');
+
+var Msg = _interopRequireWildcard(_Msg);
+
 var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
 
+var _Const = require('./Const');
+
+var _Const2 = _interopRequireDefault(_Const);
+
 var _Config = require('./Config');
+
+var _Public = require('./Public');
+
+var Public = _interopRequireWildcard(_Public);
 
 var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -5434,14 +5291,18 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 let $lootArea;
 // 争夺属性区域
 let $properties;
-// 属性点区域
+// 点数区域
 let $points;
+// 争夺记录区域
+let $lootLog;
 // 当前争夺属性
 let propertyList;
-// 附加属性点列表
+// 附加点数列表
 let extraPointList;
 // 道具使用情况
 let itemUsedNumList;
+// 争夺记录
+let lootLog = '';
 
 /**
  * 增强争夺首页
@@ -5453,10 +5314,13 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     propertyList = getLootPropertyList();
     extraPointList = getExtraPointList();
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
+    $lootLog = $lootArea.find('> tbody > tr:nth-child(5) > td');
+    lootLog = $lootLog.html();
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
-    enhanceLootLog();
+    addAttackBtns();
+    enhanceLootLog(lootLog);
 };
 
 /**
@@ -5464,7 +5328,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  */
 const handlePropertiesArea = function () {
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：\d+)\s*\(最大(\d+)\)/, '$1 (最大<span id="pdPro_s2" title="原值：$2">$2</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_d2"></span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_i1"></span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击伤害+(体质点数*6)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="攻击伤害+(体质点数*6)"></span>');
+    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：\d+)\s*\(最大(\d+)\)/, '$1 (最大<span id="pdPro_s2" title="原值：$2">$2</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_d2"></span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_i1"></span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
@@ -5473,7 +5337,7 @@ const handlePropertiesArea = function () {
         let name = $this.attr('id').replace('pdPro_', '');
         let step = 1;
         if (name === 's1') step = 5;else if (name === 's2') step = 20;else if (name === 'd1') step = 2;
-        $(`<input data-name="${ name }" type="number" value="${ parseInt($this.text()) }" min="1" step="${ step }" ` + `style="width: 65px; margin-right: 5px;" title="${ $this.attr('title') }">`).insertAfter($this).focus().select().blur(function () {
+        $(`<input class="pd_input" data-name="${ name }" type="number" value="${ parseInt($this.text()) }" min="1" step="${ step }" ` + `style="width: 65px; margin-right: 5px;" title="${ $this.attr('title') }">`).insertAfter($this).focus().select().blur(function () {
             let $this = $(this);
             let name = $this.data('name');
             let num = parseInt($this.val());
@@ -5481,7 +5345,7 @@ const handlePropertiesArea = function () {
                 $points.find(`[name="${ name }"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
             }
             $this.prev().show().end().remove();
-        }).keyup(function (e) {
+        }).keydown(function (e) {
             let $this = $(this);
             if (e.keyCode === 13) $this.blur();else if (e.keyCode === 27) $this.val('').blur();
         });
@@ -5489,11 +5353,26 @@ const handlePropertiesArea = function () {
 };
 
 /**
- * 处理属性点区域
+ * 处理点数区域
  */
 const handlePointsArea = function () {
     $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
     $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
+
+    /**
+     * 显示各项点数的和值
+     * @param {jQuery} $point 点数字段对象
+     */
+    const showSumOfPoint = function ($point) {
+        let num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        let extraNum = parseInt($point.next('span').text());
+        let $sum = $point.next('span').next('.pd_point_sum');
+        if (!$sum.length) {
+            $sum = $('<span class="pd_point_sum" style="color: #ff0033; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>').insertAfter($point.next('span'));
+        }
+        $sum.text('=' + (num + extraNum));
+    };
 
     $points.on('change', '[type="number"]', function () {
         let $this = $(this);
@@ -5501,11 +5380,12 @@ const handlePointsArea = function () {
         $('#pdSurplusPoint').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000').css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
         showNewLootProperty($this);
         showSumOfPoint($this);
-        $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()), parseInt($lootArea.find('[name="s2"]').val())));
+        $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()), parseInt($lootArea.find('[name="s2"]').val()), parseInt($lootArea.find('[name="i1"]').val())));
     }).on('click', '.pd_point_sum', function () {
         let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
         if (!surplusPoint) return;
-        let $point = $(this).prev('span').prev('[type="number"]');
+        let $point = $(this).prev('span').prev('[type="number"]:not([disabled])');
+        if (!$point.length) return;
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
         $point.val(num + surplusPoint).trigger('change');
@@ -5545,9 +5425,9 @@ const getLootPropertyList = function () {
 };
 
 /**
- * 获取当前已分配的属性点
- * @param {jQuery} $points 属性点字段对象
- * @returns {number} 当前已分配的属性点
+ * 获取当前已分配的点数
+ * @param {jQuery} $points 点数字段对象
+ * @returns {number} 当前已分配的点数
  */
 const getCurrentAssignedPoint = function ($points) {
     let usedPoint = 0;
@@ -5562,28 +5442,14 @@ const getCurrentAssignedPoint = function ($points) {
  * 获取技能伤害的值
  * @param {number} s1 力量
  * @param {number} s2 体质
+ * @param {number} i1 智力
  * @returns {number} 技能伤害的值
  */
-const getSkillAttack = (s1, s2) => (s1 + extraPointList.get('力量')) * 5 + s2 * 6;
+const getSkillAttack = (s1, s2, i1) => (s1 + extraPointList.get('力量')) * 5 + s2 * 5 + i1 * 5;
 
 /**
- * 显示各项属性点的和值
- * @param {jQuery} $point 属性点字段对象
- */
-const showSumOfPoint = function ($point) {
-    let num = parseInt($point.val());
-    if (isNaN(num) || num < 0) num = 0;
-    let extraNum = parseInt($point.next('span').text());
-    let $sum = $point.next('span').next('.pd_point_sum');
-    if (!$sum.length) {
-        $sum = $('<span class="pd_point_sum" style="color: #ff0033; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>').insertAfter($point.next('span'));
-    }
-    $sum.text('=' + (num + extraNum));
-};
-
-/**
- * 获取附加属性点列表
- * @returns {Map} 附加属性点列表
+ * 获取附加点数列表
+ * @returns {Map} 附加点数列表
  */
 const getExtraPointList = function () {
     let extraPointList = new Map([['力量', 0], ['体质', 0], ['敏捷', 0], ['灵活', 0], ['智力', 0], ['意志', 0], ['耐力', 0], ['幸运', 0]]);
@@ -5600,9 +5466,9 @@ const getExtraPointList = function () {
 };
 
 /**
- * 根据字段名称获取属性点名称
+ * 根据字段名称获取点数名称
  * @param {string} fieldName 字段名称
- * @returns {string} 属性点名称
+ * @returns {string} 点数名称
  */
 const getPointNameByFieldName = function (fieldName) {
     switch (fieldName) {
@@ -5628,8 +5494,8 @@ const getPointNameByFieldName = function (fieldName) {
 };
 
 /**
- * 根据属性点名称获取字段名称
- * @param {string} pointName 属性点名称
+ * 根据点数名称获取字段名称
+ * @param {string} pointName 点数名称
  * @returns {string} 字段名称
  */
 const getFieldNameByPointName = function (pointName) {
@@ -5657,7 +5523,7 @@ const getFieldNameByPointName = function (pointName) {
 
 /**
  * 显示新的争夺属性
- * @param {jQuery} $point 属性点字段对象
+ * @param {jQuery} $point 点数字段对象
  */
 const showNewLootProperty = function ($point) {
     let name = $point.attr('name');
@@ -5693,9 +5559,9 @@ const showNewLootProperty = function ($point) {
 };
 
 /**
- * 根据指定的属性点获得相应争夺属性的值
- * @param pointName 属性点名称
- * @param point 属性点的值
+ * 根据指定的点数获得相应争夺属性的值
+ * @param pointName 点数名称
+ * @param point 点数的值
  * @returns {number} 争夺属性的值
  */
 const getPropertyByPoint = function (pointName, point) {
@@ -5729,10 +5595,10 @@ const getPropertyByPoint = function (pointName, point) {
 };
 
 /**
- * 根据指定的争夺属性获得相应属性点的值
- * @param pointName 属性点名称
+ * 根据指定的争夺属性获得相应点数的值
+ * @param pointName 点数名称
  * @param num 争夺属性的值
- * @returns {number} 属性点的值
+ * @returns {number} 点数的值
  */
 const getPointByProperty = function (pointName, num) {
     let value = 0;
@@ -5761,59 +5627,101 @@ const getPointByProperty = function (pointName, num) {
 };
 
 /**
- * 添加每层属性点列表选择框
+ * 添加各层点数分配方案选择框
  */
 const addLevelPointListSelect = function () {
-    let pointListHtml = '';
-    for (let level of Object.keys(Config.lootLevelPointList)) {
-        pointListHtml += `<option value="${ level }">第${ level }层</option>`;
-    }
     $(`
-<select id="pdLevelPointListSelect" style="margin: 5px 0;" hidden>
-  <option>属性点分配方案</option>
+<select id="pdLevelPointListSelect" style="margin: 5px 0;">
+  <option>点数分配方案</option>
+  <option value="edit" style="color: #00f;">编辑&hellip;</option>
   <option value="0">默认</option>
-  <option class="pd_highlight" value="edit">编辑&hellip;</option>
-  ${ pointListHtml }
-</select><br hidden>
-`).prependTo($points).change(function () {
+</select>
+<a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a><br>
+`).prependTo($points).filter('#pdLevelPointListSelect').change(function () {
         let level = $(this).val();
         if (level === '0') {
             $points.find('[type="number"]').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         } else if (level === 'edit') {
-            //showLevelPointListConfigDialog();
+            showLevelPointListConfigDialog();
             this.selectedIndex = 0;
         } else if ($.isNumeric(level)) {
-            let points = Config.lootLevelPointList[parseInt(level)];
+            let points = Config.levelPointList[parseInt(level)];
             if (typeof points !== 'object') return;
-            $points.find('[type="number"]').each(function () {
+            $points.find('[type="number"]:not([disabled])').each(function () {
                 let $this = $(this);
                 $this.val(points[getPointNameByFieldName($this.attr('name'))]);
             }).trigger('change');
         }
+    }).end().filter('[data-name="save"]').click(function (e) {
+        e.preventDefault();
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        if (surplusPoint < 0) {
+            alert('剩余属性点为负，请重新填写');
+            return;
+        } else if (surplusPoint > 0) {
+            if (!confirm('你的可分配属性点尚未用完，是否保存？')) return;
+        }
+        let $levelPointListSelect = $('#pdLevelPointListSelect');
+        let level = parseInt($levelPointListSelect.val());
+        level = parseInt(prompt('请输入层数：', level ? level : ''));
+        if (!level || level < 0) return;
+
+        (0, _Config.read)();
+        if (level in Config.levelPointList) {
+            if (!confirm('该层数已存在，是否覆盖？')) return;
+        }
+        let points = {};
+        for (let elem of Array.from($points.find('[type="number"]:not([disabled])'))) {
+            let $elem = $(elem);
+            let point = parseInt($elem.val());
+            if (!point || point < 0) return;
+            points[getPointNameByFieldName($elem.attr('name'))] = point;
+        }
+        Config.levelPointList[level] = points;
+        (0, _Config.write)();
+        setLevelPointListSelect(Config.levelPointList);
+        $levelPointListSelect.val(level);
     });
+    setLevelPointListSelect(Config.levelPointList);
 };
 
 /**
- * 显示每层属性点分配设置对话框
+ * 设置各层点数分配方案选择框
+ * @param {{}} levelPointList 各层点数分配列表
  */
-const showLevelPointListConfigDialog = function () {
+const setLevelPointListSelect = function (levelPointList) {
+    let pointListHtml = '';
+    for (let level of Object.keys(levelPointList)) {
+        pointListHtml += `<option value="${ level }">第${ level }层</option>`;
+    }
+    $('#pdLevelPointListSelect').find('option:gt(2)').remove().end().append(pointListHtml);
+};
+
+/**
+ * 显示各层点数分配方案对话框
+ */
+const showLevelPointListConfigDialog = function (callback) {
     const dialogName = 'pdLevelPointListConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     let html = `
 <div class="pd_cfg_main">
-  <table id="pdLevelPointList" style="text-align: center;">
-    <tbody>
-      <tr><th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th><th></th></tr>
-    </tbody>
-  </table>
+  <div style="margin-top: 5px;">请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层</div>
+  <div style="overflow-y: auto; max-height: 400px;">
+    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
+      <tbody>
+        <tr><th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th><th></th></tr>
+      </tbody>
+    </table>
+  </div>
   <hr>
   <div style="float: left; line-height: 27px;">
     <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
     <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
     <a class="pd_btn_link pd_highlight" data-name="add" href="#">增加</a>
+    <a class="pd_btn_link" data-name="deleteSelect" href="#">删除</a>
   </div>
   <div data-id="modifyArea" style="float: right;">
     <input name="s1" type="text" maxlength="4" title="力量" placeholder="力量" style="width: 35px;">
@@ -5822,49 +5730,63 @@ const showLevelPointListConfigDialog = function () {
     <input name="d2" type="text" maxlength="4" title="灵活" placeholder="灵活" style="width: 35px;">
     <input name="i1" type="text" maxlength="4" title="智力" placeholder="智力" style="width: 35px;">
     <input name="i2" type="text" maxlength="4" title="意志" placeholder="意志" style="width: 35px;">
+    <a class="pd_btn_link" data-name="clear" href="#" title="清空修改字段">&times;</a>
     <button type="button" name="modify">修改</button>
-    <span class="pd_cfg_tips" title="">[?]</span>
+    <span class="pd_cfg_tips" title="可将所选择的层数的相应属性修改为指定的数值；数字前可设+/-号，表示增加/减少相应数量；例：100、+5或-2">[?]</span>
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a href="#">导入/导出分配设置</a></span>
+  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配方案</a></span>
   <button type="submit">确定</button>
   <button type="button" name="cancel">取消</button>
-  <button type="button" class="pd_highlight" name="clear">清空</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, '每层属性点分配设置', html);
+    let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
 
     /**
-     * 添加每层属性点分配的HTML
+     * 添加各层点数分配的HTML
      * @param {number} level 层数
-     * @param {{}} points 属性点对象
+     * @param {{}} points 点数对象
      */
     const addLevelPointHtml = function (level, points) {
         $(`
 <tr>
   <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
   <td style="text-align: left;">
-    <label style="margin-right: 8px;">第 <input name="level" type="text" value="${ level ? level : '' }" style="width: 30px;"> 层</label>
+    <label style="margin-right: 8px;">
+      第 <input name="level" type="text" value="${ level ? level : '' }" style="width: 30px;"> 层
+    </label>
   </td>
-  <td><input name="s1" type="number" min="1" max="999" value="${ points['力量'] }" style="width: 50px;"></td>
-  <td><input name="s2" type="number" min="1" max="999" value="${ points['体质'] }" style="width: 50px;"></td>
-  <td><input name="d1" type="number" min="1" max="999" value="${ points['敏捷'] }" style="width: 50px;"></td>
-  <td><input name="d2" type="number" min="1" max="999" value="${ points['灵活'] }" style="width: 50px;"></td>
-  <td><input name="i1" type="number" min="1" max="999" value="${ points['智力'] }" style="width: 50px;"></td>
-  <td><input name="i2" type="number" min="1" max="999" value="${ points['意志'] }" style="width: 50px;"></td>
-  <td><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
+  <td><input name="s1" type="number" min="1" max="999" value="${ points['力量'] }" style="width: 50px;" required></td>
+  <td><input name="s2" type="number" min="1" max="999" value="${ points['体质'] }" style="width: 50px;" required></td>
+  <td><input name="d1" type="number" min="1" max="999" value="${ points['敏捷'] }" style="width: 50px;" required></td>
+  <td><input name="d2" type="number" min="1" max="999" value="${ points['灵活'] }" style="width: 50px;" required></td>
+  <td><input name="i1" type="number" min="1" max="999" value="${ points['智力'] }" style="width: 50px;" required></td>
+  <td><input name="i2" type="number" min="1" max="999" value="${ points['意志'] }" style="width: 50px;" required></td>
+  <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
   <td></td>
-  <td class="pd_custom_tips pd_highlight" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
-  <td title="攻击力">攻：<span data-id="pro_s1" style="cursor: pointer;">0</span></td>
-  <td title="最大生命值">命：<span data-id="pro_s2" style="cursor: pointer;">0</span></td>
-  <td title="攻击速度">速：<span data-id="pro_d1" style="cursor: pointer;">0</span></td>
-  <td title="暴击几率">暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>%</td>
-  <td title="技能释放概率">技：<span data-id="pro_i1" style="cursor: pointer;">0</span>%</td>
-  <td title="防御减伤">防：<span data-id="pro_i2" style="cursor: pointer;">0</span>%</td>
-  <td class="pd_custom_tips" title="技能伤害：攻击伤害+(体质点数*6)">技伤：<span data-id="skillAttack">0</span></td>
+  <td class="pd_custom_tips" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
+  <td title="攻击力">
+    攻：<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="最大生命值">
+    命：<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="攻击速度">
+    速：<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="暴击几率">
+    暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="技能释放概率">
+    技：<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="防御减伤">
+    防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td class="pd_custom_tips" title="技能伤害：攻击+(体质*5)+(智力*5)">技伤：<span data-id="skillAttack">0</span></td>
 </tr>
 `).appendTo($levelPointList).find('[type="number"]').trigger('change');
     };
@@ -5872,7 +5794,7 @@ const showLevelPointListConfigDialog = function () {
     $dialog.submit(function (e) {
         e.preventDefault();
         (0, _Config.read)();
-        Config.lootLevelPointList = {};
+        Config.levelPointList = {};
         let prevPoints = {};
         let isError = false,
             isSurplus = false;
@@ -5892,7 +5814,7 @@ const showLevelPointListConfigDialog = function () {
                 points[getPointNameByFieldName($elem.attr('name'))] = point;
             }
             if (Util.deepEqual(prevPoints, points)) return;
-            Config.lootLevelPointList[level] = points;
+            Config.levelPointList[level] = points;
             prevPoints = points;
         });
         if (isSurplus) {
@@ -5904,35 +5826,61 @@ const showLevelPointListConfigDialog = function () {
         }
         (0, _Config.write)();
         Dialog.close(dialogName);
+        setLevelPointListSelect(Config.levelPointList);
     }).find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="add"]').click(function (e) {
         e.preventDefault();
         addLevelPointHtml(0, { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 });
         Dialog.show(dialogName);
-    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[name="clear"]').click(function () {
-        if (!confirm('是否清空所有属性点分配设置？')) return;
-        $levelPointList.find('tr:gt(0)').remove();
+    }).end().find('[data-name="deleteSelect"]').click(function (e) {
+        e.preventDefault();
+        let $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length || !confirm('是否删除所选层数？')) return;
+        let $line = $checked.closest('tr');
+        $line.next('tr').addBack().remove();
         Dialog.show(dialogName);
-    });
+    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('各层点数分配方案', 'levelPointList', null, function () {
+            $('#pdLevelPointListConfigDialog').remove();
+            showLevelPointListConfigDialog($dialog => $dialog.submit());
+        });
+    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
 
     $levelPointList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
-        $line.next('tr').remove().end().remove();
+        $line.next('tr').addBack().remove();
         Dialog.show(dialogName);
     }).on('change', '[type="number"]', function () {
         let $this = $(this);
         let name = $this.attr('name');
         let point = parseInt($this.val());
         if (!point || point < 0) return;
+
         let $points = $this.closest('tr');
         let $properties = $points.next('tr');
-        $properties.find(`[data-id="pro_${ name }"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point)).end().find('[data-id="surplusPoint"]').text(propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'))).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val())));
+        $properties.find(`[data-id="pro_${ name }"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point)).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val()), parseInt($points.find('[name="i1"]').val())));
+
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         let $this = $(this);
         let name = $this.data('id').replace('pro_', '');
         let num = parseInt(prompt('请输入数值：', $this.text()));
         if (!num || num < 0) return;
         $this.closest('tr').prev('tr').find(`[name="${ name }"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+    }).on('click', '[data-id^="opt_"]', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        let name = $this.data('id').replace('opt_', '');
+        let $points = $this.closest('tr').prev('tr');
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        if (!surplusPoint) return;
+        let $point = $points.find(`[name="${ name }"]`);
+        if (!$point.length) return;
+        let num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        $point.val(num + surplusPoint).trigger('change');
     });
 
     $dialog.find('[data-id="modifyArea"]').on('keydown', '[type="text"]', function (e) {
@@ -5971,22 +5919,193 @@ const showLevelPointListConfigDialog = function () {
                 } else $this.val(data[name].value);
             }).trigger('change');
         });
+    }).end().find('[data-name="clear"]').click(function (e) {
+        e.preventDefault();
+        $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
     });
 
-    for (let [level, points] of Util.entries(Config.lootLevelPointList)) {
+    for (let [level, points] of Util.entries(Config.levelPointList)) {
         addLevelPointHtml(level, points);
     }
 
     Dialog.show(dialogName);
     $dialog.find('input:first').focus();
+    if (typeof callback === 'function') callback($dialog);
+};
+
+/**
+ * 添加攻击相关按钮
+ */
+const addAttackBtns = function () {
+    $(`
+<label title="攻击时可自动修改成相应的点数分配方案，被击败后修改回最低层数的方案">
+  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
+</label>
+<label title="延长每次攻击的时间间隔（在3~5秒之间）">
+  <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
+</label><br>
+<button name="continuingAttack" type="button" title="连续攻击到指定层数">连续攻击</button>
+<button name="onceAttack" type="button" title="每次只攻击一层">攻击一层</button>
+`).appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
+        if (/你被击败了/.test(lootLog)) {
+            alert('你已经被击败了');
+            return;
+        }
+        let $this = $(this);
+        let type = $this.is('[name="continuingAttack"]') ? 'continue' : 'once';
+        let targetLevel = 0;
+        if (type === 'continue') {
+            targetLevel = parseInt(prompt('攻击到第几层？（设为0表示攻击到被击败为止）', 0));
+            if (isNaN(targetLevel) || targetLevel < 0) return;
+        }
+        $this.blur();
+        Msg.destroy();
+        let isChangePoints = Config.autoChangeLevelPointsEnabled && !$.isEmptyObject(Config.levelPointList);
+        let currentLevel = getCurrentMaxLevel(lootLog);
+        let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${ currentLevel }</em></i>` + '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注：请不要访问论坛的其它页面）</span>');
+
+        /**
+         * 修改点数方案
+         * @param {number} nextLevel 下一层
+         * @param {boolean} isShowMsg 是否显示消息
+         * @param {?jQuery} $wait 等待消息框
+         * @returns {Deferred} Deferred对象
+         */
+        const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
+            let changeLevel = Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel));
+            let isEqual = true;
+            $points.find('[type="number"]').each(function () {
+                if (this.defaultValue !== $(this).val()) {
+                    isEqual = false;
+                    return false;
+                }
+            });
+            let $levelPointListSelect = $('#pdLevelPointListSelect');
+            if (changeLevel !== parseInt($levelPointListSelect.val()) || !isEqual) {
+                $levelPointListSelect.val(changeLevel).trigger('change');
+                return $.ajax({
+                    type: 'POST',
+                    url: 'kf_fw_ig_enter.php',
+                    timeout: _Const2.default.defAjaxTimeout,
+                    data: $points.find('form').serialize()
+                }).then(function (html) {
+                    let { msg } = Util.getResponseMsg(html);
+                    if (/已经重新配置加点！/.test(msg)) {
+                        console.log(`【分配点数】已修改为第${ changeLevel }层的方案`);
+                        if (isShowMsg) {
+                            if ($wait) Msg.remove($wait);
+                            Msg.show(`<strong>已修改为第<em>${ changeLevel }</em>层的方案</strong>`, -1);
+                        }
+                        $points.find('[type="number"]').each(function () {
+                            this.defaultValue = $(this).val();
+                        }).trigger('change');
+                        return 'success';
+                    } else {
+                        alert(`第${ changeLevel }层方案：${ msg }`);
+                        return 'error';
+                    }
+                }, (XMLHttpRequest, textStatus) => textStatus);
+            } else return $.Deferred().resolve('success');
+        };
+
+        /**
+         * 攻击
+         */
+        const attack = function () {
+            $.ajax({
+                type: 'GET',
+                url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+                timeout: _Const2.default.defAjaxTimeout
+            }).done(function (html) {
+                let matches = /<tr><td.+?>\r\n(在\[\d+层\]你.+?<br\s*\/?>)<\/td><\/tr>/i.exec(html);
+                if (!matches) {
+                    Msg.remove($wait);
+                    return;
+                }
+                lootLog = matches[1];
+                enhanceLootLog(lootLog);
+
+                let currentLevel = getCurrentMaxLevel(lootLog);
+                console.log('【争夺攻击】当前层数：' + currentLevel);
+                let $countdown = $('.pd_countdown:last');
+                $countdown.text(currentLevel);
+
+                let isFail = /你被击败了/.test(lootLog);
+                let isStop = isFail || type !== 'continue' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
+                if (isStop) {
+                    Msg.remove($wait);
+                    if (isFail) Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);else Msg.show(`<strong>你成功打倒了第<em>${ currentLevel }</em>层的NPC</strong>`, -1);
+                    if (isChangePoints && isFail) {
+                        let $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
+                        changePoints(Math.min(...Object.keys(Config.levelPointList)), true, $wait).always(function (result) {
+                            if (result !== 'success') alert('修改点数分配方案失败');
+                            Msg.remove($wait);
+                        });
+                    }
+                } else {
+                    if (isChangePoints) {
+                        setTimeout(() => readyAttack(currentLevel), _Const2.default.defAjaxInterval);
+                    } else {
+                        setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+                    }
+                }
+            }).fail(function (XMLHttpRequest, textStatus) {
+                if ($('.pd_countdown:last').closest('.pd_msg').data('stop')) {
+                    Msg.remove($wait);
+                    return;
+                }
+                if (textStatus === 'timeout') {
+                    console.log('【争夺攻击】超时重试...');
+                    setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+                }
+            });
+        };
+
+        /**
+         * 准备攻击（用于自动修改各层点数分配方案）
+         * @param {number} currentLevel 当前层数
+         * @param {number} interval 下次攻击的间隔时间
+         */
+        const readyAttack = function (currentLevel, interval = _Const2.default.lootAttackInterval) {
+            changePoints(currentLevel + 1).done(function (result) {
+                if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+            }).fail(function (result) {
+                if (result === 'timeout') setTimeout(() => readyAttack(currentLevel, interval), _Const2.default.defAjaxInterval);
+            }).always(function (result) {
+                if (result !== 'success' && result !== 'timeout') {
+                    Msg.remove($wait);
+                }
+            });
+        };
+
+        if (isChangePoints) readyAttack(currentLevel, 0);else attack();
+    }).end().find('[name="autoChangeLevelPointsEnabled"]').click(function () {
+        (0, _Config.read)();
+        Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
+        (0, _Config.write)();
+    }).prop('checked', Config.autoChangeLevelPointsEnabled).end().find('[name="slowAttackEnabled"]').click(function () {
+        (0, _Config.read)();
+        Config.slowAttackEnabled = $(this).prop('checked');
+        (0, _Config.write)();
+    }).prop('checked', Config.slowAttackEnabled);
 };
 
 /**
  * 增强争夺记录
  */
-const enhanceLootLog = function () {
-    let $log = $lootArea.find('> tbody > tr:nth-child(5) > td');
-    let matches = $log.html().match(/获得\d+经验和\d+KFB/g);
+const enhanceLootLog = function (log) {
+    let { exp, kfb } = getLootTotalGain(log);
+    log = log.replace('<span style="color:#000FFF;font-weight:bold;">你被击败了</span>', '<b class="pd_highlight">你被击败了</b>').replace(/(#你发起了进攻：)/g, '<span style="color: #009900;">$1</span>').replace(/(对方攻击了你：)/g, '<span style="color: #cc3399;">$1</span>');
+    $lootLog.html(`<b class="pd_stat">你总共获得了<em>${ exp.toLocaleString() }</em>经验和<em>${ kfb.toLocaleString() }</em>KFB</b><br>${ log }`);
+};
+
+/**
+ * 获取当前的争夺总收获
+ * @param {string} log 争夺记录
+ * @returns {{exp: number, kfb: number}} exp：经验；kfb：KFB
+ */
+const getLootTotalGain = function (log) {
+    let matches = log.match(/获得\d+经验和\d+KFB/g);
     let exp = 0,
         kfb = 0;
     for (let i in matches) {
@@ -5994,9 +6113,23 @@ const enhanceLootLog = function () {
         exp += parseInt(logMatches[1]);
         kfb += parseInt(logMatches[2]);
     }
-    if (exp || kfb) {
-        $log.prepend(`<b class="pd_stat">你总共获得了<em>${ exp.toLocaleString() }</em>经验和<em>${ kfb.toLocaleString() }</em>KFB</b><br>`);
+    return { exp, kfb };
+};
+
+/**
+ * 获取当前的争夺记录中的最高层数
+ * @param {string} log 争夺记录
+ * @returns {number} 最高层数
+ */
+const getCurrentMaxLevel = function (log) {
+    let matches = log.match(/在\[(\d+)层]你/g);
+    let maxLevel = 1;
+    for (let i in matches) {
+        let levelMatches = /\d+/.exec(matches[i]);
+        let level = parseInt(levelMatches[0]);
+        if (maxLevel < level) maxLevel = level;
     }
+    return maxLevel;
 };
 
 /**
@@ -6010,7 +6143,7 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
     });
 };
 
-},{"./Config":4,"./Dialog":7,"./Item":11,"./Util":22}],15:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Item":11,"./Msg":15,"./Public":18,"./Util":22}],15:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -6409,13 +6542,8 @@ const addMsgSelectButton = exports.addMsgSelectButton = function () {
             });
         }
     }).parent().attr('colspan', 4).prev('td').attr('colspan', 3);
-    $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('[type="button"][value="全选"]').click(function (e) {
-        e.preventDefault();
-        $checkeds.each(function () {
-            let $this = $(this);
-            $this.prop('checked', !$this.prop('checked'));
-        });
-    });
+
+    $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('[type="button"][value="全选"]').click(() => Util.selectInverse($checkeds));
 };
 
 /**
@@ -6456,11 +6584,12 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
   </select>
 </label>&nbsp;
 <label>每隔 <input name="autoChangeIdColorInterval" class="pd_input" style="width: 25px;" type="text" maxlength="5"> 小时</label>
-<button>保存</button> <button style="margin-left: 3px;">重置</button><br>
-<a class="pd_btn_link" href="#">全选</a> <a class="pd_btn_link" href="#">反选</a>
+<button name="save" type="button">保存</button>
+<button name="reset" type="button" style="margin-left: 3px;">重置</button><br>
+<a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+<a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
 <label><input name="changeAllAvailableIdColorEnabled" class="pd_input" type="checkbox"> 选择当前所有可用的ID颜色</label>
-`).insertAfter($this.parent()).filter('button:first').click(function (e) {
-                e.preventDefault();
+`).insertAfter($this.parent()).filter('[name="save"]').click(function () {
                 let $autoChangeIdColorInterval = $area.find('[name="autoChangeIdColorInterval"]');
                 let interval = parseInt($autoChangeIdColorInterval.val());
                 if (isNaN(interval) || interval <= 0) {
@@ -6489,8 +6618,7 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
                 (0, _Config.write)();
                 if (oriInterval !== Config.autoChangeIdColorInterval) Util.deleteCookie(_Const2.default.autoChangeIdColorCookieName);
                 alert('设置保存成功');
-            }).end().filter('button:eq(1)').click(function (e) {
-                e.preventDefault();
+            }).end().filter('[name="reset"]').click(function () {
                 (0, _Config.read)();
                 Config.autoChangeIdColorEnabled = _Config.Config.autoChangeIdColorEnabled;
                 Config.autoChangeIdColorType = _Config.Config.autoChangeIdColorType;
@@ -6502,20 +6630,14 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
                 TmpLog.deleteValue(_Const2.default.prevAutoChangeIdColorTmpLogName);
                 alert('设置已重置');
                 location.reload();
-            }).end().filter('a').click(function (e) {
+            }).end().filter('[data-name="selectAll"], [data-name="selectInverse"]').click(function (e) {
                 e.preventDefault();
                 if ($idColors.find('input[disabled]').length > 0) {
                     alert('请先取消勾选“选择当前所有可用的ID颜色”复选框');
                     $area.find('[name="changeAllAvailableIdColorEnabled"]').focus();
                     return;
                 }
-                if ($(this).is('[data-name="autoChangeIdColorBtns"] > a:first')) {
-                    $idColors.find('[type="checkbox"]').prop('checked', true);
-                } else {
-                    $idColors.find('[type="checkbox"]').each(function () {
-                        $(this).prop('checked', !$(this).prop('checked'));
-                    });
-                }
+                if ($(this).is('[data-name="selectAll"]')) Util.selectAll($idColors.find('[type="checkbox"]'));else Util.selectInverse($idColors.find('[type="checkbox"]'));
             });
 
             $idColors.find('td:has(a)').each(function () {
@@ -6929,7 +7051,7 @@ const addAttachChangeAlert = exports.addAttachChangeAlert = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.importKfSmileEnhanceExtension = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.showCommonImportOrExportConfigDialog = exports.importKfSmileEnhanceExtension = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -6954,6 +7076,8 @@ var Func = _interopRequireWildcard(_Func);
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
+
+var _Config = require('./Config');
 
 var _ConfigDialog = require('./ConfigDialog');
 
@@ -7026,8 +7150,11 @@ const appendCss = exports.appendCss = function () {
   .pd_input, .pd_cfg_main input, .pd_cfg_main select {
     vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;
   }
-  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 22px; line-height: 22px; }
-  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
+  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {
+    height: 22px; line-height: 22px;
+  }
+  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,
+      .pd_textarea:focus { border-color: #7eb4ea; }
   .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
   .pd_btn_link { margin-left: 4px; margin-right: 4px; }
   .pd_custom_tips { cursor: help; }
@@ -7125,7 +7252,7 @@ const appendCss = exports.appendCss = function () {
   }
   .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }
   .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }
-  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 22px; min-height: 50px; overflow: auto; }
+  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }
   .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }
   .pd_cfg_main legend { font-weight: bold; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
@@ -7145,7 +7272,7 @@ const appendCss = exports.appendCss = function () {
   .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }
   .pd_log_nav a { display: inline-block; }
   .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }
-  .pd_log_content { height: 308px; overflow: auto; }
+  .pd_log_content { height: 242px; overflow: auto; }
   .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }
   .pd_log_content h3:not(:first-child) { margin-top: 5px; }
   .pd_log_content p { line-height: 22px; margin: 0; }
@@ -7915,7 +8042,7 @@ const changeIdColor = exports.changeIdColor = function () {
 const showElementTitleTips = exports.showElementTitleTips = function (e, title) {
     $('.pd_title_tips').remove();
     if (!title || !e.originalEvent) return;
-    $(`<div class="pd_title_tips">${ title }</div>`).appendTo('body').css('left', e.originalEvent.pageX - 20).css('top', e.originalEvent.pageY + 15);
+    $(`<div class="pd_title_tips">${ title.replace(/\n/g, '<br>') }</div>`).appendTo('body').css('left', e.originalEvent.pageX - 20).css('top', e.originalEvent.pageY + 15);
 };
 
 /**
@@ -8131,14 +8258,66 @@ const checkRatingSize = exports.checkRatingSize = function (title, ratingSize) {
  * 引入绯月表情增强插件
  */
 const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = function () {
-    var script = document.createElement('script');
+    let script = document.createElement('script');
     script.type = 'text/javascript';
     script.charset = 'utf-8';
     script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
     document.body.appendChild(script);
 };
 
-},{"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./Read":19,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+/**
+ * 显示通用的导入/导出设置对话框
+ * @param {string} title 对话框标题
+ * @param {string} configName 设置名称
+ * @param {?function} [callback] 回调方法
+ * @param {?function} [callbackAfterSubmit] 在提交之后的回调方法
+ */
+const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfigDialog = function (title, configName, callback, callbackAfterSubmit) {
+    const dialogName = 'pdCommonImOrExConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
+    (0, _Config.read)();
+    let html = `
+<div class="pd_cfg_main">
+  <div>
+    <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
+    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
+  </div>
+  <textarea name="commonConfig" style="width: 500px; height: 300px; word-break: break-all;"></textarea>
+</div>
+<div class="pd_cfg_btns">
+  <span class="pd_cfg_about"></span>
+  <button type="submit">保存</button>
+  <button name="cancel" type="button">取消</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, `导入或导出${ title }`, html);
+
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        if (!confirm('是否导入文本框中的设置？')) return;
+        let options = $.trim($dialog.find('[name="commonConfig"]').val());
+        if (!options) return;
+        try {
+            options = JSON.parse(options);
+        } catch (ex) {
+            alert('设置有错误');
+            return;
+        }
+        if (!options || $.type(options) !== $.type(Config[configName])) {
+            alert('设置有错误');
+            return;
+        }
+        Config[configName] = options;
+        (0, _Config.write)();
+        alert('设置已导入');
+        Dialog.close(dialogName);
+        if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
+    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    Dialog.show(dialogName);
+    $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
+    if (typeof callback === 'function') callback($dialog);
+};
+
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./Read":19,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
@@ -8219,7 +8398,7 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
         e.preventDefault();
         let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
-        location.href = `${ Util.getHostNameUrl }read.php?tid=${ Util.getUrlParam('tid') }&page=${ parseInt(floor / Config.perPageFloorNum) + 1 }&floor=${ floor }`;
+        location.href = `read.php?tid=${ Util.getUrlParam('tid') }&page=${ parseInt(floor / Config.perPageFloorNum) + 1 }&floor=${ floor }`;
     }).find('span').click(function () {
         $(this).closest('form').submit();
     }).end().closest('div').next().css({ 'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
@@ -8611,12 +8790,17 @@ const addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function () {
             buyThreads(threadList);
         }
     }).parent().mouseenter(function () {
-        $('<span style="margin-left: 5px;">[<a class="pd_btn_link" href="#">全选</a><a class="pd_btn_link" href="#">反选</a>]</span>').insertAfter($(this).find('.pd_buy_thread_btn')).find('a:first').click(function (e) {
+        $(`
+<span style="margin-left: 5px;">
+  [<a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+  <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>]
+</span>
+`).insertAfter($(this).find('.pd_buy_thread_btn')).find('[data-name="selectAll"]').click(function (e) {
             e.preventDefault();
             let $buyThread = $('.pd_buy_thread');
             $buyThread.prop('checked', true);
             alert(`共选择了${ $buyThread.length }项`);
-        }).next('a').click(function (e) {
+        }).end().find('[data-name="selectInverse"]').click(function (e) {
             e.preventDefault();
             let totalNum = 0;
             $('.pd_buy_thread').each(function () {
@@ -9022,12 +9206,14 @@ const showDialog = exports.showDialog = function (showIndex = null) {
     <a class="pd_btn_link" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
     <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出自定义脚本</a>
   </span>
-  <button name="ok">确定</button> <button name="cancel">取消</button> <button class="pd_highlight" name="clear">清空</button>
+  <button type="submit">确定</button>
+  <button name="cancel" type="button">取消</button>
+  <button class="pd_highlight" name="clear" type="button">清空</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
     let $customScriptList = $dialog.find('[data-name="customScriptList"]');
 
-    $dialog.find('[name="ok"]').click(function (e) {
+    $dialog.submit(function (e) {
         e.preventDefault();
         Config.customScriptList = [];
         $customScriptList.find('.pd_custom_script_content').each(function () {
@@ -9104,7 +9290,7 @@ const showDialog = exports.showDialog = function (showIndex = null) {
 `.trim() + '\n' + $content.val()).focus();
     }).end().find('[data-name="openImOrExCustomScriptDialog"]').click(function (e) {
         e.preventDefault();
-        ConfigDialog.showCommonImportOrExportConfigDialog('customScript');
+        Public.showCommonImportOrExportConfigDialog('自定义脚本', 'customScriptList');
     });
 
     $customScriptList.on('click', '.pd_custom_script_name', function (e) {

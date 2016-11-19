@@ -12,13 +12,13 @@ import * as Item from './Item';
 let $lootArea;
 // 争夺属性区域
 let $properties;
-// 属性点区域
+// 点数区域
 let $points;
 // 争夺记录区域
 let $lootLog;
 // 当前争夺属性
 let propertyList;
-// 附加属性点列表
+// 附加点数列表
 let extraPointList;
 // 道具使用情况
 let itemUsedNumList;
@@ -62,7 +62,7 @@ const handlePropertiesArea = function () {
             `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span> <span id="pdNew_i1"></span>`
         )
         .replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>')
-        .replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="攻击+(体质*5)+(智力*5)"></span>');
+        .replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
@@ -96,15 +96,15 @@ const handlePropertiesArea = function () {
 };
 
 /**
- * 处理属性点区域
+ * 处理点数区域
  */
 const handlePointsArea = function () {
     $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
     $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
 
     /**
-     * 显示各项属性点的和值
-     * @param {jQuery} $point 属性点字段对象
+     * 显示各项点数的和值
+     * @param {jQuery} $point 点数字段对象
      */
     const showSumOfPoint = function ($point) {
         let num = parseInt($point.val());
@@ -186,9 +186,9 @@ const getLootPropertyList = function () {
 };
 
 /**
- * 获取当前已分配的属性点
- * @param {jQuery} $points 属性点字段对象
- * @returns {number} 当前已分配的属性点
+ * 获取当前已分配的点数
+ * @param {jQuery} $points 点数字段对象
+ * @returns {number} 当前已分配的点数
  */
 const getCurrentAssignedPoint = function ($points) {
     let usedPoint = 0;
@@ -209,8 +209,8 @@ const getCurrentAssignedPoint = function ($points) {
 const getSkillAttack = (s1, s2, i1) => (s1 + extraPointList.get('力量')) * 5 + s2 * 5 + i1 * 5;
 
 /**
- * 获取附加属性点列表
- * @returns {Map} 附加属性点列表
+ * 获取附加点数列表
+ * @returns {Map} 附加点数列表
  */
 const getExtraPointList = function () {
     let extraPointList = new Map([
@@ -236,9 +236,9 @@ const getExtraPointList = function () {
 };
 
 /**
- * 根据字段名称获取属性点名称
+ * 根据字段名称获取点数名称
  * @param {string} fieldName 字段名称
- * @returns {string} 属性点名称
+ * @returns {string} 点数名称
  */
 const getPointNameByFieldName = function (fieldName) {
     switch (fieldName) {
@@ -264,8 +264,8 @@ const getPointNameByFieldName = function (fieldName) {
 };
 
 /**
- * 根据属性点名称获取字段名称
- * @param {string} pointName 属性点名称
+ * 根据点数名称获取字段名称
+ * @param {string} pointName 点数名称
  * @returns {string} 字段名称
  */
 const getFieldNameByPointName = function (pointName) {
@@ -293,7 +293,7 @@ const getFieldNameByPointName = function (pointName) {
 
 /**
  * 显示新的争夺属性
- * @param {jQuery} $point 属性点字段对象
+ * @param {jQuery} $point 点数字段对象
  */
 const showNewLootProperty = function ($point) {
     let name = $point.attr('name');
@@ -331,9 +331,9 @@ const showNewLootProperty = function ($point) {
 };
 
 /**
- * 根据指定的属性点获得相应争夺属性的值
- * @param pointName 属性点名称
- * @param point 属性点的值
+ * 根据指定的点数获得相应争夺属性的值
+ * @param pointName 点数名称
+ * @param point 点数的值
  * @returns {number} 争夺属性的值
  */
 const getPropertyByPoint = function (pointName, point) {
@@ -367,10 +367,10 @@ const getPropertyByPoint = function (pointName, point) {
 };
 
 /**
- * 根据指定的争夺属性获得相应属性点的值
- * @param pointName 属性点名称
+ * 根据指定的争夺属性获得相应点数的值
+ * @param pointName 点数名称
  * @param num 争夺属性的值
- * @returns {number} 属性点的值
+ * @returns {number} 点数的值
  */
 const getPointByProperty = function (pointName, num) {
     let value = 0;
@@ -399,16 +399,16 @@ const getPointByProperty = function (pointName, num) {
 };
 
 /**
- * 添加每层属性点分配方案选择框
+ * 添加各层点数分配方案选择框
  */
 const addLevelPointListSelect = function () {
     $(`
 <select id="pdLevelPointListSelect" style="margin: 5px 0;">
-  <option>属性点分配方案</option>
+  <option>点数分配方案</option>
   <option value="edit" style="color: #00f;">编辑&hellip;</option>
   <option value="0">默认</option>
 </select>
-<a class="pd_btn_link" data-name="save" href="#" title="将当前属性点设置保存为新的方案">保存</a><br>
+<a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a><br>
 `).prependTo($points).filter('#pdLevelPointListSelect').change(function () {
         let level = $(this).val();
         if (level === '0') {
@@ -423,7 +423,7 @@ const addLevelPointListSelect = function () {
         else if ($.isNumeric(level)) {
             let points = Config.levelPointList[parseInt(level)];
             if (typeof points !== 'object') return;
-            $points.find('[type="number"]').each(function () {
+            $points.find('[type="number"]:not([disabled])').each(function () {
                 let $this = $(this);
                 $this.val(points[getPointNameByFieldName($this.attr('name'))]);
             }).trigger('change');
@@ -435,7 +435,12 @@ const addLevelPointListSelect = function () {
             alert('剩余属性点为负，请重新填写');
             return;
         }
-        let level = parseInt(prompt('请输入层数：'));
+        else if (surplusPoint > 0) {
+            if (!confirm('你的可分配属性点尚未用完，是否保存？')) return;
+        }
+        let $levelPointListSelect = $('#pdLevelPointListSelect');
+        let level = parseInt($levelPointListSelect.val());
+        level = parseInt(prompt('请输入层数：', level ? level : ''));
         if (!level || level < 0) return;
 
         readConfig();
@@ -452,14 +457,14 @@ const addLevelPointListSelect = function () {
         Config.levelPointList[level] = points;
         writeConfig();
         setLevelPointListSelect(Config.levelPointList);
-        $('#pdLevelPointListSelect').val(level);
+        $levelPointListSelect.val(level);
     });
     setLevelPointListSelect(Config.levelPointList);
 };
 
 /**
- * 设置每层属性点分配方案选择框
- * @param {{}} levelPointList 每层属性点分配列表
+ * 设置各层点数分配方案选择框
+ * @param {{}} levelPointList 各层点数分配列表
  */
 const setLevelPointListSelect = function (levelPointList) {
     let pointListHtml = '';
@@ -470,7 +475,7 @@ const setLevelPointListSelect = function (levelPointList) {
 };
 
 /**
- * 显示每层属性点分配方案对话框
+ * 显示各层点数分配方案对话框
  */
 const showLevelPointListConfigDialog = function (callback) {
     const dialogName = 'pdLevelPointListConfigDialog';
@@ -478,7 +483,7 @@ const showLevelPointListConfigDialog = function (callback) {
     readConfig();
     let html = `
 <div class="pd_cfg_main">
-  <div style="margin-top: 5px;">请填写相应层数对应的属性点分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层</div>
+  <div style="margin-top: 5px;">请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层</div>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
       <tbody>
@@ -506,17 +511,17 @@ const showLevelPointListConfigDialog = function (callback) {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配设置</a></span>
+  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配方案</a></span>
   <button type="submit">确定</button>
   <button type="button" name="cancel">取消</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, '每层属性点分配方案', html, 'min-width: 665px;');
+    let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
 
     /**
-     * 添加每层属性点分配的HTML
+     * 添加各层点数分配的HTML
      * @param {number} level 层数
-     * @param {{}} points 属性点对象
+     * @param {{}} points 点数对象
      */
     const addLevelPointHtml = function (level, points) {
         $(`
@@ -538,13 +543,25 @@ const showLevelPointListConfigDialog = function (callback) {
 <tr>
   <td></td>
   <td class="pd_custom_tips" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
-  <td title="攻击力">攻：<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a></td>
-  <td title="最大生命值">命：<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a></td>
-  <td title="攻击速度">速：<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a></td>
-  <td title="暴击几率">暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a></td>
-  <td title="技能释放概率">技：<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a></td>
-  <td title="防御减伤">防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a></td>
-  <td class="pd_custom_tips" title="技能伤害：攻击伤害+(体质点数*6)">技伤：<span data-id="skillAttack">0</span></td>
+  <td title="攻击力">
+    攻：<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="最大生命值">
+    命：<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="攻击速度">
+    速：<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="暴击几率">
+    暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="技能释放概率">
+    技：<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="防御减伤">
+    防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td class="pd_custom_tips" title="技能伤害：攻击+(体质*5)+(智力*5)">技伤：<span data-id="skillAttack">0</span></td>
 </tr>
 `).appendTo($levelPointList).find('[type="number"]').trigger('change');
     };
@@ -604,7 +621,7 @@ const showLevelPointListConfigDialog = function (callback) {
         .click(function (e) {
             e.preventDefault();
             Public.showCommonImportOrExportConfigDialog(
-                '每层属性点分配方案',
+                '各层点数分配方案',
                 'levelPointList',
                 null,
                 function () {
@@ -717,10 +734,10 @@ const showLevelPointListConfigDialog = function (callback) {
  */
 const addAttackBtns = function () {
     $(`
-<label title="攻击时可自动修改成相应的属性点分配方案，被击败后还原为最低层数的方案">
-  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改每层属性点分配方案
+<label title="攻击时可自动修改成相应的点数分配方案，被击败后修改回最低层数的方案">
+  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
 </label>
-<label title="延长每次争夺攻击的时间间隔（在2-3秒之间）">
+<label title="延长每次攻击的时间间隔（在3~5秒之间）">
   <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
 </label><br>
 <button name="continuingAttack" type="button" title="连续攻击到指定层数">连续攻击</button>
@@ -742,23 +759,29 @@ const addAttackBtns = function () {
         let isChangePoints = Config.autoChangeLevelPointsEnabled && !$.isEmptyObject(Config.levelPointList);
         let currentLevel = getCurrentMaxLevel(lootLog);
         let $wait = Msg.wait(
-            `<strong>正在攻击中，请稍后&hellip;</strong><i>当前层数：<em class="pd_countdown">${currentLevel}</em></i>` +
-            '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（请不要访问论坛的其它页面）</span>'
+            `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${currentLevel}</em></i>` +
+            '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注：请不要访问论坛的其它页面）</span>'
         );
 
         /**
-         * 修改属性点
+         * 修改点数方案
          * @param {number} nextLevel 下一层
+         * @param {boolean} isShowMsg 是否显示消息
+         * @param {?jQuery} $wait 等待消息框
          * @returns {Deferred} Deferred对象
          */
-        const modifyPoints = function (nextLevel) {
-            let $levelPointListSelect = $('#pdLevelPointListSelect');
+        const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
             let changeLevel = Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel));
-            if (changeLevel !== parseInt($levelPointListSelect.val())) {
+            let isEqual = true;
+            $points.find('[type="number"]').each(function () {
+                if (this.defaultValue !== $(this).val()) {
+                    isEqual = false;
+                    return false;
+                }
+            });
+            let $levelPointListSelect = $('#pdLevelPointListSelect');
+            if (changeLevel !== parseInt($levelPointListSelect.val()) || !isEqual) {
                 $levelPointListSelect.val(changeLevel).trigger('change');
-                $points.find('[type="number"]').each(function () {
-                    this.defaultValue = $(this).val();
-                }).trigger('change');
                 return $.ajax({
                     type: 'POST',
                     url: 'kf_fw_ig_enter.php',
@@ -767,14 +790,21 @@ const addAttackBtns = function () {
                 }).then(function (html) {
                     let {msg} = Util.getResponseMsg(html);
                     if (/已经重新配置加点！/.test(msg)) {
-                        console.log(`【分配属性点】已修改为第${changeLevel}层的方案`);
+                        console.log(`【分配点数】已修改为第${changeLevel}层的方案`);
+                        if (isShowMsg) {
+                            if ($wait) Msg.remove($wait);
+                            Msg.show(`<strong>已修改为第<em>${changeLevel}</em>层的方案</strong>`, -1);
+                        }
+                        $points.find('[type="number"]').each(function () {
+                            this.defaultValue = $(this).val();
+                        }).trigger('change');
                         return 'success';
                     }
                     else {
-                        alert(msg);
+                        alert(`第${changeLevel}层方案：${msg}`);
                         return 'error';
                     }
-                }, (XMLHttpRequest, textStatus) => textStatus === 'timeout' ? 'timeout' : 'error');
+                }, (XMLHttpRequest, textStatus) => textStatus);
             }
             else return $.Deferred().resolve('success');
         };
@@ -806,44 +836,50 @@ const addAttackBtns = function () {
                     $countdown.closest('.pd_msg').data('stop');
                 if (isStop) {
                     Msg.remove($wait);
-                    Msg.show(`<strong>你进攻到了第<em>${currentLevel}</em>层</strong>`);
+                    if (isFail) Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
+                    else Msg.show(`<strong>你成功打倒了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
                     if (isChangePoints && isFail) {
-                        let $wait = Msg.wait('<strong>正在修改属性点分配&hellip;</strong>');
-                        modifyPoints(Math.min(...Object.keys(Config.levelPointList))).always(function () {
+                        let $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
+                        changePoints(Math.min(...Object.keys(Config.levelPointList)), true, $wait).always(function (result) {
+                            if (result !== 'success') alert('修改点数分配方案失败');
                             Msg.remove($wait);
                         });
                     }
                 }
                 else {
                     if (isChangePoints) {
-                        setTimeout(function () {
-                            readyAttack(currentLevel)
-                        }, Const.defAjaxInterval);
+                        setTimeout(() => readyAttack(currentLevel), Const.defAjaxInterval);
                     }
                     else {
-                        setTimeout(function () {
-                            attack();
-                        }, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
+                        setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
                     }
                 }
             }).fail(function (XMLHttpRequest, textStatus) {
+                if ($('.pd_countdown:last').closest('.pd_msg').data('stop')) {
+                    Msg.remove($wait);
+                    return;
+                }
                 if (textStatus === 'timeout') {
-                    console.log('【争夺攻击】超时重试……');
-                    setTimeout(() => attack, Const.defAjaxInterval);
+                    console.log('【争夺攻击】超时重试...');
+                    setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
                 }
             });
         };
 
         /**
-         * 准备攻击（用于自动修改每层属性点分配方案）
+         * 准备攻击（用于自动修改各层点数分配方案）
          * @param {number} currentLevel 当前层数
          * @param {number} interval 下次攻击的间隔时间
          */
         const readyAttack = function (currentLevel, interval = Const.lootAttackInterval) {
-            modifyPoints(currentLevel + 1).done(function (result) {
-                if (result === 'success') setTimeout(() => attack(), typeof interval === 'function' ? interval() : interval);
-                else if (result === 'timeout') readyAttack(currentLevel + 1, interval);
-                else Msg.remove($wait);
+            changePoints(currentLevel + 1).done(function (result) {
+                if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+            }).fail(function (result) {
+                if (result === 'timeout') setTimeout(() => readyAttack(currentLevel, interval), Const.defAjaxInterval);
+            }).always(function (result) {
+                if (result !== 'success' && result !== 'timeout') {
+                    Msg.remove($wait);
+                }
             });
         };
 
