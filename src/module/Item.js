@@ -443,7 +443,7 @@ const restoreItems = function (options, cycle) {
         $(document).queue('RestoreItems', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_ig_doit.php?renew=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
+                url: `kf_fw_ig_doit.php?renew=${settings.safeId}&id=${itemId}1&t=${new Date().getTime()}`,
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('恢复道具', html);
@@ -1066,7 +1066,7 @@ export const addBatchUseAndConvertItemTypesButton = function () {
     if (!safeId) return;
     $(`
 <div class="pd_item_btns">
-  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用和恢复道具（仅限此页面有效）">
+  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用和恢复道具">
     <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}>
     模拟手动操作道具
   </label>
@@ -1171,10 +1171,7 @@ export const addBatchUseAndConvertItemTypesButton = function () {
             }
         }).find('[name="simulateManualHandleItemEnabled"]')
         .click(function () {
-            if (!('_specialAjaxInterval' in Const)) Const._specialAjaxInterval = Const.specialAjaxInterval;
             let checked = $(this).prop('checked');
-            if (checked) Const.specialAjaxInterval = () => Math.floor(Math.random() * 4000) + 2000;
-            else Const.specialAjaxInterval = Const._specialAjaxInterval;
             if (Config.simulateManualHandleItemEnabled !== checked) {
                 readConfig();
                 Config.simulateManualHandleItemEnabled = checked;

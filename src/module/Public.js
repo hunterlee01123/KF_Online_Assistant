@@ -65,8 +65,11 @@ export const appendCss = function () {
   .pd_input, .pd_cfg_main input, .pd_cfg_main select {
     vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;
   }
-  .pd_input[type="text"], .pd_cfg_main input[type="text"] { height: 22px; line-height: 22px; }
-  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main textarea:focus, .pd_textarea:focus { border-color: #7eb4ea; }
+  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {
+    height: 22px; line-height: 22px;
+  }
+  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,
+      .pd_textarea:focus { border-color: #7eb4ea; }
   .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }
   .pd_btn_link { margin-left: 4px; margin-right: 4px; }
   .pd_custom_tips { cursor: help; }

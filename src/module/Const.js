@@ -39,7 +39,8 @@ const Const = {
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用、恢复、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval () {
-        return Math.floor(Math.random() * 150) + 200;
+        if (Config.simulateManualHandleItemEnabled) return Math.floor(Math.random() * 4000) + 2000; // 模拟手动时的情况
+        else return Math.floor(Math.random() * 150) + 200; // 正常情况
     },
     // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
     cycleUseItemsFirstAjaxInterval () {
@@ -47,7 +48,8 @@ const Const = {
     },
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval () {
-        return Math.floor(Math.random() * 1000) + 2000;
+        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 1000) + 2000; // 慢速情况
+        else return Math.floor(Math.random() * 200) + 200; // 正常情况
     },
 
     // 购买帖子提醒的最低售价（KFB）

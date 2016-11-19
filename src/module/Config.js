@@ -165,10 +165,12 @@ export const Config = {
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
 
-    // 争夺每层分配点数列表
+    // 争夺每层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
     // 自动修改争夺每层属性点分配，true：开启；false：关闭
     autoChangeLevelPointsEnabled: false,
+    // 延长每次争夺攻击的时间间隔，true：开启；false：关闭
+    slowAttackEnabled: false,
 };
 
 /**

@@ -73,7 +73,7 @@ const handlePropertiesArea = function () {
         if (name === 's1') step = 5;
         else if (name === 's2') step = 20;
         else if (name === 'd1') step = 2;
-        $(`<input data-name="${name}" type="number" value="${parseInt($this.text())}" min="1" step="${step}" ` +
+        $(`<input class="pd_input" data-name="${name}" type="number" value="${parseInt($this.text())}" min="1" step="${step}" ` +
             `style="width: 65px; margin-right: 5px;" title="${$this.attr('title')}">`
         ).insertAfter($this)
             .focus()
@@ -718,7 +718,10 @@ const showLevelPointListConfigDialog = function (callback) {
 const addAttackBtns = function () {
     $(`
 <label title="攻击时可自动修改成相应的属性点分配方案，被击败后还原为最低层数的方案">
-  <input class="pd_input" name="autoChangeLevelPoints" type="checkbox"> 自动修改每层属性点分配方案
+  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改每层属性点分配方案
+</label>
+<label title="延长每次争夺攻击的时间间隔（在2-3秒之间）">
+  <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
 </label><br>
 <button name="continuingAttack" type="button" title="连续攻击到指定层数">连续攻击</button>
 <button name="onceAttack" type="button" title="每次只攻击一层">攻击一层</button>
@@ -846,11 +849,16 @@ const addAttackBtns = function () {
 
         if (isChangePoints) readyAttack(currentLevel, 0);
         else attack();
-    }).end().find('[name="autoChangeLevelPoints"]').click(function () {
+    }).end().find('[name="autoChangeLevelPointsEnabled"]').click(function () {
         readConfig();
         Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
         writeConfig();
-    }).prop('checked', Config.autoChangeLevelPointsEnabled);
+    }).prop('checked', Config.autoChangeLevelPointsEnabled)
+        .end().find('[name="slowAttackEnabled"]').click(function () {
+        readConfig();
+        Config.slowAttackEnabled = $(this).prop('checked');
+        writeConfig();
+    }).prop('checked', Config.slowAttackEnabled);
 };
 
 /**
