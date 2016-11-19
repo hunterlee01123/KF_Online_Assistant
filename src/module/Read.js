@@ -44,15 +44,13 @@ export const addFastGotoFloorInput = function () {
             e.preventDefault();
             let floor = parseInt($(this).find('input').val());
             if (!floor || floor < 0) return;
-            location.href = `${Util.getHostNameUrl}read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
+            location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
         })
         .find('span')
         .click(function () {
             $(this).closest('form').submit();
         })
-        .end()
-        .closest('div')
-        .next()
+        .end().closest('div').next()
         .css({'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'});
 };
 

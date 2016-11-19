@@ -166,7 +166,9 @@ export const Config = {
     simulateManualHandleItemEnabled: false,
 
     // 争夺每层分配点数列表
-    lootLevelPointList: {},
+    levelPointList: {},
+    // 自动修改争夺每层属性点分配，true：开启；false：关闭
+    autoChangeLevelPointsEnabled: false,
 };
 
 /**

@@ -1175,9 +1175,11 @@ export const addBatchUseAndConvertItemTypesButton = function () {
             let checked = $(this).prop('checked');
             if (checked) Const.specialAjaxInterval = () => Math.floor(Math.random() * 4000) + 2000;
             else Const.specialAjaxInterval = Const._specialAjaxInterval;
-            readConfig();
-            Config.simulateManualHandleItemEnabled = checked;
-            writeConfig();
+            if (Config.simulateManualHandleItemEnabled !== checked) {
+                readConfig();
+                Config.simulateManualHandleItemEnabled = checked;
+                writeConfig();
+            }
         }).triggerHandler('click');
 };
 

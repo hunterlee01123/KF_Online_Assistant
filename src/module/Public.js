@@ -1250,8 +1250,9 @@ export const importKfSmileEnhanceExtension = function () {
  * @param {string} title 对话框标题
  * @param {string} configName 设置名称
  * @param {?function} [callback] 回调方法
+ * @param {?function} [callbackAfterSubmit] 在提交之后的回调方法
  */
-export const showCommonImportOrExportConfigDialog = function (title, configName, callback) {
+export const showCommonImportOrExportConfigDialog = function (title, configName, callback, callbackAfterSubmit) {
     const dialogName = 'pdCommonImOrExConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     readConfig();
@@ -1261,7 +1262,7 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
     <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
   </div>
-  <textarea name="commonConfig" style="width: 420px; height: 200px; word-break: break-all;"></textarea>
+  <textarea name="commonConfig" style="width: 500px; height: 300px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"></span>
@@ -1282,14 +1283,16 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
             alert('设置有错误');
             return;
         }
-        if (!options || !Array.isArray(options)) {
+        if (!options || $.type(options) !== $.type(Config[configName])) {
             alert('设置有错误');
             return;
         }
         Config[configName] = options;
         writeConfig();
         alert('设置已导入');
-        location.reload();
+        Dialog.close(dialogName);
+        if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
+        else location.reload();
     }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
     Dialog.show(dialogName);
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();

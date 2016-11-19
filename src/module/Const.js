@@ -10,10 +10,12 @@ const storagePrefix = 'pd_';
 const Const = {
     // 开启调试模式，true：开启；false：关闭
     debug: false,
+
     // UTC时间与论坛时间之间的时差（小时）
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
+
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
     actionFinishRetryInterval: 30,
     // 在连接超时的情况下获取剩余时间失败后的重试间隔（分钟），用于定时模式
@@ -28,6 +30,9 @@ const Const = {
     smRankChangeAlertInterval: 22,
     // 存储VIP剩余时间的Cookie有效期（分钟）
     vipSurplusTimeExpires: 60,
+    // 定期存款到期期限（天）
+    fixedDepositDueTime: 90,
+
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
@@ -40,6 +45,11 @@ const Const = {
     cycleUseItemsFirstAjaxInterval () {
         return Math.floor(Math.random() * 250) + 2000;
     },
+    // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
+    lootAttackInterval () {
+        return Math.floor(Math.random() * 1000) + 2000;
+    },
+
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
     // 统计回帖者名单最大能访问的帖子页数
@@ -59,8 +69,6 @@ const Const = {
         ['整形优惠卷', 1003993],
         ['消逝之药', 1000306],
     ]),
-    // 定期存款到期期限（天）
-    fixedDepositDueTime: 90,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义侧边栏导航内容
@@ -71,6 +79,7 @@ const Const = {
     customTileSideBarContent: '',
     // 可进行自助评分的版块ID列表
     selfRatingFidList: [41, 67, 92, 127, 68],
+
     // 通用存储数据名称前缀
     storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
@@ -83,6 +92,7 @@ const Const = {
     fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
+
     // 标记已进行KFB捐款的Cookie名称
     donationCookieName: 'donation',
     // 标记已去除首页已读at高亮提示的Cookie名称
