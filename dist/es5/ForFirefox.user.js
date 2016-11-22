@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.0.1
+// @version     8.0.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -83,7 +83,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.0.1';
+var version = '8.0.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -3412,7 +3412,7 @@ var restoreItems = function restoreItems(options, cycle) {
         $(document).queue('RestoreItems', function () {
             $.ajax({
                 type: 'GET',
-                url: 'kf_fw_ig_doit.php?renew=' + settings.safeId + '&id=' + itemId + '1&t=' + new Date().getTime(),
+                url: 'kf_fw_ig_doit.php?renew=' + settings.safeId + '&id=' + itemId + '&t=' + new Date().getTime(),
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('恢复道具', html);

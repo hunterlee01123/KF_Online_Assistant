@@ -425,7 +425,7 @@ const restoreItems = function (options, cycle) {
         $(document).queue('RestoreItems', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_ig_doit.php?renew=${settings.safeId}&id=${itemId}1&t=${new Date().getTime()}`,
+                url: `kf_fw_ig_doit.php?renew=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('恢复道具', html);
