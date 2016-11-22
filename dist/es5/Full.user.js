@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.0
+// @version     8.0.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -82,7 +82,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.0';
+var version = '8.0.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -146,7 +146,7 @@ $(function () {
     } else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
         Item.addConvertEnergyAndRestoreItemsButton();
     } else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addSellAndUseItemsButton();
+        Item.addUseItemsButton();
     } else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
         Item.modifyItemDescription();
         if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
@@ -207,8 +207,9 @@ $(function () {
     if (_Info2.default.isMobile) Public.bindElementTitleClick();
     if (_Info2.default.isInMiaolaDomain) {
         if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
-            Public.importKfSmileEnhanceExtension();
+            Post.importKfSmileEnhanceExtension();
         }
+        $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
     }
 
     var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
@@ -2949,7 +2950,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyItemDescription = exports.addBatchBuyItemsLink = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addSellAndUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
+exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
@@ -3016,24 +3017,6 @@ var getRestoreEnergyNumByLevel = function getRestoreEnergyNumByLevel(itemLevel) 
             return 10;
         case 2:
             return 50;
-        case 3:
-            return 300;
-        case 4:
-            return 2000;
-        case 5:
-            return 10000;
-        default:
-            return 0;
-    }
-};
-
-/**
- * 获取指定等级道具的出售所得
- * @param {number} itemLevel 道具等级
- * @returns {number} 出售所得
- */
-var getSellItemGainByLevel = function getSellItemGainByLevel(itemLevel) {
-    switch (itemLevel) {
         case 3:
             return 300;
         case 4:
@@ -3700,82 +3683,9 @@ var convertItemsToEnergy = function convertItemsToEnergy(options) {
 };
 
 /**
- * 出售指定的一系列道具
- * @param {{}} options 设置项
- * @param {number[]} options.itemIdList 指定的道具ID列表
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {string} options.itemName 道具名称
+ * 在道具列表页面上添加批量使用道具的按钮
  */
-var sellItems = function sellItems(options) {
-    var settings = {
-        itemIdList: [],
-        itemLevel: 0,
-        itemName: ''
-    };
-    $.extend(settings, options);
-    $('.kf_fw_ig1:last').parent().append('<ul class="pd_result"><li><strong>\u3010Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '\u3011\u51FA\u552E\u7ED3\u679C\uFF1A</strong></li></ul>');
-
-    var successNum = 0,
-        failNum = 0,
-        totalGain = 0;
-    $(document).clearQueue('SellItems');
-    $.each(settings.itemIdList, function (index, itemId) {
-        $(document).queue('SellItems', function () {
-            $.ajax({
-                type: 'GET',
-                url: 'kf_fw_ig_shop.php?sell=yes&id=' + itemId + '&t=' + new Date().getTime(),
-                timeout: _Const2.default.defAjaxTimeout,
-                success: function success(html) {
-                    Public.showFormatLog('出售道具', html);
-
-                    var _Util$getResponseMsg4 = Util.getResponseMsg(html),
-                        msg = _Util$getResponseMsg4.msg;
-
-                    if (/出售成功/.test(msg)) {
-                        successNum++;
-                        totalGain += getSellItemGainByLevel(settings.itemLevel);
-                    } else failNum++;
-                },
-                error: function error() {
-                    failNum++;
-                },
-                complete: function complete() {
-                    var $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    var isStop = $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('SellItems');
-
-                    if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($countdown.closest('.pd_msg'));
-                        if (successNum > 0) {
-                            Log.push('出售道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', {
-                                gain: { 'KFB': totalGain },
-                                pay: { '道具': -successNum }
-                            });
-                        }
-                        $('.kf_fw_ig1 input[type="checkbox"]:checked').closest('tr').fadeOut('normal', function () {
-                            $(this).remove();
-                        });
-                        console.log('\u5171\u6709' + successNum + '\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF0C\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u51FA\u552E\u5931\u8D25\uFF0CKFB+' + totalGain);
-                        Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u5931\u8D25' : '') + '</strong>' + ('<i>KFB<em>+' + totalGain + '</em></i>'), -1);
-                        $('.pd_result:last').append('<li class="pd_stat">\u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u5931\u8D25' : '') + '\uFF0C' + ('<i>KFB<em>+' + totalGain + '</em></i></li>'));
-                    } else {
-                        setTimeout(function () {
-                            return $(document).dequeue('SellItems');
-                        }, _Const2.default.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('SellItems');
-};
-
-/**
- * 在道具列表页面上添加批量出售和使用道具的按钮
- */
-var addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function addSellAndUseItemsButton() {
+var addUseItemsButton = exports.addUseItemsButton = function addUseItemsButton() {
     var safeId = Public.getSafeId();
     if (!safeId) return;
     var $lastLine = $('.kf_fw_ig1 > tbody > tr:last-child');
@@ -3793,7 +3703,7 @@ var addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function addSe
     });
     $('.kf_fw_ig1 > tbody > tr:lt(2)').find('td').attr('colspan', 5);
 
-    $('\n<div class="pd_item_btns">\n  ' + (itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" type="button" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : '') + '\n  ' + (itemTypeId > 1 ? '<button name="cycleUseItem" type="button" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : '') + '\n  <button name="useItem" type="button" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177">\u4F7F\u7528\u9053\u5177</button>\n  <button name="selectAll" type="button">\u5168\u9009</button>\n  <button name="selectInverse" type="button">\u53CD\u9009</button>\n</div>\n').insertAfter('.kf_fw_ig1').find('[name="useItem"]').click(function () {
+    $('\n<div class="pd_item_btns">\n  ' + (itemTypeId > 1 ? '<button name="cycleUseItem" type="button" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : '') + '\n  <button name="useItem" type="button" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177">\u4F7F\u7528\u9053\u5177</button>\n  <button name="selectAll" type="button">\u5168\u9009</button>\n  <button name="selectInverse" type="button">\u53CD\u9009</button>\n</div>\n').insertAfter('.kf_fw_ig1').find('[name="useItem"]').click(function () {
         Msg.destroy();
         var itemIdList = [];
         $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
@@ -3864,20 +3774,6 @@ var addSellAndUseItemsButton = exports.addSellAndUseItemsButton = function addSe
                 maxEffectiveItemCount: maxEffectiveItemCount,
                 maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
             });
-        });
-    }).end().find('[name="sellItem"]').click(function () {
-        Msg.destroy();
-        var itemIdList = [];
-        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
-            itemIdList.push(parseInt($(this).val()));
-        });
-        if (!itemIdList.length) return;
-        if (!confirm('\u5171\u9009\u62E9\u4E86' + itemIdList.length + '\u4E2A\u9053\u5177\uFF0C\u662F\u5426\u6279\u91CF\u51FA\u552E\u9053\u5177\uFF1F')) return;
-        Msg.wait('<strong>\u6B63\u5728\u51FA\u552E\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-        sellItems({
-            itemIdList: itemIdList,
-            itemLevel: itemLevel,
-            itemName: itemName
         });
     });
 
@@ -4527,246 +4423,6 @@ var addSampleItemTips = exports.addSampleItemTips = function addSampleItemTips()
 };
 
 /**
- * 购买指定种类的道具
- * @param {{}} options 设置项
- * @param {number} options.itemTypeId 指定的道具种类ID
- * @param {number} options.num 欲购买的道具数量
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {string} options.itemName 道具名称
- */
-var buyItems = function buyItems(options) {
-    var settings = {
-        itemTypeId: 0,
-        num: 0,
-        safeId: '',
-        itemLevel: 0,
-        itemName: ''
-    };
-    $.extend(settings, options);
-    $('.kf_fw_ig1').parent().append('<ul class="pd_result"><li><strong>\u3010Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '\u3011\u8D2D\u4E70\u7ED3\u679C\uFF1A</strong></li></ul>');
-
-    var successNum = 0,
-        failNum = 0;
-    var isStop = false;
-    $(document).clearQueue('BatchBuyItems');
-    $.each(new Array(settings.num), function (index) {
-        $(document).queue('BatchBuyItems', function () {
-            $.ajax({
-                type: 'GET',
-                url: 'kf_fw_ig_shop.php?lvid=' + settings.itemTypeId + '&safeid=' + settings.safeId + '&t=' + new Date().getTime(),
-                timeout: _Const2.default.defAjaxTimeout,
-                success: function success(html) {
-                    Public.showFormatLog('购买道具', html);
-
-                    var _Util$getResponseMsg5 = Util.getResponseMsg(html),
-                        msg = _Util$getResponseMsg5.msg,
-                        url = _Util$getResponseMsg5.url;
-
-                    var matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec(url);
-                    if (matches) {
-                        successNum++;
-                        msg = '\u83B7\u5F97\u4E86<a target="_blank" href="kf_fw_ig_my.php?pro=' + matches[1] + '" data-id="' + matches[1] + '">\u4E00\u4E2A\u9053\u5177</a>';
-                    } else if (/你需要持有该道具两倍市场价的KFB/.test(html)) {
-                        msg = '你需要持有该道具两倍市场价的KFB<span class="pd_notice">（购买操作中止）</span>';
-                        isStop = true;
-                    }
-                    $('.pd_result:last').append('<li><b>\u7B2C' + (index + 1) + '\u6B21\uFF1A</b>' + msg + '</li>');
-                },
-                error: function error() {
-                    failNum++;
-                },
-                complete: function complete() {
-                    var $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('BatchBuyItems');
-
-                    if (isStop || index === settings.num - 1) {
-                        Msg.remove($countdown.closest('.pd_msg'));
-                        if (successNum > 0) {
-                            Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '`\u3011\u9053\u5177\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum } });
-                        }
-                        console.log('\u5171\u6709' + successNum + '\u4E2A\u3010Lv.' + settings.itemLevel + '\uFF1A' + settings.itemName + '\u3011\u9053\u5177\u8D2D\u4E70\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u8D2D\u4E70\u5931\u8D25' : ''));
-                        Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010<em>Lv.' + settings.itemLevel + '</em>' + settings.itemName + '\u3011\u9053\u5177\u8D2D\u4E70\u6210\u529F' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u9053\u5177\u8D2D\u4E70\u5931\u8D25' : '') + '</strong>'), -1);
-
-                        if (successNum > 0) {
-                            $('<li><a href="#">统计购买价格</a></li>').appendTo('.pd_result:last').find('a').click(function (e) {
-                                e.preventDefault();
-                                var $result = $(this).closest('.pd_result');
-                                $(this).parent().remove();
-                                Msg.destroy();
-                                statBuyItemsPrice($result, settings.itemLevel, settings.itemName);
-                            });
-                            showItemShopBuyInfo();
-                        }
-                    } else {
-                        setTimeout(function () {
-                            return $(document).dequeue('BatchBuyItems');
-                        }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('BatchBuyItems');
-};
-
-/**
- * 统计批量购买道具的购买价格
- * @param {jQuery} $result 购买结果的jQuery对象
- * @param {number} itemLevel 道具等级
- * @param {string} itemName 道具名称
- */
-var statBuyItemsPrice = function statBuyItemsPrice($result, itemLevel, itemName) {
-    var successNum = 0,
-        failNum = 0,
-        totalPrice = 0,
-        minPrice = 0,
-        maxPrice = 0,
-        marketPrice = 0,
-        totalNum = $result.find('li > a').length;
-    $('.kf_fw_ig1:first > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
-        var $this = $(this);
-        if ($this.find('a').text() === itemName) {
-            marketPrice = parseInt($this.next('td').find('.pd_item_price').text());
-            return false;
-        }
-    });
-    if (!marketPrice) marketPrice = 1;
-    Msg.wait('<strong>\u6B63\u5728\u7EDF\u8BA1\u8D2D\u4E70\u4EF7\u683C\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + totalNum + '</em></i>');
-    $(document).clearQueue('StatBuyItemsPrice');
-    $result.find('li > a').each(function (index) {
-        var $this = $(this);
-        var itemId = $this.data('id');
-        if (!itemId) return;
-        $(document).queue('StatBuyItemsPrice', function () {
-            $.ajax({
-                type: 'GET',
-                url: 'kf_fw_ig_my.php?pro=' + itemId + '&t=' + new Date().getTime(),
-                timeout: _Const2.default.defAjaxTimeout,
-                success: function success(html) {
-                    var $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    var matches = /从商店购买，购买价(\d+)KFB。<br/.exec(html);
-                    if (matches) {
-                        successNum++;
-                        var price = parseInt(matches[1]);
-                        totalPrice += price;
-                        if (minPrice === 0) minPrice = price;else if (price < minPrice) minPrice = price;
-                        if (price > maxPrice) maxPrice = price;
-                        $this.after('\uFF08\u8D2D\u4E70\u4EF7\uFF1A<b class="pd_highlight">' + price + '</b>KFB\uFF09');
-                    } else {
-                        failNum++;
-                        $this.after('<span class="pd_notice">（未能获得预期的回应）</span>');
-                    }
-                },
-                error: function error() {
-                    failNum++;
-                    $this.after('<span class="pd_notice">（连接超时）</span>');
-                },
-                complete: function complete() {
-                    if (index === totalNum - 1) {
-                        Msg.destroy();
-                        if (successNum > 0) {
-                            Log.push('统计道具购买价格', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u7EDF\u8BA1\u6210\u529F' + ((failNum > 0 ? '\uFF08\u5171\u6709`' + failNum + '`\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09' : '') + '\uFF0C\u603B\u8BA1\u4EF7\u683C\uFF1A`' + totalPrice.toLocaleString() + '`\uFF0C') + ('\u5E73\u5747\u4EF7\u683C\uFF1A`' + (successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0) + '`') + ('(`' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%`)\uFF0C') + ('\u6700\u4F4E\u4EF7\u683C\uFF1A`' + minPrice.toLocaleString() + '`(`' + Math.round(minPrice / marketPrice * 100) + '%`)\uFF0C') + ('\u6700\u9AD8\u4EF7\u683C\uFF1A`' + maxPrice.toLocaleString() + '`(`' + Math.round(maxPrice / marketPrice * 100) + '%`)'), { pay: { 'KFB': -totalPrice } });
-                        }
-                        console.log('\u7EDF\u8BA1\u9053\u5177\u8D2D\u4E70\u4EF7\u683C\uFF08KFB\uFF09\uFF08\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09\uFF0C\u7EDF\u8BA1\u6210\u529F\u6570\u91CF\uFF1A' + successNum + '\uFF0C\u603B\u8BA1\u4EF7\u683C\uFF1A' + totalPrice.toLocaleString() + '\uFF0C' + ('\u5E73\u5747\u4EF7\u683C\uFF1A' + (successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0) + ' ') + ('(' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%)\uFF0C\u6700\u4F4E\u4EF7\u683C\uFF1A' + minPrice.toLocaleString() + ' ') + ('(' + Math.round(minPrice / marketPrice * 100) + '%)\uFF0C\u6700\u9AD8\u4EF7\u683C\uFF1A' + maxPrice.toLocaleString() + ' (' + Math.round(maxPrice / marketPrice * 100) + '%)'));
-                        $result.append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C' + (failNum > 0 ? '<span class="pd_notice">\uFF08\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u672A\u80FD\u7EDF\u8BA1\u6210\u529F\uFF09</span>' : '') + '\uFF1A</b><br>\n  <i>\u7EDF\u8BA1\u6210\u529F\u6570\u91CF\uFF1A<em>' + successNum + '</em></i>\n  <i>\u603B\u8BA1\u4EF7\u683C\uFF1A<em>' + totalPrice.toLocaleString() + '</em></i>\n  <i>\u5E73\u5747\u4EF7\u683C\uFF1A<em>' + (successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0) + ' \n(' + (successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0) + '%)</em></i>\n  <i>\u6700\u4F4E\u4EF7\u683C\uFF1A<em>' + minPrice.toLocaleString() + ' (' + Math.round(minPrice / marketPrice * 100) + '%)</em></i>\n  <i>\u6700\u9AD8\u4EF7\u683C\uFF1A<em>' + maxPrice.toLocaleString() + ' (' + Math.round(maxPrice / marketPrice * 100) + '%)</em></i>\n</li>\n');
-                    } else {
-                        setTimeout(function () {
-                            return $(document).dequeue('StatBuyItemsPrice');
-                        }, _Const2.default.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('StatBuyItemsPrice');
-};
-
-/**
- * 在道具商店页面上添加批量购买道具的链接
- */
-var addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function addBatchBuyItemsLink() {
-    var $shop = $('.kf_fw_ig1:first');
-
-    $shop.find('tbody > tr:nth-child(2)').find('td:nth-child(2)').css('width', '243px').end().find('td:nth-child(3)').css('width', '155px').end().find('td:last-child').css('width', '110px');
-
-    $shop.find('tbody > tr:gt(1)').each(function () {
-        $(this).find('td:nth-child(3)').wrapInner('<span class="pd_item_price"></span>').end().find('td:last-child').append('<a class="pd_batch_buy_items" style="margin-left: 15px;" href="#">批量购买</a>');
-    });
-
-    $shop.on('click', 'a[href^="kf_fw_ig_shop.php?lvid="]', function () {
-        var $this = $(this);
-        var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
-        if (!itemLevel) return;
-        var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
-        if (!itemName) return;
-        if (!confirm('\u662F\u5426\u8D2D\u4E70\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011\u9053\u5177\uFF1F')) {
-            return false;
-        }
-    }).on('click', 'a.pd_batch_buy_items', function (e) {
-        e.preventDefault();
-        Msg.destroy();
-        var $this = $(this);
-        var itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
-        if (!itemLevel) return;
-        var itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
-        if (!itemName) return;
-        var matches = /lvid=(\d+)&safeid=(\w+)/i.exec($this.prev('a').attr('href'));
-        if (!matches) return;
-        var itemTypeId = parseInt(matches[1]);
-        var safeId = matches[2];
-        var num = parseInt(prompt('\u4F60\u8981\u6279\u91CF\u8D2D\u4E70\u591A\u5C11\u4E2A\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011\u9053\u5177\uFF1F', 0));
-        if (!num || num < 0) return;
-        Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-        buyItems({ itemTypeId: itemTypeId, num: num, safeId: safeId, itemLevel: itemLevel, itemName: itemName });
-    });
-
-    $shop.find('tbody > tr:gt(1) > td:nth-child(4)').each(function () {
-        var $this = $(this);
-        var price = parseInt($this.prev('td').text());
-        if (isNaN(price)) return;
-        $this.addClass('pd_custom_tips').attr('title', Math.floor(price * 0.5) + '~' + price * 2 + '\uFF08\u5747\u4EF7\uFF1A' + Math.floor(price * 1.25) + '\uFF09');
-    });
-
-    var $itemName = $shop.find('tbody > tr:gt(1) > td:nth-child(2)');
-    addSampleItemsLink($itemName);
-    showItemUsedInfo($itemName.find('a'));
-    showItemShopBuyInfo();
-    $shop.find('tbody > tr:first-child > td').append('<br><span class="pd_highlight">想买道具却害怕使用失败？快来试试' + '<a href="read.php?tid=526110" target="_blank" title="喵拉布丁：我绝对没收广告费~">道具使用险</a>吧！</span>');
-};
-
-/**
- * 显示道具商店可购买情况
- */
-var showItemShopBuyInfo = function showItemShopBuyInfo() {
-    $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + new Date().getTime(), function (html) {
-        var matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
-        if (!matches) return;
-        var cash = parseInt(matches[1]);
-        $('.kf_fw_ig_title1:last').find('span:last').remove().end().append('<span style="margin-left: 7px;">(\u5F53\u524D\u6301\u6709 <b style="font-size: 14px;">' + cash + '</b> KFB)</span>');
-        $('.kf_fw_ig1:first > tbody > tr:gt(1) > td:nth-child(3) > .pd_item_price').each(function () {
-            var $this = $(this);
-            $this.next('.pd_verify_tips').remove();
-            var price = parseInt($this.text());
-            if (isNaN(price)) return;
-            var tips = '',
-                title = '';
-            if (price * 2 <= cash) {
-                tips = '<span style="color: #669933;">可买</span>';
-                title = '有足够KFB购买此道具';
-            } else {
-                tips = '<span style="color: #ff0033;">\u5DEE' + (price * 2 - cash) + '</span>';
-                title = '\u8FD8\u5DEE' + (price * 2 - cash) + 'KFB\u624D\u53EF\u8D2D\u4E70\u6B64\u9053\u5177';
-            }
-            $this.after('<span class="pd_verify_tips" title="' + title + '" style="font-size: 12px; margin-left: 3px;">(' + tips + ')</span>');
-        });
-    });
-};
-
-/**
  * 修正道具描述
  */
 var modifyItemDescription = exports.modifyItemDescription = function modifyItemDescription() {
@@ -4774,7 +4430,7 @@ var modifyItemDescription = exports.modifyItemDescription = function modifyItemD
     var matches = /道具名称：(.+)/.exec($area.find('span:first').text().trim());
     if (!matches) return;
     var itemName = matches[1];
-    var itemDescReplaceList = new Map([['蕾米莉亚同人漫画', ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。']], ['十六夜同人漫画', ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。']], ['档案室钥匙', ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。']], ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。']], ['整形优惠卷', [['暴击几率+3%。上限10。'], ['在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。']]], ['消逝之药', ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']]]);
+    var itemDescReplaceList = new Map([['蕾米莉亚同人漫画', ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。']], ['十六夜同人漫画', ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。']], ['档案室钥匙', ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。']], ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.8%；满30张时，追加降低对手10%攻击力。']], ['整形优惠卷', [['暴击几率+3%。上限10。'], ['在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。']]], ['消逝之药', ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']]]);
     if (itemDescReplaceList.has(itemName)) {
         $area.html($area.html().replace(itemDescReplaceList.get(itemName)[0], itemDescReplaceList.get(itemName)[1]));
     }
@@ -5346,12 +5002,6 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         invalidItemNum = 0,
         highInvalidItemNum = 0,
         invalidItemStat = {};
-    var buyItemTotalNum = 0,
-        buyItemTotalPrice = 0,
-        totalBuyItemPricePercent = 0,
-        minBuyItemPricePercent = 0,
-        maxBuyItemPricePercent = 0,
-        buyItemStat = {};
     var invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (var _d in rangeLog) {
         var _iteratorNormalCompletion7 = true;
@@ -5440,31 +5090,6 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                             if (typeof invalidItemStat[itemName] === 'undefined') invalidItemStat[itemName] = 0;
                             invalidItemStat[itemName] += gain['无效道具'];
                         }
-                    }
-                } else if (type === '统计道具购买价格' && $.type(pay) === 'object' && typeof pay['KFB'] !== 'undefined') {
-                    var _matches = /共有`(\d+)`个【`Lv.\d+：(.+?)`】道具统计成功，总计价格：`[^`]+?`，平均价格：`[^`]+?`\(`(\d+)%`\)，最低价格：`[^`]+?`\(`(\d+)%`\)，最高价格：`[^`]+?`\(`(\d+)%`\)/.exec(action);
-                    if (_matches) {
-                        var itemNum = parseInt(_matches[1]);
-                        var _itemName2 = _matches[2];
-                        if (typeof buyItemStat[_itemName2] === 'undefined') {
-                            buyItemStat[_itemName2] = {
-                                '道具数量': 0,
-                                '总计价格': 0,
-                                '总计价格比例': 0,
-                                '最低价格比例': 0,
-                                '最高价格比例': 0
-                            };
-                        }
-                        buyItemTotalNum += itemNum;
-                        buyItemStat[_itemName2]['道具数量'] += itemNum;
-                        buyItemTotalPrice += Math.abs(pay['KFB']);
-                        buyItemStat[_itemName2]['总计价格'] += Math.abs(pay['KFB']);
-                        totalBuyItemPricePercent += parseInt(_matches[3]) * itemNum;
-                        buyItemStat[_itemName2]['总计价格比例'] += parseInt(_matches[3]) * itemNum;
-                        if (minBuyItemPricePercent <= 0 || parseInt(_matches[4]) < minBuyItemPricePercent) minBuyItemPricePercent = parseInt(_matches[4]);
-                        if (parseInt(_matches[5]) > maxBuyItemPricePercent) maxBuyItemPricePercent = parseInt(_matches[5]);
-                        if (buyItemStat[_itemName2]['最低价格比例'] <= 0 || parseInt(_matches[4]) < buyItemStat[_itemName2]['最低价格比例']) buyItemStat[_itemName2]['最低价格比例'] = parseInt(_matches[4]);
-                        if (parseInt(_matches[5]) > buyItemStat[_itemName2]['最高价格比例']) buyItemStat[_itemName2]['最高价格比例'] = parseInt(_matches[5]);
                     }
                 }
             }
@@ -5576,9 +5201,9 @@ var getLogStat = function getLogStat(log, date, logStatType) {
 
     try {
         for (var _iterator13 = Util.getSortedObjectKeyList(sortItemTypeList, validItemStat)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var _itemName3 = _step13.value;
+            var _itemName2 = _step13.value;
 
-            content += '<i>' + _itemName3 + '<em>+' + validItemStat[_itemName3].toLocaleString() + '</em></i> ';
+            content += '<i>' + _itemName2 + '<em>+' + validItemStat[_itemName2].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError13 = true;
@@ -5602,9 +5227,9 @@ var getLogStat = function getLogStat(log, date, logStatType) {
 
     try {
         for (var _iterator14 = Util.getSortedObjectKeyList(sortItemTypeList, invalidItemStat)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-            var _itemName4 = _step14.value;
+            var _itemName3 = _step14.value;
 
-            content += '<i>' + _itemName4 + '<em>+' + invalidItemStat[_itemName4].toLocaleString() + '</em></i> ';
+            content += '<i>' + _itemName3 + '<em>+' + invalidItemStat[_itemName3].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError14 = true;
@@ -5620,39 +5245,6 @@ var getLogStat = function getLogStat(log, date, logStatType) {
             }
         }
     }
-
-    var buyItemStatContent = '';
-    var buyItemStatKeyList = Util.getObjectKeyList(buyItemStat, 0);
-    buyItemStatKeyList.sort(function (a, b) {
-        return Item.getLevelByName(a) > Item.getLevelByName(b);
-    });
-    var _iteratorNormalCompletion15 = true;
-    var _didIteratorError15 = false;
-    var _iteratorError15 = undefined;
-
-    try {
-        for (var _iterator15 = buyItemStatKeyList[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-            var _key3 = _step15.value;
-
-            var item = buyItemStat[_key3];
-            buyItemStatContent += '<i class="pd_custom_tips" title="\u603B\u4EF7\uFF1A' + item['总计价格'].toLocaleString() + '\uFF0C' + ('\u5E73\u5747\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + (item['道具数量'] > 0 ? Util.getFixedNumLocStr(item['总计价格比例'] / item['道具数量'], 2) : 0) + '%\uFF0C') + ('\u6700\u4F4E\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + item['最低价格比例'] + '%\uFF0C\u6700\u9AD8\u4EF7\u683C\u6BD4\u4F8B\uFF1A' + item['最高价格比例'] + '%">' + _key3 + '<em>+' + item['道具数量'] + '</em></i> ');
-        }
-    } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                _iterator15.return();
-            }
-        } finally {
-            if (_didIteratorError15) {
-                throw _iteratorError15;
-            }
-        }
-    }
-
-    content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemTotalNum + '</em></i> ' + ('<i>\u9053\u5177\u4EF7\u683C<span class="pd_stat_extra"><em title="\u9053\u5177\u603B\u4EF7">+' + buyItemTotalPrice.toLocaleString() + '</em>') + ('(<em title="\u5E73\u5747\u4EF7\u683C\u6BD4\u4F8B">' + (buyItemTotalNum > 0 ? Util.getFixedNumLocStr(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0) + '%</em>|') + ('<em title="\u6700\u4F4E\u4EF7\u683C\u6BD4\u4F8B">' + minBuyItemPricePercent + '%</em>|<em title="\u6700\u9AD8\u4EF7\u683C\u6BD4\u4F8B">' + maxBuyItemPricePercent + '%</em>)</span></i> ' + buyItemStatContent);
 
     return content;
 };
@@ -5715,13 +5307,13 @@ var showLogText = function showLogText(log, $dialog) {
     var isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     var content = '',
         lastDate = '';
-    var _iteratorNormalCompletion16 = true;
-    var _didIteratorError16 = false;
-    var _iteratorError16 = undefined;
+    var _iteratorNormalCompletion15 = true;
+    var _didIteratorError15 = false;
+    var _iteratorError15 = undefined;
 
     try {
-        for (var _iterator16 = Object.keys(log)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-            var date = _step16.value;
+        for (var _iterator15 = Object.keys(log)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+            var date = _step15.value;
 
             if (!Array.isArray(log[date])) continue;
             if (lastDate > date) lastDate = date;
@@ -5732,16 +5324,16 @@ var showLogText = function showLogText(log, $dialog) {
             content += '='.repeat(46) + '\n';
         }
     } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                _iterator16.return();
+            if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                _iterator15.return();
             }
         } finally {
-            if (_didIteratorError16) {
-                throw _iteratorError16;
+            if (_didIteratorError15) {
+                throw _iteratorError15;
             }
         }
     }
@@ -6261,7 +5853,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     var dialogName = 'pdLevelPointListConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42</div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="4" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="4" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="4" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="4" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="4" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="4" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u4FEE\u6539\u5B57\u6BB5">&times;</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button type="button" name="cancel">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="4" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="4" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="4" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="4" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="4" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="4" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button type="button" name="cancel">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
 
@@ -7388,7 +6980,7 @@ var modifyFaq = exports.modifyFaq = function modifyFaq() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Util = require('./Util');
 
@@ -7676,6 +7268,17 @@ var addAttachChangeAlert = exports.addAttachChangeAlert = function addAttachChan
     });
 };
 
+/**
+ * 引入绯月表情增强插件
+ */
+var importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = function importKfSmileEnhanceExtension() {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
+    document.body.appendChild(script);
+};
+
 },{"./Const":6,"./Func":8,"./Msg":15,"./Util":22}],18:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
@@ -7683,7 +7286,7 @@ var addAttachChangeAlert = exports.addAttachChangeAlert = function addAttachChan
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showCommonImportOrExportConfigDialog = exports.importKfSmileEnhanceExtension = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -8444,9 +8047,9 @@ var addFastNavForSideBar = exports.addFastNavForSideBar = function addFastNavFor
         if (!Config.modifySideBarEnabled) {
             $menu.append('<a href="/">论坛首页</a><br>');
         }
-        $menu.find('> a:last').before('\n<span style="color: #ff9999;">\u5FEB\u6377\u5BFC\u822A</span><br>\n<a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a> | <a href="personal.php?action=post">\u56DE\u590D</a> | <a href="kf_growup.php">\u7B49\u7EA7</a><br>\n<a href="kf_fw_ig_index.php">\u4E89\u593A</a> | <a href="kf_fw_ig_my.php">\u9053\u5177</a> | <a href="kf_fw_ig_shop.php">\u5546\u5E97</a><br>\n<a href="profile.php?action=modify">\u8BBE\u7F6E</a> | <a href="hack.php?H_name=bank">\u94F6\u884C</a> | <a href="profile.php?action=favor">\u6536\u85CF</a><br>\n' + _Const2.default.customTileSideBarContent + '\n');
+        $menu.find('> a:last').before('\n<span style="color: #ff9999;">\u5FEB\u6377\u5BFC\u822A</span><br>\n<a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a> | <a href="personal.php?action=post">\u56DE\u590D</a> | <a href="kf_growup.php">\u7B49\u7EA7</a><br>\n<a href="kf_fw_ig_index.php">\u4E89\u593A</a> | <a href="kf_fw_ig_mybp.php">\u7269\u54C1</a> | <a href="kf_fw_ig_shop.php">\u5546\u5E97</a><br>\n<a href="profile.php?action=modify">\u8BBE\u7F6E</a> | <a href="hack.php?H_name=bank">\u94F6\u884C</a> | <a href="profile.php?action=favor">\u6536\u85CF</a><br>\n' + _Const2.default.customTileSideBarContent + '\n');
     } else {
-        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_my.php">\u6211\u7684\u9053\u5177</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u9053\u5177\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
+        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_mybp.php">\u7269\u54C1\u88C5\u5907</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
     }
 };
 
@@ -8858,17 +8461,6 @@ var checkRatingSize = exports.checkRatingSize = function checkRatingSize(title, 
     } else if (titleSize > ratingSize * (100 + _Const2.default.ratingErrorSizePercent) / 100 + 1 || titleSize < ratingSize * (100 - _Const2.default.ratingErrorSizePercent) / 100 - 1) {
         return { type: 1, titleSize: titleSize, ratingSize: ratingSize };
     } else return { type: 0 };
-};
-
-/**
- * 引入绯月表情增强插件
- */
-var importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = function importKfSmileEnhanceExtension() {
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.charset = 'utf-8';
-    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
-    document.body.appendChild(script);
 };
 
 /**

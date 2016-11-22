@@ -268,8 +268,6 @@ const getLogStat = function (log, date, logStatType) {
 
     let income = {}, expense = {}, profit = {};
     let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
-    let buyItemTotalNum = 0, buyItemTotalPrice = 0, totalBuyItemPricePercent = 0, minBuyItemPricePercent = 0,
-        maxBuyItemPricePercent = 0, buyItemStat = {};
     let invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (let d in rangeLog) {
         for (let {type, action, gain, pay, notStat} of rangeLog[d]) {
@@ -308,33 +306,6 @@ const getLogStat = function (log, date, logStatType) {
                     }
                 }
             }
-            else if (type === '统计道具购买价格' && $.type(pay) === 'object' && typeof pay['KFB'] !== 'undefined') {
-                let matches = /共有`(\d+)`个【`Lv.\d+：(.+?)`】道具统计成功，总计价格：`[^`]+?`，平均价格：`[^`]+?`\(`(\d+)%`\)，最低价格：`[^`]+?`\(`(\d+)%`\)，最高价格：`[^`]+?`\(`(\d+)%`\)/.exec(action);
-                if (matches) {
-                    let itemNum = parseInt(matches[1]);
-                    let itemName = matches[2];
-                    if (typeof buyItemStat[itemName] === 'undefined') {
-                        buyItemStat[itemName] = {
-                            '道具数量': 0,
-                            '总计价格': 0,
-                            '总计价格比例': 0,
-                            '最低价格比例': 0,
-                            '最高价格比例': 0,
-                        };
-                    }
-                    buyItemTotalNum += itemNum;
-                    buyItemStat[itemName]['道具数量'] += itemNum;
-                    buyItemTotalPrice += Math.abs(pay['KFB']);
-                    buyItemStat[itemName]['总计价格'] += Math.abs(pay['KFB']);
-                    totalBuyItemPricePercent += parseInt(matches[3]) * itemNum;
-                    buyItemStat[itemName]['总计价格比例'] += parseInt(matches[3]) * itemNum;
-                    if (minBuyItemPricePercent <= 0 || parseInt(matches[4]) < minBuyItemPricePercent) minBuyItemPricePercent = parseInt(matches[4]);
-                    if (parseInt(matches[5]) > maxBuyItemPricePercent) maxBuyItemPricePercent = parseInt(matches[5]);
-                    if (buyItemStat[itemName]['最低价格比例'] <= 0 || parseInt(matches[4]) < buyItemStat[itemName]['最低价格比例'])
-                        buyItemStat[itemName]['最低价格比例'] = parseInt(matches[4]);
-                    if (parseInt(matches[5]) > buyItemStat[itemName]['最高价格比例']) buyItemStat[itemName]['最高价格比例'] = parseInt(matches[5]);
-                }
-            }
         }
     }
 
@@ -370,20 +341,6 @@ const getLogStat = function (log, date, logStatType) {
     for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, invalidItemStat)) {
         content += `<i>${itemName}<em>+${invalidItemStat[itemName].toLocaleString()}</em></i> `;
     }
-
-    let buyItemStatContent = '';
-    let buyItemStatKeyList = Util.getObjectKeyList(buyItemStat, 0);
-    buyItemStatKeyList.sort((a, b) => Item.getLevelByName(a) > Item.getLevelByName(b));
-    for (let key of buyItemStatKeyList) {
-        let item = buyItemStat[key];
-        buyItemStatContent += `<i class="pd_custom_tips" title="总价：${item['总计价格'].toLocaleString()}，` +
-            `平均价格比例：${item['道具数量'] > 0 ? Util.getFixedNumLocStr(item['总计价格比例'] / item['道具数量'], 2) : 0}%，` +
-            `最低价格比例：${item['最低价格比例']}%，最高价格比例：${item['最高价格比例']}%">${key}<em>+${item['道具数量']}</em></i> `;
-    }
-    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemTotalNum}</em></i> ` +
-        `<i>道具价格<span class="pd_stat_extra"><em title="道具总价">+${buyItemTotalPrice.toLocaleString()}</em>` +
-        `(<em title="平均价格比例">${buyItemTotalNum > 0 ? Util.getFixedNumLocStr(totalBuyItemPricePercent / buyItemTotalNum, 2) : 0}%</em>|` +
-        `<em title="最低价格比例">${minBuyItemPricePercent}%</em>|<em title="最高价格比例">${maxBuyItemPricePercent}%</em>)</span></i> ${buyItemStatContent}`;
 
     return content;
 };

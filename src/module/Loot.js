@@ -483,7 +483,9 @@ const showLevelPointListConfigDialog = function (callback) {
     readConfig();
     let html = `
 <div class="pd_cfg_main">
-  <div style="margin-top: 5px;">请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层</div>
+  <div style="margin-top: 5px;">
+    请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>例：11-19层点数相同的话，则只保留第11层
+  </div>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
       <tbody>

@@ -53,24 +53,6 @@ const getRestoreEnergyNumByLevel = function (itemLevel) {
 };
 
 /**
- * 获取指定等级道具的出售所得
- * @param {number} itemLevel 道具等级
- * @returns {number} 出售所得
- */
-const getSellItemGainByLevel = function (itemLevel) {
-    switch (itemLevel) {
-        case 3:
-            return 300;
-        case 4:
-            return 2000;
-        case 5:
-            return 10000;
-        default:
-            return 0;
-    }
-};
-
-/**
  * 获取指定名称的道具种类ID
  * @param {string} itemName 道具名称
  * @returns {number} 道具种类ID
@@ -758,92 +740,9 @@ const convertItemsToEnergy = function (options) {
 };
 
 /**
- * 出售指定的一系列道具
- * @param {{}} options 设置项
- * @param {number[]} options.itemIdList 指定的道具ID列表
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {string} options.itemName 道具名称
+ * 在道具列表页面上添加批量使用道具的按钮
  */
-const sellItems = function (options) {
-    let settings = {
-        itemIdList: [],
-        itemLevel: 0,
-        itemName: '',
-    };
-    $.extend(settings, options);
-    $('.kf_fw_ig1:last').parent().append(
-        `<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】出售结果：</strong></li></ul>`
-    );
-
-    let successNum = 0, failNum = 0, totalGain = 0;
-    $(document).clearQueue('SellItems');
-    $.each(settings.itemIdList, function (index, itemId) {
-        $(document).queue('SellItems', function () {
-            $.ajax({
-                type: 'GET',
-                url: `kf_fw_ig_shop.php?sell=yes&id=${itemId}&t=${new Date().getTime()}`,
-                timeout: Const.defAjaxTimeout,
-                success (html) {
-                    Public.showFormatLog('出售道具', html);
-                    let {msg} = Util.getResponseMsg(html);
-                    if (/出售成功/.test(msg)) {
-                        successNum++;
-                        totalGain += getSellItemGainByLevel(settings.itemLevel);
-                    }
-                    else failNum++;
-                },
-                error () {
-                    failNum++;
-                },
-                complete () {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    let isStop = $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('SellItems');
-
-                    if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($countdown.closest('.pd_msg'));
-                        if (successNum > 0) {
-                            Log.push(
-                                '出售道具',
-                                `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具出售成功`,
-                                {
-                                    gain: {'KFB': totalGain},
-                                    pay: {'道具': -successNum}
-                                }
-                            );
-                        }
-                        $('.kf_fw_ig1 input[type="checkbox"]:checked')
-                            .closest('tr')
-                            .fadeOut('normal', function () {
-                                $(this).remove();
-                            });
-                        console.log(`共有${successNum}个道具出售成功，共有${failNum}个道具出售失败，KFB+${totalGain}`);
-                        Msg.show(
-                            `<strong>共有<em>${successNum}</em>个道具出售成功${failNum > 0 ? `，共有<em>${failNum}</em>个道具出售失败` : ''}</strong>` +
-                            `<i>KFB<em>+${totalGain}</em></i>`
-                            , -1
-                        );
-                        $('.pd_result:last').append(
-                            `<li class="pd_stat">共有<em>${successNum}</em>个道具出售成功${failNum > 0 ? `，共有<em>${failNum}</em>个道具出售失败` : ''}，` +
-                            `<i>KFB<em>+${totalGain}</em></i></li>`
-                        );
-                    }
-                    else {
-                        setTimeout(() => $(document).dequeue('SellItems'), Const.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('SellItems');
-};
-
-/**
- * 在道具列表页面上添加批量出售和使用道具的按钮
- */
-export const addSellAndUseItemsButton = function () {
+export const addUseItemsButton = function () {
     let safeId = Public.getSafeId();
     if (!safeId) return;
     let $lastLine = $('.kf_fw_ig1 > tbody > tr:last-child');
@@ -865,7 +764,6 @@ export const addSellAndUseItemsButton = function () {
 
     $(`
 <div class="pd_item_btns">
-  ${itemTypeId >= 7 && itemTypeId <= 12 ? '<button name="sellItem" type="button" style="color: #f00;" title="批量出售指定道具">出售道具</button>' : ''}
   ${itemTypeId > 1 ? '<button name="cycleUseItem" type="button" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : ''}
   <button name="useItem" type="button" title="批量使用指定道具">使用道具</button>
   <button name="selectAll" type="button">全选</button>
@@ -949,26 +847,6 @@ export const addSellAndUseItemsButton = function () {
                     maxEffectiveItemCount: maxEffectiveItemCount,
                     maxSuccessRestoreItemCount: maxSuccessRestoreItemCount,
                 });
-            });
-        })
-        .end()
-        .find('[name="sellItem"]')
-        .click(function () {
-            Msg.destroy();
-            let itemIdList = [];
-            $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            if (!confirm(`共选择了${itemIdList.length}个道具，是否批量出售道具？`)) return;
-            Msg.wait(
-                `<strong>正在出售道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
-                `<a class="pd_stop_action" href="#">停止操作</a>`
-            );
-            sellItems({
-                itemIdList: itemIdList,
-                itemLevel: itemLevel,
-                itemName: itemName,
             });
         });
 
@@ -1666,292 +1544,6 @@ export const addSampleItemTips = function () {
 };
 
 /**
- * 购买指定种类的道具
- * @param {{}} options 设置项
- * @param {number} options.itemTypeId 指定的道具种类ID
- * @param {number} options.num 欲购买的道具数量
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {string} options.itemName 道具名称
- */
-const buyItems = function (options) {
-    let settings = {
-        itemTypeId: 0,
-        num: 0,
-        safeId: '',
-        itemLevel: 0,
-        itemName: '',
-    };
-    $.extend(settings, options);
-    $('.kf_fw_ig1').parent().append(
-        `<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】购买结果：</strong></li></ul>`
-    );
-
-    let successNum = 0, failNum = 0;
-    let isStop = false;
-    $(document).clearQueue('BatchBuyItems');
-    $.each(new Array(settings.num), function (index) {
-        $(document).queue('BatchBuyItems', function () {
-            $.ajax({
-                type: 'GET',
-                url: `kf_fw_ig_shop.php?lvid=${settings.itemTypeId}&safeid=${settings.safeId}&t=${new Date().getTime()}`,
-                timeout: Const.defAjaxTimeout,
-                success (html) {
-                    Public.showFormatLog('购买道具', html);
-                    let {msg, url} = Util.getResponseMsg(html);
-                    let matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec(url);
-                    if (matches) {
-                        successNum++;
-                        msg = `获得了<a target="_blank" href="kf_fw_ig_my.php?pro=${matches[1]}" data-id="${matches[1]}">一个道具</a>`;
-                    }
-                    else if (/你需要持有该道具两倍市场价的KFB/.test(html)) {
-                        msg = '你需要持有该道具两倍市场价的KFB<span class="pd_notice">（购买操作中止）</span>';
-                        isStop = true;
-                    }
-                    $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
-                },
-                error () {
-                    failNum++;
-                },
-                complete () {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('BatchBuyItems');
-
-                    if (isStop || index === settings.num - 1) {
-                        Msg.remove($countdown.closest('.pd_msg'));
-                        if (successNum > 0) {
-                            Log.push(
-                                '购买道具',
-                                `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具购买成功`,
-                                {gain: {'道具': successNum}}
-                            );
-                        }
-                        console.log(
-                            `共有${successNum}个【Lv.${settings.itemLevel}：${settings.itemName}】道具购买成功` +
-                            (failNum > 0 ? `，共有${failNum}个道具购买失败` : '')
-                        );
-                        Msg.show(
-                            `<strong>共有<em>${successNum}</em>个【<em>Lv.${settings.itemLevel}</em>${settings.itemName}】道具购买成功` +
-                            `${failNum > 0 ? `，共有<em>${failNum}</em>个道具购买失败` : ''}</strong>`
-                            , -1
-                        );
-
-                        if (successNum > 0) {
-                            $('<li><a href="#">统计购买价格</a></li>')
-                                .appendTo('.pd_result:last')
-                                .find('a')
-                                .click(function (e) {
-                                    e.preventDefault();
-                                    let $result = $(this).closest('.pd_result');
-                                    $(this).parent().remove();
-                                    Msg.destroy();
-                                    statBuyItemsPrice($result, settings.itemLevel, settings.itemName);
-                                });
-                            showItemShopBuyInfo();
-                        }
-                    }
-                    else {
-                        setTimeout(
-                            () => $(document).dequeue('BatchBuyItems'),
-                            typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval
-                        );
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('BatchBuyItems');
-};
-
-/**
- * 统计批量购买道具的购买价格
- * @param {jQuery} $result 购买结果的jQuery对象
- * @param {number} itemLevel 道具等级
- * @param {string} itemName 道具名称
- */
-const statBuyItemsPrice = function ($result, itemLevel, itemName) {
-    let successNum = 0, failNum = 0, totalPrice = 0, minPrice = 0, maxPrice = 0, marketPrice = 0, totalNum = $result.find('li > a').length;
-    $('.kf_fw_ig1:first > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
-        let $this = $(this);
-        if ($this.find('a').text() === itemName) {
-            marketPrice = parseInt($this.next('td').find('.pd_item_price').text());
-            return false;
-        }
-    });
-    if (!marketPrice) marketPrice = 1;
-    Msg.wait(`<strong>正在统计购买价格中&hellip;</strong><i>剩余：<em class="pd_countdown">${totalNum}</em></i>`);
-    $(document).clearQueue('StatBuyItemsPrice');
-    $result.find('li > a').each(function (index) {
-        let $this = $(this);
-        let itemId = $this.data('id');
-        if (!itemId) return;
-        $(document).queue('StatBuyItemsPrice', function () {
-            $.ajax({
-                type: 'GET',
-                url: `kf_fw_ig_my.php?pro=${itemId}&t=${new Date().getTime()}`,
-                timeout: Const.defAjaxTimeout,
-                success (html) {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    let matches = /从商店购买，购买价(\d+)KFB。<br/.exec(html);
-                    if (matches) {
-                        successNum++;
-                        let price = parseInt(matches[1]);
-                        totalPrice += price;
-                        if (minPrice === 0) minPrice = price;
-                        else if (price < minPrice) minPrice = price;
-                        if (price > maxPrice) maxPrice = price;
-                        $this.after(`（购买价：<b class="pd_highlight">${price}</b>KFB）`);
-                    }
-                    else {
-                        failNum++;
-                        $this.after('<span class="pd_notice">（未能获得预期的回应）</span>');
-                    }
-                },
-                error () {
-                    failNum++;
-                    $this.after('<span class="pd_notice">（连接超时）</span>');
-                },
-                complete () {
-                    if (index === totalNum - 1) {
-                        Msg.destroy();
-                        if (successNum > 0) {
-                            Log.push(
-                                '统计道具购买价格',
-                                `共有\`${successNum}\`个【\`Lv.${itemLevel}：${itemName}\`】道具统计成功` +
-                                `${failNum > 0 ? `（共有\`${failNum}\`个道具未能统计成功）` : ''}，总计价格：\`${totalPrice.toLocaleString()}\`，` +
-                                `平均价格：\`${successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0}\`` +
-                                `(\`${successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0}%\`)，` +
-                                `最低价格：\`${minPrice.toLocaleString()}\`(\`${Math.round(minPrice / marketPrice * 100)}%\`)，` +
-                                `最高价格：\`${maxPrice.toLocaleString()}\`(\`${Math.round(maxPrice / marketPrice * 100)}%\`)`,
-                                {pay: {'KFB': -totalPrice}}
-                            );
-                        }
-                        console.log(
-                            `统计道具购买价格（KFB）（共有${failNum}个道具未能统计成功），统计成功数量：${successNum}，总计价格：${totalPrice.toLocaleString()}，` +
-                            `平均价格：${successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0} ` +
-                            `(${successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0}%)，最低价格：${minPrice.toLocaleString()} ` +
-                            `(${Math.round(minPrice / marketPrice * 100)}%)，最高价格：${maxPrice.toLocaleString()} (${Math.round(maxPrice / marketPrice * 100)}%)`
-                        );
-                        $result.append(`
-<li class="pd_stat">
-  <b>统计结果${failNum > 0 ? `<span class="pd_notice">（共有${failNum}个道具未能统计成功）</span>` : ''}：</b><br>
-  <i>统计成功数量：<em>${successNum}</em></i>
-  <i>总计价格：<em>${totalPrice.toLocaleString()}</em></i>
-  <i>平均价格：<em>${successNum > 0 ? Util.getFixedNumLocStr(totalPrice / successNum, 2) : 0} 
-(${successNum > 0 ? Math.round(totalPrice / successNum / marketPrice * 100) : 0}%)</em></i>
-  <i>最低价格：<em>${minPrice.toLocaleString()} (${Math.round(minPrice / marketPrice * 100)}%)</em></i>
-  <i>最高价格：<em>${maxPrice.toLocaleString()} (${Math.round(maxPrice / marketPrice * 100)}%)</em></i>
-</li>
-`);
-                    }
-                    else {
-                        setTimeout(() => $(document).dequeue('StatBuyItemsPrice'), Const.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('StatBuyItemsPrice');
-};
-
-/**
- * 在道具商店页面上添加批量购买道具的链接
- */
-export const addBatchBuyItemsLink = function () {
-    let $shop = $('.kf_fw_ig1:first');
-
-    $shop.find('tbody > tr:nth-child(2)')
-        .find('td:nth-child(2)').css('width', '243px')
-        .end().find('td:nth-child(3)').css('width', '155px')
-        .end().find('td:last-child').css('width', '110px');
-
-    $shop.find('tbody > tr:gt(1)').each(function () {
-        $(this).find('td:nth-child(3)').wrapInner('<span class="pd_item_price"></span>')
-            .end().find('td:last-child').append('<a class="pd_batch_buy_items" style="margin-left: 15px;" href="#">批量购买</a>');
-    });
-
-    $shop.on('click', 'a[href^="kf_fw_ig_shop.php?lvid="]', function () {
-        let $this = $(this);
-        let itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
-        if (!itemLevel) return;
-        let itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
-        if (!itemName) return;
-        if (!confirm(`是否购买【Lv.${itemLevel}：${itemName}】道具？`)) {
-            return false;
-        }
-    }).on('click', 'a.pd_batch_buy_items', function (e) {
-        e.preventDefault();
-        Msg.destroy();
-        let $this = $(this);
-        let itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
-        if (!itemLevel) return;
-        let itemName = $this.closest('tr').find('td:nth-child(2) > a').text();
-        if (!itemName) return;
-        let matches = /lvid=(\d+)&safeid=(\w+)/i.exec($this.prev('a').attr('href'));
-        if (!matches) return;
-        let itemTypeId = parseInt(matches[1]);
-        let safeId = matches[2];
-        let num = parseInt(
-            prompt(`你要批量购买多少个【Lv.${itemLevel}：${itemName}】道具？`, 0)
-        );
-        if (!num || num < 0) return;
-        Msg.wait(
-            `<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
-        );
-        buyItems({itemTypeId, num, safeId, itemLevel, itemName});
-    });
-
-    $shop.find('tbody > tr:gt(1) > td:nth-child(4)').each(function () {
-        let $this = $(this);
-        let price = parseInt($this.prev('td').text());
-        if (isNaN(price)) return;
-        $this.addClass('pd_custom_tips')
-            .attr('title', `${Math.floor(price * 0.5)}~${price * 2}（均价：${Math.floor(price * 1.25)}）`);
-    });
-
-    let $itemName = $shop.find('tbody > tr:gt(1) > td:nth-child(2)');
-    addSampleItemsLink($itemName);
-    showItemUsedInfo($itemName.find('a'));
-    showItemShopBuyInfo();
-    $shop.find('tbody > tr:first-child > td').append(
-        '<br><span class="pd_highlight">想买道具却害怕使用失败？快来试试' +
-        '<a href="read.php?tid=526110" target="_blank" title="喵拉布丁：我绝对没收广告费~">道具使用险</a>吧！</span>'
-    );
-};
-
-/**
- * 显示道具商店可购买情况
- */
-const showItemShopBuyInfo = function () {
-    $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
-        let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
-        if (!matches) return;
-        let cash = parseInt(matches[1]);
-        $('.kf_fw_ig_title1:last').find('span:last').remove()
-            .end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${cash}</b> KFB)</span>`);
-        $('.kf_fw_ig1:first > tbody > tr:gt(1) > td:nth-child(3) > .pd_item_price').each(function () {
-            let $this = $(this);
-            $this.next('.pd_verify_tips').remove();
-            let price = parseInt($this.text());
-            if (isNaN(price)) return;
-            let tips = '', title = '';
-            if (price * 2 <= cash) {
-                tips = '<span style="color: #669933;">可买</span>';
-                title = '有足够KFB购买此道具';
-            }
-            else {
-                tips = `<span style="color: #ff0033;">差${price * 2 - cash}</span>`;
-                title = `还差${price * 2 - cash}KFB才可购买此道具`;
-            }
-            $this.after(`<span class="pd_verify_tips" title="${title}" style="font-size: 12px; margin-left: 3px;">(${tips})</span>`);
-        });
-    });
-};
-
-/**
  * 修正道具描述
  */
 export const modifyItemDescription = function () {
@@ -1963,7 +1555,7 @@ export const modifyItemDescription = function () {
         ['蕾米莉亚同人漫画', ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。']],
         ['十六夜同人漫画', ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。']],
         ['档案室钥匙', ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。']],
-        ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.5%；满30张时，追加降低对手10%攻击力。']],
+        ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.8%；满30张时，追加降低对手10%攻击力。']],
         ['整形优惠卷', [
             ['暴击几率+3%。上限10。'],
             ['在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。']

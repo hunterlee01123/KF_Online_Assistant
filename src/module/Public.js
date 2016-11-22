@@ -844,7 +844,7 @@ export const addFastNavForSideBar = function () {
         $menu.find('> a:last').before(`
 <span style="color: #ff9999;">快捷导航</span><br>
 <a href="guanjianci.php?gjc=${Info.userName}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br>
-<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_my.php">道具</a> | <a href="kf_fw_ig_shop.php">商店</a><br>
+<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_mybp.php">物品</a> | <a href="kf_fw_ig_shop.php">商店</a><br>
 <a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br>
 ${Const.customTileSideBarContent}
 `);
@@ -857,8 +857,8 @@ ${Const.customTileSideBarContent}
     <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_my.php">我的道具</a></li>
-    <li><a href="kf_fw_ig_shop.php">道具商店</a></li>
+    <li><a href="kf_fw_ig_mybp.php">物品装备</a></li>
+    <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
     <li><a href="profile.php?action=modify">设置</a></li>
     <li><a href="hack.php?H_name=bank">银行</a></li>
     <li><a href="profile.php?action=favor">收藏</a></li>

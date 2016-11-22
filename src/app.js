@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.0';
+const version = '8.0.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -85,7 +85,7 @@ $(function () {
         Item.addConvertEnergyAndRestoreItemsButton();
     }
     else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addSellAndUseItemsButton();
+        Item.addUseItemsButton();
     }
     else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
         Item.modifyItemDescription();
