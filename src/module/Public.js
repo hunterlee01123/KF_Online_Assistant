@@ -1238,17 +1238,6 @@ export const checkRatingSize = function (title, ratingSize) {
 };
 
 /**
- * 引入绯月表情增强插件
- */
-export const importKfSmileEnhanceExtension = function () {
-    let script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.charset = 'utf-8';
-    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
-    document.body.appendChild(script);
-};
-
-/**
  * 显示通用的导入/导出设置对话框
  * @param {string} title 对话框标题
  * @param {string} configName 设置名称

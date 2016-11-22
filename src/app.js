@@ -167,8 +167,9 @@ $(function () {
     if (Info.isMobile) Public.bindElementTitleClick();
     if (Info.isInMiaolaDomain) {
         if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
-            Public.importKfSmileEnhanceExtension();
+            Post.importKfSmileEnhanceExtension();
         }
+        $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
     }
 
     let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && Info.isInHomePage;

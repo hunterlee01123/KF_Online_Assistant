@@ -249,3 +249,14 @@ export const addAttachChangeAlert = function () {
         }
     });
 };
+
+/**
+ * 引入绯月表情增强插件
+ */
+export const importKfSmileEnhanceExtension = function () {
+    let script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.charset = 'utf-8';
+    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
+    document.body.appendChild(script);
+};

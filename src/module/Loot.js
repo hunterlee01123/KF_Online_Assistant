@@ -505,7 +505,7 @@ const showLevelPointListConfigDialog = function (callback) {
     <input name="d2" type="text" maxlength="4" title="灵活" placeholder="灵活" style="width: 35px;">
     <input name="i1" type="text" maxlength="4" title="智力" placeholder="智力" style="width: 35px;">
     <input name="i2" type="text" maxlength="4" title="意志" placeholder="意志" style="width: 35px;">
-    <a class="pd_btn_link" data-name="clear" href="#" title="清空修改字段">&times;</a>
+    <a class="pd_btn_link" data-name="clear" href="#" title="清空各修改字段">清空</a>
     <button type="button" name="modify">修改</button>
     <span class="pd_cfg_tips" title="可将所选择的层数的相应属性修改为指定的数值；数字前可设+/-号，表示增加/减少相应数量；例：100、+5或-2">[?]</span>
   </div>
