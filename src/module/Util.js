@@ -546,3 +546,9 @@ export const selectInverse = function ($nodes) {
     });
     return false;
 };
+
+/**
+ * 是否已过争夺时间
+ * @returns {boolean} 是否已过争夺时间
+ */
+export const isAfterLootTime = () => new Date() > getDateByTime(Config.otherAutoActionAfterLootTime);

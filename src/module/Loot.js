@@ -1,5 +1,6 @@
 /* 争夺模块 */
 'use strict';
+import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import * as Dialog from './Dialog';
@@ -950,5 +951,6 @@ export const addUserLinkInPkListPage = function () {
         let $this = $(this);
         let userName = $this.text().trim();
         $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        if (userName === Info.userName) $this.find('a').addClass('pd_highlight')
     });
 };

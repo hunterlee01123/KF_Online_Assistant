@@ -37,7 +37,7 @@ export const show = function () {
       <legend>
         <label>
           <input name="autoRefreshEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动捐款，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
       <label>
@@ -56,12 +56,16 @@ export const show = function () {
       </legend>
       <label>
         KFB捐款额度
-        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text">
+        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text" required>
         <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
       </label>
-      <label class="pd_cfg_ml">
-        在 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> 之后捐款
-        <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
+    </fieldset>
+    <fieldset>
+      <legend>争夺相关</legend>
+      <label>
+        在 <input name="otherAutoActionAfterLootTime" maxlength="8" style="width: 55px;" type="text" required> 之后才进行其它自动操作
+        <span class="pd_cfg_tips" title="在指定时间之后才进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；
+例：01:30:00（设为00:00:00表示不限制）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -99,6 +103,80 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
       </label>
     </fieldset>
+    <fieldset>
+      <legend>其它设置</legend>
+      <label class="pd_highlight">
+        存储类型
+        <select data-name="storageType">
+          <option value="Default">默认</option>
+          <option value="ByUid">按uid</option>
+          <option value="Global">全局</option>
+        </select>
+        <span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        浏览器类型
+        <select name="browseType">
+          <option value="auto">自动检测</option>
+          <option value="desktop">桌面版</option>
+          <option value="mobile">移动版</option>
+        </select>
+        <span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
+如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
+      </label><br>
+      <label>
+        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
+        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
+      </label><br>
+      <label>
+        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
+        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
+        <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
+      </label><br>
+      <label>
+        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
+        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
+        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
+      </label><br>
+      <label>
+        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
+        <span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
+        <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
+    </fieldset>
+    <fieldset>
+      <legend>版块页面相关</legend>
+      <label>
+        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
+        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
+      </label><br>
+      <label>
+        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
+        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+      </label>
+    </fieldset>
+  </div>
+
+  <div class="pd_cfg_panel">
     <fieldset>
       <legend>帖子页面相关</legend>
       <label>
@@ -170,80 +248,6 @@ export const show = function () {
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
-    </fieldset>
-  </div>
-
-  <div class="pd_cfg_panel">
-    <fieldset>
-      <legend>版块页面相关</legend>
-      <label>
-        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
-        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
-      </label><br>
-      <label>
-        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
-        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
-      </label>
-    </fieldset>
-    <fieldset>
-      <legend>其它设置</legend>
-      <label class="pd_highlight">
-        存储类型
-        <select data-name="storageType">
-          <option value="Default">默认</option>
-          <option value="ByUid">按uid</option>
-          <option value="Global">全局</option>
-        </select>
-        <span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        浏览器类型
-        <select name="browseType">
-          <option value="auto">自动检测</option>
-          <option value="desktop">桌面版</option>
-          <option value="mobile">移动版</option>
-        </select>
-        <span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
-如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
-      </label><br>
-      <label>
-        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
-        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
-      </label><br>
-      <label>
-        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
-        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
-        <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
-      </label><br>
-      <label>
-        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
-        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
-        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
-      </label><br>
-      <label>
-        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
-        <span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">详细设置&raquo;</a><br>
-      <label>
-        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
-        <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
     </fieldset>
     <fieldset>
       <legend>关注和屏蔽</legend>
@@ -418,6 +422,15 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
+    let $txtOtherAutoActionAfterLootTime = $dialog.find('[name="otherAutoActionAfterLootTime"]');
+    let otherAutoActionAfterLootTime = $.trim($txtOtherAutoActionAfterLootTime.val());
+    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(otherAutoActionAfterLootTime)) {
+        alert('在指定时间之后才进行其它自动操作格式不正确');
+        $txtOtherAutoActionAfterLootTime.select();
+        $txtOtherAutoActionAfterLootTime.focus();
+        return false;
+    }
+
     let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
     let donationKfb = $.trim($txtDonationKfb.val());
     if (/%$/.test(donationKfb)) {
@@ -447,15 +460,6 @@ const verifyMainConfig = function ($dialog) {
             $txtDonationKfb.focus();
             return false;
         }
-    }
-
-    let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
-    let donationAfterTime = $.trim($txtDonationAfterTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
-        alert('在指定时间之后捐款格式不正确');
-        $txtDonationAfterTime.select();
-        $txtDonationAfterTime.focus();
-        return false;
     }
 
     let $txtMaxFastGotoThreadPageNum = $dialog.find('[name="maxFastGotoThreadPageNum"]');

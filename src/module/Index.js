@@ -163,6 +163,8 @@ export const addThreadFastGotoLink = function () {
  * 在首页显示VIP剩余时间
  */
 export const showVipSurplusTime = function () {
+    if (!Util.isAfterLootTime()) return;
+
     /**
      * 添加VIP剩余时间的提示
      * @param {number} hours VIP剩余时间（小时）

@@ -330,11 +330,8 @@ export const addPolyfill = function () {
  */
 export const donation = function (isAutoSaveCurrentDeposit = false) {
     let now = new Date();
-    let date = Util.getDateByTime(Config.donationAfterTime);
-    if (now < date) {
-        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-        return;
-    }
+    let date = Util.getDateByTime(Config.otherAutoActionAfterLootTime);
+    if (now <= date) return;
     Script.runFunc('Public.donation_before_');
     console.log('KFB捐款Start');
     let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
@@ -345,7 +342,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
      */
     const getDonationCookieDate = function () {
         let now = new Date();
-        let date = Util.getTimezoneDateByTime('02:00:00');
+        let date = Util.getTimezoneDateByTime('03:00:00');
         if (now > date) {
             date = Util.getTimezoneDateByTime('00:00:00');
             date.setDate(date.getDate() + 1);
@@ -425,7 +422,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
 export const getMinRefreshInterval = function () {
     let donationInterval = -1;
     if (Config.autoDonationEnabled) {
-        let donationTime = Util.getDateByTime(Config.donationAfterTime);
+        let donationTime = Util.getDateByTime(Config.otherAutoActionAfterLootTime);
         let now = new Date();
         if (!Util.getCookie(Const.donationCookieName) && now <= donationTime) {
             donationInterval = Math.floor((donationTime - now) / 1000);
@@ -436,19 +433,7 @@ export const getMinRefreshInterval = function () {
         }
     }
 
-    let autoChangeIdColorInterval = -1;
-    if (Config.autoChangeIdColorEnabled) {
-        let nextTime = parseInt(Util.getCookie(Const.autoChangeIdColorCookieName));
-        if (!isNaN(nextTime) && nextTime > 0) {
-            autoChangeIdColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
-            if (autoChangeIdColorInterval < 0) autoChangeIdColorInterval = 0;
-            if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1)
-                autoChangeIdColorInterval = -1;
-        }
-        else autoChangeIdColorInterval = 0;
-    }
-
-    let minArr = [donationInterval, autoChangeIdColorInterval].filter(interval => interval >= 0);
+    let minArr = [donationInterval].filter(interval => interval >= 0);
     if (minArr.length > 0) {
         let min = Math.min(...minArr);
         return min > 0 ? min + 1 : 0;
@@ -552,7 +537,6 @@ export const startAutoRefreshMode = function () {
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
-        if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) changeIdColor();
 
         let interval = getMinRefreshInterval();
         if (interval > 0) errorNum = 0;
@@ -875,8 +859,11 @@ ${Const.customTileSideBarContent}
  * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
  */
 export const autoSaveCurrentDeposit = function (isRead = false) {
-    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb))
+    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 &&
+        Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
         return;
+    }
+    if (!Util.isAfterLootTime()) return;
     let $kfb = $('a[href="kf_givemekfb.php"]');
 
     /**
@@ -922,6 +909,8 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
  */
 export const changeIdColor = function () {
     if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) return;
+    if (!Util.isAfterLootTime()) return;
+
     /**
      * 写入Cookie
      */
@@ -929,6 +918,7 @@ export const changeIdColor = function () {
         let nextTime = Util.getDate(`+${Config.autoChangeIdColorInterval}h`);
         Util.setCookie(Const.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
+
     console.log('自动更换ID颜色Start');
     $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
         if (Util.getCookie(Const.autoChangeIdColorCookieName)) return;

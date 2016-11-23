@@ -400,6 +400,7 @@ export const handleInBankPage = function () {
  * 定期存款到期提醒
  */
 export const fixedDepositDueAlert = function () {
+    if (!Util.isAfterLootTime()) return;
     console.log('定期存款到期提醒Start');
     $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
         Util.setCookie(Const.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
