@@ -39,12 +39,13 @@ $(function () {
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     if (Info.isInHomePage) {
+        Index.handleIndexPersonalInfo();
         Index.handleAtTips();
-        Index.addSearchTypeSelectBoxInHomePage();
+        Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
-        if (Config.homePageThreadFastGotoLinkEnabled) Index.addHomePageThreadFastGotoLink();
+        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
     }
     else if (location.pathname === '/read.php') {

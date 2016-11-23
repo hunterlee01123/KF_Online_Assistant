@@ -376,22 +376,22 @@ const getPointByProperty = function (pointName, num) {
     let value = 0;
     switch (pointName) {
         case '力量':
-            value = Math.round(num / 5) - extraPointList.get('力量');
+            value = Math.ceil(num / 5) - extraPointList.get('力量');
             break;
         case '体质':
-            value = Math.round((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
+            value = Math.ceil((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
             break;
         case '敏捷':
-            value = Math.round((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
+            value = Math.ceil((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
             break;
         case '灵活':
-            value = Math.round(100 * num / (100 - num)) - extraPointList.get('灵活');
+            value = Math.ceil(100 * num / (100 - num)) - extraPointList.get('灵活');
             break;
         case '智力':
-            value = Math.round(90 * num / (100 - num)) - extraPointList.get('智力');
+            value = Math.ceil(90 * num / (100 - num)) - extraPointList.get('智力');
             break;
         case '意志':
-            value = Math.round(150 * num / (100 - num)) - extraPointList.get('意志');
+            value = Math.ceil(150 * num / (100 - num)) - extraPointList.get('意志');
             break;
     }
     if (!isFinite(value) || value <= 0) value = 1;

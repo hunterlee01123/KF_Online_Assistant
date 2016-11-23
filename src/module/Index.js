@@ -71,9 +71,8 @@ export const handleAtTips = function () {
  * 在神秘等级升级后进行提醒
  */
 export const smLevelUpAlert = function () {
-    let matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"]').text());
-    if (!matches) return;
-    let smLevel = parseInt(matches[1]);
+    let smLevel = parseInt($('a[href="kf_growup.php"]').data('smLevel'));
+    if (!smLevel) return;
 
     /**
      * 写入神秘等级数据
@@ -111,9 +110,9 @@ export const smLevelUpAlert = function () {
  * 在神秘系数排名发生变化时进行提醒
  */
 export const smRankChangeAlert = function () {
-    let matches = /系数排名第\s*(\d+)\s*位/.exec($('a[href="kf_growup.php"]').text());
-    if (!matches) return;
-    let smRank = parseInt(matches[1]);
+    let smRank = $('a[href="kf_growup.php"]').data('smRank');
+    if (!smRank || smRank.endsWith('+')) return;
+    smRank = parseInt(smRank);
 
     /**
      * 写入神秘系数排名数据
@@ -150,7 +149,7 @@ export const smRankChangeAlert = function () {
 /**
  * 在首页帖子链接旁添加快速跳转至页末的链接
  */
-export const addHomePageThreadFastGotoLink = function () {
+export const addThreadFastGotoLink = function () {
     $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         let $this = $(this);
         $this.css('position', 'relative')
@@ -194,10 +193,32 @@ export const showVipSurplusTime = function () {
 /**
  * 在首页上添加搜索类型选择框
  */
-export const addSearchTypeSelectBoxInHomePage = function () {
+export const addSearchTypeSelectBox = function () {
     let $form = $('form[action="search.php?"]');
     $form.attr('name', 'pdSearchForm');
     let $keyWord = $form.find('[type="text"][name="keyword"]');
     $keyWord.css('width', '116px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
+};
+
+/**
+ * 处理首页个人信息
+ */
+export const handleIndexPersonalInfo = function () {
+    let $kfb = $('a[href="kf_givemekfb.php"]');
+    let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
+    if (matches) {
+        let kfb = parseInt(matches[1]);
+        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).data('kfb', kfb);
+    }
+
+    let $smLevel = $('a[href="kf_growup.php"]');
+    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
+    if (matches) {
+        let smLevel = parseInt(matches[1]);
+        let smRank = matches[2];
+        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`)
+            .data('smLevel', smLevel)
+            .data('smRank', smRank);
+    }
 };

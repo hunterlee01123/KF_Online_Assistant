@@ -900,7 +900,6 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
                     Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
                     console.log(`共有${money}KFB已自动存入活期存款`);
                     Msg.show(`共有<em>${money}</em>KFB已自动存入活期存款`);
-                    if (Info.isInHomePage) $kfb.text(`拥有${income - money}KFB`);
                 }
             });
     };
@@ -913,8 +912,8 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
         });
     }
     else {
-        let matches = /拥有(\d+)KFB/.exec($kfb.text());
-        if (matches) saveCurrentDeposit(parseInt(matches[1]));
+        let kfb = parseInt($kfb.data('kfb'));
+        if (kfb) saveCurrentDeposit(kfb);
     }
 };
 
