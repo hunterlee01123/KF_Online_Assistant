@@ -2,13 +2,13 @@
 'use strict';
 import * as Util from './Util';
 import * as Dialog from './Dialog';
-import * as Func from './Func';
 import {
     read as readConfig,
     write as writeConfig,
 } from './Config';
 import * as Log from './Log';
 import * as Item from './Item';
+import * as Script from './Script';
 
 /**
  * 显示日志对话框
@@ -17,7 +17,7 @@ export const show = function () {
     const dialogName = 'pdLogDialog';
     if ($('#' + dialogName).length > 0) return;
     readConfig();
-    Func.run('LogDialog.show_before_');
+    Script.runFunc('LogDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_log_nav">
@@ -147,7 +147,7 @@ export const show = function () {
     if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
     $dialog.find('input:first').focus();
-    Func.run('LogDialog.show_after_');
+    Script.runFunc('LogDialog.show_after_');
 };
 
 /**
@@ -415,7 +415,7 @@ const showImportOrExportLogDialog = function () {
     Dialog.show(dialogName);
     $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find(`[name="sortType2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');
-    Func.run('LogDialog.showImportOrExportLogDialog_after_');
+    Script.runFunc('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**

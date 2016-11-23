@@ -4,9 +4,9 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import * as Dialog from './Dialog';
-import * as Func from './Func';
 import Const from './Const';
 import * as Log from './Log';
+import * as Script from './Script';
 import * as Public from './Public';
 import * as Post from './Post';
 
@@ -550,7 +550,7 @@ export const buyThreads = function (threadList) {
                             `<i>KFB<ins>-${totalSell}</ins></i>`
                             , -1
                         );
-                        Func.run('Read.buyThreads_after_', threadList);
+                        Script.runFunc('Read.buyThreads_after_', threadList);
                     }
                     else {
                         setTimeout(() => $(document).dequeue('BuyThreads'), Const.defAjaxInterval);
@@ -687,7 +687,7 @@ export const addMoreSmileLink = function () {
                     let id = $(this).data('id');
                     if (id) addSmileCode(id);
                 });
-            Func.run('Read.addMoreSmileLink_after_click_');
+            Script.runFunc('Read.addMoreSmileLink_after_click_');
         });
 };
 

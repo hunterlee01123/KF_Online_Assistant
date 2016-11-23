@@ -2,15 +2,15 @@
 'use strict';
 import * as Util from './Util';
 import * as Msg from './Msg';
-import * as Func from './Func';
 import Const from './Const';
+import * as Script from './Script';
 
 /**
  * 处理多重回复和多重引用
  * @param {number} type 处理类型，1：多重回复；2：多重引用
  */
 export const handleMultiQuote = function (type = 1) {
-    Func.run('Post.handleMultiQuote_before_', type);
+    Script.runFunc('Post.handleMultiQuote_before_', type);
     if (!$('#pdClearMultiQuoteData').length) {
         $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
             .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
@@ -89,7 +89,7 @@ export const handleMultiQuote = function (type = 1) {
     });
     if (type === 2) $(document).dequeue('MultiQuote');
     else $('textarea[name="atc_content"]').val(content).focus();
-    Func.run('Post.handleMultiQuote_after_', type);
+    Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
 /**

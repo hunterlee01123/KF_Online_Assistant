@@ -5,7 +5,6 @@ import * as Dialog from './Dialog';
 import {read as readConfig, write as writeConfig} from './Config';
 
 import * as Util from './Util';
-import * as Func from './Func';
 import Const from './Const';
 import * as Msg from './Msg';
 import * as Log from './Log';
@@ -25,6 +24,8 @@ import * as ConfigDialog from './ConfigDialog';
 const defScriptName = '未命名脚本';
 // 脚本meta信息的正则表达式
 const metaRegex = /\/\/\s*==UserScript==((?:.|\n)+?)\/\/\s*==\/UserScript==/i;
+// 自定义方法列表
+const funcList = new Map();
 
 /**
  * 执行自定义脚本
@@ -58,6 +59,37 @@ export const runCmd = function (cmd, isOutput = false) {
     }
     return {result, response: String(response)};
 };
+
+/**
+ * 添加自定义方法
+ * @param {string} name 自定义方法名称
+ * @param {function} func 自定义方法
+ */
+export const addFunc = function (name, func) {
+    if (!funcList.has(name)) funcList.set(name, []);
+    funcList.get(name).push(func);
+};
+
+/**
+ * 执行自定义方法
+ * @param {string} name 自定义方法名称
+ * @param {*} [data] 自定义方法参数
+ */
+export const runFunc = function (name, data) {
+    if (funcList.has(name)) {
+        for (let func of funcList.get(name)) {
+            if (typeof func === 'function') {
+                try {
+                    func(data);
+                }
+                catch (ex) {
+                    console.log(ex);
+                }
+            }
+        }
+    }
+};
+
 
 /**
  * 获取脚本meta信息

@@ -3,7 +3,6 @@
 import Info from './Info';
 import * as Util from './Util';
 import * as Dialog from './Dialog';
-import * as Func from './Func';
 import Const from './Const';
 import {
     read as readConfig,
@@ -24,7 +23,7 @@ export const show = function () {
     const dialogName = 'pdConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     readConfig();
-    Func.run('ConfigDialog.show_before_');
+    Script.runFunc('ConfigDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
@@ -366,7 +365,7 @@ export const show = function () {
 
     Dialog.show(dialogName);
     $dialog.find('a:first').focus();
-    Func.run('ConfigDialog.show_after_');
+    Script.runFunc('ConfigDialog.show_after_');
 };
 
 /**

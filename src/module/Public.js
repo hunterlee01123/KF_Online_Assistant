@@ -4,13 +4,13 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import * as Dialog from './Dialog';
-import * as Func from './Func';
 import Const from './Const';
 import {read as readConfig, write as writeConfig} from './Config';
 import {show as showConfigDialog} from './ConfigDialog';
 import * as Log from './Log';
 import {show as showLogDialog} from './LogDialog';
 import * as TmpLog from './TmpLog';
+import * as Script from './Script';
 import * as Read from './Read';
 
 /**
@@ -335,7 +335,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
         if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
         return;
     }
-    Func.run('Public.donation_before_');
+    Script.runFunc('Public.donation_before_');
     console.log('KFB捐款Start');
     let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
 
@@ -387,7 +387,7 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
             }
             Msg.show(msgHtml);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Func.run('Public.donation_after_', msg);
+            Script.runFunc('Public.donation_after_', msg);
         });
     };
 
