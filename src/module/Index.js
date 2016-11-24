@@ -163,8 +163,6 @@ export const addThreadFastGotoLink = function () {
  * 在首页显示VIP剩余时间
  */
 export const showVipSurplusTime = function () {
-    if (!Util.isAfterLootTime()) return;
-
     /**
      * 添加VIP剩余时间的提示
      * @param {number} hours VIP剩余时间（小时）
@@ -178,6 +176,7 @@ export const showVipSurplusTime = function () {
 
     let vipHours = parseInt(Util.getCookie(Const.vipSurplusTimeCookieName));
     if (isNaN(vipHours) || vipHours < 0) {
+        if (Util.isBetweenLootTime()) return;
         console.log('检查VIP剩余时间Start');
         $.get('kf_vmember.php?t=' + new Date().getTime(), function (html) {
             let hours = 0;

@@ -63,9 +63,8 @@ export const show = function () {
     <fieldset>
       <legend>争夺相关</legend>
       <label>
-        在 <input name="otherAutoActionAfterLootTime" maxlength="8" style="width: 55px;" type="text" required> 之后才进行其它自动操作
-        <span class="pd_cfg_tips" title="在指定时间之后才进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；
-例：01:30:00（设为00:00:00表示不限制）">[?]</span>
+        在 <input name="noDoOtherAutoActionBetweenTime" maxlength="17" style="width: 120px;" type="text" required> 之内不进行其它自动操作
+        <span class="pd_cfg_tips" title="在指定时间段之内不进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；例：23:55:00-01:30:00">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -422,52 +421,45 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
-    let $txtOtherAutoActionAfterLootTime = $dialog.find('[name="otherAutoActionAfterLootTime"]');
-    let otherAutoActionAfterLootTime = $.trim($txtOtherAutoActionAfterLootTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(otherAutoActionAfterLootTime)) {
-        alert('在指定时间之后才进行其它自动操作格式不正确');
-        $txtOtherAutoActionAfterLootTime.select();
-        $txtOtherAutoActionAfterLootTime.focus();
-        return false;
-    }
-
     let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
     let donationKfb = $.trim($txtDonationKfb.val());
     if (/%$/.test(donationKfb)) {
         if (!/^1?\d?\d%$/.test(donationKfb)) {
             alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
             alert('KFB捐款额度百分比的取值范围在1-100之间');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
     }
     else {
         if (!$.isNumeric(donationKfb)) {
             alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
             alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
+    }
+
+    let $txtNoDoOtherAutoActionBetweenTime = $dialog.find('[name="noDoOtherAutoActionBetweenTime"]');
+    if (!/^(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}-(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}$/.test($txtNoDoOtherAutoActionBetweenTime.val())) {
+        alert('在指定时间段之内不进行其它自动操作格式不正确');
+        $txtNoDoOtherAutoActionBetweenTime.select().focus();
+        return false;
     }
 
     let $txtMaxFastGotoThreadPageNum = $dialog.find('[name="maxFastGotoThreadPageNum"]');
     let maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());
     if (!$.isNumeric(maxFastGotoThreadPageNum) || parseInt(maxFastGotoThreadPageNum) <= 0) {
         alert('页数链接最大数量格式不正确');
-        $txtMaxFastGotoThreadPageNum.select();
-        $txtMaxFastGotoThreadPageNum.focus();
+        $txtMaxFastGotoThreadPageNum.select().focus();
         return false;
     }
 
@@ -475,8 +467,7 @@ const verifyMainConfig = function ($dialog) {
     let threadContentFontSize = $.trim($txtThreadContentFontSize.val());
     if (threadContentFontSize && (isNaN(parseInt(threadContentFontSize)) || parseInt(threadContentFontSize) < 0)) {
         alert('帖子内容字体大小格式不正确');
-        $txtThreadContentFontSize.select();
-        $txtThreadContentFontSize.focus();
+        $txtThreadContentFontSize.select().focus();
         return false;
     }
 
@@ -484,8 +475,7 @@ const verifyMainConfig = function ($dialog) {
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
         alert('自定义本人的神秘颜色格式不正确，例：#009cff');
-        $txtCustomMySmColor.select();
-        $txtCustomMySmColor.focus();
+        $txtCustomMySmColor.select().focus();
         return false;
     }
 
@@ -493,8 +483,7 @@ const verifyMainConfig = function ($dialog) {
     let defShowMsgDuration = $.trim($txtDefShowMsgDuration.val());
     if (!$.isNumeric(defShowMsgDuration) || parseInt(defShowMsgDuration) < -1) {
         alert('默认的消息显示时间格式不正确');
-        $txtDefShowMsgDuration.select();
-        $txtDefShowMsgDuration.focus();
+        $txtDefShowMsgDuration.select().focus();
         return false;
     }
 
@@ -502,8 +491,7 @@ const verifyMainConfig = function ($dialog) {
     let logSaveDays = $.trim($txtLogSaveDays.val());
     if (!$.isNumeric(logSaveDays) || parseInt(logSaveDays) < 1) {
         alert('日志保存天数格式不正确');
-        $txtLogSaveDays.select();
-        $txtLogSaveDays.focus();
+        $txtLogSaveDays.select().focus();
         return false;
     }
 
@@ -514,14 +502,12 @@ const verifyMainConfig = function ($dialog) {
     if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
         if (!saveCurrentDepositAfterKfb || saveCurrentDepositAfterKfb <= 0) {
             alert('自动活期存款满足额度格式不正确');
-            $txtSaveCurrentDepositAfterKfb.select();
-            $txtSaveCurrentDepositAfterKfb.focus();
+            $txtSaveCurrentDepositAfterKfb.select().focus();
             return false;
         }
         if (!saveCurrentDepositKfb || saveCurrentDepositKfb <= 0 || saveCurrentDepositKfb > saveCurrentDepositAfterKfb) {
             alert('想要存款的金额格式不正确');
-            $txtSaveCurrentDepositKfb.select();
-            $txtSaveCurrentDepositKfb.focus();
+            $txtSaveCurrentDepositKfb.select().focus();
             return false;
         }
     }
@@ -719,8 +705,7 @@ const showCustomSmColorDialog = function () {
             if (min === '') return;
             if (!/^(-?\d+|MAX)$/i.test(min)) {
                 verification = false;
-                $txtSmMin.select();
-                $txtSmMin.focus();
+                $txtSmMin.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
@@ -729,15 +714,13 @@ const showCustomSmColorDialog = function () {
             if (max === '') return;
             if (!/^(-?\d+|MAX)$/i.test(max)) {
                 verification = false;
-                $txtSmMax.select();
-                $txtSmMax.focus();
+                $txtSmMax.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
             if (Util.compareSmLevel(max, min) < 0) {
                 verification = false;
-                $txtSmMin.select();
-                $txtSmMin.focus();
+                $txtSmMin.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
@@ -746,8 +729,7 @@ const showCustomSmColorDialog = function () {
             if (color === '') return;
             if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
                 verification = false;
-                $txtSmColor.select();
-                $txtSmColor.focus();
+                $txtSmColor.select().focus();
                 alert('颜色格式不正确');
                 return false;
             }
@@ -1207,8 +1189,7 @@ const showBlockThreadDialog = function () {
                 }
                 catch (ex) {
                     alert('正则表达式不正确');
-                    $txtKeyWord.select();
-                    $txtKeyWord.focus();
+                    $txtKeyWord.select().focus();
                     flag = false;
                     return false;
                 }

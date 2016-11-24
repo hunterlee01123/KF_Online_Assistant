@@ -162,14 +162,12 @@ const batchTransferVerify = function ($transfer) {
     let users = $bankUsers.val();
     if (!/^\s*\S+\s*$/m.test(users) || /^\s*:/m.test(users) || /:/.test(users) && /:(\D|$)/m.test(users)) {
         alert('用户列表格式不正确');
-        $bankUsers.select();
-        $bankUsers.focus();
+        $bankUsers.select().focus();
         return false;
     }
     if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
         alert(`转帐金额不能小于${minTransferMoney}KFB`);
-        $bankUsers.select();
-        $bankUsers.focus();
+        $bankUsers.select().focus();
         return false;
     }
     let $bankMoney = $transfer.find('[name="money"]');
@@ -177,14 +175,12 @@ const batchTransferVerify = function ($transfer) {
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
             alert('通用转账金额格式不正确');
-            $bankMoney.select();
-            $bankMoney.focus();
+            $bankMoney.select().focus();
             return false;
         }
         else if (money < minTransferMoney) {
             alert(`转帐金额不能小于${minTransferMoney}KFB`);
-            $bankMoney.select();
-            $bankMoney.focus();
+            $bankMoney.select().focus();
             return false;
         }
     }
@@ -400,7 +396,7 @@ export const handleInBankPage = function () {
  * 定期存款到期提醒
  */
 export const fixedDepositDueAlert = function () {
-    if (!Util.isAfterLootTime()) return;
+    if (Util.isBetweenLootTime()) return;
     console.log('定期存款到期提醒Start');
     $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
         Util.setCookie(Const.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));

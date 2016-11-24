@@ -322,8 +322,7 @@ export const addAutoChangeIdColorButton = function () {
                 let interval = parseInt($autoChangeIdColorInterval.val());
                 if (isNaN(interval) || interval <= 0) {
                     alert('ID颜色更换时间间隔格式不正确');
-                    $autoChangeIdColorInterval.select();
-                    $autoChangeIdColorInterval.focus();
+                    $autoChangeIdColorInterval.select().focus();
                     return;
                 }
                 let changeAllAvailableSMColorEnabled = $area.find('[name="changeAllAvailableIdColorEnabled"]').prop('checked');

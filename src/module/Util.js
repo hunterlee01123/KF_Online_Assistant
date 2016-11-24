@@ -548,7 +548,7 @@ export const selectInverse = function ($nodes) {
 };
 
 /**
- * 是否已过争夺时间
- * @returns {boolean} 是否已过争夺时间
+ * 是否在争夺时间之内
+ * @returns {boolean} 是否在争夺时间之内
  */
-export const isAfterLootTime = () => new Date() > getDateByTime(Config.otherAutoActionAfterLootTime);
+export const isBetweenLootTime = () => isBetweenInTimeRange(new Date(), Config.noDoOtherAutoActionBetweenTime);

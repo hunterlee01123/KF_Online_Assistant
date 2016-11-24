@@ -329,9 +329,7 @@ export const addPolyfill = function () {
  * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
  */
 export const donation = function (isAutoSaveCurrentDeposit = false) {
-    let now = new Date();
-    let date = Util.getDateByTime(Config.otherAutoActionAfterLootTime);
-    if (now <= date) return;
+    if (Util.isBetweenLootTime()) return;
     Script.runFunc('Public.donation_before_');
     console.log('KFB捐款Start');
     let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
@@ -422,15 +420,25 @@ export const donation = function (isAutoSaveCurrentDeposit = false) {
 export const getMinRefreshInterval = function () {
     let donationInterval = -1;
     if (Config.autoDonationEnabled) {
-        let donationTime = Util.getDateByTime(Config.otherAutoActionAfterLootTime);
         let now = new Date();
-        if (!Util.getCookie(Const.donationCookieName) && now <= donationTime) {
-            donationInterval = Math.floor((donationTime - now) / 1000);
+        let next = now;
+        if (Util.getCookie(Const.donationCookieName)) {
+            next = Util.getTimezoneDateByTime('00:05:00');
+            if (now > next) next.setDate(next.getDate() + 1);
         }
-        else {
-            donationTime.setDate(donationTime.getDate() + 1);
-            donationInterval = Math.floor((donationTime - now) / 1000);
+        let [start, end] = Config.noDoOtherAutoActionBetweenTime.split('-');
+        start = Util.getDateByTime(start);
+        end = Util.getDateByTime(end);
+        if (end < start) {
+            if (now > end) end.setDate(end.getDate() + 1);
+            else start.setDate(start.getDate() - 1);
         }
+        if (start < now && end < now) {
+            start.setDate(start.getDate() + 1);
+            end.setDate(end.getDate() + 1);
+        }
+        if (next >= start && next <= end) next = end;
+        donationInterval = Math.floor((next - now) / 1000);
     }
 
     let minArr = [donationInterval].filter(interval => interval >= 0);
@@ -458,13 +466,10 @@ export const startAutoRefreshMode = function () {
      * @returns {string} 经过格式化的倒计时标题
      */
     const getFormatIntervalTitle = function (type, interval) {
-        let textInterval = '';
         let diff = Util.getTimeDiffInfo(Util.getDate('+' + interval + 's').getTime());
-        textInterval = diff.hours > 0 ? diff.hours + '时' : '';
-        if (type === 1)
-            textInterval += (diff.minutes > 0 ? diff.minutes + '分' : '') + diff.seconds + '秒';
-        else
-            textInterval += diff.minutes + '分';
+        let textInterval = diff.hours > 0 ? diff.hours + '时' : '';
+        if (type === 1) textInterval += (diff.minutes > 0 ? diff.minutes + '分' : '') + diff.seconds + '秒';
+        else textInterval += diff.minutes + '分';
         return textInterval;
     };
 
@@ -863,7 +868,7 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
         Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
         return;
     }
-    if (!Util.isAfterLootTime()) return;
+    if (Util.isBetweenLootTime()) return;
     let $kfb = $('a[href="kf_givemekfb.php"]');
 
     /**
@@ -909,7 +914,7 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
  */
 export const changeIdColor = function () {
     if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) return;
-    if (!Util.isAfterLootTime()) return;
+    if (Util.isBetweenLootTime()) return;
 
     /**
      * 写入Cookie
