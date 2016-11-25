@@ -172,9 +172,9 @@ const showLogContent = function (log, date, $dialog) {
 const getLogContent = function (log, date, logSortType) {
     let logList = log[date];
     if (logSortType === 'type') {
-        const sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具',
-            '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级',
-            '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+        const sortTypeList = ['捐款', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具',
+            '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果',
+            '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type));
     }
     else {
@@ -267,6 +267,8 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     let income = {}, expense = {}, profit = {};
+    let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootExpStat = {total: 0, min: 0, max: 0},
+        lootKfbStat = {total: 0, min: 0, max: 0};
     let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
     let invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (let d in rangeLog) {
@@ -287,7 +289,27 @@ const getLogStat = function (log, date, logStatType) {
                 }
             }
 
-            if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
+            if (type === '争夺攻击' && $.type(gain) === 'object') {
+                let matches = /第`(\d+)`层/.exec(action);
+                if (matches) {
+                    lootCount++;
+                    let level = parseInt(matches[1]);
+                    lootLevelStat.total += level;
+                    if (lootLevelStat.max < level) lootLevelStat.max = level;
+                    if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
+                    if (gain['KFB'] > 0) {
+                        lootKfbStat.total += gain['KFB'];
+                        if (lootKfbStat.max < gain['KFB']) lootKfbStat.max = gain['KFB'];
+                        if (!lootKfbStat.min || lootKfbStat.min > gain['KFB']) lootKfbStat.min = gain['KFB'];
+                    }
+                    if (gain['经验值'] > 0) {
+                        lootExpStat.total += gain['经验值'];
+                        if (lootExpStat.max < gain['经验值']) lootExpStat.max = gain['经验值'];
+                        if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
+                    }
+                }
+            }
+            else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
                 let matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
                 if (matches) {
                     let itemLevel = parseInt(matches[1]);
@@ -331,13 +353,24 @@ const getLogStat = function (log, date, logStatType) {
 
     const sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
         '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
-    content += `\n<strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${validItemNum.toLocaleString()}</em>` +
-        `(<em title="3级以上有效道具">+${highValidItemNum.toLocaleString()}</em>)</i></span> `;
+    content += `\n<strong>争夺攻击统计：</strong><i>次数<em>+${lootCount}</em></i> `;
+    if (lootCount > 0) {
+        content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` +
+            `<em title="最小值">+${lootLevelStat.min}</em>|<em title="最大值">+${lootLevelStat.max}</em>)</span></i> `;
+        content += `<i>KFB<em>+${lootKfbStat.total.toLocaleString()}</em><span class="pd_stat_extra">` +
+            `(<em title="平均值">+${Util.getFixedNumLocStr(lootKfbStat.total / lootCount)}</em>|` +
+            `<em title="最小值">+${lootKfbStat.min.toLocaleString()}</em>|<em title="最大值">+${lootKfbStat.max.toLocaleString()}</em>)</span></i> `;
+        content += `<i>经验值<em>+${lootExpStat.total.toLocaleString()}</em><span class="pd_stat_extra">` +
+            `(<em title="平均值">+${Util.getFixedNumLocStr(lootExpStat.total / lootCount)}</em>|` +
+            `<em title="最小值">+${lootExpStat.min.toLocaleString()}</em>|<em title="最大值">+${lootExpStat.max.toLocaleString()}</em>)</span></i> `;
+    }
+    content += `<br><strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${validItemNum.toLocaleString()}</em>` +
+        `(<em title="3级以上有效道具">+${highValidItemNum.toLocaleString()}</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, validItemStat)) {
         content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;
     }
     content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${invalidItemNum.toLocaleString()}</em>` +
-        `(<em title="3级以上无效道具">+${highInvalidItemNum.toLocaleString()}</em>)</i></span> `;
+        `(<em title="3级以上无效道具">+${highInvalidItemNum.toLocaleString()}</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, invalidItemStat)) {
         content += `<i>${itemName}<em>+${invalidItemStat[itemName].toLocaleString()}</em></i> `;
     }
