@@ -12,7 +12,7 @@ __关于ES5和ES6版本的区别请参见【[常见问题2](https://git.oschina.
 3. __For Firefox版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
 Firefox桌面版专用（安卓版请安装全功能版），引入了一个额外的jQuery脚本，可使用全部的存储类型 __（代价是脚本初始化用时将翻倍，如只使用默认存储类型的话，建议安装通用版）__
 
-__注：如发现部分功能无法正常使用，请尝试安装其它版本（通用版及ES5版的兼容性最好）__
+__注：如发现部分功能无法正常使用，请尝试安装其它版本（通用版及ES5版本的兼容性最好）__
 
 ## 安装方法
 1. __Firefox：__ 安装[Greasemonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/)扩展，重启浏览器后打开脚本下载地址安装脚本即可
