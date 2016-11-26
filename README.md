@@ -6,11 +6,13 @@ __注：初次安装请先阅读安装方法__
 __以下3个版本仅在数据存储类型的支持程度方面有所区别（在其它功能上并无区别），关于各存储类型的区别详见【[常见问题1](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#1)】__  
 __关于ES5和ES6版本的区别请参见【[常见问题2](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#2)】（如实在不清楚应该安装哪个版本，请一律安装ES5版本）__  
 1. __全功能版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Full.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.user.js)]  
-可使用全部的存储类型（默认、按uid、全局）__（Firefox桌面版无法使用）__  
+可使用全部的存储类型（默认、按uid、全局）__（部分浏览器可能无法使用或有功能异常，例如Firefox桌面版）__  
 2. __通用版：__ [[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js)]  
 仅能使用默认的存储类型，所有浏览器通用 __（如全功能版无法使用，请安装此版本）__  
 3. __For Firefox版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
-Firefox桌面版专用（安卓版请安装全功能版），引入了一个额外的jQuery脚本，可使用全部的存储类型，__代价是脚本初始化用时将翻倍，如只使用默认存储类型的话，建议安装通用版__
+Firefox桌面版专用（安卓版请安装全功能版），引入了一个额外的jQuery脚本，可使用全部的存储类型 __（代价是脚本初始化用时将翻倍，如只使用默认存储类型的话，建议安装通用版）__
+
+__注：如发现部分功能无法正常使用，请尝试安装其它版本（通用版及ES5版的兼容性最好）__
 
 ## 安装方法
 1. __Firefox：__ 安装[Greasemonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/)扩展，重启浏览器后打开脚本下载地址安装脚本即可
@@ -25,7 +27,7 @@ _（各种采用了Chrome内核的国产浏览器也可尝试到各自的应用�
 
 ## 使用说明
 安装完脚本后请点击论坛页面上方的助手设置链接，打开设置界面进行相应设置，如不清楚各选项的意思可将鼠标停留在其之后的问号上即可获得相应提示 __（自动捐款等功能默认关闭，请自行开启）__  
-__在设置里开启定时模式后可按时进行自动操作（如不开启的话只能在刷新页面后才会进行操作）__，自动操作包括捐款、自动更换ID颜色（需开启相关功能），__只在论坛首页生效__
+__在设置里开启定时模式后可按时进行自动操作（如不开启的话只能在刷新页面后才会进行操作）__，自动操作包括自动捐款（需开启相关功能），__只在论坛首页生效__
 
 ## 常见问题
 [详细问题请参见此页面&raquo;](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
