@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.0.2
+// @version     8.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -83,7 +83,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.0.2';
+var version = '8.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -107,12 +107,13 @@ $(function () {
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     if (_Info2.default.isInHomePage) {
+        Index.handleIndexPersonalInfo();
         Index.handleAtTips();
-        Index.addSearchTypeSelectBoxInHomePage();
+        Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
-        if (Config.homePageThreadFastGotoLinkEnabled) Index.addHomePageThreadFastGotoLink();
+        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
@@ -232,7 +233,7 @@ $(function () {
     console.log('\u3010KF Online\u52A9\u624B\u3011\u52A0\u8F7D\u5B8C\u6BD5\uFF0C\u52A0\u8F7D\u8017\u65F6\uFF1A' + (endDate - startDate) + 'ms');
 });
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Loot":14,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/Util":22}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Loot":13,"./module/Other":15,"./module/Post":16,"./module/Public":17,"./module/Read":18,"./module/Script":19,"./module/Util":21}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -411,14 +412,12 @@ var batchTransferVerify = function batchTransferVerify($transfer) {
     var users = $bankUsers.val();
     if (!/^\s*\S+\s*$/m.test(users) || /^\s*:/m.test(users) || /:/.test(users) && /:(\D|$)/m.test(users)) {
         alert('用户列表格式不正确');
-        $bankUsers.select();
-        $bankUsers.focus();
+        $bankUsers.select().focus();
         return false;
     }
     if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
         alert('\u8F6C\u5E10\u91D1\u989D\u4E0D\u80FD\u5C0F\u4E8E' + minTransferMoney + 'KFB');
-        $bankUsers.select();
-        $bankUsers.focus();
+        $bankUsers.select().focus();
         return false;
     }
     var $bankMoney = $transfer.find('[name="money"]');
@@ -426,13 +425,11 @@ var batchTransferVerify = function batchTransferVerify($transfer) {
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
             alert('通用转账金额格式不正确');
-            $bankMoney.select();
-            $bankMoney.focus();
+            $bankMoney.select().focus();
             return false;
         } else if (money < minTransferMoney) {
             alert('\u8F6C\u5E10\u91D1\u989D\u4E0D\u80FD\u5C0F\u4E8E' + minTransferMoney + 'KFB');
-            $bankMoney.select();
-            $bankMoney.focus();
+            $bankMoney.select().focus();
             return false;
         }
     }
@@ -699,6 +696,7 @@ var handleInBankPage = exports.handleInBankPage = function handleInBankPage() {
  * 定期存款到期提醒
  */
 var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositDueAlert() {
+    if (Util.isBetweenLootTime()) return;
     console.log('定期存款到期提醒Start');
     $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
         Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
@@ -714,7 +712,7 @@ var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositD
     });
 };
 
-},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":14,"./Public":17,"./TmpLog":20,"./Util":21}],3:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -939,7 +937,7 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
     });
 };
 
-},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],4:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -990,8 +988,6 @@ var Config = exports.Config = {
     autoDonationEnabled: false,
     // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
     donationKfb: '1',
-    // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    donationAfterTime: '00:30:00',
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -1133,6 +1129,8 @@ var Config = exports.Config = {
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
 
+    // 在指定时间段之内不进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；例：23:55:00-01:30:00
+    noDoOtherAutoActionBetweenTime: '23:55:00-01:30:00',
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
     // 是否在攻击时自动修改争夺各层点数分配方案，true：开启；false：关闭
@@ -1244,7 +1242,7 @@ var normalize = exports.normalize = function normalize(options) {
     return settings;
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./TmpLog":20,"./Util":21}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -1266,10 +1264,6 @@ var Util = _interopRequireWildcard(_Util);
 var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
-
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
 
 var _Const = require('./Const');
 
@@ -1300,8 +1294,8 @@ var show = exports.show = function show() {
     var dialogName = 'pdConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    Func.run('ConfigDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoRefreshEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u6350\u6B3E\u3001\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\uFF0C\u53EA\u5728\u8BBA\u575B\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showRefreshModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoDonationEnabled" type="checkbox"> \u81EA\u52A8KFB\u6350\u6B3E</label>\n      </legend>\n      <label>\n        KFB\u6350\u6B3E\u989D\u5EA6\n        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text">\n        <span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5728 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> \u4E4B\u540E\u6350\u6B3E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u6350\u6B3E\uFF0824\u5C0F\u65F6\u5236\uFF09\uFF0C\u4F8B\uFF1A22:30:00\uFF08\u6CE8\u610F\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u9519\u8FC7\u6350\u6B3E\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 130px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86KF\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u663E\u793A\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="batchBuyThreadEnabled" type="checkbox"> \u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u7684\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="buyThreadViaAjaxEnabled" type="checkbox"> \u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSelfRatingLinkEnabled" type="checkbox"> \u663E\u793A\u81EA\u52A9\u8BC4\u5206\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7B26\u5408\u6761\u4EF6\u7684\u5E16\u5B50\u9875\u9762\u663E\u793A\u81EA\u52A9\u8BC4\u5206\u7684\u94FE\u63A5\uFF08\u4EC5\u9650\u81EA\u52A9\u8BC4\u5206\u6D4B\u8BD5\u4EBA\u5458\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSideBarFastNavEnabled" type="checkbox"> \u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\n        <span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
+    Script.runFunc('ConfigDialog.show_before_');
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoRefreshEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u6350\u6B3E\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\uFF0C\u53EA\u5728\u8BBA\u575B\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showRefreshModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoDonationEnabled" type="checkbox"> \u81EA\u52A8KFB\u6350\u6B3E</label>\n      </legend>\n      <label>\n        KFB\u6350\u6B3E\u989D\u5EA6\n        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text" required>\n        <span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        \u5728 <input name="noDoOtherAutoActionBetweenTime" maxlength="17" style="width: 120px;" type="text" required> \u4E4B\u5185\u4E0D\u8FDB\u884C\u5176\u5B83\u81EA\u52A8\u64CD\u4F5C\n        <span class="pd_cfg_tips" title="\u5728\u6307\u5B9A\u65F6\u95F4\u6BB5\u4E4B\u5185\u4E0D\u8FDB\u884C\u5176\u5B83\u81EA\u52A8\u64CD\u4F5C\uFF08\u5982\u81EA\u52A8\u6350\u6B3E\u3001\u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\u3001\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\u7B49\uFF09\uFF0C\u4EE5\u4FBF\u4E0D\u59A8\u788D\u8FDB\u884C\u4E89\u593A\uFF1B\u4F8B\uFF1A23:55:00-01:30:00">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 130px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSideBarFastNavEnabled" type="checkbox"> \u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\n        <span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86KF\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u663E\u793A\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="batchBuyThreadEnabled" type="checkbox"> \u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u7684\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="buyThreadViaAjaxEnabled" type="checkbox"> \u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSelfRatingLinkEnabled" type="checkbox"> \u663E\u793A\u81EA\u52A9\u8BC4\u5206\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7B26\u5408\u6761\u4EF6\u7684\u5E16\u5B50\u9875\u9762\u663E\u793A\u81EA\u52A9\u8BC4\u5206\u7684\u94FE\u63A5\uFF08\u4EC5\u9650\u81EA\u52A9\u8BC4\u5206\u6D4B\u8BD5\u4EBA\u5458\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
     var $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
     $dialog.submit(function (e) {
@@ -1365,7 +1359,7 @@ var show = exports.show = function show() {
 
     Dialog.show(dialogName);
     $dialog.find('a:first').focus();
-    Func.run('ConfigDialog.show_after_');
+    Script.runFunc('ConfigDialog.show_after_');
 };
 
 /**
@@ -1415,37 +1409,31 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
     if (/%$/.test(donationKfb)) {
         if (!/^1?\d?\d%$/.test(donationKfb)) {
             alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
             alert('KFB捐款额度百分比的取值范围在1-100之间');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
     } else {
         if (!$.isNumeric(donationKfb)) {
             alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > _Const2.default.maxDonationKfb) {
             alert('KFB\u6350\u6B3E\u989D\u5EA6\u7684\u53D6\u503C\u8303\u56F4\u57281-' + _Const2.default.maxDonationKfb + '\u4E4B\u95F4');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
     }
 
-    var $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
-    var donationAfterTime = $.trim($txtDonationAfterTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
-        alert('在指定时间之后捐款格式不正确');
-        $txtDonationAfterTime.select();
-        $txtDonationAfterTime.focus();
+    var $txtNoDoOtherAutoActionBetweenTime = $dialog.find('[name="noDoOtherAutoActionBetweenTime"]');
+    if (!/^(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}-(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}$/.test($txtNoDoOtherAutoActionBetweenTime.val())) {
+        alert('在指定时间段之内不进行其它自动操作格式不正确');
+        $txtNoDoOtherAutoActionBetweenTime.select().focus();
         return false;
     }
 
@@ -1453,8 +1441,7 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
     var maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());
     if (!$.isNumeric(maxFastGotoThreadPageNum) || parseInt(maxFastGotoThreadPageNum) <= 0) {
         alert('页数链接最大数量格式不正确');
-        $txtMaxFastGotoThreadPageNum.select();
-        $txtMaxFastGotoThreadPageNum.focus();
+        $txtMaxFastGotoThreadPageNum.select().focus();
         return false;
     }
 
@@ -1462,8 +1449,7 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
     var threadContentFontSize = $.trim($txtThreadContentFontSize.val());
     if (threadContentFontSize && (isNaN(parseInt(threadContentFontSize)) || parseInt(threadContentFontSize) < 0)) {
         alert('帖子内容字体大小格式不正确');
-        $txtThreadContentFontSize.select();
-        $txtThreadContentFontSize.focus();
+        $txtThreadContentFontSize.select().focus();
         return false;
     }
 
@@ -1471,8 +1457,7 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
     var customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
         alert('自定义本人的神秘颜色格式不正确，例：#009cff');
-        $txtCustomMySmColor.select();
-        $txtCustomMySmColor.focus();
+        $txtCustomMySmColor.select().focus();
         return false;
     }
 
@@ -1480,8 +1465,7 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
     var defShowMsgDuration = $.trim($txtDefShowMsgDuration.val());
     if (!$.isNumeric(defShowMsgDuration) || parseInt(defShowMsgDuration) < -1) {
         alert('默认的消息显示时间格式不正确');
-        $txtDefShowMsgDuration.select();
-        $txtDefShowMsgDuration.focus();
+        $txtDefShowMsgDuration.select().focus();
         return false;
     }
 
@@ -1489,8 +1473,7 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
     var logSaveDays = $.trim($txtLogSaveDays.val());
     if (!$.isNumeric(logSaveDays) || parseInt(logSaveDays) < 1) {
         alert('日志保存天数格式不正确');
-        $txtLogSaveDays.select();
-        $txtLogSaveDays.focus();
+        $txtLogSaveDays.select().focus();
         return false;
     }
 
@@ -1501,14 +1484,12 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
     if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
         if (!saveCurrentDepositAfterKfb || saveCurrentDepositAfterKfb <= 0) {
             alert('自动活期存款满足额度格式不正确');
-            $txtSaveCurrentDepositAfterKfb.select();
-            $txtSaveCurrentDepositAfterKfb.focus();
+            $txtSaveCurrentDepositAfterKfb.select().focus();
             return false;
         }
         if (!saveCurrentDepositKfb || saveCurrentDepositKfb <= 0 || saveCurrentDepositKfb > saveCurrentDepositAfterKfb) {
             alert('想要存款的金额格式不正确');
-            $txtSaveCurrentDepositKfb.select();
-            $txtSaveCurrentDepositKfb.focus();
+            $txtSaveCurrentDepositKfb.select().focus();
             return false;
         }
     }
@@ -1686,8 +1667,7 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
             if (min === '') return;
             if (!/^(-?\d+|MAX)$/i.test(min)) {
                 verification = false;
-                $txtSmMin.select();
-                $txtSmMin.focus();
+                $txtSmMin.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
@@ -1696,15 +1676,13 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
             if (max === '') return;
             if (!/^(-?\d+|MAX)$/i.test(max)) {
                 verification = false;
-                $txtSmMax.select();
-                $txtSmMax.focus();
+                $txtSmMax.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
             if (Util.compareSmLevel(max, min) < 0) {
                 verification = false;
-                $txtSmMin.select();
-                $txtSmMin.focus();
+                $txtSmMin.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
@@ -1713,8 +1691,7 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
             if (color === '') return;
             if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
                 verification = false;
-                $txtSmColor.select();
-                $txtSmColor.focus();
+                $txtSmColor.select().focus();
                 alert('颜色格式不正确');
                 return false;
             }
@@ -2196,8 +2173,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
                     eval(keyWord);
                 } catch (ex) {
                     alert('正则表达式不正确');
-                    $txtKeyWord.select();
-                    $txtKeyWord.focus();
+                    $txtKeyWord.select().focus();
                     flag = false;
                     return false;
                 }
@@ -2412,7 +2388,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
     $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":17,"./Script":19,"./TmpLog":20,"./Util":21}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2632,82 +2608,14 @@ var close = exports.close = function close(id) {
     return false;
 };
 
-},{"./Info":10,"./Public":18,"./Util":22}],8:[function(require,module,exports){
-/* 自定义方法模块 */
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.run = exports.add = undefined;
-
-var _Script = require('./Script');
-
-var Script = _interopRequireWildcard(_Script);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-// 自定义方法列表
-var funcList = new Map();
-
-/**
- * 添加自定义方法
- * @param {string} name 自定义方法名称
- * @param {function} func 自定义方法
- */
-var add = exports.add = function add(name, func) {
-    if (!funcList.has(name)) funcList.set(name, []);
-    funcList.get(name).push(func);
-};
-
-/**
- * 执行自定义方法
- * @param {string} name 自定义方法名称
- * @param {*} [data] 自定义方法参数
- */
-var run = exports.run = function run(name, data) {
-    if (funcList.has(name)) {
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
-        try {
-            for (var _iterator = funcList.get(name)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                var func = _step.value;
-
-                if (typeof func === 'function') {
-                    try {
-                        func(data);
-                    } catch (ex) {
-                        console.log(ex);
-                    }
-                }
-            }
-        } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion && _iterator.return) {
-                    _iterator.return();
-                }
-            } finally {
-                if (_didIteratorError) {
-                    throw _iteratorError;
-                }
-            }
-        }
-    }
-};
-
-},{"./Script":20}],9:[function(require,module,exports){
+},{"./Info":9,"./Public":17,"./Util":21}],8:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSearchTypeSelectBoxInHomePage = exports.showVipSurplusTime = exports.addHomePageThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.handleIndexPersonalInfo = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
 
 var _Info = require('./Info');
 
@@ -2794,9 +2702,8 @@ var handleAtTips = exports.handleAtTips = function handleAtTips() {
  * 在神秘等级升级后进行提醒
  */
 var smLevelUpAlert = exports.smLevelUpAlert = function smLevelUpAlert() {
-    var matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"]').text());
-    if (!matches) return;
-    var smLevel = parseInt(matches[1]);
+    var smLevel = parseInt($('a[href="kf_growup.php"]').data('smLevel'));
+    if (!smLevel) return;
 
     /**
      * 写入神秘等级数据
@@ -2828,9 +2735,9 @@ var smLevelUpAlert = exports.smLevelUpAlert = function smLevelUpAlert() {
  * 在神秘系数排名发生变化时进行提醒
  */
 var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert() {
-    var matches = /系数排名第\s*(\d+)\s*位/.exec($('a[href="kf_growup.php"]').text());
-    if (!matches) return;
-    var smRank = parseInt(matches[1]);
+    var smRank = $('a[href="kf_growup.php"]').data('smRank');
+    if (!smRank || smRank.endsWith('+')) return;
+    smRank = parseInt(smRank);
 
     /**
      * 写入神秘系数排名数据
@@ -2860,7 +2767,7 @@ var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert()
 /**
  * 在首页帖子链接旁添加快速跳转至页末的链接
  */
-var addHomePageThreadFastGotoLink = exports.addHomePageThreadFastGotoLink = function addHomePageThreadFastGotoLink() {
+var addThreadFastGotoLink = exports.addThreadFastGotoLink = function addThreadFastGotoLink() {
     $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         var $this = $(this);
         $this.css('position', 'relative').prepend('<a class="pd_thread_goto" href="' + $this.find('a').attr('href') + '&page=e#a">&raquo;</a>');
@@ -2883,6 +2790,7 @@ var showVipSurplusTime = exports.showVipSurplusTime = function showVipSurplusTim
 
     var vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
     if (isNaN(vipHours) || vipHours < 0) {
+        if (Util.isBetweenLootTime()) return;
         console.log('检查VIP剩余时间Start');
         $.get('kf_vmember.php?t=' + new Date().getTime(), function (html) {
             var hours = 0;
@@ -2899,7 +2807,7 @@ var showVipSurplusTime = exports.showVipSurplusTime = function showVipSurplusTim
 /**
  * 在首页上添加搜索类型选择框
  */
-var addSearchTypeSelectBoxInHomePage = exports.addSearchTypeSelectBoxInHomePage = function addSearchTypeSelectBoxInHomePage() {
+var addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function addSearchTypeSelectBox() {
     var $form = $('form[action="search.php?"]');
     $form.attr('name', 'pdSearchForm');
     var $keyWord = $form.find('[type="text"][name="keyword"]');
@@ -2907,7 +2815,27 @@ var addSearchTypeSelectBoxInHomePage = exports.addSearchTypeSelectBoxInHomePage 
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./TmpLog":21,"./Util":22}],10:[function(require,module,exports){
+/**
+ * 处理首页个人信息
+ */
+var handleIndexPersonalInfo = exports.handleIndexPersonalInfo = function handleIndexPersonalInfo() {
+    var $kfb = $('a[href="kf_givemekfb.php"]');
+    var matches = /拥有(-?\d+)KFB/.exec($kfb.text());
+    if (matches) {
+        var kfb = parseInt(matches[1]);
+        $kfb.html('\u62E5\u6709<b>' + kfb.toLocaleString() + '</b>KFB').data('kfb', kfb);
+    }
+
+    var $smLevel = $('a[href="kf_growup.php"]');
+    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
+    if (matches) {
+        var smLevel = parseInt(matches[1]);
+        var smRank = matches[2];
+        $smLevel.html('\u795E\u79D8<b>' + smLevel + '</b>\u7EA7 (\u7CFB\u6570\u6392\u540D\u7B2C<b style="color: #00f;">' + smRank + '</b>\u4F4D)').data('smLevel', smLevel).data('smRank', smRank);
+    }
+};
+
+},{"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./TmpLog":20,"./Util":21}],9:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -2944,7 +2872,7 @@ var Info = {
 
 exports.default = Info;
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /* 道具模块 */
 'use strict';
 
@@ -4437,7 +4365,7 @@ var modifyItemDescription = exports.modifyItemDescription = function modifyItemD
     }
 };
 
-},{"./Config":4,"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],12:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -4620,7 +4548,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":10,"./Util":22}],13:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":21}],12:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -4637,10 +4565,6 @@ var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
 
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
-
 var _Config = require('./Config');
 
 var _Log = require('./Log');
@@ -4651,6 +4575,10 @@ var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
 
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 /**
@@ -4660,7 +4588,7 @@ var show = exports.show = function show() {
     var dialogName = 'pdLogDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    Func.run('LogDialog.show_before_');
+    Script.runFunc('LogDialog.show_before_');
     var html = '\n<div class="pd_cfg_main">\n  <div class="pd_log_nav">\n    <a class="pd_disabled_link" href="#">&lt;&lt;</a>\n    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&lt;</a>\n    <h2 class="pd_custom_tips">\u6682\u65E0\u65E5\u5FD7</h2>\n    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&gt;</a>\n    <a class="pd_disabled_link" href="#">&gt;&gt;</a>\n  </div>\n  <fieldset>\n    <legend>\u65E5\u5FD7\u5185\u5BB9</legend>\n    <div>\n      <strong>\u6392\u5E8F\u65B9\u5F0F\uFF1A</strong>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="sortType" value="time" checked> \u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="sortType" value="type"> \u6309\u7C7B\u522B</label>\n    </div>\n    <div class="pd_stat pd_log_content">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n  <fieldset>\n    <legend>\u7EDF\u8BA1\u7ED3\u679C</legend>\n    <div>\n      <strong>\u7EDF\u8BA1\u8303\u56F4\uFF1A</strong>\n      <label title="\u663E\u793A\u5F53\u5929\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="current" checked> \u5F53\u5929</label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="custom"></label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input name="statDays" type="text" style="width: 22px;" maxlength="3"> \u5929\u5185</label>\n      <label title="\u663E\u793A\u5168\u90E8\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="all"> \u5168\u90E8</label>\n    </div>\n    <div class="pd_stat" data-name="stat">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</a></span>\n  <button name="close" type="button">\u5173\u95ED</button>\n  <button name="clear" type="button">\u6E05\u9664\u65E5\u5FD7</button>\n</div>';
     var $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
 
@@ -4746,7 +4674,7 @@ var show = exports.show = function show() {
     if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
     $dialog.find('input:first').focus();
-    Func.run('LogDialog.show_after_');
+    Script.runFunc('LogDialog.show_after_');
 };
 
 /**
@@ -4771,7 +4699,7 @@ var getLogContent = function getLogContent(log, date, logSortType) {
     var logList = log[date];
     if (logSortType === 'type') {
         (function () {
-            var sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+            var sortTypeList = ['捐款', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
             logList.sort(function (a, b) {
                 return sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type);
             });
@@ -4997,6 +4925,10 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     var income = {},
         expense = {},
         profit = {};
+    var lootCount = 0,
+        lootLevelStat = { total: 0, min: 0, max: 0 },
+        lootExpStat = { total: 0, min: 0, max: 0 },
+        lootKfbStat = { total: 0, min: 0, max: 0 };
     var validItemNum = 0,
         highValidItemNum = 0,
         validItemStat = {},
@@ -5074,11 +5006,30 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                     }
                 }
 
-                if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
-                    var matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
+                if (type === '争夺攻击' && $.type(gain) === 'object') {
+                    var matches = /第`(\d+)`层/.exec(action);
                     if (matches) {
-                        var itemLevel = parseInt(matches[1]);
-                        var itemName = matches[2];
+                        lootCount++;
+                        var level = parseInt(matches[1]);
+                        lootLevelStat.total += level;
+                        if (lootLevelStat.max < level) lootLevelStat.max = level;
+                        if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
+                        if (gain['KFB'] > 0) {
+                            lootKfbStat.total += gain['KFB'];
+                            if (lootKfbStat.max < gain['KFB']) lootKfbStat.max = gain['KFB'];
+                            if (!lootKfbStat.min || lootKfbStat.min > gain['KFB']) lootKfbStat.min = gain['KFB'];
+                        }
+                        if (gain['经验值'] > 0) {
+                            lootExpStat.total += gain['经验值'];
+                            if (lootExpStat.max < gain['经验值']) lootExpStat.max = gain['经验值'];
+                            if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
+                        }
+                    }
+                } else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
+                    var _matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
+                    if (_matches) {
+                        var itemLevel = parseInt(_matches[1]);
+                        var itemName = _matches[2];
                         if (gain['有效道具'] > 0) {
                             validItemNum += gain['有效道具'];
                             if (itemLevel >= 3) highValidItemNum += gain['有效道具'];
@@ -5195,7 +5146,13 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
 
     var sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
-    content += '\n<strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</i></span> ');
+    content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
+    if (lootCount > 0) {
+        content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
+        content += '<i>KFB<em>+' + lootKfbStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootKfbStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootKfbStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootKfbStat.max.toLocaleString() + '</em>)</span></i> ');
+        content += '<i>\u7ECF\u9A8C\u503C<em>+' + lootExpStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootExpStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootExpStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootExpStat.max.toLocaleString() + '</em>)</span></i> ');
+    }
+    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
     var _iteratorNormalCompletion13 = true;
     var _didIteratorError13 = false;
     var _iteratorError13 = undefined;
@@ -5221,7 +5178,7 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</i></span> ');
+    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
     var _iteratorNormalCompletion14 = true;
     var _didIteratorError14 = false;
     var _iteratorError14 = undefined;
@@ -5295,7 +5252,7 @@ var showImportOrExportLogDialog = function showImportOrExportLogDialog() {
     Dialog.show(dialogName);
     $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find('[name="sortType2"][value="' + Config.logSortType + '"]').prop('checked', true).triggerHandler('click');
-    Func.run('LogDialog.showImportOrExportLogDialog_after_');
+    Script.runFunc('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**
@@ -5345,7 +5302,7 @@ var showLogText = function showLogText(log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Func":8,"./Item":11,"./Log":12,"./Util":22}],14:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":19,"./Util":21}],13:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -5357,6 +5314,10 @@ exports.addUserLinkInPkListPage = exports.enhanceLootIndexPage = undefined;
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
 
 var _Util = require('./Util');
 
@@ -5376,6 +5337,10 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Config = require('./Config');
 
+var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
+
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -5384,9 +5349,9 @@ var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -5397,7 +5362,7 @@ var $properties = void 0;
 // 点数区域
 var $points = void 0;
 // 争夺记录区域
-var $lootLog = void 0;
+var $log = void 0;
 // 当前争夺属性
 var propertyList = void 0;
 // 附加点数列表
@@ -5405,7 +5370,7 @@ var extraPointList = void 0;
 // 道具使用情况
 var itemUsedNumList = void 0;
 // 争夺记录
-var lootLog = '';
+var log = '';
 
 /**
  * 增强争夺首页
@@ -5417,13 +5382,13 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     propertyList = getLootPropertyList();
     extraPointList = getExtraPointList();
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
-    $lootLog = $lootArea.find('> tbody > tr:nth-child(5) > td');
-    lootLog = $lootLog.html();
+    $log = $lootArea.find('> tbody > tr:nth-child(5) > td');
+    log = $log.html();
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
-    enhanceLootLog(lootLog);
+    enhanceLootLog(log);
 };
 
 /**
@@ -5493,14 +5458,24 @@ var handlePointsArea = function handlePointsArea() {
         if (isNaN(num) || num < 0) num = 0;
         $point.val(num + surplusPoint).trigger('change');
     }).find('form').submit(function () {
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
-        if (surplusPoint < 0) {
-            alert('剩余属性点为负，请重新填写');
-            return false;
-        } else if (surplusPoint > 0) {
-            return confirm('你的可分配属性点尚未用完，是否提交？');
-        }
+        return checkPoints($points);
     }).find('[type="number"]').trigger('change');
+};
+
+/**
+ * 检查点数设置
+ * @param {jQuery} $points 点数字段对象
+ * @returns {boolean} 检查结果
+ */
+var checkPoints = function checkPoints($points) {
+    var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+    if (surplusPoint < 0) {
+        alert('剩余属性点为负，请重新填写');
+        return false;
+    } else if (surplusPoint > 0) {
+        return confirm('你的可分配属性点尚未用完，是否提交？');
+    }
+    return true;
 };
 
 /**
@@ -5508,21 +5483,23 @@ var handlePointsArea = function handlePointsArea() {
  * @returns {Map} 争夺属性
  */
 var getLootPropertyList = function getLootPropertyList() {
-    var propertyList = new Map([['攻击力', 0], ['最大生命值', 0], ['攻击速度', 0], ['暴击几率', 0], ['技能释放概率', 0], ['防御', 0], ['可分配属性点', 0]]);
-    var html = $properties.html();
-    var matches = /攻击力：(\d+)/.exec(html);
+    var propertyList = new Map([['攻击力', 0], ['最大生命值', 0], ['攻击速度', 0], ['暴击几率', 0], ['技能伤害', 0], ['技能释放概率', 0], ['防御', 0], ['可分配属性点', 0]]);
+    var content = $properties.text();
+    var matches = /攻击力：(\d+)/.exec(content);
     if (matches) propertyList.set('攻击力', parseInt(matches[1]));
-    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
+    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(content);
     if (matches) propertyList.set('最大生命值', parseInt(matches[1]));
-    matches = /攻击速度：(\d+)/.exec(html);
+    matches = /攻击速度：(\d+)/.exec(content);
     if (matches) propertyList.set('攻击速度', parseInt(matches[1]));
-    matches = /暴击几率：(\d+)%/.exec(html);
+    matches = /暴击几率：(\d+)%/.exec(content);
     if (matches) propertyList.set('暴击几率', parseInt(matches[1]));
-    matches = /技能释放概率：(\d+)%/.exec(html);
+    matches = /技能伤害：(\d+)/.exec(content);
+    if (matches) propertyList.set('技能伤害', parseInt(matches[1]));
+    matches = /技能释放概率：(\d+)%/.exec(content);
     if (matches) propertyList.set('技能释放概率', parseInt(matches[1]));
-    matches = /防御：(\d+)%/.exec(html);
+    matches = /防御：(\d+)%/.exec(content);
     if (matches) propertyList.set('防御', parseInt(matches[1]));
-    matches = /可分配属性点：(\d+)/.exec(html);
+    matches = /可分配属性点：(\d+)/.exec(content);
     if (matches) propertyList.set('可分配属性点', parseInt(matches[1]));
     return propertyList;
 };
@@ -5709,22 +5686,22 @@ var getPointByProperty = function getPointByProperty(pointName, num) {
     var value = 0;
     switch (pointName) {
         case '力量':
-            value = Math.round(num / 5) - extraPointList.get('力量');
+            value = Math.ceil(num / 5) - extraPointList.get('力量');
             break;
         case '体质':
-            value = Math.round((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
+            value = Math.ceil((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
             break;
         case '敏捷':
-            value = Math.round((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
+            value = Math.ceil((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
             break;
         case '灵活':
-            value = Math.round(100 * num / (100 - num)) - extraPointList.get('灵活');
+            value = Math.ceil(100 * num / (100 - num)) - extraPointList.get('灵活');
             break;
         case '智力':
-            value = Math.round(90 * num / (100 - num)) - extraPointList.get('智力');
+            value = Math.ceil(90 * num / (100 - num)) - extraPointList.get('智力');
             break;
         case '意志':
-            value = Math.round(150 * num / (100 - num)) - extraPointList.get('意志');
+            value = Math.ceil(150 * num / (100 - num)) - extraPointList.get('意志');
             break;
     }
     if (!isFinite(value) || value <= 0) value = 1;
@@ -5760,13 +5737,7 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         }
     }).end().filter('[data-name="save"]').click(function (e) {
         e.preventDefault();
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
-        if (surplusPoint < 0) {
-            alert('剩余属性点为负，请重新填写');
-            return;
-        } else if (surplusPoint > 0) {
-            if (!confirm('你的可分配属性点尚未用完，是否保存？')) return;
-        }
+        if (!checkPoints($points)) return;
         var $levelPointListSelect = $('#pdLevelPointListSelect');
         var level = parseInt($levelPointListSelect.val());
         level = parseInt(prompt('请输入层数：', level ? level : ''));
@@ -6066,8 +6037,8 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
  * 添加攻击相关按钮
  */
 var addAttackBtns = function addAttackBtns() {
-    $('\n<label title="\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u6210\u76F8\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u88AB\u51FB\u8D25\u540E\u4FEE\u6539\u56DE\u6700\u4F4E\u5C42\u6570\u7684\u65B9\u6848">\n  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n</label>\n<label title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~5\u79D2\u4E4B\u95F4\uFF09">\n  <input class="pd_input" name="slowAttackEnabled" type="checkbox"> \u6162\u901F\n</label><br>\n<button name="continuingAttack" type="button" title="\u8FDE\u7EED\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u8FDE\u7EED\u653B\u51FB</button>\n<button name="onceAttack" type="button" title="\u6BCF\u6B21\u53EA\u653B\u51FB\u4E00\u5C42">\u653B\u51FB\u4E00\u5C42</button>\n').appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
-        if (/你被击败了/.test(lootLog)) {
+    $('\n<label>\n  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n  <span class="pd_cfg_tips" title="\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u6210\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u88AB\u51FB\u8D25\u540E\u4FEE\u6539\u56DE\u7B2C1\u5C42\u7684\u65B9\u6848\uFF08\u5982\u679C\u6709\uFF09\uFF1B\u5982\u4E0D\u52FE\u9009\u6B64\u9879\u7684\u8BDD\uFF0C\u653B\u51FB\u65F6\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u7684\u70B9\u6570\u8BBE\u7F6E">[?]</span>\n</label>\n<label>\n  <input class="pd_input" name="slowAttackEnabled" type="checkbox"> \u6162\u901F\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~5\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n</label><br>\n<button name="continuingAttack" type="button" title="\u8FDE\u7EED\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u8FDE\u7EED\u653B\u51FB</button>\n<button name="onceAttack" type="button" title="\u6BCF\u6B21\u53EA\u653B\u51FB\u4E00\u5C42">\u653B\u51FB\u4E00\u5C42</button>\n').appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
+        if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
         }
@@ -6081,12 +6052,13 @@ var addAttackBtns = function addAttackBtns() {
         $this.blur();
         Msg.destroy();
         var isChangePoints = Config.autoChangeLevelPointsEnabled && !$.isEmptyObject(Config.levelPointList);
-        var currentLevel = getCurrentMaxLevel(lootLog);
-        var $wait = Msg.wait('<strong>\u6B63\u5728\u653B\u51FB\u4E2D\uFF0C\u8BF7\u7A0D\u7B49&hellip;</strong><i>\u5F53\u524D\u5C42\u6570\uFF1A<em class="pd_countdown">' + currentLevel + '</em></i>' + '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注：请不要访问论坛的其它页面）</span>');
+        var currentLevel = getCurrentMaxLevel(log);
+        if (!isChangePoints && !checkPoints($points)) return;
+        var $wait = Msg.wait('<strong>\u6B63\u5728\u653B\u51FB\u4E2D\uFF0C\u8BF7\u7A0D\u7B49&hellip;</strong><i>\u5F53\u524D\u5C42\u6570\uFF1A<em class="pd_countdown">' + currentLevel + '</em></i>' + '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注意：请不要访问论坛的其它页面）</span>');
 
         /**
          * 修改点数方案
-         * @param {number} nextLevel 下一层
+         * @param {number} nextLevel 下一层（0表示修改为当前点数设置）
          * @param {boolean} isShowMsg 是否显示消息
          * @param {?jQuery} $wait 等待消息框
          * @returns {Deferred} Deferred对象
@@ -6095,19 +6067,19 @@ var addAttackBtns = function addAttackBtns() {
             var isShowMsg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
             var $wait = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
 
-            var changeLevel = Math.max.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList).filter(function (level) {
+            var changeLevel = nextLevel ? Math.max.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList).filter(function (level) {
                 return level <= nextLevel;
-            })));
-            var isEqual = true;
-            $points.find('[type="number"]').each(function () {
+            }))) : 0;
+            var isChange = true;
+            $points.find('[type="number"]:not([disabled])').each(function () {
                 if (this.defaultValue !== $(this).val()) {
-                    isEqual = false;
+                    isChange = false;
                     return false;
                 }
             });
             var $levelPointListSelect = $('#pdLevelPointListSelect');
-            if (changeLevel !== parseInt($levelPointListSelect.val()) || !isEqual) {
-                $levelPointListSelect.val(changeLevel).trigger('change');
+            if (!isChange || changeLevel && changeLevel !== parseInt($levelPointListSelect.val())) {
+                if (changeLevel) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
                 return $.ajax({
                     type: 'POST',
                     url: 'kf_fw_ig_enter.php',
@@ -6118,17 +6090,66 @@ var addAttackBtns = function addAttackBtns() {
                         msg = _Util$getResponseMsg.msg;
 
                     if (/已经重新配置加点！/.test(msg)) {
-                        console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u5DF2\u4FEE\u6539\u4E3A\u7B2C' + changeLevel + '\u5C42\u7684\u65B9\u6848');
-                        if (isShowMsg) {
-                            if ($wait) Msg.remove($wait);
-                            Msg.show('<strong>\u5DF2\u4FEE\u6539\u4E3A\u7B2C<em>' + changeLevel + '</em>\u5C42\u7684\u65B9\u6848</strong>', -1);
+                        propertyList = getLootPropertyList();
+                        var pointsText = '',
+                            propertiesText = '';
+                        $points.find('[type="number"]:not([disabled])').each(function () {
+                            var $this = $(this);
+                            var name = $this.attr('name');
+                            var value = $.trim($this.val());
+                            pointsText += getPointNameByFieldName(name) + '\uFF1A' + value + '\uFF0C';
+                        });
+                        pointsText = pointsText.replace(/，$/, '');
+                        var _iteratorNormalCompletion5 = true;
+                        var _didIteratorError5 = false;
+                        var _iteratorError5 = undefined;
+
+                        try {
+                            for (var _iterator5 = propertyList[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                                var _step5$value = _slicedToArray(_step5.value, 2),
+                                    key = _step5$value[0],
+                                    value = _step5$value[1];
+
+                                if (key === '可分配属性点') continue;
+                                var unit = '';
+                                if (key.endsWith('率') || key === '防御') unit = '%';
+                                propertiesText += key + '\uFF1A' + value + unit + '\uFF0C';
+                            }
+                        } catch (err) {
+                            _didIteratorError5 = true;
+                            _iteratorError5 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                                    _iterator5.return();
+                                }
+                            } finally {
+                                if (_didIteratorError5) {
+                                    throw _iteratorError5;
+                                }
+                            }
                         }
+
+                        propertiesText = propertiesText.replace(/，$/, '');
+
+                        if (changeLevel) {
+                            console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u5DF2\u4FEE\u6539\u4E3A\u7B2C' + changeLevel + '\u5C42\u7684\u65B9\u6848\uFF1B\u70B9\u6570\uFF08' + pointsText + '\uFF09\uFF1B\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09');
+                            $('#pdAttackProcess').append('\n<li>\n  \u3010\u5206\u914D\u70B9\u6570\u3011\u5DF2\u4FEE\u6539\u4E3A\u7B2C<b class="pd_highlight">' + changeLevel + '</b>\u5C42\u7684\u65B9\u6848<br>\n  <span style="color: #666;">\u70B9\u6570\uFF08' + pointsText + '\uFF09<br>\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09</span>\n</li>\n');
+                            if (isShowMsg) {
+                                if ($wait) Msg.remove($wait);
+                                Msg.show('<strong>\u5DF2\u4FEE\u6539\u4E3A\u7B2C<em>' + changeLevel + '</em>\u5C42\u7684\u65B9\u6848</strong>', -1);
+                            }
+                        } else {
+                            console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u5DF2\u4FEE\u6539\u70B9\u6570\u8BBE\u7F6E\uFF1B\u70B9\u6570\uFF08' + pointsText + '\uFF09\uFF1B\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09');
+                            $('#pdAttackProcess').append('\n<li>\n  \u3010\u5206\u914D\u70B9\u6570\u3011\u5DF2\u4FEE\u6539\u70B9\u6570\u8BBE\u7F6E<br>\n  <span style="color: #666;">\u70B9\u6570\uFF08' + pointsText + '\uFF09<br>\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09</span>\n</li>\n');
+                        }
+
                         $points.find('[type="number"]').each(function () {
                             this.defaultValue = $(this).val();
                         }).trigger('change');
                         return 'success';
                     } else {
-                        alert('\u7B2C' + changeLevel + '\u5C42\u65B9\u6848\uFF1A' + msg);
+                        alert((changeLevel ? '\u7B2C' + changeLevel + '\u5C42\u65B9\u6848\uFF1A' : '') + msg);
                         return 'error';
                     }
                 }, function (XMLHttpRequest, textStatus) {
@@ -6151,27 +6172,94 @@ var addAttackBtns = function addAttackBtns() {
                     Msg.remove($wait);
                     return;
                 }
-                lootLog = matches[1];
-                enhanceLootLog(lootLog);
+                log = matches[1];
+                enhanceLootLog(log);
 
-                var currentLevel = getCurrentMaxLevel(lootLog);
+                var currentLevel = getCurrentMaxLevel(log);
                 console.log('【争夺攻击】当前层数：' + currentLevel);
+                $('#pdAttackProcess').append('<li>\u3010\u4E89\u593A\u653B\u51FB\u3011\u5F53\u524D\u5C42\u6570\uFF1A<b class="pd_highlight">' + currentLevel + '</b></li>');
                 var $countdown = $('.pd_countdown:last');
                 $countdown.text(currentLevel);
 
-                var isFail = /你被击败了/.test(lootLog);
+                var isFail = /你被击败了/.test(log);
                 var isStop = isFail || type !== 'continue' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
                 if (isStop) {
                     Msg.remove($wait);
-                    if (isFail) Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>', -1);else Msg.show('<strong>\u4F60\u6210\u529F\u6253\u5012\u4E86\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC</strong>', -1);
-                    if (isChangePoints && isFail) {
-                        (function () {
-                            var $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
-                            changePoints(Math.min.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList))), true, $wait).always(function (result) {
-                                if (result !== 'success') alert('修改点数分配方案失败');
-                                Msg.remove($wait);
-                            });
-                        })();
+                    if (isFail) {
+                        var enemyList = {};
+                        var _iteratorNormalCompletion6 = true;
+                        var _didIteratorError6 = false;
+                        var _iteratorError6 = undefined;
+
+                        try {
+                            for (var _iterator6 = Util.entries(getEnemyList(log))[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                                var _step6$value = _slicedToArray(_step6.value, 2),
+                                    enemy = _step6$value[0],
+                                    num = _step6$value[1];
+
+                                enemyList[enemy.replace('特别', '')] = num;
+                            }
+                        } catch (err) {
+                            _didIteratorError6 = true;
+                            _iteratorError6 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                                    _iterator6.return();
+                                }
+                            } finally {
+                                if (_didIteratorError6) {
+                                    throw _iteratorError6;
+                                }
+                            }
+                        }
+
+                        var enemyStat = '';
+                        var _iteratorNormalCompletion7 = true;
+                        var _didIteratorError7 = false;
+                        var _iteratorError7 = undefined;
+
+                        try {
+                            for (var _iterator7 = Util.entries(enemyList)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                                var _step7$value = _slicedToArray(_step7.value, 2),
+                                    enemy = _step7$value[0],
+                                    num = _step7$value[1];
+
+                                enemyStat += enemy + '`+' + num + '` ';
+                            }
+                        } catch (err) {
+                            _didIteratorError7 = true;
+                            _iteratorError7 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                                    _iterator7.return();
+                                }
+                            } finally {
+                                if (_didIteratorError7) {
+                                    throw _iteratorError7;
+                                }
+                            }
+                        }
+
+                        var _getTotalGain = getTotalGain(log),
+                            exp = _getTotalGain.exp,
+                            kfb = _getTotalGain.kfb;
+
+                        Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (' + enemyStat.trim() + ')', { gain: { 'KFB': kfb, '经验值': exp } });
+
+                        Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>', -1);
+                        if (isChangePoints && Config.levelPointList[1]) {
+                            (function () {
+                                var $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
+                                changePoints(1, true, $wait).always(function (result) {
+                                    if (result !== 'success') alert('修改点数分配方案失败');
+                                    Msg.remove($wait);
+                                });
+                            })();
+                        }
+                    } else {
+                        Msg.show('<strong>\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC</strong>', -1);
                     }
                 } else {
                     if (isChangePoints) {
@@ -6189,6 +6277,7 @@ var addAttackBtns = function addAttackBtns() {
                 }
                 if (textStatus === 'timeout') {
                     console.log('【争夺攻击】超时重试...');
+                    $('#pdAttackProcess').append('<li>【争夺攻击】超时重试&hellip;</li>');
                     setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
                 }
             });
@@ -6202,7 +6291,7 @@ var addAttackBtns = function addAttackBtns() {
         var readyAttack = function readyAttack(currentLevel) {
             var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Const2.default.lootAttackInterval;
 
-            changePoints(currentLevel + 1).done(function (result) {
+            changePoints(currentLevel ? currentLevel + 1 : 0).done(function (result) {
                 if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
             }).fail(function (result) {
                 if (result === 'timeout') setTimeout(function () {
@@ -6215,7 +6304,8 @@ var addAttackBtns = function addAttackBtns() {
             });
         };
 
-        if (isChangePoints) readyAttack(currentLevel, 0);else attack();
+        if (!$('#pdAttackProcess').length) $lootArea.parent().append('<ul class="pd_result" id="pdAttackProcess"><li><strong>攻击过程：</strong></li></ul>');
+        readyAttack(isChangePoints ? currentLevel : 0, 0);
     }).end().find('[name="autoChangeLevelPointsEnabled"]').click(function () {
         (0, _Config.read)();
         Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
@@ -6231,12 +6321,67 @@ var addAttackBtns = function addAttackBtns() {
  * 增强争夺记录
  */
 var enhanceLootLog = function enhanceLootLog(log) {
-    var _getLootTotalGain = getLootTotalGain(log),
-        exp = _getLootTotalGain.exp,
-        kfb = _getLootTotalGain.kfb;
+    var html = log;
+    html = html.replace('<span style="color:#000FFF;font-weight:bold;">你被击败了</span>', '<b class="pd_highlight">你被击败了</b>').replace(/(#你发起了进攻：)/g, '<span style="color: #090;">$1</span>').replace(/(对方攻击了你：)/g, '<span style="color: #c39;">$1</span>').replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
+        var color = '';
+        switch (enemy) {
+            case '普通':
+                color = '#09c';
+                break;
+            case '特别脆弱':
+                color = '#c96';
+                break;
+            case '特别缓慢':
+                color = '#c69';
+                break;
+            case '特别强壮':
+                color = '#f93';
+                break;
+            case '特别快速':
+                color = '#f3c';
+                break;
+            case 'BOSS':
+                color = '#f00';
+                break;
+            default:
+                color = '#000';
+        }
+        return '[<span style="color: ' + color + '; ' + (enemy === 'BOSS' ? 'font-weight: bold;' : '') + '">' + enemy + '\u7684</span>]NPC';
+    }).replace('[大魔王', '[<b style="color: #c03;">大魔王</b>');
 
-    log = log.replace('<span style="color:#000FFF;font-weight:bold;">你被击败了</span>', '<b class="pd_highlight">你被击败了</b>').replace(/(#你发起了进攻：)/g, '<span style="color: #009900;">$1</span>').replace(/(对方攻击了你：)/g, '<span style="color: #cc3399;">$1</span>');
-    $lootLog.html('<b class="pd_stat">\u4F60\u603B\u5171\u83B7\u5F97\u4E86<em>' + exp.toLocaleString() + '</em>\u7ECF\u9A8C\u548C<em>' + kfb.toLocaleString() + '</em>KFB</b><br>' + log);
+    var _getTotalGain2 = getTotalGain(log),
+        exp = _getTotalGain2.exp,
+        kfb = _getTotalGain2.kfb;
+
+    var enemyStatHtml = '';
+    var _iteratorNormalCompletion8 = true;
+    var _didIteratorError8 = false;
+    var _iteratorError8 = undefined;
+
+    try {
+        for (var _iterator8 = Util.entries(getEnemyList(log))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            var _step8$value = _slicedToArray(_step8.value, 2),
+                enemy = _step8$value[0],
+                num = _step8$value[1];
+
+            enemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                _iterator8.return();
+            }
+        } finally {
+            if (_didIteratorError8) {
+                throw _iteratorError8;
+            }
+        }
+    }
+
+    $log.html('\n<ul style="margin-top: 7px;">\n  <li class="pd_stat"><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n  <li class="pd_stat"><b>NPC\u7EDF\u8BA1\uFF1A</b>' + enemyStatHtml + '</li>\n</ul><hr>' + html + '\n');
 };
 
 /**
@@ -6244,7 +6389,7 @@ var enhanceLootLog = function enhanceLootLog(log) {
  * @param {string} log 争夺记录
  * @returns {{exp: number, kfb: number}} exp：经验；kfb：KFB
  */
-var getLootTotalGain = function getLootTotalGain(log) {
+var getTotalGain = function getTotalGain(log) {
     var matches = log.match(/获得\d+经验和\d+KFB/g);
     var exp = 0,
         kfb = 0;
@@ -6254,6 +6399,59 @@ var getLootTotalGain = function getLootTotalGain(log) {
         kfb += parseInt(logMatches[2]);
     }
     return { exp: exp, kfb: kfb };
+};
+
+/**
+ * 获取遭遇敌人列表
+ * @param {string} log 争夺记录
+ * @returns {{}} 遭遇敌人列表
+ */
+var getEnemyList = function getEnemyList(log) {
+    var matches = log.match(/\[[^\]]+的]NPC/g);
+    var enemyList = {
+        '普通': 0,
+        '特别脆弱': 0,
+        '特别缓慢': 0,
+        '特别强壮': 0,
+        '特别快速': 0,
+        'BOSS': 0,
+        '大魔王': 0
+    };
+    for (var i in matches) {
+        var enemyMatches = /\[([^\]]+)的/.exec(matches[i]);
+        var enemy = enemyMatches[1];
+        if (!(enemy in enemyList)) enemyList[enemy] = 0;
+        enemyList[enemy]++;
+    }
+    if (/\[大魔王/.test(log)) enemyList['大魔王'] = 1;
+    var _iteratorNormalCompletion9 = true;
+    var _didIteratorError9 = false;
+    var _iteratorError9 = undefined;
+
+    try {
+        for (var _iterator9 = Util.entries(enemyList)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var _step9$value = _slicedToArray(_step9.value, 2),
+                _enemy = _step9$value[0],
+                num = _step9$value[1];
+
+            if (!num) delete enemyList[_enemy];
+        }
+    } catch (err) {
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                _iterator9.return();
+            }
+        } finally {
+            if (_didIteratorError9) {
+                throw _iteratorError9;
+            }
+        }
+    }
+
+    return enemyList;
 };
 
 /**
@@ -6280,10 +6478,11 @@ var addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function addUser
         var $this = $(this);
         var userName = $this.text().trim();
         $this.html('<a href="profile.php?action=show&username=' + userName + '" target="_blank">' + userName + '</a>');
+        if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Item":11,"./Msg":15,"./Public":18,"./Util":22}],15:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],14:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -6413,7 +6612,7 @@ var destroy = exports.destroy = function destroy() {
     $('.pd_mask').remove();
 };
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /* 其它模块 */
 'use strict';
 
@@ -6770,8 +6969,7 @@ var addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function a
                 var interval = parseInt($autoChangeIdColorInterval.val());
                 if (isNaN(interval) || interval <= 0) {
                     alert('ID颜色更换时间间隔格式不正确');
-                    $autoChangeIdColorInterval.select();
-                    $autoChangeIdColorInterval.focus();
+                    $autoChangeIdColorInterval.select().focus();
                     return;
                 }
                 var changeAllAvailableSMColorEnabled = $area.find('[name="changeAllAvailableIdColorEnabled"]').prop('checked');
@@ -6974,7 +7172,7 @@ var modifyFaq = exports.modifyFaq = function modifyFaq() {
     }
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":10,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":14,"./Public":17,"./TmpLog":20,"./Util":21}],16:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -6991,13 +7189,13 @@ var _Msg = require('./Msg');
 
 var Msg = _interopRequireWildcard(_Msg);
 
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
-
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7012,7 +7210,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
     var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 
-    Func.run('Post.handleMultiQuote_before_', type);
+    Script.runFunc('Post.handleMultiQuote_before_', type);
     if (!$('#pdClearMultiQuoteData').length) {
         $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
             e.preventDefault();
@@ -7125,7 +7323,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
     if (type === 2) $(document).dequeue('MultiQuote');else $('textarea[name="atc_content"]').val(content).focus();
-    Func.run('Post.handleMultiQuote_after_', type);
+    Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
 /**
@@ -7280,7 +7478,7 @@ var importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = func
     document.body.appendChild(script);
 };
 
-},{"./Const":6,"./Func":8,"./Msg":15,"./Util":22}],18:[function(require,module,exports){
+},{"./Const":6,"./Msg":14,"./Script":19,"./Util":21}],17:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
@@ -7289,9 +7487,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _Info = require('./Info');
 
@@ -7308,10 +7506,6 @@ var Msg = _interopRequireWildcard(_Msg);
 var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
-
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
 
 var _Const = require('./Const');
 
@@ -7330,6 +7524,10 @@ var _LogDialog = require('./LogDialog');
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 var _Read = require('./Read');
 
@@ -7524,13 +7722,8 @@ var addPolyfill = exports.addPolyfill = function addPolyfill() {
 var donation = exports.donation = function donation() {
     var isAutoSaveCurrentDeposit = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-    var now = new Date();
-    var date = Util.getDateByTime(Config.donationAfterTime);
-    if (now < date) {
-        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-        return;
-    }
-    Func.run('Public.donation_before_');
+    if (Util.isBetweenLootTime()) return;
+    Script.runFunc('Public.donation_before_');
     console.log('KFB捐款Start');
     var $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
 
@@ -7540,7 +7733,7 @@ var donation = exports.donation = function donation() {
      */
     var getDonationCookieDate = function getDonationCookieDate() {
         var now = new Date();
-        var date = Util.getTimezoneDateByTime('02:00:00');
+        var date = Util.getTimezoneDateByTime('03:00:00');
         if (now > date) {
             date = Util.getTimezoneDateByTime('00:00:00');
             date.setDate(date.getDate() + 1);
@@ -7581,7 +7774,7 @@ var donation = exports.donation = function donation() {
             }
             Msg.show(msgHtml);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Func.run('Public.donation_after_', msg);
+            Script.runFunc('Public.donation_after_', msg);
         });
     };
 
@@ -7616,27 +7809,32 @@ var donation = exports.donation = function donation() {
 var getMinRefreshInterval = exports.getMinRefreshInterval = function getMinRefreshInterval() {
     var donationInterval = -1;
     if (Config.autoDonationEnabled) {
-        var donationTime = Util.getDateByTime(Config.donationAfterTime);
         var now = new Date();
-        if (!Util.getCookie(_Const2.default.donationCookieName) && now <= donationTime) {
-            donationInterval = Math.floor((donationTime - now) / 1000);
-        } else {
-            donationTime.setDate(donationTime.getDate() + 1);
-            donationInterval = Math.floor((donationTime - now) / 1000);
+        var next = now;
+        if (Util.getCookie(_Const2.default.donationCookieName)) {
+            next = Util.getTimezoneDateByTime('00:05:00');
+            if (now > next) next.setDate(next.getDate() + 1);
         }
+
+        var _Config$noDoOtherAuto = Config.noDoOtherAutoActionBetweenTime.split('-'),
+            _Config$noDoOtherAuto2 = _slicedToArray(_Config$noDoOtherAuto, 2),
+            start = _Config$noDoOtherAuto2[0],
+            end = _Config$noDoOtherAuto2[1];
+
+        start = Util.getDateByTime(start);
+        end = Util.getDateByTime(end);
+        if (end < start) {
+            if (now > end) end.setDate(end.getDate() + 1);else start.setDate(start.getDate() - 1);
+        }
+        if (start < now && end < now) {
+            start.setDate(start.getDate() + 1);
+            end.setDate(end.getDate() + 1);
+        }
+        if (next >= start && next <= end) next = end;
+        donationInterval = Math.floor((next - now) / 1000);
     }
 
-    var autoChangeIdColorInterval = -1;
-    if (Config.autoChangeIdColorEnabled) {
-        var nextTime = parseInt(Util.getCookie(_Const2.default.autoChangeIdColorCookieName));
-        if (!isNaN(nextTime) && nextTime > 0) {
-            autoChangeIdColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
-            if (autoChangeIdColorInterval < 0) autoChangeIdColorInterval = 0;
-            if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) autoChangeIdColorInterval = -1;
-        } else autoChangeIdColorInterval = 0;
-    }
-
-    var minArr = [donationInterval, autoChangeIdColorInterval].filter(function (interval) {
+    var minArr = [donationInterval].filter(function (interval) {
         return interval >= 0;
     });
     if (minArr.length > 0) {
@@ -7663,9 +7861,8 @@ var startAutoRefreshMode = exports.startAutoRefreshMode = function startAutoRefr
      * @returns {string} 经过格式化的倒计时标题
      */
     var getFormatIntervalTitle = function getFormatIntervalTitle(type, interval) {
-        var textInterval = '';
         var diff = Util.getTimeDiffInfo(Util.getDate('+' + interval + 's').getTime());
-        textInterval = diff.hours > 0 ? diff.hours + '时' : '';
+        var textInterval = diff.hours > 0 ? diff.hours + '时' : '';
         if (type === 1) textInterval += (diff.minutes > 0 ? diff.minutes + '分' : '') + diff.seconds + '秒';else textInterval += diff.minutes + '分';
         return textInterval;
     };
@@ -7739,7 +7936,6 @@ var startAutoRefreshMode = exports.startAutoRefreshMode = function startAutoRefr
     var checkRefreshInterval = function checkRefreshInterval() {
         Msg.remove($('.pd_refresh_notice').parent());
         if (Config.autoDonationEnabled && !Util.getCookie(_Const2.default.donationCookieName)) donation();
-        if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) changeIdColor();
 
         var interval = getMinRefreshInterval();
         if (interval > 0) errorNum = 0;
@@ -8061,7 +8257,10 @@ var addFastNavForSideBar = exports.addFastNavForSideBar = function addFastNavFor
 var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveCurrentDeposit() {
     var isRead = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) return;
+    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
+        return;
+    }
+    if (Util.isBetweenLootTime()) return;
     var $kfb = $('a[href="kf_givemekfb.php"]');
 
     /**
@@ -8085,7 +8284,6 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
                 Log.push('自动存款', '\u5171\u6709`' + money + '`KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
                 console.log('\u5171\u6709' + money + 'KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
                 Msg.show('\u5171\u6709<em>' + money + '</em>KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
-                if (_Info2.default.isInHomePage) $kfb.text('\u62E5\u6709' + (income - money) + 'KFB');
             }
         });
     };
@@ -8097,8 +8295,8 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
     } else {
-        var matches = /拥有(\d+)KFB/.exec($kfb.text());
-        if (matches) saveCurrentDeposit(parseInt(matches[1]));
+        var kfb = parseInt($kfb.data('kfb'));
+        if (kfb) saveCurrentDeposit(kfb);
     }
 };
 
@@ -8107,6 +8305,8 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
  */
 var changeIdColor = exports.changeIdColor = function changeIdColor() {
     if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) return;
+    if (Util.isBetweenLootTime()) return;
+
     /**
      * 写入Cookie
      */
@@ -8114,6 +8314,7 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
         var nextTime = Util.getDate('+' + Config.autoChangeIdColorInterval + 'h');
         Util.setCookie(_Const2.default.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
+
     console.log('自动更换ID颜色Start');
     $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
         if (Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) return;
@@ -8506,7 +8707,7 @@ var showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfi
     if (typeof callback === 'function') callback($dialog);
 };
 
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./Read":19,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Msg":14,"./Read":18,"./Script":19,"./TmpLog":20,"./Util":21}],18:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
@@ -8533,10 +8734,6 @@ var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
 
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
-
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
@@ -8544,6 +8741,10 @@ var _Const2 = _interopRequireDefault(_Const);
 var _Log = require('./Log');
 
 var Log = _interopRequireWildcard(_Log);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 var _Public = require('./Public');
 
@@ -9087,7 +9288,7 @@ var buyThreads = exports.buyThreads = function buyThreads(threadList) {
                         }
                         console.log('\u5171\u6709' + successNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F\uFF0C\u5171\u6709' + failNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25\uFF0CKFB-' + totalSell);
                         Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25' : '') + '</strong>' + ('<i>KFB<ins>-' + totalSell + '</ins></i>'), -1);
-                        Func.run('Read.buyThreads_after_', threadList);
+                        Script.runFunc('Read.buyThreads_after_', threadList);
                     } else {
                         setTimeout(function () {
                             return $(document).dequeue('BuyThreads');
@@ -9233,7 +9434,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
             var id = $(this).data('id');
             if (id) addSmileCode(id);
         });
-        Func.run('Read.addMoreSmileLink_after_click_');
+        Script.runFunc('Read.addMoreSmileLink_after_click_');
     });
 };
 
@@ -9286,14 +9487,14 @@ var getThreadTitle = exports.getThreadTitle = function getThreadTitle() {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
 
-},{"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./Msg":15,"./Post":17,"./Public":18,"./Util":22}],20:[function(require,module,exports){
+},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":14,"./Post":16,"./Public":17,"./Script":19,"./Util":21}],19:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleInstallScriptLink = exports.showDialog = exports.runCmd = exports.runCustomScript = undefined;
+exports.handleInstallScriptLink = exports.showDialog = exports.runFunc = exports.addFunc = exports.runCmd = exports.runCustomScript = undefined;
 
 var _Info = require('./Info');
 
@@ -9308,10 +9509,6 @@ var _Config = require('./Config');
 var _Util = require('./Util');
 
 var Util = _interopRequireWildcard(_Util);
-
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
 
 var _Const = require('./Const');
 
@@ -9377,6 +9574,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var defScriptName = '未命名脚本';
 // 脚本meta信息的正则表达式
 var metaRegex = /\/\/\s*==UserScript==((?:.|\n)+?)\/\/\s*==\/UserScript==/i;
+// 自定义方法列表
+var funcList = new Map();
 
 /**
  * 执行自定义脚本
@@ -9435,6 +9634,56 @@ var runCmd = exports.runCmd = function runCmd(cmd) {
         console.log(ex);
     }
     return { result: result, response: String(response) };
+};
+
+/**
+ * 添加自定义方法
+ * @param {string} name 自定义方法名称
+ * @param {function} func 自定义方法
+ */
+var addFunc = exports.addFunc = function addFunc(name, func) {
+    if (!funcList.has(name)) funcList.set(name, []);
+    funcList.get(name).push(func);
+};
+
+/**
+ * 执行自定义方法
+ * @param {string} name 自定义方法名称
+ * @param {*} [data] 自定义方法参数
+ */
+var runFunc = exports.runFunc = function runFunc(name, data) {
+    if (funcList.has(name)) {
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
+        try {
+            for (var _iterator2 = funcList.get(name)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var func = _step2.value;
+
+                if (typeof func === 'function') {
+                    try {
+                        func(data);
+                    } catch (ex) {
+                        console.log(ex);
+                    }
+                }
+            }
+        } catch (err) {
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                    _iterator2.return();
+                }
+            } finally {
+                if (_didIteratorError2) {
+                    throw _iteratorError2;
+                }
+            }
+        }
+    }
 };
 
 /**
@@ -9529,27 +9778,27 @@ var showDialog = exports.showDialog = function showDialog() {
         $customScriptList.append('\n<div class="pd_custom_script_header">\n  <input type="checkbox" ' + (enabled ? 'checked' : '') + ' title="\u662F\u5426\u542F\u7528\u6B64\u811A\u672C">\n  <a class="pd_custom_script_name" href="#" style="margin-left: 5px;">[' + name + ']</a>\n  <span data-name="version" style="margin-left: 5px; color: #666;" ' + (!version ? 'hidden' : '') + '>' + version + '</span>\n  <span data-name="trigger" style="margin-left: 5px; color: ' + (trigger === 'start' ? '#f00' : '#00f') + ';" title="\u811A\u672C\u6267\u884C\u65F6\u673A">\n    [' + (trigger === 'start' ? '开始时' : '结束时') + ']\n  </span>\n  <a data-name="homepage" href="' + homepage + '" target="_blank" style="margin-left: 5px;" ' + (!homepage ? 'hidden' : '') + '>[\u4E3B\u9875]</a>\n  <a data-name="delete" href="#" style="margin-left: 5px; color: #666;">[\u5220\u9664]</a>\n</div>\n<textarea class="pd_custom_script_content" wrap="off">' + content + '</textarea>\n');
     };
 
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
+    var _iteratorNormalCompletion3 = true;
+    var _didIteratorError3 = false;
+    var _iteratorError3 = undefined;
 
     try {
-        for (var _iterator2 = Config.customScriptList[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var data = _step2.value;
+        for (var _iterator3 = Config.customScriptList[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var data = _step3.value;
 
             addCustomScript(data);
         }
     } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                _iterator2.return();
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                _iterator3.return();
             }
         } finally {
-            if (_didIteratorError2) {
-                throw _iteratorError2;
+            if (_didIteratorError3) {
+                throw _iteratorError3;
             }
         }
     }
@@ -9631,7 +9880,7 @@ var handleInstallScriptLink = exports.handleInstallScriptLink = function handleI
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Index":9,"./Info":10,"./Item":11,"./Log":12,"./Loot":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./Msg":14,"./Other":15,"./Post":16,"./Public":17,"./Read":18,"./TmpLog":20,"./Util":21}],20:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -9748,14 +9997,14 @@ var deleteValue = exports.deleteValue = function deleteValue(key) {
     }
 };
 
-},{"./Const":6,"./Info":10}],22:[function(require,module,exports){
+},{"./Const":6,"./Info":9}],21:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.isBetweenLootTime = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -10412,4 +10661,12 @@ var selectInverse = exports.selectInverse = function selectInverse($nodes) {
     return false;
 };
 
-},{"./Const":6,"./Info":10}]},{},[1]);
+/**
+ * 是否在争夺时间之内
+ * @returns {boolean} 是否在争夺时间之内
+ */
+var isBetweenLootTime = exports.isBetweenLootTime = function isBetweenLootTime() {
+    return isBetweenInTimeRange(new Date(), Config.noDoOtherAutoActionBetweenTime);
+};
+
+},{"./Const":6,"./Info":9}]},{},[1]);

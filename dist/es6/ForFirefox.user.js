@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.0.2
+// @version     8.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -82,7 +82,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.0.2';
+const version = '8.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -106,12 +106,13 @@ $(function () {
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     if (_Info2.default.isInHomePage) {
+        Index.handleIndexPersonalInfo();
         Index.handleAtTips();
-        Index.addSearchTypeSelectBoxInHomePage();
+        Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
-        if (Config.homePageThreadFastGotoLinkEnabled) Index.addHomePageThreadFastGotoLink();
+        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
@@ -231,7 +232,7 @@ $(function () {
     console.log(`【KF Online助手】加载完毕，加载耗时：${ endDate - startDate }ms`);
 });
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Loot":14,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/Util":22}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Loot":13,"./module/Other":15,"./module/Post":16,"./module/Public":17,"./module/Read":18,"./module/Script":19,"./module/Util":21}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -398,14 +399,12 @@ const batchTransferVerify = function ($transfer) {
     let users = $bankUsers.val();
     if (!/^\s*\S+\s*$/m.test(users) || /^\s*:/m.test(users) || /:/.test(users) && /:(\D|$)/m.test(users)) {
         alert('用户列表格式不正确');
-        $bankUsers.select();
-        $bankUsers.focus();
+        $bankUsers.select().focus();
         return false;
     }
     if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
         alert(`转帐金额不能小于${ minTransferMoney }KFB`);
-        $bankUsers.select();
-        $bankUsers.focus();
+        $bankUsers.select().focus();
         return false;
     }
     let $bankMoney = $transfer.find('[name="money"]');
@@ -413,13 +412,11 @@ const batchTransferVerify = function ($transfer) {
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
             alert('通用转账金额格式不正确');
-            $bankMoney.select();
-            $bankMoney.focus();
+            $bankMoney.select().focus();
             return false;
         } else if (money < minTransferMoney) {
             alert(`转帐金额不能小于${ minTransferMoney }KFB`);
-            $bankMoney.select();
-            $bankMoney.focus();
+            $bankMoney.select().focus();
             return false;
         }
     }
@@ -623,6 +620,7 @@ const handleInBankPage = exports.handleInBankPage = function () {
  * 定期存款到期提醒
  */
 const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
+    if (Util.isBetweenLootTime()) return;
     console.log('定期存款到期提醒Start');
     $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
         Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
@@ -638,7 +636,7 @@ const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
     });
 };
 
-},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":14,"./Public":17,"./TmpLog":20,"./Util":21}],3:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -822,7 +820,7 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
     });
 };
 
-},{"./Const":6,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],4:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -871,8 +869,6 @@ const Config = exports.Config = {
     autoDonationEnabled: false,
     // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
     donationKfb: '1',
-    // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    donationAfterTime: '00:30:00',
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -1014,6 +1010,8 @@ const Config = exports.Config = {
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
 
+    // 在指定时间段之内不进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；例：23:55:00-01:30:00
+    noDoOtherAutoActionBetweenTime: '23:55:00-01:30:00',
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
     // 是否在攻击时自动修改争夺各层点数分配方案，true：开启；false：关闭
@@ -1101,7 +1099,7 @@ const normalize = exports.normalize = function (options) {
     return settings;
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./TmpLog":20,"./Util":21}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -1121,10 +1119,6 @@ var Util = _interopRequireWildcard(_Util);
 var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
-
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
 
 var _Const = require('./Const');
 
@@ -1155,7 +1149,7 @@ const show = exports.show = function () {
     const dialogName = 'pdConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    Func.run('ConfigDialog.show_before_');
+    Script.runFunc('ConfigDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
@@ -1169,7 +1163,7 @@ const show = exports.show = function () {
       <legend>
         <label>
           <input name="autoRefreshEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动捐款，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
       <label>
@@ -1188,12 +1182,15 @@ const show = exports.show = function () {
       </legend>
       <label>
         KFB捐款额度
-        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text">
+        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text" required>
         <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
       </label>
-      <label class="pd_cfg_ml">
-        在 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> 之后捐款
-        <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
+    </fieldset>
+    <fieldset>
+      <legend>争夺相关</legend>
+      <label>
+        在 <input name="noDoOtherAutoActionBetweenTime" maxlength="17" style="width: 120px;" type="text" required> 之内不进行其它自动操作
+        <span class="pd_cfg_tips" title="在指定时间段之内不进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；例：23:55:00-01:30:00">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1231,6 +1228,80 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
       </label>
     </fieldset>
+    <fieldset>
+      <legend>其它设置</legend>
+      <label class="pd_highlight">
+        存储类型
+        <select data-name="storageType">
+          <option value="Default">默认</option>
+          <option value="ByUid">按uid</option>
+          <option value="Global">全局</option>
+        </select>
+        <span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        浏览器类型
+        <select name="browseType">
+          <option value="auto">自动检测</option>
+          <option value="desktop">桌面版</option>
+          <option value="mobile">移动版</option>
+        </select>
+        <span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
+如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
+      </label><br>
+      <label>
+        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
+        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.logSaveDays }">[?]</span>
+      </label><br>
+      <label>
+        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
+        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
+        <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
+      </label><br>
+      <label>
+        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
+        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
+        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
+      </label><br>
+      <label>
+        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
+        <span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
+        <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
+    </fieldset>
+    <fieldset>
+      <legend>版块页面相关</legend>
+      <label>
+        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
+        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
+      </label><br>
+      <label>
+        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
+        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+      </label>
+    </fieldset>
+  </div>
+
+  <div class="pd_cfg_panel">
     <fieldset>
       <legend>帖子页面相关</legend>
       <label>
@@ -1302,80 +1373,6 @@ const show = exports.show = function () {
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
-    </fieldset>
-  </div>
-
-  <div class="pd_cfg_panel">
-    <fieldset>
-      <legend>版块页面相关</legend>
-      <label>
-        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
-        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
-      </label><br>
-      <label>
-        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
-        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
-      </label>
-    </fieldset>
-    <fieldset>
-      <legend>其它设置</legend>
-      <label class="pd_highlight">
-        存储类型
-        <select data-name="storageType">
-          <option value="Default">默认</option>
-          <option value="ByUid">按uid</option>
-          <option value="Global">全局</option>
-        </select>
-        <span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        浏览器类型
-        <select name="browseType">
-          <option value="auto">自动检测</option>
-          <option value="desktop">桌面版</option>
-          <option value="mobile">移动版</option>
-        </select>
-        <span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
-如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
-      </label><br>
-      <label>
-        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
-        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.logSaveDays }">[?]</span>
-      </label><br>
-      <label>
-        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
-        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
-        <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
-      </label><br>
-      <label>
-        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
-        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
-        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
-      </label><br>
-      <label>
-        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
-        <span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">详细设置&raquo;</a><br>
-      <label>
-        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
-        <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
     </fieldset>
     <fieldset>
       <legend>关注和屏蔽</legend>
@@ -1485,7 +1482,7 @@ const show = exports.show = function () {
 
     Dialog.show(dialogName);
     $dialog.find('a:first').focus();
-    Func.run('ConfigDialog.show_after_');
+    Script.runFunc('ConfigDialog.show_after_');
 };
 
 /**
@@ -1535,37 +1532,31 @@ const verifyMainConfig = function ($dialog) {
     if (/%$/.test(donationKfb)) {
         if (!/^1?\d?\d%$/.test(donationKfb)) {
             alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
             alert('KFB捐款额度百分比的取值范围在1-100之间');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
     } else {
         if (!$.isNumeric(donationKfb)) {
             alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
         if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > _Const2.default.maxDonationKfb) {
             alert(`KFB捐款额度的取值范围在1-${ _Const2.default.maxDonationKfb }之间`);
-            $txtDonationKfb.select();
-            $txtDonationKfb.focus();
+            $txtDonationKfb.select().focus();
             return false;
         }
     }
 
-    let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
-    let donationAfterTime = $.trim($txtDonationAfterTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
-        alert('在指定时间之后捐款格式不正确');
-        $txtDonationAfterTime.select();
-        $txtDonationAfterTime.focus();
+    let $txtNoDoOtherAutoActionBetweenTime = $dialog.find('[name="noDoOtherAutoActionBetweenTime"]');
+    if (!/^(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}-(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}$/.test($txtNoDoOtherAutoActionBetweenTime.val())) {
+        alert('在指定时间段之内不进行其它自动操作格式不正确');
+        $txtNoDoOtherAutoActionBetweenTime.select().focus();
         return false;
     }
 
@@ -1573,8 +1564,7 @@ const verifyMainConfig = function ($dialog) {
     let maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());
     if (!$.isNumeric(maxFastGotoThreadPageNum) || parseInt(maxFastGotoThreadPageNum) <= 0) {
         alert('页数链接最大数量格式不正确');
-        $txtMaxFastGotoThreadPageNum.select();
-        $txtMaxFastGotoThreadPageNum.focus();
+        $txtMaxFastGotoThreadPageNum.select().focus();
         return false;
     }
 
@@ -1582,8 +1572,7 @@ const verifyMainConfig = function ($dialog) {
     let threadContentFontSize = $.trim($txtThreadContentFontSize.val());
     if (threadContentFontSize && (isNaN(parseInt(threadContentFontSize)) || parseInt(threadContentFontSize) < 0)) {
         alert('帖子内容字体大小格式不正确');
-        $txtThreadContentFontSize.select();
-        $txtThreadContentFontSize.focus();
+        $txtThreadContentFontSize.select().focus();
         return false;
     }
 
@@ -1591,8 +1580,7 @@ const verifyMainConfig = function ($dialog) {
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
         alert('自定义本人的神秘颜色格式不正确，例：#009cff');
-        $txtCustomMySmColor.select();
-        $txtCustomMySmColor.focus();
+        $txtCustomMySmColor.select().focus();
         return false;
     }
 
@@ -1600,8 +1588,7 @@ const verifyMainConfig = function ($dialog) {
     let defShowMsgDuration = $.trim($txtDefShowMsgDuration.val());
     if (!$.isNumeric(defShowMsgDuration) || parseInt(defShowMsgDuration) < -1) {
         alert('默认的消息显示时间格式不正确');
-        $txtDefShowMsgDuration.select();
-        $txtDefShowMsgDuration.focus();
+        $txtDefShowMsgDuration.select().focus();
         return false;
     }
 
@@ -1609,8 +1596,7 @@ const verifyMainConfig = function ($dialog) {
     let logSaveDays = $.trim($txtLogSaveDays.val());
     if (!$.isNumeric(logSaveDays) || parseInt(logSaveDays) < 1) {
         alert('日志保存天数格式不正确');
-        $txtLogSaveDays.select();
-        $txtLogSaveDays.focus();
+        $txtLogSaveDays.select().focus();
         return false;
     }
 
@@ -1621,14 +1607,12 @@ const verifyMainConfig = function ($dialog) {
     if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
         if (!saveCurrentDepositAfterKfb || saveCurrentDepositAfterKfb <= 0) {
             alert('自动活期存款满足额度格式不正确');
-            $txtSaveCurrentDepositAfterKfb.select();
-            $txtSaveCurrentDepositAfterKfb.focus();
+            $txtSaveCurrentDepositAfterKfb.select().focus();
             return false;
         }
         if (!saveCurrentDepositKfb || saveCurrentDepositKfb <= 0 || saveCurrentDepositKfb > saveCurrentDepositAfterKfb) {
             alert('想要存款的金额格式不正确');
-            $txtSaveCurrentDepositKfb.select();
-            $txtSaveCurrentDepositKfb.focus();
+            $txtSaveCurrentDepositKfb.select().focus();
             return false;
         }
     }
@@ -1824,8 +1808,7 @@ const showCustomSmColorDialog = function () {
             if (min === '') return;
             if (!/^(-?\d+|MAX)$/i.test(min)) {
                 verification = false;
-                $txtSmMin.select();
-                $txtSmMin.focus();
+                $txtSmMin.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
@@ -1834,15 +1817,13 @@ const showCustomSmColorDialog = function () {
             if (max === '') return;
             if (!/^(-?\d+|MAX)$/i.test(max)) {
                 verification = false;
-                $txtSmMax.select();
-                $txtSmMax.focus();
+                $txtSmMax.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
             if (Util.compareSmLevel(max, min) < 0) {
                 verification = false;
-                $txtSmMin.select();
-                $txtSmMin.focus();
+                $txtSmMin.select().focus();
                 alert('等级范围格式不正确');
                 return false;
             }
@@ -1851,8 +1832,7 @@ const showCustomSmColorDialog = function () {
             if (color === '') return;
             if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
                 verification = false;
-                $txtSmColor.select();
-                $txtSmColor.focus();
+                $txtSmColor.select().focus();
                 alert('颜色格式不正确');
                 return false;
             }
@@ -2294,8 +2274,7 @@ const showBlockThreadDialog = function () {
                     eval(keyWord);
                 } catch (ex) {
                     alert('正则表达式不正确');
-                    $txtKeyWord.select();
-                    $txtKeyWord.focus();
+                    $txtKeyWord.select().focus();
                     flag = false;
                     return false;
                 }
@@ -2426,7 +2405,7 @@ const showBlockThreadDialog = function () {
     $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":17,"./Script":19,"./TmpLog":20,"./Util":21}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2643,61 +2622,14 @@ const close = exports.close = function (id) {
     return false;
 };
 
-},{"./Info":10,"./Public":18,"./Util":22}],8:[function(require,module,exports){
-/* 自定义方法模块 */
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.run = exports.add = undefined;
-
-var _Script = require('./Script');
-
-var Script = _interopRequireWildcard(_Script);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-// 自定义方法列表
-const funcList = new Map();
-
-/**
- * 添加自定义方法
- * @param {string} name 自定义方法名称
- * @param {function} func 自定义方法
- */
-const add = exports.add = function (name, func) {
-    if (!funcList.has(name)) funcList.set(name, []);
-    funcList.get(name).push(func);
-};
-
-/**
- * 执行自定义方法
- * @param {string} name 自定义方法名称
- * @param {*} [data] 自定义方法参数
- */
-const run = exports.run = function (name, data) {
-    if (funcList.has(name)) {
-        for (let func of funcList.get(name)) {
-            if (typeof func === 'function') {
-                try {
-                    func(data);
-                } catch (ex) {
-                    console.log(ex);
-                }
-            }
-        }
-    }
-};
-
-},{"./Script":20}],9:[function(require,module,exports){
+},{"./Info":9,"./Public":17,"./Util":21}],8:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSearchTypeSelectBoxInHomePage = exports.showVipSurplusTime = exports.addHomePageThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.handleIndexPersonalInfo = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
 
 var _Info = require('./Info');
 
@@ -2784,9 +2716,8 @@ const handleAtTips = exports.handleAtTips = function () {
  * 在神秘等级升级后进行提醒
  */
 const smLevelUpAlert = exports.smLevelUpAlert = function () {
-    let matches = /神秘(\d+)级/.exec($('a[href="kf_growup.php"]').text());
-    if (!matches) return;
-    let smLevel = parseInt(matches[1]);
+    let smLevel = parseInt($('a[href="kf_growup.php"]').data('smLevel'));
+    if (!smLevel) return;
 
     /**
      * 写入神秘等级数据
@@ -2818,9 +2749,9 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
  * 在神秘系数排名发生变化时进行提醒
  */
 const smRankChangeAlert = exports.smRankChangeAlert = function () {
-    let matches = /系数排名第\s*(\d+)\s*位/.exec($('a[href="kf_growup.php"]').text());
-    if (!matches) return;
-    let smRank = parseInt(matches[1]);
+    let smRank = $('a[href="kf_growup.php"]').data('smRank');
+    if (!smRank || smRank.endsWith('+')) return;
+    smRank = parseInt(smRank);
 
     /**
      * 写入神秘系数排名数据
@@ -2848,7 +2779,7 @@ const smRankChangeAlert = exports.smRankChangeAlert = function () {
 /**
  * 在首页帖子链接旁添加快速跳转至页末的链接
  */
-const addHomePageThreadFastGotoLink = exports.addHomePageThreadFastGotoLink = function () {
+const addThreadFastGotoLink = exports.addThreadFastGotoLink = function () {
     $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         let $this = $(this);
         $this.css('position', 'relative').prepend(`<a class="pd_thread_goto" href="${ $this.find('a').attr('href') }&page=e#a">&raquo;</a>`);
@@ -2871,6 +2802,7 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
 
     let vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
     if (isNaN(vipHours) || vipHours < 0) {
+        if (Util.isBetweenLootTime()) return;
         console.log('检查VIP剩余时间Start');
         $.get('kf_vmember.php?t=' + new Date().getTime(), function (html) {
             let hours = 0;
@@ -2887,7 +2819,7 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
 /**
  * 在首页上添加搜索类型选择框
  */
-const addSearchTypeSelectBoxInHomePage = exports.addSearchTypeSelectBoxInHomePage = function () {
+const addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function () {
     let $form = $('form[action="search.php?"]');
     $form.attr('name', 'pdSearchForm');
     let $keyWord = $form.find('[type="text"][name="keyword"]');
@@ -2895,7 +2827,27 @@ const addSearchTypeSelectBoxInHomePage = exports.addSearchTypeSelectBoxInHomePag
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 
-},{"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./TmpLog":21,"./Util":22}],10:[function(require,module,exports){
+/**
+ * 处理首页个人信息
+ */
+const handleIndexPersonalInfo = exports.handleIndexPersonalInfo = function () {
+    let $kfb = $('a[href="kf_givemekfb.php"]');
+    let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
+    if (matches) {
+        let kfb = parseInt(matches[1]);
+        $kfb.html(`拥有<b>${ kfb.toLocaleString() }</b>KFB`).data('kfb', kfb);
+    }
+
+    let $smLevel = $('a[href="kf_growup.php"]');
+    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
+    if (matches) {
+        let smLevel = parseInt(matches[1]);
+        let smRank = matches[2];
+        $smLevel.html(`神秘<b>${ smLevel }</b>级 (系数排名第<b style="color: #00f;">${ smRank }</b>位)`).data('smLevel', smLevel).data('smRank', smRank);
+    }
+};
+
+},{"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./TmpLog":20,"./Util":21}],9:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -2932,7 +2884,7 @@ const Info = {
 
 exports.default = Info;
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /* 道具模块 */
 'use strict';
 
@@ -4320,7 +4272,7 @@ const modifyItemDescription = exports.modifyItemDescription = function () {
     }
 };
 
-},{"./Config":4,"./Const":6,"./Info":10,"./Log":12,"./Msg":15,"./Public":18,"./Util":22}],12:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -4443,7 +4395,7 @@ const getMergeLog = exports.getMergeLog = function (log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":10,"./Util":22}],13:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":21}],12:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -4460,10 +4412,6 @@ var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
 
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
-
 var _Config = require('./Config');
 
 var _Log = require('./Log');
@@ -4474,6 +4422,10 @@ var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
 
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 /**
@@ -4483,7 +4435,7 @@ const show = exports.show = function () {
     const dialogName = 'pdLogDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    Func.run('LogDialog.show_before_');
+    Script.runFunc('LogDialog.show_before_');
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_log_nav">
@@ -4601,7 +4553,7 @@ const show = exports.show = function () {
     if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
     $dialog.find('input:first').focus();
-    Func.run('LogDialog.show_after_');
+    Script.runFunc('LogDialog.show_after_');
 };
 
 /**
@@ -4625,7 +4577,7 @@ const showLogContent = function (log, date, $dialog) {
 const getLogContent = function (log, date, logSortType) {
     let logList = log[date];
     if (logSortType === 'type') {
-        const sortTypeList = ['捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+        const sortTypeList = ['捐款', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type));
     } else {
         logList.sort((a, b) => a.time > b.time);
@@ -4715,6 +4667,10 @@ const getLogStat = function (log, date, logStatType) {
     let income = {},
         expense = {},
         profit = {};
+    let lootCount = 0,
+        lootLevelStat = { total: 0, min: 0, max: 0 },
+        lootExpStat = { total: 0, min: 0, max: 0 },
+        lootKfbStat = { total: 0, min: 0, max: 0 };
     let validItemNum = 0,
         highValidItemNum = 0,
         validItemStat = {},
@@ -4738,7 +4694,26 @@ const getLogStat = function (log, date, logStatType) {
                 }
             }
 
-            if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
+            if (type === '争夺攻击' && $.type(gain) === 'object') {
+                let matches = /第`(\d+)`层/.exec(action);
+                if (matches) {
+                    lootCount++;
+                    let level = parseInt(matches[1]);
+                    lootLevelStat.total += level;
+                    if (lootLevelStat.max < level) lootLevelStat.max = level;
+                    if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
+                    if (gain['KFB'] > 0) {
+                        lootKfbStat.total += gain['KFB'];
+                        if (lootKfbStat.max < gain['KFB']) lootKfbStat.max = gain['KFB'];
+                        if (!lootKfbStat.min || lootKfbStat.min > gain['KFB']) lootKfbStat.min = gain['KFB'];
+                    }
+                    if (gain['经验值'] > 0) {
+                        lootExpStat.total += gain['经验值'];
+                        if (lootExpStat.max < gain['经验值']) lootExpStat.max = gain['经验值'];
+                        if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
+                    }
+                }
+            } else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
                 let matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
                 if (matches) {
                     let itemLevel = parseInt(matches[1]);
@@ -4780,11 +4755,17 @@ const getLogStat = function (log, date, logStatType) {
     content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
 
     const sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
-    content += `\n<strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${ validItemNum.toLocaleString() }</em>` + `(<em title="3级以上有效道具">+${ highValidItemNum.toLocaleString() }</em>)</i></span> `;
+    content += `\n<strong>争夺攻击统计：</strong><i>次数<em>+${ lootCount }</em></i> `;
+    if (lootCount > 0) {
+        content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${ (lootLevelStat.total / lootCount).toFixed(2) }</em>|` + `<em title="最小值">+${ lootLevelStat.min }</em>|<em title="最大值">+${ lootLevelStat.max }</em>)</span></i> `;
+        content += `<i>KFB<em>+${ lootKfbStat.total.toLocaleString() }</em><span class="pd_stat_extra">` + `(<em title="平均值">+${ Util.getFixedNumLocStr(lootKfbStat.total / lootCount) }</em>|` + `<em title="最小值">+${ lootKfbStat.min.toLocaleString() }</em>|<em title="最大值">+${ lootKfbStat.max.toLocaleString() }</em>)</span></i> `;
+        content += `<i>经验值<em>+${ lootExpStat.total.toLocaleString() }</em><span class="pd_stat_extra">` + `(<em title="平均值">+${ Util.getFixedNumLocStr(lootExpStat.total / lootCount) }</em>|` + `<em title="最小值">+${ lootExpStat.min.toLocaleString() }</em>|<em title="最大值">+${ lootExpStat.max.toLocaleString() }</em>)</span></i> `;
+    }
+    content += `<br><strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${ validItemNum.toLocaleString() }</em>` + `(<em title="3级以上有效道具">+${ highValidItemNum.toLocaleString() }</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, validItemStat)) {
         content += `<i>${ itemName }<em>+${ validItemStat[itemName].toLocaleString() }</em></i> `;
     }
-    content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${ invalidItemNum.toLocaleString() }</em>` + `(<em title="3级以上无效道具">+${ highInvalidItemNum.toLocaleString() }</em>)</i></span> `;
+    content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${ invalidItemNum.toLocaleString() }</em>` + `(<em title="3级以上无效道具">+${ highInvalidItemNum.toLocaleString() }</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, invalidItemStat)) {
         content += `<i>${ itemName }<em>+${ invalidItemStat[itemName].toLocaleString() }</em></i> `;
     }
@@ -4860,7 +4841,7 @@ const showImportOrExportLogDialog = function () {
     Dialog.show(dialogName);
     $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find(`[name="sortType2"][value="${ Config.logSortType }"]`).prop('checked', true).triggerHandler('click');
-    Func.run('LogDialog.showImportOrExportLogDialog_after_');
+    Script.runFunc('LogDialog.showImportOrExportLogDialog_after_');
 };
 
 /**
@@ -4888,7 +4869,7 @@ const showLogText = function (log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Func":8,"./Item":11,"./Log":12,"./Util":22}],14:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":19,"./Util":21}],13:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -4896,6 +4877,10 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.addUserLinkInPkListPage = exports.enhanceLootIndexPage = undefined;
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
 
 var _Util = require('./Util');
 
@@ -4915,6 +4900,10 @@ var _Const2 = _interopRequireDefault(_Const);
 
 var _Config = require('./Config');
 
+var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
+
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -4923,9 +4912,9 @@ var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 争夺首页区域
 let $lootArea;
@@ -4934,7 +4923,7 @@ let $properties;
 // 点数区域
 let $points;
 // 争夺记录区域
-let $lootLog;
+let $log;
 // 当前争夺属性
 let propertyList;
 // 附加点数列表
@@ -4942,7 +4931,7 @@ let extraPointList;
 // 道具使用情况
 let itemUsedNumList;
 // 争夺记录
-let lootLog = '';
+let log = '';
 
 /**
  * 增强争夺首页
@@ -4954,13 +4943,13 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     propertyList = getLootPropertyList();
     extraPointList = getExtraPointList();
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
-    $lootLog = $lootArea.find('> tbody > tr:nth-child(5) > td');
-    lootLog = $lootLog.html();
+    $log = $lootArea.find('> tbody > tr:nth-child(5) > td');
+    log = $log.html();
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
-    enhanceLootLog(lootLog);
+    enhanceLootLog(log);
 };
 
 /**
@@ -5029,15 +5018,23 @@ const handlePointsArea = function () {
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
         $point.val(num + surplusPoint).trigger('change');
-    }).find('form').submit(function () {
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
-        if (surplusPoint < 0) {
-            alert('剩余属性点为负，请重新填写');
-            return false;
-        } else if (surplusPoint > 0) {
-            return confirm('你的可分配属性点尚未用完，是否提交？');
-        }
-    }).find('[type="number"]').trigger('change');
+    }).find('form').submit(() => checkPoints($points)).find('[type="number"]').trigger('change');
+};
+
+/**
+ * 检查点数设置
+ * @param {jQuery} $points 点数字段对象
+ * @returns {boolean} 检查结果
+ */
+const checkPoints = function ($points) {
+    let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+    if (surplusPoint < 0) {
+        alert('剩余属性点为负，请重新填写');
+        return false;
+    } else if (surplusPoint > 0) {
+        return confirm('你的可分配属性点尚未用完，是否提交？');
+    }
+    return true;
 };
 
 /**
@@ -5045,21 +5042,23 @@ const handlePointsArea = function () {
  * @returns {Map} 争夺属性
  */
 const getLootPropertyList = function () {
-    let propertyList = new Map([['攻击力', 0], ['最大生命值', 0], ['攻击速度', 0], ['暴击几率', 0], ['技能释放概率', 0], ['防御', 0], ['可分配属性点', 0]]);
-    let html = $properties.html();
-    let matches = /攻击力：(\d+)/.exec(html);
+    let propertyList = new Map([['攻击力', 0], ['最大生命值', 0], ['攻击速度', 0], ['暴击几率', 0], ['技能伤害', 0], ['技能释放概率', 0], ['防御', 0], ['可分配属性点', 0]]);
+    let content = $properties.text();
+    let matches = /攻击力：(\d+)/.exec(content);
     if (matches) propertyList.set('攻击力', parseInt(matches[1]));
-    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(html);
+    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(content);
     if (matches) propertyList.set('最大生命值', parseInt(matches[1]));
-    matches = /攻击速度：(\d+)/.exec(html);
+    matches = /攻击速度：(\d+)/.exec(content);
     if (matches) propertyList.set('攻击速度', parseInt(matches[1]));
-    matches = /暴击几率：(\d+)%/.exec(html);
+    matches = /暴击几率：(\d+)%/.exec(content);
     if (matches) propertyList.set('暴击几率', parseInt(matches[1]));
-    matches = /技能释放概率：(\d+)%/.exec(html);
+    matches = /技能伤害：(\d+)/.exec(content);
+    if (matches) propertyList.set('技能伤害', parseInt(matches[1]));
+    matches = /技能释放概率：(\d+)%/.exec(content);
     if (matches) propertyList.set('技能释放概率', parseInt(matches[1]));
-    matches = /防御：(\d+)%/.exec(html);
+    matches = /防御：(\d+)%/.exec(content);
     if (matches) propertyList.set('防御', parseInt(matches[1]));
-    matches = /可分配属性点：(\d+)/.exec(html);
+    matches = /可分配属性点：(\d+)/.exec(content);
     if (matches) propertyList.set('可分配属性点', parseInt(matches[1]));
     return propertyList;
 };
@@ -5244,22 +5243,22 @@ const getPointByProperty = function (pointName, num) {
     let value = 0;
     switch (pointName) {
         case '力量':
-            value = Math.round(num / 5) - extraPointList.get('力量');
+            value = Math.ceil(num / 5) - extraPointList.get('力量');
             break;
         case '体质':
-            value = Math.round((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
+            value = Math.ceil((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
             break;
         case '敏捷':
-            value = Math.round((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
+            value = Math.ceil((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
             break;
         case '灵活':
-            value = Math.round(100 * num / (100 - num)) - extraPointList.get('灵活');
+            value = Math.ceil(100 * num / (100 - num)) - extraPointList.get('灵活');
             break;
         case '智力':
-            value = Math.round(90 * num / (100 - num)) - extraPointList.get('智力');
+            value = Math.ceil(90 * num / (100 - num)) - extraPointList.get('智力');
             break;
         case '意志':
-            value = Math.round(150 * num / (100 - num)) - extraPointList.get('意志');
+            value = Math.ceil(150 * num / (100 - num)) - extraPointList.get('意志');
             break;
     }
     if (!isFinite(value) || value <= 0) value = 1;
@@ -5296,13 +5295,7 @@ const addLevelPointListSelect = function () {
         }
     }).end().filter('[data-name="save"]').click(function (e) {
         e.preventDefault();
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
-        if (surplusPoint < 0) {
-            alert('剩余属性点为负，请重新填写');
-            return;
-        } else if (surplusPoint > 0) {
-            if (!confirm('你的可分配属性点尚未用完，是否保存？')) return;
-        }
+        if (!checkPoints($points)) return;
         let $levelPointListSelect = $('#pdLevelPointListSelect');
         let level = parseInt($levelPointListSelect.val());
         level = parseInt(prompt('请输入层数：', level ? level : ''));
@@ -5580,16 +5573,18 @@ const showLevelPointListConfigDialog = function (callback) {
  */
 const addAttackBtns = function () {
     $(`
-<label title="攻击时可自动修改成相应的点数分配方案，被击败后修改回最低层数的方案">
+<label>
   <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
+  <span class="pd_cfg_tips" title="攻击时可自动修改成相应层数的点数分配方案，被击败后修改回第1层的方案（如果有）；如不勾选此项的话，攻击时会自动提交当前的点数设置">[?]</span>
 </label>
-<label title="延长每次攻击的时间间隔（在3~5秒之间）">
+<label>
   <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
+  <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
 </label><br>
 <button name="continuingAttack" type="button" title="连续攻击到指定层数">连续攻击</button>
 <button name="onceAttack" type="button" title="每次只攻击一层">攻击一层</button>
 `).appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
-        if (/你被击败了/.test(lootLog)) {
+        if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
         }
@@ -5603,28 +5598,29 @@ const addAttackBtns = function () {
         $this.blur();
         Msg.destroy();
         let isChangePoints = Config.autoChangeLevelPointsEnabled && !$.isEmptyObject(Config.levelPointList);
-        let currentLevel = getCurrentMaxLevel(lootLog);
-        let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${ currentLevel }</em></i>` + '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注：请不要访问论坛的其它页面）</span>');
+        let currentLevel = getCurrentMaxLevel(log);
+        if (!isChangePoints && !checkPoints($points)) return;
+        let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${ currentLevel }</em></i>` + '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注意：请不要访问论坛的其它页面）</span>');
 
         /**
          * 修改点数方案
-         * @param {number} nextLevel 下一层
+         * @param {number} nextLevel 下一层（0表示修改为当前点数设置）
          * @param {boolean} isShowMsg 是否显示消息
          * @param {?jQuery} $wait 等待消息框
          * @returns {Deferred} Deferred对象
          */
         const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
-            let changeLevel = Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel));
-            let isEqual = true;
-            $points.find('[type="number"]').each(function () {
+            let changeLevel = nextLevel ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : 0;
+            let isChange = true;
+            $points.find('[type="number"]:not([disabled])').each(function () {
                 if (this.defaultValue !== $(this).val()) {
-                    isEqual = false;
+                    isChange = false;
                     return false;
                 }
             });
             let $levelPointListSelect = $('#pdLevelPointListSelect');
-            if (changeLevel !== parseInt($levelPointListSelect.val()) || !isEqual) {
-                $levelPointListSelect.val(changeLevel).trigger('change');
+            if (!isChange || changeLevel && changeLevel !== parseInt($levelPointListSelect.val())) {
+                if (changeLevel) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
                 return $.ajax({
                     type: 'POST',
                     url: 'kf_fw_ig_enter.php',
@@ -5633,17 +5629,52 @@ const addAttackBtns = function () {
                 }).then(function (html) {
                     let { msg } = Util.getResponseMsg(html);
                     if (/已经重新配置加点！/.test(msg)) {
-                        console.log(`【分配点数】已修改为第${ changeLevel }层的方案`);
-                        if (isShowMsg) {
-                            if ($wait) Msg.remove($wait);
-                            Msg.show(`<strong>已修改为第<em>${ changeLevel }</em>层的方案</strong>`, -1);
+                        propertyList = getLootPropertyList();
+                        let pointsText = '',
+                            propertiesText = '';
+                        $points.find('[type="number"]:not([disabled])').each(function () {
+                            let $this = $(this);
+                            let name = $this.attr('name');
+                            let value = $.trim($this.val());
+                            pointsText += `${ getPointNameByFieldName(name) }：${ value }，`;
+                        });
+                        pointsText = pointsText.replace(/，$/, '');
+                        for (let [key, value] of propertyList) {
+                            if (key === '可分配属性点') continue;
+                            let unit = '';
+                            if (key.endsWith('率') || key === '防御') unit = '%';
+                            propertiesText += `${ key }：${ value }${ unit }，`;
                         }
+                        propertiesText = propertiesText.replace(/，$/, '');
+
+                        if (changeLevel) {
+                            console.log(`【分配点数】已修改为第${ changeLevel }层的方案；点数（${ pointsText }）；争夺属性（${ propertiesText }）`);
+                            $('#pdAttackProcess').append(`
+<li>
+  【分配点数】已修改为第<b class="pd_highlight">${ changeLevel }</b>层的方案<br>
+  <span style="color: #666;">点数（${ pointsText }）<br>争夺属性（${ propertiesText }）</span>
+</li>
+`);
+                            if (isShowMsg) {
+                                if ($wait) Msg.remove($wait);
+                                Msg.show(`<strong>已修改为第<em>${ changeLevel }</em>层的方案</strong>`, -1);
+                            }
+                        } else {
+                            console.log(`【分配点数】已修改点数设置；点数（${ pointsText }）；争夺属性（${ propertiesText }）`);
+                            $('#pdAttackProcess').append(`
+<li>
+  【分配点数】已修改点数设置<br>
+  <span style="color: #666;">点数（${ pointsText }）<br>争夺属性（${ propertiesText }）</span>
+</li>
+`);
+                        }
+
                         $points.find('[type="number"]').each(function () {
                             this.defaultValue = $(this).val();
                         }).trigger('change');
                         return 'success';
                     } else {
-                        alert(`第${ changeLevel }层方案：${ msg }`);
+                        alert((changeLevel ? `第${ changeLevel }层方案：` : '') + msg);
                         return 'error';
                     }
                 }, (XMLHttpRequest, textStatus) => textStatus);
@@ -5664,25 +5695,41 @@ const addAttackBtns = function () {
                     Msg.remove($wait);
                     return;
                 }
-                lootLog = matches[1];
-                enhanceLootLog(lootLog);
+                log = matches[1];
+                enhanceLootLog(log);
 
-                let currentLevel = getCurrentMaxLevel(lootLog);
+                let currentLevel = getCurrentMaxLevel(log);
                 console.log('【争夺攻击】当前层数：' + currentLevel);
+                $('#pdAttackProcess').append(`<li>【争夺攻击】当前层数：<b class="pd_highlight">${ currentLevel }</b></li>`);
                 let $countdown = $('.pd_countdown:last');
                 $countdown.text(currentLevel);
 
-                let isFail = /你被击败了/.test(lootLog);
+                let isFail = /你被击败了/.test(log);
                 let isStop = isFail || type !== 'continue' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
                 if (isStop) {
                     Msg.remove($wait);
-                    if (isFail) Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);else Msg.show(`<strong>你成功打倒了第<em>${ currentLevel }</em>层的NPC</strong>`, -1);
-                    if (isChangePoints && isFail) {
-                        let $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
-                        changePoints(Math.min(...Object.keys(Config.levelPointList)), true, $wait).always(function (result) {
-                            if (result !== 'success') alert('修改点数分配方案失败');
-                            Msg.remove($wait);
-                        });
+                    if (isFail) {
+                        let enemyList = {};
+                        for (let [enemy, num] of Util.entries(getEnemyList(log))) {
+                            enemyList[enemy.replace('特别', '')] = num;
+                        }
+                        let enemyStat = '';
+                        for (let [enemy, num] of Util.entries(enemyList)) {
+                            enemyStat += enemy + '`+' + num + '` ';
+                        }
+                        let { exp, kfb } = getTotalGain(log);
+                        Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (${ enemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
+
+                        Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);
+                        if (isChangePoints && Config.levelPointList[1]) {
+                            let $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
+                            changePoints(1, true, $wait).always(function (result) {
+                                if (result !== 'success') alert('修改点数分配方案失败');
+                                Msg.remove($wait);
+                            });
+                        }
+                    } else {
+                        Msg.show(`<strong>你成功击败了第<em>${ currentLevel }</em>层的NPC</strong>`, -1);
                     }
                 } else {
                     if (isChangePoints) {
@@ -5698,6 +5745,7 @@ const addAttackBtns = function () {
                 }
                 if (textStatus === 'timeout') {
                     console.log('【争夺攻击】超时重试...');
+                    $('#pdAttackProcess').append('<li>【争夺攻击】超时重试&hellip;</li>');
                     setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
                 }
             });
@@ -5709,7 +5757,7 @@ const addAttackBtns = function () {
          * @param {number} interval 下次攻击的间隔时间
          */
         const readyAttack = function (currentLevel, interval = _Const2.default.lootAttackInterval) {
-            changePoints(currentLevel + 1).done(function (result) {
+            changePoints(currentLevel ? currentLevel + 1 : 0).done(function (result) {
                 if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
             }).fail(function (result) {
                 if (result === 'timeout') setTimeout(() => readyAttack(currentLevel, interval), _Const2.default.defAjaxInterval);
@@ -5720,7 +5768,8 @@ const addAttackBtns = function () {
             });
         };
 
-        if (isChangePoints) readyAttack(currentLevel, 0);else attack();
+        if (!$('#pdAttackProcess').length) $lootArea.parent().append('<ul class="pd_result" id="pdAttackProcess"><li><strong>攻击过程：</strong></li></ul>');
+        readyAttack(isChangePoints ? currentLevel : 0, 0);
     }).end().find('[name="autoChangeLevelPointsEnabled"]').click(function () {
         (0, _Config.read)();
         Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
@@ -5736,9 +5785,46 @@ const addAttackBtns = function () {
  * 增强争夺记录
  */
 const enhanceLootLog = function (log) {
-    let { exp, kfb } = getLootTotalGain(log);
-    log = log.replace('<span style="color:#000FFF;font-weight:bold;">你被击败了</span>', '<b class="pd_highlight">你被击败了</b>').replace(/(#你发起了进攻：)/g, '<span style="color: #009900;">$1</span>').replace(/(对方攻击了你：)/g, '<span style="color: #cc3399;">$1</span>');
-    $lootLog.html(`<b class="pd_stat">你总共获得了<em>${ exp.toLocaleString() }</em>经验和<em>${ kfb.toLocaleString() }</em>KFB</b><br>${ log }`);
+    let html = log;
+    html = html.replace('<span style="color:#000FFF;font-weight:bold;">你被击败了</span>', '<b class="pd_highlight">你被击败了</b>').replace(/(#你发起了进攻：)/g, '<span style="color: #090;">$1</span>').replace(/(对方攻击了你：)/g, '<span style="color: #c39;">$1</span>').replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
+        let color = '';
+        switch (enemy) {
+            case '普通':
+                color = '#09c';
+                break;
+            case '特别脆弱':
+                color = '#c96';
+                break;
+            case '特别缓慢':
+                color = '#c69';
+                break;
+            case '特别强壮':
+                color = '#f93';
+                break;
+            case '特别快速':
+                color = '#f3c';
+                break;
+            case 'BOSS':
+                color = '#f00';
+                break;
+            default:
+                color = '#000';
+        }
+        return `[<span style="color: ${ color }; ${ enemy === 'BOSS' ? 'font-weight: bold;' : '' }">${ enemy }的</span>]NPC`;
+    }).replace('[大魔王', '[<b style="color: #c03;">大魔王</b>');
+
+    let { exp, kfb } = getTotalGain(log);
+    let enemyStatHtml = '';
+    for (let [enemy, num] of Util.entries(getEnemyList(log))) {
+        enemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
+    }
+
+    $log.html(`
+<ul style="margin-top: 7px;">
+  <li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${ kfb.toLocaleString() }</em></i> <i>经验值<em>+${ exp.toLocaleString() }</em></i></li>
+  <li class="pd_stat"><b>NPC统计：</b>${ enemyStatHtml }</li>
+</ul><hr>${ html }
+`);
 };
 
 /**
@@ -5746,7 +5832,7 @@ const enhanceLootLog = function (log) {
  * @param {string} log 争夺记录
  * @returns {{exp: number, kfb: number}} exp：经验；kfb：KFB
  */
-const getLootTotalGain = function (log) {
+const getTotalGain = function (log) {
     let matches = log.match(/获得\d+经验和\d+KFB/g);
     let exp = 0,
         kfb = 0;
@@ -5756,6 +5842,35 @@ const getLootTotalGain = function (log) {
         kfb += parseInt(logMatches[2]);
     }
     return { exp, kfb };
+};
+
+/**
+ * 获取遭遇敌人列表
+ * @param {string} log 争夺记录
+ * @returns {{}} 遭遇敌人列表
+ */
+const getEnemyList = function (log) {
+    let matches = log.match(/\[[^\]]+的]NPC/g);
+    let enemyList = {
+        '普通': 0,
+        '特别脆弱': 0,
+        '特别缓慢': 0,
+        '特别强壮': 0,
+        '特别快速': 0,
+        'BOSS': 0,
+        '大魔王': 0
+    };
+    for (let i in matches) {
+        let enemyMatches = /\[([^\]]+)的/.exec(matches[i]);
+        let enemy = enemyMatches[1];
+        if (!(enemy in enemyList)) enemyList[enemy] = 0;
+        enemyList[enemy]++;
+    }
+    if (/\[大魔王/.test(log)) enemyList['大魔王'] = 1;
+    for (let [enemy, num] of Util.entries(enemyList)) {
+        if (!num) delete enemyList[enemy];
+    }
+    return enemyList;
 };
 
 /**
@@ -5782,10 +5897,11 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
         let $this = $(this);
         let userName = $this.text().trim();
         $this.html(`<a href="profile.php?action=show&username=${ userName }" target="_blank">${ userName }</a>`);
+        if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Item":11,"./Msg":15,"./Public":18,"./Util":22}],15:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],14:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -5913,7 +6029,7 @@ const destroy = exports.destroy = function () {
     $('.pd_mask').remove();
 };
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /* 其它模块 */
 'use strict';
 
@@ -6236,8 +6352,7 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
                 let interval = parseInt($autoChangeIdColorInterval.val());
                 if (isNaN(interval) || interval <= 0) {
                     alert('ID颜色更换时间间隔格式不正确');
-                    $autoChangeIdColorInterval.select();
-                    $autoChangeIdColorInterval.focus();
+                    $autoChangeIdColorInterval.select().focus();
                     return;
                 }
                 let changeAllAvailableSMColorEnabled = $area.find('[name="changeAllAvailableIdColorEnabled"]').prop('checked');
@@ -6423,7 +6538,7 @@ const modifyFaq = exports.modifyFaq = function () {
     }
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":10,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":14,"./Public":17,"./TmpLog":20,"./Util":21}],16:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -6440,13 +6555,13 @@ var _Msg = require('./Msg');
 
 var Msg = _interopRequireWildcard(_Msg);
 
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
-
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -6457,7 +6572,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
  * @param {number} type 处理类型，1：多重回复；2：多重引用
  */
 const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
-    Func.run('Post.handleMultiQuote_before_', type);
+    Script.runFunc('Post.handleMultiQuote_before_', type);
     if (!$('#pdClearMultiQuoteData').length) {
         $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
             e.preventDefault();
@@ -6527,7 +6642,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
     if (type === 2) $(document).dequeue('MultiQuote');else $('textarea[name="atc_content"]').val(content).focus();
-    Func.run('Post.handleMultiQuote_after_', type);
+    Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
 /**
@@ -6697,7 +6812,7 @@ const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = fu
     document.body.appendChild(script);
 };
 
-},{"./Const":6,"./Func":8,"./Msg":15,"./Util":22}],18:[function(require,module,exports){
+},{"./Const":6,"./Msg":14,"./Script":19,"./Util":21}],17:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
@@ -6722,10 +6837,6 @@ var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
 
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
-
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
@@ -6743,6 +6854,10 @@ var _LogDialog = require('./LogDialog');
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 var _Read = require('./Read');
 
@@ -7061,13 +7176,8 @@ const addPolyfill = exports.addPolyfill = function () {
  * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
  */
 const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) {
-    let now = new Date();
-    let date = Util.getDateByTime(Config.donationAfterTime);
-    if (now < date) {
-        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-        return;
-    }
-    Func.run('Public.donation_before_');
+    if (Util.isBetweenLootTime()) return;
+    Script.runFunc('Public.donation_before_');
     console.log('KFB捐款Start');
     let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
 
@@ -7077,7 +7187,7 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
      */
     const getDonationCookieDate = function () {
         let now = new Date();
-        let date = Util.getTimezoneDateByTime('02:00:00');
+        let date = Util.getTimezoneDateByTime('03:00:00');
         if (now > date) {
             date = Util.getTimezoneDateByTime('00:00:00');
             date.setDate(date.getDate() + 1);
@@ -7115,7 +7225,7 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
             }
             Msg.show(msgHtml);
             if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Func.run('Public.donation_after_', msg);
+            Script.runFunc('Public.donation_after_', msg);
         });
     };
 
@@ -7150,27 +7260,27 @@ const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) 
 const getMinRefreshInterval = exports.getMinRefreshInterval = function () {
     let donationInterval = -1;
     if (Config.autoDonationEnabled) {
-        let donationTime = Util.getDateByTime(Config.donationAfterTime);
         let now = new Date();
-        if (!Util.getCookie(_Const2.default.donationCookieName) && now <= donationTime) {
-            donationInterval = Math.floor((donationTime - now) / 1000);
-        } else {
-            donationTime.setDate(donationTime.getDate() + 1);
-            donationInterval = Math.floor((donationTime - now) / 1000);
+        let next = now;
+        if (Util.getCookie(_Const2.default.donationCookieName)) {
+            next = Util.getTimezoneDateByTime('00:05:00');
+            if (now > next) next.setDate(next.getDate() + 1);
         }
+        let [start, end] = Config.noDoOtherAutoActionBetweenTime.split('-');
+        start = Util.getDateByTime(start);
+        end = Util.getDateByTime(end);
+        if (end < start) {
+            if (now > end) end.setDate(end.getDate() + 1);else start.setDate(start.getDate() - 1);
+        }
+        if (start < now && end < now) {
+            start.setDate(start.getDate() + 1);
+            end.setDate(end.getDate() + 1);
+        }
+        if (next >= start && next <= end) next = end;
+        donationInterval = Math.floor((next - now) / 1000);
     }
 
-    let autoChangeIdColorInterval = -1;
-    if (Config.autoChangeIdColorEnabled) {
-        let nextTime = parseInt(Util.getCookie(_Const2.default.autoChangeIdColorCookieName));
-        if (!isNaN(nextTime) && nextTime > 0) {
-            autoChangeIdColorInterval = Math.floor((nextTime - new Date().getTime()) / 1000);
-            if (autoChangeIdColorInterval < 0) autoChangeIdColorInterval = 0;
-            if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) autoChangeIdColorInterval = -1;
-        } else autoChangeIdColorInterval = 0;
-    }
-
-    let minArr = [donationInterval, autoChangeIdColorInterval].filter(interval => interval >= 0);
+    let minArr = [donationInterval].filter(interval => interval >= 0);
     if (minArr.length > 0) {
         let min = Math.min(...minArr);
         return min > 0 ? min + 1 : 0;
@@ -7195,9 +7305,8 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
      * @returns {string} 经过格式化的倒计时标题
      */
     const getFormatIntervalTitle = function (type, interval) {
-        let textInterval = '';
         let diff = Util.getTimeDiffInfo(Util.getDate('+' + interval + 's').getTime());
-        textInterval = diff.hours > 0 ? diff.hours + '时' : '';
+        let textInterval = diff.hours > 0 ? diff.hours + '时' : '';
         if (type === 1) textInterval += (diff.minutes > 0 ? diff.minutes + '分' : '') + diff.seconds + '秒';else textInterval += diff.minutes + '分';
         return textInterval;
     };
@@ -7269,7 +7378,6 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         if (Config.autoDonationEnabled && !Util.getCookie(_Const2.default.donationCookieName)) donation();
-        if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) changeIdColor();
 
         let interval = getMinRefreshInterval();
         if (interval > 0) errorNum = 0;
@@ -7569,7 +7677,10 @@ ${ _Const2.default.customTileSideBarContent }
  * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
  */
 const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead = false) {
-    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) return;
+    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
+        return;
+    }
+    if (Util.isBetweenLootTime()) return;
     let $kfb = $('a[href="kf_givemekfb.php"]');
 
     /**
@@ -7590,7 +7701,6 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
                 Log.push('自动存款', `共有\`${ money }\`KFB已自动存入活期存款`);
                 console.log(`共有${ money }KFB已自动存入活期存款`);
                 Msg.show(`共有<em>${ money }</em>KFB已自动存入活期存款`);
-                if (_Info2.default.isInHomePage) $kfb.text(`拥有${ income - money }KFB`);
             }
         });
     };
@@ -7602,8 +7712,8 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
     } else {
-        let matches = /拥有(\d+)KFB/.exec($kfb.text());
-        if (matches) saveCurrentDeposit(parseInt(matches[1]));
+        let kfb = parseInt($kfb.data('kfb'));
+        if (kfb) saveCurrentDeposit(kfb);
     }
 };
 
@@ -7612,6 +7722,8 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
  */
 const changeIdColor = exports.changeIdColor = function () {
     if (!Config.changeAllAvailableIdColorEnabled && Config.customAutoChangeIdColorList.length <= 1) return;
+    if (Util.isBetweenLootTime()) return;
+
     /**
      * 写入Cookie
      */
@@ -7619,6 +7731,7 @@ const changeIdColor = exports.changeIdColor = function () {
         let nextTime = Util.getDate(`+${ Config.autoChangeIdColorInterval }h`);
         Util.setCookie(_Const2.default.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
+
     console.log('自动更换ID颜色Start');
     $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
         if (Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) return;
@@ -7959,7 +8072,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
     if (typeof callback === 'function') callback($dialog);
 };
 
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Msg":15,"./Read":19,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Msg":14,"./Read":18,"./Script":19,"./TmpLog":20,"./Util":21}],18:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
@@ -7984,10 +8097,6 @@ var _Dialog = require('./Dialog');
 
 var Dialog = _interopRequireWildcard(_Dialog);
 
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
-
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
@@ -7995,6 +8104,10 @@ var _Const2 = _interopRequireDefault(_Const);
 var _Log = require('./Log');
 
 var Log = _interopRequireWildcard(_Log);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 var _Public = require('./Public');
 
@@ -8496,7 +8609,7 @@ const buyThreads = exports.buyThreads = function (threadList) {
                         }
                         console.log(`共有${ successNum }个帖子购买成功，共有${ failNum }个帖子购买失败，KFB-${ totalSell }`);
                         Msg.show(`<strong>共有<em>${ successNum }</em>个帖子购买成功${ failNum > 0 ? `，共有<em>${ failNum }</em>个帖子购买失败` : '' }</strong>` + `<i>KFB<ins>-${ totalSell }</ins></i>`, -1);
-                        Func.run('Read.buyThreads_after_', threadList);
+                        Script.runFunc('Read.buyThreads_after_', threadList);
                     } else {
                         setTimeout(() => $(document).dequeue('BuyThreads'), _Const2.default.defAjaxInterval);
                     }
@@ -8621,7 +8734,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
             let id = $(this).data('id');
             if (id) addSmileCode(id);
         });
-        Func.run('Read.addMoreSmileLink_after_click_');
+        Script.runFunc('Read.addMoreSmileLink_after_click_');
     });
 };
 
@@ -8674,14 +8787,14 @@ const getThreadTitle = exports.getThreadTitle = function () {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
 
-},{"./Const":6,"./Dialog":7,"./Func":8,"./Info":10,"./Log":12,"./Msg":15,"./Post":17,"./Public":18,"./Util":22}],20:[function(require,module,exports){
+},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":14,"./Post":16,"./Public":17,"./Script":19,"./Util":21}],19:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleInstallScriptLink = exports.showDialog = exports.runCmd = exports.runCustomScript = undefined;
+exports.handleInstallScriptLink = exports.showDialog = exports.runFunc = exports.addFunc = exports.runCmd = exports.runCustomScript = undefined;
 
 var _Info = require('./Info');
 
@@ -8696,10 +8809,6 @@ var _Config = require('./Config');
 var _Util = require('./Util');
 
 var Util = _interopRequireWildcard(_Util);
-
-var _Func = require('./Func');
-
-var Func = _interopRequireWildcard(_Func);
 
 var _Const = require('./Const');
 
@@ -8765,6 +8874,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const defScriptName = '未命名脚本';
 // 脚本meta信息的正则表达式
 const metaRegex = /\/\/\s*==UserScript==((?:.|\n)+?)\/\/\s*==\/UserScript==/i;
+// 自定义方法列表
+const funcList = new Map();
 
 /**
  * 执行自定义脚本
@@ -8796,6 +8907,35 @@ const runCmd = exports.runCmd = function (cmd, isOutput = false) {
         console.log(ex);
     }
     return { result, response: String(response) };
+};
+
+/**
+ * 添加自定义方法
+ * @param {string} name 自定义方法名称
+ * @param {function} func 自定义方法
+ */
+const addFunc = exports.addFunc = function (name, func) {
+    if (!funcList.has(name)) funcList.set(name, []);
+    funcList.get(name).push(func);
+};
+
+/**
+ * 执行自定义方法
+ * @param {string} name 自定义方法名称
+ * @param {*} [data] 自定义方法参数
+ */
+const runFunc = exports.runFunc = function (name, data) {
+    if (funcList.has(name)) {
+        for (let func of funcList.get(name)) {
+            if (typeof func === 'function') {
+                try {
+                    func(data);
+                } catch (ex) {
+                    console.log(ex);
+                }
+            }
+        }
+    }
 };
 
 /**
@@ -8989,7 +9129,7 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Func":8,"./Index":9,"./Info":10,"./Item":11,"./Log":12,"./Loot":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./Msg":14,"./Other":15,"./Post":16,"./Public":17,"./Read":18,"./TmpLog":20,"./Util":21}],20:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -9084,14 +9224,14 @@ const deleteValue = exports.deleteValue = function (key) {
     }
 };
 
-},{"./Const":6,"./Info":10}],22:[function(require,module,exports){
+},{"./Const":6,"./Info":9}],21:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.isBetweenLootTime = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -9622,4 +9762,10 @@ const selectInverse = exports.selectInverse = function ($nodes) {
     return false;
 };
 
-},{"./Const":6,"./Info":10}]},{},[1]);
+/**
+ * 是否在争夺时间之内
+ * @returns {boolean} 是否在争夺时间之内
+ */
+const isBetweenLootTime = exports.isBetweenLootTime = () => isBetweenInTimeRange(new Date(), Config.noDoOtherAutoActionBetweenTime);
+
+},{"./Const":6,"./Info":9}]},{},[1]);
