@@ -634,7 +634,7 @@ export const addMoreSmileLink = function () {
      * @param {string} id 表情ID
      */
     const addSmileCode = function (id) {
-        let textArea = $('textarea[name="atc_content"]').get(0);
+        let textArea = $('textarea:first').get(0);
         if (!textArea) return;
         let code = `[s:${id}]`;
         Util.addCode(textArea, code);

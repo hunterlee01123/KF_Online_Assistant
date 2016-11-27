@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        发帖时自动附加额外内容
-// @version     1.8
+// @version     1.9
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=12635726
@@ -49,7 +49,7 @@
     }
     $form.submit(function () {
         let $this = $(this);
-        let $textArea = $this.find('#textarea, textarea[name="atc_content"]').eq(0);
+        let $textArea = $this.find(location.pathname === '/post.php' ? '#textarea' : 'textarea:first');
         let content = $textArea.val();
         if (!content) return;
         if (options.showNoAttachOptionEnabled && $this.find('[name="noAttach"]').prop('checked')) return;

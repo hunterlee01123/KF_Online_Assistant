@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.1
+// @version     8.1.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -81,7 +81,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.1';
+const version = '8.1.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -6577,7 +6577,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
-            if (type === 2) $('#textarea').val('');else $('textarea[name="atc_content"]').val('');
+            if (type === 2) $('#textarea').val('');else $('textarea:first').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -6640,7 +6640,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
     $('form[name="FORM"]').submit(function () {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
-    if (type === 2) $(document).dequeue('MultiQuote');else $('textarea[name="atc_content"]').val(content).focus();
+    if (type === 2) $(document).dequeue('MultiQuote');else $('textarea:first').val(content).focus();
     Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
@@ -6663,7 +6663,7 @@ const removeUnpairedBBCodeInQuoteContent = exports.removeUnpairedBBCodeInQuoteCo
  * 在发帖页面的发帖框上添加额外的按钮
  */
 const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () {
-    let textArea = $('textarea[name="atc_content"]').get(0);
+    let textArea = $('#textarea').get(0);
     if (!textArea) return;
 
     $(`
@@ -7985,7 +7985,7 @@ const turnPageViaKeyboard = exports.turnPageViaKeyboard = function () {
             url = $page.find('li > a:contains("下一页")').attr('href');
         }
         if (location.pathname === '/read.php') {
-            if ($.trim($('textarea[name="atc_content"]').val())) {
+            if ($.trim($('textarea:first').val())) {
                 if (!confirm('发帖框尚有文字，是否继续翻页？')) return;
             }
         }
@@ -8688,7 +8688,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
      * @param {string} id 表情ID
      */
     const addSmileCode = function (id) {
-        let textArea = $('textarea[name="atc_content"]').get(0);
+        let textArea = $('textarea:first').get(0);
         if (!textArea) return;
         let code = `[s:${ id }]`;
         Util.addCode(textArea, code);

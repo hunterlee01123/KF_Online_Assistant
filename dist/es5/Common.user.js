@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.1
+// @version     8.1.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -79,7 +79,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.1';
+var version = '8.1.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -7212,7 +7212,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
-            if (type === 2) $('#textarea').val('');else $('textarea[name="atc_content"]').val('');
+            if (type === 2) $('#textarea').val('');else $('textarea:first').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -7318,7 +7318,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
     $('form[name="FORM"]').submit(function () {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
-    if (type === 2) $(document).dequeue('MultiQuote');else $('textarea[name="atc_content"]').val(content).focus();
+    if (type === 2) $(document).dequeue('MultiQuote');else $('textarea:first').val(content).focus();
     Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
@@ -7341,7 +7341,7 @@ var removeUnpairedBBCodeInQuoteContent = exports.removeUnpairedBBCodeInQuoteCont
  * 在发帖页面的发帖框上添加额外的按钮
  */
 var addExtraPostEditorButton = exports.addExtraPostEditorButton = function addExtraPostEditorButton() {
-    var textArea = $('textarea[name="atc_content"]').get(0);
+    var textArea = $('#textarea').get(0);
     if (!textArea) return;
 
     $('\n<span id="wy_post" title="\u63D2\u5165\u9690\u85CF\u5185\u5BB9" data-type="hide" style="background-position: 0 -280px;">\u63D2\u5165\u9690\u85CF\u5185\u5BB9</span>\n<span id="wy_justifyleft" title="\u5DE6\u5BF9\u9F50" data-type="left" style="background-position: 0 -360px;">\u5DE6\u5BF9\u9F50</span>\n<span id="wy_justifycenter" title="\u5C45\u4E2D" data-type="center" style="background-position: 0 -380px;">\u5C45\u4E2D</span>\n<span id="wy_justifyright" title="\u53F3\u5BF9\u9F50" data-type="right" style="background-position: 0 -400px;">\u53F3\u5BF9\u9F50</span>\n<span id="wy_subscript" title="\u4E0B\u6807" data-type="sub" style="background-position: 0 -80px;">\u4E0B\u6807</span>\n<span id="wy_superscript" title="\u4E0A\u6807" data-type="sup" style="background-position: 0 -100px;">\u4E0A\u6807</span>\n<span class="pd_editor_btn" title="\u63D2\u5165\u98DE\u884C\u6587\u5B57" data-type="fly">F</span>\n<span class="pd_editor_btn" title="\u63D2\u5165HTML5\u97F3\u9891" data-type="audio">A</span>\n<span class="pd_editor_btn" title="\u63D2\u5165HTML5\u89C6\u9891" data-type="video">V</span>\n').appendTo('#editor-button .editor-button').click(function () {
@@ -8627,7 +8627,7 @@ var turnPageViaKeyboard = exports.turnPageViaKeyboard = function turnPageViaKeyb
             url = $page.find('li > a:contains("下一页")').attr('href');
         }
         if (location.pathname === '/read.php') {
-            if ($.trim($('textarea[name="atc_content"]').val())) {
+            if ($.trim($('textarea:first').val())) {
                 if (!confirm('发帖框尚有文字，是否继续翻页？')) return;
             }
         }
@@ -9385,7 +9385,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
      * @param {string} id 表情ID
      */
     var addSmileCode = function addSmileCode(id) {
-        var textArea = $('textarea[name="atc_content"]').get(0);
+        var textArea = $('textarea:first').get(0);
         if (!textArea) return;
         var code = '[s:' + id + ']';
         Util.addCode(textArea, code);

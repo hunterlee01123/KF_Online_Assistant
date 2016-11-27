@@ -18,7 +18,7 @@ export const handleMultiQuote = function (type = 1) {
             localStorage.removeItem(Const.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
             if (type === 2) $('#textarea').val('');
-            else $('textarea[name="atc_content"]').val('');
+            else $('textarea:first').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -88,7 +88,7 @@ export const handleMultiQuote = function (type = 1) {
         localStorage.removeItem(Const.multiQuoteStorageName);
     });
     if (type === 2) $(document).dequeue('MultiQuote');
-    else $('textarea[name="atc_content"]').val(content).focus();
+    else $('textarea:first').val(content).focus();
     Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
@@ -111,7 +111,7 @@ export const removeUnpairedBBCodeInQuoteContent = function () {
  * 在发帖页面的发帖框上添加额外的按钮
  */
 export const addExtraPostEditorButton = function () {
-    let textArea = $('textarea[name="atc_content"]').get(0);
+    let textArea = $('#textarea').get(0);
     if (!textArea) return;
 
     $(`

@@ -1193,7 +1193,7 @@ export const turnPageViaKeyboard = function () {
             url = $page.find('li > a:contains("下一页")').attr('href');
         }
         if (location.pathname === '/read.php') {
-            if ($.trim($('textarea[name="atc_content"]').val())) {
+            if ($.trim($('textarea:first').val())) {
                 if (!confirm('发帖框尚有文字，是否继续翻页？')) return;
             }
         }

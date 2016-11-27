@@ -6,7 +6,7 @@ __注：初次安装请先阅读安装方法__
 __以下3个版本仅在数据存储类型的支持程度方面有所区别（在其它功能上并无区别），关于各存储类型的区别详见【[常见问题1](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#1)】__  
 __关于ES5和ES6版本的区别请参见【[常见问题2](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#2)】（如实在不清楚应该安装哪个版本，请一律安装ES5版本）__  
 1. __全功能版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Full.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.user.js)]  
-可使用全部的存储类型（默认、按uid、全局）__（部分浏览器可能无法使用或有功能异常，例如Firefox桌面版）__  
+可使用全部的存储类型（默认、按uid、全局）__（部分浏览器可能无法使用或有功能异常，例如Firefox桌面版、搜狗浏览器等）__  
 2. __通用版：__ [[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js)]  
 仅能使用默认的存储类型，所有浏览器通用 __（如全功能版无法使用，请安装此版本）__  
 3. __For Firefox版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
