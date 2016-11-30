@@ -944,16 +944,12 @@ export const addBatchUseAndConvertItemTypesButton = function () {
     if (!safeId) return;
     $(`
 <div class="pd_item_btns">
-  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用和恢复道具">
-    <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}>
-    模拟手动操作道具
-  </label>
   <button name="useItemTypes" type="button" title="批量使用指定种类的道具">批量使用</button>
   <button class="pd_highlight" name="convertItemTypes" type="button" title="批量将指定种类的道具转换为能量">批量转换</button>
   <button name="selectAll" type="button">全选</button>
   <button name="selectInverse" type="button">反选</button>
 </div>
-`).insertAfter('.pd_my_items')
+`).insertAfter('.pd_items')
         .on('click', 'button', function () {
             let name = $(this).attr('name');
             if (name === 'useItemTypes' || name === 'convertItemTypes') {
@@ -1047,15 +1043,8 @@ export const addBatchUseAndConvertItemTypesButton = function () {
             else if (name === 'selectInverse') {
                 Util.selectInverse($('.pd_item_type_chk'));
             }
-        }).find('[name="simulateManualHandleItemEnabled"]')
-        .click(function () {
-            let checked = $(this).prop('checked');
-            if (Config.simulateManualHandleItemEnabled !== checked) {
-                readConfig();
-                Config.simulateManualHandleItemEnabled = checked;
-                writeConfig();
-            }
-        }).triggerHandler('click');
+        });
+    addSimulateManualHandleItemChecked();
 };
 
 /**
@@ -1241,7 +1230,7 @@ const bindItemActionLinksClick = function ($element) {
  */
 export const enhanceMyItemsPage = function () {
     let $myItems = $('.kf_fw_ig1:last');
-    $myItems.addClass('pd_my_items').find('tbody > tr').each(function (index) {
+    $myItems.addClass('pd_items').find('tbody > tr').each(function (index) {
         let $this = $(this);
         if (index === 0) {
             $this.find('td').attr('colspan', 6);
@@ -1565,4 +1554,165 @@ export const modifyItemDescription = function () {
     if (itemDescReplaceList.has(itemName)) {
         $area.html($area.html().replace(itemDescReplaceList.get(itemName)[0], itemDescReplaceList.get(itemName)[1]));
     }
+};
+
+/**
+ * 添加批量购买道具链接
+ */
+export const addBatchBuyItemsLink = function () {
+    let $area = $('.kf_fw_ig1').addClass('pd_items');
+    $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px')
+        .next('td').next('td').css('width', '120px');
+    $area.find('a[href="kf_fw_ig_shop.php?do=buy&id=1"]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
+    $area.on('click', '[data-name="batchBuyItem"]', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        let $line = $this.closest('tr');
+        let name = $line.find('td:first-child').text().trim();
+        let kfb = parseInt($line.find('td:nth-child(3)').text());
+        let url = $this.prev('a').attr('href');
+        if (!name || !kfb || !url) return;
+        let num = parseInt(prompt(`你要购买多少个【${name}】？（单价：${kfb.toLocaleString()} KFB）`, 0));
+        if (!num || num < 0) return;
+
+        Msg.wait(
+            `<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
+        );
+        buyItems(num, name, kfb, url);
+    }).on('click', 'a[href="kf_fw_ig_shop.php?do=buy&id=1"]', () => confirm('是否购买？'));
+    $area.after('<div class="pd_item_btns"></div>');
+    addSimulateManualHandleItemChecked();
+    showKfbInItemShop();
+};
+
+/**
+ * 购买道具
+ * @param {number} buyNum 购买数量
+ * @param {string} type 购买项目
+ * @param {number} kfb 道具单价
+ * @param {string} url 购买URL
+ */
+const buyItems = function (buyNum, type, kfb, url) {
+    let successNum = 0, totalKfb = 0;
+    let myItemUrlList = [];
+    let itemList = {'蕾米莉亚同人漫画': 0, '十六夜同人漫画': 0, '档案室钥匙': 0, '傲娇LOLI娇蛮音CD': 0, '整形优惠卷': 0, '消逝之药': 0};
+    let isStop = false;
+
+    /**
+     * 购买
+     */
+    const buy = function () {
+        $.ajax({
+            type: 'GET',
+            url: url + '&t=' + new Date().getTime(),
+            timeout: Const.defAjaxTimeout,
+            success (html) {
+                Public.showFormatLog('购买道具', html);
+                let {msg} = Util.getResponseMsg(html);
+                if (/购买成功，返回我的背包/.test(msg)) {
+                    successNum++;
+                    totalKfb += kfb;
+                }
+                else {
+                    isStop = true;
+                    $('.pd_result:last').append(`<li>${msg}<span class="pd_notice">（购买中止）</span></li>`);
+                }
+                setTimeout(getNewItemInfo, Const.defAjaxInterval);
+            },
+            error () {
+                setTimeout(buy, Const.defAjaxInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取新道具的信息
+     * @param {boolean} isFirst 购买前第一次获取信息
+     */
+    const getNewItemInfo = function (isFirst = false) {
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            timeout: Const.defAjaxTimeout,
+            success (html) {
+                let list = [];
+                $('.kf_fw_ig1 a[href^="kf_fw_ig_mybp.php?do=1&id="]', html).each(function () {
+                    let $this = $(this);
+                    let url = $this.attr('href');
+                    list.push(url);
+                    if (isFirst || myItemUrlList.includes(url)) return;
+                    let itemName = $this.closest('tr').find('td:nth-child(2)').text().trim();
+                    if (!(itemName in itemList)) return;
+                    itemList[itemName]++;
+                    console.log(`获得了一个【Lv.${getLevelByName(itemName)}：${itemName}】道具`);
+                    $('.pd_result:last').append(
+                        `<li>获得了一个【<b class="pd_highlight">Lv.${getLevelByName(itemName)}：${itemName}</b>】道具</li>`
+                    );
+                });
+                myItemUrlList = list;
+
+                let $countdown = $('.pd_countdown:last');
+                $countdown.text(buyNum - successNum);
+                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
+                if (isStop || successNum === buyNum) {
+                    Msg.remove($countdown.closest('.pd_msg'));
+                    for (let [itemName, num] of Util.entries(itemList)) {
+                        if (!num) delete itemList[itemName];
+                    }
+                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
+                        Log.push(
+                            '购买道具',
+                            `共有\`${successNum}\`个【\`${type}\`】购买成功`,
+                            {gain: {'道具': successNum, 'item': itemList}, pay: {'KFB': -totalKfb}}
+                        );
+                    }
+                    console.log(`共有${successNum}个【${type}】购买成功，KFB-${totalKfb}`);
+                    Msg.show(`<strong>共有<em>${successNum}</em>个【${type}】购买成功</strong><i>KFB<ins>-${totalKfb}</ins></i>`, -1);
+                    showKfbInItemShop();
+                }
+                else {
+                    let interval = typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval;
+                    setTimeout(buy, isFirst ? Const.defAjaxInterval : interval);
+                }
+            },
+            error () {
+                setTimeout(() => getNewItemInfo(isFirst), Const.defAjaxInterval);
+            }
+        });
+    };
+
+    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【${type}】购买结果：</strong></li></ul>`);
+    getNewItemInfo(true);
+};
+
+/**
+ * 在道具商店显示当前持有的KFB
+ */
+const showKfbInItemShop = function () {
+    $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
+        let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
+        if (!matches) return;
+        let cash = parseInt(matches[1]);
+        $('.kf_fw_ig_title1:last').find('span:last').remove()
+            .end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${cash.toLocaleString()}</b> KFB)</span>`);
+    });
+};
+
+/**
+ * 添加模拟手动操作道具复选框
+ */
+const addSimulateManualHandleItemChecked = function () {
+    $(`
+<label style="margin-right: 5px;">
+  <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}> 模拟手动操作道具
+  <span class="pd_cfg_tips" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用、恢复和购买道具">[?]</span>
+</label>
+`).prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config.simulateManualHandleItemEnabled !== checked) {
+            readConfig();
+            Config.simulateManualHandleItemEnabled = checked;
+            writeConfig();
+        }
+    });
 };

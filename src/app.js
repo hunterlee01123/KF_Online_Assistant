@@ -79,9 +79,6 @@ $(function () {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertItemTypesButton();
     }
-    else if (/\/kf_fw_ig_renew\.php$/i.test(location.href)) {
-        Item.addBatchConvertEnergyAndRestoreItemsLink();
-    }
     else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
         Item.addConvertEnergyAndRestoreItemsButton();
     }

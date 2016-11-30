@@ -77,9 +77,7 @@ const handlePropertiesArea = function () {
         else if (name === 'd1') step = 2;
         $(`<input class="pd_input" data-name="${name}" type="number" value="${parseInt($this.text())}" min="1" step="${step}" ` +
             `style="width: 65px; margin-right: 5px;" title="${$this.attr('title')}">`
-        ).insertAfter($this)
-            .focus()
-            .select()
+        ).insertAfter($this).focus().select()
             .blur(function () {
                 let $this = $(this);
                 let name = $this.data('name');
@@ -101,8 +99,9 @@ const handlePropertiesArea = function () {
  * 处理点数区域
  */
 const handlePointsArea = function () {
-    $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
-    $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
+    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 999)
+        .prop('required', true).css('width', '60px').addClass('pd_point');
+    $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
     /**
      * 显示各项点数的和值
@@ -120,9 +119,9 @@ const handlePointsArea = function () {
         $sum.text('=' + (num + extraNum));
     };
 
-    $points.on('change', '[type="number"]', function () {
+    $points.on('change', '.pd_point', function () {
         let $this = $(this);
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         $('#pdSurplusPoint').text(surplusPoint)
             .css('color', surplusPoint !== 0 ? '#f00' : '#000')
             .css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
@@ -136,14 +135,15 @@ const handlePointsArea = function () {
             )
         );
     }).on('click', '.pd_point_sum', function () {
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
-        let $point = $(this).prev('span').prev('[type="number"]:not([disabled])');
+        let $point = $(this).prev('span').prev('.pd_point');
         if (!$point.length) return;
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
-        $point.val(num + surplusPoint).trigger('change');
-    }).find('form').submit(() => checkPoints($points)).find('[type="number"]').trigger('change');
+        num = num + surplusPoint;
+        $point.val(num < 1 ? 1 : num).trigger('change');
+    }).find('form').submit(() => checkPoints($points)).find('.pd_point').trigger('change');
 };
 
 /**
@@ -152,7 +152,7 @@ const handlePointsArea = function () {
  * @returns {boolean} 检查结果
  */
 const checkPoints = function ($points) {
-    let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+    let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
     if (surplusPoint < 0) {
         alert('剩余属性点为负，请重新填写');
         return false;
@@ -267,10 +267,6 @@ const getPointNameByFieldName = function (fieldName) {
             return '智力';
         case 'i2':
             return '意志';
-        case 'p':
-            return '耐力';
-        case 'l':
-            return '幸运';
         default:
             return '';
     }
@@ -295,10 +291,6 @@ const getFieldNameByPointName = function (pointName) {
             return 'i1';
         case '意志':
             return 'i2';
-        case '耐力':
-            return 'p';
-        case '幸运':
-            return 'l';
         default:
             return '';
     }
@@ -418,14 +410,14 @@ const addLevelPointListSelect = function () {
     $(`
 <select id="pdLevelPointListSelect" style="margin: 5px 0;">
   <option>点数分配方案</option>
-  <option value="edit" style="color: #00f;">编辑&hellip;</option>
+  <option class="pd_highlight" value="edit">编辑&hellip;</option>
   <option value="0">默认</option>
 </select>
 <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a><br>
 `).prependTo($points).filter('#pdLevelPointListSelect').change(function () {
         let level = $(this).val();
         if (level === '0') {
-            $points.find('[type="number"]').each(function () {
+            $points.find('.pd_point').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         }
@@ -436,7 +428,7 @@ const addLevelPointListSelect = function () {
         else if ($.isNumeric(level)) {
             let points = Config.levelPointList[parseInt(level)];
             if (typeof points !== 'object') return;
-            $points.find('[type="number"]:not([disabled])').each(function () {
+            $points.find('.pd_point').each(function () {
                 let $this = $(this);
                 $this.val(points[getPointNameByFieldName($this.attr('name'))]);
             }).trigger('change');
@@ -454,7 +446,7 @@ const addLevelPointListSelect = function () {
             if (!confirm('该层数已存在，是否覆盖？')) return;
         }
         let points = {};
-        for (let elem of Array.from($points.find('[type="number"]:not([disabled])'))) {
+        for (let elem of Array.from($points.find('.pd_point'))) {
             let $elem = $(elem);
             let point = parseInt($elem.val());
             if (!point || point < 0) return;
@@ -540,12 +532,12 @@ const showLevelPointListConfigDialog = function (callback) {
       第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层
     </label>
   </td>
-  <td><input name="s1" type="number" min="1" max="999" value="${points['力量']}" style="width: 50px;" required></td>
-  <td><input name="s2" type="number" min="1" max="999" value="${points['体质']}" style="width: 50px;" required></td>
-  <td><input name="d1" type="number" min="1" max="999" value="${points['敏捷']}" style="width: 50px;" required></td>
-  <td><input name="d2" type="number" min="1" max="999" value="${points['灵活']}" style="width: 50px;" required></td>
-  <td><input name="i1" type="number" min="1" max="999" value="${points['智力']}" style="width: 50px;" required></td>
-  <td><input name="i2" type="number" min="1" max="999" value="${points['意志']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s1" type="number" min="1" max="999" value="${points['力量']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s2" type="number" min="1" max="999" value="${points['体质']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d1" type="number" min="1" max="999" value="${points['敏捷']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d2" type="number" min="1" max="999" value="${points['灵活']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i1" type="number" min="1" max="999" value="${points['智力']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i2" type="number" min="1" max="999" value="${points['意志']}" style="width: 50px;" required></td>
   <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
@@ -571,7 +563,7 @@ const showLevelPointListConfigDialog = function (callback) {
   </td>
   <td class="pd_custom_tips" title="技能伤害：攻击+(体质*5)+(智力*5)">技伤：<span data-id="skillAttack">0</span></td>
 </tr>
-`).appendTo($levelPointList).find('[type="number"]').trigger('change');
+`).appendTo($levelPointList).find('.pd_point').trigger('change');
     };
 
     $dialog.submit(function (e) {
@@ -582,15 +574,18 @@ const showLevelPointListConfigDialog = function (callback) {
         let isError = false, isSurplus = false;
         $levelPointList.find('tr:gt(0)').each(function () {
             let $this = $(this);
-            if (!$this.find('input').length) return;
-            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('[type="number"]'));
+            if (!$this.find('.pd_point').length) return;
+            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('.pd_point'));
             if (surplusPoint > 0) isSurplus = true;
-            else if (surplusPoint < 0) isError = true;
+            else if (surplusPoint < 0) {
+                isError = true;
+                return false;
+            }
 
             let level = parseInt($this.find('[name="level"]').val());
             if (!level || level < 0) return;
             let points = {};
-            for (let elem of Array.from($this.find('[type="number"]'))) {
+            for (let elem of Array.from($this.find('.pd_point'))) {
                 let $elem = $(elem);
                 let point = parseInt($elem.val());
                 if (!point || point < 0) return;
@@ -644,7 +639,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let $line = $(this).closest('tr');
         $line.next('tr').addBack().remove();
         Dialog.show(dialogName);
-    }).on('change', '[type="number"]', function () {
+    }).on('change', '.pd_point', function () {
         let $this = $(this);
         let name = $this.attr('name');
         let point = parseInt($this.val());
@@ -663,7 +658,7 @@ const showLevelPointListConfigDialog = function (callback) {
                 )
             );
 
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         let $this = $(this);
@@ -676,13 +671,14 @@ const showLevelPointListConfigDialog = function (callback) {
         let $this = $(this);
         let name = $this.data('id').replace('opt_', '');
         let $points = $this.closest('tr').prev('tr');
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         let $point = $points.find(`[name="${name}"]`);
         if (!$point.length) return;
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
-        $point.val(num + surplusPoint).trigger('change');
+        num = num + surplusPoint;
+        $point.val(num < 1 ? 1 : num).trigger('change');
     });
 
     $dialog.find('[data-id="modifyArea"]').on('keydown', '[type="text"]', function (e) {
@@ -711,7 +707,7 @@ const showLevelPointListConfigDialog = function (callback) {
         });
         $checked.each(function () {
             let $points = $(this).closest('tr');
-            $points.find('[type="number"]').each(function () {
+            $points.find('.pd_point').each(function () {
                 let $this = $(this);
                 let name = $this.attr('name');
                 if (!(name in data)) return;
@@ -784,7 +780,7 @@ const addAttackBtns = function () {
         const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
             let changeLevel = nextLevel ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : 0;
             let isChange = true;
-            $points.find('[type="number"]:not([disabled])').each(function () {
+            $points.find('.pd_point').each(function () {
                 if (this.defaultValue !== $(this).val()) {
                     isChange = false;
                     return false;
@@ -804,7 +800,7 @@ const addAttackBtns = function () {
                     if (/已经重新配置加点！/.test(msg)) {
                         propertyList = getLootPropertyList();
                         let pointsText = '', propertiesText = '';
-                        $points.find('[type="number"]:not([disabled])').each(function () {
+                        $points.find('.pd_point').each(function () {
                             let $this = $(this);
                             let name = $this.attr('name');
                             let value = $.trim($this.val());
@@ -842,7 +838,7 @@ const addAttackBtns = function () {
 `);
                         }
 
-                        $points.find('[type="number"]').each(function () {
+                        $points.find('.pd_point').each(function () {
                             this.defaultValue = $(this).val();
                         }).trigger('change');
                         return 'success';

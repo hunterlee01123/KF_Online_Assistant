@@ -125,12 +125,12 @@ export const appendCss = function () {
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
-  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; }
+  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
   
   /* 道具页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
-  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }
+  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
   .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }
   .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }
