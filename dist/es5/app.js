@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.1.1';
+var version = '8.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -120,8 +120,6 @@ $(function () {
     } else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertItemTypesButton();
-    } else if (/\/kf_fw_ig_renew\.php$/i.test(location.href)) {
-        Item.addBatchConvertEnergyAndRestoreItemsLink();
     } else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
         Item.addConvertEnergyAndRestoreItemsButton();
     } else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
@@ -2856,7 +2854,9 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
+exports.addBatchBuyItemsLink = exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = exports.itemTypeList = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
@@ -2889,6 +2889,11 @@ var Public = _interopRequireWildcard(_Public);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * 道具种类列表
+ */
+var itemTypeList = exports.itemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
 
 /**
  * 获得转换指定等级道具可获得的能量点
@@ -3757,7 +3762,7 @@ var addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestoreIt
 var addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTypesButton = function addBatchUseAndConvertItemTypesButton() {
     var safeId = Public.getSafeId();
     if (!safeId) return;
-    $('\n<div class="pd_item_btns">\n  <label style="margin-right: 5px;" title="\u5EF6\u957F\u9053\u5177\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57282~6\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u548C\u6062\u590D\u9053\u5177">\n    <input name="simulateManualHandleItemEnabled" type="checkbox" ' + (Config.simulateManualHandleItemEnabled ? 'checked' : '') + '>\n    \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\u9053\u5177\n  </label>\n  <button name="useItemTypes" type="button" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u79CD\u7C7B\u7684\u9053\u5177">\u6279\u91CF\u4F7F\u7528</button>\n  <button class="pd_highlight" name="convertItemTypes" type="button" title="\u6279\u91CF\u5C06\u6307\u5B9A\u79CD\u7C7B\u7684\u9053\u5177\u8F6C\u6362\u4E3A\u80FD\u91CF">\u6279\u91CF\u8F6C\u6362</button>\n  <button name="selectAll" type="button">\u5168\u9009</button>\n  <button name="selectInverse" type="button">\u53CD\u9009</button>\n</div>\n').insertAfter('.pd_my_items').on('click', 'button', function () {
+    $('\n<div class="pd_item_btns">\n  <button name="useItemTypes" type="button" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u79CD\u7C7B\u7684\u9053\u5177">\u6279\u91CF\u4F7F\u7528</button>\n  <button class="pd_highlight" name="convertItemTypes" type="button" title="\u6279\u91CF\u5C06\u6307\u5B9A\u79CD\u7C7B\u7684\u9053\u5177\u8F6C\u6362\u4E3A\u80FD\u91CF">\u6279\u91CF\u8F6C\u6362</button>\n  <button name="selectAll" type="button">\u5168\u9009</button>\n  <button name="selectInverse" type="button">\u53CD\u9009</button>\n</div>\n').insertAfter('.pd_items').on('click', 'button', function () {
         var name = $(this).attr('name');
         if (name === 'useItemTypes' || name === 'convertItemTypes') {
             var _ret = function () {
@@ -3847,14 +3852,8 @@ var addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemType
         } else if (name === 'selectInverse') {
             Util.selectInverse($('.pd_item_type_chk'));
         }
-    }).find('[name="simulateManualHandleItemEnabled"]').click(function () {
-        var checked = $(this).prop('checked');
-        if (Config.simulateManualHandleItemEnabled !== checked) {
-            (0, _Config.read)();
-            Config.simulateManualHandleItemEnabled = checked;
-            (0, _Config.write)();
-        }
-    }).triggerHandler('click');
+    });
+    addSimulateManualHandleItemChecked();
 };
 
 /**
@@ -4045,7 +4044,7 @@ var bindItemActionLinksClick = function bindItemActionLinksClick($element) {
  */
 var enhanceMyItemsPage = exports.enhanceMyItemsPage = function enhanceMyItemsPage() {
     var $myItems = $('.kf_fw_ig1:last');
-    $myItems.addClass('pd_my_items').find('tbody > tr').each(function (index) {
+    $myItems.addClass('pd_items').find('tbody > tr').each(function (index) {
         var $this = $(this);
         if (index === 0) {
             $this.find('td').attr('colspan', 6);
@@ -4342,6 +4341,185 @@ var modifyItemDescription = exports.modifyItemDescription = function modifyItemD
     }
 };
 
+/**
+ * 添加批量购买道具链接
+ */
+var addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function addBatchBuyItemsLink() {
+    var $area = $('.kf_fw_ig1').addClass('pd_items');
+    $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px').next('td').next('td').css('width', '120px');
+    $area.find('a[href="kf_fw_ig_shop.php?do=buy&id=1"]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
+    $area.on('click', '[data-name="batchBuyItem"]', function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var $line = $this.closest('tr');
+        var name = $line.find('td:first-child').text().trim();
+        var kfb = parseInt($line.find('td:nth-child(3)').text());
+        var url = $this.prev('a').attr('href');
+        if (!name || !kfb || !url) return;
+        var num = parseInt(prompt('\u4F60\u8981\u8D2D\u4E70\u591A\u5C11\u4E2A\u3010' + name + '\u3011\uFF1F\uFF08\u5355\u4EF7\uFF1A' + kfb.toLocaleString() + ' KFB\uFF09', 0));
+        if (!num || num < 0) return;
+
+        Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        buyItems(num, name, kfb, url);
+    }).on('click', 'a[href="kf_fw_ig_shop.php?do=buy&id=1"]', function () {
+        return confirm('是否购买？');
+    });
+    $area.after('<div class="pd_item_btns"></div>');
+    addSimulateManualHandleItemChecked();
+    showKfbInItemShop();
+};
+
+/**
+ * 购买道具
+ * @param {number} buyNum 购买数量
+ * @param {string} type 购买项目
+ * @param {number} kfb 道具单价
+ * @param {string} url 购买URL
+ */
+var buyItems = function buyItems(buyNum, type, kfb, url) {
+    var successNum = 0,
+        totalKfb = 0;
+    var myItemUrlList = [];
+    var itemList = {};
+    var isStop = false;
+
+    /**
+     * 购买
+     */
+    var buy = function buy() {
+        $.ajax({
+            type: 'GET',
+            url: url + '&t=' + new Date().getTime(),
+            timeout: _Const2.default.defAjaxTimeout,
+            success: function success(html) {
+                Public.showFormatLog('购买道具', html);
+
+                var _Util$getResponseMsg4 = Util.getResponseMsg(html),
+                    msg = _Util$getResponseMsg4.msg;
+
+                if (/购买成功，返回我的背包/.test(msg)) {
+                    successNum++;
+                    totalKfb += kfb;
+                } else {
+                    isStop = true;
+                    $('.pd_result:last').append('<li>' + msg + '<span class="pd_notice">\uFF08\u8D2D\u4E70\u4E2D\u6B62\uFF09</span></li>');
+                }
+                setTimeout(getNewItemInfo, _Const2.default.defAjaxInterval);
+            },
+            error: function error() {
+                setTimeout(buy, _Const2.default.defAjaxInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取新道具的信息
+     * @param {boolean} isFirst 购买前第一次获取信息
+     */
+    var getNewItemInfo = function getNewItemInfo() {
+        var isFirst = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            timeout: _Const2.default.defAjaxTimeout,
+            success: function success(html) {
+                var list = [];
+                $('.kf_fw_ig1 a[href^="kf_fw_ig_mybp.php?do=1&id="]', html).each(function () {
+                    var $this = $(this);
+                    var url = $this.attr('href');
+                    list.push(url);
+                    if (isFirst || myItemUrlList.includes(url)) return;
+                    var itemName = $this.closest('tr').find('td:nth-child(2)').text().trim();
+                    if (!itemTypeList.includes(itemName)) return;
+                    if (!(itemName in itemList)) itemList[itemName] = 0;
+                    itemList[itemName]++;
+                    console.log('\u83B7\u5F97\u4E86\u4E00\u4E2A\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011\u9053\u5177');
+                    $('.pd_result:last').append('<li>\u83B7\u5F97\u4E86\u4E00\u4E2A\u3010<b class="pd_highlight">Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '</b>\u3011\u9053\u5177</li>');
+                });
+                myItemUrlList = list;
+
+                var $countdown = $('.pd_countdown:last');
+                $countdown.text(buyNum - successNum);
+                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
+                if (isStop || successNum === buyNum) {
+                    Msg.remove($countdown.closest('.pd_msg'));
+                    var _iteratorNormalCompletion5 = true;
+                    var _didIteratorError5 = false;
+                    var _iteratorError5 = undefined;
+
+                    try {
+                        for (var _iterator5 = Util.entries(itemList)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                            var _step5$value = _slicedToArray(_step5.value, 2),
+                                itemName = _step5$value[0],
+                                num = _step5$value[1];
+
+                            if (!num) delete itemList[itemName];
+                        }
+                    } catch (err) {
+                        _didIteratorError5 = true;
+                        _iteratorError5 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                                _iterator5.return();
+                            }
+                        } finally {
+                            if (_didIteratorError5) {
+                                throw _iteratorError5;
+                            }
+                        }
+                    }
+
+                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
+                        Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + type + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
+                    }
+                    console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F\uFF0CKFB-' + totalKfb);
+                    Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F</strong><i>KFB<ins>-' + totalKfb + '</ins></i>', -1);
+                    showKfbInItemShop();
+                } else {
+                    var interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
+                    setTimeout(buy, isFirst ? _Const2.default.defAjaxInterval : interval);
+                }
+            },
+            error: function error() {
+                setTimeout(function () {
+                    return getNewItemInfo(isFirst);
+                }, _Const2.default.defAjaxInterval);
+            }
+        });
+    };
+
+    $('.kf_fw_ig1:last').parent().append('<ul class="pd_result"><li><strong>\u3010' + type + '\u3011\u8D2D\u4E70\u7ED3\u679C\uFF1A</strong></li></ul>');
+    getNewItemInfo(true);
+};
+
+/**
+ * 在道具商店显示当前持有的KFB
+ */
+var showKfbInItemShop = function showKfbInItemShop() {
+    $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + new Date().getTime(), function (html) {
+        var matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
+        if (!matches) return;
+        var cash = parseInt(matches[1]);
+        $('.kf_fw_ig_title1:last').find('span:last').remove().end().append('<span style="margin-left: 7px;">(\u5F53\u524D\u6301\u6709 <b style="font-size: 14px;">' + cash.toLocaleString() + '</b> KFB)</span>');
+    });
+};
+
+/**
+ * 添加模拟手动操作道具复选框
+ */
+var addSimulateManualHandleItemChecked = function addSimulateManualHandleItemChecked() {
+    $('\n<label style="margin-right: 5px;">\n  <input name="simulateManualHandleItemEnabled" type="checkbox" ' + (Config.simulateManualHandleItemEnabled ? 'checked' : '') + '> \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\u9053\u5177\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u9053\u5177\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57282~6\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u3001\u6062\u590D\u548C\u8D2D\u4E70\u9053\u5177">[?]</span>\n</label>\n').prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
+        var checked = $(this).prop('checked');
+        if (Config.simulateManualHandleItemEnabled !== checked) {
+            (0, _Config.read)();
+            Config.simulateManualHandleItemEnabled = checked;
+            (0, _Config.write)();
+        }
+    });
+};
+
 },{"./Config":4,"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
@@ -4533,6 +4711,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.show = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _Util = require('./Util');
 
@@ -4731,7 +4911,7 @@ var getLogContent = function getLogContent(log, date, logSortType) {
                             var _iteratorError3 = undefined;
 
                             try {
-                                for (var _iterator3 = Object.keys(gain[k])[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                                for (var _iterator3 = Util.getSortedObjectKeyList(Item.itemTypeList, gain[k])[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                                     var itemName = _step3.value;
 
                                     stat += '<i>' + itemName + '<em>+' + gain[k][itemName].toLocaleString() + '</em></i> ';
@@ -4906,6 +5086,9 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         lootLevelStat = { total: 0, min: 0, max: 0 },
         lootExpStat = { total: 0, min: 0, max: 0 },
         lootKfbStat = { total: 0, min: 0, max: 0 };
+    var buyItemNum = 0,
+        buyItemKfb = 0,
+        buyItemStat = {};
     var validItemNum = 0,
         highValidItemNum = 0,
         validItemStat = {},
@@ -5002,6 +5185,36 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                             if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
                         }
                     }
+                } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
+                    buyItemNum += gain['道具'];
+                    buyItemKfb += pay['KFB'];
+                    var _iteratorNormalCompletion10 = true;
+                    var _didIteratorError10 = false;
+                    var _iteratorError10 = undefined;
+
+                    try {
+                        for (var _iterator10 = Util.entries(gain['item'])[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                            var _step10$value = _slicedToArray(_step10.value, 2),
+                                itemName = _step10$value[0],
+                                num = _step10$value[1];
+
+                            if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
+                            buyItemStat[itemName] += num;
+                        }
+                    } catch (err) {
+                        _didIteratorError10 = true;
+                        _iteratorError10 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                                _iterator10.return();
+                            }
+                        } finally {
+                            if (_didIteratorError10) {
+                                throw _iteratorError10;
+                            }
+                        }
+                    }
                 } else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
                     var _matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
                     if (_matches) {
@@ -5041,43 +5254,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     var content = '';
     var sortStatTypeList = ['KFB', '经验值', '能量', '贡献', '道具', '已使用道具', '卡片'];
     content += '<strong>收获：</strong>';
-    var _iteratorNormalCompletion10 = true;
-    var _didIteratorError10 = false;
-    var _iteratorError10 = undefined;
-
-    try {
-        for (var _iterator10 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-            var key = _step10.value;
-
-            profit[key] = income[key];
-            content += '<i>' + key + '<em>+' + income[key].toLocaleString() + '</em></i> ';
-        }
-    } catch (err) {
-        _didIteratorError10 = true;
-        _iteratorError10 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                _iterator10.return();
-            }
-        } finally {
-            if (_didIteratorError10) {
-                throw _iteratorError10;
-            }
-        }
-    }
-
-    content += '<br><strong>付出：</strong>';
     var _iteratorNormalCompletion11 = true;
     var _didIteratorError11 = false;
     var _iteratorError11 = undefined;
 
     try {
-        for (var _iterator11 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _key = _step11.value;
+        for (var _iterator11 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var key = _step11.value;
 
-            if (typeof profit[_key] === 'undefined') profit[_key] = expense[_key];else profit[_key] += expense[_key];
-            content += '<i>' + _key + '<ins>' + expense[_key].toLocaleString() + '</ins></i> ';
+            profit[key] = income[key];
+            content += '<i>' + key + '<em>+' + income[key].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError11 = true;
@@ -5094,16 +5280,17 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>结余：</strong>';
+    content += '<br><strong>付出：</strong>';
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var _key2 = _step12.value;
+        for (var _iterator12 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var _key = _step12.value;
 
-            content += '<i>' + _key2 + Util.getStatFormatNumber(profit[_key2]) + '</i> ';
+            if (typeof profit[_key] === 'undefined') profit[_key] = expense[_key];else profit[_key] += expense[_key];
+            content += '<i>' + _key + '<ins>' + expense[_key].toLocaleString() + '</ins></i> ';
         }
     } catch (err) {
         _didIteratorError12 = true;
@@ -5120,25 +5307,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
-
-    var sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
-    content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
-    if (lootCount > 0) {
-        content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
-        content += '<i>KFB<em>+' + lootKfbStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootKfbStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootKfbStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootKfbStat.max.toLocaleString() + '</em>)</span></i> ');
-        content += '<i>\u7ECF\u9A8C\u503C<em>+' + lootExpStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootExpStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootExpStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootExpStat.max.toLocaleString() + '</em>)</span></i> ');
-    }
-    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
+    content += '<br><strong>结余：</strong>';
     var _iteratorNormalCompletion13 = true;
     var _didIteratorError13 = false;
     var _iteratorError13 = undefined;
 
     try {
-        for (var _iterator13 = Util.getSortedObjectKeyList(sortItemTypeList, validItemStat)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var _itemName2 = _step13.value;
+        for (var _iterator13 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var _key2 = _step13.value;
 
-            content += '<i>' + _itemName2 + '<em>+' + validItemStat[_itemName2].toLocaleString() + '</em></i> ';
+            content += '<i>' + _key2 + Util.getStatFormatNumber(profit[_key2]) + '</i> ';
         }
     } catch (err) {
         _didIteratorError13 = true;
@@ -5155,16 +5333,24 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
+    content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
+    content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
+    if (lootCount > 0) {
+        content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
+        content += '<i>KFB<em>+' + lootKfbStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootKfbStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootKfbStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootKfbStat.max.toLocaleString() + '</em>)</span></i> ');
+        content += '<i>\u7ECF\u9A8C\u503C<em>+' + lootExpStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootExpStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootExpStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootExpStat.max.toLocaleString() + '</em>)</span></i> ');
+    }
+
+    content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemNum.toLocaleString() + '</em></i> <i>KFB<ins>' + buyItemKfb.toLocaleString() + '</ins></i> ';
     var _iteratorNormalCompletion14 = true;
     var _didIteratorError14 = false;
     var _iteratorError14 = undefined;
 
     try {
-        for (var _iterator14 = Util.getSortedObjectKeyList(sortItemTypeList, invalidItemStat)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-            var _itemName3 = _step14.value;
+        for (var _iterator14 = Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+            var _itemName2 = _step14.value;
 
-            content += '<i>' + _itemName3 + '<em>+' + invalidItemStat[_itemName3].toLocaleString() + '</em></i> ';
+            content += '<i>' + _itemName2 + '<em>+' + buyItemStat[_itemName2].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError14 = true;
@@ -5177,6 +5363,58 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         } finally {
             if (_didIteratorError14) {
                 throw _iteratorError14;
+            }
+        }
+    }
+
+    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
+    var _iteratorNormalCompletion15 = true;
+    var _didIteratorError15 = false;
+    var _iteratorError15 = undefined;
+
+    try {
+        for (var _iterator15 = Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+            var _itemName3 = _step15.value;
+
+            content += '<i>' + _itemName3 + '<em>+' + validItemStat[_itemName3].toLocaleString() + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                _iterator15.return();
+            }
+        } finally {
+            if (_didIteratorError15) {
+                throw _iteratorError15;
+            }
+        }
+    }
+
+    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
+    var _iteratorNormalCompletion16 = true;
+    var _didIteratorError16 = false;
+    var _iteratorError16 = undefined;
+
+    try {
+        for (var _iterator16 = Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var _itemName4 = _step16.value;
+
+            content += '<i>' + _itemName4 + '<em>+' + invalidItemStat[_itemName4].toLocaleString() + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                _iterator16.return();
+            }
+        } finally {
+            if (_didIteratorError16) {
+                throw _iteratorError16;
             }
         }
     }
@@ -5242,13 +5480,13 @@ var showLogText = function showLogText(log, $dialog) {
     var isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     var content = '',
         lastDate = '';
-    var _iteratorNormalCompletion15 = true;
-    var _didIteratorError15 = false;
-    var _iteratorError15 = undefined;
+    var _iteratorNormalCompletion17 = true;
+    var _didIteratorError17 = false;
+    var _iteratorError17 = undefined;
 
     try {
-        for (var _iterator15 = Object.keys(log)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-            var date = _step15.value;
+        for (var _iterator17 = Object.keys(log)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+            var date = _step17.value;
 
             if (!Array.isArray(log[date])) continue;
             if (lastDate > date) lastDate = date;
@@ -5259,16 +5497,16 @@ var showLogText = function showLogText(log, $dialog) {
             content += '='.repeat(46) + '\n';
         }
     } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                _iterator15.return();
+            if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                _iterator17.return();
             }
         } finally {
-            if (_didIteratorError15) {
-                throw _iteratorError15;
+            if (_didIteratorError17) {
+                throw _iteratorError17;
             }
         }
     }
@@ -5401,8 +5639,8 @@ var handlePropertiesArea = function handlePropertiesArea() {
  * 处理点数区域
  */
 var handlePointsArea = function handlePointsArea() {
-    $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
-    $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
+    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px').addClass('pd_point');
+    $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
     /**
      * 显示各项点数的和值
@@ -5419,24 +5657,25 @@ var handlePointsArea = function handlePointsArea() {
         $sum.text('=' + (num + extraNum));
     };
 
-    $points.on('change', '[type="number"]', function () {
+    $points.on('change', '.pd_point', function () {
         var $this = $(this);
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         $('#pdSurplusPoint').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000').css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
         showNewLootProperty($this);
         showSumOfPoint($this);
         $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()), parseInt($lootArea.find('[name="s2"]').val()), parseInt($lootArea.find('[name="i1"]').val())));
     }).on('click', '.pd_point_sum', function () {
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
-        var $point = $(this).prev('span').prev('[type="number"]:not([disabled])');
+        var $point = $(this).prev('span').prev('.pd_point');
         if (!$point.length) return;
         var num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
-        $point.val(num + surplusPoint).trigger('change');
+        num = num + surplusPoint;
+        $point.val(num < 1 ? 1 : num).trigger('change');
     }).find('form').submit(function () {
         return checkPoints($points);
-    }).find('[type="number"]').trigger('change');
+    }).find('.pd_point').trigger('change');
 };
 
 /**
@@ -5445,7 +5684,7 @@ var handlePointsArea = function handlePointsArea() {
  * @returns {boolean} 检查结果
  */
 var checkPoints = function checkPoints($points) {
-    var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+    var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
     if (surplusPoint < 0) {
         alert('剩余属性点为负，请重新填写');
         return false;
@@ -5543,10 +5782,6 @@ var getPointNameByFieldName = function getPointNameByFieldName(fieldName) {
             return '智力';
         case 'i2':
             return '意志';
-        case 'p':
-            return '耐力';
-        case 'l':
-            return '幸运';
         default:
             return '';
     }
@@ -5571,10 +5806,6 @@ var getFieldNameByPointName = function getFieldNameByPointName(pointName) {
             return 'i1';
         case '意志':
             return 'i2';
-        case '耐力':
-            return 'p';
-        case '幸运':
-            return 'l';
         default:
             return '';
     }
@@ -5689,10 +5920,10 @@ var getPointByProperty = function getPointByProperty(pointName, num) {
  * 添加各层点数分配方案选择框
  */
 var addLevelPointListSelect = function addLevelPointListSelect() {
-    $('\n<select id="pdLevelPointListSelect" style="margin: 5px 0;">\n  <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n  <option value="edit" style="color: #00f;">\u7F16\u8F91&hellip;</option>\n  <option value="0">\u9ED8\u8BA4</option>\n</select>\n<a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a><br>\n').prependTo($points).filter('#pdLevelPointListSelect').change(function () {
+    $('\n<select id="pdLevelPointListSelect" style="margin: 5px 0;">\n  <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n  <option class="pd_highlight" value="edit">\u7F16\u8F91&hellip;</option>\n  <option value="0">\u9ED8\u8BA4</option>\n</select>\n<a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a><br>\n').prependTo($points).filter('#pdLevelPointListSelect').change(function () {
         var level = $(this).val();
         if (level === '0') {
-            $points.find('[type="number"]').each(function () {
+            $points.find('.pd_point').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         } else if (level === 'edit') {
@@ -5704,7 +5935,7 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
                 if ((typeof points === 'undefined' ? 'undefined' : _typeof(points)) !== 'object') return {
                         v: void 0
                     };
-                $points.find('[type="number"]:not([disabled])').each(function () {
+                $points.find('.pd_point').each(function () {
                     var $this = $(this);
                     $this.val(points[getPointNameByFieldName($this.attr('name'))]);
                 }).trigger('change');
@@ -5730,7 +5961,7 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         var _iteratorError = undefined;
 
         try {
-            for (var _iterator = Array.from($points.find('[type="number"]:not([disabled])'))[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            for (var _iterator = Array.from($points.find('.pd_point'))[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                 var elem = _step.value;
 
                 var $elem = $(elem);
@@ -5812,7 +6043,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
      * @param {{}} points 点数对象
      */
     var addLevelPointHtml = function addLevelPointHtml(level, points) {
-        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input name="s1" type="number" min="1" max="999" value="' + points['力量'] + '" style="width: 50px;" required></td>\n  <td><input name="s2" type="number" min="1" max="999" value="' + points['体质'] + '" style="width: 50px;" required></td>\n  <td><input name="d1" type="number" min="1" max="999" value="' + points['敏捷'] + '" style="width: 50px;" required></td>\n  <td><input name="d2" type="number" min="1" max="999" value="' + points['灵活'] + '" style="width: 50px;" required></td>\n  <td><input name="i1" type="number" min="1" max="999" value="' + points['智力'] + '" style="width: 50px;" required></td>\n  <td><input name="i2" type="number" min="1" max="999" value="' + points['意志'] + '" style="width: 50px;" required></td>\n  <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a></td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B">\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C">\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6">\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387">\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387">\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24">\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="\u6280\u80FD\u4F24\u5BB3\uFF1A\u653B\u51FB+(\u4F53\u8D28*5)+(\u667A\u529B*5)">\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n</tr>\n').appendTo($levelPointList).find('[type="number"]').trigger('change');
+        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" min="1" max="999" value="' + points['力量'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" min="1" max="999" value="' + points['体质'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" min="1" max="999" value="' + points['敏捷'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" min="1" max="999" value="' + points['灵活'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" min="1" max="999" value="' + points['智力'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" min="1" max="999" value="' + points['意志'] + '" style="width: 50px;" required></td>\n  <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a></td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B">\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C">\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6">\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387">\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387">\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24">\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="\u6280\u80FD\u4F24\u5BB3\uFF1A\u653B\u51FB+(\u4F53\u8D28*5)+(\u667A\u529B*5)">\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
     };
 
     $dialog.submit(function (e) {
@@ -5824,9 +6055,12 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
             isSurplus = false;
         $levelPointList.find('tr:gt(0)').each(function () {
             var $this = $(this);
-            if (!$this.find('input').length) return;
-            var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('[type="number"]'));
-            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) isError = true;
+            if (!$this.find('.pd_point').length) return;
+            var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('.pd_point'));
+            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) {
+                isError = true;
+                return false;
+            }
 
             var level = parseInt($this.find('[name="level"]').val());
             if (!level || level < 0) return;
@@ -5836,7 +6070,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
             var _iteratorError3 = undefined;
 
             try {
-                for (var _iterator3 = Array.from($this.find('[type="number"]'))[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                for (var _iterator3 = Array.from($this.find('.pd_point'))[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                     var elem = _step3.value;
 
                     var $elem = $(elem);
@@ -5905,7 +6139,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         var $line = $(this).closest('tr');
         $line.next('tr').addBack().remove();
         Dialog.show(dialogName);
-    }).on('change', '[type="number"]', function () {
+    }).on('change', '.pd_point', function () {
         var $this = $(this);
         var name = $this.attr('name');
         var point = parseInt($this.val());
@@ -5915,7 +6149,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         var $properties = $points.next('tr');
         $properties.find('[data-id="pro_' + name + '"]').text(getPropertyByPoint(getPointNameByFieldName(name), point)).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val()), parseInt($points.find('[name="i1"]').val())));
 
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         var $this = $(this);
@@ -5928,13 +6162,14 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         var $this = $(this);
         var name = $this.data('id').replace('opt_', '');
         var $points = $this.closest('tr').prev('tr');
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         var $point = $points.find('[name="' + name + '"]');
         if (!$point.length) return;
         var num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
-        $point.val(num + surplusPoint).trigger('change');
+        num = num + surplusPoint;
+        $point.val(num < 1 ? 1 : num).trigger('change');
     });
 
     $dialog.find('[data-id="modifyArea"]').on('keydown', '[type="text"]', function (e) {
@@ -5962,7 +6197,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         });
         $checked.each(function () {
             var $points = $(this).closest('tr');
-            $points.find('[type="number"]').each(function () {
+            $points.find('.pd_point').each(function () {
                 var $this = $(this);
                 var name = $this.attr('name');
                 if (!(name in data)) return;
@@ -6048,7 +6283,7 @@ var addAttackBtns = function addAttackBtns() {
                 return level <= nextLevel;
             }))) : 0;
             var isChange = true;
-            $points.find('[type="number"]:not([disabled])').each(function () {
+            $points.find('.pd_point').each(function () {
                 if (this.defaultValue !== $(this).val()) {
                     isChange = false;
                     return false;
@@ -6070,7 +6305,7 @@ var addAttackBtns = function addAttackBtns() {
                         propertyList = getLootPropertyList();
                         var pointsText = '',
                             propertiesText = '';
-                        $points.find('[type="number"]:not([disabled])').each(function () {
+                        $points.find('.pd_point').each(function () {
                             var $this = $(this);
                             var name = $this.attr('name');
                             var value = $.trim($this.val());
@@ -6121,7 +6356,7 @@ var addAttackBtns = function addAttackBtns() {
                             $('#pdAttackProcess').append('\n<li>\n  \u3010\u5206\u914D\u70B9\u6570\u3011\u5DF2\u4FEE\u6539\u70B9\u6570\u8BBE\u7F6E<br>\n  <span style="color: #666;">\u70B9\u6570\uFF08' + pointsText + '\uFF09<br>\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09</span>\n</li>\n');
                         }
 
-                        $points.find('[type="number"]').each(function () {
+                        $points.find('.pd_point').each(function () {
                             this.defaultValue = $(this).val();
                         }).trigger('change');
                         return 'success';
@@ -7559,7 +7794,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1001; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pages .pd_fast_goto_page { margin-left: 8px; }\n  .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1001; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pages .pd_fast_goto_page { margin-left: 8px; }\n  .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');
@@ -8580,10 +8815,7 @@ var addSearchDialogLink = exports.addSearchDialogLink = function addSearchDialog
  * 修复论坛错误代码
  */
 var repairBbsErrorCode = exports.repairBbsErrorCode = function repairBbsErrorCode() {
-    _Info2.default.w.is_ie = false;
-    if (location.pathname === '/read.php') {
-        _Info2.default.w.strlen = Util.getStrByteLen;
-    }
+    if (location.pathname === '/read.php') _Info2.default.w.strlen = Util.getStrByteLen;
 };
 
 /**

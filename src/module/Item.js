@@ -9,6 +9,14 @@ import * as Log from './Log';
 import * as Public from './Public';
 
 /**
+ * 道具种类列表
+ */
+export const itemTypeList = [
+    '零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画',
+    '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药',
+];
+
+/**
  * 获得转换指定等级道具可获得的能量点
  * @param {number} itemLevel 道具等级
  * @returns {number} 能量点
@@ -1595,7 +1603,7 @@ export const addBatchBuyItemsLink = function () {
 const buyItems = function (buyNum, type, kfb, url) {
     let successNum = 0, totalKfb = 0;
     let myItemUrlList = [];
-    let itemList = {'蕾米莉亚同人漫画': 0, '十六夜同人漫画': 0, '档案室钥匙': 0, '傲娇LOLI娇蛮音CD': 0, '整形优惠卷': 0, '消逝之药': 0};
+    let itemList = {};
     let isStop = false;
 
     /**
@@ -1642,7 +1650,8 @@ const buyItems = function (buyNum, type, kfb, url) {
                     list.push(url);
                     if (isFirst || myItemUrlList.includes(url)) return;
                     let itemName = $this.closest('tr').find('td:nth-child(2)').text().trim();
-                    if (!(itemName in itemList)) return;
+                    if (!itemTypeList.includes(itemName)) return;
+                    if (!(itemName in itemList)) itemList[itemName] = 0;
                     itemList[itemName]++;
                     console.log(`获得了一个【Lv.${getLevelByName(itemName)}：${itemName}】道具`);
                     $('.pd_result:last').append(

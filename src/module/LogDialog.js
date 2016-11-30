@@ -201,7 +201,7 @@ const getLogContent = function (log, date, logSortType) {
             stat += '，';
             for (let k of Object.keys(gain)) {
                 if (k === 'item') {
-                    for (let itemName of Object.keys(gain[k])) {
+                    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, gain[k])) {
                         stat += `<i>${itemName}<em>+${gain[k][itemName].toLocaleString()}</em></i> `;
                     }
                 }
@@ -269,6 +269,7 @@ const getLogStat = function (log, date, logStatType) {
     let income = {}, expense = {}, profit = {};
     let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootExpStat = {total: 0, min: 0, max: 0},
         lootKfbStat = {total: 0, min: 0, max: 0};
+    let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
     let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
     let invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (let d in rangeLog) {
@@ -307,6 +308,14 @@ const getLogStat = function (log, date, logStatType) {
                         if (lootExpStat.max < gain['经验值']) lootExpStat.max = gain['经验值'];
                         if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
                     }
+                }
+            }
+            else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
+                buyItemNum += gain['道具'];
+                buyItemKfb += pay['KFB'];
+                for (let [itemName, num] of Util.entries(gain['item'])) {
+                    if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
+                    buyItemStat[itemName] += num;
                 }
             }
             else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
@@ -350,9 +359,6 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
-
-    const sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画',
-        '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
     content += `\n<strong>争夺攻击统计：</strong><i>次数<em>+${lootCount}</em></i> `;
     if (lootCount > 0) {
         content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` +
@@ -364,14 +370,19 @@ const getLogStat = function (log, date, logStatType) {
             `(<em title="平均值">+${Util.getFixedNumLocStr(lootExpStat.total / lootCount)}</em>|` +
             `<em title="最小值">+${lootExpStat.min.toLocaleString()}</em>|<em title="最大值">+${lootExpStat.max.toLocaleString()}</em>)</span></i> `;
     }
+
+    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> <i>KFB<ins>${buyItemKfb.toLocaleString()}</ins></i> `;
+    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
+        content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
+    }
     content += `<br><strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${validItemNum.toLocaleString()}</em>` +
         `(<em title="3级以上有效道具">+${highValidItemNum.toLocaleString()}</em>)</span></i> `;
-    for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, validItemStat)) {
+    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
         content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;
     }
     content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${invalidItemNum.toLocaleString()}</em>` +
         `(<em title="3级以上无效道具">+${highInvalidItemNum.toLocaleString()}</em>)</span></i> `;
-    for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, invalidItemStat)) {
+    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)) {
         content += `<i>${itemName}<em>+${invalidItemStat[itemName].toLocaleString()}</em></i> `;
     }
 

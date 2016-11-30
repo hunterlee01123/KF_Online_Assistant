@@ -1164,10 +1164,7 @@ export const addSearchDialogLink = function () {
  * 修复论坛错误代码
  */
 export const repairBbsErrorCode = function () {
-    Info.w.is_ie = false;
-    if (location.pathname === '/read.php') {
-        Info.w.strlen = Util.getStrByteLen;
-    }
+    if (location.pathname === '/read.php') Info.w.strlen = Util.getStrByteLen;
 };
 
 /**

@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.1.1';
+const version = '8.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -120,8 +120,6 @@ $(function () {
     } else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertItemTypesButton();
-    } else if (/\/kf_fw_ig_renew\.php$/i.test(location.href)) {
-        Item.addBatchConvertEnergyAndRestoreItemsLink();
     } else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
         Item.addConvertEnergyAndRestoreItemsButton();
     } else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
@@ -2869,7 +2867,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = undefined;
+exports.addBatchBuyItemsLink = exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = exports.itemTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -2900,6 +2898,11 @@ var Public = _interopRequireWildcard(_Public);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * 道具种类列表
+ */
+const itemTypeList = exports.itemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
 
 /**
  * 获得转换指定等级道具可获得的能量点
@@ -3714,16 +3717,12 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
     if (!safeId) return;
     $(`
 <div class="pd_item_btns">
-  <label style="margin-right: 5px;" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用和恢复道具">
-    <input name="simulateManualHandleItemEnabled" type="checkbox" ${ Config.simulateManualHandleItemEnabled ? 'checked' : '' }>
-    模拟手动操作道具
-  </label>
   <button name="useItemTypes" type="button" title="批量使用指定种类的道具">批量使用</button>
   <button class="pd_highlight" name="convertItemTypes" type="button" title="批量将指定种类的道具转换为能量">批量转换</button>
   <button name="selectAll" type="button">全选</button>
   <button name="selectInverse" type="button">反选</button>
 </div>
-`).insertAfter('.pd_my_items').on('click', 'button', function () {
+`).insertAfter('.pd_items').on('click', 'button', function () {
         let name = $(this).attr('name');
         if (name === 'useItemTypes' || name === 'convertItemTypes') {
             let itemTypeList = [];
@@ -3805,14 +3804,8 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
         } else if (name === 'selectInverse') {
             Util.selectInverse($('.pd_item_type_chk'));
         }
-    }).find('[name="simulateManualHandleItemEnabled"]').click(function () {
-        let checked = $(this).prop('checked');
-        if (Config.simulateManualHandleItemEnabled !== checked) {
-            (0, _Config.read)();
-            Config.simulateManualHandleItemEnabled = checked;
-            (0, _Config.write)();
-        }
-    }).triggerHandler('click');
+    });
+    addSimulateManualHandleItemChecked();
 };
 
 /**
@@ -3975,7 +3968,7 @@ const bindItemActionLinksClick = function ($element) {
  */
 const enhanceMyItemsPage = exports.enhanceMyItemsPage = function () {
     let $myItems = $('.kf_fw_ig1:last');
-    $myItems.addClass('pd_my_items').find('tbody > tr').each(function (index) {
+    $myItems.addClass('pd_items').find('tbody > tr').each(function (index) {
         let $this = $(this);
         if (index === 0) {
             $this.find('td').attr('colspan', 6);
@@ -4248,6 +4241,157 @@ const modifyItemDescription = exports.modifyItemDescription = function () {
     if (itemDescReplaceList.has(itemName)) {
         $area.html($area.html().replace(itemDescReplaceList.get(itemName)[0], itemDescReplaceList.get(itemName)[1]));
     }
+};
+
+/**
+ * 添加批量购买道具链接
+ */
+const addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function () {
+    let $area = $('.kf_fw_ig1').addClass('pd_items');
+    $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px').next('td').next('td').css('width', '120px');
+    $area.find('a[href="kf_fw_ig_shop.php?do=buy&id=1"]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
+    $area.on('click', '[data-name="batchBuyItem"]', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        let $line = $this.closest('tr');
+        let name = $line.find('td:first-child').text().trim();
+        let kfb = parseInt($line.find('td:nth-child(3)').text());
+        let url = $this.prev('a').attr('href');
+        if (!name || !kfb || !url) return;
+        let num = parseInt(prompt(`你要购买多少个【${ name }】？（单价：${ kfb.toLocaleString() } KFB）`, 0));
+        if (!num || num < 0) return;
+
+        Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ num }</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
+        buyItems(num, name, kfb, url);
+    }).on('click', 'a[href="kf_fw_ig_shop.php?do=buy&id=1"]', () => confirm('是否购买？'));
+    $area.after('<div class="pd_item_btns"></div>');
+    addSimulateManualHandleItemChecked();
+    showKfbInItemShop();
+};
+
+/**
+ * 购买道具
+ * @param {number} buyNum 购买数量
+ * @param {string} type 购买项目
+ * @param {number} kfb 道具单价
+ * @param {string} url 购买URL
+ */
+const buyItems = function (buyNum, type, kfb, url) {
+    let successNum = 0,
+        totalKfb = 0;
+    let myItemUrlList = [];
+    let itemList = {};
+    let isStop = false;
+
+    /**
+     * 购买
+     */
+    const buy = function () {
+        $.ajax({
+            type: 'GET',
+            url: url + '&t=' + new Date().getTime(),
+            timeout: _Const2.default.defAjaxTimeout,
+            success(html) {
+                Public.showFormatLog('购买道具', html);
+                let { msg } = Util.getResponseMsg(html);
+                if (/购买成功，返回我的背包/.test(msg)) {
+                    successNum++;
+                    totalKfb += kfb;
+                } else {
+                    isStop = true;
+                    $('.pd_result:last').append(`<li>${ msg }<span class="pd_notice">（购买中止）</span></li>`);
+                }
+                setTimeout(getNewItemInfo, _Const2.default.defAjaxInterval);
+            },
+            error() {
+                setTimeout(buy, _Const2.default.defAjaxInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取新道具的信息
+     * @param {boolean} isFirst 购买前第一次获取信息
+     */
+    const getNewItemInfo = function (isFirst = false) {
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            timeout: _Const2.default.defAjaxTimeout,
+            success(html) {
+                let list = [];
+                $('.kf_fw_ig1 a[href^="kf_fw_ig_mybp.php?do=1&id="]', html).each(function () {
+                    let $this = $(this);
+                    let url = $this.attr('href');
+                    list.push(url);
+                    if (isFirst || myItemUrlList.includes(url)) return;
+                    let itemName = $this.closest('tr').find('td:nth-child(2)').text().trim();
+                    if (!itemTypeList.includes(itemName)) return;
+                    if (!(itemName in itemList)) itemList[itemName] = 0;
+                    itemList[itemName]++;
+                    console.log(`获得了一个【Lv.${ getLevelByName(itemName) }：${ itemName }】道具`);
+                    $('.pd_result:last').append(`<li>获得了一个【<b class="pd_highlight">Lv.${ getLevelByName(itemName) }：${ itemName }</b>】道具</li>`);
+                });
+                myItemUrlList = list;
+
+                let $countdown = $('.pd_countdown:last');
+                $countdown.text(buyNum - successNum);
+                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
+                if (isStop || successNum === buyNum) {
+                    Msg.remove($countdown.closest('.pd_msg'));
+                    for (let [itemName, num] of Util.entries(itemList)) {
+                        if (!num) delete itemList[itemName];
+                    }
+                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
+                        Log.push('购买道具', `共有\`${ successNum }\`个【\`${ type }\`】购买成功`, { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
+                    }
+                    console.log(`共有${ successNum }个【${ type }】购买成功，KFB-${ totalKfb }`);
+                    Msg.show(`<strong>共有<em>${ successNum }</em>个【${ type }】购买成功</strong><i>KFB<ins>-${ totalKfb }</ins></i>`, -1);
+                    showKfbInItemShop();
+                } else {
+                    let interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
+                    setTimeout(buy, isFirst ? _Const2.default.defAjaxInterval : interval);
+                }
+            },
+            error() {
+                setTimeout(() => getNewItemInfo(isFirst), _Const2.default.defAjaxInterval);
+            }
+        });
+    };
+
+    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【${ type }】购买结果：</strong></li></ul>`);
+    getNewItemInfo(true);
+};
+
+/**
+ * 在道具商店显示当前持有的KFB
+ */
+const showKfbInItemShop = function () {
+    $.get(`profile.php?action=show&uid=${ _Info2.default.uid }&t=${ new Date().getTime() }`, function (html) {
+        let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
+        if (!matches) return;
+        let cash = parseInt(matches[1]);
+        $('.kf_fw_ig_title1:last').find('span:last').remove().end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${ cash.toLocaleString() }</b> KFB)</span>`);
+    });
+};
+
+/**
+ * 添加模拟手动操作道具复选框
+ */
+const addSimulateManualHandleItemChecked = function () {
+    $(`
+<label style="margin-right: 5px;">
+  <input name="simulateManualHandleItemEnabled" type="checkbox" ${ Config.simulateManualHandleItemEnabled ? 'checked' : '' }> 模拟手动操作道具
+  <span class="pd_cfg_tips" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用、恢复和购买道具">[?]</span>
+</label>
+`).prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config.simulateManualHandleItemEnabled !== checked) {
+            (0, _Config.read)();
+            Config.simulateManualHandleItemEnabled = checked;
+            (0, _Config.write)();
+        }
+    });
 };
 
 },{"./Config":4,"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],11:[function(require,module,exports){
@@ -4581,7 +4725,7 @@ const getLogContent = function (log, date, logSortType) {
             stat += '，';
             for (let k of Object.keys(gain)) {
                 if (k === 'item') {
-                    for (let itemName of Object.keys(gain[k])) {
+                    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, gain[k])) {
                         stat += `<i>${ itemName }<em>+${ gain[k][itemName].toLocaleString() }</em></i> `;
                     }
                 } else {
@@ -4649,6 +4793,9 @@ const getLogStat = function (log, date, logStatType) {
         lootLevelStat = { total: 0, min: 0, max: 0 },
         lootExpStat = { total: 0, min: 0, max: 0 },
         lootKfbStat = { total: 0, min: 0, max: 0 };
+    let buyItemNum = 0,
+        buyItemKfb = 0,
+        buyItemStat = {};
     let validItemNum = 0,
         highValidItemNum = 0,
         validItemStat = {},
@@ -4691,6 +4838,13 @@ const getLogStat = function (log, date, logStatType) {
                         if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
                     }
                 }
+            } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
+                buyItemNum += gain['道具'];
+                buyItemKfb += pay['KFB'];
+                for (let [itemName, num] of Util.entries(gain['item'])) {
+                    if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
+                    buyItemStat[itemName] += num;
+                }
             } else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
                 let matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
                 if (matches) {
@@ -4731,20 +4885,23 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
-
-    const sortItemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
     content += `\n<strong>争夺攻击统计：</strong><i>次数<em>+${ lootCount }</em></i> `;
     if (lootCount > 0) {
         content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${ (lootLevelStat.total / lootCount).toFixed(2) }</em>|` + `<em title="最小值">+${ lootLevelStat.min }</em>|<em title="最大值">+${ lootLevelStat.max }</em>)</span></i> `;
         content += `<i>KFB<em>+${ lootKfbStat.total.toLocaleString() }</em><span class="pd_stat_extra">` + `(<em title="平均值">+${ Util.getFixedNumLocStr(lootKfbStat.total / lootCount) }</em>|` + `<em title="最小值">+${ lootKfbStat.min.toLocaleString() }</em>|<em title="最大值">+${ lootKfbStat.max.toLocaleString() }</em>)</span></i> `;
         content += `<i>经验值<em>+${ lootExpStat.total.toLocaleString() }</em><span class="pd_stat_extra">` + `(<em title="平均值">+${ Util.getFixedNumLocStr(lootExpStat.total / lootCount) }</em>|` + `<em title="最小值">+${ lootExpStat.min.toLocaleString() }</em>|<em title="最大值">+${ lootExpStat.max.toLocaleString() }</em>)</span></i> `;
     }
+
+    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${ buyItemNum.toLocaleString() }</em></i> <i>KFB<ins>${ buyItemKfb.toLocaleString() }</ins></i> `;
+    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
+        content += `<i>${ itemName }<em>+${ buyItemStat[itemName].toLocaleString() }</em></i> `;
+    }
     content += `<br><strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${ validItemNum.toLocaleString() }</em>` + `(<em title="3级以上有效道具">+${ highValidItemNum.toLocaleString() }</em>)</span></i> `;
-    for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, validItemStat)) {
+    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
         content += `<i>${ itemName }<em>+${ validItemStat[itemName].toLocaleString() }</em></i> `;
     }
     content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${ invalidItemNum.toLocaleString() }</em>` + `(<em title="3级以上无效道具">+${ highInvalidItemNum.toLocaleString() }</em>)</span></i> `;
-    for (let itemName of Util.getSortedObjectKeyList(sortItemTypeList, invalidItemStat)) {
+    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)) {
         content += `<i>${ itemName }<em>+${ invalidItemStat[itemName].toLocaleString() }</em></i> `;
     }
 
@@ -4963,8 +5120,8 @@ const handlePropertiesArea = function () {
  * 处理点数区域
  */
 const handlePointsArea = function () {
-    $points.find('[type="text"]').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px');
-    $points.find('input[readonly]').attr('min', 0).prop('disabled', true).removeProp('required', true);
+    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px').addClass('pd_point');
+    $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
     /**
      * 显示各项点数的和值
@@ -4981,22 +5138,23 @@ const handlePointsArea = function () {
         $sum.text('=' + (num + extraNum));
     };
 
-    $points.on('change', '[type="number"]', function () {
+    $points.on('change', '.pd_point', function () {
         let $this = $(this);
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         $('#pdSurplusPoint').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000').css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
         showNewLootProperty($this);
         showSumOfPoint($this);
         $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()), parseInt($lootArea.find('[name="s2"]').val()), parseInt($lootArea.find('[name="i1"]').val())));
     }).on('click', '.pd_point_sum', function () {
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
-        let $point = $(this).prev('span').prev('[type="number"]:not([disabled])');
+        let $point = $(this).prev('span').prev('.pd_point');
         if (!$point.length) return;
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
-        $point.val(num + surplusPoint).trigger('change');
-    }).find('form').submit(() => checkPoints($points)).find('[type="number"]').trigger('change');
+        num = num + surplusPoint;
+        $point.val(num < 1 ? 1 : num).trigger('change');
+    }).find('form').submit(() => checkPoints($points)).find('.pd_point').trigger('change');
 };
 
 /**
@@ -5005,7 +5163,7 @@ const handlePointsArea = function () {
  * @returns {boolean} 检查结果
  */
 const checkPoints = function ($points) {
-    let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+    let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
     if (surplusPoint < 0) {
         alert('剩余属性点为负，请重新填写');
         return false;
@@ -5101,10 +5259,6 @@ const getPointNameByFieldName = function (fieldName) {
             return '智力';
         case 'i2':
             return '意志';
-        case 'p':
-            return '耐力';
-        case 'l':
-            return '幸运';
         default:
             return '';
     }
@@ -5129,10 +5283,6 @@ const getFieldNameByPointName = function (pointName) {
             return 'i1';
         case '意志':
             return 'i2';
-        case '耐力':
-            return 'p';
-        case '幸运':
-            return 'l';
         default:
             return '';
     }
@@ -5250,14 +5400,14 @@ const addLevelPointListSelect = function () {
     $(`
 <select id="pdLevelPointListSelect" style="margin: 5px 0;">
   <option>点数分配方案</option>
-  <option value="edit" style="color: #00f;">编辑&hellip;</option>
+  <option class="pd_highlight" value="edit">编辑&hellip;</option>
   <option value="0">默认</option>
 </select>
 <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a><br>
 `).prependTo($points).filter('#pdLevelPointListSelect').change(function () {
         let level = $(this).val();
         if (level === '0') {
-            $points.find('[type="number"]').each(function () {
+            $points.find('.pd_point').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         } else if (level === 'edit') {
@@ -5266,7 +5416,7 @@ const addLevelPointListSelect = function () {
         } else if ($.isNumeric(level)) {
             let points = Config.levelPointList[parseInt(level)];
             if (typeof points !== 'object') return;
-            $points.find('[type="number"]:not([disabled])').each(function () {
+            $points.find('.pd_point').each(function () {
                 let $this = $(this);
                 $this.val(points[getPointNameByFieldName($this.attr('name'))]);
             }).trigger('change');
@@ -5284,7 +5434,7 @@ const addLevelPointListSelect = function () {
             if (!confirm('该层数已存在，是否覆盖？')) return;
         }
         let points = {};
-        for (let elem of Array.from($points.find('[type="number"]:not([disabled])'))) {
+        for (let elem of Array.from($points.find('.pd_point'))) {
             let $elem = $(elem);
             let point = parseInt($elem.val());
             if (!point || point < 0) return;
@@ -5370,12 +5520,12 @@ const showLevelPointListConfigDialog = function (callback) {
       第 <input name="level" type="text" value="${ level ? level : '' }" style="width: 30px;"> 层
     </label>
   </td>
-  <td><input name="s1" type="number" min="1" max="999" value="${ points['力量'] }" style="width: 50px;" required></td>
-  <td><input name="s2" type="number" min="1" max="999" value="${ points['体质'] }" style="width: 50px;" required></td>
-  <td><input name="d1" type="number" min="1" max="999" value="${ points['敏捷'] }" style="width: 50px;" required></td>
-  <td><input name="d2" type="number" min="1" max="999" value="${ points['灵活'] }" style="width: 50px;" required></td>
-  <td><input name="i1" type="number" min="1" max="999" value="${ points['智力'] }" style="width: 50px;" required></td>
-  <td><input name="i2" type="number" min="1" max="999" value="${ points['意志'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s1" type="number" min="1" max="999" value="${ points['力量'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s2" type="number" min="1" max="999" value="${ points['体质'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d1" type="number" min="1" max="999" value="${ points['敏捷'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d2" type="number" min="1" max="999" value="${ points['灵活'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i1" type="number" min="1" max="999" value="${ points['智力'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i2" type="number" min="1" max="999" value="${ points['意志'] }" style="width: 50px;" required></td>
   <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
@@ -5401,7 +5551,7 @@ const showLevelPointListConfigDialog = function (callback) {
   </td>
   <td class="pd_custom_tips" title="技能伤害：攻击+(体质*5)+(智力*5)">技伤：<span data-id="skillAttack">0</span></td>
 </tr>
-`).appendTo($levelPointList).find('[type="number"]').trigger('change');
+`).appendTo($levelPointList).find('.pd_point').trigger('change');
     };
 
     $dialog.submit(function (e) {
@@ -5413,14 +5563,17 @@ const showLevelPointListConfigDialog = function (callback) {
             isSurplus = false;
         $levelPointList.find('tr:gt(0)').each(function () {
             let $this = $(this);
-            if (!$this.find('input').length) return;
-            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('[type="number"]'));
-            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) isError = true;
+            if (!$this.find('.pd_point').length) return;
+            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('.pd_point'));
+            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) {
+                isError = true;
+                return false;
+            }
 
             let level = parseInt($this.find('[name="level"]').val());
             if (!level || level < 0) return;
             let points = {};
-            for (let elem of Array.from($this.find('[type="number"]'))) {
+            for (let elem of Array.from($this.find('.pd_point'))) {
                 let $elem = $(elem);
                 let point = parseInt($elem.val());
                 if (!point || point < 0) return;
@@ -5464,7 +5617,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let $line = $(this).closest('tr');
         $line.next('tr').addBack().remove();
         Dialog.show(dialogName);
-    }).on('change', '[type="number"]', function () {
+    }).on('change', '.pd_point', function () {
         let $this = $(this);
         let name = $this.attr('name');
         let point = parseInt($this.val());
@@ -5474,7 +5627,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let $properties = $points.next('tr');
         $properties.find(`[data-id="pro_${ name }"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point)).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val()), parseInt($points.find('[name="i1"]').val())));
 
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         let $this = $(this);
@@ -5487,13 +5640,14 @@ const showLevelPointListConfigDialog = function (callback) {
         let $this = $(this);
         let name = $this.data('id').replace('opt_', '');
         let $points = $this.closest('tr').prev('tr');
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('[type="number"]'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         let $point = $points.find(`[name="${ name }"]`);
         if (!$point.length) return;
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
-        $point.val(num + surplusPoint).trigger('change');
+        num = num + surplusPoint;
+        $point.val(num < 1 ? 1 : num).trigger('change');
     });
 
     $dialog.find('[data-id="modifyArea"]').on('keydown', '[type="text"]', function (e) {
@@ -5521,7 +5675,7 @@ const showLevelPointListConfigDialog = function (callback) {
         });
         $checked.each(function () {
             let $points = $(this).closest('tr');
-            $points.find('[type="number"]').each(function () {
+            $points.find('.pd_point').each(function () {
                 let $this = $(this);
                 let name = $this.attr('name');
                 if (!(name in data)) return;
@@ -5590,7 +5744,7 @@ const addAttackBtns = function () {
         const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
             let changeLevel = nextLevel ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : 0;
             let isChange = true;
-            $points.find('[type="number"]:not([disabled])').each(function () {
+            $points.find('.pd_point').each(function () {
                 if (this.defaultValue !== $(this).val()) {
                     isChange = false;
                     return false;
@@ -5610,7 +5764,7 @@ const addAttackBtns = function () {
                         propertyList = getLootPropertyList();
                         let pointsText = '',
                             propertiesText = '';
-                        $points.find('[type="number"]:not([disabled])').each(function () {
+                        $points.find('.pd_point').each(function () {
                             let $this = $(this);
                             let name = $this.attr('name');
                             let value = $.trim($this.val());
@@ -5647,7 +5801,7 @@ const addAttackBtns = function () {
 `);
                         }
 
-                        $points.find('[type="number"]').each(function () {
+                        $points.find('.pd_point').each(function () {
                             this.defaultValue = $(this).val();
                         }).trigger('change');
                         return 'success';
@@ -6956,12 +7110,12 @@ const appendCss = exports.appendCss = function () {
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
-  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; }
+  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
   
   /* 道具页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
-  .pd_my_items > tbody > tr > td > a + a { margin-left: 15px; }
+  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
   .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }
   .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }
@@ -7936,10 +8090,7 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
  * 修复论坛错误代码
  */
 const repairBbsErrorCode = exports.repairBbsErrorCode = function () {
-    _Info2.default.w.is_ie = false;
-    if (location.pathname === '/read.php') {
-        _Info2.default.w.strlen = Util.getStrByteLen;
-    }
+    if (location.pathname === '/read.php') _Info2.default.w.strlen = Util.getStrByteLen;
 };
 
 /**
