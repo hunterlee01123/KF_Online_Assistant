@@ -86,6 +86,7 @@ const Const = {
     storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: storagePrefix + 'multiQuote',
+
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称

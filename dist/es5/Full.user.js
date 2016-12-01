@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.2
+// @version     8.2.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -82,7 +82,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.2';
+var version = '8.2.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -2468,6 +2468,7 @@ var Const = {
     storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: storagePrefix + 'multiQuote',
+
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
@@ -4369,22 +4370,22 @@ var modifyItemDescription = exports.modifyItemDescription = function modifyItemD
 var addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function addBatchBuyItemsLink() {
     var $area = $('.kf_fw_ig1').addClass('pd_items');
     $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px').next('td').next('td').css('width', '120px');
-    $area.find('a[href="kf_fw_ig_shop.php?do=buy&id=1"]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
+    $area.find('a[href^="kf_fw_ig_shop.php?do=buy&id="]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
     $area.on('click', '[data-name="batchBuyItem"]', function (e) {
         e.preventDefault();
         var $this = $(this);
         var $line = $this.closest('tr');
-        var name = $line.find('td:first-child').text().trim();
+        var type = $line.find('td:first-child').text().trim();
         var kfb = parseInt($line.find('td:nth-child(3)').text());
         var url = $this.prev('a').attr('href');
-        if (!name || !kfb || !url) return;
-        var num = parseInt(prompt('\u4F60\u8981\u8D2D\u4E70\u591A\u5C11\u4E2A\u3010' + name + '\u3011\uFF1F\uFF08\u5355\u4EF7\uFF1A' + kfb.toLocaleString() + ' KFB\uFF09', 0));
+        if (!type.includes('道具') || !kfb || !url) return;
+        var num = parseInt(prompt('\u4F60\u8981\u8D2D\u4E70\u591A\u5C11\u4E2A\u3010' + type + '\u3011\uFF1F\uFF08\u5355\u4EF7\uFF1A' + kfb.toLocaleString() + ' KFB\uFF09', 0));
         if (!num || num < 0) return;
 
         Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-        buyItems(num, name, kfb, url);
-    }).on('click', 'a[href="kf_fw_ig_shop.php?do=buy&id=1"]', function () {
-        return confirm('是否购买？');
+        buyItems(num, type, kfb, url);
+    }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', function () {
+        return confirm('是否购买此道具？');
     });
     $area.after('<div class="pd_item_btns"></div>');
     addSimulateManualHandleItemChecked();
@@ -4497,7 +4498,8 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                         Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + type + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
                     }
                     console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F\uFF0CKFB-' + totalKfb);
-                    Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F</strong><i>KFB<ins>-' + totalKfb + '</ins></i>', -1);
+                    $('.pd_result:last').append('\n<li class="pd_stat">\n  \u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u8D2D\u4E70\u6210\u529F\uFF0C<i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i>\n  <span style="color: #666;">(\u8BF7\u5230<a href="kf_fw_ig_mybp.php" target="_blank">\u7269\u54C1\u88C5\u5907\u9875\u9762</a>\u67E5\u770B)</span>\n</li>\n');
+                    Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F</strong><i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i>', -1);
                     showKfbInItemShop();
                 } else {
                     var interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;

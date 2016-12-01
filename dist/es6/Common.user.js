@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.2
+// @version     8.2.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -78,7 +78,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.2';
+const version = '8.2.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -2479,6 +2479,7 @@ const Const = {
     storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: storagePrefix + 'multiQuote',
+
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
@@ -4267,21 +4268,21 @@ const modifyItemDescription = exports.modifyItemDescription = function () {
 const addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function () {
     let $area = $('.kf_fw_ig1').addClass('pd_items');
     $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px').next('td').next('td').css('width', '120px');
-    $area.find('a[href="kf_fw_ig_shop.php?do=buy&id=1"]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
+    $area.find('a[href^="kf_fw_ig_shop.php?do=buy&id="]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
     $area.on('click', '[data-name="batchBuyItem"]', function (e) {
         e.preventDefault();
         let $this = $(this);
         let $line = $this.closest('tr');
-        let name = $line.find('td:first-child').text().trim();
+        let type = $line.find('td:first-child').text().trim();
         let kfb = parseInt($line.find('td:nth-child(3)').text());
         let url = $this.prev('a').attr('href');
-        if (!name || !kfb || !url) return;
-        let num = parseInt(prompt(`你要购买多少个【${ name }】？（单价：${ kfb.toLocaleString() } KFB）`, 0));
+        if (!type.includes('道具') || !kfb || !url) return;
+        let num = parseInt(prompt(`你要购买多少个【${ type }】？（单价：${ kfb.toLocaleString() } KFB）`, 0));
         if (!num || num < 0) return;
 
         Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ num }</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
-        buyItems(num, name, kfb, url);
-    }).on('click', 'a[href="kf_fw_ig_shop.php?do=buy&id=1"]', () => confirm('是否购买？'));
+        buyItems(num, type, kfb, url);
+    }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买此道具？'));
     $area.after('<div class="pd_item_btns"></div>');
     addSimulateManualHandleItemChecked();
     showKfbInItemShop();
@@ -4364,7 +4365,13 @@ const buyItems = function (buyNum, type, kfb, url) {
                         Log.push('购买道具', `共有\`${ successNum }\`个【\`${ type }\`】购买成功`, { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
                     }
                     console.log(`共有${ successNum }个【${ type }】购买成功，KFB-${ totalKfb }`);
-                    Msg.show(`<strong>共有<em>${ successNum }</em>个【${ type }】购买成功</strong><i>KFB<ins>-${ totalKfb }</ins></i>`, -1);
+                    $('.pd_result:last').append(`
+<li class="pd_stat">
+  共有<em>${ successNum }</em>个道具购买成功，<i>KFB<ins>-${ totalKfb.toLocaleString() }</ins></i>
+  <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php" target="_blank">物品装备页面</a>查看)</span>
+</li>
+`);
+                    Msg.show(`<strong>共有<em>${ successNum }</em>个【${ type }】购买成功</strong><i>KFB<ins>-${ totalKfb.toLocaleString() }</ins></i>`, -1);
                     showKfbInItemShop();
                 } else {
                     let interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
