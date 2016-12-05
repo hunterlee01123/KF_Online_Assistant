@@ -1675,13 +1675,20 @@ const buyItems = function (buyNum, type, kfb, url) {
                             {gain: {'道具': successNum, 'item': itemList}, pay: {'KFB': -totalKfb}}
                         );
                     }
-                    console.log(`共有${successNum}个【${type}】购买成功，KFB-${totalKfb}`);
+
+                    let itemStatHtml = '';
+                    for (let itemName of Util.getSortedObjectKeyList(itemTypeList, itemList)) {
+                        itemStatHtml += `<i>${itemName}<em>+${itemList[itemName]}</em></i> `;
+                    }
                     $('.pd_result:last').append(`
 <li class="pd_stat">
-  共有<em>${successNum}</em>个道具购买成功，<i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i>
+  <b>统计结果：</b><br>
+  共有<em>${successNum}</em>个道具购买成功，<i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i> ${itemStatHtml}<br>
   <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php" target="_blank">物品装备页面</a>查看)</span>
 </li>
 `);
+
+                    console.log(`共有${successNum}个【${type}】购买成功，KFB-${totalKfb}`);
                     Msg.show(`<strong>共有<em>${successNum}</em>个【${type}】购买成功</strong><i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i>`, -1);
                     showKfbInItemShop();
                 }

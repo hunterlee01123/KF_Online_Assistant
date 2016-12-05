@@ -681,12 +681,7 @@ const showLevelPointListConfigDialog = function (callback) {
         $point.val(num < 1 ? 1 : num).trigger('change');
     });
 
-    $dialog.find('[data-id="modifyArea"]').on('keydown', '[type="text"]', function (e) {
-        if (e.keyCode === 13) {
-            e.preventDefault();
-            $(this).closest('div').find('[name="modify"]').click();
-        }
-    }).find('[name="modify"]').click(function () {
+    $dialog.find('[name="modify"]').click(function () {
         let $checked = $levelPointList.find('[type="checkbox"]:checked');
         if (!$checked.length) return;
         let data = {};
@@ -714,11 +709,13 @@ const showLevelPointListConfigDialog = function (callback) {
                 if (data[name].action !== 'equal') {
                     let point = parseInt($this.val());
                     if (!point || point < 0) point = 0;
-                    $this.val(point + (data[name].action === 'add' ? data[name].value : -data[name].value));
+                    point += (data[name].action === 'add' ? data[name].value : -data[name].value);
+                    $this.val(point > 1 ? point : 1);
                 }
                 else $this.val(data[name].value);
             }).trigger('change');
         });
+        alert('点数已修改');
     }).end().find('[data-name="clear"]').click(function (e) {
         e.preventDefault();
         $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
