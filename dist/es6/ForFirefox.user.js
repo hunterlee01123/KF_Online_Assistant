@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.3
+// @version     8.3.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -82,7 +82,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.3';
+const version = '8.3.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -5515,9 +5515,9 @@ const showLevelPointListConfigDialog = function (callback) {
     (0, _Config.read)();
     let html = `
 <div class="pd_cfg_main">
-  <div style="margin-top: 5px; line-height: 1.6em;">
+  <div style="margin: 5px 0; line-height: 1.6em;">
     请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
-    例：11-19层点数相同的话，则只保留第11层<br>
+    （例：11-19层点数相同的话，则只保留第11层）<br>
     自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
     ${ typeof _Const2.default.getCustomPoints === 'function' ? '（<span class="pd_highlight" data-name="openCustomScriptDialog" style="cursor: pointer;">自定义点数分配方案已启用</span>）' : '' }
   </div>
@@ -5777,7 +5777,7 @@ const addAttackBtns = function () {
         $this.blur();
         Msg.destroy();
         let isChangePoints = Config.autoChangeLevelPointsEnabled && (!$.isEmptyObject(Config.levelPointList) || typeof _Const2.default.getCustomPoints === 'function');
-        let currentLevel = getCurrentMaxLevel(logList);
+        let currentLevel = getCurrentLevel(logList);
         if (!isChangePoints && !checkPoints($points)) return;
         let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${ currentLevel }</em></i>` + '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注意：请不要访问论坛的其它页面）</span>');
 
@@ -5790,21 +5790,23 @@ const addAttackBtns = function () {
          */
         const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
             if (nextLevel > 0 && typeof _Const2.default.getCustomPoints === 'function' && logList.length > 1) {
-                let currentLevel = getCurrentMaxLevel(logList);
-                let currentLife = 0;
-                let matches = /在\[\d+层]你\((\d+)\).+生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[currentLevel]);
-                if (matches) {
-                    if (matches[3] === '满值') currentLife = parseInt(matches[1]);else currentLife = parseInt(matches[2]);
-                }
+                let currentLevel = getCurrentLevel(logList);
+                let currentLife = 0,
+                    currentInitLife = 0;
+                let initLifeMatches = /在\[\d+层]你\((\d+)\)/.exec(logList[currentLevel]);
+                if (initLifeMatches) currentInitLife = parseInt(initLifeMatches[1]);
+                let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[currentLevel]);
+                if (lifeMatches) currentLife = lifeMatches[2] === '满值' ? currentInitLife : parseInt(lifeMatches[1]);
 
                 let points = null;
                 try {
                     points = _Const2.default.getCustomPoints({
                         currentLevel,
                         currentLife,
+                        currentInitLife,
                         levelPointList: Config.levelPointList,
-                        propertyList,
                         availablePoint: propertyList.get('可分配属性点'),
+                        propertyList,
                         extraPointList,
                         itemUsedNumList,
                         log,
@@ -5915,7 +5917,7 @@ const addAttackBtns = function () {
                 logList = getLogList(log);
                 enhanceLootLog(log);
 
-                let currentLevel = getCurrentMaxLevel(logList);
+                let currentLevel = getCurrentLevel(logList);
                 console.log('【争夺攻击】当前层数：' + currentLevel);
                 $('#pdAttackProcess').append(`<li>【争夺攻击】当前层数：<b class="pd_highlight">${ currentLevel }</b></li>`);
                 let $countdown = $('.pd_countdown:last');
@@ -6106,11 +6108,11 @@ const getEnemyList = function (log) {
 };
 
 /**
- * 获取各层争夺记录列表中的最高层数
+ * 获取当前层数
  * @param {string[]} logList 各层争夺记录列表
- * @returns {number} 最高层数
+ * @returns {number} 当前层数
  */
-const getCurrentMaxLevel = logList => logList.length - 1 > 1 ? logList.length - 1 : 1;
+const getCurrentLevel = logList => logList.length - 1 > 1 ? logList.length - 1 : 1;
 
 /**
  * 在争夺排行页面添加用户链接

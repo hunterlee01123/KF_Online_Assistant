@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name        自定义争夺点数分配方案
-// @version     1.0
+// @name        自定义争夺点数分配方案参考范例
+// @version     1.1
 // @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13270735
@@ -14,7 +14,8 @@ var Const = require('./Const').default;
  * 获取自定义争夺点数分配方案
  * @param {{}} data 参数对象
  * @param {number} data.currentLevel 当前层数（注：当前是指修改点数之前所在的层数，下同）
- * @param {number} data.currentLife 当前生命值
+ * @param {number} data.currentLife 当前剩余生命值
+ * @param {number} data.currentInitLife 当前层数的初始生命值
  * @param {{}} data.levelPointList 用户设置的各层点数分配方案
  * @param {number} data.availablePoint 可分配属性点
  * @param {Map} data.propertyList 当前争夺属性列表
