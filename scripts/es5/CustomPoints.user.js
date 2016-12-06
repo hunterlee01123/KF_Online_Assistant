@@ -36,6 +36,7 @@ Const.getCustomPoints = function (data) {
     // 注：点数修改过程可见争夺记录下方
 
     // 参考范例：
+    console.log(data); // 在控制台输出各参数的具体值
     if (data.currentLevel === 1 || data.currentLife === 0) {
         // 当处于第1层或被击败后，将剩余可分配属性点全部分配给体质
         return { "力量": 1, "体质": data.availablePoint - 5, "敏捷": 1, "灵活": 1, "智力": 1, "意志": 1 };
@@ -43,7 +44,7 @@ Const.getCustomPoints = function (data) {
         // 当前层数大于40时暂停连续攻击，改为手动设置点数
         return null;
     } else if (data.currentLife < 1000) {
-        // 在当前生命值小于1000，返回指定的点数设置
+        // 在当前生命值小于1000时，返回指定的点数设置
         return { "力量": 1, "体质": 10, "敏捷": 60, "灵活": 90, "智力": 1, "意志": 1 };
     } else {
         // 在其它情况下，返回用户设置的各层点数分配方案的下一层的方案
