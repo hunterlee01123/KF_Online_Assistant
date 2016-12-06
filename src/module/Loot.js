@@ -7,6 +7,7 @@ import * as Dialog from './Dialog';
 import Const from './Const';
 import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
+import * as Script from './Script';
 import * as Public from './Public';
 import * as Item from './Item';
 
@@ -20,12 +21,14 @@ let $points;
 let $log;
 // 当前争夺属性
 let propertyList;
-// 附加点数列表
+// 道具加成点数列表
 let extraPointList;
-// 道具使用情况
+// 道具使用情况列表
 let itemUsedNumList;
 // 争夺记录
 let log = '';
+// 各层争夺记录列表
+let logList = [];
 
 /**
  * 增强争夺首页
@@ -39,6 +42,7 @@ export const enhanceLootIndexPage = function () {
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
     $log = $lootArea.find('> tbody > tr:nth-child(5) > td');
     log = $log.html();
+    logList = getLogList(log);
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
@@ -481,8 +485,12 @@ const showLevelPointListConfigDialog = function (callback) {
     readConfig();
     let html = `
 <div class="pd_cfg_main">
-  <div style="margin-top: 5px;">
-    请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>例：11-19层点数相同的话，则只保留第11层
+  <div style="margin-top: 5px; line-height: 1.6em;">
+    请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
+    例：11-19层点数相同的话，则只保留第11层<br>
+    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
+    ${typeof Const.getCustomPoints === 'function' ?
+        '（<span class="pd_highlight" data-name="openCustomScriptDialog" style="cursor: pointer;">自定义点数分配方案已启用</span>）' : ''}
   </div>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
@@ -632,7 +640,8 @@ const showLevelPointListConfigDialog = function (callback) {
                     showLevelPointListConfigDialog($dialog => $dialog.submit());
                 }
             );
-        }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
+        }).end().find('[data-name="openCustomScriptDialog"]').click(() => Script.showDialog())
+        .end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
 
     $levelPointList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
@@ -737,7 +746,8 @@ const addAttackBtns = function () {
     $(`
 <label>
   <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
-  <span class="pd_cfg_tips" title="攻击时可自动修改成相应层数的点数分配方案，被击败后修改回第1层的方案（如果有）；如不勾选此项的话，攻击时会自动提交当前的点数设置">[?]</span>
+  <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案，被击败后修改回第1层的方案（如果有）；
+如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
 </label>
 <label>
   <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
@@ -759,8 +769,9 @@ const addAttackBtns = function () {
         }
         $this.blur();
         Msg.destroy();
-        let isChangePoints = Config.autoChangeLevelPointsEnabled && !$.isEmptyObject(Config.levelPointList);
-        let currentLevel = getCurrentMaxLevel(log);
+        let isChangePoints = Config.autoChangeLevelPointsEnabled &&
+            (!$.isEmptyObject(Config.levelPointList) || typeof Const.getCustomPoints === 'function');
+        let currentLevel = getCurrentMaxLevel(logList);
         if (!isChangePoints && !checkPoints($points)) return;
         let $wait = Msg.wait(
             `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${currentLevel}</em></i>` +
@@ -769,22 +780,63 @@ const addAttackBtns = function () {
 
         /**
          * 修改点数方案
-         * @param {number} nextLevel 下一层（0表示修改为当前点数设置）
+         * @param {number} nextLevel 下一层（设为0表示采用当前点数设置）
          * @param {boolean} isShowMsg 是否显示消息
          * @param {?jQuery} $wait 等待消息框
          * @returns {Deferred} Deferred对象
          */
         const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
-            let changeLevel = nextLevel ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : 0;
-            let isChange = true;
+            if (nextLevel > 0 && typeof Const.getCustomPoints === 'function' && logList.length > 1) {
+                let currentLevel = getCurrentMaxLevel(logList);
+                let currentLife = 0;
+                let matches = /在\[\d+层]你\((\d+)\).+生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[currentLevel]);
+                if (matches) {
+                    if (matches[3] === '满值') currentLife = parseInt(matches[1]);
+                    else currentLife = parseInt(matches[2]);
+                }
+
+                let points = null;
+                try {
+                    points = Const.getCustomPoints({
+                        currentLevel,
+                        currentLife,
+                        levelPointList: Config.levelPointList,
+                        propertyList,
+                        availablePoint: propertyList.get('可分配属性点'),
+                        extraPointList,
+                        itemUsedNumList,
+                        log,
+                        logList,
+                        getPointByProperty,
+                        getPropertyByPoint,
+                    });
+                }
+                catch (ex) {
+                    console.log(ex);
+                }
+                if ($.type(points) === 'object') {
+                    for (let key of Object.keys(points)) {
+                        $points.find(`[name="${getFieldNameByPointName(key)}"]`).val(points[key]).trigger('change');
+                    }
+                    nextLevel = 0;
+                }
+                else if (typeof points === 'number') {
+                    nextLevel = parseInt(points);
+                    nextLevel = nextLevel > 1 ? nextLevel : 1;
+                }
+                else return $.Deferred().resolve('error');
+            }
+
+            let changeLevel = nextLevel > 0 ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : 0;
+            let isChange = false;
             $points.find('.pd_point').each(function () {
                 if (this.defaultValue !== $(this).val()) {
-                    isChange = false;
+                    isChange = true;
                     return false;
                 }
             });
             let $levelPointListSelect = $('#pdLevelPointListSelect');
-            if (!isChange || (changeLevel && changeLevel !== parseInt($levelPointListSelect.val()))) {
+            if (isChange || (changeLevel && changeLevel !== parseInt($levelPointListSelect.val()))) {
                 if (changeLevel) $levelPointListSelect.val(changeLevel).trigger('change');
                 else $levelPointListSelect.get(0).selectedIndex = 0;
                 return $.ajax({
@@ -858,15 +910,16 @@ const addAttackBtns = function () {
                 url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
                 timeout: Const.defAjaxTimeout,
             }).done(function (html) {
-                let matches = /<tr><td.+?>\r\n(在\[\d+层\]你.+?<br\s*\/?>)<\/td><\/tr>/i.exec(html);
-                if (!matches) {
+                let logHtml = $('.kf_fw_ig1:first > tbody > tr:nth-child(5) > td', html).html();
+                if (!/在\[\d+层]你/.test(logHtml)) {
                     Msg.remove($wait);
                     return;
                 }
-                log = matches[1];
+                log = logHtml;
+                logList = getLogList(log);
                 enhanceLootLog(log);
 
-                let currentLevel = getCurrentMaxLevel(log);
+                let currentLevel = getCurrentMaxLevel(logList);
                 console.log('【争夺攻击】当前层数：' + currentLevel);
                 $('#pdAttackProcess').append(`<li>【争夺攻击】当前层数：<b class="pd_highlight">${currentLevel}</b></li>`);
                 let $countdown = $('.pd_countdown:last');
@@ -890,7 +943,7 @@ const addAttackBtns = function () {
                         Log.push('争夺攻击', `你成功击败了第\`${currentLevel - 1}\`层的NPC (${enemyStat.trim()})`, {gain: {'KFB': kfb, '经验值': exp}});
 
                         Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
-                        if (isChangePoints && Config.levelPointList[1]) {
+                        if (isChangePoints && (Config.levelPointList[1] || typeof Const.getCustomPoints === 'function')) {
                             let $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
                             changePoints(1, true, $wait).always(function (result) {
                                 if (result !== 'success') alert('修改点数分配方案失败');
@@ -925,7 +978,7 @@ const addAttackBtns = function () {
 
         /**
          * 准备攻击（用于自动修改各层点数分配方案）
-         * @param {number} currentLevel 当前层数
+         * @param {number} currentLevel 当前层数（设为0表示采用当前点数设置）
          * @param {number} interval 下次攻击的间隔时间
          */
         const readyAttack = function (currentLevel, interval = Const.lootAttackInterval) {
@@ -1006,6 +1059,21 @@ const enhanceLootLog = function (log) {
 };
 
 /**
+ * 获取各层争夺记录列表
+ * @param log 争夺记录
+ * @returns {string[]} 各层争夺记录列表
+ */
+const getLogList = function (log) {
+    let logList = [];
+    let matches = log.match(/在\[(\d+)层]你.+?(?=在\[(\d+)层]你|$)/g);
+    for (let i in matches) {
+        let levelMatches = /在\[(\d+)层]你/.exec(matches[i]);
+        logList[parseInt(levelMatches[1])] = matches[i];
+    }
+    return logList;
+};
+
+/**
  * 获取当前的争夺总收获
  * @param {string} log 争夺记录
  * @returns {{exp: number, kfb: number}} exp：经验；kfb：KFB
@@ -1051,20 +1119,11 @@ const getEnemyList = function (log) {
 };
 
 /**
- * 获取当前的争夺记录中的最高层数
- * @param {string} log 争夺记录
+ * 获取各层争夺记录列表中的最高层数
+ * @param {string[]} logList 各层争夺记录列表
  * @returns {number} 最高层数
  */
-const getCurrentMaxLevel = function (log) {
-    let matches = log.match(/在\[(\d+)层]你/g);
-    let maxLevel = 1;
-    for (let i in matches) {
-        let levelMatches = /\d+/.exec(matches[i]);
-        let level = parseInt(levelMatches[0]);
-        if (maxLevel < level) maxLevel = level;
-    }
-    return maxLevel;
-};
+const getCurrentMaxLevel = logList => logList.length - 1 > 1 ? logList.length - 1 : 1;
 
 /**
  * 在争夺排行页面添加用户链接

@@ -160,6 +160,7 @@ export const showDialog = function (showIndex = null) {
         });
         writeConfig();
         Dialog.close(dialogName);
+        alert('自定义脚本修改成功（需刷新页面后才可生效）');
     }).end().find('[name="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清空所有脚本？')) {

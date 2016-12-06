@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.2.1
+// @version     8.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -82,7 +82,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.2.1';
+var version = '8.3';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -1743,6 +1743,7 @@ var showCustomCssDialog = function showCustomCssDialog() {
         Config.customCssContent = $.trim($content.val());
         (0, _Config.write)();
         Dialog.close(dialogName);
+        alert('自定义CSS修改成功（需刷新页面后才可生效）');
     }).find('[name="cancel"]').click(function () {
         return Dialog.close(dialogName);
     });
@@ -2407,6 +2408,8 @@ var Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
+    // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
+    getCustomPoints: null,
 
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
     actionFinishRetryInterval: 30,
@@ -4257,7 +4260,7 @@ var showCurrentUsableItemNum = function showCurrentUsableItemNum() {
 /**
  * 获取道具使用情况
  * @param html 争夺首页的HTML代码
- * @returns {Map} 道具使用情况对象
+ * @returns {Map} 道具使用情况列表
  */
 var getItemUsedInfo = exports.getItemUsedInfo = function getItemUsedInfo(html) {
     var itemUsedNumList = new Map([['蕾米莉亚同人漫画', 0], ['十六夜同人漫画', 0], ['档案室钥匙', 0], ['傲娇LOLI娇蛮音CD', 0], ['消逝之药', 0], ['整形优惠卷', 0]]);
@@ -4497,8 +4500,36 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                     if (successNum > 0 && !$.isEmptyObject(itemList)) {
                         Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + type + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
                     }
+
+                    var itemStatHtml = '';
+                    var _iteratorNormalCompletion6 = true;
+                    var _didIteratorError6 = false;
+                    var _iteratorError6 = undefined;
+
+                    try {
+                        for (var _iterator6 = Util.getSortedObjectKeyList(itemTypeList, itemList)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                            var itemName = _step6.value;
+
+                            itemStatHtml += '<i>' + itemName + '<em>+' + itemList[itemName] + '</em></i> ';
+                        }
+                    } catch (err) {
+                        _didIteratorError6 = true;
+                        _iteratorError6 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                                _iterator6.return();
+                            }
+                        } finally {
+                            if (_didIteratorError6) {
+                                throw _iteratorError6;
+                            }
+                        }
+                    }
+
+                    $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF1A</b><br>\n  \u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u8D2D\u4E70\u6210\u529F\uFF0C<i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i> ' + itemStatHtml + '<br>\n  <span style="color: #666;">(\u8BF7\u5230<a href="kf_fw_ig_mybp.php" target="_blank">\u7269\u54C1\u88C5\u5907\u9875\u9762</a>\u67E5\u770B)</span>\n</li>\n');
+
                     console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F\uFF0CKFB-' + totalKfb);
-                    $('.pd_result:last').append('\n<li class="pd_stat">\n  \u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u8D2D\u4E70\u6210\u529F\uFF0C<i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i>\n  <span style="color: #666;">(\u8BF7\u5230<a href="kf_fw_ig_mybp.php" target="_blank">\u7269\u54C1\u88C5\u5907\u9875\u9762</a>\u67E5\u770B)</span>\n</li>\n');
                     Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F</strong><i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i>', -1);
                     showKfbInItemShop();
                 } else {
@@ -5580,6 +5611,10 @@ var _Log = require('./Log');
 
 var Log = _interopRequireWildcard(_Log);
 
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
+
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -5604,12 +5639,14 @@ var $points = void 0;
 var $log = void 0;
 // 当前争夺属性
 var propertyList = void 0;
-// 附加点数列表
+// 道具加成点数列表
 var extraPointList = void 0;
-// 道具使用情况
+// 道具使用情况列表
 var itemUsedNumList = void 0;
 // 争夺记录
 var log = '';
+// 各层争夺记录列表
+var logList = [];
 
 /**
  * 增强争夺首页
@@ -5623,6 +5660,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(4) > td').html());
     $log = $lootArea.find('> tbody > tr:nth-child(5) > td');
     log = $log.html();
+    logList = getLogList(log);
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
@@ -6057,7 +6095,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     var dialogName = 'pdLevelPointListConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="4" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="4" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="4" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="4" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="4" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="4" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button type="button" name="cancel">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a>\n    ' + (typeof _Const2.default.getCustomPoints === 'function' ? '（<span class="pd_highlight" data-name="openCustomScriptDialog" style="cursor: pointer;">自定义点数分配方案已启用</span>）' : '') + '\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="4" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="4" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="4" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="4" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="4" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="4" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button type="button" name="cancel">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
 
@@ -6154,6 +6192,8 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
                 return $dialog.submit();
             });
         });
+    }).end().find('[data-name="openCustomScriptDialog"]').click(function () {
+        return Script.showDialog();
     }).end().find('[name="cancel"]').click(function () {
         return Dialog.close(dialogName);
     });
@@ -6196,12 +6236,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         $point.val(num < 1 ? 1 : num).trigger('change');
     });
 
-    $dialog.find('[data-id="modifyArea"]').on('keydown', '[type="text"]', function (e) {
-        if (e.keyCode === 13) {
-            e.preventDefault();
-            $(this).closest('div').find('[name="modify"]').click();
-        }
-    }).find('[name="modify"]').click(function () {
+    $dialog.find('[name="modify"]').click(function () {
         var $checked = $levelPointList.find('[type="checkbox"]:checked');
         if (!$checked.length) return;
         var data = {};
@@ -6228,10 +6263,12 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
                 if (data[name].action !== 'equal') {
                     var point = parseInt($this.val());
                     if (!point || point < 0) point = 0;
-                    $this.val(point + (data[name].action === 'add' ? data[name].value : -data[name].value));
+                    point += data[name].action === 'add' ? data[name].value : -data[name].value;
+                    $this.val(point > 1 ? point : 1);
                 } else $this.val(data[name].value);
             }).trigger('change');
         });
+        alert('点数已修改');
     }).end().find('[data-name="clear"]').click(function (e) {
         e.preventDefault();
         $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
@@ -6273,7 +6310,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
  * 添加攻击相关按钮
  */
 var addAttackBtns = function addAttackBtns() {
-    $('\n<label>\n  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n  <span class="pd_cfg_tips" title="\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u6210\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u88AB\u51FB\u8D25\u540E\u4FEE\u6539\u56DE\u7B2C1\u5C42\u7684\u65B9\u6848\uFF08\u5982\u679C\u6709\uFF09\uFF1B\u5982\u4E0D\u52FE\u9009\u6B64\u9879\u7684\u8BDD\uFF0C\u653B\u51FB\u65F6\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u7684\u70B9\u6570\u8BBE\u7F6E">[?]</span>\n</label>\n<label>\n  <input class="pd_input" name="slowAttackEnabled" type="checkbox"> \u6162\u901F\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~5\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n</label><br>\n<button name="continuingAttack" type="button" title="\u8FDE\u7EED\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u8FDE\u7EED\u653B\u51FB</button>\n<button name="onceAttack" type="button" title="\u6BCF\u6B21\u53EA\u653B\u51FB\u4E00\u5C42">\u653B\u51FB\u4E00\u5C42</button>\n').appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
+    $('\n<label>\n  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n  <span class="pd_cfg_tips" title="\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u540E\u53EF\u81EA\u52A8\u4FEE\u6539\u6210\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u88AB\u51FB\u8D25\u540E\u4FEE\u6539\u56DE\u7B2C1\u5C42\u7684\u65B9\u6848\uFF08\u5982\u679C\u6709\uFF09\uFF1B\n\u5982\u4E0D\u52FE\u9009\u6B64\u9879\u7684\u8BDD\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u540E\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u7684\u70B9\u6570\u8BBE\u7F6E">[?]</span>\n</label>\n<label>\n  <input class="pd_input" name="slowAttackEnabled" type="checkbox"> \u6162\u901F\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~5\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n</label><br>\n<button name="continuingAttack" type="button" title="\u8FDE\u7EED\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u8FDE\u7EED\u653B\u51FB</button>\n<button name="onceAttack" type="button" title="\u6BCF\u6B21\u53EA\u653B\u51FB\u4E00\u5C42">\u653B\u51FB\u4E00\u5C42</button>\n').appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -6287,14 +6324,14 @@ var addAttackBtns = function addAttackBtns() {
         }
         $this.blur();
         Msg.destroy();
-        var isChangePoints = Config.autoChangeLevelPointsEnabled && !$.isEmptyObject(Config.levelPointList);
-        var currentLevel = getCurrentMaxLevel(log);
+        var isChangePoints = Config.autoChangeLevelPointsEnabled && (!$.isEmptyObject(Config.levelPointList) || typeof _Const2.default.getCustomPoints === 'function');
+        var currentLevel = getCurrentMaxLevel(logList);
         if (!isChangePoints && !checkPoints($points)) return;
         var $wait = Msg.wait('<strong>\u6B63\u5728\u653B\u51FB\u4E2D\uFF0C\u8BF7\u7A0D\u7B49&hellip;</strong><i>\u5F53\u524D\u5C42\u6570\uFF1A<em class="pd_countdown">' + currentLevel + '</em></i>' + '<a class="pd_stop_action" href="#">停止操作</a><br><span class="pd_notice">（注意：请不要访问论坛的其它页面）</span>');
 
         /**
          * 修改点数方案
-         * @param {number} nextLevel 下一层（0表示修改为当前点数设置）
+         * @param {number} nextLevel 下一层（设为0表示采用当前点数设置）
          * @param {boolean} isShowMsg 是否显示消息
          * @param {?jQuery} $wait 等待消息框
          * @returns {Deferred} Deferred对象
@@ -6303,18 +6340,77 @@ var addAttackBtns = function addAttackBtns() {
             var isShowMsg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
             var $wait = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
 
-            var changeLevel = nextLevel ? Math.max.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList).filter(function (level) {
+            if (nextLevel > 0 && typeof _Const2.default.getCustomPoints === 'function' && logList.length > 1) {
+                var _currentLevel = getCurrentMaxLevel(logList);
+                var currentLife = 0;
+                var matches = /在\[\d+层]你\((\d+)\).+生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[_currentLevel]);
+                if (matches) {
+                    if (matches[3] === '满值') currentLife = parseInt(matches[1]);else currentLife = parseInt(matches[2]);
+                }
+
+                var points = null;
+                try {
+                    points = _Const2.default.getCustomPoints({
+                        currentLevel: _currentLevel,
+                        currentLife: currentLife,
+                        levelPointList: Config.levelPointList,
+                        propertyList: propertyList,
+                        availablePoint: propertyList.get('可分配属性点'),
+                        extraPointList: extraPointList,
+                        itemUsedNumList: itemUsedNumList,
+                        log: log,
+                        logList: logList,
+                        getPointByProperty: getPointByProperty,
+                        getPropertyByPoint: getPropertyByPoint
+                    });
+                } catch (ex) {
+                    console.log(ex);
+                }
+                if ($.type(points) === 'object') {
+                    var _iteratorNormalCompletion5 = true;
+                    var _didIteratorError5 = false;
+                    var _iteratorError5 = undefined;
+
+                    try {
+                        for (var _iterator5 = Object.keys(points)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                            var key = _step5.value;
+
+                            $points.find('[name="' + getFieldNameByPointName(key) + '"]').val(points[key]).trigger('change');
+                        }
+                    } catch (err) {
+                        _didIteratorError5 = true;
+                        _iteratorError5 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                                _iterator5.return();
+                            }
+                        } finally {
+                            if (_didIteratorError5) {
+                                throw _iteratorError5;
+                            }
+                        }
+                    }
+
+                    nextLevel = 0;
+                } else if (typeof points === 'number') {
+                    nextLevel = parseInt(points);
+                    nextLevel = nextLevel > 1 ? nextLevel : 1;
+                } else return $.Deferred().resolve('error');
+            }
+
+            var changeLevel = nextLevel > 0 ? Math.max.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList).filter(function (level) {
                 return level <= nextLevel;
             }))) : 0;
-            var isChange = true;
+            var isChange = false;
             $points.find('.pd_point').each(function () {
                 if (this.defaultValue !== $(this).val()) {
-                    isChange = false;
+                    isChange = true;
                     return false;
                 }
             });
             var $levelPointListSelect = $('#pdLevelPointListSelect');
-            if (!isChange || changeLevel && changeLevel !== parseInt($levelPointListSelect.val())) {
+            if (isChange || changeLevel && changeLevel !== parseInt($levelPointListSelect.val())) {
                 if (changeLevel) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
                 return $.ajax({
                     type: 'POST',
@@ -6336,32 +6432,32 @@ var addAttackBtns = function addAttackBtns() {
                             pointsText += getPointNameByFieldName(name) + '\uFF1A' + value + '\uFF0C';
                         });
                         pointsText = pointsText.replace(/，$/, '');
-                        var _iteratorNormalCompletion5 = true;
-                        var _didIteratorError5 = false;
-                        var _iteratorError5 = undefined;
+                        var _iteratorNormalCompletion6 = true;
+                        var _didIteratorError6 = false;
+                        var _iteratorError6 = undefined;
 
                         try {
-                            for (var _iterator5 = propertyList[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                                var _step5$value = _slicedToArray(_step5.value, 2),
-                                    key = _step5$value[0],
-                                    value = _step5$value[1];
+                            for (var _iterator6 = propertyList[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                                var _step6$value = _slicedToArray(_step6.value, 2),
+                                    _key = _step6$value[0],
+                                    value = _step6$value[1];
 
-                                if (key === '可分配属性点') continue;
+                                if (_key === '可分配属性点') continue;
                                 var unit = '';
-                                if (key.endsWith('率') || key === '防御') unit = '%';
-                                propertiesText += key + '\uFF1A' + value + unit + '\uFF0C';
+                                if (_key.endsWith('率') || _key === '防御') unit = '%';
+                                propertiesText += _key + '\uFF1A' + value + unit + '\uFF0C';
                             }
                         } catch (err) {
-                            _didIteratorError5 = true;
-                            _iteratorError5 = err;
+                            _didIteratorError6 = true;
+                            _iteratorError6 = err;
                         } finally {
                             try {
-                                if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                                    _iterator5.return();
+                                if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                                    _iterator6.return();
                                 }
                             } finally {
-                                if (_didIteratorError5) {
-                                    throw _iteratorError5;
+                                if (_didIteratorError6) {
+                                    throw _iteratorError6;
                                 }
                             }
                         }
@@ -6403,15 +6499,16 @@ var addAttackBtns = function addAttackBtns() {
                 url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
                 timeout: _Const2.default.defAjaxTimeout
             }).done(function (html) {
-                var matches = /<tr><td.+?>\r\n(在\[\d+层\]你.+?<br\s*\/?>)<\/td><\/tr>/i.exec(html);
-                if (!matches) {
+                var logHtml = $('.kf_fw_ig1:first > tbody > tr:nth-child(5) > td', html).html();
+                if (!/在\[\d+层]你/.test(logHtml)) {
                     Msg.remove($wait);
                     return;
                 }
-                log = matches[1];
+                log = logHtml;
+                logList = getLogList(log);
                 enhanceLootLog(log);
 
-                var currentLevel = getCurrentMaxLevel(log);
+                var currentLevel = getCurrentMaxLevel(logList);
                 console.log('【争夺攻击】当前层数：' + currentLevel);
                 $('#pdAttackProcess').append('<li>\u3010\u4E89\u593A\u653B\u51FB\u3011\u5F53\u524D\u5C42\u6570\uFF1A<b class="pd_highlight">' + currentLevel + '</b></li>');
                 var $countdown = $('.pd_countdown:last');
@@ -6423,45 +6520,17 @@ var addAttackBtns = function addAttackBtns() {
                     Msg.remove($wait);
                     if (isFail) {
                         var enemyList = {};
-                        var _iteratorNormalCompletion6 = true;
-                        var _didIteratorError6 = false;
-                        var _iteratorError6 = undefined;
-
-                        try {
-                            for (var _iterator6 = Util.entries(getEnemyList(log))[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                                var _step6$value = _slicedToArray(_step6.value, 2),
-                                    enemy = _step6$value[0],
-                                    num = _step6$value[1];
-
-                                enemyList[enemy.replace('特别', '')] = num;
-                            }
-                        } catch (err) {
-                            _didIteratorError6 = true;
-                            _iteratorError6 = err;
-                        } finally {
-                            try {
-                                if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                                    _iterator6.return();
-                                }
-                            } finally {
-                                if (_didIteratorError6) {
-                                    throw _iteratorError6;
-                                }
-                            }
-                        }
-
-                        var enemyStat = '';
                         var _iteratorNormalCompletion7 = true;
                         var _didIteratorError7 = false;
                         var _iteratorError7 = undefined;
 
                         try {
-                            for (var _iterator7 = Util.entries(enemyList)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                            for (var _iterator7 = Util.entries(getEnemyList(log))[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
                                 var _step7$value = _slicedToArray(_step7.value, 2),
                                     enemy = _step7$value[0],
                                     num = _step7$value[1];
 
-                                enemyStat += enemy + '`+' + num + '` ';
+                                enemyList[enemy.replace('特别', '')] = num;
                             }
                         } catch (err) {
                             _didIteratorError7 = true;
@@ -6478,6 +6547,34 @@ var addAttackBtns = function addAttackBtns() {
                             }
                         }
 
+                        var enemyStat = '';
+                        var _iteratorNormalCompletion8 = true;
+                        var _didIteratorError8 = false;
+                        var _iteratorError8 = undefined;
+
+                        try {
+                            for (var _iterator8 = Util.entries(enemyList)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                                var _step8$value = _slicedToArray(_step8.value, 2),
+                                    enemy = _step8$value[0],
+                                    num = _step8$value[1];
+
+                                enemyStat += enemy + '`+' + num + '` ';
+                            }
+                        } catch (err) {
+                            _didIteratorError8 = true;
+                            _iteratorError8 = err;
+                        } finally {
+                            try {
+                                if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                                    _iterator8.return();
+                                }
+                            } finally {
+                                if (_didIteratorError8) {
+                                    throw _iteratorError8;
+                                }
+                            }
+                        }
+
                         var _getTotalGain = getTotalGain(log),
                             exp = _getTotalGain.exp,
                             kfb = _getTotalGain.kfb;
@@ -6485,7 +6582,7 @@ var addAttackBtns = function addAttackBtns() {
                         Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (' + enemyStat.trim() + ')', { gain: { 'KFB': kfb, '经验值': exp } });
 
                         Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>', -1);
-                        if (isChangePoints && Config.levelPointList[1]) {
+                        if (isChangePoints && (Config.levelPointList[1] || typeof _Const2.default.getCustomPoints === 'function')) {
                             (function () {
                                 var $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
                                 changePoints(1, true, $wait).always(function (result) {
@@ -6521,7 +6618,7 @@ var addAttackBtns = function addAttackBtns() {
 
         /**
          * 准备攻击（用于自动修改各层点数分配方案）
-         * @param {number} currentLevel 当前层数
+         * @param {number} currentLevel 当前层数（设为0表示采用当前点数设置）
          * @param {number} interval 下次攻击的间隔时间
          */
         var readyAttack = function readyAttack(currentLevel) {
@@ -6590,34 +6687,49 @@ var enhanceLootLog = function enhanceLootLog(log) {
         kfb = _getTotalGain2.kfb;
 
     var enemyStatHtml = '';
-    var _iteratorNormalCompletion8 = true;
-    var _didIteratorError8 = false;
-    var _iteratorError8 = undefined;
+    var _iteratorNormalCompletion9 = true;
+    var _didIteratorError9 = false;
+    var _iteratorError9 = undefined;
 
     try {
-        for (var _iterator8 = Util.entries(getEnemyList(log))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var _step8$value = _slicedToArray(_step8.value, 2),
-                enemy = _step8$value[0],
-                num = _step8$value[1];
+        for (var _iterator9 = Util.entries(getEnemyList(log))[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var _step9$value = _slicedToArray(_step9.value, 2),
+                enemy = _step9$value[0],
+                num = _step9$value[1];
 
             enemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
         }
     } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                _iterator8.return();
+            if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                _iterator9.return();
             }
         } finally {
-            if (_didIteratorError8) {
-                throw _iteratorError8;
+            if (_didIteratorError9) {
+                throw _iteratorError9;
             }
         }
     }
 
     $log.html('\n<ul style="margin-top: 7px;">\n  <li class="pd_stat"><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n  <li class="pd_stat"><b>NPC\u7EDF\u8BA1\uFF1A</b>' + enemyStatHtml + '</li>\n</ul><hr>' + html + '\n');
+};
+
+/**
+ * 获取各层争夺记录列表
+ * @param log 争夺记录
+ * @returns {string[]} 各层争夺记录列表
+ */
+var getLogList = function getLogList(log) {
+    var logList = [];
+    var matches = log.match(/在\[(\d+)层]你.+?(?=在\[(\d+)层]你|$)/g);
+    for (var i in matches) {
+        var levelMatches = /在\[(\d+)层]你/.exec(matches[i]);
+        logList[parseInt(levelMatches[1])] = matches[i];
+    }
+    return logList;
 };
 
 /**
@@ -6660,29 +6772,29 @@ var getEnemyList = function getEnemyList(log) {
         enemyList[enemy]++;
     }
     if (/\[大魔王/.test(log)) enemyList['大魔王'] = 1;
-    var _iteratorNormalCompletion9 = true;
-    var _didIteratorError9 = false;
-    var _iteratorError9 = undefined;
+    var _iteratorNormalCompletion10 = true;
+    var _didIteratorError10 = false;
+    var _iteratorError10 = undefined;
 
     try {
-        for (var _iterator9 = Util.entries(enemyList)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var _step9$value = _slicedToArray(_step9.value, 2),
-                _enemy = _step9$value[0],
-                num = _step9$value[1];
+        for (var _iterator10 = Util.entries(enemyList)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var _step10$value = _slicedToArray(_step10.value, 2),
+                _enemy = _step10$value[0],
+                num = _step10$value[1];
 
             if (!num) delete enemyList[_enemy];
         }
     } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                _iterator9.return();
+            if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                _iterator10.return();
             }
         } finally {
-            if (_didIteratorError9) {
-                throw _iteratorError9;
+            if (_didIteratorError10) {
+                throw _iteratorError10;
             }
         }
     }
@@ -6691,19 +6803,12 @@ var getEnemyList = function getEnemyList(log) {
 };
 
 /**
- * 获取当前的争夺记录中的最高层数
- * @param {string} log 争夺记录
+ * 获取各层争夺记录列表中的最高层数
+ * @param {string[]} logList 各层争夺记录列表
  * @returns {number} 最高层数
  */
-var getCurrentMaxLevel = function getCurrentMaxLevel(log) {
-    var matches = log.match(/在\[(\d+)层]你/g);
-    var maxLevel = 1;
-    for (var i in matches) {
-        var levelMatches = /\d+/.exec(matches[i]);
-        var level = parseInt(levelMatches[0]);
-        if (maxLevel < level) maxLevel = level;
-    }
-    return maxLevel;
+var getCurrentMaxLevel = function getCurrentMaxLevel(logList) {
+    return logList.length - 1 > 1 ? logList.length - 1 : 1;
 };
 
 /**
@@ -6718,7 +6823,7 @@ var addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function addUser
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],14:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./Msg":14,"./Public":17,"./Script":19,"./Util":21}],14:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -9974,6 +10079,7 @@ var showDialog = exports.showDialog = function showDialog() {
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
+        alert('自定义脚本修改成功（需刷新页面后才可生效）');
     }).end().find('[name="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清空所有脚本？')) {

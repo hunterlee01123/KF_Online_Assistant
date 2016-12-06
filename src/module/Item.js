@@ -1451,7 +1451,7 @@ const showCurrentUsableItemNum = function (html = '') {
 /**
  * 获取道具使用情况
  * @param html 争夺首页的HTML代码
- * @returns {Map} 道具使用情况对象
+ * @returns {Map} 道具使用情况列表
  */
 export const getItemUsedInfo = function (html) {
     let itemUsedNumList = new Map([

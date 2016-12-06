@@ -796,6 +796,7 @@ const showCustomCssDialog = function () {
         Config.customCssContent = $.trim($content.val());
         writeConfig();
         Dialog.close(dialogName);
+        alert('自定义CSS修改成功（需刷新页面后才可生效）');
     }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
     $content.val(Config.customCssContent);
     Dialog.show(dialogName);

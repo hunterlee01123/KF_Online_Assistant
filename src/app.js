@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.2.1';
+const version = '8.3';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
