@@ -1791,7 +1791,20 @@ export const addBatchUseItemsButton = function () {
         });
         $(document).dequeue('UseItemTypes');
     }).end().find('[name="hideItemTypes"]').click(function () {
-
+        readConfig();
+        let value = prompt(
+            '请输入你要隐藏的道具种类：\n（多个种类请用英文逗号分隔，留空表示不隐藏，例：蕾米莉亚同人漫画,整形优惠卷）',
+            Config.hideItemTypeList.join(',')
+        );
+        if (value === null) return;
+        Config.hideItemTypeList = [];
+        for (let itemType of value.split(',')) {
+            itemType = itemType.trim();
+            if (!itemTypeList.includes(itemType)) continue;
+            Config.hideItemTypeList.push(itemType);
+        }
+        writeConfig();
+        alert('指定道具种类已被隐藏（需刷新页面后才可生效）');
     }).end().find('[name="selectAll"]').click(() => Util.selectAll($area.find('[type="checkbox"]')))
         .end().find('[name="selectInverse"]').click(() => Util.selectInverse($area.find('[type="checkbox"]')));
 
@@ -1895,4 +1908,20 @@ const useItems = function ({itemLevel, itemName, itemIdList, $wait}) {
         });
     });
     $(document).dequeue('UseItems');
+};
+
+/**
+ * 隐藏指定道具种类
+ */
+export const hideItemTypes = function () {
+    let $area = $('.kf_fw_ig1:first');
+    let num = 0;
+    for (let itemType of Config.hideItemTypeList) {
+        let $item = $area.find(`> tbody > tr:gt(1):has(td:nth-child(2):contains("${itemType}"))`);
+        num += $item.length;
+        $item.remove();
+    }
+    if (num > 0) {
+        $area.find('> tbody').append(`<tr><td colspan="4" style="color: #666; text-align: center;">共有${num}个道具已被隐藏&hellip;</td></tr>`);
+    }
 };

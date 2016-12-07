@@ -162,6 +162,8 @@ export const Config = {
 
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
+    // 隐藏指定的道具种类，例：['蕾米莉亚同人漫画', '整形优惠卷']
+    hideItemTypeList: [],
 
     // 在指定时间段之内不进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；例：23:55:00-01:30:00
     noDoOtherAutoActionBetweenTime: '23:55:00-01:30:00',
