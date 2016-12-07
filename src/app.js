@@ -77,19 +77,22 @@ $(function () {
     }
     else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
         Item.enhanceMyItemsPage();
-        Item.addBatchUseAndConvertItemTypesButton();
+        Item.addBatchUseAndConvertOldItemTypesButton();
     }
     else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
         Item.addConvertEnergyAndRestoreItemsButton();
     }
     else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addUseItemsButton();
+        Item.addBatchUseOldItemsButton();
     }
     else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
         Item.modifyItemDescription();
         if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
             Item.addSampleItemTips();
         }
+    }
+    else if (location.pathname === '/kf_fw_ig_mybp.php') {
+        Item.addBatchUseItemsButton();
     }
     else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.addBatchBuyItemsLink();

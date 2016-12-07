@@ -312,7 +312,7 @@ const getLogStat = function (log, date, logStatType) {
             }
             else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
                 buyItemNum += gain['道具'];
-                buyItemKfb += pay['KFB'];
+                buyItemKfb += Math.abs(pay['KFB']);
                 for (let [itemName, num] of Util.entries(gain['item'])) {
                     if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
                     buyItemStat[itemName] += num;
@@ -371,7 +371,8 @@ const getLogStat = function (log, date, logStatType) {
             `<em title="最小值">+${lootExpStat.min.toLocaleString()}</em>|<em title="最大值">+${lootExpStat.max.toLocaleString()}</em>)</span></i> `;
     }
 
-    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> <i>KFB<ins>${buyItemKfb.toLocaleString()}</ins></i> `;
+    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` +
+        `<i>KFB<ins>-${buyItemKfb.toLocaleString()}</ins></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
         content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
     }
