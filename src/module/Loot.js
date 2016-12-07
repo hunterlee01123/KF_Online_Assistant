@@ -746,6 +746,7 @@ const addAttackBtns = function () {
     $(`
 <label>
   <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
+  ${typeof Const.getCustomPoints === 'function' ? '<span class="pd_highlight pd_custom_tips" title="自定义点数分配方案已启用">(*)</span>' : ''}
   <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案，被击败后修改回第1层的方案（如果有）；
 如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
 </label>
@@ -931,16 +932,31 @@ const addAttackBtns = function () {
                 if (isStop) {
                     Msg.remove($wait);
                     if (isFail) {
-                        let enemyList = {};
+                        let allEnemyList = {};
                         for (let [enemy, num] of Util.entries(getEnemyList(log))) {
-                            enemyList[enemy.replace('特别', '')] = num;
+                            allEnemyList[enemy.replace('特别', '')] = num;
                         }
-                        let enemyStat = '';
-                        for (let [enemy, num] of Util.entries(enemyList)) {
-                            enemyStat += enemy + '`+' + num + '` ';
+                        let allEnemyStat = '';
+                        for (let [enemy, num] of Util.entries(allEnemyList)) {
+                            allEnemyStat += enemy + '`+' + num + '` ';
                         }
+
+                        let latestLog = logList.filter((elem, level) => level >= logList.length - 10).join('');
+                        let latestEnemyList = {};
+                        for (let [enemy, num] of Util.entries(getEnemyList(latestLog))) {
+                            latestEnemyList[enemy.replace('特别', '')] = num;
+                        }
+                        let latestEnemyStat = '';
+                        for (let [enemy, num] of Util.entries(latestEnemyList)) {
+                            latestEnemyStat += enemy + '`+' + num + '` ';
+                        }
+
                         let {exp, kfb} = getTotalGain(log);
-                        Log.push('争夺攻击', `你成功击败了第\`${currentLevel - 1}\`层的NPC (${enemyStat.trim()})`, {gain: {'KFB': kfb, '经验值': exp}});
+                        Log.push(
+                            '争夺攻击',
+                            `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近10层：${latestEnemyStat.trim()})`,
+                            {gain: {'KFB': kfb, '经验值': exp}}
+                        );
 
                         Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
                         if (isChangePoints && (Config.levelPointList[1] || typeof Const.getCustomPoints === 'function')) {
@@ -1045,15 +1061,23 @@ const enhanceLootLog = function (log) {
         .replace('[大魔王', '[<b style="color: #c03;">大魔王</b>');
 
     let {exp, kfb} = getTotalGain(log);
-    let enemyStatHtml = '';
+    let allEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyList(log))) {
-        enemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
+        allEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
+    }
+    let latestEnemyStatHtml = '';
+    let latestLog = logList.filter((elem, level) => level >= logList.length - 10).join('');
+    for (let [enemy, num] of Util.entries(getEnemyList(latestLog))) {
+        latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
 
     $log.html(`
-<ul style="margin-top: 7px;">
+<ul style="margin-top: 7px; line-height: 2em;">
   <li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
-  <li class="pd_stat"><b>NPC统计：</b>${enemyStatHtml}</li>
+  <li class="pd_stat">
+    <b>全部楼层：</b>${allEnemyStatHtml}<br>
+    <b>最近10层：</b>${latestEnemyStatHtml}
+  </li>
 </ul><hr>${html}
 `);
 };
@@ -1133,6 +1157,6 @@ export const addUserLinkInPkListPage = function () {
         let $this = $(this);
         let userName = $this.text().trim();
         $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
-        if (userName === Info.userName) $this.find('a').addClass('pd_highlight')
+        if (userName === Info.userName) $this.find('a').addClass('pd_highlight');
     });
 };

@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.3.1';
+const version = '8.4';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -119,16 +119,19 @@ $(function () {
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
     } else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
         Item.enhanceMyItemsPage();
-        Item.addBatchUseAndConvertItemTypesButton();
+        Item.addBatchUseAndConvertOldItemTypesButton();
     } else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
         Item.addConvertEnergyAndRestoreItemsButton();
     } else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addUseItemsButton();
+        Item.addBatchUseOldItemsButton();
     } else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
         Item.modifyItemDescription();
         if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
             Item.addSampleItemTips();
         }
+    } else if (location.pathname === '/kf_fw_ig_mybp.php') {
+        Item.addBatchUseItemsButton();
+        Item.hideItemTypes();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.addBatchBuyItemsLink();
     } else if (location.pathname === '/kf_fw_ig_index.php') {
@@ -985,6 +988,8 @@ const Config = exports.Config = {
 
     // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
+    // 隐藏指定的道具种类，例：['蕾米莉亚同人漫画', '整形优惠卷']
+    hideItemTypeList: [],
 
     // 在指定时间段之内不进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；例：23:55:00-01:30:00
     noDoOtherAutoActionBetweenTime: '23:55:00-01:30:00',
@@ -2871,7 +2876,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchBuyItemsLink = exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addUseItemsButton = exports.getLevelByName = exports.getTypeIdByName = exports.itemTypeList = undefined;
+exports.hideItemTypes = exports.addBatchUseItemsButton = exports.addBatchBuyItemsLink = exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addBatchUseOldItemsButton = exports.getLevelByName = exports.getTypeIdByName = exports.itemTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3102,7 +3107,7 @@ const getItemIdList = function (html, num = 0) {
  * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
  * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
  */
-const useItems = function (options, cycle) {
+const useOldItems = function (options, cycle) {
     let settings = {
         type: 1,
         itemIdList: [],
@@ -3435,7 +3440,7 @@ const cycleUseItems = function (type, options, cycle) {
         showResult(type, cycle.stat);
         Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         setTimeout(function () {
-            useItems(options, cycle);
+            useOldItems(options, cycle);
         }, cycle.round === 1 ? 500 : typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
     } else if (type === 2) {
         Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
@@ -3547,7 +3552,7 @@ const convertItemsToEnergy = function (options) {
 /**
  * 在道具列表页面上添加批量使用道具的按钮
  */
-const addUseItemsButton = exports.addUseItemsButton = function () {
+const addBatchUseOldItemsButton = exports.addBatchUseOldItemsButton = function () {
     let safeId = Public.getSafeId();
     if (!safeId) return;
     let $lastLine = $('.kf_fw_ig1 > tbody > tr:last-child');
@@ -3581,7 +3586,7 @@ const addUseItemsButton = exports.addUseItemsButton = function () {
         if (!itemIdList.length) return;
         if (!confirm(`共选择了${ itemIdList.length }个道具，是否批量使用道具？`)) return;
         Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        useItems({
+        useOldItems({
             type: 2,
             itemIdList: itemIdList,
             safeId: safeId,
@@ -3716,7 +3721,7 @@ const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestore
 /**
  * 添加批量使用和转换指定种类的道具的按钮
  */
-const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTypesButton = function () {
+const addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOldItemTypesButton = function () {
     let safeId = Public.getSafeId();
     if (!safeId) return;
     $(`
@@ -3771,7 +3776,7 @@ const addBatchUseAndConvertItemTypesButton = exports.addBatchUseAndConvertItemTy
                             if (name === 'useItemTypes') {
                                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
                                 Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                                useItems({
+                                useOldItems({
                                     type: 1,
                                     itemIdList: itemIdList,
                                     safeId: safeId,
@@ -3848,7 +3853,7 @@ const bindItemActionLinksClick = function ($element) {
                 }
                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
                 Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                useItems({
+                useOldItems({
                     type: 1,
                     itemIdList: itemIdList,
                     safeId: safeId,
@@ -4267,7 +4272,7 @@ const addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function () {
 
         Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ num }</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
         buyItems(num, type, kfb, url);
-    }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买此道具？'));
+    }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买该物品？'));
     $area.after('<div class="pd_item_btns"></div>');
     addSimulateManualHandleItemChecked();
     showKfbInItemShop();
@@ -4409,6 +4414,169 @@ const addSimulateManualHandleItemChecked = function () {
             (0, _Config.write)();
         }
     });
+};
+
+/**
+ * 在物品装备页面上添加批量使用道具按钮
+ */
+const addBatchUseItemsButton = exports.addBatchUseItemsButton = function () {
+    let $area = $('.kf_fw_ig1:first');
+    $area.find('> tbody > tr:gt(1)').each(function () {
+        let $this = $(this);
+        let matches = /id=(\d+)/.exec($this.find('td:nth-child(3) > a').attr('href'));
+        if (!matches) return;
+        let id = parseInt(matches[1]);
+        let itemName = $this.find('td:nth-child(2)').text().trim();
+        $this.find('td:first-child').prepend(`<input class="pd_input" data-name="${ itemName }" type="checkbox" value="${ id }">`);
+    });
+
+    $(`
+<div class="pd_item_btns">
+  <button name="useItems" type="button" style="color: #00f;" title="批量使用指定道具">批量使用</button>
+  <button name="hideItemTypes" type="button" style="color: #f00;" title="隐藏指定种类的道具">隐藏道具</button>
+  <button name="selectAll" type="button">全选</button>
+  <button name="selectInverse" type="button">反选</button>
+</div>
+`).insertAfter($area).find('[name="useItems"]').click(function () {
+        let $checked = $area.find('[type="checkbox"]:checked');
+        if (!$checked.length) return;
+        let itemList = new Map();
+        $checked.each(function () {
+            let $this = $(this);
+            let itemId = parseInt($this.val());
+            let itemName = $this.data('name');
+            if (!itemTypeList.includes(itemName)) return;
+            if (!itemList.has(itemName)) itemList.set(itemName, []);
+            itemList.get(itemName).push(itemId);
+        });
+        if (!confirm(`你共选择了${ itemList.size }个种类中的${ $checked.length }个道具，是否批量使用？`)) return;
+        Msg.destroy();
+
+        $(document).clearQueue('UseItemTypes');
+        $.each([...itemList], function (index, [itemName, itemIdList]) {
+            $(document).queue('UseItemTypes', function () {
+                let $wait = Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                let itemLevel = getLevelByName(itemName);
+                let interval = 0;
+                if (index > 0) interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
+                setTimeout(() => useItems({ itemLevel, itemName, itemIdList, $wait }), interval);
+            });
+        });
+        $(document).dequeue('UseItemTypes');
+    }).end().find('[name="hideItemTypes"]').click(function () {
+        (0, _Config.read)();
+        let value = prompt('请输入你要隐藏的道具种类：\n（多个种类请用英文逗号分隔，留空表示不隐藏，例：蕾米莉亚同人漫画,整形优惠卷）', Config.hideItemTypeList.join(','));
+        if (value === null) return;
+        Config.hideItemTypeList = [];
+        for (let itemType of value.split(',')) {
+            itemType = itemType.trim();
+            if (!itemTypeList.includes(itemType)) continue;
+            Config.hideItemTypeList.push(itemType);
+        }
+        (0, _Config.write)();
+        alert('指定道具种类已被隐藏（需刷新页面后才可生效）');
+    }).end().find('[name="selectAll"]').click(() => Util.selectAll($area.find('[type="checkbox"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($area.find('[type="checkbox"]')));
+
+    addSimulateManualHandleItemChecked();
+};
+
+/**
+ * 使用道具
+ * @param {number} itemLevel 道具等级
+ * @param {string} itemName 道具名称
+ * @param {number[]} itemIdList 道具ID列表
+ * @param {jQuery} $wait 等待消息框对象
+ */
+const useItems = function ({ itemLevel, itemName, itemIdList, $wait }) {
+    let $area = $('.kf_fw_ig1:first');
+    $area.parent().append(`<ul class="pd_result"><li><strong>【Lv.${ itemLevel }：${ itemName }】使用结果：</strong></li></ul>`);
+    let successNum = 0,
+        failNum = 0;
+    let isStop = false;
+    let stat = { '有效道具': 0, '无效道具': 0 };
+    $(document).clearQueue('UseItems');
+    $.each(itemIdList, function (index, itemId) {
+        $(document).queue('UseItems', function () {
+            $.ajax({
+                type: 'GET',
+                url: `kf_fw_ig_mybp.php?do=1&id=${ itemId }&t=${ new Date().getTime() }`,
+                timeout: _Const2.default.defAjaxTimeout,
+                success(html) {
+                    Public.showFormatLog('使用道具', html);
+                    let { msg } = Util.getResponseMsg(html);
+                    if (/(成功|失败)！/.test(msg)) {
+                        successNum++;
+                        if (/成功！/.test(msg)) stat['有效道具']++;else stat['无效道具']++;
+                        $area.find(`[type="checkbox"][value="${ itemId }"]`).closest('tr').fadeOut('normal', function () {
+                            $(this).remove();
+                        });
+                    } else {
+                        failNum++;
+                        if (/无法再使用/.test(msg)) {
+                            isStop = true;
+                            $(document).clearQueue('UseItems');
+                        }
+                    }
+                    $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ msg }</li>`);
+                },
+                error() {
+                    failNum++;
+                },
+                complete() {
+                    let $countdown = $wait.find('.pd_countdown');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isAllStop = $wait.data('stop');
+                    if (isAllStop) {
+                        isStop = true;
+                        $(document).clearQueue('UseItems');
+                        $(document).clearQueue('UseItemTypes');
+                    }
+
+                    if (isStop || index === itemIdList.length - 1) {
+                        Msg.remove($wait);
+                        if (stat['有效道具'] === 0) delete stat['有效道具'];
+                        if (stat['无效道具'] === 0) delete stat['无效道具'];
+                        if (successNum > 0) {
+                            Log.push('使用道具', `共有\`${ successNum }\`个【\`Lv.${ itemLevel }：${ itemName }\`】道具被使用`, { gain: stat, pay: { '道具': -successNum } });
+                        }
+
+                        let logStat = '',
+                            msgStat = '',
+                            resultStat = '';
+                        for (let [key, num] of Util.entries(stat)) {
+                            logStat += `，${ key }+${ num }`;
+                            msgStat += `<i>${ key }<em>+${ num }</em></i>`;
+                            resultStat += `<i>${ key }<em>+${ num }</em></i> `;
+                        }
+                        console.log(`共有${ successNum }个【Lv.${ itemLevel }：${ itemName }】道具被使用${ failNum > 0 ? `，共有${ failNum }个道具未能使用` : '' }${ logStat }`);
+                        Msg.show(`<strong>共有<em>${ successNum }</em>个【Lv.${ itemLevel }：${ itemName }】道具被使用` + `${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具未能使用` : '' }</strong>${ msgStat }`, -1);
+                        if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
+                        $('.pd_result:last').append(`<li class="pd_stat"><b>统计结果（共有<em>${ successNum }</em>个道具被使用）：</b>${ resultStat }</li>`);
+                        $(document).dequeue('UseItemTypes');
+                    } else {
+                        setTimeout(() => $(document).dequeue('UseItems'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+                    }
+                }
+            });
+        });
+    });
+    $(document).dequeue('UseItems');
+};
+
+/**
+ * 隐藏指定道具种类
+ */
+const hideItemTypes = exports.hideItemTypes = function () {
+    let $area = $('.kf_fw_ig1:first');
+    let num = 0;
+    for (let itemType of Config.hideItemTypeList) {
+        let $item = $area.find(`> tbody > tr:gt(1):has(td:nth-child(2):contains("${ itemType }"))`);
+        num += $item.length;
+        $item.remove();
+    }
+    if (num > 0) {
+        $area.find('> tbody').append(`<tr><td colspan="4" style="color: #666; text-align: center;">共有${ num }个道具已被隐藏&hellip;</td></tr>`);
+    }
 };
 
 },{"./Config":4,"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],11:[function(require,module,exports){
@@ -4857,7 +5025,7 @@ const getLogStat = function (log, date, logStatType) {
                 }
             } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
                 buyItemNum += gain['道具'];
-                buyItemKfb += pay['KFB'];
+                buyItemKfb += Math.abs(pay['KFB']);
                 for (let [itemName, num] of Util.entries(gain['item'])) {
                     if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
                     buyItemStat[itemName] += num;
@@ -4909,7 +5077,7 @@ const getLogStat = function (log, date, logStatType) {
         content += `<i>经验值<em>+${ lootExpStat.total.toLocaleString() }</em><span class="pd_stat_extra">` + `(<em title="平均值">+${ Util.getFixedNumLocStr(lootExpStat.total / lootCount) }</em>|` + `<em title="最小值">+${ lootExpStat.min.toLocaleString() }</em>|<em title="最大值">+${ lootExpStat.max.toLocaleString() }</em>)</span></i> `;
     }
 
-    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${ buyItemNum.toLocaleString() }</em></i> <i>KFB<ins>${ buyItemKfb.toLocaleString() }</ins></i> `;
+    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${ buyItemNum.toLocaleString() }</em></i> ` + `<i>KFB<ins>-${ buyItemKfb.toLocaleString() }</ins></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
         content += `<i>${ itemName }<em>+${ buyItemStat[itemName].toLocaleString() }</em></i> `;
     }
@@ -5731,6 +5899,7 @@ const addAttackBtns = function () {
     $(`
 <label>
   <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
+  ${ typeof _Const2.default.getCustomPoints === 'function' ? '<span class="pd_highlight pd_custom_tips" title="自定义点数分配方案已启用">(*)</span>' : '' }
   <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案，被击败后修改回第1层的方案（如果有）；
 如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
 </label>
@@ -5906,16 +6075,27 @@ const addAttackBtns = function () {
                 if (isStop) {
                     Msg.remove($wait);
                     if (isFail) {
-                        let enemyList = {};
+                        let allEnemyList = {};
                         for (let [enemy, num] of Util.entries(getEnemyList(log))) {
-                            enemyList[enemy.replace('特别', '')] = num;
+                            allEnemyList[enemy.replace('特别', '')] = num;
                         }
-                        let enemyStat = '';
-                        for (let [enemy, num] of Util.entries(enemyList)) {
-                            enemyStat += enemy + '`+' + num + '` ';
+                        let allEnemyStat = '';
+                        for (let [enemy, num] of Util.entries(allEnemyList)) {
+                            allEnemyStat += enemy + '`+' + num + '` ';
                         }
+
+                        let latestLog = logList.filter((elem, level) => level >= logList.length - 10).join('');
+                        let latestEnemyList = {};
+                        for (let [enemy, num] of Util.entries(getEnemyList(latestLog))) {
+                            latestEnemyList[enemy.replace('特别', '')] = num;
+                        }
+                        let latestEnemyStat = '';
+                        for (let [enemy, num] of Util.entries(latestEnemyList)) {
+                            latestEnemyStat += enemy + '`+' + num + '` ';
+                        }
+
                         let { exp, kfb } = getTotalGain(log);
-                        Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (${ enemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
+                        Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近10层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
 
                         Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);
                         if (isChangePoints && (Config.levelPointList[1] || typeof _Const2.default.getCustomPoints === 'function')) {
@@ -6011,15 +6191,23 @@ const enhanceLootLog = function (log) {
     }).replace('[大魔王', '[<b style="color: #c03;">大魔王</b>');
 
     let { exp, kfb } = getTotalGain(log);
-    let enemyStatHtml = '';
+    let allEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyList(log))) {
-        enemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
+        allEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
+    }
+    let latestEnemyStatHtml = '';
+    let latestLog = logList.filter((elem, level) => level >= logList.length - 10).join('');
+    for (let [enemy, num] of Util.entries(getEnemyList(latestLog))) {
+        latestEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
     }
 
     $log.html(`
-<ul style="margin-top: 7px;">
+<ul style="margin-top: 7px; line-height: 2em;">
   <li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${ kfb.toLocaleString() }</em></i> <i>经验值<em>+${ exp.toLocaleString() }</em></i></li>
-  <li class="pd_stat"><b>NPC统计：</b>${ enemyStatHtml }</li>
+  <li class="pd_stat">
+    <b>全部楼层：</b>${ allEnemyStatHtml }<br>
+    <b>最近10层：</b>${ latestEnemyStatHtml }
+  </li>
 </ul><hr>${ html }
 `);
 };
