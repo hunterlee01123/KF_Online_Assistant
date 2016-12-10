@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.4';
+const version = '8.5';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -70,10 +70,24 @@ $(function () {
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
+        if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
+    }
+    else if (location.pathname === '/post.php') {
+        if (/\bmultiquote=1/i.test(location.href)) {
+            if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
+        }
+        else if (/\baction=quote/i.test(location.href)) {
+            Post.removeUnpairedBBCodeInQuoteContent();
+        }
+        Post.addExtraPostEditorButton();
+        Post.addExtraOptionInPostPage();
+        if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
+        if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
+        if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
         Item.enhanceMyItemsPage();
@@ -110,12 +124,6 @@ $(function () {
     }
     else if (/\/kf_fw_card_my\.php$/i.test(location.href)) {
         Card.addStartBatchModeButton();
-    }
-    else if (/\/post\.php\?action=reply&fid=\d+&tid=\d+&multiquote=1/i.test(location.href)) {
-        if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
-    }
-    else if (/\/post\.php\?action=quote/i.test(location.href)) {
-        Post.removeUnpairedBBCodeInQuoteContent();
     }
     else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
@@ -157,11 +165,6 @@ $(function () {
     }
     else if (location.pathname === '/faq.php') {
         Other.modifyFaq();
-    }
-    if (location.pathname === '/post.php') {
-        Post.addExtraPostEditorButton();
-        Post.addExtraOptionInPostPage();
-        if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();

@@ -1,5 +1,6 @@
 /* 发帖模块 */
 'use strict';
+import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
@@ -259,4 +260,50 @@ export const importKfSmileEnhanceExtension = function () {
     script.charset = 'utf-8';
     script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
     document.body.appendChild(script);
+};
+
+/**
+ * 在撰写发帖内容时阻止关闭页面
+ */
+export const preventCloseWindowWhenEditPost = function () {
+    window.addEventListener('beforeunload', function (e) {
+        let content = $.trim($(location.pathname === '/post.php' ? '#textarea' : 'textarea:first').val());
+        if (content.length > 0 && !/\[\/quote]\n*$/.test(content) && !Info.w.isSubmit) {
+            let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
+            e.returnValue = msg;
+            return msg;
+        }
+    });
+
+    $('form[action="post.php?"]').submit(function () {
+        Info.w.isSubmit = true;
+    });
+};
+
+/**
+ * 在提交时保存发帖内容
+ */
+export const savePostContentWhenSubmit = function () {
+    let $textArea = $('#textarea');
+    $('form[action="post.php?"]').submit(function () {
+        let content = $textArea.val();
+        if ($.trim(content).length > 0) sessionStorage.setItem(Const.postContentStorageName, content);
+    });
+
+    let postContent = sessionStorage.getItem(Const.postContentStorageName);
+    if (postContent) {
+        $(`
+<div style="padding: 0 10px; line-height: 2em; text-align: left; background-color: #fefee9; border: 1px solid #9999ff;">
+  <a class="pd_btn_link" data-name="restore" href="#">[恢复上次提交的内容]</a>
+  <a class="pd_btn_link" data-name="clear" href="#">[清除]</a>
+</div>
+`).insertBefore($textArea).find('[data-name="restore"]').click(function (e) {
+            e.preventDefault();
+            $textArea.val(postContent);
+        }).end().find('[data-name="clear"]').click(function (e) {
+            e.preventDefault();
+            sessionStorage.removeItem(Const.postContentStorageName);
+            $(this).parent().remove();
+        });
+    }
 };

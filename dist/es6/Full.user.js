@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.4
+// @version     8.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -81,7 +81,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.4';
+const version = '8.5';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -135,9 +135,21 @@ $(function () {
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
+        if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
+    } else if (location.pathname === '/post.php') {
+        if (/\bmultiquote=1/i.test(location.href)) {
+            if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
+        } else if (/\baction=quote/i.test(location.href)) {
+            Post.removeUnpairedBBCodeInQuoteContent();
+        }
+        Post.addExtraPostEditorButton();
+        Post.addExtraOptionInPostPage();
+        if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
+        if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
+        if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
     } else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertOldItemTypesButton();
@@ -164,10 +176,6 @@ $(function () {
         Bank.handleInBankPage();
     } else if (/\/kf_fw_card_my\.php$/i.test(location.href)) {
         Card.addStartBatchModeButton();
-    } else if (/\/post\.php\?action=reply&fid=\d+&tid=\d+&multiquote=1/i.test(location.href)) {
-        if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
-    } else if (/\/post\.php\?action=quote/i.test(location.href)) {
-        Post.removeUnpairedBBCodeInQuoteContent();
     } else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
@@ -196,11 +204,6 @@ $(function () {
         Other.addUserNameLinkInRankPage();
     } else if (location.pathname === '/faq.php') {
         Other.modifyFaq();
-    }
-    if (location.pathname === '/post.php') {
-        Post.addExtraPostEditorButton();
-        Post.addExtraOptionInPostPage();
-        if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
@@ -923,6 +926,10 @@ const Config = exports.Config = {
     buyThreadViaAjaxEnabled: true,
     // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
+    // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
+    preventCloseWindowWhenEditPostEnabled: true,
+    // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
+    autoSavePostContentWhenSubmitEnabled: true,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1374,6 +1381,14 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
+      </label><br>
+      <label>
+        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> 写帖子时阻止关闭页面
+        <span class="pd_cfg_tips" title="在撰写发帖内容时，如不小心关闭了页面会提示确认">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
+        <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -2490,6 +2505,8 @@ const Const = {
     storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: storagePrefix + 'multiQuote',
+    // 保存发帖内容的SessionStorage名称
+    postContentStorageName: storagePrefix + 'postContent',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
@@ -5939,7 +5956,8 @@ const addAttackBtns = function () {
         let type = $this.is('[name="continuingAttack"]') ? 'continue' : 'once';
         let targetLevel = 0;
         if (type === 'continue') {
-            targetLevel = parseInt(prompt('攻击到第几层？（设为0表示攻击到被击败为止）', 0));
+            targetLevel = parseInt($this.data('level'));
+            if (isNaN(targetLevel)) targetLevel = parseInt(prompt('攻击到第几层？（设为0表示攻击到被击败为止）', 0));
             if (isNaN(targetLevel) || targetLevel < 0) return;
         }
         $this.blur();
@@ -6957,7 +6975,11 @@ const modifyFaq = exports.modifyFaq = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
 
 var _Util = require('./Util');
 
@@ -6975,9 +6997,9 @@ var _Script = require('./Script');
 
 var Script = _interopRequireWildcard(_Script);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * 处理多重回复和多重引用
@@ -7224,7 +7246,53 @@ const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = fu
     document.body.appendChild(script);
 };
 
-},{"./Const":6,"./Msg":14,"./Script":19,"./Util":21}],17:[function(require,module,exports){
+/**
+ * 在撰写发帖内容时阻止关闭页面
+ */
+const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function () {
+    window.addEventListener('beforeunload', function (e) {
+        let content = $.trim($(location.pathname === '/post.php' ? '#textarea' : 'textarea:first').val());
+        if (content.length > 0 && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
+            let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
+            e.returnValue = msg;
+            return msg;
+        }
+    });
+
+    $('form[action="post.php?"]').submit(function () {
+        _Info2.default.w.isSubmit = true;
+    });
+};
+
+/**
+ * 在提交时保存发帖内容
+ */
+const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function () {
+    let $textArea = $('#textarea');
+    $('form[action="post.php?"]').submit(function () {
+        let content = $textArea.val();
+        if ($.trim(content).length > 0) sessionStorage.setItem(_Const2.default.postContentStorageName, content);
+    });
+
+    let postContent = sessionStorage.getItem(_Const2.default.postContentStorageName);
+    if (postContent) {
+        $(`
+<div style="padding: 0 10px; line-height: 2em; text-align: left; background-color: #fefee9; border: 1px solid #9999ff;">
+  <a class="pd_btn_link" data-name="restore" href="#">[恢复上次提交的内容]</a>
+  <a class="pd_btn_link" data-name="clear" href="#">[清除]</a>
+</div>
+`).insertBefore($textArea).find('[data-name="restore"]').click(function (e) {
+            e.preventDefault();
+            $textArea.val(postContent);
+        }).end().find('[data-name="clear"]').click(function (e) {
+            e.preventDefault();
+            sessionStorage.removeItem(_Const2.default.postContentStorageName);
+            $(this).parent().remove();
+        });
+    }
+};
+
+},{"./Const":6,"./Info":9,"./Msg":14,"./Script":19,"./Util":21}],17:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
@@ -8393,11 +8461,6 @@ const turnPageViaKeyboard = exports.turnPageViaKeyboard = function () {
             if (!matches) return;
             if (curPage >= parseInt(matches[1])) return;
             url = $page.find('li > a:contains("下一页")').attr('href');
-        }
-        if (location.pathname === '/read.php') {
-            if ($.trim($('textarea:first').val())) {
-                if (!confirm('发帖框尚有文字，是否继续翻页？')) return;
-            }
         }
         location.href = url;
     });

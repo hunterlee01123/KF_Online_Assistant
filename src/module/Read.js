@@ -756,4 +756,3 @@ export const addSelfRatingLink = function () {
 export const getThreadTitle = function () {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
-

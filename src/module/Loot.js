@@ -765,7 +765,8 @@ const addAttackBtns = function () {
         let type = $this.is('[name="continuingAttack"]') ? 'continue' : 'once';
         let targetLevel = 0;
         if (type === 'continue') {
-            targetLevel = parseInt(prompt('攻击到第几层？（设为0表示攻击到被击败为止）', 0));
+            targetLevel = parseInt($this.data('level'));
+            if (isNaN(targetLevel)) targetLevel = parseInt(prompt('攻击到第几层？（设为0表示攻击到被击败为止）', 0));
             if (isNaN(targetLevel) || targetLevel < 0) return;
         }
         $this.blur();

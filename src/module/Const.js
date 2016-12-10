@@ -88,6 +88,8 @@ const Const = {
     storagePrefix: storagePrefix,
     // 存储多重引用数据的LocalStorage名称
     multiQuoteStorageName: storagePrefix + 'multiQuote',
+    // 保存发帖内容的SessionStorage名称
+    postContentStorageName: storagePrefix + 'postContent',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
