@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.5';
+var version = '8.5.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -8159,8 +8159,9 @@ var importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = func
  */
 var preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function preventCloseWindowWhenEditPost() {
     window.addEventListener('beforeunload', function (e) {
-        var content = $.trim($(location.pathname === '/post.php' ? '#textarea' : 'textarea:first').val());
-        if (content.length > 0 && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
+        var $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea:first');
+        var content = $textArea.val();
+        if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
             var msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
             e.returnValue = msg;
             return msg;

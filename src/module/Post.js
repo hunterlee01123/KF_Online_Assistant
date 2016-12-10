@@ -267,8 +267,9 @@ export const importKfSmileEnhanceExtension = function () {
  */
 export const preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let content = $.trim($(location.pathname === '/post.php' ? '#textarea' : 'textarea:first').val());
-        if (content.length > 0 && !/\[\/quote]\n*$/.test(content) && !Info.w.isSubmit) {
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea:first');
+        let content = $textArea.val();
+        if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !Info.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
             e.returnValue = msg;
             return msg;

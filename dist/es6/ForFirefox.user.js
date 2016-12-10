@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.5
+// @version     8.5.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -82,7 +82,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.5';
+const version = '8.5.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -7252,8 +7252,9 @@ const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = fu
  */
 const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let content = $.trim($(location.pathname === '/post.php' ? '#textarea' : 'textarea:first').val());
-        if (content.length > 0 && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea:first');
+        let content = $textArea.val();
+        if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
             e.returnValue = msg;
             return msg;
