@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.5.1
+// @version     8.5.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -78,7 +78,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.5.1';
+const version = '8.5.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -7282,6 +7282,7 @@ const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function (
 `).insertBefore($textArea).find('[data-name="restore"]').click(function (e) {
             e.preventDefault();
             $textArea.val(postContent);
+            $(this).parent().find('[data-name="clear"]').click();
         }).end().find('[data-name="clear"]').click(function (e) {
             e.preventDefault();
             sessionStorage.removeItem(_Const2.default.postContentStorageName);
@@ -8436,6 +8437,7 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
  * 修复论坛错误代码
  */
 const repairBbsErrorCode = exports.repairBbsErrorCode = function () {
+    _Info2.default.w.is_ie = false;
     if (location.pathname === '/read.php') _Info2.default.w.strlen = Util.getStrByteLen;
 };
 

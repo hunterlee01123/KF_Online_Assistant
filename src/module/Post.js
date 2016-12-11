@@ -301,6 +301,7 @@ export const savePostContentWhenSubmit = function () {
 `).insertBefore($textArea).find('[data-name="restore"]').click(function (e) {
             e.preventDefault();
             $textArea.val(postContent);
+            $(this).parent().find('[data-name="clear"]').click();
         }).end().find('[data-name="clear"]').click(function (e) {
             e.preventDefault();
             sessionStorage.removeItem(Const.postContentStorageName);

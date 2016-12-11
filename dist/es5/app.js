@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.5.1';
+var version = '8.5.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -8188,6 +8188,7 @@ var savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function sav
         $('\n<div style="padding: 0 10px; line-height: 2em; text-align: left; background-color: #fefee9; border: 1px solid #9999ff;">\n  <a class="pd_btn_link" data-name="restore" href="#">[\u6062\u590D\u4E0A\u6B21\u63D0\u4EA4\u7684\u5185\u5BB9]</a>\n  <a class="pd_btn_link" data-name="clear" href="#">[\u6E05\u9664]</a>\n</div>\n').insertBefore($textArea).find('[data-name="restore"]').click(function (e) {
             e.preventDefault();
             $textArea.val(postContent);
+            $(this).parent().find('[data-name="clear"]').click();
         }).end().find('[data-name="clear"]').click(function (e) {
             e.preventDefault();
             sessionStorage.removeItem(_Const2.default.postContentStorageName);
@@ -9321,6 +9322,7 @@ var addSearchDialogLink = exports.addSearchDialogLink = function addSearchDialog
  * 修复论坛错误代码
  */
 var repairBbsErrorCode = exports.repairBbsErrorCode = function repairBbsErrorCode() {
+    _Info2.default.w.is_ie = false;
     if (location.pathname === '/read.php') _Info2.default.w.strlen = Util.getStrByteLen;
 };
 
