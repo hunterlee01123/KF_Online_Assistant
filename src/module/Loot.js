@@ -1123,20 +1123,20 @@ const getEnemyList = function (log) {
     let matches = log.match(/\[[^\]]+的]NPC/g);
     let enemyList = {
         '普通': 0,
-        '特别脆弱': 0,
-        '特别缓慢': 0,
         '特别强壮': 0,
         '特别快速': 0,
+        '特别脆弱': 0,
+        '特别缓慢': 0,
         'BOSS': 0,
         '大魔王': 0,
     };
     for (let i in matches) {
         let enemyMatches = /\[([^\]]+)的/.exec(matches[i]);
         let enemy = enemyMatches[1];
-        if (!(enemy in enemyList)) enemyList[enemy] = 0;
+        enemy = enemy.replace('(后续更新前此路不通)', '');
+        if (!(enemy in enemyList)) continue;
         enemyList[enemy]++;
     }
-    if (/\[大魔王/.test(log)) enemyList['大魔王'] = 1;
     for (let [enemy, num] of Util.entries(enemyList)) {
         if (!num) delete enemyList[enemy];
     }
