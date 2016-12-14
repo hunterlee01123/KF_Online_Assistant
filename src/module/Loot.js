@@ -807,6 +807,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
         `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${currentLevel}</em></i>` +
         '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>'
     );
+    let retryNum = 0;
 
     /**
      * 修改点数分配方案
@@ -942,9 +943,18 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
             if (!/你\(\d+\)遭遇了/.test(html)) {
+                if (!$.trim(html)) {
+                    retryNum++;
+                    if (retryNum < 5) {
+                        setTimeout(attack, Const.defAjaxInterval);
+                        return;
+                    }
+                }
                 completeAttack();
                 return;
             }
+            retryNum = 0;
+
             if ($log.html().includes('本日无争夺记录')) $log.html('');
             $log.prepend(html);
             log = $log.html();

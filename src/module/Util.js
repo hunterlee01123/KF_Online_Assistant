@@ -546,9 +546,3 @@ export const selectInverse = function ($nodes) {
     });
     return false;
 };
-
-/**
- * 是否在争夺时间之内
- * @returns {boolean} 是否在争夺时间之内
- */
-export const isBetweenLootTime = () => isBetweenInTimeRange(new Date(), Config.noDoOtherAutoActionBetweenTime);

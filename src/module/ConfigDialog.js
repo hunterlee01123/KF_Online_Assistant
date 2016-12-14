@@ -59,12 +59,9 @@ export const show = function () {
         <input name="donationKfb" maxlength="4" style="width: 32px;" type="text" required>
         <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
       </label>
-    </fieldset>
-    <fieldset>
-      <legend>争夺相关</legend>
-      <label>
-        在 <input name="noDoOtherAutoActionBetweenTime" maxlength="17" style="width: 120px;" type="text" required> 之内不进行其它自动操作
-        <span class="pd_cfg_tips" title="在指定时间段之内不进行其它自动操作（如自动捐款、自动活期存款、显示VIP剩余时间等），以便不妨碍进行争夺；例：23:55:00-01:30:00">[?]</span>
+      <label class="pd_cfg_ml">
+        在 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> 之后捐款
+        <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -102,80 +99,6 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
       </label>
     </fieldset>
-    <fieldset>
-      <legend>其它设置</legend>
-      <label class="pd_highlight">
-        存储类型
-        <select data-name="storageType">
-          <option value="Default">默认</option>
-          <option value="ByUid">按uid</option>
-          <option value="Global">全局</option>
-        </select>
-        <span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        浏览器类型
-        <select name="browseType">
-          <option value="auto">自动检测</option>
-          <option value="desktop">桌面版</option>
-          <option value="mobile">移动版</option>
-        </select>
-        <span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
-如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
-      </label><br>
-      <label>
-        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
-        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
-      </label><br>
-      <label>
-        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
-        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
-        <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
-      </label><br>
-      <label>
-        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
-        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
-        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
-      </label><br>
-      <label>
-        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
-        <span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">详细设置&raquo;</a><br>
-      <label>
-        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
-        <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
-    </fieldset>
-    <fieldset>
-      <legend>版块页面相关</legend>
-      <label>
-        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
-        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
-      </label><br>
-      <label>
-        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
-        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
-      </label>
-    </fieldset>
-  </div>
-
-  <div class="pd_cfg_panel">
     <fieldset>
       <legend>帖子页面相关</legend>
       <label>
@@ -255,6 +178,80 @@ export const show = function () {
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容">[?]</span>
       </label>
+    </fieldset>
+  </div>
+
+  <div class="pd_cfg_panel">
+    <fieldset>
+      <legend>版块页面相关</legend>
+      <label>
+        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
+        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
+      </label><br>
+      <label>
+        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
+        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>其它设置</legend>
+      <label class="pd_highlight">
+        存储类型
+        <select data-name="storageType">
+          <option value="Default">默认</option>
+          <option value="ByUid">按uid</option>
+          <option value="Global">全局</option>
+        </select>
+        <span class="pd_cfg_tips" title="助手设置和日志的存储方式，详情参见【常见问题1】">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        浏览器类型
+        <select name="browseType">
+          <option value="auto">自动检测</option>
+          <option value="desktop">桌面版</option>
+          <option value="mobile">移动版</option>
+        </select>
+        <span class="pd_cfg_tips" title="用于在KFOL助手上判断浏览器的类型，一般使用自动检测即可；
+如果当前浏览器与自动检测的类型不相符（移动版会在设置界面标题上显示“For Mobile”的字样），请手动设置为正确的类型">[?]</span>
+      </label><br>
+      <label>
+        消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
+        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
+      </label><br>
+      <label>
+        <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
+        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
+        <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
+      </label><br>
+      <label>
+        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
+        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
+        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
+      </label><br>
+      <label>
+        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
+        <span class="pd_cfg_tips" title="为页面添加自定义的CSS内容，请点击详细设置填入自定义的CSS内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
+        <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
     </fieldset>
     <fieldset>
       <legend>关注和屏蔽</legend>
@@ -456,10 +453,11 @@ const verifyMainConfig = function ($dialog) {
         }
     }
 
-    let $txtNoDoOtherAutoActionBetweenTime = $dialog.find('[name="noDoOtherAutoActionBetweenTime"]');
-    if (!/^(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}-(2[0-3]|[0-1][0-9])(:[0-5][0-9]){2}$/.test($txtNoDoOtherAutoActionBetweenTime.val())) {
-        alert('在指定时间段之内不进行其它自动操作格式不正确');
-        $txtNoDoOtherAutoActionBetweenTime.select().focus();
+    let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
+    let donationAfterTime = $.trim($txtDonationAfterTime.val());
+    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
+        alert('在指定时间之后捐款格式不正确');
+        $txtDonationAfterTime.select().focus();
         return false;
     }
 
