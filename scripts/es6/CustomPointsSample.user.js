@@ -37,8 +37,8 @@ Const.getCustomPoints = function (data) {
 
     // 参考范例：
     console.log(data); // 在控制台输出各参数的具体值
-    if (data.currentLevel === 1 || data.currentLife === 0) {
-        // 当处于第1层或被击败后，将剩余可分配属性点全部分配给体质
+    if (data.currentLevel === 1) {
+        // 当处于第1层时，将剩余可分配属性点全部分配给体质
         return {"力量": 1, "体质": data.availablePoint - 5, "敏捷": 1, "灵活": 1, "智力": 1, "意志": 1};
     }
     else if (data.currentLevel > 40) {
