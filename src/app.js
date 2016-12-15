@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.6.1';
+const version = '8.6.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -162,9 +162,6 @@ $(function () {
     }
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
-    }
-    else if (location.pathname === '/faq.php') {
-        Other.modifyFaq();
     }
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();

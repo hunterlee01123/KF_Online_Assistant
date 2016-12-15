@@ -1095,7 +1095,7 @@ const showLogStat = function (log, logList) {
     $logStat.html(`
 <li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
 <li class="pd_stat">
-  <b>全部楼层：</b>${allEnemyStatHtml}<br>
+  <b>全部层数：</b>${allEnemyStatHtml}<br>
   <b>最近10层：</b>${latestEnemyStatHtml}
 </li>
 `);

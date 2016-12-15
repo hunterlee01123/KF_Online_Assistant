@@ -408,7 +408,6 @@ export const addAutoChangeIdColorButton = function () {
     }
 
     $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
-    $('div[style="border-bottom:#8000FF 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
 };
 
 /**
@@ -490,27 +489,4 @@ export const addUserNameLinkInRankPage = function () {
         $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === Info.userName) $this.find('a').addClass('pd_highlight');
     });
-};
-
-/**
- * 修改帮助页面
- */
-export const modifyFaq = function () {
-    let id = parseInt(Util.getUrlParam('id'));
-    let $faq = $('.kf_share1 > tbody > tr:nth-child(2) > td:last-child > div:last-child');
-    if (id === 1) {
-        if ($faq.html().length !== 848) return;
-        $faq.html(`
-你可以通过发帖/回贴、参与<a href="kf_fw_ig_index.php" target="_blank">争夺奖励</a>等方式获取KFB（论坛货币）和经验。<br><br>
-发帖/回贴时会获得基本的KFB奖励，每天第一次发帖/回贴还可获得额外经验奖励。<br>
-发帖请先阅读规定避免违规，在你还没有时间阅读全部规定之前，请至少注意以下几点：<br>
-不要发表纯水帖；不要纯复制发帖；不要发表政治、广告、恶心的内容；不要攻击、讽刺、挑衅他人；<br>
-不要发表成人图片、视频、小说等内容；不要伪造原创、盗取他人原创。<br><br>
-升级（神秘系数）可以获得不同的等级权限，你可以在<a href="kf_growup.php" target="_blank">等级经验页面</a>进行KFB捐款，
-根据不同的捐款数额获得相应的经验来提升神秘系数。<br>
-注册初始神秘系数为0，为“通常版”等级，拥有大部分的日常权限；提升为神秘系数4时，升级为“初回限定版”等级，拥有部分追加的权限。<br>
-部分板块需要一定神秘系数以上才可进入，如打开帖子时出现“error&hellip;”的提示，说明你当前的神秘系数无法进入该板块。<br><br>
-神秘等级的值以神秘系数为基础，基本上是装饰用的属性，可见于帖子页面各楼层用户名称旁，还可用于选择自定义ID颜色。
-`);
-    }
 };

@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.6.1';
+var version = '8.6.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -181,8 +181,6 @@ $(function () {
         Other.showSelfRatingErrorSizeSubmitWarning();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
-    } else if (location.pathname === '/faq.php') {
-        Other.modifyFaq();
     }
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
@@ -7073,7 +7071,7 @@ var showLogStat = function showLogStat(log, logList) {
     if (!$logStat.length) {
         $logStat = $('<ul id="pdLogStat" style="padding: 5px; line-height: 2em;"></ul>').insertBefore($logBox);
     }
-    $logStat.html('\n<li class="pd_stat"><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n<li class="pd_stat">\n  <b>\u5168\u90E8\u697C\u5C42\uFF1A</b>' + allEnemyStatHtml + '<br>\n  <b>\u6700\u8FD110\u5C42\uFF1A</b>' + latestEnemyStatHtml + '\n</li>\n');
+    $logStat.html('\n<li class="pd_stat"><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n<li class="pd_stat">\n  <b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + allEnemyStatHtml + '<br>\n  <b>\u6700\u8FD110\u5C42\uFF1A</b>' + latestEnemyStatHtml + '\n</li>\n');
 };
 
 /**
@@ -7328,7 +7326,7 @@ var destroy = exports.destroy = function destroy() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.modifyFaq = exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -7781,7 +7779,6 @@ var addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function a
     }
 
     $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
-    $('div[style="border-bottom:#8000FF 1px dashed;"] > div:contains("帖子被奖励KFB")').html('帖子被奖励KFB(被协管评分)');
 };
 
 /**
@@ -7867,18 +7864,6 @@ var addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function add
         $this.html('<a href="profile.php?action=show&username=' + userName + '" target="_blank">' + userName + '</a>');
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
-};
-
-/**
- * 修改帮助页面
- */
-var modifyFaq = exports.modifyFaq = function modifyFaq() {
-    var id = parseInt(Util.getUrlParam('id'));
-    var $faq = $('.kf_share1 > tbody > tr:nth-child(2) > td:last-child > div:last-child');
-    if (id === 1) {
-        if ($faq.html().length !== 848) return;
-        $faq.html('\n\u4F60\u53EF\u4EE5\u901A\u8FC7\u53D1\u5E16/\u56DE\u8D34\u3001\u53C2\u4E0E<a href="kf_fw_ig_index.php" target="_blank">\u4E89\u593A\u5956\u52B1</a>\u7B49\u65B9\u5F0F\u83B7\u53D6KFB\uFF08\u8BBA\u575B\u8D27\u5E01\uFF09\u548C\u7ECF\u9A8C\u3002<br><br>\n\u53D1\u5E16/\u56DE\u8D34\u65F6\u4F1A\u83B7\u5F97\u57FA\u672C\u7684KFB\u5956\u52B1\uFF0C\u6BCF\u5929\u7B2C\u4E00\u6B21\u53D1\u5E16/\u56DE\u8D34\u8FD8\u53EF\u83B7\u5F97\u989D\u5916\u7ECF\u9A8C\u5956\u52B1\u3002<br>\n\u53D1\u5E16\u8BF7\u5148\u9605\u8BFB\u89C4\u5B9A\u907F\u514D\u8FDD\u89C4\uFF0C\u5728\u4F60\u8FD8\u6CA1\u6709\u65F6\u95F4\u9605\u8BFB\u5168\u90E8\u89C4\u5B9A\u4E4B\u524D\uFF0C\u8BF7\u81F3\u5C11\u6CE8\u610F\u4EE5\u4E0B\u51E0\u70B9\uFF1A<br>\n\u4E0D\u8981\u53D1\u8868\u7EAF\u6C34\u5E16\uFF1B\u4E0D\u8981\u7EAF\u590D\u5236\u53D1\u5E16\uFF1B\u4E0D\u8981\u53D1\u8868\u653F\u6CBB\u3001\u5E7F\u544A\u3001\u6076\u5FC3\u7684\u5185\u5BB9\uFF1B\u4E0D\u8981\u653B\u51FB\u3001\u8BBD\u523A\u3001\u6311\u8845\u4ED6\u4EBA\uFF1B<br>\n\u4E0D\u8981\u53D1\u8868\u6210\u4EBA\u56FE\u7247\u3001\u89C6\u9891\u3001\u5C0F\u8BF4\u7B49\u5185\u5BB9\uFF1B\u4E0D\u8981\u4F2A\u9020\u539F\u521B\u3001\u76D7\u53D6\u4ED6\u4EBA\u539F\u521B\u3002<br><br>\n\u5347\u7EA7\uFF08\u795E\u79D8\u7CFB\u6570\uFF09\u53EF\u4EE5\u83B7\u5F97\u4E0D\u540C\u7684\u7B49\u7EA7\u6743\u9650\uFF0C\u4F60\u53EF\u4EE5\u5728<a href="kf_growup.php" target="_blank">\u7B49\u7EA7\u7ECF\u9A8C\u9875\u9762</a>\u8FDB\u884CKFB\u6350\u6B3E\uFF0C\n\u6839\u636E\u4E0D\u540C\u7684\u6350\u6B3E\u6570\u989D\u83B7\u5F97\u76F8\u5E94\u7684\u7ECF\u9A8C\u6765\u63D0\u5347\u795E\u79D8\u7CFB\u6570\u3002<br>\n\u6CE8\u518C\u521D\u59CB\u795E\u79D8\u7CFB\u6570\u4E3A0\uFF0C\u4E3A\u201C\u901A\u5E38\u7248\u201D\u7B49\u7EA7\uFF0C\u62E5\u6709\u5927\u90E8\u5206\u7684\u65E5\u5E38\u6743\u9650\uFF1B\u63D0\u5347\u4E3A\u795E\u79D8\u7CFB\u65704\u65F6\uFF0C\u5347\u7EA7\u4E3A\u201C\u521D\u56DE\u9650\u5B9A\u7248\u201D\u7B49\u7EA7\uFF0C\u62E5\u6709\u90E8\u5206\u8FFD\u52A0\u7684\u6743\u9650\u3002<br>\n\u90E8\u5206\u677F\u5757\u9700\u8981\u4E00\u5B9A\u795E\u79D8\u7CFB\u6570\u4EE5\u4E0A\u624D\u53EF\u8FDB\u5165\uFF0C\u5982\u6253\u5F00\u5E16\u5B50\u65F6\u51FA\u73B0\u201Cerror&hellip;\u201D\u7684\u63D0\u793A\uFF0C\u8BF4\u660E\u4F60\u5F53\u524D\u7684\u795E\u79D8\u7CFB\u6570\u65E0\u6CD5\u8FDB\u5165\u8BE5\u677F\u5757\u3002<br><br>\n\u795E\u79D8\u7B49\u7EA7\u7684\u503C\u4EE5\u795E\u79D8\u7CFB\u6570\u4E3A\u57FA\u7840\uFF0C\u57FA\u672C\u4E0A\u662F\u88C5\u9970\u7528\u7684\u5C5E\u6027\uFF0C\u53EF\u89C1\u4E8E\u5E16\u5B50\u9875\u9762\u5404\u697C\u5C42\u7528\u6237\u540D\u79F0\u65C1\uFF0C\u8FD8\u53EF\u7528\u4E8E\u9009\u62E9\u81EA\u5B9A\u4E49ID\u989C\u8272\u3002\n');
-    }
 };
 
 },{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":14,"./Public":17,"./TmpLog":20,"./Util":21}],16:[function(require,module,exports){
