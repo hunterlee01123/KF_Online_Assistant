@@ -41,6 +41,7 @@ export const enhanceLootIndexPage = function () {
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
     let log = $log.html();
+    if (log.includes('本日无争夺记录')) $log.html(getEnhancedLog(log));
     let logList = getLogList(log);
     handlePropertiesArea();
     handlePointsArea();
@@ -1098,6 +1099,17 @@ const showLogStat = function (log, logList) {
   <b>最近10层：</b>${latestEnemyStatHtml}
 </li>
 `);
+};
+
+/**
+ * 获取经过增强的争夺记录
+ * @param {string} log 争夺记录
+ * @returns {string} 经过增强的争夺记录
+ */
+const getEnhancedLog = function (log) {
+    return log.replace('请点击这里开始争夺战斗', '请点击上方的攻击按钮开始争夺战斗')
+        .replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗')
+        .replace('请点击这里开始争夺战斗', '请点击上方的攻击按钮开始争夺战斗');
 };
 
 /**

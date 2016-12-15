@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.6
+// @version     8.6.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -81,7 +81,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.6';
+const version = '8.6.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -1190,11 +1190,11 @@ const show = exports.show = function () {
       </legend>
       <label>
         KFB捐款额度
-        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text" required>
+        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>
         <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        在 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> 之后捐款
+        在 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后捐款
         <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
       </label>
     </fieldset>
@@ -5304,6 +5304,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
     let log = $log.html();
+    if (log.includes('本日无争夺记录')) $log.html(getEnhancedLog(log));
     let logList = getLogList(log);
     handlePropertiesArea();
     handlePointsArea();
@@ -5934,8 +5935,7 @@ const addAttackBtns = function () {
 <label>
   <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
   ${ typeof _Const2.default.getCustomPoints === 'function' ? '<span class="pd_highlight pd_custom_tips" title="自定义点数分配方案已启用">(*)</span>' : '' }
-  <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案，被击败后修改回第1层的方案（如果有）；
-如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
+  <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案；如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
 </label>
 <label>
   <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
@@ -5994,11 +5994,9 @@ const lootAttack = function ({ type, targetLevel, isChangePoints, safeId, curren
     /**
      * 修改点数分配方案
      * @param {number} nextLevel 下一层（设为-1表示采用当前点数分配方案）
-     * @param {boolean} isShowMsg 是否显示消息
-     * @param {?jQuery} $wait 等待消息框
      * @returns {Deferred} Deferred对象
      */
-    const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
+    const changePoints = function (nextLevel) {
         if (nextLevel > 0 && typeof _Const2.default.getCustomPoints === 'function') {
             let currentLevel = getCurrentLevel(logList);
             let currentLife = 0,
@@ -6083,10 +6081,6 @@ const lootAttack = function ({ type, targetLevel, isChangePoints, safeId, curren
   <span style="color: #666;">点数（${ pointsText }）<br>争夺属性（${ propertiesText }）</span>
 </li>
 `);
-                        if (isShowMsg) {
-                            if ($wait) Msg.remove($wait);
-                            Msg.show(`<strong>已修改为第<em>${ changeLevel }</em>层的方案</strong>`, -1);
-                        }
                     } else {
                         console.log(`【分配点数】已修改点数设置；点数（${ pointsText }）；争夺属性（${ propertiesText }）`);
                         $('#pdAttackProcess').append(`
@@ -6228,15 +6222,7 @@ const lootAttack = function ({ type, targetLevel, isChangePoints, safeId, curren
 
                 let { exp, kfb } = getTotalGain(log);
                 Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近10层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
-
                 Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);
-                if (isChangePoints && (Config.levelPointList[1] || typeof _Const2.default.getCustomPoints === 'function')) {
-                    let $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
-                    changePoints(1, true, $wait).always(function (result) {
-                        if (result !== 'success') alert('修改点数分配方案失败');
-                        Msg.remove($wait);
-                    });
-                }
             },
             error(XMLHttpRequest, textStatus) {
                 if (textStatus === 'timeout') {
@@ -6282,6 +6268,15 @@ const showLogStat = function (log, logList) {
   <b>最近10层：</b>${ latestEnemyStatHtml }
 </li>
 `);
+};
+
+/**
+ * 获取经过增强的争夺记录
+ * @param {string} log 争夺记录
+ * @returns {string} 经过增强的争夺记录
+ */
+const getEnhancedLog = function (log) {
+    return log.replace('请点击这里开始争夺战斗', '请点击上方的攻击按钮开始争夺战斗').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗').replace('请点击这里开始争夺战斗', '请点击上方的攻击按钮开始争夺战斗');
 };
 
 /**
