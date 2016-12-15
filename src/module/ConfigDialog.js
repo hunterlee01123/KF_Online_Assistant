@@ -56,11 +56,11 @@ export const show = function () {
       </legend>
       <label>
         KFB捐款额度
-        <input name="donationKfb" maxlength="4" style="width: 32px;" type="text" required>
+        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>
         <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        在 <input name="donationAfterTime" maxlength="8" style="width: 55px;" type="text"> 之后捐款
+        在 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后捐款
         <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
       </label>
     </fieldset>

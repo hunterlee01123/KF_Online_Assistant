@@ -747,8 +747,7 @@ const addAttackBtns = function () {
 <label>
   <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
   ${typeof Const.getCustomPoints === 'function' ? '<span class="pd_highlight pd_custom_tips" title="自定义点数分配方案已启用">(*)</span>' : ''}
-  <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案，被击败后修改回第1层的方案（如果有）；
-如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
+  <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案；如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
 </label>
 <label>
   <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
@@ -812,11 +811,9 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
     /**
      * 修改点数分配方案
      * @param {number} nextLevel 下一层（设为-1表示采用当前点数分配方案）
-     * @param {boolean} isShowMsg 是否显示消息
-     * @param {?jQuery} $wait 等待消息框
      * @returns {Deferred} Deferred对象
      */
-    const changePoints = function (nextLevel, isShowMsg = false, $wait = null) {
+    const changePoints = function (nextLevel) {
         if (nextLevel > 0 && typeof Const.getCustomPoints === 'function') {
             let currentLevel = getCurrentLevel(logList);
             let currentLife = 0, currentInitLife = 0;
@@ -903,10 +900,6 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
   <span style="color: #666;">点数（${pointsText}）<br>争夺属性（${propertiesText}）</span>
 </li>
 `);
-                        if (isShowMsg) {
-                            if ($wait) Msg.remove($wait);
-                            Msg.show(`<strong>已修改为第<em>${changeLevel}</em>层的方案</strong>`, -1);
-                        }
                     }
                     else {
                         console.log(`【分配点数】已修改点数设置；点数（${pointsText}）；争夺属性（${propertiesText}）`);
@@ -1059,15 +1052,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
                     `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近10层：${latestEnemyStat.trim()})`,
                     {gain: {'KFB': kfb, '经验值': exp}}
                 );
-
                 Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
-                if (isChangePoints && (Config.levelPointList[1] || typeof Const.getCustomPoints === 'function')) {
-                    let $wait = Msg.wait('<strong>正在修改点数分配方案&hellip;</strong>');
-                    changePoints(1, true, $wait).always(function (result) {
-                        if (result !== 'success') alert('修改点数分配方案失败');
-                        Msg.remove($wait);
-                    });
-                }
             },
             error (XMLHttpRequest, textStatus) {
                 if (textStatus === 'timeout') {
