@@ -21,12 +21,18 @@ let $points;
 let $logBox;
 // 争夺记录区域
 let $log;
+// 争夺记录
+let log;
+// 各层争夺记录列表
+let logList;
 // 当前争夺属性
 let propertyList;
 // 道具加成点数列表
 let extraPointList;
 // 道具使用情况列表
 let itemUsedNumList;
+// 点数分配日志列表
+let pointsLogList = [];
 
 /**
  * 增强争夺首页
@@ -40,14 +46,18 @@ export const enhanceLootIndexPage = function () {
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(3) > td').html());
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
-    let log = $log.html();
-    if (log.includes('本日无争夺记录')) $log.html(getEnhancedLog(log));
-    let logList = getLogList(log);
+
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
-    showLogStat(log, logList);
+
+    log = $log.html();
+    logList = getLogList(log);
+    if (log.includes('本日无争夺记录'))
+        $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
+    else showEnhanceLog(logList);
+    showLogStat(logList);
 };
 
 /**
@@ -767,7 +777,6 @@ const addAttackBtns = function () {
 `).appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
         let safeId = Public.getSafeId();
         if (!safeId) return;
-        let log = $log.html();
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -784,10 +793,8 @@ const addAttackBtns = function () {
         Msg.destroy();
         let isChangePoints = Config.autoChangeLevelPointsEnabled &&
             (!$.isEmptyObject(Config.levelPointList) || typeof Const.getCustomPoints === 'function');
-        let logList = getLogList(log);
-        let currentLevel = getCurrentLevel(logList);
         if (!isChangePoints && !checkPoints($points)) return;
-        lootAttack({type, targetLevel, isChangePoints, safeId, currentLevel, log, logList});
+        lootAttack({type, targetLevel, isChangePoints, safeId});
     }).end().find('[name="autoChangeLevelPointsEnabled"]').click(function () {
         readConfig();
         Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
@@ -806,11 +813,9 @@ const addAttackBtns = function () {
  * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止）
  * @param {boolean} isChangePoints 是否自动修改点数分配方案
  * @param {string} safeId SafeID
- * @param {number} currentLevel 当前层数
- * @param {string} log 当前争夺记录
- * @param {string[]} logList 各层争夺记录列表
  */
-const lootAttack = function ({type, targetLevel, isChangePoints, safeId, currentLevel, log, logList}) {
+const lootAttack = function ({type, targetLevel, isChangePoints, safeId}) {
+    let currentLevel = getCurrentLevel(logList);
     let $wait = Msg.wait(
         `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${currentLevel}</em></i>` +
         '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>'
@@ -830,7 +835,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
             if (initLifeMatches) currentInitLife = parseInt(initLifeMatches[1]);
             let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[currentLevel]);
             if (lifeMatches) currentLife = lifeMatches[2] === '满值' ? currentInitLife : parseInt(lifeMatches[1]);
-
+            let enemyList = getEnemyList(logList);
             let points = null;
             try {
                 points = Const.getCustomPoints({
@@ -844,6 +849,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
                     itemUsedNumList,
                     log,
                     logList,
+                    enemyList,
                     getPointByProperty,
                     getPropertyByPoint,
                 });
@@ -901,25 +907,11 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
                         propertiesText += `${key}：${value}${unit}，`;
                     }
                     propertiesText = propertiesText.replace(/，$/, '');
-
-                    if (changeLevel > 0) {
-                        console.log(`【分配点数】已修改为第${changeLevel}层的方案；点数（${pointsText}）；争夺属性（${propertiesText}）`);
-                        $('#pdAttackProcess').append(`
-<li>
-  【分配点数】已修改为第<b class="pd_highlight">${changeLevel}</b>层的方案<br>
-  <span style="color: #666;">点数（${pointsText}）<br>争夺属性（${propertiesText}）</span>
-</li>
-`);
-                    }
-                    else {
-                        console.log(`【分配点数】已修改点数设置；点数（${pointsText}）；争夺属性（${propertiesText}）`);
-                        $('#pdAttackProcess').append(`
-<li>
-  【分配点数】已修改点数设置<br>
-  <span style="color: #666;">点数（${pointsText}）<br>争夺属性（${propertiesText}）</span>
-</li>
-`);
-                    }
+                    pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
+                    console.log(
+                        `【分配点数】${changeLevel > 0 ? `已修改为第${changeLevel}层的方案` : '已修改点数设置'}；` +
+                        `点数方案（${pointsText}）；争夺属性（${propertiesText}）`
+                    );
 
                     $points.find('.pd_point').each(function () {
                         this.defaultValue = $(this).val();
@@ -958,15 +950,12 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
             }
             retryNum = 0;
 
-            if ($log.html().includes('本日无争夺记录')) $log.html('');
-            $log.prepend(html);
-            log = $log.html();
+            log = html + log;
             logList = getLogList(log);
-            showLogStat(log, logList);
-
+            showEnhanceLog(logList);
+            showLogStat(logList);
             let currentLevel = getCurrentLevel(logList);
             console.log('【争夺攻击】当前层数：' + currentLevel);
-            $('#pdAttackProcess').append(`<li>【争夺攻击】当前层数：<b class="pd_highlight">${currentLevel}</b></li>`);
             let $countdown = $('.pd_countdown:last');
             $countdown.text(currentLevel);
 
@@ -1034,11 +1023,10 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
                 if (!/你被击败了/.test(logHtml)) return;
                 log = logHtml;
                 logList = getLogList(log);
-                let currentLevel = getCurrentLevel(logList);
-                $log.html(log);
+                showEnhanceLog(logList);
 
                 let allEnemyList = {};
-                for (let [enemy, num] of Util.entries(getEnemyList(log))) {
+                for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
                     allEnemyList[enemy.replace('特别', '')] = num;
                 }
                 let allEnemyStat = '';
@@ -1046,9 +1034,8 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
                     allEnemyStat += enemy + '`+' + num + '` ';
                 }
 
-                let latestLog = logList.filter((elem, level) => level >= logList.length - 10).join('');
                 let latestEnemyList = {};
-                for (let [enemy, num] of Util.entries(getEnemyList(latestLog))) {
+                for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - 10)))) {
                     latestEnemyList[enemy.replace('特别', '')] = num;
                 }
                 let latestEnemyStat = '';
@@ -1056,12 +1043,15 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
                     latestEnemyStat += enemy + '`+' + num + '` ';
                 }
 
-                let {exp, kfb} = getTotalGain(log);
-                Log.push(
-                    '争夺攻击',
-                    `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近10层：${latestEnemyStat.trim()})`,
-                    {gain: {'KFB': kfb, '经验值': exp}}
-                );
+                let currentLevel = getCurrentLevel(logList);
+                let {exp, kfb} = getTotalGain(logList);
+                if (exp > 0 && kfb > 0) {
+                    Log.push(
+                        '争夺攻击',
+                        `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近10层：${latestEnemyStat.trim()})`,
+                        {gain: {'KFB': kfb, '经验值': exp}}
+                    );
+                }
                 Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
             },
             error (XMLHttpRequest, textStatus) {
@@ -1072,28 +1062,23 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId, current
         })
     };
 
-    if (!$('#pdAttackProcess').length) {
-        $lootArea.parent().append('<ul class="pd_result" id="pdAttackProcess"><li><strong>攻击过程：</strong></li></ul>');
-    }
     readyAttack(isChangePoints ? currentLevel : -1, 0);
 };
 
 /**
  * 显示争夺记录统计
- * @param {string} log 争夺记录
  * @param {string[]} logList 各层争夺记录列表
  */
-const showLogStat = function (log, logList) {
-    let {exp, kfb} = getTotalGain(log);
+const showLogStat = function (logList) {
+    let {exp, kfb} = getTotalGain(logList);
     if (!exp || !kfb) return;
 
     let allEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyList(log))) {
+    for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
         allEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
     let latestEnemyStatHtml = '';
-    let latestLog = logList.filter((elem, level) => level >= logList.length - 10).join('');
-    for (let [enemy, num] of Util.entries(getEnemyList(latestLog))) {
+    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - 10)))) {
         latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
 
@@ -1111,14 +1096,47 @@ const showLogStat = function (log, logList) {
 };
 
 /**
- * 获取经过增强的争夺记录
- * @param {string} log 争夺记录
- * @returns {string} 经过增强的争夺记录
+ * 显示经过增强的争夺记录
+ * @param {string[]} logList 各层争夺记录列表
  */
-const getEnhancedLog = function (log) {
-    return log.replace('请点击这里开始争夺战斗', '请点击上方的攻击按钮开始争夺战斗')
-        .replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗')
-        .replace('请点击这里开始争夺战斗', '请点击上方的攻击按钮开始争夺战斗');
+const showEnhanceLog = function (logList) {
+    let list = [];
+    $.each(logList, function (level, levelLog) {
+        if (!levelLog) return;
+        list[level] = levelLog.replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
+            let color = '';
+            switch (enemy) {
+                case '普通':
+                    color = '#09c';
+                    break;
+                case '特别脆弱':
+                    color = '#c96';
+                    break;
+                case '特别缓慢':
+                    color = '#c69';
+                    break;
+                case '特别强壮':
+                    color = '#f93';
+                    break;
+                case '特别快速':
+                    color = '#f3c';
+                    break;
+                case 'BOSS':
+                    color = '#f00';
+                    break;
+                default:
+                    color = '#0075ea';
+            }
+            return `<span style="background-color: ${color};">[${enemy}的]</span>NPC`;
+        });
+
+        if (pointsLogList[level]) {
+            list[level] = list[level].replace(
+                '</li>', `</li><li class="pk_log_g" style="color: #666;">${pointsLogList[level]}</li>`.replace(/\n/g, '<br>')
+            );
+        }
+    });
+    $log.html(list.reverse().join(''));
 };
 
 /**
@@ -1130,7 +1148,7 @@ const getLogList = function (log) {
     let logList = [];
     let matches = log.match(/<li class="pk_log_j">.+?(?=\s*<li class="pk_log_j">|\s*$)/g);
     for (let i in matches) {
-        let levelMatches = /在\[\s*<span[^<>]+>(\d+)<\/span>\s*层]/.exec(matches[i]);
+        let levelMatches = /在\[\s*(\d+)\s*层]/.exec(Util.removeHtmlTag(matches[i]));
         if (levelMatches) logList[parseInt(levelMatches[1])] = matches[i];
     }
     return logList;
@@ -1138,28 +1156,29 @@ const getLogList = function (log) {
 
 /**
  * 获取当前的争夺总收获
- * @param {string} log 争夺记录
+ * @param {string[]} logList 各层争夺记录列表
  * @returns {{exp: number, kfb: number}} exp：经验；kfb：KFB
  */
-const getTotalGain = function (log) {
-    let matches = log.match(/获得\s*\[\s*\d+\s*]\s*经验和\s*\[\s*\d+\s*]\s*KFB/g);
+const getTotalGain = function (logList) {
     let exp = 0, kfb = 0;
-    for (let i in matches) {
-        let logMatches = /获得\s*\[\s*(\d+)\s*]\s*经验和\s*\[\s*(\d+)\s*]\s*KFB/.exec(matches[i]);
-        exp += parseInt(logMatches[1]);
-        kfb += parseInt(logMatches[2]);
-    }
+    $.each(logList, function (level, levelLog) {
+        if (!levelLog) return;
+        let matches = /获得\s*\[\s*(\d+)\s*]\s*经验和\s*\[\s*(\d+)\s*]\s*KFB/.exec(Util.removeHtmlTag(levelLog));
+        if (matches) {
+            exp += parseInt(matches[1]);
+            kfb += parseInt(matches[2]);
+        }
+    });
     return {exp, kfb};
 };
 
 /**
- * 获取遭遇敌人列表
- * @param {string} log 争夺记录
+ * 获取遭遇敌人统计列表
+ * @param {string[]} logList 各层争夺记录列表
  * @returns {{}} 遭遇敌人列表
  */
-const getEnemyList = function (log) {
-    let matches = log.match(/\[[^\]]+的]NPC/g);
-    let enemyList = {
+const getEnemyStatList = function (logList) {
+    let enemyStatList = {
         '普通': 0,
         '特别强壮': 0,
         '特别快速': 0,
@@ -1168,15 +1187,32 @@ const getEnemyList = function (log) {
         'BOSS': 0,
         '大魔王': 0,
     };
-    for (let i in matches) {
-        let enemyMatches = /\[([^\]]+)的/.exec(matches[i]);
-        let enemy = enemyMatches[1];
-        enemy = enemy.replace('(后续更新前此路不通)', '');
-        if (!(enemy in enemyList)) continue;
-        enemyList[enemy]++;
+    $.each(getEnemyList(logList), function (level, enemy) {
+        if (!enemy || !(enemy in enemyStatList)) return;
+        enemyStatList[enemy]++;
+    });
+    for (let [enemy, num] of Util.entries(enemyStatList)) {
+        if (!num) delete enemyStatList[enemy];
     }
-    for (let [enemy, num] of Util.entries(enemyList)) {
-        if (!num) delete enemyList[enemy];
+    return enemyStatList;
+};
+
+/**
+ * 获取各层敌人列表
+ * @param {string[]} logList 各层争夺记录列表
+ * @returns {[]} 各层敌人列表
+ */
+const getEnemyList = function (logList) {
+    let enemyList = [];
+    for (let level in logList) {
+        let levelLog = logList[level];
+        if (!levelLog) continue;
+        let matches = /\[([^\]]+)的]NPC/.exec(Util.removeHtmlTag(levelLog));
+        if (matches) {
+            let enemy = matches[1];
+            enemy = enemy.replace('(后续更新前此路不通)', '');
+            enemyList[level] = enemy;
+        }
     }
     return enemyList;
 };

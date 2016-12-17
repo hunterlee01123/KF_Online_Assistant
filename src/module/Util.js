@@ -302,6 +302,13 @@ export const htmlDecode = function (str) {
 };
 
 /**
+ * 去除HTML标签
+ * @param html HTML代码
+ * @returns {string} 去除HTML标签的文本
+ */
+export const removeHtmlTag = html => html.replace(/<[^>]+>/g, '');
+
+/**
  * 获取指定对象的关键字列表
  * @param {Object} obj 指定对象
  * @param {number} sortBy 是否排序，0：不排序；1：升序；-1：降序
