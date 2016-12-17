@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.6.2';
+const version = '8.6.3';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -5462,6 +5462,10 @@ const getPointNameByFieldName = function (fieldName) {
             return '智力';
         case 'i2':
             return '意志';
+        case 'p':
+            return '耐力';
+        case 'l':
+            return '幸运';
         default:
             return '';
     }
@@ -5486,6 +5490,10 @@ const getFieldNameByPointName = function (pointName) {
             return 'i1';
         case '意志':
             return 'i2';
+        case '耐力':
+            return 'p';
+        case '幸运':
+            return 'l';
         default:
             return '';
     }
@@ -6010,7 +6018,7 @@ const lootAttack = function ({ type, targetLevel, isChangePoints, safeId, curren
             } else if (typeof points === 'number') {
                 nextLevel = parseInt(points);
                 nextLevel = nextLevel > 1 ? nextLevel : 1;
-            } else return $.Deferred().resolve('error');
+            } else if (points === false) return $.Deferred().resolve('success');else return $.Deferred().resolve('error');
         }
 
         let changeLevel = nextLevel > 0 ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : -1;
