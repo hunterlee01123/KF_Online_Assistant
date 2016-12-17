@@ -747,10 +747,12 @@ export const blockThread = function () {
     if (Info.isInHomePage) {
         $('.b_tit4 a, .b_tit4_1 a').each(function () {
             let $this = $(this);
-            let matches = /》by：(.+)/.exec($this.attr('title'));
+            let title = $this.attr('title');
+            if (!title) return;
+            let matches = /》by：(.+)/.exec(title);
             let userName = '';
             if (matches) userName = matches[1];
-            if (isBlock($this.text(), userName)) {
+            if (isBlock(title, userName)) {
                 num++;
                 $this.parent('li').remove();
             }
