@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        自定义争夺点数分配方案参考范例
-// @version     1.1
+// @version     1.2
 // @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13270735
@@ -23,9 +23,10 @@ var Const = require('./Const').default;
  * @param {Map} data.itemUsedNumList 道具使用情况列表
  * @param {string} data.log 当前争夺记录
  * @param {string[]} data.logList 当前各层争夺记录列表
+ * @param {string[]} data.enemyList 当前各层遭遇NPC列表
  * @param {function} data.getPropertyByPoint 根据指定的点数获得相应争夺属性的值（会根据用户的道具加成情况进行计算），例：data.getPropertyByPoint('力量', 5)
  * @param {function} data.getPointByProperty 根据指定的争夺属性获得相应点数的值（会根据用户的道具加成情况进行计算），例：data.getPointByProperty('力量', 400)
- * @returns {?{}|number} 争夺点数分配方案，可返回点数设置对象或各层点数分配方案中的指定层数，返回null表示暂停连续攻击
+ * @returns {?{}|number|boolean} 争夺点数分配方案，可返回点数设置对象或各层点数分配方案中的指定层数，返回null表示暂停连续攻击，返回false表示使用当前点数继续攻击
  */
 Const.getCustomPoints = function (data) {
     // data参数的含义见上方注释，可使用 console.log(data) 在控制台查看各参数具体的值
@@ -34,7 +35,7 @@ Const.getCustomPoints = function (data) {
     //   1. 点数设置对象，如：return {"力量": 1, "体质": 2, "敏捷": 3, "灵活": 3, "智力": 2, "意志": 1};
     //   2. 用户设置的各层点数分配方案中的指定层数（如不存在指定层数的方案，则使用低于指定层数的最大层数的方案），如：return 18;
     //   3. 返回null表示暂停攻击，如：return null;
-    // 注：点数修改过程可见争夺记录下方
+    //   4. 返回false表示使用当前点数继续攻击，如：return false;
 
     // 参考范例：
     console.log(data); // 在控制台输出各参数的具体值
