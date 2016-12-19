@@ -773,7 +773,7 @@ const addAttackBtns = function () {
     <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
     <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
   </label><br>
-  <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
+  <button name="autoAttack" type="button" title="连续攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="每次只攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
 </div>
 `).appendTo($points).on('click', '[name="autoAttack"], [name="onceAttack"]', function () {
