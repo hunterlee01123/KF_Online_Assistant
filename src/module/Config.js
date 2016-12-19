@@ -177,6 +177,8 @@ export const Config = {
     autoChangeLevelPointsEnabled: false,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
+    // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下），true：开启；false：关闭
+    customPointsScriptEnabled: false,
 };
 
 /**

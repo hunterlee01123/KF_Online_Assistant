@@ -432,27 +432,23 @@ const addLevelPointListSelect = function () {
     $(`
 <select id="pdLevelPointListSelect" style="margin: 5px 0;">
   <option>点数分配方案</option>
-  <option class="pd_highlight" value="edit">编辑&hellip;</option>
   <option value="0">默认</option>
 </select>
-<a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a><br>
+<a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a>
+<a class="pd_btn_link" data-name="edit" href="#" title="编辑各层点数分配方案">编辑</a><br>
 `).prependTo($points).filter('#pdLevelPointListSelect').change(function () {
-        let level = $(this).val();
-        if (level === '0') {
-            $points.find('.pd_point').each(function () {
-                $(this).val(this.defaultValue);
-            }).trigger('change');
-        }
-        else if (level === 'edit') {
-            showLevelPointListConfigDialog();
-            this.selectedIndex = 0;
-        }
-        else if ($.isNumeric(level)) {
+        let level = parseInt($(this).val());
+        if (level > 0) {
             let points = Config.levelPointList[parseInt(level)];
             if (typeof points !== 'object') return;
             $points.find('.pd_point').each(function () {
                 let $this = $(this);
                 $this.val(points[getPointNameByFieldName($this.attr('name'))]);
+            }).trigger('change');
+        }
+        else if (level === 0) {
+            $points.find('.pd_point').each(function () {
+                $(this).val(this.defaultValue);
             }).trigger('change');
         }
     }).end().filter('[data-name="save"]').click(function (e) {
@@ -478,6 +474,9 @@ const addLevelPointListSelect = function () {
         writeConfig();
         setLevelPointListSelect(Config.levelPointList);
         $levelPointListSelect.val(level);
+    }).end().filter('[data-name="edit"]').click(function (e) {
+        e.preventDefault();
+        showLevelPointListConfigDialog();
     });
     setLevelPointListSelect(Config.levelPointList);
 };
@@ -507,8 +506,6 @@ const showLevelPointListConfigDialog = function (callback) {
     请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
     （例：11-19层点数相同的话，则只保留第11层）<br>
     自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
-    ${typeof Const.getCustomPoints === 'function' ?
-        '（<span class="pd_highlight" data-name="openCustomScriptDialog" style="cursor: pointer;">自定义点数分配方案已启用</span>）' : ''}
   </div>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
@@ -763,18 +760,23 @@ const showLevelPointListConfigDialog = function (callback) {
 const addAttackBtns = function () {
     $logBox.off('click');
     $(`
-<label>
-  <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
-  ${typeof Const.getCustomPoints === 'function' ? '<span class="pd_highlight pd_custom_tips" title="自定义点数分配方案已启用">(*)</span>' : ''}
-  <span class="pd_cfg_tips" title="点击攻击按钮后可自动修改成相应层数的点数分配方案；如不勾选此项的话，点击攻击按钮后会自动提交当前的点数设置">[?]</span>
-</label>
-<label>
-  <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
-  <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
-</label><br>
-<button name="continuingAttack" type="button" title="连续攻击到指定层数">连续攻击</button>
-<button name="onceAttack" type="button" title="每次只攻击一层">攻击一层</button>
-`).appendTo($points).filter('[name="continuingAttack"], [name="onceAttack"]').click(function () {
+<div id="pdAttackBtns">
+  <label>
+    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
+    <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击有效）">[?]</span>
+  </label>
+  ${typeof Const.getCustomPoints === 'function' ? `<label>
+    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox"> 使用自定义脚本
+    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击有效）">[?]</span>
+  </label>` : ''}
+  <label>
+    <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
+    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
+  </label><br>
+  <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
+  <button name="onceAttack" type="button" title="每次只攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
+</div>
+`).appendTo($points).on('click', '[name="autoAttack"], [name="onceAttack"]', function () {
         let safeId = Public.getSafeId();
         if (!safeId) return;
         if (/你被击败了/.test(log)) {
@@ -782,40 +784,61 @@ const addAttackBtns = function () {
             return;
         }
         let $this = $(this);
-        let type = $this.is('[name="continuingAttack"]') ? 'continue' : 'once';
+        let type = $this.is('[name="autoAttack"]') ? 'auto' : 'once';
         let targetLevel = 0;
-        if (type === 'continue') {
-            targetLevel = parseInt($this.data('level'));
-            if (isNaN(targetLevel)) targetLevel = parseInt(prompt('攻击到第几层？（设为0表示攻击到被击败为止）', 0));
+        if (type === 'auto') {
+            let prevTargetLevel = $this.data('prevTargetLevel');
+            let value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : 0));
+            if (!/\+?\d+/.test(value)) return;
+            if (value.startsWith('+')) {
+                let currentLevel = getCurrentLevel(logList);
+                targetLevel = currentLevel + parseInt(value);
+            }
+            else targetLevel = parseInt(value);
             if (isNaN(targetLevel) || targetLevel < 0) return;
+            $this.data('prevTargetLevel', value);
         }
         $this.blur();
         Msg.destroy();
-        let isChangePoints = Config.autoChangeLevelPointsEnabled &&
-            (!$.isEmptyObject(Config.levelPointList) || typeof Const.getCustomPoints === 'function');
-        if (!isChangePoints && !checkPoints($points)) return;
-        lootAttack({type, targetLevel, isChangePoints, safeId});
-    }).end().find('[name="autoChangeLevelPointsEnabled"]').click(function () {
-        readConfig();
-        Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
-        writeConfig();
-    }).prop('checked', Config.autoChangeLevelPointsEnabled)
-        .end().find('[name="slowAttackEnabled"]').click(function () {
-        readConfig();
-        Config.slowAttackEnabled = $(this).prop('checked');
-        writeConfig();
-    }).prop('checked', Config.slowAttackEnabled);
+        let autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled ||
+            Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') && type === 'auto';
+        if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
+        lootAttack({type, targetLevel, autoChangeLevelPointsEnabled, safeId});
+    }).on('click', '.pd_cfg_tips', () => false)
+        .find('[name="autoChangeLevelPointsEnabled"]')
+        .click(function () {
+            readConfig();
+            Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
+            writeConfig();
+        }).prop('checked', Config.autoChangeLevelPointsEnabled)
+        .end().find('[name="slowAttackEnabled"]')
+        .click(function () {
+            readConfig();
+            Config.slowAttackEnabled = $(this).prop('checked');
+            writeConfig();
+        }).prop('checked', Config.slowAttackEnabled)
+        .end().find('[name="customPointsScriptEnabled"]')
+        .click(function () {
+            let checked = $(this).prop('checked');
+            $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', checked);
+            if (Config.customPointsScriptEnabled !== checked) {
+                readConfig();
+                Config.customPointsScriptEnabled = checked;
+                writeConfig();
+            }
+        }).prop('checked', Config.customPointsScriptEnabled).triggerHandler('click');
 };
 
 /**
  * 争夺攻击
  * @param {string} type 攻击类型，continue：连续攻击；once：攻击一层
  * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止）
- * @param {boolean} isChangePoints 是否自动修改点数分配方案
+ * @param {boolean} autoChangeLevelPointsEnabled 是否自动修改为相应层数的点数分配方案
  * @param {string} safeId SafeID
  */
-const lootAttack = function ({type, targetLevel, isChangePoints, safeId}) {
+const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, safeId}) {
     let currentLevel = getCurrentLevel(logList);
+    if (targetLevel > 0 && targetLevel <= currentLevel) return;
     let $wait = Msg.wait(
         `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${currentLevel}</em></i>` +
         '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>'
@@ -828,7 +851,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId}) {
      * @returns {Deferred} Deferred对象
      */
     const changePoints = function (nextLevel) {
-        if (nextLevel > 0 && typeof Const.getCustomPoints === 'function') {
+        if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') {
             let currentLevel = getCurrentLevel(logList);
             let currentLife = 0, currentInitLife = 0;
             let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[currentLevel]);
@@ -960,7 +983,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId}) {
             $countdown.text(currentLevel);
 
             let isFail = /你被击败了/.test(html);
-            let isStop = isFail || type !== 'continue' || (targetLevel && currentLevel >= targetLevel) ||
+            let isStop = isFail || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) ||
                 $countdown.closest('.pd_msg').data('stop');
             if (isStop) {
                 if (isFail) {
@@ -972,7 +995,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId}) {
                 }
             }
             else {
-                if (isChangePoints) {
+                if (autoChangeLevelPointsEnabled) {
                     setTimeout(() => readyAttack(currentLevel), Const.defAjaxInterval);
                 }
                 else {
@@ -1062,7 +1085,7 @@ const lootAttack = function ({type, targetLevel, isChangePoints, safeId}) {
         })
     };
 
-    readyAttack(isChangePoints ? currentLevel : -1, 0);
+    readyAttack(autoChangeLevelPointsEnabled ? currentLevel : -1, 0);
 };
 
 /**
