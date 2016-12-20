@@ -58,21 +58,6 @@ const Const = {
     minBuyThreadWarningSell: 6,
     // 统计回帖者名单最大能访问的帖子页数
     statRepliersMaxPage: 300,
-    // 道具样品ID列表
-    sampleItemIdList: new Map([
-        ['零时迷子的碎片', 2257935],
-        ['被遗弃的告白信', 2005272],
-        ['学校天台的钥匙', 2001303],
-        ['TMA最新作压缩包', 1990834],
-        ['LOLI的钱包', 1836588],
-        ['棒棒糖', 1942370],
-        ['蕾米莉亚同人漫画', 1000888],
-        ['十六夜同人漫画', 1002668],
-        ['档案室钥匙', 1013984],
-        ['傲娇LOLI娇蛮音CD', 4621],
-        ['整形优惠卷', 1003993],
-        ['消逝之药', 1000306],
-    ]),
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义侧边栏导航内容
@@ -81,8 +66,6 @@ const Const = {
     // 自定义侧边栏导航内容（手机平铺样式）
     // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br>'，换行：'<br>'
     customTileSideBarContent: '',
-    // 可进行自助评分的版块ID列表
-    selfRatingFidList: [41, 67, 92, 127, 68],
 
     // 通用存储数据名称前缀
     storagePrefix: storagePrefix,

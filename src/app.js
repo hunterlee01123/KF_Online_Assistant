@@ -92,18 +92,6 @@ $(function () {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertOldItemTypesButton();
     }
-    else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addConvertEnergyAndRestoreItemsButton();
-    }
-    else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addBatchUseOldItemsButton();
-    }
-    else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
-        Item.modifyItemDescription();
-        if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
-            Item.addSampleItemTips();
-        }
-    }
     else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.addBatchUseItemsButton();
         Item.hideItemTypes();

@@ -61,42 +61,6 @@ const getRestoreEnergyNumByLevel = function (itemLevel) {
 };
 
 /**
- * 获取指定名称的道具种类ID
- * @param {string} itemName 道具名称
- * @returns {number} 道具种类ID
- */
-export const getTypeIdByName = function (itemName) {
-    switch (itemName) {
-        case '零时迷子的碎片':
-            return 1;
-        case '被遗弃的告白信':
-            return 2;
-        case '学校天台的钥匙':
-            return 3;
-        case 'TMA最新作压缩包':
-            return 4;
-        case 'LOLI的钱包':
-            return 5;
-        case '棒棒糖':
-            return 6;
-        case '蕾米莉亚同人漫画':
-            return 11;
-        case '十六夜同人漫画':
-            return 7;
-        case '档案室钥匙':
-            return 8;
-        case '傲娇LOLI娇蛮音CD':
-            return 12;
-        case '整形优惠卷':
-            return 9;
-        case '消逝之药':
-            return 10;
-        default:
-            return 0;
-    }
-};
-
-/**
  * 获取指定名称的道具等级
  * @param {string} itemName 道具名称
  * @returns {number} 道具等级
@@ -289,9 +253,7 @@ const useOldItems = function (options, cycle) {
                         failNum++;
                         if (/无法再使用/.test(msg)) nextRoundItemIdList = [];
                     }
-                    $('.pd_result:last').append(
-                        `<li><b>第${index + 1}次：</b>${msg}</li>`
-                    );
+                    $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                     if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
                         isStop = true;
                         console.log('有效道具使用次数到达设定上限，循环使用操作停止');
@@ -345,18 +307,7 @@ const useOldItems = function (options, cycle) {
                         $('.pd_result:last').append(
                             `<li class="pd_stat"><b>统计结果（共有<em>${successNum}</em>个道具被使用）：</b><br>${resultStat}</li>`
                         );
-
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1 input[type="checkbox"]:checked')
-                                .closest('tr')
-                                .fadeOut('normal', function () {
-                                    $(this).remove();
-                                });
-                        }
-                        else {
-                            setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
-                            showItemUsedInfo(settings.$itemLine.closest('tbody').find('tr:gt(1) > td:nth-child(2) > a'));
-                        }
+                        setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
                         if (settings.itemName === '零时迷子的碎片') showCurrentUsedItemNum();
 
                         if (cycle) {
@@ -490,14 +441,6 @@ const restoreItems = function (options, cycle) {
                             `<li class="pd_stat">共有<em>${successNum}</em>个道具恢复成功，共有<em>${failNum}</em>个道具恢复失败，` +
                             `<i>能量<ins>-${successEnergyNum}</ins></i></li>`
                         );
-
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked')
-                                .closest('tr')
-                                .fadeOut('normal', function () {
-                                    $(this).remove();
-                                });
-                        }
                         setCurrentItemUsableAndUsedNum(settings.$itemLine, -(successNum + failNum), successNum, -successEnergyNum);
 
                         if (cycle) {
@@ -726,14 +669,6 @@ const convertItemsToEnergy = function (options) {
                             `<li class="pd_stat">共有<em>${successNum}</em>个道具成功转换为能量${failNum > 0 ? `，共有<em>${failNum}</em>个道具转换失败` : ''}，` +
                             `<i>能量<em>+${successEnergyNum}</em></i></li>`
                         );
-
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked')
-                                .closest('tr')
-                                .fadeOut('normal', function () {
-                                    $(this).remove();
-                                });
-                        }
                         setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, null, successEnergyNum);
                         if (settings.isTypeBatch) $(document).dequeue('ConvertItemTypesToEnergy');
                     }
@@ -745,203 +680,6 @@ const convertItemsToEnergy = function (options) {
         });
     });
     $(document).dequeue('ConvertItemsToEnergy');
-};
-
-/**
- * 在道具列表页面上添加批量使用道具的按钮
- */
-export const addBatchUseOldItemsButton = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    let $lastLine = $('.kf_fw_ig1 > tbody > tr:last-child');
-    let itemName = $lastLine.find('td:first-child').text();
-    if (!itemName) return;
-    let matches = /(\d+)级道具/.exec($lastLine.find('td:nth-child(2)').text());
-    if (!matches) return;
-    let itemLevel = parseInt(matches[1]);
-    let itemTypeId = parseInt(Util.getUrlParam('lv'));
-    if (!itemTypeId) return;
-    $('.kf_fw_ig1 > tbody > tr > td:last-child').each(function () {
-        let matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec($(this).find('a').attr('href'));
-        if (!matches) return;
-        $(this).css('width', '163')
-            .parent()
-            .append(`<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="${matches[1]}"></td>`);
-    });
-    $('.kf_fw_ig1 > tbody > tr:lt(2)').find('td').attr('colspan', 5);
-
-    $(`
-<div class="pd_item_btns">
-  ${itemTypeId > 1 ? '<button name="cycleUseItem" type="button" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : ''}
-  <button name="useItem" type="button" title="批量使用指定道具">使用道具</button>
-  <button name="selectAll" type="button">全选</button>
-  <button name="selectInverse" type="button">反选</button>
-</div>
-`).insertAfter('.kf_fw_ig1')
-        .find('[name="useItem"]')
-        .click(function () {
-            Msg.destroy();
-            let itemIdList = [];
-            $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            if (!confirm(`共选择了${itemIdList.length}个道具，是否批量使用道具？`)) return;
-            Msg.wait(
-                `<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
-                `<a class="pd_stop_action" href="#">停止操作</a>`
-            );
-            useOldItems({
-                type: 2,
-                itemIdList: itemIdList,
-                safeId: safeId,
-                itemLevel: itemLevel,
-                itemTypeId: itemTypeId,
-                itemName: itemName,
-            });
-        })
-        .end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1 [type="checkbox"]')))
-        .end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1 [type="checkbox"]')))
-        .end().find('[name="cycleUseItem"]')
-        .click(function () {
-            Msg.destroy();
-            let itemIdList = [];
-            $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            let value = prompt(
-                '你要循环使用多少个道具？\n' +
-                '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）'
-                , itemIdList.length
-            );
-            if (value === null) return;
-            value = $.trim(value);
-            if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
-                alert('格式不正确');
-                return;
-            }
-            let arr = value.split('|');
-            let num = parseInt(arr[0]), maxEffectiveItemCount = 0, maxSuccessRestoreItemCount = 0;
-            if (!num) return;
-            if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
-            if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
-            Msg.destroy();
-
-            if (num > itemIdList.length) num = itemIdList.length;
-            let tmpItemIdList = [];
-            for (let i = 0; i < num; i++) {
-                tmpItemIdList.push(itemIdList[i]);
-            }
-            itemIdList = tmpItemIdList;
-            Msg.wait('正在获取当前道具相关信息，请稍后&hellip;');
-            $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
-                Msg.destroy();
-                let totalEnergyNum = getCurrentEnergyNum(html);
-                showCurrentUsedItemNum(html);
-                cycleUseItems(1, {
-                    type: 2,
-                    itemIdList: itemIdList,
-                    safeId: safeId,
-                    itemLevel: itemLevel,
-                    itemTypeId: itemTypeId,
-                    itemName: itemName,
-                }, {
-                    itemNum: itemIdList.length,
-                    round: 1,
-                    totalEnergyNum: totalEnergyNum,
-                    countStat: {},
-                    stat: {},
-                    maxEffectiveItemCount: maxEffectiveItemCount,
-                    maxSuccessRestoreItemCount: maxSuccessRestoreItemCount,
-                });
-            });
-        });
-
-    showCurrentUsedItemNum();
-};
-
-/**
- * 在已使用道具列表页面上添加批量转换能量和恢复道具的按钮
- */
-export const addConvertEnergyAndRestoreItemsButton = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    let $lastLine = $('.kf_fw_ig1:eq(1) > tbody > tr:last-child');
-    let itemName = $lastLine.find('td:first-child').text();
-    if (!itemName) return;
-    let matches = /(\d+)级道具/.exec($lastLine.find('td:nth-child(2)').text());
-    if (!matches) return;
-    let itemLevel = parseInt(matches[1]);
-    let itemTypeId = parseInt(Util.getUrlParam('lv'));
-    if (!itemTypeId) return;
-    $('.kf_fw_ig1:eq(1) > tbody > tr > td:last-child').each(function () {
-        let matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec($(this).find('a').attr('href'));
-        if (!matches) return;
-        $(this).css('width', '500')
-            .parent()
-            .append(`<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="${matches[1]}"></td>`);
-    });
-    $(`
-<div class="pd_item_btns">
-  <button class="pd_highlight" name="convertEnergy" type="button" title="批量将指定道具转换为能量">转换能量</button>
-  <button name="restoreItem" type="button" title="批量恢复指定道具">恢复道具</button>
-  <button name="selectAll" type="button">全选</button>
-  <button name="selectInverse" type="button">反选</button>
-</div>
-`).insertAfter('.kf_fw_ig1:eq(1)')
-        .find('[name="convertEnergy"]')
-        .click(function () {
-            Msg.destroy();
-            let itemIdList = [];
-            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            if (!confirm(`共选择了${itemIdList.length}个道具，是否转换为能量？`)) return;
-            Msg.wait(
-                `<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
-                `<a class="pd_stop_action" href="#">停止操作</a>`
-            );
-            convertItemsToEnergy({
-                type: 2,
-                itemIdList: itemIdList,
-                safeId: safeId,
-                itemLevel: itemLevel,
-                itemName: itemName,
-            });
-        })
-        .end()
-        .find('[name="restoreItem"]')
-        .click(function () {
-            Msg.destroy();
-            let itemIdList = [];
-            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
-                itemIdList.push(parseInt($(this).val()));
-            });
-            if (!itemIdList.length) return;
-            let totalRequiredEnergyNum = itemIdList.length * getRestoreEnergyNumByLevel(itemLevel);
-            if (!confirm(`共选择了${itemIdList.length}个道具，共需要${totalRequiredEnergyNum}点恢复能量，是否恢复道具？`)) return;
-            let totalEnergyNum = parseInt($('.kf_fw_ig1 td:contains("道具恢复能量")').find('span').text());
-            if (!totalEnergyNum || totalEnergyNum < totalRequiredEnergyNum) {
-                alert('所需恢复能量不足');
-                return;
-            }
-            Msg.wait(
-                `<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` +
-                `<a class="pd_stop_action" href="#">停止操作</a>`
-            );
-            restoreItems({
-                type: 2,
-                itemIdList: itemIdList,
-                safeId: safeId,
-                itemLevel: itemLevel,
-                itemTypeId: itemTypeId,
-                itemName: itemName,
-            });
-        })
-        .end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1:eq(1) input[type="checkbox"]')))
-        .end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1:eq(1) input[type="checkbox"]')));
 };
 
 /**
@@ -966,7 +704,7 @@ export const addBatchUseAndConvertOldItemTypesButton = function () {
                     let $itemLine = $(this).closest('tr'),
                         itemLevel = parseInt($itemLine.find('td:first-child').text()),
                         itemTypeId = parseInt($itemLine.data('itemTypeId')),
-                        itemName = $itemLine.find('td:nth-child(2) > a').text();
+                        itemName = $itemLine.find('td:nth-child(2)').text().trim();
                     if (isNaN(itemTypeId) || itemTypeId <= 0) return;
                     if (name === 'convertItemTypes' && itemTypeId === 1) return;
                     let itemListUrl = $itemLine.find('td:last-child')
@@ -1069,7 +807,7 @@ const bindItemActionLinksClick = function ($element) {
         let $itemLine = $this.closest('tr'),
             itemLevel = parseInt($itemLine.find('td:first-child').text()),
             itemTypeId = parseInt($itemLine.data('itemTypeId')),
-            itemName = $itemLine.find('td:nth-child(2) > a').text(),
+            itemName = $itemLine.find('td:nth-child(2)').text().trim(),
             itemUsableNum = parseInt($itemLine.find('td:nth-child(3) > .pd_usable_num').text()),
             itemUsedNum = parseInt($itemLine.find('td:nth-child(3) > .pd_used_num').text()),
             itemListUrl = '';
@@ -1278,10 +1016,6 @@ export const enhanceMyItemsPage = function () {
         }
     });
     bindItemActionLinksClick($myItems);
-
-    let $itemName = $myItems.find('tbody > tr:gt(1) > td:nth-child(2)');
-    addSampleItemsLink($itemName);
-    showItemUsedInfo($itemName.find('a'));
     showCurrentUsedItemNum();
 };
 
@@ -1296,7 +1030,7 @@ const setCurrentItemUsableAndUsedNum = function ($itemLine, usedChangeNum, usabl
     let flag = false;
     if ($itemLine) {
         let $itemUsed = $itemLine.find('td:nth-child(3) > .pd_used_num');
-        let itemName = $itemLine.find('td:nth-child(2) > a').text();
+        let itemName = $itemLine.find('td:nth-child(2)').text().trim();
         if ($itemUsed.length > 0 && itemName !== '零时迷子的碎片') {
             let num = parseInt($itemUsed.text());
             if (isNaN(num) || num + usedChangeNum < 0) {
@@ -1318,8 +1052,6 @@ const setCurrentItemUsableAndUsedNum = function ($itemLine, usedChangeNum, usabl
     }
     if (energyChangeNum) {
         let $totalEnergy = $('.pd_total_energy_num');
-        if (location.pathname === '/kf_fw_ig_renew.php')
-            $totalEnergy = $('.kf_fw_ig1:first > tbody > tr:nth-child(2) > td:contains("道具恢复能量") > span');
         if ($totalEnergy.length > 0) {
             let num = parseInt($totalEnergy.text());
             if (isNaN(num) || num + energyChangeNum < 0) flag = true;
@@ -1383,12 +1115,9 @@ const showCurrentUsedItemNum = function (html = '') {
             $('.kf_fw_ig_title1:last').find('span:has(.pd_total_energy_num)').remove()
                 .end()
                 .append(
-                    `<span class="pd_custom_tips" style="margin-left: 7px;" title="${introMatches ? introMatches[1] : ''}">` +
-                    `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${energyNum}</b> 点)</span>`
-                );
-        }
-        else {
-            $('.kf_fw_ig1:first > tbody > tr:nth-child(2) > td:contains("道具恢复能量") > span').text(energyNum);
+                `<span class="pd_custom_tips" style="margin-left: 7px;" title="${introMatches ? introMatches[1] : ''}">` +
+                `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${energyNum}</b> 点)</span>`
+            );
         }
 
         if ($('.pd_used_num').length > 0) {
@@ -1469,99 +1198,6 @@ export const getItemUsedInfo = function (html) {
         }
     }
     return itemUsedNumList;
-};
-
-/**
- * 显示道具使用情况
- * @param {jQuery} $links 道具名称的链接列表
- */
-const showItemUsedInfo = function ($links) {
-    let tipsList = [
-        '仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋',
-        '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律',
-    ];
-    $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-        let itemUsedNumList = getItemUsedInfo(html);
-        $links.next('.pd_used_item_info').remove();
-        $links.each(function () {
-            let $this = $(this);
-            let itemName = $this.text();
-            if (!itemUsedNumList.has(itemName)) return;
-            let usedNum = itemUsedNumList.get(itemName);
-            let maxUsedNum = getMaxUsedNumByName(itemName);
-            let nextSuccessPercent = 0;
-            if (usedNum > maxUsedNum) nextSuccessPercent = 0;
-            else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
-            let tips = '';
-            if (usedNum < maxUsedNum && usedNum > 0) tips = `（${tipsList[Math.floor(Math.random() * tipsList.length)]}）`;
-            $this.after(
-                `<span class="pd_used_item_info" title="下个道具使用成功几率：${usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%'}${tips}">` +
-                `(<span style="${usedNum >= maxUsedNum ? 'color: #f00;' : ''}">${usedNum}</span>/<span style="color: #f00;">${maxUsedNum}</span>)</span>`
-            );
-        });
-    });
-};
-
-/**
- * 添加道具样品的链接
- * @param {jQuery} $nodes 道具名称的节点列表
- */
-const addSampleItemsLink = function ($nodes) {
-    $nodes.each(function () {
-        let $this = $(this);
-        let itemName = $this.text().trim();
-        let itemLevel = getLevelByName(itemName);
-        if (itemName && Const.sampleItemIdList.has(itemName)) {
-            let title = '';
-            if (itemName !== '零时迷子的碎片') {
-                title = `恢复此道具需${getRestoreEnergyNumByLevel(itemLevel)}点能量，转换此道具可得${getGainEnergyNumByLevel(itemLevel)}点能量`;
-            }
-            else {
-                title = '此道具不可恢复和转换';
-            }
-            $this.html(`<a href="kf_fw_ig_my.php?pro=${Const.sampleItemIdList.get(itemName)}&display=1" title="${title}">${itemName}</a>`);
-        }
-    });
-};
-
-/**
- * 添加道具样品提示
- */
-export const addSampleItemTips = function () {
-    let id = parseInt(Util.getUrlParam('pro'));
-    if (isNaN(id) || id <= 0) return;
-    for (let itemId of Const.sampleItemIdList.values()) {
-        if (id === itemId) {
-            $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child')
-                .find('span:first')
-                .after('<span class="pd_notice" style="margin-left: 5px;">(展示用样品)</span>');
-            break;
-        }
-    }
-};
-
-/**
- * 修正道具描述
- */
-export const modifyItemDescription = function () {
-    let $area = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child');
-    let matches = /道具名称：(.+)/.exec($area.find('span:first').text().trim());
-    if (!matches) return;
-    let itemName = matches[1];
-    let itemDescReplaceList = new Map([
-        ['蕾米莉亚同人漫画', ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。']],
-        ['十六夜同人漫画', ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。']],
-        ['档案室钥匙', ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。']],
-        ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.8%；满30张时，追加降低对手10%攻击力。']],
-        ['整形优惠卷', [
-            ['暴击几率+3%。上限10。'],
-            ['在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。']
-        ]],
-        ['消逝之药', ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']],
-    ]);
-    if (itemDescReplaceList.has(itemName)) {
-        $area.html($area.html().replace(itemDescReplaceList.get(itemName)[0], itemDescReplaceList.get(itemName)[1]));
-    }
 };
 
 /**
