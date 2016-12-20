@@ -749,12 +749,12 @@ export const blockThread = function () {
             let $this = $(this);
             let title = $this.attr('title');
             if (!title) return;
-            let matches = /》by：(.+)/.exec(title);
-            let userName = '';
-            if (matches) userName = matches[1];
-            if (isBlock(title, userName)) {
-                num++;
-                $this.parent('li').remove();
+            let matches = /^《(.+)》by：(.+)$/.exec(title);
+            if (matches) {
+                if (isBlock(matches[1], matches[2])) {
+                    num++;
+                    $this.parent('li').remove();
+                }
             }
         });
     }
@@ -1127,7 +1127,7 @@ export const addSearchDialogLink = function () {
             let $dialog = Dialog.create(dialogName, '搜索', html);
 
             $dialog.closest('form').attr({
-                'name': dialogName,
+                'name': 'pdSearchForm',
                 'action': 'search.php?',
                 'method': 'post',
                 'target': '_blank',

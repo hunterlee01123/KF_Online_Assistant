@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.7.1';
+const version = '8.7.2';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -8075,12 +8075,12 @@ const blockThread = exports.blockThread = function () {
             let $this = $(this);
             let title = $this.attr('title');
             if (!title) return;
-            let matches = /》by：(.+)/.exec(title);
-            let userName = '';
-            if (matches) userName = matches[1];
-            if (isBlock(title, userName)) {
-                num++;
-                $this.parent('li').remove();
+            let matches = /^《(.+)》by：(.+)$/.exec(title);
+            if (matches) {
+                if (isBlock(matches[1], matches[2])) {
+                    num++;
+                    $this.parent('li').remove();
+                }
             }
         });
     } else if (location.pathname === '/thread.php') {
@@ -8431,7 +8431,7 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
         let $dialog = Dialog.create(dialogName, '搜索', html);
 
         $dialog.closest('form').attr({
-            'name': dialogName,
+            'name': 'pdSearchForm',
             'action': 'search.php?',
             'method': 'post',
             'target': '_blank'
