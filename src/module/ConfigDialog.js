@@ -33,7 +33,7 @@ export const show = function () {
   </div>
 
   <div class="pd_cfg_panel" style="margin-bottom: 5px;">
-    <fieldset>
+    <fieldset hidden>
       <legend>
         <label>
           <input name="autoRefreshEnabled" type="checkbox"> 定时模式
@@ -50,7 +50,7 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span>
       </label>
     </fieldset>
-    <fieldset>
+    <fieldset hidden>
       <legend>
         <label><input name="autoDonationEnabled" type="checkbox"> 自动KFB捐款</label>
       </legend>
@@ -163,20 +163,16 @@ export const show = function () {
         <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
       </label><br>
       <label>
-        <input name="showSelfRatingLinkEnabled" type="checkbox"> 显示自助评分链接
-        <span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
-        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
-      </label><br>
-      <label>
         <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> 写帖子时阻止关闭页面
-        <span class="pd_cfg_tips" title="在撰写发帖内容时，如不小心关闭了页面会提示确认">[?]</span>
+        <span class="pd_cfg_tips" title="在撰写发帖内容时，如不小心关闭了页面会进行提示">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
-        <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容">[?]</span>
+        <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
+      </label><br>
+      <label>
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>
   </div>
@@ -426,7 +422,7 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
-    let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
+    /*let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
     let donationKfb = $.trim($txtDonationKfb.val());
     if (/%$/.test(donationKfb)) {
         if (!/^1?\d?\d%$/.test(donationKfb)) {
@@ -459,7 +455,7 @@ const verifyMainConfig = function ($dialog) {
         alert('在指定时间之后捐款格式不正确');
         $txtDonationAfterTime.select().focus();
         return false;
-    }
+    }*/
 
     let $txtMaxFastGotoThreadPageNum = $dialog.find('[name="maxFastGotoThreadPageNum"]');
     let maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());

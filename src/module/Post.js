@@ -18,8 +18,7 @@ export const handleMultiQuote = function (type = 1) {
             e.preventDefault();
             localStorage.removeItem(Const.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
-            if (type === 2) $('#textarea').val('');
-            else $('textarea:first').val('');
+            $(type === 2 ? '#textarea' : '[name="atc_content"]').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -89,7 +88,7 @@ export const handleMultiQuote = function (type = 1) {
         localStorage.removeItem(Const.multiQuoteStorageName);
     });
     if (type === 2) $(document).dequeue('MultiQuote');
-    else $('textarea:first').val(content).focus();
+    else $('[name="atc_content"]').val(content).focus();
     Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
@@ -267,7 +266,7 @@ export const importKfSmileEnhanceExtension = function () {
  */
 export const preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea:first');
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
         let content = $textArea.val();
         if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !Info.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';

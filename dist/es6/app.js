@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.7';
+const version = '8.7.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -109,7 +109,6 @@ $(function () {
         Read.addStatRepliersLink();
         Read.handleBuyThreadBtn();
         if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
-        if (Config.showSelfRatingLinkEnabled) Read.addSelfRatingLink();
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
@@ -195,16 +194,16 @@ $(function () {
 
     let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
     let isDonationStarted = false;
-    if (Config.autoDonationEnabled && !Util.getCookie(_Const2.default.donationCookieName)) {
+    /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
         isDonationStarted = true;
         Public.donation(autoSaveCurrentDepositAvailable);
-    }
+    }*/
 
     if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
 
-    if (Config.autoRefreshEnabled && _Info2.default.isInHomePage) Public.startAutoRefreshMode();
+    //if (Config.autoRefreshEnabled && Info.isInHomePage) Public.startAutoRefreshMode();
 
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 
@@ -840,16 +839,16 @@ const name = _Const2.default.storagePrefix + 'config';
  */
 const Config = exports.Config = {
     // 是否开启定时模式，可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效，true：开启；false：关闭
-    autoRefreshEnabled: false,
+    //autoRefreshEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
-    showRefreshModeTipsType: 'auto',
+    //showRefreshModeTipsType: 'auto',
 
     // 是否自动KFB捐款，true：开启；false：关闭
-    autoDonationEnabled: false,
+    //autoDonationEnabled: false,
     // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
-    donationKfb: '1',
+    //donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    donationAfterTime: '00:05:00',
+    //donationAfterTime: '00:05:00',
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -898,8 +897,6 @@ const Config = exports.Config = {
     parseMediaTagEnabled: true,
     // 是否在帖子和搜索页面通过左右键进行翻页，true：开启；false：关闭
     turnPageViaKeyboardEnabled: false,
-    // 是否在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用），true：开启；false：关闭
-    showSelfRatingLinkEnabled: false,
     // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
     buyThreadViaAjaxEnabled: true,
     // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
@@ -907,7 +904,7 @@ const Config = exports.Config = {
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
-    autoSavePostContentWhenSubmitEnabled: true,
+    autoSavePostContentWhenSubmitEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -927,10 +924,6 @@ const Config = exports.Config = {
     customScriptEnabled: false,
     // 自定义脚本列表
     customScriptList: [],
-    // 在脚本开始时执行的自定义脚本内容（已废弃）
-    customScriptStartContent: '',
-    // 在脚本结束时执行的自定义脚本内容（已废弃）
-    customScriptEndContent: '',
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',
 
@@ -1077,7 +1070,6 @@ const changeStorageType = exports.changeStorageType = function (storageType) {
 const normalize = exports.normalize = function (options) {
     let settings = {};
     if ($.type(options) !== 'object') return settings;
-    if (typeof options.donationKfb === 'number') options.donationKfb = options.donationKfb.toString();
     for (let [key, value] of Util.entries(options)) {
         if (key in Config && $.type(value) === $.type(Config[key])) {
             settings[key] = value;
@@ -1146,7 +1138,7 @@ const show = exports.show = function () {
   </div>
 
   <div class="pd_cfg_panel" style="margin-bottom: 5px;">
-    <fieldset>
+    <fieldset hidden>
       <legend>
         <label>
           <input name="autoRefreshEnabled" type="checkbox"> 定时模式
@@ -1163,7 +1155,7 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span>
       </label>
     </fieldset>
-    <fieldset>
+    <fieldset hidden>
       <legend>
         <label><input name="autoDonationEnabled" type="checkbox"> 自动KFB捐款</label>
       </legend>
@@ -1276,20 +1268,16 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
       </label><br>
       <label>
-        <input name="showSelfRatingLinkEnabled" type="checkbox"> 显示自助评分链接
-        <span class="pd_cfg_tips" title="在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用）">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
-        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
-      </label><br>
-      <label>
         <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> 写帖子时阻止关闭页面
-        <span class="pd_cfg_tips" title="在撰写发帖内容时，如不小心关闭了页面会提示确认">[?]</span>
+        <span class="pd_cfg_tips" title="在撰写发帖内容时，如不小心关闭了页面会进行提示">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
-        <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容">[?]</span>
+        <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
+      </label><br>
+      <label>
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>
   </div>
@@ -1519,7 +1507,7 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
-    let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
+    /*let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
     let donationKfb = $.trim($txtDonationKfb.val());
     if (/%$/.test(donationKfb)) {
         if (!/^1?\d?\d%$/.test(donationKfb)) {
@@ -1532,26 +1520,26 @@ const verifyMainConfig = function ($dialog) {
             $txtDonationKfb.select().focus();
             return false;
         }
-    } else {
+    }
+    else {
         if (!$.isNumeric(donationKfb)) {
             alert('KFB捐款额度格式不正确');
             $txtDonationKfb.select().focus();
             return false;
         }
-        if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > _Const2.default.maxDonationKfb) {
-            alert(`KFB捐款额度的取值范围在1-${ _Const2.default.maxDonationKfb }之间`);
+        if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
+            alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
             $txtDonationKfb.select().focus();
             return false;
         }
     }
-
-    let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
+      let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
     let donationAfterTime = $.trim($txtDonationAfterTime.val());
     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
         alert('在指定时间之后捐款格式不正确');
         $txtDonationAfterTime.select().focus();
         return false;
-    }
+    }*/
 
     let $txtMaxFastGotoThreadPageNum = $dialog.find('[name="maxFastGotoThreadPageNum"]');
     let maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());
@@ -5333,7 +5321,7 @@ const handlePropertiesArea = function () {
  * 处理点数区域
  */
 const handlePointsArea = function () {
-    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 999).prop('required', true).css('width', '60px').addClass('pd_point');
+    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
     /**
@@ -5743,12 +5731,12 @@ const showLevelPointListConfigDialog = function (callback) {
       第 <input name="level" type="text" value="${ level ? level : '' }" style="width: 30px;"> 层
     </label>
   </td>
-  <td><input class="pd_point" name="s1" type="number" min="1" max="999" value="${ points['力量'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="s2" type="number" min="1" max="999" value="${ points['体质'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d1" type="number" min="1" max="999" value="${ points['敏捷'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d2" type="number" min="1" max="999" value="${ points['灵活'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i1" type="number" min="1" max="999" value="${ points['智力'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i2" type="number" min="1" max="999" value="${ points['意志'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s1" type="number" min="1" max="9999" value="${ points['力量'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s2" type="number" min="1" max="9999" value="${ points['体质'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d1" type="number" min="1" max="9999" value="${ points['敏捷'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d2" type="number" min="1" max="9999" value="${ points['灵活'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i1" type="number" min="1" max="9999" value="${ points['智力'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i2" type="number" min="1" max="9999" value="${ points['意志'] }" style="width: 50px;" required></td>
   <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
@@ -5939,10 +5927,10 @@ const addAttackBtns = function () {
     <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
     <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
   </label><br>
-  <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
-  <button name="onceAttack" type="button" title="每次只攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
+  <button name="autoAttack" type="button" title="连续攻击到指定层数">自动攻击</button>
+  <button name="manualAttack" type="button" title="每次只攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
 </div>
-`).appendTo($points).on('click', '[name="autoAttack"], [name="onceAttack"]', function () {
+`).appendTo($points).on('click', '[name="autoAttack"], [name="manualAttack"]', function () {
         let safeId = Public.getSafeId();
         if (!safeId) return;
         if (/你被击败了/.test(log)) {
@@ -5950,7 +5938,7 @@ const addAttackBtns = function () {
             return;
         }
         let $this = $(this);
-        let type = $this.is('[name="autoAttack"]') ? 'auto' : 'once';
+        let type = $this.is('[name="autoAttack"]') ? 'auto' : 'manual';
         let targetLevel = 0;
         if (type === 'auto') {
             let prevTargetLevel = $this.data('prevTargetLevel');
@@ -5989,8 +5977,8 @@ const addAttackBtns = function () {
 
 /**
  * 争夺攻击
- * @param {string} type 攻击类型，continue：连续攻击；once：攻击一层
- * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止）
+ * @param {string} type 攻击类型，auto：自动攻击；manual：手动攻击
+ * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止，仅限自动攻击有效）
  * @param {boolean} autoChangeLevelPointsEnabled 是否自动修改为相应层数的点数分配方案
  * @param {string} safeId SafeID
  */
@@ -6928,8 +6916,6 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
     if (Config.autoChangeIdColorEnabled) {
         $area.find('[name="autoChangeIdColorEnabled"]').prop('checked', true).triggerHandler('click');
     }
-
-    $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
 };
 
 /**
@@ -7054,7 +7040,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
-            if (type === 2) $('#textarea').val('');else $('textarea:first').val('');
+            $(type === 2 ? '#textarea' : '[name="atc_content"]').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -7117,7 +7103,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
     $('form[name="FORM"]').submit(function () {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
-    if (type === 2) $(document).dequeue('MultiQuote');else $('textarea:first').val(content).focus();
+    if (type === 2) $(document).dequeue('MultiQuote');else $('[name="atc_content"]').val(content).focus();
     Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
@@ -7293,7 +7279,7 @@ const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = fu
  */
 const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea:first');
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
         let content = $textArea.val();
         if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
@@ -8591,7 +8577,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadTitle = exports.addSelfRatingLink = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -9201,7 +9187,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
      * @param {string} id 表情ID
      */
     const addSmileCode = function (id) {
-        let textArea = $('textarea:first').get(0);
+        let textArea = $('[name="atc_content"]').get(0);
         if (!textArea) return;
         let code = `[s:${ id }]`;
         Util.addCode(textArea, code);
@@ -9276,19 +9262,6 @@ const showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = fu
             $this.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${ pid }&tid=${ tid }&aid=$1" alt="[附件图片]" style="max-width:550px" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${ pid }&tid=${ tid }&aid=$1');">`));
         }
     });
-};
-
-/**
- * 在帖子页面添加自助评分链接
- */
-const addSelfRatingLink = exports.addSelfRatingLink = function () {
-    let fid = parseInt($('input[name="fid"]:first').val());
-    if (!fid || !_Const2.default.selfRatingFidList.includes(fid)) return;
-    let tid = parseInt($('input[name="tid"]:first').val());
-    let safeId = Public.getSafeId();
-    if (!safeId || !tid) return;
-    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
-    $('a[href^="kf_tidfavor.php?action=favor"]').after(`<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${ safeId }&ptid=${ tid }" title="仅限自助评分测试人员使用">自助评分</a>`);
 };
 
 /**
@@ -9497,7 +9470,7 @@ const showDialog = exports.showDialog = function (showIndex = null) {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about">
-    <a class="pd_btn_link" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
+    <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
     <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出自定义脚本</a>
   </span>
   <button type="submit">确定</button>

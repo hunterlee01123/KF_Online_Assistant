@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.7';
+const version = '8.7.1';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -65,7 +65,6 @@ $(function () {
         Read.addStatRepliersLink();
         Read.handleBuyThreadBtn();
         if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
-        if (Config.showSelfRatingLinkEnabled) Read.addSelfRatingLink();
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
@@ -176,16 +175,16 @@ $(function () {
 
     let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && Info.isInHomePage;
     let isDonationStarted = false;
-    if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
+    /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
         isDonationStarted = true;
         Public.donation(autoSaveCurrentDepositAvailable);
-    }
+    }*/
 
     if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) Public.changeIdColor();
 
-    if (Config.autoRefreshEnabled && Info.isInHomePage) Public.startAutoRefreshMode();
+    //if (Config.autoRefreshEnabled && Info.isInHomePage) Public.startAutoRefreshMode();
 
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 

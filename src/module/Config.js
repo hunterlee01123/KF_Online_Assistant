@@ -14,16 +14,16 @@ const name = Const.storagePrefix + 'config';
  */
 export const Config = {
     // 是否开启定时模式，可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效，true：开启；false：关闭
-    autoRefreshEnabled: false,
+    //autoRefreshEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
-    showRefreshModeTipsType: 'auto',
+    //showRefreshModeTipsType: 'auto',
 
     // 是否自动KFB捐款，true：开启；false：关闭
-    autoDonationEnabled: false,
+    //autoDonationEnabled: false,
     // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
-    donationKfb: '1',
+    //donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    donationAfterTime: '00:05:00',
+    //donationAfterTime: '00:05:00',
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -72,8 +72,6 @@ export const Config = {
     parseMediaTagEnabled: true,
     // 是否在帖子和搜索页面通过左右键进行翻页，true：开启；false：关闭
     turnPageViaKeyboardEnabled: false,
-    // 是否在符合条件的帖子页面显示自助评分的链接（仅限自助评分测试人员使用），true：开启；false：关闭
-    showSelfRatingLinkEnabled: false,
     // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
     buyThreadViaAjaxEnabled: true,
     // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
@@ -81,7 +79,7 @@ export const Config = {
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
-    autoSavePostContentWhenSubmitEnabled: true,
+    autoSavePostContentWhenSubmitEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -101,10 +99,6 @@ export const Config = {
     customScriptEnabled: false,
     // 自定义脚本列表
     customScriptList: [],
-    // 在脚本开始时执行的自定义脚本内容（已废弃）
-    customScriptStartContent: '',
-    // 在脚本结束时执行的自定义脚本内容（已废弃）
-    customScriptEndContent: '',
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',
 
@@ -258,7 +252,6 @@ export const changeStorageType = function (storageType) {
 export const normalize = function (options) {
     let settings = {};
     if ($.type(options) !== 'object') return settings;
-    if (typeof options.donationKfb === 'number') options.donationKfb = options.donationKfb.toString();
     for (let [key, value] of Util.entries(options)) {
         if (key in Config && $.type(value) === $.type(Config[key])) {
             settings[key] = value;

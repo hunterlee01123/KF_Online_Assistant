@@ -113,7 +113,7 @@ const handlePropertiesArea = function () {
  * 处理点数区域
  */
 const handlePointsArea = function () {
-    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 999)
+    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999)
         .prop('required', true).css('width', '60px').addClass('pd_point');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
@@ -555,12 +555,12 @@ const showLevelPointListConfigDialog = function (callback) {
       第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层
     </label>
   </td>
-  <td><input class="pd_point" name="s1" type="number" min="1" max="999" value="${points['力量']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="s2" type="number" min="1" max="999" value="${points['体质']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d1" type="number" min="1" max="999" value="${points['敏捷']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d2" type="number" min="1" max="999" value="${points['灵活']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i1" type="number" min="1" max="999" value="${points['智力']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i2" type="number" min="1" max="999" value="${points['意志']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s1" type="number" min="1" max="9999" value="${points['力量']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s2" type="number" min="1" max="9999" value="${points['体质']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d1" type="number" min="1" max="9999" value="${points['敏捷']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d2" type="number" min="1" max="9999" value="${points['灵活']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i1" type="number" min="1" max="9999" value="${points['智力']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i2" type="number" min="1" max="9999" value="${points['意志']}" style="width: 50px;" required></td>
   <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
@@ -774,9 +774,9 @@ const addAttackBtns = function () {
     <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
   </label><br>
   <button name="autoAttack" type="button" title="连续攻击到指定层数">自动攻击</button>
-  <button name="onceAttack" type="button" title="每次只攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
+  <button name="manualAttack" type="button" title="每次只攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
 </div>
-`).appendTo($points).on('click', '[name="autoAttack"], [name="onceAttack"]', function () {
+`).appendTo($points).on('click', '[name="autoAttack"], [name="manualAttack"]', function () {
         let safeId = Public.getSafeId();
         if (!safeId) return;
         if (/你被击败了/.test(log)) {
@@ -784,7 +784,7 @@ const addAttackBtns = function () {
             return;
         }
         let $this = $(this);
-        let type = $this.is('[name="autoAttack"]') ? 'auto' : 'once';
+        let type = $this.is('[name="autoAttack"]') ? 'auto' : 'manual';
         let targetLevel = 0;
         if (type === 'auto') {
             let prevTargetLevel = $this.data('prevTargetLevel');
@@ -831,8 +831,8 @@ const addAttackBtns = function () {
 
 /**
  * 争夺攻击
- * @param {string} type 攻击类型，continue：连续攻击；once：攻击一层
- * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止）
+ * @param {string} type 攻击类型，auto：自动攻击；manual：手动攻击
+ * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止，仅限自动攻击有效）
  * @param {boolean} autoChangeLevelPointsEnabled 是否自动修改为相应层数的点数分配方案
  * @param {string} safeId SafeID
  */

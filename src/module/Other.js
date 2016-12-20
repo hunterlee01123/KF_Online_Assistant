@@ -406,8 +406,6 @@ export const addAutoChangeIdColorButton = function () {
     if (Config.autoChangeIdColorEnabled) {
         $area.find('[name="autoChangeIdColorEnabled"]').prop('checked', true).triggerHandler('click');
     }
-
-    $('div[style="float:right;color:#8080C0"]:contains("每天捐款附送100经验值")').html('每天捐款附送50经验值');
 };
 
 /**

@@ -634,7 +634,7 @@ export const addMoreSmileLink = function () {
      * @param {string} id 表情ID
      */
     const addSmileCode = function (id) {
-        let textArea = $('textarea:first').get(0);
+        let textArea = $('[name="atc_content"]').get(0);
         if (!textArea) return;
         let code = `[s:${id}]`;
         Util.addCode(textArea, code);
@@ -732,21 +732,6 @@ export const showAttachImageOutsideSellBox = function () {
             );
         }
     });
-};
-
-/**
- * 在帖子页面添加自助评分链接
- */
-export const addSelfRatingLink = function () {
-    let fid = parseInt($('input[name="fid"]:first').val());
-    if (!fid || !Const.selfRatingFidList.includes(fid)) return;
-    let tid = parseInt($('input[name="tid"]:first').val());
-    let safeId = Public.getSafeId();
-    if (!safeId || !tid) return;
-    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
-    $('a[href^="kf_tidfavor.php?action=favor"]').after(
-        `<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}" title="仅限自助评分测试人员使用">自助评分</a>`
-    );
 };
 
 /**
