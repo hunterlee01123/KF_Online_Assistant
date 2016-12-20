@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        发帖常用文本
-// @version     1.5
+// @version     1.6
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=12878948
@@ -52,7 +52,7 @@
                 text = $selectItem.val();
             }
             if (text) {
-                let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea:first');
+                let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
                 let content = $textArea.val();
                 content += (content && !/\n$/.test(content) ? '\n' : '') + text;
                 $textArea.val(content).focus();
