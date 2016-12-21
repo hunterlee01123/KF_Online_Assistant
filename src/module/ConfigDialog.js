@@ -33,16 +33,16 @@ export const show = function () {
   </div>
 
   <div class="pd_cfg_panel" style="margin-bottom: 5px;">
-    <fieldset hidden>
+    <fieldset>
       <legend>
         <label>
-          <input name="autoRefreshEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动捐款，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
+          <input name="timingModeEnabled" type="checkbox"> 定时模式
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
       <label>
         标题提示方案
-        <select name="showRefreshModeTipsType">
+        <select name="showTimingModeTipsType">
           <option value="auto">停留一分钟后显示</option>
           <option value="always">总是显示</option>
           <option value="never">不显示</option>
@@ -62,6 +62,19 @@ export const show = function () {
       <label class="pd_cfg_ml">
         在 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后捐款
         <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>
+        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> 自动领取每日奖励</label>
+      </legend>
+      <label>
+        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> 完成争夺后才领取
+        <span class="pd_cfg_tips" title="在完成争夺奖励后才领取每日奖励">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> 完成发言后才领取
+        <span class="pd_cfg_tips" title="在完成发言奖励后才领取每日奖励">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -297,7 +310,7 @@ export const show = function () {
     $dialog.submit(function (e) {
         e.preventDefault();
         if (!verifyMainConfig($dialog)) return;
-        let oriAutoRefreshEnabled = Config.autoRefreshEnabled;
+        let oriAutoRefreshEnabled = Config.timingModeEnabled;
         readConfig();
         let options = getMainConfigValue($dialog);
         options = normalizeConfig(options);
@@ -312,7 +325,7 @@ export const show = function () {
             return;
         }
         Dialog.close(dialogName);
-        if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
+        if (oriAutoRefreshEnabled !== options.timingModeEnabled) {
             if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
                 location.reload();
             }

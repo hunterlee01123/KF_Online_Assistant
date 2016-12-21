@@ -15,6 +15,8 @@ const Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
+    // 在当天的指定时间之后领取每日奖励（北京时间），例：01:35:00
+    getDailyBonusAfterTime: '01:35:00',
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -24,6 +26,8 @@ const Const = {
     errorRefreshInterval: 1,
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
     showRefreshModeTipsInterval: 1,
+    // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
+    getDailyBonusSpecialInterval: 60,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
@@ -85,6 +89,8 @@ const Const = {
 
     // 标记已进行KFB捐款的Cookie名称
     donationCookieName: 'donation',
+    // 标记已领取每日奖励的Cookie名称
+    getDailyBonusCookieName: 'getDailyBonus',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称

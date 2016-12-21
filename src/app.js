@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.7.2';
+const version = '8.8';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -160,6 +160,8 @@ $(function () {
         $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
     }
 
+    if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) Public.getDailyBonus();
+
     let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && Info.isInHomePage;
     let isDonationStarted = false;
     /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
@@ -171,7 +173,7 @@ $(function () {
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) Public.changeIdColor();
 
-    //if (Config.autoRefreshEnabled && Info.isInHomePage) Public.startAutoRefreshMode();
+    if (Config.timingModeEnabled && Info.isInHomePage) Public.startTimingMode();
 
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 

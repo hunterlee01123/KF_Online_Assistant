@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.7.2
+// @version     8.8
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -81,7 +81,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '8.7.2';
+const version = '8.8';
 
 $(function () {
     if (typeof jQuery === 'undefined') return;
@@ -147,20 +147,10 @@ $(function () {
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
-        if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
     } else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertOldItemTypesButton();
-    } else if (/\/kf_fw_ig_renew\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addConvertEnergyAndRestoreItemsButton();
-    } else if (/\/kf_fw_ig_my\.php\?lv=\d+$/i.test(location.href)) {
-        Item.addBatchUseOldItemsButton();
-    } else if (/\/kf_fw_ig_my\.php\?pro=\d+/i.test(location.href)) {
-        Item.modifyItemDescription();
-        if (/\/kf_fw_ig_my\.php\?pro=\d+&display=1$/i.test(location.href)) {
-            Item.addSampleItemTips();
-        }
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.addBatchUseItemsButton();
         Item.hideItemTypes();
@@ -213,6 +203,8 @@ $(function () {
         $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
     }
 
+    if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) Public.getDailyBonus();
+
     let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
     let isDonationStarted = false;
     /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
@@ -224,7 +216,7 @@ $(function () {
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
 
-    //if (Config.autoRefreshEnabled && Info.isInHomePage) Public.startAutoRefreshMode();
+    if (Config.timingModeEnabled && _Info2.default.isInHomePage) Public.startTimingMode();
 
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 
@@ -859,10 +851,10 @@ const name = _Const2.default.storagePrefix + 'config';
  * 配置类
  */
 const Config = exports.Config = {
-    // 是否开启定时模式，可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效，true：开启；false：关闭
-    //autoRefreshEnabled: false,
+    // 是否开启定时模式，可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作），true：开启；false：关闭
+    timingModeEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
-    //showRefreshModeTipsType: 'auto',
+    showTimingModeTipsType: 'auto',
 
     // 是否自动KFB捐款，true：开启；false：关闭
     //autoDonationEnabled: false,
@@ -870,6 +862,13 @@ const Config = exports.Config = {
     //donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     //donationAfterTime: '00:05:00',
+
+    // 是否自动领取每日奖励，true：开启；false：关闭
+    autoGetDailyBonusEnabled: false,
+    // 是否在完成争夺奖励后才领取每日奖励，true：开启；false：关闭
+    getBonusAfterLootCompleteEnabled: false,
+    // 是否在完成发言奖励后才领取每日奖励，true：开启；false：关闭
+    getBonusAfterSpeakCompleteEnabled: false,
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -924,8 +923,6 @@ const Config = exports.Config = {
     kfSmileEnhanceExtensionEnabled: false,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
-    // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
-    autoSavePostContentWhenSubmitEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1159,16 +1156,16 @@ const show = exports.show = function () {
   </div>
 
   <div class="pd_cfg_panel" style="margin-bottom: 5px;">
-    <fieldset hidden>
+    <fieldset>
       <legend>
         <label>
-          <input name="autoRefreshEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动捐款，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
+          <input name="timingModeEnabled" type="checkbox"> 定时模式
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
       <label>
         标题提示方案
-        <select name="showRefreshModeTipsType">
+        <select name="showTimingModeTipsType">
           <option value="auto">停留一分钟后显示</option>
           <option value="always">总是显示</option>
           <option value="never">不显示</option>
@@ -1188,6 +1185,19 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
         在 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后捐款
         <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>
+        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> 自动领取每日奖励</label>
+      </legend>
+      <label>
+        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> 完成争夺后才领取
+        <span class="pd_cfg_tips" title="在完成争夺奖励后才领取每日奖励">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> 完成发言后才领取
+        <span class="pd_cfg_tips" title="在完成发言奖励后才领取每日奖励">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1293,10 +1303,6 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在撰写发帖内容时，如不小心关闭了页面会进行提示">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
-        <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
-      </label><br>
-      <label>
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
@@ -1427,7 +1433,7 @@ const show = exports.show = function () {
     $dialog.submit(function (e) {
         e.preventDefault();
         if (!verifyMainConfig($dialog)) return;
-        let oriAutoRefreshEnabled = Config.autoRefreshEnabled;
+        let oriAutoRefreshEnabled = Config.timingModeEnabled;
         (0, _Config.read)();
         let options = getMainConfigValue($dialog);
         options = (0, _Config.normalize)(options);
@@ -1442,7 +1448,7 @@ const show = exports.show = function () {
             return;
         }
         Dialog.close(dialogName);
-        if (oriAutoRefreshEnabled !== options.autoRefreshEnabled) {
+        if (oriAutoRefreshEnabled !== options.timingModeEnabled) {
             if (confirm('你已修改了定时模式的设置，需要刷新页面才能生效，是否立即刷新？')) {
                 location.reload();
             }
@@ -2430,6 +2436,8 @@ const Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
+    // 在当天的指定时间之后领取每日奖励（北京时间），例：01:35:00
+    getDailyBonusAfterTime: '01:35:00',
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -2439,6 +2447,8 @@ const Const = {
     errorRefreshInterval: 1,
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
     showRefreshModeTipsInterval: 1,
+    // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
+    getDailyBonusSpecialInterval: 60,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
@@ -2473,8 +2483,6 @@ const Const = {
     minBuyThreadWarningSell: 6,
     // 统计回帖者名单最大能访问的帖子页数
     statRepliersMaxPage: 300,
-    // 道具样品ID列表
-    sampleItemIdList: new Map([['零时迷子的碎片', 2257935], ['被遗弃的告白信', 2005272], ['学校天台的钥匙', 2001303], ['TMA最新作压缩包', 1990834], ['LOLI的钱包', 1836588], ['棒棒糖', 1942370], ['蕾米莉亚同人漫画', 1000888], ['十六夜同人漫画', 1002668], ['档案室钥匙', 1013984], ['傲娇LOLI娇蛮音CD', 4621], ['整形优惠卷', 1003993], ['消逝之药', 1000306]]),
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义侧边栏导航内容
@@ -2483,8 +2491,6 @@ const Const = {
     // 自定义侧边栏导航内容（手机平铺样式）
     // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br>'，换行：'<br>'
     customTileSideBarContent: '',
-    // 可进行自助评分的版块ID列表
-    selfRatingFidList: [41, 67, 92, 127, 68],
 
     // 通用存储数据名称前缀
     storagePrefix: storagePrefix,
@@ -2504,6 +2510,8 @@ const Const = {
 
     // 标记已进行KFB捐款的Cookie名称
     donationCookieName: 'donation',
+    // 标记已领取每日奖励的Cookie名称
+    getDailyBonusCookieName: 'getDailyBonus',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
@@ -2898,7 +2906,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.hideItemTypes = exports.addBatchUseItemsButton = exports.addBatchBuyItemsLink = exports.modifyItemDescription = exports.addSampleItemTips = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.addConvertEnergyAndRestoreItemsButton = exports.addBatchUseOldItemsButton = exports.getLevelByName = exports.getTypeIdByName = exports.itemTypeList = undefined;
+exports.hideItemTypes = exports.addBatchUseItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.itemTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -2974,42 +2982,6 @@ const getRestoreEnergyNumByLevel = function (itemLevel) {
             return 2000;
         case 5:
             return 10000;
-        default:
-            return 0;
-    }
-};
-
-/**
- * 获取指定名称的道具种类ID
- * @param {string} itemName 道具名称
- * @returns {number} 道具种类ID
- */
-const getTypeIdByName = exports.getTypeIdByName = function (itemName) {
-    switch (itemName) {
-        case '零时迷子的碎片':
-            return 1;
-        case '被遗弃的告白信':
-            return 2;
-        case '学校天台的钥匙':
-            return 3;
-        case 'TMA最新作压缩包':
-            return 4;
-        case 'LOLI的钱包':
-            return 5;
-        case '棒棒糖':
-            return 6;
-        case '蕾米莉亚同人漫画':
-            return 11;
-        case '十六夜同人漫画':
-            return 7;
-        case '档案室钥匙':
-            return 8;
-        case '傲娇LOLI娇蛮音CD':
-            return 12;
-        case '整形优惠卷':
-            return 9;
-        case '消逝之药':
-            return 10;
         default:
             return 0;
     }
@@ -3242,15 +3214,7 @@ const useOldItems = function (options, cycle) {
                         Msg.show(`<strong>共有<em>${ successNum }</em>个道具被使用${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具未能使用` : '' }</strong>${ msgStat }`, -1);
                         if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
                         $('.pd_result:last').append(`<li class="pd_stat"><b>统计结果（共有<em>${ successNum }</em>个道具被使用）：</b><br>${ resultStat }</li>`);
-
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1 input[type="checkbox"]:checked').closest('tr').fadeOut('normal', function () {
-                                $(this).remove();
-                            });
-                        } else {
-                            setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
-                            showItemUsedInfo(settings.$itemLine.closest('tbody').find('tr:gt(1) > td:nth-child(2) > a'));
-                        }
+                        setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
                         if (settings.itemName === '零时迷子的碎片') showCurrentUsedItemNum();
 
                         if (cycle) {
@@ -3363,12 +3327,6 @@ const restoreItems = function (options, cycle) {
                         console.log(`共有${ successNum }个道具恢复成功，共有${ failNum }个道具恢复失败，能量-${ successEnergyNum }`);
                         Msg.show(`<strong>共有<em>${ successNum }</em>个道具恢复成功，共有<em>${ failNum }</em>个道具恢复失败</strong>` + `<i>能量<ins>-${ successEnergyNum }</ins></i>`, -1);
                         $('.pd_result:last').append(`<li class="pd_stat">共有<em>${ successNum }</em>个道具恢复成功，共有<em>${ failNum }</em>个道具恢复失败，` + `<i>能量<ins>-${ successEnergyNum }</ins></i></li>`);
-
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').closest('tr').fadeOut('normal', function () {
-                                $(this).remove();
-                            });
-                        }
                         setCurrentItemUsableAndUsedNum(settings.$itemLine, -(successNum + failNum), successNum, -successEnergyNum);
 
                         if (cycle) {
@@ -3553,12 +3511,6 @@ const convertItemsToEnergy = function (options) {
                         console.log(`共有${ successNum }个道具成功转换为能量${ failNum > 0 ? `，共有${ failNum }个道具转换失败` : '' }，能量+${ successEnergyNum }`);
                         Msg.show(`<strong>共有<em>${ successNum }</em>个道具成功转换为能量${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具转换失败` : '' }</strong>` + `<i>能量<em>+${ successEnergyNum }</em></i>`, -1);
                         $('.pd_result:last').append(`<li class="pd_stat">共有<em>${ successNum }</em>个道具成功转换为能量${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具转换失败` : '' }，` + `<i>能量<em>+${ successEnergyNum }</em></i></li>`);
-
-                        if (settings.type === 2) {
-                            $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').closest('tr').fadeOut('normal', function () {
-                                $(this).remove();
-                            });
-                        }
                         setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, null, successEnergyNum);
                         if (settings.isTypeBatch) $(document).dequeue('ConvertItemTypesToEnergy');
                     } else {
@@ -3569,175 +3521,6 @@ const convertItemsToEnergy = function (options) {
         });
     });
     $(document).dequeue('ConvertItemsToEnergy');
-};
-
-/**
- * 在道具列表页面上添加批量使用道具的按钮
- */
-const addBatchUseOldItemsButton = exports.addBatchUseOldItemsButton = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    let $lastLine = $('.kf_fw_ig1 > tbody > tr:last-child');
-    let itemName = $lastLine.find('td:first-child').text();
-    if (!itemName) return;
-    let matches = /(\d+)级道具/.exec($lastLine.find('td:nth-child(2)').text());
-    if (!matches) return;
-    let itemLevel = parseInt(matches[1]);
-    let itemTypeId = parseInt(Util.getUrlParam('lv'));
-    if (!itemTypeId) return;
-    $('.kf_fw_ig1 > tbody > tr > td:last-child').each(function () {
-        let matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec($(this).find('a').attr('href'));
-        if (!matches) return;
-        $(this).css('width', '163').parent().append(`<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="${ matches[1] }"></td>`);
-    });
-    $('.kf_fw_ig1 > tbody > tr:lt(2)').find('td').attr('colspan', 5);
-
-    $(`
-<div class="pd_item_btns">
-  ${ itemTypeId > 1 ? '<button name="cycleUseItem" type="button" style="color: #00f;" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</button>' : '' }
-  <button name="useItem" type="button" title="批量使用指定道具">使用道具</button>
-  <button name="selectAll" type="button">全选</button>
-  <button name="selectInverse" type="button">反选</button>
-</div>
-`).insertAfter('.kf_fw_ig1').find('[name="useItem"]').click(function () {
-        Msg.destroy();
-        let itemIdList = [];
-        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
-            itemIdList.push(parseInt($(this).val()));
-        });
-        if (!itemIdList.length) return;
-        if (!confirm(`共选择了${ itemIdList.length }个道具，是否批量使用道具？`)) return;
-        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        useOldItems({
-            type: 2,
-            itemIdList: itemIdList,
-            safeId: safeId,
-            itemLevel: itemLevel,
-            itemTypeId: itemTypeId,
-            itemName: itemName
-        });
-    }).end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1 [type="checkbox"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1 [type="checkbox"]'))).end().find('[name="cycleUseItem"]').click(function () {
-        Msg.destroy();
-        let itemIdList = [];
-        $('.kf_fw_ig1 [type="checkbox"]:checked').each(function () {
-            itemIdList.push(parseInt($(this).val()));
-        });
-        if (!itemIdList.length) return;
-        let value = prompt('你要循环使用多少个道具？\n' + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemIdList.length);
-        if (value === null) return;
-        value = $.trim(value);
-        if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
-            alert('格式不正确');
-            return;
-        }
-        let arr = value.split('|');
-        let num = parseInt(arr[0]),
-            maxEffectiveItemCount = 0,
-            maxSuccessRestoreItemCount = 0;
-        if (!num) return;
-        if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
-        if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
-        Msg.destroy();
-
-        if (num > itemIdList.length) num = itemIdList.length;
-        let tmpItemIdList = [];
-        for (let i = 0; i < num; i++) {
-            tmpItemIdList.push(itemIdList[i]);
-        }
-        itemIdList = tmpItemIdList;
-        Msg.wait('正在获取当前道具相关信息，请稍后&hellip;');
-        $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
-            Msg.destroy();
-            let totalEnergyNum = getCurrentEnergyNum(html);
-            showCurrentUsedItemNum(html);
-            cycleUseItems(1, {
-                type: 2,
-                itemIdList: itemIdList,
-                safeId: safeId,
-                itemLevel: itemLevel,
-                itemTypeId: itemTypeId,
-                itemName: itemName
-            }, {
-                itemNum: itemIdList.length,
-                round: 1,
-                totalEnergyNum: totalEnergyNum,
-                countStat: {},
-                stat: {},
-                maxEffectiveItemCount: maxEffectiveItemCount,
-                maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
-            });
-        });
-    });
-
-    showCurrentUsedItemNum();
-};
-
-/**
- * 在已使用道具列表页面上添加批量转换能量和恢复道具的按钮
- */
-const addConvertEnergyAndRestoreItemsButton = exports.addConvertEnergyAndRestoreItemsButton = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    let $lastLine = $('.kf_fw_ig1:eq(1) > tbody > tr:last-child');
-    let itemName = $lastLine.find('td:first-child').text();
-    if (!itemName) return;
-    let matches = /(\d+)级道具/.exec($lastLine.find('td:nth-child(2)').text());
-    if (!matches) return;
-    let itemLevel = parseInt(matches[1]);
-    let itemTypeId = parseInt(Util.getUrlParam('lv'));
-    if (!itemTypeId) return;
-    $('.kf_fw_ig1:eq(1) > tbody > tr > td:last-child').each(function () {
-        let matches = /kf_fw_ig_my\.php\?pro=(\d+)/.exec($(this).find('a').attr('href'));
-        if (!matches) return;
-        $(this).css('width', '500').parent().append(`<td style="width: 20px; padding-right: 5px;"><input class="pd_input" type="checkbox" value="${ matches[1] }"></td>`);
-    });
-    $(`
-<div class="pd_item_btns">
-  <button class="pd_highlight" name="convertEnergy" type="button" title="批量将指定道具转换为能量">转换能量</button>
-  <button name="restoreItem" type="button" title="批量恢复指定道具">恢复道具</button>
-  <button name="selectAll" type="button">全选</button>
-  <button name="selectInverse" type="button">反选</button>
-</div>
-`).insertAfter('.kf_fw_ig1:eq(1)').find('[name="convertEnergy"]').click(function () {
-        Msg.destroy();
-        let itemIdList = [];
-        $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
-            itemIdList.push(parseInt($(this).val()));
-        });
-        if (!itemIdList.length) return;
-        if (!confirm(`共选择了${ itemIdList.length }个道具，是否转换为能量？`)) return;
-        Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        convertItemsToEnergy({
-            type: 2,
-            itemIdList: itemIdList,
-            safeId: safeId,
-            itemLevel: itemLevel,
-            itemName: itemName
-        });
-    }).end().find('[name="restoreItem"]').click(function () {
-        Msg.destroy();
-        let itemIdList = [];
-        $('.kf_fw_ig1:eq(1) input[type="checkbox"]:checked').each(function () {
-            itemIdList.push(parseInt($(this).val()));
-        });
-        if (!itemIdList.length) return;
-        let totalRequiredEnergyNum = itemIdList.length * getRestoreEnergyNumByLevel(itemLevel);
-        if (!confirm(`共选择了${ itemIdList.length }个道具，共需要${ totalRequiredEnergyNum }点恢复能量，是否恢复道具？`)) return;
-        let totalEnergyNum = parseInt($('.kf_fw_ig1 td:contains("道具恢复能量")').find('span').text());
-        if (!totalEnergyNum || totalEnergyNum < totalRequiredEnergyNum) {
-            alert('所需恢复能量不足');
-            return;
-        }
-        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        restoreItems({
-            type: 2,
-            itemIdList: itemIdList,
-            safeId: safeId,
-            itemLevel: itemLevel,
-            itemTypeId: itemTypeId,
-            itemName: itemName
-        });
-    }).end().find('[name="selectAll"]').click(() => Util.selectAll($('.kf_fw_ig1:eq(1) input[type="checkbox"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($('.kf_fw_ig1:eq(1) input[type="checkbox"]')));
 };
 
 /**
@@ -3761,7 +3544,7 @@ const addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOld
                 let $itemLine = $(this).closest('tr'),
                     itemLevel = parseInt($itemLine.find('td:first-child').text()),
                     itemTypeId = parseInt($itemLine.data('itemTypeId')),
-                    itemName = $itemLine.find('td:nth-child(2) > a').text();
+                    itemName = $itemLine.find('td:nth-child(2)').text().trim();
                 if (isNaN(itemTypeId) || itemTypeId <= 0) return;
                 if (name === 'convertItemTypes' && itemTypeId === 1) return;
                 let itemListUrl = $itemLine.find('td:last-child').find(name === 'useItemTypes' ? 'a:first-child' : 'a:last-child').attr('href') + '&t=' + new Date().getTime();
@@ -3853,7 +3636,7 @@ const bindItemActionLinksClick = function ($element) {
         let $itemLine = $this.closest('tr'),
             itemLevel = parseInt($itemLine.find('td:first-child').text()),
             itemTypeId = parseInt($itemLine.data('itemTypeId')),
-            itemName = $itemLine.find('td:nth-child(2) > a').text(),
+            itemName = $itemLine.find('td:nth-child(2)').text().trim(),
             itemUsableNum = parseInt($itemLine.find('td:nth-child(3) > .pd_usable_num').text()),
             itemUsedNum = parseInt($itemLine.find('td:nth-child(3) > .pd_used_num').text()),
             itemListUrl = '';
@@ -4028,10 +3811,6 @@ const enhanceMyItemsPage = exports.enhanceMyItemsPage = function () {
         }
     });
     bindItemActionLinksClick($myItems);
-
-    let $itemName = $myItems.find('tbody > tr:gt(1) > td:nth-child(2)');
-    addSampleItemsLink($itemName);
-    showItemUsedInfo($itemName.find('a'));
     showCurrentUsedItemNum();
 };
 
@@ -4046,7 +3825,7 @@ const setCurrentItemUsableAndUsedNum = function ($itemLine, usedChangeNum, usabl
     let flag = false;
     if ($itemLine) {
         let $itemUsed = $itemLine.find('td:nth-child(3) > .pd_used_num');
-        let itemName = $itemLine.find('td:nth-child(2) > a').text();
+        let itemName = $itemLine.find('td:nth-child(2)').text().trim();
         if ($itemUsed.length > 0 && itemName !== '零时迷子的碎片') {
             let num = parseInt($itemUsed.text());
             if (isNaN(num) || num + usedChangeNum < 0) {
@@ -4066,7 +3845,6 @@ const setCurrentItemUsableAndUsedNum = function ($itemLine, usedChangeNum, usabl
     }
     if (energyChangeNum) {
         let $totalEnergy = $('.pd_total_energy_num');
-        if (location.pathname === '/kf_fw_ig_renew.php') $totalEnergy = $('.kf_fw_ig1:first > tbody > tr:nth-child(2) > td:contains("道具恢复能量") > span');
         if ($totalEnergy.length > 0) {
             let num = parseInt($totalEnergy.text());
             if (isNaN(num) || num + energyChangeNum < 0) flag = true;else $totalEnergy.text(num + energyChangeNum);
@@ -4126,8 +3904,6 @@ const showCurrentUsedItemNum = function (html = '') {
         let introMatches = /(1级道具转换得.+?点能量)。<br/.exec(html);
         if (location.pathname === '/kf_fw_ig_my.php') {
             $('.kf_fw_ig_title1:last').find('span:has(.pd_total_energy_num)').remove().end().append(`<span class="pd_custom_tips" style="margin-left: 7px;" title="${ introMatches ? introMatches[1] : '' }">` + `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${ energyNum }</b> 点)</span>`);
-        } else {
-            $('.kf_fw_ig1:first > tbody > tr:nth-child(2) > td:contains("道具恢复能量") > span').text(energyNum);
         }
 
         if ($('.pd_used_num').length > 0) {
@@ -4199,79 +3975,6 @@ const getItemUsedInfo = exports.getItemUsedInfo = function (html) {
         }
     }
     return itemUsedNumList;
-};
-
-/**
- * 显示道具使用情况
- * @param {jQuery} $links 道具名称的链接列表
- */
-const showItemUsedInfo = function ($links) {
-    let tipsList = ['仅供参考', '←谁信谁傻逼', '←不管你信不信，反正我是信了', '要是失败了出门左转找XX风', '退KFOL保一生平安', '←这一切都是XX风的阴谋', '这样的几率大丈夫？大丈夫，萌大奶！', '玄不救非，氪不改命', '严重警告：此地的概率学已死', '←概率对非洲人是不适用的', '要相信RP守恒定律'];
-    $.get('kf_fw_ig_index.php?t=' + new Date().getTime(), function (html) {
-        let itemUsedNumList = getItemUsedInfo(html);
-        $links.next('.pd_used_item_info').remove();
-        $links.each(function () {
-            let $this = $(this);
-            let itemName = $this.text();
-            if (!itemUsedNumList.has(itemName)) return;
-            let usedNum = itemUsedNumList.get(itemName);
-            let maxUsedNum = getMaxUsedNumByName(itemName);
-            let nextSuccessPercent = 0;
-            if (usedNum > maxUsedNum) nextSuccessPercent = 0;else nextSuccessPercent = (1 - usedNum / maxUsedNum) * 100;
-            let tips = '';
-            if (usedNum < maxUsedNum && usedNum > 0) tips = `（${ tipsList[Math.floor(Math.random() * tipsList.length)] }）`;
-            $this.after(`<span class="pd_used_item_info" title="下个道具使用成功几率：${ usedNum >= maxUsedNum ? '无' : nextSuccessPercent.toFixed(2) + '%' }${ tips }">` + `(<span style="${ usedNum >= maxUsedNum ? 'color: #f00;' : '' }">${ usedNum }</span>/<span style="color: #f00;">${ maxUsedNum }</span>)</span>`);
-        });
-    });
-};
-
-/**
- * 添加道具样品的链接
- * @param {jQuery} $nodes 道具名称的节点列表
- */
-const addSampleItemsLink = function ($nodes) {
-    $nodes.each(function () {
-        let $this = $(this);
-        let itemName = $this.text().trim();
-        let itemLevel = getLevelByName(itemName);
-        if (itemName && _Const2.default.sampleItemIdList.has(itemName)) {
-            let title = '';
-            if (itemName !== '零时迷子的碎片') {
-                title = `恢复此道具需${ getRestoreEnergyNumByLevel(itemLevel) }点能量，转换此道具可得${ getGainEnergyNumByLevel(itemLevel) }点能量`;
-            } else {
-                title = '此道具不可恢复和转换';
-            }
-            $this.html(`<a href="kf_fw_ig_my.php?pro=${ _Const2.default.sampleItemIdList.get(itemName) }&display=1" title="${ title }">${ itemName }</a>`);
-        }
-    });
-};
-
-/**
- * 添加道具样品提示
- */
-const addSampleItemTips = exports.addSampleItemTips = function () {
-    let id = parseInt(Util.getUrlParam('pro'));
-    if (isNaN(id) || id <= 0) return;
-    for (let itemId of _Const2.default.sampleItemIdList.values()) {
-        if (id === itemId) {
-            $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child').find('span:first').after('<span class="pd_notice" style="margin-left: 5px;">(展示用样品)</span>');
-            break;
-        }
-    }
-};
-
-/**
- * 修正道具描述
- */
-const modifyItemDescription = exports.modifyItemDescription = function () {
-    let $area = $('.kf_fw_ig1 > tbody > tr:nth-child(3) > td:last-child');
-    let matches = /道具名称：(.+)/.exec($area.find('span:first').text().trim());
-    if (!matches) return;
-    let itemName = matches[1];
-    let itemDescReplaceList = new Map([['蕾米莉亚同人漫画', ['燃烧伤害+1。上限50。', '力量+1，体质+1；满50本时，追加+700生命值。']], ['十六夜同人漫画', ['命中+3，闪避+1。上限50。', '敏捷+1，灵活+1；满50本时，追加+100攻击速度。']], ['档案室钥匙', ['暴击伤害加成+10%。上限30。', '增加5%盒子获得概率[原概率*(100%+追加概率)]；满30枚时，增加50点可分配点数。']], ['傲娇LOLI娇蛮音CD', ['闪避+3，命中+1。上限30。', '降低对手生命值上限的0.8%；满30张时，追加降低对手10%攻击力。']], ['整形优惠卷', [['暴击几率+3%。上限10。'], ['在获得盒子时，增加3%的几率直接获得高一级的盒子；<br>满10张时，这个概率直接提升为50%(无法将传奇盒子升级为神秘盒子)。']]], ['消逝之药', ['消除伤害。<br>防御效果+7%。上限10。', '所有属性+5(不含耐力、幸运)；满10瓶时，追加200点可分配点数。']]]);
-    if (itemDescReplaceList.has(itemName)) {
-        $area.html($area.html().replace(itemDescReplaceList.get(itemName)[0], itemDescReplaceList.get(itemName)[1]));
-    }
 };
 
 /**
@@ -4906,7 +4609,7 @@ const showLogContent = function (log, date, $dialog) {
 const getLogContent = function (log, date, logSortType) {
     let logList = log[date];
     if (logSortType === 'type') {
-        const sortTypeList = ['捐款', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+        const sortTypeList = ['捐款', '领取每日奖励', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type));
     } else {
         logList.sort((a, b) => a.time > b.time);
@@ -5075,7 +4778,7 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     let content = '';
-    let sortStatTypeList = ['KFB', '经验值', '能量', '贡献', '道具', '已使用道具', '卡片'];
+    let sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '能量', '道具', '已使用道具', '卡片'];
     content += '<strong>收获：</strong>';
     for (let key of Util.getSortedObjectKeyList(sortStatTypeList, income)) {
         profit[key] = income[key];
@@ -6224,6 +5927,12 @@ const lootAttack = function ({ type, targetLevel, autoChangeLevelPointsEnabled, 
                     Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近10层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
                 }
                 Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);
+
+                if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
+                    Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
+                    Public.getDailyBonus();
+                }
+                Script.runFunc('Loot.lootAttack_complete_');
             },
             error(XMLHttpRequest, textStatus) {
                 if (textStatus === 'timeout') {
@@ -7024,7 +6733,7 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Info = require('./Info');
 
@@ -7314,35 +7023,6 @@ const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = 
     });
 };
 
-/**
- * 在提交时保存发帖内容
- */
-const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function () {
-    let $textArea = $('#textarea');
-    $('form[action="post.php?"]').submit(function () {
-        let content = $textArea.val();
-        if ($.trim(content).length > 0) sessionStorage.setItem(_Const2.default.postContentStorageName, content);
-    });
-
-    let postContent = sessionStorage.getItem(_Const2.default.postContentStorageName);
-    if (postContent) {
-        $(`
-<div style="padding: 0 10px; line-height: 2em; text-align: left; background-color: #fefee9; border: 1px solid #9999ff;">
-  <a class="pd_btn_link" data-name="restore" href="#">[恢复上次提交的内容]</a>
-  <a class="pd_btn_link" data-name="clear" href="#">[清除]</a>
-</div>
-`).insertBefore($textArea).find('[data-name="restore"]').click(function (e) {
-            e.preventDefault();
-            $textArea.val(postContent);
-            $(this).parent().find('[data-name="clear"]').click();
-        }).end().find('[data-name="clear"]').click(function (e) {
-            e.preventDefault();
-            sessionStorage.removeItem(_Const2.default.postContentStorageName);
-            $(this).parent().remove();
-        });
-    }
-};
-
 },{"./Const":6,"./Info":9,"./Msg":14,"./Script":19,"./Util":21}],17:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
@@ -7350,7 +7030,7 @@ const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function (
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.startAutoRefreshMode = exports.getMinRefreshInterval = exports.donation = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.donation = exports.startTimingMode = exports.getNextTimingInterval = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -7703,110 +7383,36 @@ const addPolyfill = exports.addPolyfill = function () {
 };
 
 /**
- * KFB捐款
- * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
+ * 获取定时模式下次操作的时间间隔（秒）
+ * @returns {number} 定时模式下次操作的时间间隔（秒）
  */
-const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) {
-    let now = new Date();
-    let date = Util.getDateByTime(Config.donationAfterTime);
-    if (now < date) {
-        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-        return;
-    }
-    Script.runFunc('Public.donation_before_');
-    console.log('KFB捐款Start');
-    let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
+const getNextTimingInterval = exports.getNextTimingInterval = function () {
+    /*let donationInterval = -1;
+     if (Config.autoDonationEnabled) {
+     let donationTime = Util.getDateByTime(Config.donationAfterTime);
+     let now = new Date();
+     if (!Util.getCookie(Const.donationCookieName) && now <= donationTime) {
+     donationInterval = Math.floor((donationTime - now) / 1000);
+     }
+     else {
+     donationTime.setDate(donationTime.getDate() + 1);
+     donationInterval = Math.floor((donationTime - now) / 1000);
+     }
+     }*/
 
-    /**
-     * 获取捐款Cookies有效期
-     * @returns {Date} Cookies有效期的Date对象
-     */
-    const getDonationCookieDate = function () {
-        let now = new Date();
-        let date = Util.getTimezoneDateByTime('02:30:00');
-        if (now > date) {
-            date = Util.getTimezoneDateByTime('00:00:00');
+    let getDailyBonusInterval = -1;
+    if (Config.autoGetDailyBonusEnabled) {
+        let value = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
+        if (value > 0) {
+            let date = Util.getTimezoneDateByTime(_Const2.default.getDailyBonusAfterTime);
             date.setDate(date.getDate() + 1);
-        }
-        if (now > date) date.setDate(date.getDate() + 1);
-        return date;
-    };
-
-    /**
-     * 使用指定的KFB捐款
-     * @param {number} kfb 指定的KFB
-     */
-    const donationSubmit = function (kfb) {
-        $.post('kf_growup.php?ok=1', { kfb: kfb }, function (html) {
-            Util.setCookie(_Const2.default.donationCookieName, 1, getDonationCookieDate());
-            showFormatLog(`捐款${ kfb }KFB`, html);
-            let { msg } = Util.getResponseMsg(html);
-            Msg.remove($wait);
-
-            let msgHtml = `<strong>捐款<em>${ kfb }</em>KFB</strong>`;
-            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
-            if (!matches) {
-                if (/KFB不足。/.test(msg)) {
-                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
-                } else return;
-            } else {
-                msgHtml += `<i>经验值<em>+${ matches[1] }</em></i>`;
-                let gain = { '经验值': parseInt(matches[1]) };
-                if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
-                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' + (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${ matches[2] }</em>${ typeof matches[3] !== 'undefined' ? '' : ')' }</i>` : '') + (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${ matches[3] }</em>)</i>` : '');
-                    if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
-                    if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
-                }
-                Log.push('捐款', `捐款\`${ kfb }\`KFB`, { gain: gain, pay: { 'KFB': -kfb } });
-            }
-            Msg.show(msgHtml);
-            if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Script.runFunc('Public.donation_after_', msg);
-        });
-    };
-
-    if (/%$/.test(Config.donationKfb)) {
-        $.get(`profile.php?action=show&uid=${ _Info2.default.uid }&t=${ new Date().getTime() }`, function (html) {
-            let matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
-            let income = 1;
-            if (matches) income = parseInt(matches[1]);else console.log('当前持有KFB获取失败');
-            let donationKfb = parseInt(Config.donationKfb);
-            donationKfb = Math.floor(income * donationKfb / 100);
-            donationKfb = donationKfb > 0 ? donationKfb : 1;
-            donationKfb = donationKfb <= _Const2.default.maxDonationKfb ? donationKfb : _Const2.default.maxDonationKfb;
-            donationSubmit(donationKfb);
-        });
-    } else {
-        $.get(`kf_growup.php?t=${ new Date().getTime() }`, function (html) {
-            if (/>今天已经捐款</.test(html)) {
-                Msg.remove($wait);
-                Util.setCookie(_Const2.default.donationCookieName, 1, getDonationCookieDate());
-                if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-            } else {
-                donationSubmit(parseInt(Config.donationKfb));
-            }
-        });
-    }
-};
-
-/**
- * 获取倒计时的最小时间间隔（秒）
- * @returns {number} 倒计时的最小时间间隔（秒）
- */
-const getMinRefreshInterval = exports.getMinRefreshInterval = function () {
-    let donationInterval = -1;
-    if (Config.autoDonationEnabled) {
-        let donationTime = Util.getDateByTime(Config.donationAfterTime);
-        let now = new Date();
-        if (!Util.getCookie(_Const2.default.donationCookieName) && now <= donationTime) {
-            donationInterval = Math.floor((donationTime - now) / 1000);
-        } else {
-            donationTime.setDate(donationTime.getDate() + 1);
-            donationInterval = Math.floor((donationTime - now) / 1000);
-        }
+            let now = new Date();
+            if (now > date) date.setDate(date.getDate() + 1);
+            getDailyBonusInterval = Math.floor((date - now) / 1000);
+        } else if (value < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
     }
 
-    let minArr = [donationInterval].filter(interval => interval >= 0);
+    let minArr = [getDailyBonusInterval].filter(interval => interval >= 0);
     if (minArr.length > 0) {
         let min = Math.min(...minArr);
         return min > 0 ? min + 1 : 0;
@@ -7816,8 +7422,8 @@ const getMinRefreshInterval = exports.getMinRefreshInterval = function () {
 /**
  * 启动定时模式
  */
-const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
-    let interval = getMinRefreshInterval();
+const startTimingMode = exports.startTimingMode = function () {
+    let interval = getNextTimingInterval();
     if (interval === -1) return;
     let oriTitle = document.title;
     let titleItvFunc = null;
@@ -7846,12 +7452,12 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
         if (titleItvFunc) window.clearInterval(titleItvFunc);
         let showInterval = interval;
         console.log('【定时模式】倒计时：' + getFormatIntervalTitle(1, showInterval));
-        if (Config.showRefreshModeTipsType.toLowerCase() !== 'never') {
+        if (Config.showTimingModeTipsType.toLowerCase() !== 'never') {
             const showIntervalTitle = function () {
                 document.title = `${ oriTitle } (定时: ${ getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval) })`;
                 showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
             };
-            if (isShowTitle || Config.showRefreshModeTipsType.toLowerCase() === 'always' || interval < 60) showIntervalTitle();else showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
+            if (isShowTitle || Config.showTimingModeTipsType.toLowerCase() === 'always' || interval < 60) showIntervalTitle();else showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
             titleItvFunc = setInterval(showIntervalTitle, _Const2.default.showRefreshModeTipsInterval * 60 * 1000);
         }
     };
@@ -7903,9 +7509,10 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
      */
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
-        if (Config.autoDonationEnabled && !Util.getCookie(_Const2.default.donationCookieName)) donation();
+        //if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
+        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) getDailyBonus();
 
-        let interval = getMinRefreshInterval();
+        let interval = getNextTimingInterval();
         if (interval > 0) errorNum = 0;
         if (interval === 0 && prevInterval === 0) {
             prevInterval = -1;
@@ -7922,6 +7529,158 @@ const startAutoRefreshMode = exports.startAutoRefreshMode = function () {
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
     showRefreshModeTips(interval < 60 ? 60 : interval);
+};
+
+/**
+ * KFB捐款
+ * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
+ */
+const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) {
+    let now = new Date();
+    let date = Util.getDateByTime(Config.donationAfterTime);
+    if (now < date) {
+        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
+        return;
+    }
+    Script.runFunc('Public.donation_before_');
+    console.log('KFB捐款Start');
+    let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
+
+    /**
+     * 获取捐款Cookies有效期
+     * @returns {Date} Cookies有效期的Date对象
+     */
+    const getCookieDate = function () {
+        let now = new Date();
+        let date = Util.getTimezoneDateByTime('02:30:00');
+        if (now > date) {
+            date = Util.getTimezoneDateByTime('00:00:00');
+            date.setDate(date.getDate() + 1);
+        }
+        if (now > date) date.setDate(date.getDate() + 1);
+        return date;
+    };
+
+    /**
+     * 使用指定的KFB捐款
+     * @param {number} kfb 指定的KFB
+     */
+    const donationSubmit = function (kfb) {
+        $.post('kf_growup.php?ok=1', { kfb: kfb }, function (html) {
+            Util.setCookie(_Const2.default.donationCookieName, 1, getCookieDate());
+            showFormatLog(`捐款${ kfb }KFB`, html);
+            let { msg } = Util.getResponseMsg(html);
+            Msg.remove($wait);
+
+            let msgHtml = `<strong>捐款<em>${ kfb }</em>KFB</strong>`;
+            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
+            if (!matches) {
+                if (/KFB不足。/.test(msg)) {
+                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
+                } else return;
+            } else {
+                msgHtml += `<i>经验值<em>+${ matches[1] }</em></i>`;
+                let gain = { '经验值': parseInt(matches[1]) };
+                if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
+                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' + (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${ matches[2] }</em>${ typeof matches[3] !== 'undefined' ? '' : ')' }</i>` : '') + (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${ matches[3] }</em>)</i>` : '');
+                    if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
+                    if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
+                }
+                Log.push('捐款', `捐款\`${ kfb }\`KFB`, { gain: gain, pay: { 'KFB': -kfb } });
+            }
+            Msg.show(msgHtml);
+            if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
+            Script.runFunc('Public.donation_after_', msg);
+        });
+    };
+
+    if (/%$/.test(Config.donationKfb)) {
+        $.get(`profile.php?action=show&uid=${ _Info2.default.uid }&t=${ new Date().getTime() }`, function (html) {
+            let matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
+            let income = 1;
+            if (matches) income = parseInt(matches[1]);else console.log('当前持有KFB获取失败');
+            let donationKfb = parseInt(Config.donationKfb);
+            donationKfb = Math.floor(income * donationKfb / 100);
+            donationKfb = donationKfb > 0 ? donationKfb : 1;
+            donationKfb = donationKfb <= _Const2.default.maxDonationKfb ? donationKfb : _Const2.default.maxDonationKfb;
+            donationSubmit(donationKfb);
+        });
+    } else {
+        $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+            if (/>今天已经捐款</.test(html)) {
+                Msg.remove($wait);
+                Util.setCookie(_Const2.default.donationCookieName, 1, getCookieDate());
+                if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
+            } else {
+                donationSubmit(parseInt(Config.donationKfb));
+            }
+        });
+    }
+};
+
+/**
+ * 领取每日奖励
+ */
+const getDailyBonus = exports.getDailyBonus = function () {
+    Script.runFunc('Public.getDailyBonus_before_');
+    console.log('领取每日奖励Start');
+    let $wait = Msg.wait('<strong>正在领取每日奖励，请稍候&hellip;</strong>');
+
+    /**
+     * 获取领取每日奖励Cookies有效期
+     * @returns {Date} Cookies有效期的Date对象
+     */
+    const getCookieDate = function () {
+        let date = Util.getTimezoneDateByTime(_Const2.default.getDailyBonusAfterTime);
+        date.setDate(date.getDate() + 1);
+        if (new Date() > date) date.setDate(date.getDate() + 1);
+        return date;
+    };
+
+    $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+        let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+)贡献\s*\+\s*(\d+)转账额度/.exec(html);
+        if (matches) {
+            if (Config.getBonusAfterLootCompleteEnabled && !/<div class="gro_divlv">\r\n争夺奖励/.test(html)) {
+                Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate(`+${ _Const2.default.getDailyBonusSpecialInterval }m`));
+                Msg.remove($wait);
+                return;
+            }
+            if (Config.getBonusAfterSpeakCompleteEnabled && !/<div class="gro_divlv">\r\n发言奖励/.test(html)) {
+                Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate(`+${ _Const2.default.getDailyBonusSpecialInterval }m`));
+                Msg.remove($wait);
+                return;
+            }
+            let url = matches[1];
+            let gain = {};
+            if (parseInt(matches[2]) > 0) gain['KFB'] = parseInt(matches[2]);
+            if (parseInt(matches[3]) > 0) gain['经验值'] = parseInt(matches[3]);
+            if (parseInt(matches[4]) > 0) gain['贡献'] = parseInt(matches[4]);
+            if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
+
+            $.get(`${ url }&t=${ new Date().getTime() }`, function (html) {
+                Util.setCookie(_Const2.default.getDailyBonusCookieName, 1, getCookieDate());
+                showFormatLog('领取每日奖励', html);
+                let { msg } = Util.getResponseMsg(html);
+                Msg.remove($wait);
+
+                if (/领取成功/.test(msg)) {
+                    let logStatText = '',
+                        msgStatText = '';
+                    for (let [key, num] of Util.entries(gain)) {
+                        logStatText += `${ key }+${ num } `;
+                        msgStatText += `<i>${ key }<em>+${ num.toLocaleString() }</em></i>`;
+                    }
+                    console.log('领取每日奖励，' + logStatText);
+                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
+                    if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', { gain });
+                }
+                Script.runFunc('Public.getDailyBonus_after_', msg);
+            }).fail(() => Msg.remove($wait));
+        } else {
+            Msg.remove($wait);
+            Util.setCookie(_Const2.default.getDailyBonusCookieName, 1, getCookieDate());
+        }
+    }).fail(() => Msg.remove($wait));
 };
 
 /**

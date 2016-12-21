@@ -325,118 +325,38 @@ export const addPolyfill = function () {
 };
 
 /**
- * KFB捐款
- * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
+ * 获取定时模式下次操作的时间间隔（秒）
+ * @returns {number} 定时模式下次操作的时间间隔（秒）
  */
-export const donation = function (isAutoSaveCurrentDeposit = false) {
-    let now = new Date();
-    let date = Util.getDateByTime(Config.donationAfterTime);
-    if (now < date) {
-        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-        return;
-    }
-    Script.runFunc('Public.donation_before_');
-    console.log('KFB捐款Start');
-    let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
+export const getNextTimingInterval = function () {
+    /*let donationInterval = -1;
+     if (Config.autoDonationEnabled) {
+     let donationTime = Util.getDateByTime(Config.donationAfterTime);
+     let now = new Date();
+     if (!Util.getCookie(Const.donationCookieName) && now <= donationTime) {
+     donationInterval = Math.floor((donationTime - now) / 1000);
+     }
+     else {
+     donationTime.setDate(donationTime.getDate() + 1);
+     donationInterval = Math.floor((donationTime - now) / 1000);
+     }
+     }*/
 
-    /**
-     * 获取捐款Cookies有效期
-     * @returns {Date} Cookies有效期的Date对象
-     */
-    const getDonationCookieDate = function () {
-        let now = new Date();
-        let date = Util.getTimezoneDateByTime('02:30:00');
-        if (now > date) {
-            date = Util.getTimezoneDateByTime('00:00:00');
+    let getDailyBonusInterval = -1;
+    if (Config.autoGetDailyBonusEnabled) {
+        let value = parseInt(Util.getCookie(Const.getDailyBonusCookieName));
+        if (value > 0) {
+            let date = Util.getTimezoneDateByTime(Const.getDailyBonusAfterTime);
             date.setDate(date.getDate() + 1);
+            let now = new Date();
+            if (now > date) date.setDate(date.getDate() + 1);
+            getDailyBonusInterval = Math.floor((date - now) / 1000);
         }
-        if (now > date) date.setDate(date.getDate() + 1);
-        return date;
-    };
-
-    /**
-     * 使用指定的KFB捐款
-     * @param {number} kfb 指定的KFB
-     */
-    const donationSubmit = function (kfb) {
-        $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
-            Util.setCookie(Const.donationCookieName, 1, getDonationCookieDate());
-            showFormatLog(`捐款${kfb}KFB`, html);
-            let {msg} = Util.getResponseMsg(html);
-            Msg.remove($wait);
-
-            let msgHtml = `<strong>捐款<em>${kfb}</em>KFB</strong>`;
-            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
-            if (!matches) {
-                if (/KFB不足。/.test(msg)) {
-                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
-                }
-                else return;
-            }
-            else {
-                msgHtml += `<i>经验值<em>+${matches[1]}</em></i>`;
-                let gain = {'经验值': parseInt(matches[1])};
-                if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
-                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' +
-                        (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${matches[2]}</em>${typeof matches[3] !== 'undefined' ? '' : ')'}</i>` : '') +
-                        (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${matches[3]}</em>)</i>` : '');
-                    if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
-                    if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
-                }
-                Log.push('捐款', `捐款\`${kfb}\`KFB`, {gain: gain, pay: {'KFB': -kfb}});
-            }
-            Msg.show(msgHtml);
-            if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Script.runFunc('Public.donation_after_', msg);
-        });
-    };
-
-    if (/%$/.test(Config.donationKfb)) {
-        $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
-            let matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
-            let income = 1;
-            if (matches) income = parseInt(matches[1]);
-            else console.log('当前持有KFB获取失败');
-            let donationKfb = parseInt(Config.donationKfb);
-            donationKfb = Math.floor(income * donationKfb / 100);
-            donationKfb = donationKfb > 0 ? donationKfb : 1;
-            donationKfb = donationKfb <= Const.maxDonationKfb ? donationKfb : Const.maxDonationKfb;
-            donationSubmit(donationKfb);
-        });
-    }
-    else {
-        $.get(`kf_growup.php?t=${new Date().getTime()}`, function (html) {
-            if (/>今天已经捐款</.test(html)) {
-                Msg.remove($wait);
-                Util.setCookie(Const.donationCookieName, 1, getDonationCookieDate());
-                if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-            }
-            else {
-                donationSubmit(parseInt(Config.donationKfb));
-            }
-        });
-    }
-};
-
-/**
- * 获取倒计时的最小时间间隔（秒）
- * @returns {number} 倒计时的最小时间间隔（秒）
- */
-export const getMinRefreshInterval = function () {
-    let donationInterval = -1;
-    if (Config.autoDonationEnabled) {
-        let donationTime = Util.getDateByTime(Config.donationAfterTime);
-        let now = new Date();
-        if (!Util.getCookie(Const.donationCookieName) && now <= donationTime) {
-            donationInterval = Math.floor((donationTime - now) / 1000);
-        }
-        else {
-            donationTime.setDate(donationTime.getDate() + 1);
-            donationInterval = Math.floor((donationTime - now) / 1000);
-        }
+        else if (value < 0) getDailyBonusInterval = Const.getDailyBonusSpecialInterval * 60;
+        else getDailyBonusInterval = 0;
     }
 
-    let minArr = [donationInterval].filter(interval => interval >= 0);
+    let minArr = [getDailyBonusInterval].filter(interval => interval >= 0);
     if (minArr.length > 0) {
         let min = Math.min(...minArr);
         return min > 0 ? min + 1 : 0;
@@ -447,8 +367,8 @@ export const getMinRefreshInterval = function () {
 /**
  * 启动定时模式
  */
-export const startAutoRefreshMode = function () {
-    let interval = getMinRefreshInterval();
+export const startTimingMode = function () {
+    let interval = getNextTimingInterval();
     if (interval === -1) return;
     let oriTitle = document.title;
     let titleItvFunc = null;
@@ -477,12 +397,12 @@ export const startAutoRefreshMode = function () {
         if (titleItvFunc) window.clearInterval(titleItvFunc);
         let showInterval = interval;
         console.log('【定时模式】倒计时：' + getFormatIntervalTitle(1, showInterval));
-        if (Config.showRefreshModeTipsType.toLowerCase() !== 'never') {
+        if (Config.showTimingModeTipsType.toLowerCase() !== 'never') {
             const showIntervalTitle = function () {
                 document.title = `${oriTitle} (定时: ${getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval)})`;
                 showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
             };
-            if (isShowTitle || Config.showRefreshModeTipsType.toLowerCase() === 'always' || interval < 60) showIntervalTitle();
+            if (isShowTitle || Config.showTimingModeTipsType.toLowerCase() === 'always' || interval < 60) showIntervalTitle();
             else showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
             titleItvFunc = setInterval(showIntervalTitle, Const.showRefreshModeTipsInterval * 60 * 1000);
         }
@@ -536,9 +456,10 @@ export const startAutoRefreshMode = function () {
      */
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
-        if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
+        //if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
+        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
 
-        let interval = getMinRefreshInterval();
+        let interval = getNextTimingInterval();
         if (interval > 0) errorNum = 0;
         if (interval === 0 && prevInterval === 0) {
             prevInterval = -1;
@@ -557,6 +478,165 @@ export const startAutoRefreshMode = function () {
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
     showRefreshModeTips(interval < 60 ? 60 : interval);
+};
+
+/**
+ * KFB捐款
+ * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
+ */
+export const donation = function (isAutoSaveCurrentDeposit = false) {
+    let now = new Date();
+    let date = Util.getDateByTime(Config.donationAfterTime);
+    if (now < date) {
+        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
+        return;
+    }
+    Script.runFunc('Public.donation_before_');
+    console.log('KFB捐款Start');
+    let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
+
+    /**
+     * 获取捐款Cookies有效期
+     * @returns {Date} Cookies有效期的Date对象
+     */
+    const getCookieDate = function () {
+        let now = new Date();
+        let date = Util.getTimezoneDateByTime('02:30:00');
+        if (now > date) {
+            date = Util.getTimezoneDateByTime('00:00:00');
+            date.setDate(date.getDate() + 1);
+        }
+        if (now > date) date.setDate(date.getDate() + 1);
+        return date;
+    };
+
+    /**
+     * 使用指定的KFB捐款
+     * @param {number} kfb 指定的KFB
+     */
+    const donationSubmit = function (kfb) {
+        $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
+            Util.setCookie(Const.donationCookieName, 1, getCookieDate());
+            showFormatLog(`捐款${kfb}KFB`, html);
+            let {msg} = Util.getResponseMsg(html);
+            Msg.remove($wait);
+
+            let msgHtml = `<strong>捐款<em>${kfb}</em>KFB</strong>`;
+            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
+            if (!matches) {
+                if (/KFB不足。/.test(msg)) {
+                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
+                }
+                else return;
+            }
+            else {
+                msgHtml += `<i>经验值<em>+${matches[1]}</em></i>`;
+                let gain = {'经验值': parseInt(matches[1])};
+                if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
+                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' +
+                        (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${matches[2]}</em>${typeof matches[3] !== 'undefined' ? '' : ')'}</i>` : '') +
+                        (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${matches[3]}</em>)</i>` : '');
+                    if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
+                    if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
+                }
+                Log.push('捐款', `捐款\`${kfb}\`KFB`, {gain: gain, pay: {'KFB': -kfb}});
+            }
+            Msg.show(msgHtml);
+            if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
+            Script.runFunc('Public.donation_after_', msg);
+        });
+    };
+
+    if (/%$/.test(Config.donationKfb)) {
+        $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
+            let matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
+            let income = 1;
+            if (matches) income = parseInt(matches[1]);
+            else console.log('当前持有KFB获取失败');
+            let donationKfb = parseInt(Config.donationKfb);
+            donationKfb = Math.floor(income * donationKfb / 100);
+            donationKfb = donationKfb > 0 ? donationKfb : 1;
+            donationKfb = donationKfb <= Const.maxDonationKfb ? donationKfb : Const.maxDonationKfb;
+            donationSubmit(donationKfb);
+        });
+    }
+    else {
+        $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+            if (/>今天已经捐款</.test(html)) {
+                Msg.remove($wait);
+                Util.setCookie(Const.donationCookieName, 1, getCookieDate());
+                if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
+            }
+            else {
+                donationSubmit(parseInt(Config.donationKfb));
+            }
+        });
+    }
+};
+
+/**
+ * 领取每日奖励
+ */
+export const getDailyBonus = function () {
+    Script.runFunc('Public.getDailyBonus_before_');
+    console.log('领取每日奖励Start');
+    let $wait = Msg.wait('<strong>正在领取每日奖励，请稍候&hellip;</strong>');
+
+    /**
+     * 获取领取每日奖励Cookies有效期
+     * @returns {Date} Cookies有效期的Date对象
+     */
+    const getCookieDate = function () {
+        let date = Util.getTimezoneDateByTime(Const.getDailyBonusAfterTime);
+        date.setDate(date.getDate() + 1);
+        if (new Date() > date) date.setDate(date.getDate() + 1);
+        return date;
+    };
+
+    $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+        let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+)贡献\s*\+\s*(\d+)转账额度/.exec(html);
+        if (matches) {
+            if (Config.getBonusAfterLootCompleteEnabled && !/<div class="gro_divlv">\r\n争夺奖励/.test(html)) {
+                Util.setCookie(Const.getDailyBonusCookieName, -1, Util.getDate(`+${Const.getDailyBonusSpecialInterval}m`));
+                Msg.remove($wait);
+                return;
+            }
+            if (Config.getBonusAfterSpeakCompleteEnabled && !/<div class="gro_divlv">\r\n发言奖励/.test(html)) {
+                Util.setCookie(Const.getDailyBonusCookieName, -1, Util.getDate(`+${Const.getDailyBonusSpecialInterval}m`));
+                Msg.remove($wait);
+                return;
+            }
+            let url = matches[1];
+            let gain = {};
+            if (parseInt(matches[2]) > 0) gain['KFB'] = parseInt(matches[2]);
+            if (parseInt(matches[3]) > 0) gain['经验值'] = parseInt(matches[3]);
+            if (parseInt(matches[4]) > 0) gain['贡献'] = parseInt(matches[4]);
+            if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
+
+            $.get(`${url}&t=${new Date().getTime()}`, function (html) {
+                Util.setCookie(Const.getDailyBonusCookieName, 1, getCookieDate());
+                showFormatLog('领取每日奖励', html);
+                let {msg} = Util.getResponseMsg(html);
+                Msg.remove($wait);
+
+                if (/领取成功/.test(msg)) {
+                    let logStatText = '', msgStatText = '';
+                    for (let [key, num] of Util.entries(gain)) {
+                        logStatText += `${key}+${num} `;
+                        msgStatText += `<i>${key}<em>+${num.toLocaleString()}</em></i>`;
+                    }
+                    console.log('领取每日奖励，' + logStatText);
+                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
+                    if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', {gain});
+                }
+                Script.runFunc('Public.getDailyBonus_after_', msg);
+            }).fail(() => Msg.remove($wait));
+        }
+        else {
+            Msg.remove($wait);
+            Util.setCookie(Const.getDailyBonusCookieName, 1, getCookieDate());
+        }
+    }).fail(() => Msg.remove($wait));
 };
 
 /**

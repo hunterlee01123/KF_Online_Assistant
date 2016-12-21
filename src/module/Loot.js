@@ -1076,6 +1076,12 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                     );
                 }
                 Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
+
+                if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
+                    Util.deleteCookie(Const.getDailyBonusCookieName);
+                    Public.getDailyBonus();
+                }
+                Script.runFunc('Loot.lootAttack_complete_');
             },
             error (XMLHttpRequest, textStatus) {
                 if (textStatus === 'timeout') {

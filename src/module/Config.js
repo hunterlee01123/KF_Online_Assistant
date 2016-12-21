@@ -13,10 +13,10 @@ const name = Const.storagePrefix + 'config';
  * 配置类
  */
 export const Config = {
-    // 是否开启定时模式，可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效，true：开启；false：关闭
-    //autoRefreshEnabled: false,
+    // 是否开启定时模式，可按时进行自动操作（包括捐款、自动更换ID颜色，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作），true：开启；false：关闭
+    timingModeEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
-    //showRefreshModeTipsType: 'auto',
+    showTimingModeTipsType: 'auto',
 
     // 是否自动KFB捐款，true：开启；false：关闭
     //autoDonationEnabled: false,
@@ -24,6 +24,13 @@ export const Config = {
     //donationKfb: '1',
     // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
     //donationAfterTime: '00:05:00',
+
+    // 是否自动领取每日奖励，true：开启；false：关闭
+    autoGetDailyBonusEnabled: false,
+    // 是否在完成争夺奖励后才领取每日奖励，true：开启；false：关闭
+    getBonusAfterLootCompleteEnabled: false,
+    // 是否在完成发言奖励后才领取每日奖励，true：开启；false：关闭
+    getBonusAfterSpeakCompleteEnabled: false,
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
