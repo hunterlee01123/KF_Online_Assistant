@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name        实时计算点数分配方案
-// @version     2.0-beta
+// @version     2.0.3-beta
 // @trigger     start
 // @author      bch
-// @homepage    read.php?tid=500968&spid=13281070
+// @homepage    read.php?tid=589364
 // @description 根据当前状态实时计算点数分配方案（仅限自动攻击有效）
 // ==/UserScript==
 'use strict';
@@ -84,9 +84,9 @@ let restLifeRatioLucky = 1 - (1 / strongHoldLevel);
 // 冒险机制的选项参数  
 let riskingOption = 1;  // 冒险机制的选项开关，为0时冒险机制失效
 let riskingProbability = 0.875;  // 当某些条件的概率大于此值，将启用冒险机制，调得越大越保险，但是点数、生命损耗越快
-let tempPlayerPropabilityCoefficient = 0.875;  // 冒险机制下调节默认事件发生概率的系数
-let tempNPCPropabilityCoefficient = 1.33;    // 冒险机制下调节默认npc事件发生概率的系数
-let lifePercent = 0.9;    // 当前生命值与下一层最大生命值之比的临界（为回血提供参考）
+let tempPlayerPropabilityCoefficient = 8;  // 冒险机制下调节默认事件发生概率的系数
+let tempNPCPropabilityCoefficient = 7;    // 冒险机制下调节默认npc事件发生概率的系数
+let lifePercent = 1;    // 当前生命值与下一层最大生命值之比的临界（为回血提供参考）
 
 // 冒险机制下能调节的关键参数
 let playerPropability = playerPropability0; // 因冒险机制，作为变量可以调节
@@ -794,16 +794,19 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
 let strongProbability = 0.2;   // 预计出现强化怪概率
 let maxLevel = 40;   // 预计能到达的最大楼层，也可以通过助手统计上一次战斗数据
 let maxStrongNum = 8;  // 预计总共碰到的强化怪个数，也可以通过助手统计上一次战斗数据
+let strongSecNum = 10;  // 因强化怪分布可能存在前期稀疏，后期扎堆的可能，故分段进行统计，该值为分段的数目
 
 function getTotalStrongNum() {
-// 统计目前出现强化怪个数，需要用到统计npc的数组
-    let num = 0;
-    for (let i = 1; i <= enemyList.length - 1; i++) {
-        if (enemyList[i] === "特别强壮" || enemyList[i] === "特别快速") {
-            num++;
+    // 统计目前出现强化怪个数，需要用到统计npc的数组
+    let totalStrongNum = 0;
+    // 因强化怪分布可能存在前期稀疏，后期扎堆的可能，故分段进行统计
+    let startNum = currentLevel - currentLevel % strongSecNum;
+    for (let i = startNum; i <= currentLevel; i++) {
+        if (enemyList[i] == "特别强壮" || enemyList[i] == "特别快速") {
+            totalStrongNum++;
         }
     }
-    return num;
+    return totalStrongNum;
 }
 
 function getNextLevelStrongProbabilitySimple() {
@@ -812,10 +815,11 @@ function getNextLevelStrongProbabilitySimple() {
         // 下一层出现boss
         return 0;
     }
-    let strongProbability = (maxStrongNum - totalStrongNum) / (maxLevel * 0.9 - currentLevel);
+    let strongProbability = (maxStrongNum - getTotalStrongNum()) / (maxLevel * 0.9 - currentLevel);
     strongProbability = Math.ceil(strongProbability * 100) / 100;
     return strongProbability;
 }
+
 
 function getNextLevelStrongProbability() {
 // 计算下一层出现强化怪概率，通过统计二项分布计算
@@ -823,30 +827,45 @@ function getNextLevelStrongProbability() {
         // 下一层出现boss
         return 0;
     }
-    let riskingNextStrongNum = CritBinom(currentLevel + 1, strongProbability, riskingProbability); // 下一层出现强化怪的总个数大于该值的概率大于riskingProbability
-    //let riskingNextStrongNum = CritBinom(currentLevel + 1 - Math.floor(currentLevel / 10), strongProbability, riskingProbability); // 该计算除去了boss的场合，没有上面一行保险
-    return riskingNextStrongNum < totalStrongNum + 1 ? 0 : 1;  // 目前出现强化怪个数+1小于预计值时，认为下一层必然出现强化怪
+    if (riskingProbability === 0) {
+        // 必开启冒险机制
+        return 0;
+    }
+    if (riskingProbability >= 1) {
+        // 必关闭冒险机制
+        return 1;
+    }
+    let riskingNextStrongNum = CritBinom((currentLevel + 1) % strongSecNum, strongProbability, riskingProbability); // 下一层出现强化怪的总个数小于该值的概率大于riskingProbability
+    //let riskingNextStrongNum = CritBinom((currentLevel + 1) % strongSecNum - Math.floor(((currentLevel + 1) % strongSecNum) / 10), strongProbability, riskingProbability); // 该计算除去了boss的场合，没有上面一行保险
+    let strongAppearProbability = riskingNextStrongNum >= getTotalStrongNum() + 1 ? 1 : 0;  // 目前出现强化怪个数+1小于等于预计值时，认为下一层必然出现强化怪
+    console.log("比较强化怪个数: " + riskingNextStrongNum + "  " + (getTotalStrongNum() + 1));
+    return strongAppearProbability;
 }
 
 
 function riskingForHP() {
 // 冒险机制，根据情况在预测不会遇到强化怪时调节关键参数保证回血或控制点数损失，前2个参数为冒险机制下默认事件概率，后1个参数为预计下一层最大生命值
-    if (riskingOption === 0 || currentLevel % 10 === 9 || riskingProbability >= 1) {
+    if (riskingOption === 0 || currentLevel % 10 == 9) {
         // 未启用冒险机制或boss楼层不启用冒险机制
         playerPropability = playerPropability0; // 默认事件发生概率恢复初始值
         npcPropability = npcPropability0; // 默认npc事件发生概率恢复初始值
         restLifeRatioUnlucky = restLifeRatioUnlucky0; // 针对强化npc的加点在遭遇强化npc时保留血量的百分比恢复初始值
         return false;
     }
-    let tempProbability = (currentLevel % 10 === 2) || (currentLevel % 10 === 7) ? 1 : 0; // 每10层中试用2层，启用冒险机制
-    playerPropability = Math.max(tempPlayerPropabilityCoefficient * playerPropability, 0.01); // 调整事件发生概率
-    npcPropability = Math.min(tempNPCPropabilityCoefficient * npcPropability, 0.99); // 调整npc事件发生概率
+    let tempProbability = (currentLevel % 10 == 2) || (currentLevel % 10 == 7) ? 1 : 0; // 每10层中试用2层，启用冒险机制
+    playerPropability = Math.max(playerPropability0 - (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整事件发生概率
+    npcPropability = Math.min(npcPropability0 + (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整npc事件发生概率
+
+    //playerPropability = Math.max(tempPlayerPropabilityCoefficient * playerPropability0,0.01); // 调整事件发生概率
+    //npcPropability = Math.min(tempNPCPropabilityCoefficient * npcPropability0,0.99); // 调整npc事件发生概率
+
     let levelStrategy = getOptimalNextLevelStrategy(currentLevel, currentLife, 0, searchRangeNormal, 1, 1);
     let levelPoints = getNextLevelPoints(currentLevel, 0, levelStrategy);
     let maxLife = getPropertyByPoint("体质", levelPoints["体质"]);  // 下一层最大生命值
     //if((tempProbability >= riskingProbability) && (currentLife / maxLife < lifePercent)){
     if (((1 - getNextLevelStrongProbability()) >= riskingProbability) && (currentLife / maxLife < lifePercent)) {
         // 符合冒险机制条件，启用冒险机制（本例为每10层中2层，且最大生命值下有效回血）
+        console.log("启用冒险机制");
         restLifeRatioUnlucky = 1; // 冒险机制下忽略强化怪
         return true;
     }
@@ -917,7 +936,7 @@ Const.getCustomPoints = function (data) {
     fullIzayoiSpeed = itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0;
 
     let $attackBtns = $('#pdAttackBtns');
-    if ($attackBtns.length > 0) {
+    if ($attackBtns.find('[name="playerPropability0"]').length > 0) {
         if ($attackBtns.find('input:invalid').length > 0) {
             alert('参数错误');
             return null;
