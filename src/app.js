@@ -85,7 +85,6 @@ $(function () {
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
-        if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
