@@ -758,7 +758,10 @@ const showLevelPointListConfigDialog = function (callback) {
  * 添加攻击相关按钮
  */
 const addAttackBtns = function () {
+    let safeId = Public.getSafeId();
+    if (!safeId) return;
     $logBox.off('click');
+
     $(`
 <div id="pdAttackBtns">
   <label>
@@ -773,22 +776,27 @@ const addAttackBtns = function () {
     <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
     <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
   </label><br>
-  <button name="autoAttack" type="button" title="连续攻击到指定层数">自动攻击</button>
-  <button name="manualAttack" type="button" title="每次只攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
+  <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
+  <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
+  <span style="color: #888;">|</span>
+  <button name="manualAttack" type="button" title="手动攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
 </div>
-`).appendTo($points).on('click', '[name="autoAttack"], [name="manualAttack"]', function () {
-        let safeId = Public.getSafeId();
-        if (!safeId) return;
+`).appendTo($points).on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
         }
+        if ($('.pd_mask').length > 0) return;
         let $this = $(this);
-        let type = $this.is('[name="autoAttack"]') ? 'auto' : 'manual';
+        let name = $this.attr('name');
+        let type = name === 'manualAttack' ? 'manual' : 'auto';
         let targetLevel = 0;
         if (type === 'auto') {
-            let prevTargetLevel = $this.data('prevTargetLevel');
-            let value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : 0));
+            let value = '+1';
+            if (name === 'autoAttack') {
+                let prevTargetLevel = $this.data('prevTargetLevel');
+                value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : 0));
+            }
             if (!/\+?\d+/.test(value)) return;
             if (value.startsWith('+')) {
                 let currentLevel = getCurrentLevel(logList);
@@ -796,9 +804,8 @@ const addAttackBtns = function () {
             }
             else targetLevel = parseInt(value);
             if (isNaN(targetLevel) || targetLevel < 0) return;
-            $this.data('prevTargetLevel', value);
+            if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
-        $this.blur();
         Msg.destroy();
         let autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled ||
             Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') && type === 'auto';

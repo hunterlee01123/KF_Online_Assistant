@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     8.8
+// @version     8.8.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -79,148 +79,149 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '8.8';
+var version = '8.8.1';
 
-$(function () {
-    if (typeof jQuery === 'undefined') return;
-    var startDate = new Date();
-    //console.log('【KF Online助手】启动');
-    _Info2.default.version = version;
-    if (!Public.getUidAndUserName()) return;
-    Public.addPolyfill();
-    (0, _Config.init)();
-    Public.checkBrowserType();
-    Public.appendCss();
-    Public.addConfigAndLogDialogLink();
-    if (Config.animationEffectOffEnabled) $.fx.off = true;
+if (typeof jQuery !== 'undefined') {
+    $(function () {
+        var startDate = new Date();
+        //console.log('【KF Online助手】启动');
+        _Info2.default.version = version;
+        if (!Public.getUidAndUserName()) return;
+        Public.addPolyfill();
+        (0, _Config.init)();
+        Public.checkBrowserType();
+        Public.appendCss();
+        Public.addConfigAndLogDialogLink();
+        if (Config.animationEffectOffEnabled) $.fx.off = true;
 
-    if (Config.customScriptEnabled) Script.runCustomScript('start');
-    Public.repairBbsErrorCode();
-    window.addEventListener('beforeunload', Public.preventCloseWindowWhenActioning);
-    if (Config.showSearchLinkEnabled) Public.addSearchDialogLink();
-    Public.bindSearchTypeSelectMenuClick();
-    Public.makeSearchByBelowTwoKeyWordAvailable();
-    if (Config.modifySideBarEnabled) Public.modifySideBar();
-    if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
-    if (_Info2.default.isInHomePage) {
-        Index.handleIndexPersonalInfo();
-        Index.handleAtTips();
-        Index.addSearchTypeSelectBox();
-        if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
-        if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
-        if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
-        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
-        if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
-    } else if (location.pathname === '/read.php') {
-        if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-        Read.fastGotoFloor();
-        if (Config.adjustThreadContentWidthEnabled) Read.adjustThreadContentWidth();
-        Read.adjustThreadContentFontSize();
-        Read.showAttachImageOutsideSellBox();
-        if (Config.parseMediaTagEnabled) Read.parseMediaTag();
-        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
-        if (Config.customSmColorEnabled) Read.modifySmColor();
-        if (Config.customMySmColor) Read.modifyMySmColor();
-        if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
-        Read.addFastGotoFloorInput();
-        Read.addFloorGotoLink();
-        Read.addCopyBuyersListLink();
-        Read.addStatRepliersLink();
-        Read.handleBuyThreadBtn();
-        if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
-        if (Config.userMemoEnabled) Read.addUserMemo();
-        Read.addCopyCodeLink();
-        Read.addMoreSmileLink();
-        if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
-        if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
-    } else if (location.pathname === '/thread.php') {
-        if (Config.highlightNewPostEnabled) Other.highlightNewPost();
-        if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
-    } else if (location.pathname === '/post.php') {
-        if (/\bmultiquote=1/i.test(location.href)) {
-            if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
-        } else if (/\baction=quote/i.test(location.href)) {
-            Post.removeUnpairedBBCodeInQuoteContent();
+        if (Config.customScriptEnabled) Script.runCustomScript('start');
+        Public.repairBbsErrorCode();
+        window.addEventListener('beforeunload', Public.preventCloseWindowWhenActioning);
+        if (Config.showSearchLinkEnabled) Public.addSearchDialogLink();
+        Public.bindSearchTypeSelectMenuClick();
+        Public.makeSearchByBelowTwoKeyWordAvailable();
+        if (Config.modifySideBarEnabled) Public.modifySideBar();
+        if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
+        if (_Info2.default.isInHomePage) {
+            Index.handleIndexPersonalInfo();
+            Index.handleAtTips();
+            Index.addSearchTypeSelectBox();
+            if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
+            if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
+            if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
+            if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
+            if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
+        } else if (location.pathname === '/read.php') {
+            if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
+            Read.fastGotoFloor();
+            if (Config.adjustThreadContentWidthEnabled) Read.adjustThreadContentWidth();
+            Read.adjustThreadContentFontSize();
+            Read.showAttachImageOutsideSellBox();
+            if (Config.parseMediaTagEnabled) Read.parseMediaTag();
+            if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+            if (Config.customSmColorEnabled) Read.modifySmColor();
+            if (Config.customMySmColor) Read.modifyMySmColor();
+            if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
+            Read.addFastGotoFloorInput();
+            Read.addFloorGotoLink();
+            Read.addCopyBuyersListLink();
+            Read.addStatRepliersLink();
+            Read.handleBuyThreadBtn();
+            if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
+            if (Config.userMemoEnabled) Read.addUserMemo();
+            Read.addCopyCodeLink();
+            Read.addMoreSmileLink();
+            if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
+            if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
+        } else if (location.pathname === '/thread.php') {
+            if (Config.highlightNewPostEnabled) Other.highlightNewPost();
+            if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
+        } else if (location.pathname === '/post.php') {
+            if (/\bmultiquote=1/i.test(location.href)) {
+                if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
+            } else if (/\baction=quote/i.test(location.href)) {
+                Post.removeUnpairedBBCodeInQuoteContent();
+            }
+            Post.addExtraPostEditorButton();
+            Post.addExtraOptionInPostPage();
+            if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
+            if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
+        } else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
+            Item.enhanceMyItemsPage();
+            Item.addBatchUseAndConvertOldItemTypesButton();
+        } else if (location.pathname === '/kf_fw_ig_mybp.php') {
+            Item.addBatchUseItemsButton();
+            Item.hideItemTypes();
+        } else if (location.pathname === '/kf_fw_ig_shop.php') {
+            Item.addBatchBuyItemsLink();
+        } else if (location.pathname === '/kf_fw_ig_index.php') {
+            Loot.enhanceLootIndexPage();
+        } else if (location.pathname === '/kf_fw_ig_pklist.php') {
+            Loot.addUserLinkInPkListPage();
+        } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
+            Bank.addBatchTransferButton();
+            Bank.handleInBankPage();
+        } else if (/\/kf_fw_card_my\.php$/i.test(location.href)) {
+            Card.addStartBatchModeButton();
+        } else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
+            Other.addFastDrawMoneyLink();
+            if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        } else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
+            Other.addMsgSelectButton();
+        } else if (/\/profile\.php\?action=show/i.test(location.href)) {
+            Other.addFollowAndBlockAndMemoUserLink();
+        } else if (/\/personal\.php\?action=post/i.test(location.href)) {
+            if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
+        } else if (location.pathname === '/kf_growup.php') {
+            Other.addAutoChangeIdColorButton();
+        } else if (location.pathname === '/guanjianci.php') {
+            Other.highlightUnReadAtTipsMsg();
+        } else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
+            Other.syncModifyPerPageFloorNum();
+            if (_Info2.default.isInMiaolaDomain) Other.addAvatarChangeAlert();
+        } else if (/\/job\.php\?action=preview$/i.test(location.href)) {
+            Post.modifyPostPreviewPage();
+        } else if (location.pathname === '/search.php') {
+            if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
+        } else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
+            Other.highlightRatingErrorSize();
+        } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
+            Other.showSelfRatingErrorSizeSubmitWarning();
+        } else if (location.pathname === '/kf_no1.php') {
+            Other.addUserNameLinkInRankPage();
         }
-        Post.addExtraPostEditorButton();
-        Post.addExtraOptionInPostPage();
-        if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
-        if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
-    } else if (/\/kf_fw_ig_my\.php$/i.test(location.href)) {
-        Item.enhanceMyItemsPage();
-        Item.addBatchUseAndConvertOldItemTypesButton();
-    } else if (location.pathname === '/kf_fw_ig_mybp.php') {
-        Item.addBatchUseItemsButton();
-        Item.hideItemTypes();
-    } else if (location.pathname === '/kf_fw_ig_shop.php') {
-        Item.addBatchBuyItemsLink();
-    } else if (location.pathname === '/kf_fw_ig_index.php') {
-        Loot.enhanceLootIndexPage();
-    } else if (location.pathname === '/kf_fw_ig_pklist.php') {
-        Loot.addUserLinkInPkListPage();
-    } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
-        Bank.addBatchTransferButton();
-        Bank.handleInBankPage();
-    } else if (/\/kf_fw_card_my\.php$/i.test(location.href)) {
-        Card.addStartBatchModeButton();
-    } else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
-        Other.addFastDrawMoneyLink();
-        if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
-    } else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
-        Other.addMsgSelectButton();
-    } else if (/\/profile\.php\?action=show/i.test(location.href)) {
-        Other.addFollowAndBlockAndMemoUserLink();
-    } else if (/\/personal\.php\?action=post/i.test(location.href)) {
-        if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
-    } else if (location.pathname === '/kf_growup.php') {
-        Other.addAutoChangeIdColorButton();
-    } else if (location.pathname === '/guanjianci.php') {
-        Other.highlightUnReadAtTipsMsg();
-    } else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
-        Other.syncModifyPerPageFloorNum();
-        if (_Info2.default.isInMiaolaDomain) Other.addAvatarChangeAlert();
-    } else if (/\/job\.php\?action=preview$/i.test(location.href)) {
-        Post.modifyPostPreviewPage();
-    } else if (location.pathname === '/search.php') {
-        if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-    } else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
-        Other.highlightRatingErrorSize();
-    } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
-        Other.showSelfRatingErrorSizeSubmitWarning();
-    } else if (location.pathname === '/kf_no1.php') {
-        Other.addUserNameLinkInRankPage();
-    }
-    if (Config.blockUserEnabled) Public.blockUsers();
-    if (Config.blockThreadEnabled) Public.blockThread();
-    if (Config.followUserEnabled) Public.followUsers();
-    if (_Info2.default.isMobile) Public.bindElementTitleClick();
-    if (_Info2.default.isInMiaolaDomain) {
-        if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
-            Post.importKfSmileEnhanceExtension();
+        if (Config.blockUserEnabled) Public.blockUsers();
+        if (Config.blockThreadEnabled) Public.blockThread();
+        if (Config.followUserEnabled) Public.followUsers();
+        if (_Info2.default.isMobile) Public.bindElementTitleClick();
+        if (_Info2.default.isInMiaolaDomain) {
+            if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
+                Post.importKfSmileEnhanceExtension();
+            }
+            $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
         }
-        $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
-    }
 
-    if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) Public.getDailyBonus();
+        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) Public.getDailyBonus();
 
-    var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
-    var isDonationStarted = false;
-    /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
-        isDonationStarted = true;
-        Public.donation(autoSaveCurrentDepositAvailable);
-    }*/
+        var autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
+        var isDonationStarted = false;
+        /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
+         isDonationStarted = true;
+         Public.donation(autoSaveCurrentDepositAvailable);
+         }*/
 
-    if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
+        if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
 
-    if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
+        if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
 
-    if (Config.timingModeEnabled && _Info2.default.isInHomePage) Public.startTimingMode();
+        if (Config.timingModeEnabled && _Info2.default.isInHomePage) Public.startTimingMode();
 
-    if (Config.customScriptEnabled) Script.runCustomScript('end');
+        if (Config.customScriptEnabled) Script.runCustomScript('end');
 
-    var endDate = new Date();
-    console.log('\u3010KF Online\u52A9\u624B\u3011\u52A0\u8F7D\u5B8C\u6BD5\uFF0C\u52A0\u8F7D\u8017\u65F6\uFF1A' + (endDate - startDate) + 'ms');
-});
+        var endDate = new Date();
+        console.log('\u3010KF Online\u52A9\u624B\u3011\u52A0\u8F7D\u5B8C\u6BD5\uFF0C\u52A0\u8F7D\u8017\u65F6\uFF1A' + (endDate - startDate) + 'ms');
+    });
+}
 
 },{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Loot":13,"./module/Other":15,"./module/Post":16,"./module/Public":17,"./module/Read":18,"./module/Script":19,"./module/Util":21}],2:[function(require,module,exports){
 /* 银行模块 */
@@ -1035,10 +1036,10 @@ var Config = exports.Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
     buyThreadViaAjaxEnabled: true,
-    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
-    kfSmileEnhanceExtensionEnabled: false,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
+    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
+    kfSmileEnhanceExtensionEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -6253,29 +6254,34 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
  * 添加攻击相关按钮
  */
 var addAttackBtns = function addAttackBtns() {
+    var safeId = Public.getSafeId();
+    if (!safeId) return;
     $logBox.off('click');
-    $('\n<div id="pdAttackBtns">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u6709\u6548\uFF09">[?]</span>\n  </label>\n  ' + (typeof _Const2.default.getCustomPoints === 'function' ? '<label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox"> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u6709\u6548\uFF09">[?]</span>\n  </label>' : '') + '\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox"> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~5\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u8FDE\u7EED\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="manualAttack" type="button" title="\u6BCF\u6B21\u53EA\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').appendTo($points).on('click', '[name="autoAttack"], [name="manualAttack"]', function () {
-        var safeId = Public.getSafeId();
-        if (!safeId) return;
+
+    $('\n<div id="pdAttackBtns">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u6709\u6548\uFF09">[?]</span>\n  </label>\n  ' + (typeof _Const2.default.getCustomPoints === 'function' ? '<label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox"> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u6709\u6548\uFF09">[?]</span>\n  </label>' : '') + '\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox"> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~5\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').appendTo($points).on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
         }
+        if ($('.pd_mask').length > 0) return;
         var $this = $(this);
-        var type = $this.is('[name="autoAttack"]') ? 'auto' : 'manual';
+        var name = $this.attr('name');
+        var type = name === 'manualAttack' ? 'manual' : 'auto';
         var targetLevel = 0;
         if (type === 'auto') {
-            var prevTargetLevel = $this.data('prevTargetLevel');
-            var value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : 0));
+            var value = '+1';
+            if (name === 'autoAttack') {
+                var prevTargetLevel = $this.data('prevTargetLevel');
+                value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : 0));
+            }
             if (!/\+?\d+/.test(value)) return;
             if (value.startsWith('+')) {
                 var currentLevel = getCurrentLevel(logList);
                 targetLevel = currentLevel + parseInt(value);
             } else targetLevel = parseInt(value);
             if (isNaN(targetLevel) || targetLevel < 0) return;
-            $this.data('prevTargetLevel', value);
+            if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
-        $this.blur();
         Msg.destroy();
         var autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
         if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;

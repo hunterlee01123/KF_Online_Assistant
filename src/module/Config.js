@@ -81,10 +81,10 @@ export const Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
     buyThreadViaAjaxEnabled: true,
-    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
-    kfSmileEnhanceExtensionEnabled: false,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
+    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
+    kfSmileEnhanceExtensionEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
