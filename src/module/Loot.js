@@ -58,6 +58,8 @@ export const enhanceLootIndexPage = function () {
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     else showEnhanceLog(logList);
     showLogStat(logList);
+
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(Const.lootAttackingCookieName)) $(document).ready(autoLoot);
 };
 
 /**
@@ -67,7 +69,10 @@ const handlePropertiesArea = function () {
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
     let html = $properties.html()
         .replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>')
-        .replace(/(生命值：\d+)\s*\(最大(\d+)\)/, '$1 (最大<span id="pdPro_s2" title="原值：$2">$2</span>) <span id="pdNew_s2"></span>')
+        .replace(
+            /(生命值：)(\d+)\s*\(最大(\d+)\)/,
+            '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>'
+        )
         .replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>')
         .replace(
             /(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/,
@@ -184,6 +189,7 @@ const checkPoints = function ($points) {
 const getLootPropertyList = function () {
     let propertyList = new Map([
         ['攻击力', 0],
+        ['生命值', 0],
         ['最大生命值', 0],
         ['攻击速度', 0],
         ['暴击几率', 0],
@@ -195,8 +201,11 @@ const getLootPropertyList = function () {
     let content = $properties.text();
     let matches = /攻击力：(\d+)/.exec(content);
     if (matches) propertyList.set('攻击力', parseInt(matches[1]));
-    matches = /生命值：\d+\s*\(最大(\d+)\)/.exec(content);
-    if (matches) propertyList.set('最大生命值', parseInt(matches[1]));
+    matches = /生命值：(\d+)\s*\(最大(\d+)\)/.exec(content);
+    if (matches) {
+        propertyList.set('生命值', parseInt(matches[1]));
+        propertyList.set('最大生命值', parseInt(matches[2]));
+    }
     matches = /攻击速度：(\d+)/.exec(content);
     if (matches) propertyList.set('攻击速度', parseInt(matches[1]));
     matches = /暴击几率：(\d+)%/.exec(content);
@@ -795,7 +804,9 @@ const addAttackBtns = function () {
             let value = '+1';
             if (name === 'autoAttack') {
                 let prevTargetLevel = $this.data('prevTargetLevel');
-                value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : 0));
+                value = $.trim(
+                    prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : Config.attackTargetLevel)
+                );
             }
             if (!/\+?\d+/.test(value)) return;
             if (value.startsWith('+')) {
@@ -860,11 +871,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
     const changePoints = function (nextLevel) {
         if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') {
             let currentLevel = getCurrentLevel(logList);
-            let currentLife = 0, currentInitLife = 0;
-            let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[currentLevel]);
-            if (initLifeMatches) currentInitLife = parseInt(initLifeMatches[1]);
-            let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[currentLevel]);
-            if (lifeMatches) currentLife = lifeMatches[2] === '满值' ? currentInitLife : parseInt(lifeMatches[1]);
+            let {life: currentLife, initLife: currentInitLife} = getLifeInfo(logList, currentLevel);
             let enemyList = getEnemyList(logList);
             let points = null;
             try {
@@ -931,7 +938,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                     });
                     pointsText = pointsText.replace(/，$/, '');
                     for (let [key, value] of propertyList) {
-                        if (key === '可分配属性点') continue;
+                        if (key === '可分配属性点' || key === '生命值') continue;
                         let unit = '';
                         if (key.endsWith('率') || key === '防御') unit = '%';
                         propertiesText += `${key}：${value}${unit}，`;
@@ -952,7 +959,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                     alert((changeLevel ? `第${changeLevel}层方案：` : '') + msg);
                     return 'error';
                 }
-            }, (XMLHttpRequest, textStatus) => textStatus);
+            }, () => 'timeout');
         }
         else return $.Deferred().resolve('success');
     };
@@ -967,6 +974,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
             data: {'safeid': safeId},
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
+            if (Config.autoLootEnabled) Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
             if (!/你\(\d+\)遭遇了/.test(html)) {
                 if (!$.trim(html)) {
                     retryNum++;
@@ -988,11 +996,18 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
             console.log('【争夺攻击】当前层数：' + currentLevel);
             let $countdown = $('.pd_countdown:last');
             $countdown.text(currentLevel);
+            let {life: currentLife} = getLifeInfo(logList, currentLevel);
+            $properties.find('#pdCurrentLife').text(currentLife);
 
             let isFail = /你被击败了/.test(html);
             let isStop = isFail || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) ||
                 $countdown.closest('.pd_msg').data('stop');
             if (isStop) {
+                if (Config.autoLootEnabled) {
+                    Util.deleteCookie(Const.lootCheckingCookieName);
+                    Util.deleteCookie(Const.lootAttackingCookieName);
+                    Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
+                }
                 if (isFail) {
                     completeAttack();
                 }
@@ -1009,16 +1024,14 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                     setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
                 }
             }
-        }).fail(function (XMLHttpRequest, textStatus) {
+        }).fail(function () {
             if ($('.pd_countdown:last').closest('.pd_msg').data('stop')) {
                 Msg.remove($wait);
                 return;
             }
-            if (textStatus === 'timeout') {
-                console.log('【争夺攻击】超时重试...');
-                $('#pdAttackProcess').append('<li>【争夺攻击】超时重试&hellip;</li>');
-                setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
-            }
+            console.log('【争夺攻击】超时重试...');
+            $('#pdAttackProcess').append('<li>【争夺攻击】超时重试&hellip;</li>');
+            setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
         });
     };
 
@@ -1051,6 +1064,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                 Msg.remove($wait);
                 let logHtml = $('#pk_text', html).html();
                 if (!/你被击败了/.test(logHtml)) return;
+                if (Config.autoLootEnabled) Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
                 log = logHtml;
                 logList = getLogList(log);
                 showEnhanceLog(logList);
@@ -1090,10 +1104,8 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                 }
                 Script.runFunc('Loot.lootAttack_complete_');
             },
-            error (XMLHttpRequest, textStatus) {
-                if (textStatus === 'timeout') {
-                    setTimeout(completeAttack, Const.defAjaxInterval);
-                }
+            error () {
+                setTimeout(completeAttack, Const.defAjaxInterval);
             }
         })
     };
@@ -1259,6 +1271,96 @@ const getEnemyList = function (logList) {
  * @returns {number} 当前层数
  */
 const getCurrentLevel = logList => logList.length - 1 >= 1 ? logList.length - 1 : 0;
+
+/**
+ * 获取指定层数的生命值信息
+ * @param {string[]} logList 各层争夺记录列表
+ * @param {number} level 指定层数
+ * @returns {{life: number, initLife: number}} life：该层剩余生命值；initLife：该层初始生命值
+ */
+const getLifeInfo = function (logList, level) {
+    let life = 0, initLife = 0;
+    let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
+    if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
+    let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[level]);
+    if (lifeMatches) life = lifeMatches[2] === '满值' ? initLife : parseInt(lifeMatches[1]);
+    return {life, initLife};
+};
+
+/**
+ * 获取自动争夺Cookies有效期
+ * @returns {Date} Cookies有效期的Date对象
+ */
+const getAutoLootCookieDate = function () {
+    let now = new Date();
+    let date = Util.getTimezoneDateByTime('02:30:00');
+    if (now > date) {
+        date = Util.getTimezoneDateByTime('00:00:30');
+        date.setDate(date.getDate() + 1);
+    }
+    if (now > date) date.setDate(date.getDate() + 1);
+    return date;
+};
+
+/**
+ * 检查争夺情况
+ */
+export const checkLoot = function () {
+    console.log('检查争夺情况Start');
+    let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        timeout: Const.defAjaxTimeout,
+        success (html) {
+            Msg.remove($wait);
+            if (!/你被击败了/.test(html)) {
+                if (Util.getCookie(Const.lootCheckingCookieName)) return;
+                let $log = $('#pk_text', html);
+                if (!$log.length) {
+                    Util.setCookie(Const.lootCompleteCookieName, -1, Util.getDate('+1h'));
+                    return;
+                }
+                if (Config.attackTargetLevel > 0) {
+                    let log = $log.html();
+                    let logList = getLogList(log);
+                    let currentLevel = getCurrentLevel(logList);
+                    if (Config.attackTargetLevel <= currentLevel) {
+                        Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
+                        return;
+                    }
+                }
+                Util.setCookie(Const.lootCheckingCookieName, 1, Util.getDate('+1m'));
+                Msg.destroy();
+                location.href = 'kf_fw_ig_index.php';
+            }
+            else {
+                Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+            }
+        },
+        error () {
+            Msg.remove($wait);
+            setTimeout(checkLoot, Const.defAjaxInterval);
+        }
+    });
+};
+
+/**
+ * 自动争夺
+ */
+const autoLoot = function () {
+    if (/你被击败了/.test(log)) return;
+    let safeId = Public.getSafeId();
+    let currentLevel = getCurrentLevel(logList);
+    if (!safeId || Config.attackTargetLevel > 0 && Config.attackTargetLevel <= currentLevel) {
+        Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
+        return;
+    }
+    Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
+    Util.deleteCookie(Const.lootCompleteCookieName);
+    let autoChangeLevelPointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
+    lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangeLevelPointsEnabled, safeId});
+};
 
 /**
  * 在争夺排行页面添加用户链接

@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.8.1';
+const version = '8.9';
 
 if (typeof jQuery !== 'undefined') {
     $(function () {
@@ -47,6 +47,8 @@ if (typeof jQuery !== 'undefined') {
             if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
             if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
             if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
+            if (Config.autoLootEnabled && parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2)
+                $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
         }
         else if (location.pathname === '/read.php') {
             if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
@@ -160,7 +162,15 @@ if (typeof jQuery !== 'undefined') {
             $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
         }
 
-        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) Public.getDailyBonus();
+        let isAutoLootStarted = false;
+        if (Config.autoLootEnabled && location.pathname !== '/kf_fw_ig_index.php'
+            && !Util.getCookie(Const.lootCompleteCookieName) && !Util.getCookie(Const.lootAttackingCookieName)
+        ) {
+            isAutoLootStarted = true;
+            Loot.checkLoot();
+        }
+
+        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
 
         let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && Info.isInHomePage;
         let isDonationStarted = false;
@@ -173,7 +183,7 @@ if (typeof jQuery !== 'undefined') {
 
         if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) Public.changeIdColor();
 
-        if (Config.timingModeEnabled && Info.isInHomePage) Public.startTimingMode();
+        if (Config.timingModeEnabled && (Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php')) Public.startTimingMode();
 
         if (Config.customScriptEnabled) Script.runCustomScript('end');
 

@@ -12,6 +12,7 @@ import {show as showLogDialog} from './LogDialog';
 import * as TmpLog from './TmpLog';
 import * as Script from './Script';
 import * as Read from './Read';
+import * as Loot from './Loot';
 
 /**
  * 获取Uid和用户名
@@ -342,6 +343,21 @@ export const getNextTimingInterval = function () {
      }
      }*/
 
+    let lootInterval = -1;
+    if (Config.autoLootEnabled) {
+        let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
+        if (value > 0) {
+            let date = Util.getTimezoneDateByTime(Const.lootAfterTime);
+            date.setDate(date.getDate() + 1);
+            let now = new Date();
+            if (now > date) date.setDate(date.getDate() + 1);
+            lootInterval = Math.floor((date - now) / 1000);
+        }
+        else if (value < 0) lootInterval = 60 * 60;
+        else if (Util.getCookie(Const.lootAttackingCookieName)) lootInterval = Const.lootAttackingExpires * 60;
+        else lootInterval = 0;
+    }
+
     let getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
         let value = parseInt(Util.getCookie(Const.getDailyBonusCookieName));
@@ -356,7 +372,7 @@ export const getNextTimingInterval = function () {
         else getDailyBonusInterval = 0;
     }
 
-    let minArr = [getDailyBonusInterval].filter(interval => interval >= 0);
+    let minArr = [lootInterval, getDailyBonusInterval].filter(interval => interval >= 0);
     if (minArr.length > 0) {
         let min = Math.min(...minArr);
         return min > 0 ? min + 1 : 0;
@@ -457,6 +473,8 @@ export const startTimingMode = function () {
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         //if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
+        if (Config.autoLootEnabled && !Util.getCookie(Const.lootCompleteCookieName) && !Util.getCookie(Const.lootAttackingCookieName))
+            Loot.checkLoot();
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
 
         let interval = getNextTimingInterval();
@@ -593,7 +611,11 @@ export const getDailyBonus = function () {
         return date;
     };
 
-    $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+    $.ajax({
+        type: 'GET',
+        url: 'kf_growup.php?t=' + new Date().getTime(),
+        timeout: Const.defAjaxTimeout,
+    }).done(function (html) {
         let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+)贡献\s*\+\s*(\d+)转账额度/.exec(html);
         if (matches) {
             if (Config.getBonusAfterLootCompleteEnabled && !/<div class="gro_divlv">\r\n争夺奖励/.test(html)) {
@@ -636,7 +658,10 @@ export const getDailyBonus = function () {
             Msg.remove($wait);
             Util.setCookie(Const.getDailyBonusCookieName, 1, getCookieDate());
         }
-    }).fail(() => Msg.remove($wait));
+    }).fail(function () {
+        Msg.remove($wait);
+        setTimeout(getDailyBonus, Const.defAjaxInterval);
+    });
 };
 
 /**

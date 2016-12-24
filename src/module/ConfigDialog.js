@@ -37,7 +37,8 @@ export const show = function () {
       <legend>
         <label>
           <input name="timingModeEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励、自动争夺，需开启相关功能）
+只在论坛首页和争夺首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
       <label>
@@ -75,6 +76,15 @@ export const show = function () {
       <label class="pd_cfg_ml">
         <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> 完成发言后才领取
         <span class="pd_cfg_tips" title="在完成发言奖励后才领取每日奖励">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>
+        <label><input name="autoLootEnabled" type="checkbox"> 自动争夺</label>
+      </legend>
+      <label>
+        攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
+        <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -466,43 +476,11 @@ const verifyMainConfig = function ($dialog) {
         return false;
     }*/
 
-    let $txtMaxFastGotoThreadPageNum = $dialog.find('[name="maxFastGotoThreadPageNum"]');
-    let maxFastGotoThreadPageNum = $.trim($txtMaxFastGotoThreadPageNum.val());
-    if (!$.isNumeric(maxFastGotoThreadPageNum) || parseInt(maxFastGotoThreadPageNum) <= 0) {
-        alert('页数链接最大数量格式不正确');
-        $txtMaxFastGotoThreadPageNum.select().focus();
-        return false;
-    }
-
-    let $txtThreadContentFontSize = $dialog.find('[name="threadContentFontSize"]');
-    let threadContentFontSize = $.trim($txtThreadContentFontSize.val());
-    if (threadContentFontSize && (isNaN(parseInt(threadContentFontSize)) || parseInt(threadContentFontSize) < 0)) {
-        alert('帖子内容字体大小格式不正确');
-        $txtThreadContentFontSize.select().focus();
-        return false;
-    }
-
     let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
         alert('自定义本人的神秘颜色格式不正确，例：#009cff');
         $txtCustomMySmColor.select().focus();
-        return false;
-    }
-
-    let $txtDefShowMsgDuration = $dialog.find('[name="defShowMsgDuration"]');
-    let defShowMsgDuration = $.trim($txtDefShowMsgDuration.val());
-    if (!$.isNumeric(defShowMsgDuration) || parseInt(defShowMsgDuration) < -1) {
-        alert('默认的消息显示时间格式不正确');
-        $txtDefShowMsgDuration.select().focus();
-        return false;
-    }
-
-    let $txtLogSaveDays = $dialog.find('[name="logSaveDays"]');
-    let logSaveDays = $.trim($txtLogSaveDays.val());
-    if (!$.isNumeric(logSaveDays) || parseInt(logSaveDays) < 1) {
-        alert('日志保存天数格式不正确');
-        $txtLogSaveDays.select().focus();
         return false;
     }
 
