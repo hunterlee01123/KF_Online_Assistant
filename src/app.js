@@ -107,8 +107,7 @@ if (typeof jQuery !== 'undefined') {
             Loot.addUserLinkInPkListPage();
         }
         else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
-            Bank.addBatchTransferButton();
-            Bank.handleInBankPage();
+            Bank.handleBankPage();
         }
         else if (/\/kf_fw_card_my\.php$/i.test(location.href)) {
             Card.addStartBatchModeButton();

@@ -61,6 +61,8 @@ const Const = {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 3000; // 慢速情况
         else return Math.floor(Math.random() * 100) + 200; // 正常情况
     },
+    // 银行相关操作的时间间隔（毫秒）
+    bankActionInterval: 5000,
 
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
