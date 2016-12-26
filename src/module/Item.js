@@ -121,16 +121,17 @@ const getCreditsViaResponse = function (response, itemTypeId) {
         return -1;
     }
     if (itemTypeId >= 7 && itemTypeId <= 12) {
-        if (/成功！/.test(response)) return {'效果': 1};
+        if (/成功！/.test(response)) return {'有效道具': 1};
+        else return {'无效道具': 1};
     }
     else {
-        let matches = /恢复能量增加了\s*(\d+)\s*点/i.exec(response);
+        let matches = /恢复能量增加了\s*(\d+)\s*点/.exec(response);
         if (matches) return {'能量': parseInt(matches[1])};
-        matches = /(\d+)KFB/i.exec(response);
+        matches = /(\d+)KFB/.exec(response);
         if (matches) return {'KFB': parseInt(matches[1])};
-        matches = /(\d+)点?贡献/i.exec(response);
+        matches = /(\d+)点?贡献/.exec(response);
         if (matches) return {'贡献': parseInt(matches[1])};
-        matches = /贡献\+(\d+)/i.exec(response);
+        matches = /贡献\+(\d+)/.exec(response);
         if (matches) return {'贡献': parseInt(matches[1])};
     }
     return {};
@@ -239,13 +240,9 @@ const useOldItems = function (options, cycle) {
                         nextRoundItemIdList.push(itemId);
                         let credits = getCreditsViaResponse(msg, settings.itemTypeId);
                         if (credits !== -1) {
-                            if ($.isEmptyObject(credits)) stat['无效道具']++;
-                            else stat['有效道具']++;
-                            if (settings.itemTypeId <= 6) {
-                                for (let key of Object.keys(credits)) {
-                                    if (typeof stat[key] === 'undefined') stat[key] = credits[key];
-                                    else stat[key] += credits[key];
-                                }
+                            for (let key of Object.keys(credits)) {
+                                if (typeof stat[key] === 'undefined') stat[key] = credits[key];
+                                else stat[key] += credits[key];
                             }
                         }
                     }

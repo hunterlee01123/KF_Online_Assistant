@@ -775,11 +775,11 @@ const addAttackBtns = function () {
 <div id="pdAttackBtns">
   <label>
     <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
-    <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击有效）">[?]</span>
+    <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效）">[?]</span>
   </label>
   ${typeof Const.getCustomPoints === 'function' ? `<label>
     <input class="pd_input" name="customPointsScriptEnabled" type="checkbox"> 使用自定义脚本
-    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击有效）">[?]</span>
+    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效）">[?]</span>
   </label>` : ''}
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速

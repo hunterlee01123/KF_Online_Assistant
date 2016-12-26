@@ -488,3 +488,23 @@ export const addUserNameLinkInRankPage = function () {
         if (userName === Info.userName) $this.find('a').addClass('pd_highlight');
     });
 };
+
+/**
+ * 处理个人信息页面上的元素
+ */
+export const handleProfilePage = function () {
+    let $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
+    $area.html(
+        $area.html().replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>')
+            .replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
+            .replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
+            .replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
+            .replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
+                let now = new Date();
+                let html = date;
+                if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) < now.getFullYear())
+                    html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
+                return '注册时间：' + html;
+            })
+    );
+};
