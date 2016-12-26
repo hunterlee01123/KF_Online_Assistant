@@ -177,7 +177,7 @@ const checkPoints = function ($points) {
         return false;
     }
     else if (surplusPoint > 0) {
-        return confirm('你的可分配属性点尚未用完，是否提交？');
+        return confirm('可分配属性点尚未用完，是否继续？');
     }
     return true;
 };
@@ -822,17 +822,24 @@ const addAttackBtns = function () {
     $logBox.off('click');
 
     $(`
-<div id="pdAttackBtns">
+<div id="pdAttackBtns" style="line-height: 2.2em; margin-bottom: 5px;">
   <label>
-    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox"> 自动修改点数分配方案
+    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''}>
+    自动修改点数分配方案
     <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效）">[?]</span>
   </label>
-  ${typeof Const.getCustomPoints === 'function' ? `<label>
-    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox"> 使用自定义脚本
-    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效）">[?]</span>
-  </label>` : ''}
   <label>
-    <input class="pd_input" name="slowAttackEnabled" type="checkbox"> 慢速
+    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${Config.customPointsScriptEnabled ? 'checked' : ''} 
+${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定义脚本
+    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效）">[?]</span>
+  </label><br>
+  <label>
+    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
+    有剩余属性点时提醒
+    <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效）">[?]</span>
+  </label>
+  <label>
+    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
     <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
@@ -873,28 +880,19 @@ const addAttackBtns = function () {
         if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
         lootAttack({type, targetLevel, autoChangeLevelPointsEnabled, safeId});
     }).on('click', '.pd_cfg_tips', () => false)
-        .find('[name="autoChangeLevelPointsEnabled"]')
-        .click(function () {
-            readConfig();
-            Config.autoChangeLevelPointsEnabled = $(this).prop('checked');
-            writeConfig();
-        }).prop('checked', Config.autoChangeLevelPointsEnabled)
-        .end().find('[name="slowAttackEnabled"]')
-        .click(function () {
-            readConfig();
-            Config.slowAttackEnabled = $(this).prop('checked');
-            writeConfig();
-        }).prop('checked', Config.slowAttackEnabled)
-        .end().find('[name="customPointsScriptEnabled"]')
-        .click(function () {
-            let checked = $(this).prop('checked');
-            $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', checked);
-            if (Config.customPointsScriptEnabled !== checked) {
+        .on('click', '[type="checkbox"]', function () {
+            let $this = $(this);
+            let name = $this.attr('name');
+            let checked = $this.prop('checked');
+            if (name in Config && Config[name] !== checked) {
                 readConfig();
-                Config.customPointsScriptEnabled = checked;
+                Config[name] = $this.prop('checked');
                 writeConfig();
             }
-        }).prop('checked', Config.customPointsScriptEnabled).triggerHandler('click');
+        }).find('[name="customPointsScriptEnabled"]:not([disabled])')
+        .click(function () {
+            $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $(this).prop('checked'));
+        }).triggerHandler('click');
 };
 
 /**
@@ -970,6 +968,10 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
         if (isChange || (changeLevel > 0 && changeLevel !== parseInt($levelPointListSelect.val()))) {
             if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');
             else $levelPointListSelect.get(0).selectedIndex = 0;
+            if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
+                if (confirm('可分配属性点尚未用完，是否继续？')) Info.w.unusedPointNumAlert = true;
+                else return $.Deferred().resolve('error');
+            }
             return $.ajax({
                 type: 'POST',
                 url: 'kf_fw_ig_enter.php',
@@ -1129,7 +1131,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                 }
 
                 let latestEnemyList = {};
-                for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - 10)))) {
+                for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
                     latestEnemyList[enemy.replace('特别', '')] = num;
                 }
                 let latestEnemyStat = '';
@@ -1142,7 +1144,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                 if (exp > 0 && kfb > 0) {
                     Log.push(
                         '争夺攻击',
-                        `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近10层：${latestEnemyStat.trim()})`,
+                        `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${Const.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`,
                         {gain: {'KFB': kfb, '经验值': exp}}
                     );
                 }
@@ -1176,7 +1178,7 @@ const showLogStat = function (logList) {
         allEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
     let latestEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - 10)))) {
+    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
         latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
 
@@ -1188,7 +1190,7 @@ const showLogStat = function (logList) {
 <li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
 <li class="pd_stat">
   <b>全部层数：</b>${allEnemyStatHtml}<br>
-  <b>最近10层：</b>${latestEnemyStatHtml}
+  <b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml}
 </li>
 `);
 };

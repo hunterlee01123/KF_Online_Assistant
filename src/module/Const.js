@@ -19,6 +19,8 @@ const Const = {
     getDailyBonusAfterTime: '01:05:00',
     // 在当天的指定时间之后进行自动争夺（北京时间），例：00:05:00
     lootAfterTime: '00:05:00',
+    // 遭遇敌人统计的指定最近层数
+    enemyStatLatestLevelNum: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 

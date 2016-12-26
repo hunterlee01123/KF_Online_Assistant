@@ -38,12 +38,14 @@ export const Config = {
     attackTargetLevel: 0,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
-    // 是否在攻击时自动修改争夺各层点数分配方案，true：开启；false：关闭
+    // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
     autoChangeLevelPointsEnabled: false,
+    // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
+    customPointsScriptEnabled: false,
+    // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
+    unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
-    // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下），true：开启；false：关闭
-    customPointsScriptEnabled: false,
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)

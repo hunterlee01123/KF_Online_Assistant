@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '8.9';
+const version = '9.0';
 
 /**
  * 初始化
