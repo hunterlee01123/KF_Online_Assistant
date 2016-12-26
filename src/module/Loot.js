@@ -224,13 +224,16 @@ const getLootPropertyList = function () {
 /**
  * 获取当前已分配的点数
  * @param {jQuery} $points 点数字段对象
+ * @param {number} type 类型，0：仅点数；1：点数+道具加成
  * @returns {number} 当前已分配的点数
  */
-const getCurrentAssignedPoint = function ($points) {
+const getCurrentAssignedPoint = function ($points, type = 0) {
     let usedPoint = 0;
     $points.each(function () {
-        let point = parseInt($(this).val());
-        if (point && point > 0) usedPoint += point;
+        let $this = $(this);
+        let name = $this.attr('name');
+        let point = parseInt($this.val());
+        if (point && point > 0) usedPoint += point - (type === 1 ? extraPointList.get(getPointNameByFieldName(name)) : 0);
     });
     return usedPoint;
 };
@@ -240,9 +243,13 @@ const getCurrentAssignedPoint = function ($points) {
  * @param {number} s1 力量
  * @param {number} s2 体质
  * @param {number} i1 智力
+ * @param {number} type 类型，0：仅点数；1：点数+道具加成
  * @returns {number} 技能伤害的值
  */
-const getSkillAttack = (s1, s2, i1) => (s1 + extraPointList.get('力量')) * 5 + s2 * 5 + i1 * 5;
+const getSkillAttack = (s1, s2, i1, type = 0) => {
+    return (s1 + (type === 1 ? 0 : extraPointList.get('力量'))) * 5 + (s2 - (type === 1 ? extraPointList.get('体质') : 0)) * 5 +
+        (i1 - (type === 1 ? extraPointList.get('智力') : 0)) * 5;
+};
 
 /**
  * 获取附加点数列表
@@ -360,21 +367,20 @@ const showNewLootProperty = function ($point) {
     }
     $('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
 
-    if (point !== oriPoint)
-        $('#pdNew_' + name).text(`(${(diffValue >= 0 ? '+' : '') + diffValue})`).css('color', diffValue >= 0 ? '#ff0033' : '#339933');
-    else
-        $('#pdNew_' + name).text('');
+    if (point !== oriPoint) $('#pdNew_' + name).text(`(${(diffValue >= 0 ? '+' : '') + diffValue})`).css('color', diffValue >= 0 ? '#f03' : '#393');
+    else $('#pdNew_' + name).text('');
 };
 
 /**
  * 根据指定的点数获得相应争夺属性的值
- * @param pointName 点数名称
- * @param point 点数的值
+ * @param {string} pointName 点数名称
+ * @param {number} point 点数的值
+ * @param {number} type 类型，0：仅点数；1：点数+道具加成
  * @returns {number} 争夺属性的值
  */
-const getPropertyByPoint = function (pointName, point) {
+const getPropertyByPoint = function (pointName, point, type = 0) {
     let extraPoint = extraPointList.get(pointName);
-    if (!extraPoint) extraPoint = 0;
+    if (!extraPoint || type === 1) extraPoint = 0;
     let value = 0;
     switch (pointName) {
         case '力量':
@@ -404,33 +410,37 @@ const getPropertyByPoint = function (pointName, point) {
 
 /**
  * 根据指定的争夺属性获得相应点数的值
- * @param pointName 点数名称
- * @param num 争夺属性的值
+ * @param {string} pointName 点数名称
+ * @param {number} num 争夺属性的值
+ * @param {number} type 类型，0：仅点数；1：点数+道具加成
  * @returns {number} 点数的值
  */
-const getPointByProperty = function (pointName, num) {
+const getPointByProperty = function (pointName, num, type = 0) {
     let value = 0;
+    let extraPoint = extraPointList.get(pointName);
+    if (!extraPoint || type === 1) extraPoint = 0;
     switch (pointName) {
         case '力量':
-            value = Math.ceil(num / 5) - extraPointList.get('力量');
+            value = Math.ceil(num / 5) - extraPoint;
             break;
         case '体质':
-            value = Math.ceil((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPointList.get('体质');
+            value = Math.ceil((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPoint;
             break;
         case '敏捷':
-            value = Math.ceil((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPointList.get('敏捷');
+            value = Math.ceil((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPoint;
             break;
         case '灵活':
-            value = Math.ceil(100 * num / (100 - num)) - extraPointList.get('灵活');
+            value = Math.ceil(100 * num / (100 - num)) - extraPoint;
             break;
         case '智力':
-            value = Math.ceil(90 * num / (100 - num)) - extraPointList.get('智力');
+            value = Math.ceil(90 * num / (100 - num)) - extraPoint;
             break;
         case '意志':
-            value = Math.ceil(150 * num / (100 - num)) - extraPointList.get('意志');
+            value = Math.ceil(150 * num / (100 - num)) - extraPoint;
             break;
     }
-    if (!isFinite(value) || value <= 0) value = 1;
+    if (!isFinite(value) || value < 1) value = 1;
+    if (type === 1 && value <= extraPointList.get(pointName)) value = extraPointList.get(pointName) + 1;
     return value;
 };
 
@@ -440,7 +450,7 @@ const getPointByProperty = function (pointName, num) {
 const addLevelPointListSelect = function () {
     $(`
 <select id="pdLevelPointListSelect" style="margin: 5px 0;">
-  <option>点数分配方案</option>
+  <option>点数分配方案${Config.levelPointList.type == 1 ? '(*)' : ''}</option>
   <option value="0">默认</option>
 </select>
 <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a>
@@ -452,7 +462,8 @@ const addLevelPointListSelect = function () {
             if (typeof points !== 'object') return;
             $points.find('.pd_point').each(function () {
                 let $this = $(this);
-                $this.val(points[getPointNameByFieldName($this.attr('name'))]);
+                let pointName = getPointNameByFieldName($this.attr('name'));
+                $this.val(points[pointName] - (Config.levelPointList.type === 1 ? extraPointList.get(pointName) : 0));
             }).trigger('change');
         }
         else if (level === 0) {
@@ -477,7 +488,8 @@ const addLevelPointListSelect = function () {
             let $elem = $(elem);
             let point = parseInt($elem.val());
             if (!point || point < 0) return;
-            points[getPointNameByFieldName($elem.attr('name'))] = point;
+            let pointName = getPointNameByFieldName($elem.attr('name'));
+            points[pointName] = point + (Config.levelPointList.type === 1 ? extraPointList.get(pointName) : 0);
         }
         Config.levelPointList[level] = points;
         writeConfig();
@@ -497,9 +509,11 @@ const addLevelPointListSelect = function () {
 const setLevelPointListSelect = function (levelPointList) {
     let pointListHtml = '';
     for (let level of Object.keys(levelPointList)) {
+        if (!$.isNumeric(level)) continue;
         pointListHtml += `<option value="${level}">第${level}层</option>`;
     }
-    $('#pdLevelPointListSelect').find('option:gt(2)').remove().end().append(pointListHtml);
+    $('#pdLevelPointListSelect').find('option:first').text('点数分配方案' + (Config.levelPointList.type === 1 ? '(*)' : ''))
+        .end().find('option:gt(1)').remove().end().append(pointListHtml);
 };
 
 /**
@@ -516,6 +530,10 @@ const showLevelPointListConfigDialog = function (callback) {
     （例：11-19层点数相同的话，则只保留第11层）<br>
     自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
   </div>
+  <label class="pd_highlight">
+    保存方式： <select name="saveType"><option value="0">仅点数</option><option value="1">点数+道具加成</option></select>
+    <span class="pd_cfg_tips" title="各层点数分配方案中数值的保存方式，仅点数：仅按照点数来保存；点数+道具加成：按照点数与道具加成之和来保存">[?]</span>
+  </label>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
       <tbody>
@@ -549,6 +567,7 @@ const showLevelPointListConfigDialog = function (callback) {
 </div>`;
     let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
+    let saveType = Config.levelPointList.type === 1 ? 1 : 0;
 
     /**
      * 添加各层点数分配的HTML
@@ -598,16 +617,29 @@ const showLevelPointListConfigDialog = function (callback) {
 `).appendTo($levelPointList).find('.pd_point').trigger('change');
     };
 
+    /**
+     * 设置各点数字段的取值范围
+     */
+    const setPointsRange = function () {
+        $dialog.find('.pd_point').each(function () {
+            let $this = $(this);
+            let name = $this.attr('name');
+            if (saveType === 1) $this.attr('min', extraPointList.get(getPointNameByFieldName(name)) + 1).removeAttr('max');
+            else $this.attr('min', 1).attr('max', 9999);
+        });
+    };
+
     $dialog.submit(function (e) {
         e.preventDefault();
         readConfig();
-        Config.levelPointList = {};
+        let levelPointList = {};
         let prevPoints = {};
         let isError = false, isSurplus = false;
+        if (saveType === 1) levelPointList.type = 1;
         $levelPointList.find('tr:gt(0)').each(function () {
             let $this = $(this);
             if (!$this.find('.pd_point').length) return;
-            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('.pd_point'));
+            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('.pd_point'), saveType);
             if (surplusPoint > 0) isSurplus = true;
             else if (surplusPoint < 0) {
                 isError = true;
@@ -624,7 +656,7 @@ const showLevelPointListConfigDialog = function (callback) {
                 points[getPointNameByFieldName($elem.attr('name'))] = point;
             }
             if (Util.deepEqual(prevPoints, points)) return;
-            Config.levelPointList[level] = points;
+            levelPointList[level] = points;
             prevPoints = points;
         });
         if (isSurplus) {
@@ -634,6 +666,7 @@ const showLevelPointListConfigDialog = function (callback) {
             alert('部分层数的剩余属性点为负，请重新填写');
             return;
         }
+        Config.levelPointList = levelPointList;
         writeConfig();
         Dialog.close(dialogName);
         setLevelPointListSelect(Config.levelPointList);
@@ -681,40 +714,54 @@ const showLevelPointListConfigDialog = function (callback) {
         let $points = $this.closest('tr');
         let $properties = $points.next('tr');
         $properties.find(`[data-id="pro_${name}"]`)
-            .text(getPropertyByPoint(getPointNameByFieldName(name), point))
+            .text(getPropertyByPoint(getPointNameByFieldName(name), point, saveType))
             .end().find('[data-id="skillAttack"]')
             .text(
                 getSkillAttack(
                     parseInt($points.find('[name="s1"]').val()),
                     parseInt($points.find('[name="s2"]').val()),
-                    parseInt($points.find('[name="i1"]').val())
+                    parseInt($points.find('[name="i1"]').val()),
+                    saveType
                 )
             );
 
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'), saveType);
         $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         let $this = $(this);
         let name = $this.data('id').replace('pro_', '');
         let num = parseInt(prompt('请输入数值：', $this.text()));
         if (!num || num < 0) return;
-        $this.closest('tr').prev('tr').find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+        $this.closest('tr').prev('tr').find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num, saveType)).trigger('change');
     }).on('click', '[data-id^="opt_"]', function (e) {
         e.preventDefault();
         let $this = $(this);
         let name = $this.data('id').replace('opt_', '');
         let $points = $this.closest('tr').prev('tr');
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'), saveType);
         if (!surplusPoint) return;
         let $point = $points.find(`[name="${name}"]`);
         if (!$point.length) return;
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
         num = num + surplusPoint;
-        $point.val(num < 1 ? 1 : num).trigger('change');
+        let min = parseInt($point.attr('min'));
+        $point.val(num < min ? min : num).trigger('change');
     });
 
-    $dialog.find('[name="modify"]').click(function () {
+    $dialog.find('[name="saveType"]').change(function () {
+        saveType = parseInt($(this).val());
+        setPointsRange();
+        $dialog.find('.pd_point').each(function () {
+            let $this = $(this);
+            let name = $this.attr('name');
+            let point = parseInt($this.val());
+            if (!point || point < 0) point = 0;
+            if (saveType === 1) point += extraPointList.get(getPointNameByFieldName(name));
+            else point -= extraPointList.get(getPointNameByFieldName(name));
+            $this.val(point);
+        }).trigger('change');
+    }).end().find('[name="modify"]').click(function () {
         let $checked = $levelPointList.find('[type="checkbox"]:checked');
         if (!$checked.length) return;
         let data = {};
@@ -754,7 +801,10 @@ const showLevelPointListConfigDialog = function (callback) {
         $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
     });
 
+    $dialog.find('[name="saveType"]').val(saveType);
+    if (saveType === 1) setPointsRange();
     for (let [level, points] of Util.entries(Config.levelPointList)) {
+        if (!$.isNumeric(level)) continue;
         addLevelPointHtml(level, points);
     }
 
