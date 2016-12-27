@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        实时计算点数分配方案
-// @version     2.0.5-beta
+// @version     2.0.8-beta
 // @trigger     start
 // @author      bch
 // @homepage    read.php?tid=589364
@@ -694,7 +694,7 @@ function getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchR
 
 }
 
-let restLifeRatioByTenth = 0.7;  // 预计到达每10层boss的血的保留比
+let restLifeRatioByTenth = 0.85;  // 预计到达每10层boss的血的保留比
 let minRestLifeRatioUnlucky = 0.1;  // 极限区的遭遇强化怪血的保留比
 
 function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
@@ -702,6 +702,13 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
 
     // 记录npc种类，供控制台返回加点信息
     let npcFlag = 0;
+
+    if (currentLevel % 10 === 9) {
+        // boss楼层加点
+        npcFlag = 1;
+        let levelStrategy = getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchRangeBoss, 1, 1);
+        return {levelStrategy: levelStrategy, npcFlag: npcFlag};
+    }
 
     let levelStrategy = getOptimalNextLevelStrategy(currentLevel, currentLife, 0, searchRangeNormal, 0, 0);  // 最优方案存储变量
     if (levelStrategy["被攻击次数"] === -1 || restLifeRatioUnlucky === 1 || restLifeRatioUnlucky0 === 0) {
@@ -719,7 +726,12 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
     }
     else {
         // 在每10层第1楼预测攻击boss情况，调整对强化怪的牺牲加点
+        playerPropability = Math.max(playerPropability0 - 0.2, 0.01); // 放宽打败boss条件
+        npcPropability = Math.min(npcPropability0 + 0.2, 0.99); // 放宽打败boss条件
         let levelStrategyTenth = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9, Math.floor(currentLife * (restLifeRatioByTenth + (1 - restLifeRatioByTenth) / 9 * (currentLevel % 10))), 1, searchRangeBoss, 1, 1);
+        playerPropability = playerPropability0; // 恢复默认概率
+        npcPropability = npcPropability0; // 恢复默认概率
+
         if (levelStrategyTenth["被攻击次数"] === -1) {
             // 打不过boss，进入极限区
             strongHoldLevel = 9 - (currentLevel % 10);
@@ -932,6 +944,8 @@ if (location.pathname === '/kf_fw_ig_index.php') {
     });
 }
 
+let lastTryingFlag = 1; // 最后一层搜索失败，若该标志为1，则放宽条件搜索，最终失败则返回当前楼层加点
+
 Const.getCustomPoints = function (data) {
 // let getCustomPoints = function (data) {
     currentLevel = data.currentLevel;
@@ -954,6 +968,7 @@ Const.getCustomPoints = function (data) {
     strongHoldLevel0 = Math.ceil((availablePoint + basePoints["力量"] + basePoints["体质"] + basePoints["敏捷"] + basePoints["灵活"] + basePoints["智力"] + basePoints["意志"]) / 400 * 10);
     strongHoldLevel = strongHoldLevel0;  // 需要计算中调整
     restLifeRatioLucky = 1 - (1 / strongHoldLevel);
+    strongSecNum = Math.ceil(strongHoldLevel0 * 1.3);
 
     console.log(data);
     console.log("统计强化怪个数： " + totalStrongNum);
@@ -963,7 +978,7 @@ Const.getCustomPoints = function (data) {
     fullIzayoiSpeed = itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0;
 
     let $attackBtns = $('#pdAttackBtns');
-    if ($attackBtns.length > 0) {
+    if ($attackBtns.find('[name="playerPropability0"]').length > 0) {
         if ($attackBtns.find('input:invalid').length > 0) {
             alert('参数错误');
             return null;
@@ -989,9 +1004,43 @@ Const.getCustomPoints = function (data) {
         npcflag = result.npcFlag;
     }
     if (levelStrategy["被攻击次数"] === -1) {
-        // 搜索最优方案失败，暂停攻击，由玩家手动加点
-        alert('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
-        return null;
+        // 搜索方案失败的处理
+        if (lastTryingFlag === 1) {
+            let tryingTimes = 1;
+            playerPropability -= 0.1
+            npcPropability += 0.1
+            while (playerPropability > 0.01 && npcPropability < 0.99 && tryingTimes <= 3) {
+                // 修改默认概率，放宽条件
+                console.log(tryingTimes + "次尝试最终搜索：  默认事件概率 " + playerPropability + "  默认npc事件概率 " + npcPropability);
+                let lastResult = getOptimalNextLevelStrategyStronger(currentLevel, currentLife);
+                let lastLevelStrategy = lastResult.levelStrategy;
+                console.log(lastLevelStrategy);
+                if (lastLevelStrategy["被攻击次数"] >= 0) {
+                    // 最后尝试方宽条件搜索成功，返回方案
+                    levelStrategy["灵活"] = lastLevelStrategy["灵活"];
+                    levelStrategy["智力"] = lastLevelStrategy["智力"];
+                    levelStrategy["意志"] = lastLevelStrategy["意志"];
+                    levelStrategy["攻速比"] = lastLevelStrategy["攻速比"];
+                    levelStrategy["被攻击次数"] = lastLevelStrategy["被攻击次数"];
+                    npcflag = lastResult.npcFlag;
+                    break;
+                }
+                playerPropability -= 0.1;
+                npcPropability += 0.1;
+                tryingTimes++;
+            }
+            if (tryingTimes > 3) {
+                // 搜索最优方案失败，返回当前加点
+                console.log('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
+                // alert('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
+                return false;
+            }
+        }
+        else {
+            // 搜索最优方案失败，暂停攻击，由玩家手动加点
+            // alert('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
+            return null;
+        }
     }
     let levelPoints = getNextLevelPoints(currentLevel, npcflag, levelStrategy);
     console.log(levelStrategy);
