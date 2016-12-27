@@ -15,7 +15,7 @@ import * as Loot from './module/Loot';
 import * as Script from './module/Script';
 
 // 版本号
-const version = '9.0';
+const version = '9.0.1';
 
 /**
  * 初始化
@@ -74,6 +74,7 @@ const init = function () {
         Read.addMoreSmileLink();
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
+        if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
@@ -89,6 +90,7 @@ const init = function () {
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
+        if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {

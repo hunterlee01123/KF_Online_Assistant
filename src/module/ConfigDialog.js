@@ -190,6 +190,10 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在撰写发帖内容时，如不小心关闭了页面会进行提示">[?]</span>
       </label>
       <label class="pd_cfg_ml">
+        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
+        <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
+      </label><br>
+      <label>
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>

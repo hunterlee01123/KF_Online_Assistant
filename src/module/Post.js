@@ -279,3 +279,32 @@ export const preventCloseWindowWhenEditPost = function () {
         Info.w.isSubmit = true;
     });
 };
+
+/**
+ * 在提交时保存发帖内容
+ */
+export const savePostContentWhenSubmit = function () {
+    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
+    $('form[action="post.php?"]').submit(function () {
+        let content = $textArea.val();
+        if ($.trim(content).length > 0) sessionStorage.setItem(Const.postContentStorageName, content);
+    });
+
+    let postContent = sessionStorage.getItem(Const.postContentStorageName);
+    if (postContent) {
+        $(`
+<div style="padding: 0 10px; line-height: 2em; text-align: left; background-color: #fefee9; border: 1px solid #99f;">
+  <a class="pd_btn_link" data-name="restore" href="#">[恢复上次提交的内容]</a>
+  <a class="pd_btn_link" data-name="clear" href="#">[清除]</a>
+</div>
+`).insertBefore($textArea).find('[data-name="restore"]').click(function (e) {
+            e.preventDefault();
+            $textArea.val(postContent);
+            $(this).parent().find('[data-name="clear"]').click();
+        }).end().find('[data-name="clear"]').click(function (e) {
+            e.preventDefault();
+            sessionStorage.removeItem(Const.postContentStorageName);
+            $(this).parent().remove();
+        });
+    }
+};

@@ -224,7 +224,7 @@ const getLootPropertyList = function () {
 /**
  * 获取当前已分配的点数
  * @param {jQuery} $points 点数字段对象
- * @param {number} type 类型，0：仅点数；1：点数+道具加成
+ * @param {number} type 类型，0：仅点数；1：点数+道具
  * @returns {number} 当前已分配的点数
  */
 const getCurrentAssignedPoint = function ($points, type = 0) {
@@ -243,7 +243,7 @@ const getCurrentAssignedPoint = function ($points, type = 0) {
  * @param {number} s1 力量
  * @param {number} s2 体质
  * @param {number} i1 智力
- * @param {number} type 类型，0：仅点数；1：点数+道具加成
+ * @param {number} type 类型，0：仅点数；1：点数+道具
  * @returns {number} 技能伤害的值
  */
 const getSkillAttack = (s1, s2, i1, type = 0) => {
@@ -375,7 +375,7 @@ const showNewLootProperty = function ($point) {
  * 根据指定的点数获得相应争夺属性的值
  * @param {string} pointName 点数名称
  * @param {number} point 点数的值
- * @param {number} type 类型，0：仅点数；1：点数+道具加成
+ * @param {number} type 类型，0：仅点数；1：点数+道具
  * @returns {number} 争夺属性的值
  */
 const getPropertyByPoint = function (pointName, point, type = 0) {
@@ -412,7 +412,7 @@ const getPropertyByPoint = function (pointName, point, type = 0) {
  * 根据指定的争夺属性获得相应点数的值
  * @param {string} pointName 点数名称
  * @param {number} num 争夺属性的值
- * @param {number} type 类型，0：仅点数；1：点数+道具加成
+ * @param {number} type 类型，0：仅点数；1：点数+道具
  * @returns {number} 点数的值
  */
 const getPointByProperty = function (pointName, num, type = 0) {
@@ -528,12 +528,12 @@ const showLevelPointListConfigDialog = function (callback) {
   <div style="margin: 5px 0; line-height: 1.6em;">
     请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
     （例：11-19层点数相同的话，则只保留第11层）<br>
-    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
+    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a><br>
+    <label class="pd_highlight" style="line-height: 2em;">
+      保存方式： <select name="saveType"><option value="0">仅点数</option><option value="1">点数+道具</option></select>
+      <span class="pd_cfg_tips" title="各层点数分配方案中数值的保存方式，仅点数：仅按照点数来保存；点数+道具：按照点数与道具加成之和来保存">[?]</span>
+    </label>
   </div>
-  <label class="pd_highlight">
-    保存方式： <select name="saveType"><option value="0">仅点数</option><option value="1">点数+道具加成</option></select>
-    <span class="pd_cfg_tips" title="各层点数分配方案中数值的保存方式，仅点数：仅按照点数来保存；点数+道具加成：按照点数与道具加成之和来保存">[?]</span>
-  </label>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
       <tbody>
@@ -549,12 +549,12 @@ const showLevelPointListConfigDialog = function (callback) {
     <a class="pd_btn_link" data-name="deleteSelect" href="#">删除</a>
   </div>
   <div data-id="modifyArea" style="float: right;">
-    <input name="s1" type="text" maxlength="4" title="力量" placeholder="力量" style="width: 35px;">
-    <input name="s2" type="text" maxlength="4" title="体质" placeholder="体质" style="width: 35px;">
-    <input name="d1" type="text" maxlength="4" title="敏捷" placeholder="敏捷" style="width: 35px;">
-    <input name="d2" type="text" maxlength="4" title="灵活" placeholder="灵活" style="width: 35px;">
-    <input name="i1" type="text" maxlength="4" title="智力" placeholder="智力" style="width: 35px;">
-    <input name="i2" type="text" maxlength="4" title="意志" placeholder="意志" style="width: 35px;">
+    <input name="s1" type="text" maxlength="5" title="力量" placeholder="力量" style="width: 35px;">
+    <input name="s2" type="text" maxlength="5" title="体质" placeholder="体质" style="width: 35px;">
+    <input name="d1" type="text" maxlength="5" title="敏捷" placeholder="敏捷" style="width: 35px;">
+    <input name="d2" type="text" maxlength="5" title="灵活" placeholder="灵活" style="width: 35px;">
+    <input name="i1" type="text" maxlength="5" title="智力" placeholder="智力" style="width: 35px;">
+    <input name="i2" type="text" maxlength="5" title="意志" placeholder="意志" style="width: 35px;">
     <a class="pd_btn_link" data-name="clear" href="#" title="清空各修改字段">清空</a>
     <button type="button" name="modify">修改</button>
     <span class="pd_cfg_tips" title="可将所选择的层数的相应属性修改为指定的数值；数字前可设+/-号，表示增加/减少相应数量；例：100、+5或-2">[?]</span>
@@ -575,7 +575,7 @@ const showLevelPointListConfigDialog = function (callback) {
      * @param {{}} points 点数对象
      */
     const addLevelPointHtml = function (level, points) {
-        $(`
+        let $points = $(`
 <tr>
   <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
   <td style="text-align: left;">
@@ -583,12 +583,12 @@ const showLevelPointListConfigDialog = function (callback) {
       第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层
     </label>
   </td>
-  <td><input class="pd_point" name="s1" type="number" min="1" max="9999" value="${points['力量']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="s2" type="number" min="1" max="9999" value="${points['体质']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d1" type="number" min="1" max="9999" value="${points['敏捷']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d2" type="number" min="1" max="9999" value="${points['灵活']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i1" type="number" min="1" max="9999" value="${points['智力']}" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i2" type="number" min="1" max="9999" value="${points['意志']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s1" type="number" value="${points['力量']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s2" type="number" value="${points['体质']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d1" type="number" value="${points['敏捷']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d2" type="number" value="${points['灵活']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i1" type="number" value="${points['智力']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i2" type="number" value="${points['意志']}" style="width: 50px;" required></td>
   <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
@@ -615,13 +615,15 @@ const showLevelPointListConfigDialog = function (callback) {
   <td class="pd_custom_tips" title="技能伤害：攻击+(体质*5)+(智力*5)">技伤：<span data-id="skillAttack">0</span></td>
 </tr>
 `).appendTo($levelPointList).find('.pd_point').trigger('change');
+        setPointsRange($points);
     };
 
     /**
      * 设置各点数字段的取值范围
+     * @param {jQuery} $points 点数字段集合
      */
-    const setPointsRange = function () {
-        $dialog.find('.pd_point').each(function () {
+    const setPointsRange = function ($points) {
+        $points.each(function () {
             let $this = $(this);
             let name = $this.attr('name');
             if (saveType === 1) $this.attr('min', extraPointList.get(getPointNameByFieldName(name)) + 1).removeAttr('max');
@@ -675,7 +677,14 @@ const showLevelPointListConfigDialog = function (callback) {
         .end().find('[data-name="add"]')
         .click(function (e) {
             e.preventDefault();
-            addLevelPointHtml(0, {'力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1});
+            let points = {'力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1};
+            if (saveType === 1) {
+                for (let [key, num] of extraPointList) {
+                    if (key in points) points[key] = num + 1;
+                }
+            }
+            addLevelPointHtml(0, points);
+            $levelPointList.find('[name="level"]:last').focus();
             Dialog.show(dialogName);
         }).end().find('[data-name="deleteSelect"]')
         .click(function (e) {
@@ -751,7 +760,7 @@ const showLevelPointListConfigDialog = function (callback) {
 
     $dialog.find('[name="saveType"]').change(function () {
         saveType = parseInt($(this).val());
-        setPointsRange();
+        setPointsRange($levelPointList.find('.pd_point'));
         $dialog.find('.pd_point').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
@@ -802,7 +811,6 @@ const showLevelPointListConfigDialog = function (callback) {
     });
 
     $dialog.find('[name="saveType"]').val(saveType);
-    if (saveType === 1) setPointsRange();
     for (let [level, points] of Util.entries(Config.levelPointList)) {
         if (!$.isNumeric(level)) continue;
         addLevelPointHtml(level, points);
