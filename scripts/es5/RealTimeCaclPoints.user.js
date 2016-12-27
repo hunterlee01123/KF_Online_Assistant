@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        实时计算点数分配方案
-// @version     2.0.3-beta
+// @version     2.0.5-beta
 // @trigger     start
 // @author      bch
 // @homepage    read.php?tid=589364
@@ -78,7 +78,8 @@ var playerPropability0 = 0.8; // 默认事件发生概率初始值，脸越黑�
 var npcPropability0 = 0.3; // 默认npc事件发生概率初始值，脸越黑设得越小
 var restLifeRatioUnlucky0 = 0.3; // 针对强化npc的加点在遭遇强化npc时保留血量的百分比，将数值调小时，收入更稳定，但是收入期望会减少，为1或0时忽略强化怪
 var recoverLevel = 2.5; // 预计回复楼层系数，根据连续几层不碰到强化npc进行估算，脸越黑设得越小
-var strongHoldLevel = 8; // 针对强化npc加点（牺牲点数）应至少能撑过的最大楼层数，将数值调小（不能为0）时，收入更稳定，但是收入期望会减少
+var strongHoldLevel0 = 20; // （初始值）针对强化npc加点（牺牲点数）应至少能撑过的最大楼层数，将数值调小（不能为0）时，收入更稳定，但是收入期望会减少
+var strongHoldLevel = strongHoldLevel0; // 需要计算中调整
 var restLifeRatioLucky = 1 - 1 / strongHoldLevel;
 
 // 冒险机制的选项参数  
@@ -335,7 +336,7 @@ function getNextLevelPoints(currentLevel, npcFlag, levelStrategy) {
     var baseHealth = basePoints["体质"]; // 计算基础体质
 
     playerPower = npcHP + 4 - Math.floor(playerAttackCoefficient * basePower * (1 - npcDefence) * (attackTimes + expectCriticalHitNum)) - Math.floor(playerAttackCoefficient * (basePoints["分配点"] - levelStrategy["灵活"] - levelStrategy["意志"] - playerQuick - Math.round((levelStrategy["智力"] + basePoints["智力"] + Math.round(npcInteligenceStepNum * (currentLevel + 1) * npcInteligenceIntensiveCoefficient[npcFlag])) / antiInteligenceCoefficient) + baseHealth + baseInteligence) * (1 - npcDefence) * (expectSkillNum + expectCHSNum));
-    playerPower = Math.ceil(playerPower / (playerAttackCoefficient * (1 - npcDefence) * (attackTimes + expectCriticalHitNum - expectSkillNum - expectCHSNum)));
+    playerPower = Math.ceil((playerPower + (attackTimes + expectCriticalHitNum - expectSkillNum - expectCHSNum)) / (playerAttackCoefficient * (1 - npcDefence) * (attackTimes + expectCriticalHitNum - expectSkillNum - expectCHSNum)));
     playerPower = Math.max(playerPower, 1); // 计算玩家力量加点
 
     playerHealth = basePoints["分配点"] - levelStrategy["灵活"] - levelStrategy["意志"] - levelStrategy["智力"] - playerPower - playerQuick; // 计算玩家体质加点
@@ -675,6 +676,9 @@ function getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchR
     return levelStrategy;
 }
 
+var restLifeRatioByTenth = 0.7; // 预计到达每10层boss的血的保留比
+var minRestLifeRatioUnlucky = 0.1; // 极限区的遭遇强化怪血的保留比
+
 function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
     // 计算最优方案将考虑强化npc的场合
 
@@ -688,6 +692,23 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
     var levelStrategy1 = { "灵活": 1, "智力": 1, "意志": 1, "攻速比": 1, "被攻击次数": 1 }; // 最优方案临时存储变量
 
     var restLife = restLifeInNextLevelByStrategy(currentLevel, currentLife, 0, levelStrategy); // 打普通怪后剩余生命值
+
+    if (strongHoldLevel < strongHoldLevel0) {
+        // strongHoldLevel已经过调整，需逐层调整缩小极限区，避免遇强化怪不针对加点的风险
+        strongHoldLevel = 9 - currentLevel % 10;
+        restLifeRatioLucky = 1 - 1 / strongHoldLevel;
+        restLifeRatioUnlucky = minRestLifeRatioUnlucky;
+    } else {
+        // 在每10层第1楼预测攻击boss情况，调整对强化怪的牺牲加点
+        var levelStrategyTenth = getOptimalNextLevelStrategy(currentLevel - currentLevel % 10 + 9, Math.floor(currentLife * (restLifeRatioByTenth + (1 - restLifeRatioByTenth) / 9 * (currentLevel % 10))), 1, searchRangeBoss, 1, 1);
+        if (levelStrategyTenth["被攻击次数"] === -1) {
+            // 打不过boss，进入极限区
+            strongHoldLevel = 9 - currentLevel % 10;
+            restLifeRatioLucky = 1 - 1 / strongHoldLevel;
+            restLifeRatioUnlucky = minRestLifeRatioUnlucky;
+        }
+    }
+
     if (restLife / currentLife <= 0.85) {
         // 进入极限区，最后7、8层听天由命
         return { levelStrategy: levelStrategy, npcFlag: npcFlag };
@@ -773,7 +794,7 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
 var strongProbability = 0.2; // 预计出现强化怪概率
 var maxLevel = 40; // 预计能到达的最大楼层，也可以通过助手统计上一次战斗数据
 var maxStrongNum = 8; // 预计总共碰到的强化怪个数，也可以通过助手统计上一次战斗数据
-var strongSecNum = 10; // 因强化怪分布可能存在前期稀疏，后期扎堆的可能，故分段进行统计，该值为分段的数目
+var strongSecNum = 8; // 因强化怪分布可能存在前期稀疏，后期扎堆的可能，故分段进行统计，该值为分段的数目
 
 function getTotalStrongNum() {
     // 统计目前出现强化怪个数，需要用到统计npc的数组
@@ -878,6 +899,11 @@ Const.getCustomPoints = function (data) {
         "智力": extraPointList.get('智力'),
         "意志": extraPointList.get('意志')
     };
+
+    strongHoldLevel0 = Math.ceil((availablePoint + basePoints["力量"] + basePoints["体质"] + basePoints["敏捷"] + basePoints["灵活"] + basePoints["智力"] + basePoints["意志"]) / 400 * 10);
+    strongHoldLevel = strongHoldLevel0; // 需要计算中调整
+    restLifeRatioLucky = 1 - 1 / strongHoldLevel;
+
     console.log(data);
     console.log("统计强化怪个数： " + totalStrongNum);
     CDNum = itemUsedNumList.get('傲娇LOLI娇蛮音CD');
@@ -886,7 +912,7 @@ Const.getCustomPoints = function (data) {
     fullIzayoiSpeed = itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0;
 
     var $attackBtns = $('#pdAttackBtns');
-    if ($attackBtns.find('[name="playerPropability0"]').length > 0) {
+    if ($attackBtns.length > 0) {
         if ($attackBtns.find('input:invalid').length > 0) {
             alert('参数错误');
             return null;
