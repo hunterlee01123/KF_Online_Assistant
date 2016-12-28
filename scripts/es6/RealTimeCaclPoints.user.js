@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        实时计算点数分配方案
-// @version     2.0.8-beta
+// @version     2.0.9-beta
 // @trigger     start
 // @author      bch
 // @homepage    read.php?tid=589364
@@ -990,18 +990,18 @@ Const.getCustomPoints = function (data) {
     }
 
     riskingForHP();
-    let npcflag = 0;
+    let npcFlag = 0;
     let levelStrategy;
     if (currentLevel % 10 === 9) {
         // boss楼层加点
-        npcflag = 1;
-        levelStrategy = getOptimalNextLevelStrategy(currentLevel, currentLife, npcflag, searchRangeBoss, 1, 1);
+        npcFlag = 1;
+        levelStrategy = getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchRangeBoss, 1, 1);
     }
     else {
         // 普通npc楼层加点
         let result = getOptimalNextLevelStrategyStronger(currentLevel, currentLife);
         levelStrategy = result.levelStrategy;
-        npcflag = result.npcFlag;
+        npcFlag = result.npcFlag;
     }
     if (levelStrategy["被攻击次数"] === -1) {
         // 搜索方案失败的处理
@@ -1022,7 +1022,7 @@ Const.getCustomPoints = function (data) {
                     levelStrategy["意志"] = lastLevelStrategy["意志"];
                     levelStrategy["攻速比"] = lastLevelStrategy["攻速比"];
                     levelStrategy["被攻击次数"] = lastLevelStrategy["被攻击次数"];
-                    npcflag = lastResult.npcFlag;
+                    npcFlag = lastResult.npcFlag;
                     break;
                 }
                 playerPropability -= 0.1;
@@ -1042,9 +1042,9 @@ Const.getCustomPoints = function (data) {
             return null;
         }
     }
-    let levelPoints = getNextLevelPoints(currentLevel, npcflag, levelStrategy);
+    let levelPoints = getNextLevelPoints(currentLevel, npcFlag, levelStrategy);
     console.log(levelStrategy);
     console.log(levelPoints);
-    console.log((currentLevel + 1) + "层，" + npcflag + "类怪物，预计剩余生命值：" + restLifeInNextLevelByStrategy(currentLevel, currentLife, npcflag, levelStrategy));
+    console.log((currentLevel + 1) + "层，" + npcFlag + "类怪物，预计剩余生命值：" + restLifeInNextLevelByStrategy(currentLevel, currentLife, npcFlag, levelStrategy));
     return levelPoints;
 };
