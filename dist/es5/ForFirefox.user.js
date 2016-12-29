@@ -7,12 +7,12 @@
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js
-// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.16.0
+// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.20.0
 // @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.1.1
+// @version     9.1.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -83,7 +83,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.1.1';
+var version = '9.1.2';
 
 /**
  * 初始化
@@ -1470,7 +1470,7 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
      return false;
      }
      }
-      let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
+       let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
      let donationAfterTime = $.trim($txtDonationAfterTime.val());
      if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
      alert('在指定时间之后捐款格式不正确');
@@ -9249,9 +9249,9 @@ var blockThread = exports.blockThread = function blockThread() {
         if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         var userName = $userName.text();
         if (!userName) return;
-        var _fid2 = parseInt($('input[name="fid"]:first').val());
-        if (!_fid2) return;
-        if (isBlock(title, userName, _fid2)) {
+        var fid = parseInt($('input[name="fid"]:first').val());
+        if (!fid) return;
+        if (isBlock(title, userName, fid)) {
             num++;
             var $lou = $userName.closest('.readtext');
             $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();

@@ -60,7 +60,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.1.1';
+var version = '9.1.2';
 
 /**
  * 初始化
@@ -1447,7 +1447,7 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
      return false;
      }
      }
-      let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
+       let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
      let donationAfterTime = $.trim($txtDonationAfterTime.val());
      if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
      alert('在指定时间之后捐款格式不正确');
@@ -9226,9 +9226,9 @@ var blockThread = exports.blockThread = function blockThread() {
         if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         var userName = $userName.text();
         if (!userName) return;
-        var _fid2 = parseInt($('input[name="fid"]:first').val());
-        if (!_fid2) return;
-        if (isBlock(title, userName, _fid2)) {
+        var fid = parseInt($('input[name="fid"]:first').val());
+        if (!fid) return;
+        if (isBlock(title, userName, fid)) {
             num++;
             var $lou = $userName.closest('.readtext');
             $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
