@@ -2,6 +2,7 @@
 'use strict';
 import Info from './Info';
 import Const from './Const';
+import * as Util from './Util';
 
 // 保存临时日志的键值名称
 const name = Const.storagePrefix + 'tmp_log';
@@ -12,9 +13,7 @@ const name = Const.storagePrefix + 'tmp_log';
  */
 export const read = function () {
     let log = {};
-    let options = null;
-    if (Info.storageType === 'ByUid' || Info.storageType === 'Global') options = GM_getValue(name + '_' + Info.uid);
-    else options = localStorage.getItem(name + '_' + Info.uid);
+    let options = Util.readData(name + '_' + Info.uid);
     if (!options) return log;
     try {
         options = JSON.parse(options);
@@ -36,20 +35,14 @@ export const read = function () {
 
 /**
  * 写入临时日志
+ * @param {{}} log 临时日志对象
  */
-export const write = function (log) {
-    if (Info.storageType === 'ByUid' || Info.storageType === 'Global')
-        GM_setValue(name + '_' + Info.uid, JSON.stringify(log));
-    else localStorage.setItem(name + '_' + Info.uid, JSON.stringify(log));
-};
+export const write = log => Util.writeData(name + '_' + Info.uid, JSON.stringify(log));
 
 /**
  * 清除临时日志
  */
-export const clear = function () {
-    if (Info.storageType === 'ByUid' || Info.storageType === 'Global') GM_deleteValue(name + '_' + Info.uid);
-    else localStorage.removeItem(name + '_' + Info.uid);
-};
+export const clear = () => Util.deleteData(name + '_' + Info.uid);
 
 /**
  * 获取指定名称的临时日志内容

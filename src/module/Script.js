@@ -139,7 +139,7 @@ export const showDialog = function (showIndex = null) {
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about">
     <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
-    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出自定义脚本</a>
+    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出所有脚本</a>
   </span>
   <button type="submit">确定</button>
   <button name="cancel" type="button">取消</button>

@@ -21,11 +21,11 @@ export const show = function () {
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_log_nav">
-    <a class="pd_disabled_link" href="#">&lt;&lt;</a>
-    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&lt;</a>
-    <h2 class="pd_custom_tips">暂无日志</h2>
-    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&gt;</a>
-    <a class="pd_disabled_link" href="#">&gt;&gt;</a>
+    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
+    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
+    <h2 class="pd_log_date pd_custom_tips">暂无日志</h2>
+    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
+    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
   </div>
   <fieldset>
     <legend>日志内容</legend>
@@ -54,6 +54,7 @@ export const show = function () {
   <button name="clear" type="button">清除日志</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
+    let $logNav = $dialog.find('.pd_log_nav');
 
     let log = Log.read();
     let dateList = [];
@@ -61,46 +62,51 @@ export const show = function () {
     if (!$.isEmptyObject(log)) {
         dateList = Util.getObjectKeyList(log, 1);
         curIndex = dateList.length - 1;
-        $dialog.find('.pd_log_nav h2').attr('title', `总共记录了${dateList.length}天的日志`).text(dateList[curIndex]);
+        $logNav.find('.pd_log_date').attr('title', `总共记录了${dateList.length}天的日志`).text(dateList[curIndex]);
         if (dateList.length > 1) {
-            $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
-            $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="start"]').attr('title', dateList[0]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="prev"]').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
         }
     }
-    $dialog.find('.pd_log_nav a').click(function (e) {
+    $logNav.on('click', 'a[data-name]', function (e) {
         e.preventDefault();
-        if ($(this).is('.pd_log_nav a:eq(0)')) {
+        let $this = $(this);
+        if ($this.hasClass('pd_disabled_link')) return;
+        let name = $this.data('name');
+        if (name === 'start') {
             curIndex = 0;
         }
-        else if ($(this).is('.pd_log_nav a:eq(1)')) {
+        else if (name === 'prev') {
             if (curIndex > 0) curIndex--;
             else return;
         }
-        else if ($(this).is('.pd_log_nav a:eq(2)')) {
+        else if (name === 'next') {
             if (curIndex < dateList.length - 1) curIndex++;
             else return;
         }
-        else if ($(this).is('.pd_log_nav a:eq(3)')) {
+        else if (name === 'end') {
             curIndex = dateList.length - 1;
         }
-        $dialog.find('.pd_log_nav h2').text(dateList[curIndex]);
+        $logNav.find('.pd_log_date').text(dateList[curIndex]);
         showLogContent(log, dateList[curIndex], $dialog);
         showLogStat(log, dateList[curIndex], $dialog);
         if (curIndex > 0) {
-            $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
-            $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="start"]').attr('title', dateList[0]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="prev"]').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
         }
         else {
-            $dialog.find('.pd_log_nav > a:lt(2)').removeAttr('title').addClass('pd_disabled_link');
+            $logNav.find('[data-name="start"], [data-name="prev"]').removeAttr('title').addClass('pd_disabled_link');
         }
         if (curIndex < dateList.length - 1) {
-            $dialog.find('.pd_log_nav > a:eq(2)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
-            $dialog.find('.pd_log_nav > a:eq(3)').attr('title', dateList[dateList.length - 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="next"]').attr('title', dateList[curIndex + 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="end"]').attr('title', dateList[dateList.length - 1]).removeClass('pd_disabled_link');
         }
         else {
-            $dialog.find('.pd_log_nav > a:gt(1)').removeAttr('title').addClass('pd_disabled_link');
+            $logNav.find('[data-name="next"], [data-name="end"]').removeAttr('title').addClass('pd_disabled_link');
         }
-    }).end().find('[name="sortType"]').click(function () {
+    });
+
+    $dialog.find('[name="sortType"]').click(function () {
         let value = $(this).val();
         if (Config.logSortType !== value) {
             Config.logSortType = value;

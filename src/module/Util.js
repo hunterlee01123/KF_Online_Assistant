@@ -553,3 +553,33 @@ export const selectInverse = function ($nodes) {
     });
     return false;
 };
+
+/**
+ * 读取数据
+ * @param {string} key 关键字
+ * @param {string} storageType 存储类型
+ */
+export const readData = (key, storageType = Info.storageType) => {
+    return storageType === 'ByUid' || storageType === 'Global' ? GM_getValue(key) : localStorage.getItem(key);
+};
+
+/**
+ * 写入数据
+ * @param {string} key 关键字
+ * @param {string} value 值
+ * @param {string} storageType 存储类型
+ */
+export const writeData = (key, value, storageType = Info.storageType) => {
+    if (storageType === 'ByUid' || storageType === 'Global') GM_setValue(key, value);
+    else localStorage.setItem(key, value);
+};
+
+/**
+ * 删除数据
+ * @param {string} key 关键字
+ * @param {string} storageType 存储类型
+ */
+export const deleteData = (key, storageType = Info.storageType) => {
+    if (storageType === 'ByUid' || storageType === 'Global') GM_deleteValue(key);
+    else localStorage.removeItem(key);
+};

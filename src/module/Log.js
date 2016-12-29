@@ -13,9 +13,7 @@ const name = Const.storagePrefix + 'log';
  */
 export const read = function () {
     let log = {};
-    let options = null;
-    if (Info.storageType === 'ByUid' || Info.storageType === 'Global') options = GM_getValue(name + '_' + Info.uid);
-    else options = localStorage.getItem(name + '_' + Info.uid);
+    let options = Util.readData(name + '_' + Info.uid);
     if (!options) return log;
     try {
         options = JSON.parse(options);
@@ -25,7 +23,6 @@ export const read = function () {
     }
     if (!options || $.type(options) !== 'object') return log;
     log = options;
-    if (!Util.getCookie(Const.checkOverdueLogCookieName)) deleteOverdueLog(log);
     return log;
 };
 
@@ -33,38 +30,12 @@ export const read = function () {
  * 写入日志
  * @param {{}} log 日志对象
  */
-export const write = function (log) {
-    if (Info.storageType === 'ByUid' || Info.storageType === 'Global')
-        GM_setValue(name + '_' + Info.uid, JSON.stringify(log));
-    else localStorage.setItem(name + '_' + Info.uid, JSON.stringify(log));
-};
+export const write = log => Util.writeData(name + '_' + Info.uid, JSON.stringify(log));
 
 /**
  * 清除日志
  */
-export const clear = function () {
-    if (Info.storageType === 'ByUid' || Info.storageType === 'Global') GM_deleteValue(name + '_' + Info.uid);
-    else localStorage.removeItem(name + '_' + Info.uid);
-};
-
-/**
- * 删除过期日志
- * @param {{}} log 日志对象
- */
-const deleteOverdueLog = function (log) {
-    let dateList = Util.getObjectKeyList(log, 1);
-    let overdueDate = Util.getDateString(Util.getDate(`-${Config.logSaveDays}d`));
-    let isDeleted = false;
-    for (let date of dateList) {
-        if (date <= overdueDate) {
-            delete log[date];
-            isDeleted = true;
-        }
-        else break;
-    }
-    if (isDeleted) write(log);
-    Util.setCookie(Const.checkOverdueLogCookieName, 1, Util.getMidnightHourDate(1));
-};
+export const clear = () => Util.deleteData(name + '_' + Info.uid);
 
 /**
  * 记录一条新日志
@@ -74,13 +45,19 @@ const deleteOverdueLog = function (log) {
  * @param {?{}} pay 付出
  */
 export const push = function (type, action, {gain = null, pay = null} = {}) {
-    let date = new Date();
-    let time = date.getTime();
-    let today = Util.getDateString(date);
+    let log = read();
+    let overdueDate = Util.getDateString(Util.getDate(`-${Config.logSaveDays}d`));
+    for (let date of Util.getObjectKeyList(log, 1)) {
+        if (date <= overdueDate) delete log[date];
+        else break;
+    }
+
+    let now = new Date();
+    let time = now.getTime();
+    let today = Util.getDateString(now);
     let obj = {time, type, action};
     if (gain) obj['gain'] = gain;
     if (pay) obj['pay'] = pay;
-    let log = read();
     if (!Array.isArray(log[today])) log[today] = [];
     log[today].push(obj);
     write(log);

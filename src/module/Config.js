@@ -5,6 +5,7 @@ import * as Util from './Util';
 import Const from './Const';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
+import * as LootLog from './LootLog';
 
 // 保存设置的键值名称
 const name = Const.storagePrefix + 'config';
@@ -46,6 +47,8 @@ export const Config = {
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
+    // 历史争夺记录保存天数
+    lootLogSaveDays: 15,
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -204,10 +207,7 @@ export const init = function () {
  * 读取设置
  */
 export const read = function () {
-    let options = null;
-    if (Info.storageType === 'ByUid') options = GM_getValue(name + '_' + Info.uid);
-    else if (Info.storageType === 'Global') options = GM_getValue(name);
-    else options = localStorage.getItem(name);
+    let options = Util.readData(Info.storageType === 'ByUid' ? name + '_' + Info.uid : name);
     if (!options) return;
     try {
         options = JSON.parse(options);
@@ -225,19 +225,13 @@ export const read = function () {
  */
 export const write = function () {
     let options = Util.getDifferenceSetOfObject(Config, Info.w.Config);
-    if (Info.storageType === 'ByUid') GM_setValue(name + '_' + Info.uid, JSON.stringify(options));
-    else if (Info.storageType === 'Global') GM_setValue(name, JSON.stringify(options));
-    else localStorage.setItem(name, JSON.stringify(options));
+    Util.writeData(Info.storageType === 'ByUid' ? name + '_' + Info.uid : name, JSON.stringify(options));
 };
 
 /**
  * 清空设置
  */
-export const clear = function () {
-    if (Info.storageType === 'ByUid') GM_deleteValue(name + '_' + Info.uid);
-    else if (Info.storageType === 'Global') GM_deleteValue(name);
-    else localStorage.removeItem(name);
-};
+export const clear = () => Util.deleteData(Info.storageType === 'ByUid' ? name + '_' + Info.uid : name);
 
 /**
  * 更改存储类型
@@ -246,6 +240,7 @@ export const clear = function () {
 export const changeStorageType = function (storageType) {
     let log = Log.read();
     let tmpLog = TmpLog.read();
+    let lootLog = LootLog.read();
     Info.storageType = storageType;
     if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', Info.storageType);
     if (!Util.deepEqual(Config, Info.w.Config) || !$.isEmptyObject(log)) {
@@ -253,6 +248,7 @@ export const changeStorageType = function (storageType) {
             write();
             Log.write(log);
             TmpLog.write(tmpLog);
+            LootLog.write(lootLog);
         }
     }
 };
