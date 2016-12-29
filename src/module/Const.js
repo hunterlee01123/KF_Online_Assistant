@@ -85,6 +85,8 @@ const Const = {
     multiQuoteStorageName: storagePrefix + 'multiQuote',
     // 保存发帖内容的SessionStorage名称
     postContentStorageName: storagePrefix + 'postContent',
+    // 存储临时点数分配记录列表的SessionStorage名称
+    tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
@@ -115,8 +117,6 @@ const Const = {
     vipSurplusTimeCookieName: 'vipSurplusTime',
     // 标记已自动更换ID颜色的Cookie名称
     autoChangeIdColorCookieName: 'autoChangeIdColor',
-    // 标记已检查过期日志的Cookie名称
-    checkOverdueLogCookieName: 'checkOverdueLog',
 };
 
 export default Const;

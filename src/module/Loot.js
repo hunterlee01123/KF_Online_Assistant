@@ -7,6 +7,7 @@ import * as Dialog from './Dialog';
 import Const from './Const';
 import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
+import * as LootLog from './LootLog';
 import * as Script from './Script';
 import * as Public from './Public';
 import * as Item from './Item';
@@ -22,16 +23,16 @@ let $logBox;
 // 争夺记录区域
 let $log;
 // 争夺记录
-let log;
+let log = '';
 // 各层争夺记录列表
-let logList;
+let logList = [];
 // 当前争夺属性
-let propertyList;
+let propertyList = new Map();
 // 道具加成点数列表
-let extraPointList;
+let extraPointList = new Map();
 // 道具使用情况列表
-let itemUsedNumList;
-// 点数分配日志列表
+let itemUsedNumList = new Map();
+// 点数分配记录列表
 let pointsLogList = [];
 
 /**
@@ -54,10 +55,11 @@ export const enhanceLootIndexPage = function () {
 
     log = $log.html();
     logList = getLogList(log);
+    pointsLogList = getTempPointsLogList(logList);
     if (log.includes('本日无争夺记录'))
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
-    else showEnhanceLog(logList);
     showLogStat(logList);
+    addHistoryLogsNav();
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(Const.lootAttackingCookieName)) $(document).ready(autoLoot);
 };
@@ -883,6 +885,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
             if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
         Msg.destroy();
+        $('#pdHistoryLogsNav').find('[data-name="end"]').click();
         let autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled ||
             Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') && type === 'auto';
         if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
@@ -1005,6 +1008,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                     }
                     propertiesText = propertiesText.replace(/，$/, '');
                     pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
+                    sessionStorage.setItem(Const.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
                     console.log(
                         `【分配点数】${changeLevel > 0 ? `已修改为第${changeLevel}层的方案` : '已修改点数设置'}；` +
                         `点数方案（${pointsText}）；争夺属性（${propertiesText}）`
@@ -1050,7 +1054,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
 
             log = html + log;
             logList = getLogList(log);
-            showEnhanceLog(logList);
+            showEnhanceLog(logList, pointsLogList);
             showLogStat(logList);
             let currentLevel = getCurrentLevel(logList);
             console.log('【争夺攻击】当前层数：' + currentLevel);
@@ -1125,9 +1129,10 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                 let logHtml = $('#pk_text', html).html();
                 if (!/你被击败了/.test(logHtml)) return;
                 if (Config.autoLootEnabled) Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+                sessionStorage.removeItem(Const.tempPointsLogListStorageName);
                 log = logHtml;
                 logList = getLogList(log);
-                showEnhanceLog(logList);
+                showEnhanceLog(logList, pointsLogList);
 
                 let allEnemyList = {};
                 for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
@@ -1155,6 +1160,7 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
                         `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${Const.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`,
                         {gain: {'KFB': kfb, '经验值': exp}}
                     );
+                    LootLog.record(logList, pointsLogList);
                 }
                 Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
 
@@ -1179,7 +1185,6 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
  */
 const showLogStat = function (logList) {
     let {exp, kfb} = getTotalGain(logList);
-    if (!exp || !kfb) return;
 
     let allEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
@@ -1197,8 +1202,8 @@ const showLogStat = function (logList) {
     $logStat.html(`
 <li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
 <li class="pd_stat">
-  <b>全部层数：</b>${allEnemyStatHtml}<br>
-  <b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml}
+  <b>全部层数：</b>${allEnemyStatHtml ? allEnemyStatHtml : '无'}<br>
+  <b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml ? latestEnemyStatHtml : '无'}
 </li>
 `);
 };
@@ -1206,8 +1211,9 @@ const showLogStat = function (logList) {
 /**
  * 显示经过增强的争夺记录
  * @param {string[]} logList 各层争夺记录列表
+ * @param {string[]} pointsLogList 点数分配记录列表
  */
-const showEnhanceLog = function (logList) {
+const showEnhanceLog = function (logList, pointsLogList) {
     let list = [];
     $.each(logList, function (level, levelLog) {
         if (!levelLog) return;
@@ -1245,6 +1251,95 @@ const showEnhanceLog = function (logList) {
         }
     });
     $log.html(list.reverse().join(''));
+};
+
+/**
+ * 添加历史争夺记录导航
+ */
+const addHistoryLogsNav = function () {
+    let $logNav = $(`
+<div id="pdHistoryLogsNav" class="pd_log_nav">
+  <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
+  <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
+  <h2 class="pd_history_logs_key pd_custom_tips" title="共有0天的争夺记录">现在</h2>
+  <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
+  <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
+</div>
+`).insertBefore('#pdLogStat');
+
+    /**
+     * 获取历史争夺记录的标题字符串
+     * @param {number} timestamp 争夺记录的时间戳（0表示现在）
+     * @returns {string} 标题字符串
+     */
+    const getKeyTitleStr = timestamp => {
+        if (parseInt(timestamp) === 0) return '现在';
+        let date = new Date(parseInt(timestamp));
+        return Util.getDateString(date) + ' ' + Util.getTimeString(date, ':', false);
+    };
+
+    let historyLogs = LootLog.read();
+    let keyList = [];
+    if (!$.isEmptyObject(historyLogs)) {
+        keyList = Util.getObjectKeyList(historyLogs, 1);
+        let latestKey = parseInt(keyList[keyList.length - 1]);
+        if (!/你被击败了/.test(log) || latestKey <= Util.getDate('-1d').getTime() || historyLogs[latestKey].log.join('').trim() !== logList.join('').trim())
+            keyList.push(0);
+    }
+    else keyList.push(0);
+    let curIndex = keyList.length - 1;
+
+    let totalDays = keyList[curIndex] === 0 ? keyList.length - 1 : keyList.length;
+    $logNav.find('.pd_history_logs_key').attr('title', `共有${totalDays}天的争夺记录`).text(getKeyTitleStr(keyList[curIndex]));
+    if (keyList.length > 1) {
+        $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
+        $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
+    }
+    $logNav.on('click', 'a[data-name]', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        if ($this.hasClass('pd_disabled_link')) return;
+        let name = $this.data('name');
+        if (name === 'start') {
+            curIndex = 0;
+        }
+        else if (name === 'prev') {
+            if (curIndex > 0) curIndex--;
+            else return;
+        }
+        else if (name === 'next') {
+            if (curIndex < keyList.length - 1) curIndex++;
+            else return;
+        }
+        else if (name === 'end') {
+            curIndex = keyList.length - 1;
+        }
+        $logNav.find('.pd_history_logs_key').text(getKeyTitleStr(keyList[curIndex]));
+        let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
+        showEnhanceLog(curLogList, curPointsLogList);
+        showLogStat(curLogList);
+        if (curIndex > 0) {
+            $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
+        }
+        else {
+            $logNav.find('[data-name="start"], [data-name="prev"]').removeAttr('title').addClass('pd_disabled_link');
+        }
+        if (curIndex < keyList.length - 1) {
+            $logNav.find('[data-name="next"]').attr('title', getKeyTitleStr(keyList[curIndex + 1])).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="end"]').attr('title', getKeyTitleStr(keyList[keyList.length - 1])).removeClass('pd_disabled_link');
+        }
+        else {
+            $logNav.find('[data-name="next"], [data-name="end"]').removeAttr('title').addClass('pd_disabled_link');
+        }
+    });
+
+    if (!log.includes('本日无争夺记录')) {
+        let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
+        showEnhanceLog(curLogList, curPointsLogList);
+    }
 };
 
 /**
@@ -1345,6 +1440,28 @@ const getLifeInfo = function (logList, level) {
     let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[level]);
     if (lifeMatches) life = lifeMatches[2] === '满值' ? initLife : parseInt(lifeMatches[1]);
     return {life, initLife};
+};
+
+/**
+ * 获取临时点数分配记录列表
+ * @param {string[]} logList 各层争夺记录列表
+ * @returns {string[]} 点数分配记录列表
+ */
+const getTempPointsLogList = function (logList) {
+    let pointsLogList = sessionStorage.getItem(Const.tempPointsLogListStorageName);
+    if (!pointsLogList) return [];
+    try {
+        pointsLogList = JSON.parse(pointsLogList);
+    }
+    catch (ex) {
+        return [];
+    }
+    if (!pointsLogList || $.type(pointsLogList) !== 'array') return [];
+    if (pointsLogList.length > logList.length) {
+        sessionStorage.removeItem(Const.tempPointsLogListStorageName);
+        return [];
+    }
+    return pointsLogList;
 };
 
 /**

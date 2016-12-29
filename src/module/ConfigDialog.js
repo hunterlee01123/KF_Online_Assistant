@@ -13,6 +13,7 @@ import {
     Config as defConfig,
 } from './Config';
 import * as TmpLog from './TmpLog';
+import * as LootLog from './LootLog';
 import * as Public from './Public';
 import * as Script from './Script';
 
@@ -79,13 +80,20 @@ export const show = function () {
       </label>
     </fieldset>
     <fieldset>
-      <legend>
-        <label><input name="autoLootEnabled" type="checkbox"> 自动争夺</label>
-      </legend>
+      <legend>争夺相关</legend>
       <label>
+        <input name="autoLootEnabled" type="checkbox"> 自动争夺
+        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
         <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
+      </label><br>
+      <label>
+        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}">[?]</span>
       </label>
+      <a class="pd_cfg_ml" data-name="clearLootLog" href="#">清除记录</a>
     </fieldset>
     <fieldset>
       <legend>首页相关</legend>
@@ -381,6 +389,11 @@ export const show = function () {
         else if (name === 'openFollowUserDialog') showFollowUserDialog();
         else if (name === 'openBlockUserDialog') showBlockUserDialog();
         else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
+    }).find('[data-name="clearLootLog"]').click(function (e) {
+        e.preventDefault();
+        if (!confirm('是否清除所有争夺记录？')) return;
+        LootLog.clear();
+        alert('争夺记录已清除');
     }).end().find('[data-name="customMySmColorSelect"]').change(function () {
         $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
     }).end().find('[name="customMySmColor"]').change(function () {
@@ -404,10 +417,8 @@ const setMainConfigValue = function ($dialog) {
         let $this = $(this);
         let name = $this.attr('name');
         if (name in Config) {
-            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean')
-                $this.prop('checked', Config[name] === true);
-            else
-                $this.val(Config[name]);
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') $this.prop('checked', Config[name] === true);
+            else $this.val(Config[name]);
         }
     });
     $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
@@ -430,10 +441,11 @@ const getMainConfigValue = function ($dialog) {
         if (name in Config) {
             if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean')
                 options[name] = Boolean($this.prop('checked'));
-            else if (typeof Config[name] === 'number')
+            else if (typeof Config[name] === 'number') {
                 options[name] = parseInt($this.val());
-            else
-                options[name] = $.trim($this.val());
+                if (name === 'threadContentFontSize' && isNaN(options[name])) options[name] = 0;
+            }
+            else options[name] = $.trim($this.val());
         }
     });
     return options;
@@ -446,39 +458,39 @@ const getMainConfigValue = function ($dialog) {
  */
 const verifyMainConfig = function ($dialog) {
     /*let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
-    let donationKfb = $.trim($txtDonationKfb.val());
-    if (/%$/.test(donationKfb)) {
-        if (!/^1?\d?\d%$/.test(donationKfb)) {
-            alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-        if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
-            alert('KFB捐款额度百分比的取值范围在1-100之间');
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-    }
-    else {
-        if (!$.isNumeric(donationKfb)) {
-            alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-        if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
-            alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-    }
+     let donationKfb = $.trim($txtDonationKfb.val());
+     if (/%$/.test(donationKfb)) {
+     if (!/^1?\d?\d%$/.test(donationKfb)) {
+     alert('KFB捐款额度格式不正确');
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
+     alert('KFB捐款额度百分比的取值范围在1-100之间');
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     }
+     else {
+     if (!$.isNumeric(donationKfb)) {
+     alert('KFB捐款额度格式不正确');
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
+     alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     }
 
-    let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
-    let donationAfterTime = $.trim($txtDonationAfterTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
-        alert('在指定时间之后捐款格式不正确');
-        $txtDonationAfterTime.select().focus();
-        return false;
-    }*/
+     let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
+     let donationAfterTime = $.trim($txtDonationAfterTime.val());
+     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
+     alert('在指定时间之后捐款格式不正确');
+     $txtDonationAfterTime.select().focus();
+     return false;
+     }*/
 
     let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());

@@ -7,11 +7,11 @@
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.meta.js
 // @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js
-// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
+// @pd-require
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.0.1
+// @version     9.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -82,7 +82,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.0.1';
+const version = '9.1';
 
 /**
  * 初始化
@@ -238,7 +238,7 @@ const init = function () {
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Loot":13,"./module/Other":15,"./module/Post":16,"./module/Public":17,"./module/Read":18,"./module/Script":19,"./module/Util":21}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Loot":13,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/Util":22}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -633,7 +633,7 @@ const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":14,"./Public":17,"./TmpLog":20,"./Util":21}],3:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -817,7 +817,7 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -845,6 +845,10 @@ var Log = _interopRequireWildcard(_Log);
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _LootLog = require('./LootLog');
+
+var LootLog = _interopRequireWildcard(_LootLog);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -890,6 +894,8 @@ const Config = exports.Config = {
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
+    // 历史争夺记录保存天数
+    lootLogSaveDays: 15,
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -1048,8 +1054,7 @@ const init = exports.init = function () {
  * 读取设置
  */
 const read = exports.read = function () {
-    let options = null;
-    if (_Info2.default.storageType === 'ByUid') options = GM_getValue(name + '_' + _Info2.default.uid);else if (_Info2.default.storageType === 'Global') options = GM_getValue(name);else options = localStorage.getItem(name);
+    let options = Util.readData(_Info2.default.storageType === 'ByUid' ? name + '_' + _Info2.default.uid : name);
     if (!options) return;
     try {
         options = JSON.parse(options);
@@ -1066,15 +1071,13 @@ const read = exports.read = function () {
  */
 const write = exports.write = function () {
     let options = Util.getDifferenceSetOfObject(Config, window.Config);
-    if (_Info2.default.storageType === 'ByUid') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(options));else if (_Info2.default.storageType === 'Global') GM_setValue(name, JSON.stringify(options));else localStorage.setItem(name, JSON.stringify(options));
+    Util.writeData(_Info2.default.storageType === 'ByUid' ? name + '_' + _Info2.default.uid : name, JSON.stringify(options));
 };
 
 /**
  * 清空设置
  */
-const clear = exports.clear = function () {
-    if (_Info2.default.storageType === 'ByUid') GM_deleteValue(name + '_' + _Info2.default.uid);else if (_Info2.default.storageType === 'Global') GM_deleteValue(name);else localStorage.removeItem(name);
-};
+const clear = exports.clear = () => Util.deleteData(_Info2.default.storageType === 'ByUid' ? name + '_' + _Info2.default.uid : name);
 
 /**
  * 更改存储类型
@@ -1083,6 +1086,7 @@ const clear = exports.clear = function () {
 const changeStorageType = exports.changeStorageType = function (storageType) {
     let log = Log.read();
     let tmpLog = TmpLog.read();
+    let lootLog = LootLog.read();
     _Info2.default.storageType = storageType;
     if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', _Info2.default.storageType);
     if (!Util.deepEqual(Config, window.Config) || !$.isEmptyObject(log)) {
@@ -1090,6 +1094,7 @@ const changeStorageType = exports.changeStorageType = function (storageType) {
             write();
             Log.write(log);
             TmpLog.write(tmpLog);
+            LootLog.write(lootLog);
         }
     }
 };
@@ -1110,7 +1115,7 @@ const normalize = exports.normalize = function (options) {
     return settings;
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./TmpLog":20,"./Util":21}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -1140,6 +1145,10 @@ var _Config = require('./Config');
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _LootLog = require('./LootLog');
+
+var LootLog = _interopRequireWildcard(_LootLog);
 
 var _Public = require('./Public');
 
@@ -1216,13 +1225,20 @@ const show = exports.show = function () {
       </label>
     </fieldset>
     <fieldset>
-      <legend>
-        <label><input name="autoLootEnabled" type="checkbox"> 自动争夺</label>
-      </legend>
+      <legend>争夺相关</legend>
       <label>
+        <input name="autoLootEnabled" type="checkbox"> 自动争夺
+        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
         <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
+      </label><br>
+      <label>
+        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.lootLogSaveDays }">[?]</span>
       </label>
+      <a class="pd_cfg_ml" data-name="clearLootLog" href="#">清除记录</a>
     </fieldset>
     <fieldset>
       <legend>首页相关</legend>
@@ -1506,6 +1522,11 @@ const show = exports.show = function () {
         if (name === 'openRumCommandDialog') showRunCommandDialog();
         if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
         if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
+    }).find('[data-name="clearLootLog"]').click(function (e) {
+        e.preventDefault();
+        if (!confirm('是否清除所有争夺记录？')) return;
+        LootLog.clear();
+        alert('争夺记录已清除');
     }).end().find('[data-name="customMySmColorSelect"]').change(function () {
         $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
     }).end().find('[name="customMySmColor"]').change(function () {
@@ -1550,7 +1571,10 @@ const getMainConfigValue = function ($dialog) {
         let $this = $(this);
         let name = $this.attr('name');
         if (name in Config) {
-            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') options[name] = Boolean($this.prop('checked'));else if (typeof Config[name] === 'number') options[name] = parseInt($this.val());else options[name] = $.trim($this.val());
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') options[name] = Boolean($this.prop('checked'));else if (typeof Config[name] === 'number') {
+                options[name] = parseInt($this.val());
+                if (name === 'threadContentFontSize' && isNaN(options[name])) options[name] = 0;
+            } else options[name] = $.trim($this.val());
         }
     });
     return options;
@@ -1563,38 +1587,38 @@ const getMainConfigValue = function ($dialog) {
  */
 const verifyMainConfig = function ($dialog) {
     /*let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
-    let donationKfb = $.trim($txtDonationKfb.val());
-    if (/%$/.test(donationKfb)) {
-        if (!/^1?\d?\d%$/.test(donationKfb)) {
-            alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-        if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
-            alert('KFB捐款额度百分比的取值范围在1-100之间');
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-    }
-    else {
-        if (!$.isNumeric(donationKfb)) {
-            alert('KFB捐款额度格式不正确');
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-        if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
-            alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
-            $txtDonationKfb.select().focus();
-            return false;
-        }
-    }
-      let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
-    let donationAfterTime = $.trim($txtDonationAfterTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
-        alert('在指定时间之后捐款格式不正确');
-        $txtDonationAfterTime.select().focus();
-        return false;
-    }*/
+     let donationKfb = $.trim($txtDonationKfb.val());
+     if (/%$/.test(donationKfb)) {
+     if (!/^1?\d?\d%$/.test(donationKfb)) {
+     alert('KFB捐款额度格式不正确');
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
+     alert('KFB捐款额度百分比的取值范围在1-100之间');
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     }
+     else {
+     if (!$.isNumeric(donationKfb)) {
+     alert('KFB捐款额度格式不正确');
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
+     alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
+     $txtDonationKfb.select().focus();
+     return false;
+     }
+     }
+       let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
+     let donationAfterTime = $.trim($txtDonationAfterTime.val());
+     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
+     alert('在指定时间之后捐款格式不正确');
+     $txtDonationAfterTime.select().focus();
+     return false;
+     }*/
 
     let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());
@@ -2410,7 +2434,7 @@ const showBlockThreadDialog = function () {
     $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":17,"./Script":19,"./TmpLog":20,"./Util":21}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./LootLog":14,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2502,6 +2526,8 @@ const Const = {
     multiQuoteStorageName: storagePrefix + 'multiQuote',
     // 保存发帖内容的SessionStorage名称
     postContentStorageName: storagePrefix + 'postContent',
+    // 存储临时点数分配记录列表的SessionStorage名称
+    tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
@@ -2531,9 +2557,7 @@ const Const = {
     // 存储VIP剩余时间的Cookie名称
     vipSurplusTimeCookieName: 'vipSurplusTime',
     // 标记已自动更换ID颜色的Cookie名称
-    autoChangeIdColorCookieName: 'autoChangeIdColor',
-    // 标记已检查过期日志的Cookie名称
-    checkOverdueLogCookieName: 'checkOverdueLog'
+    autoChangeIdColorCookieName: 'autoChangeIdColor'
 };
 
 exports.default = Const;
@@ -2648,7 +2672,7 @@ const close = exports.close = function (id) {
     return false;
 };
 
-},{"./Info":9,"./Public":17,"./Util":21}],8:[function(require,module,exports){
+},{"./Info":9,"./Public":18,"./Util":22}],8:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
@@ -2872,7 +2896,7 @@ const handleIndexPersonalInfo = exports.handleIndexPersonalInfo = function () {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./TmpLog":20,"./Util":21}],9:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -4311,7 +4335,7 @@ const hideItemTypes = exports.hideItemTypes = function () {
     }
 };
 
-},{"./Config":4,"./Const":6,"./Info":9,"./Log":11,"./Msg":14,"./Public":17,"./Util":21}],11:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Info":9,"./Log":11,"./Msg":15,"./Public":18,"./Util":22}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -4345,8 +4369,7 @@ const name = _Const2.default.storagePrefix + 'log';
  */
 const read = exports.read = function () {
     let log = {};
-    let options = null;
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') options = GM_getValue(name + '_' + _Info2.default.uid);else options = localStorage.getItem(name + '_' + _Info2.default.uid);
+    let options = Util.readData(name + '_' + _Info2.default.uid);
     if (!options) return log;
     try {
         options = JSON.parse(options);
@@ -4355,7 +4378,6 @@ const read = exports.read = function () {
     }
     if (!options || $.type(options) !== 'object') return log;
     log = options;
-    if (!Util.getCookie(_Const2.default.checkOverdueLogCookieName)) deleteOverdueLog(log);
     return log;
 };
 
@@ -4363,34 +4385,12 @@ const read = exports.read = function () {
  * 写入日志
  * @param {{}} log 日志对象
  */
-const write = exports.write = function (log) {
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(log));
-};
+const write = exports.write = log => Util.writeData(name + '_' + _Info2.default.uid, JSON.stringify(log));
 
 /**
  * 清除日志
  */
-const clear = exports.clear = function () {
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_deleteValue(name + '_' + _Info2.default.uid);else localStorage.removeItem(name + '_' + _Info2.default.uid);
-};
-
-/**
- * 删除过期日志
- * @param {{}} log 日志对象
- */
-const deleteOverdueLog = function (log) {
-    let dateList = Util.getObjectKeyList(log, 1);
-    let overdueDate = Util.getDateString(Util.getDate(`-${ Config.logSaveDays }d`));
-    let isDeleted = false;
-    for (let date of dateList) {
-        if (date <= overdueDate) {
-            delete log[date];
-            isDeleted = true;
-        } else break;
-    }
-    if (isDeleted) write(log);
-    Util.setCookie(_Const2.default.checkOverdueLogCookieName, 1, Util.getMidnightHourDate(1));
-};
+const clear = exports.clear = () => Util.deleteData(name + '_' + _Info2.default.uid);
 
 /**
  * 记录一条新日志
@@ -4400,13 +4400,18 @@ const deleteOverdueLog = function (log) {
  * @param {?{}} pay 付出
  */
 const push = exports.push = function (type, action, { gain = null, pay = null } = {}) {
-    let date = new Date();
-    let time = date.getTime();
-    let today = Util.getDateString(date);
+    let log = read();
+    let overdueDate = Util.getDateString(Util.getDate(`-${ Config.logSaveDays }d`));
+    for (let date of Util.getObjectKeyList(log, 1)) {
+        if (date <= overdueDate) delete log[date];else break;
+    }
+
+    let now = new Date();
+    let time = now.getTime();
+    let today = Util.getDateString(now);
     let obj = { time, type, action };
     if (gain) obj['gain'] = gain;
     if (pay) obj['pay'] = pay;
-    let log = read();
     if (!Array.isArray(log[today])) log[today] = [];
     log[today].push(obj);
     write(log);
@@ -4434,7 +4439,7 @@ const getMergeLog = exports.getMergeLog = function (log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":21}],12:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":22}],12:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -4478,11 +4483,11 @@ const show = exports.show = function () {
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_log_nav">
-    <a class="pd_disabled_link" href="#">&lt;&lt;</a>
-    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&lt;</a>
-    <h2 class="pd_custom_tips">暂无日志</h2>
-    <a style="padding: 0 7px;" class="pd_disabled_link" href="#">&gt;</a>
-    <a class="pd_disabled_link" href="#">&gt;&gt;</a>
+    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
+    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
+    <h2 class="pd_log_date pd_custom_tips">暂无日志</h2>
+    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
+    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
   </div>
   <fieldset>
     <legend>日志内容</legend>
@@ -4511,6 +4516,7 @@ const show = exports.show = function () {
   <button name="clear" type="button">清除日志</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
+    let $logNav = $dialog.find('.pd_log_nav');
 
     let log = Log.read();
     let dateList = [];
@@ -4518,39 +4524,44 @@ const show = exports.show = function () {
     if (!$.isEmptyObject(log)) {
         dateList = Util.getObjectKeyList(log, 1);
         curIndex = dateList.length - 1;
-        $dialog.find('.pd_log_nav h2').attr('title', `总共记录了${ dateList.length }天的日志`).text(dateList[curIndex]);
+        $logNav.find('.pd_log_date').attr('title', `总共记录了${ dateList.length }天的日志`).text(dateList[curIndex]);
         if (dateList.length > 1) {
-            $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
-            $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="start"]').attr('title', dateList[0]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="prev"]').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
         }
     }
-    $dialog.find('.pd_log_nav a').click(function (e) {
+    $logNav.on('click', 'a[data-name]', function (e) {
         e.preventDefault();
-        if ($(this).is('.pd_log_nav a:eq(0)')) {
+        let $this = $(this);
+        if ($this.hasClass('pd_disabled_link')) return;
+        let name = $this.data('name');
+        if (name === 'start') {
             curIndex = 0;
-        } else if ($(this).is('.pd_log_nav a:eq(1)')) {
+        } else if (name === 'prev') {
             if (curIndex > 0) curIndex--;else return;
-        } else if ($(this).is('.pd_log_nav a:eq(2)')) {
+        } else if (name === 'next') {
             if (curIndex < dateList.length - 1) curIndex++;else return;
-        } else if ($(this).is('.pd_log_nav a:eq(3)')) {
+        } else if (name === 'end') {
             curIndex = dateList.length - 1;
         }
-        $dialog.find('.pd_log_nav h2').text(dateList[curIndex]);
+        $logNav.find('.pd_log_date').text(dateList[curIndex]);
         showLogContent(log, dateList[curIndex], $dialog);
         showLogStat(log, dateList[curIndex], $dialog);
         if (curIndex > 0) {
-            $dialog.find('.pd_log_nav > a:eq(0)').attr('title', dateList[0]).removeClass('pd_disabled_link');
-            $dialog.find('.pd_log_nav > a:eq(1)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="start"]').attr('title', dateList[0]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="prev"]').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
         } else {
-            $dialog.find('.pd_log_nav > a:lt(2)').removeAttr('title').addClass('pd_disabled_link');
+            $logNav.find('[data-name="start"], [data-name="prev"]').removeAttr('title').addClass('pd_disabled_link');
         }
         if (curIndex < dateList.length - 1) {
-            $dialog.find('.pd_log_nav > a:eq(2)').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
-            $dialog.find('.pd_log_nav > a:eq(3)').attr('title', dateList[dateList.length - 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="next"]').attr('title', dateList[curIndex + 1]).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="end"]').attr('title', dateList[dateList.length - 1]).removeClass('pd_disabled_link');
         } else {
-            $dialog.find('.pd_log_nav > a:gt(1)').removeAttr('title').addClass('pd_disabled_link');
+            $logNav.find('[data-name="next"], [data-name="end"]').removeAttr('title').addClass('pd_disabled_link');
         }
-    }).end().find('[name="sortType"]').click(function () {
+    });
+
+    $dialog.find('[name="sortType"]').click(function () {
         let value = $(this).val();
         if (Config.logSortType !== value) {
             Config.logSortType = value;
@@ -4921,7 +4932,7 @@ const showLogText = function (log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":19,"./Util":21}],13:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":22}],13:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -4956,6 +4967,10 @@ var _Log = require('./Log');
 
 var Log = _interopRequireWildcard(_Log);
 
+var _LootLog = require('./LootLog');
+
+var LootLog = _interopRequireWildcard(_LootLog);
+
 var _Script = require('./Script');
 
 var Script = _interopRequireWildcard(_Script);
@@ -4983,16 +4998,16 @@ let $logBox;
 // 争夺记录区域
 let $log;
 // 争夺记录
-let log;
+let log = '';
 // 各层争夺记录列表
-let logList;
+let logList = [];
 // 当前争夺属性
-let propertyList;
+let propertyList = new Map();
 // 道具加成点数列表
-let extraPointList;
+let extraPointList = new Map();
 // 道具使用情况列表
-let itemUsedNumList;
-// 点数分配日志列表
+let itemUsedNumList = new Map();
+// 点数分配记录列表
 let pointsLogList = [];
 
 /**
@@ -5015,8 +5030,10 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
 
     log = $log.html();
     logList = getLogList(log);
-    if (log.includes('本日无争夺记录')) $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));else showEnhanceLog(logList);
+    pointsLogList = getTempPointsLogList(logList);
+    if (log.includes('本日无争夺记录')) $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     showLogStat(logList);
+    addHistoryLogsNav();
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) $(document).ready(autoLoot);
 };
@@ -5758,6 +5775,7 @@ ${ typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '' }> �
             if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
         Msg.destroy();
+        $('#pdHistoryLogsNav').find('[data-name="end"]').click();
         let autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
         if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
         lootAttack({ type, targetLevel, autoChangeLevelPointsEnabled, safeId });
@@ -5869,6 +5887,7 @@ const lootAttack = function ({ type, targetLevel, autoChangeLevelPointsEnabled, 
                     }
                     propertiesText = propertiesText.replace(/，$/, '');
                     pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${ pointsText }）\n争夺属性（${ propertiesText }）`;
+                    sessionStorage.setItem(_Const2.default.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
                     console.log(`【分配点数】${ changeLevel > 0 ? `已修改为第${ changeLevel }层的方案` : '已修改点数设置' }；` + `点数方案（${ pointsText }）；争夺属性（${ propertiesText }）`);
 
                     $points.find('.pd_point').each(function () {
@@ -5909,7 +5928,7 @@ const lootAttack = function ({ type, targetLevel, autoChangeLevelPointsEnabled, 
 
             log = html + log;
             logList = getLogList(log);
-            showEnhanceLog(logList);
+            showEnhanceLog(logList, pointsLogList);
             showLogStat(logList);
             let currentLevel = getCurrentLevel(logList);
             console.log('【争夺攻击】当前层数：' + currentLevel);
@@ -5980,9 +5999,10 @@ const lootAttack = function ({ type, targetLevel, autoChangeLevelPointsEnabled, 
                 let logHtml = $('#pk_text', html).html();
                 if (!/你被击败了/.test(logHtml)) return;
                 if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
+                sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
                 log = logHtml;
                 logList = getLogList(log);
-                showEnhanceLog(logList);
+                showEnhanceLog(logList, pointsLogList);
 
                 let allEnemyList = {};
                 for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
@@ -6006,6 +6026,7 @@ const lootAttack = function ({ type, targetLevel, autoChangeLevelPointsEnabled, 
                 let { exp, kfb } = getTotalGain(logList);
                 if (exp > 0 && kfb > 0) {
                     Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近${ _Const2.default.enemyStatLatestLevelNum }层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
+                    LootLog.record(logList, pointsLogList);
                 }
                 Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);
 
@@ -6030,7 +6051,6 @@ const lootAttack = function ({ type, targetLevel, autoChangeLevelPointsEnabled, 
  */
 const showLogStat = function (logList) {
     let { exp, kfb } = getTotalGain(logList);
-    if (!exp || !kfb) return;
 
     let allEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
@@ -6048,8 +6068,8 @@ const showLogStat = function (logList) {
     $logStat.html(`
 <li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${ kfb.toLocaleString() }</em></i> <i>经验值<em>+${ exp.toLocaleString() }</em></i></li>
 <li class="pd_stat">
-  <b>全部层数：</b>${ allEnemyStatHtml }<br>
-  <b>最近${ _Const2.default.enemyStatLatestLevelNum }层：</b>${ latestEnemyStatHtml }
+  <b>全部层数：</b>${ allEnemyStatHtml ? allEnemyStatHtml : '无' }<br>
+  <b>最近${ _Const2.default.enemyStatLatestLevelNum }层：</b>${ latestEnemyStatHtml ? latestEnemyStatHtml : '无' }
 </li>
 `);
 };
@@ -6057,8 +6077,9 @@ const showLogStat = function (logList) {
 /**
  * 显示经过增强的争夺记录
  * @param {string[]} logList 各层争夺记录列表
+ * @param {string[]} pointsLogList 点数分配记录列表
  */
-const showEnhanceLog = function (logList) {
+const showEnhanceLog = function (logList, pointsLogList) {
     let list = [];
     $.each(logList, function (level, levelLog) {
         if (!levelLog) return;
@@ -6094,6 +6115,86 @@ const showEnhanceLog = function (logList) {
         }
     });
     $log.html(list.reverse().join(''));
+};
+
+/**
+ * 添加历史争夺记录导航
+ */
+const addHistoryLogsNav = function () {
+    let $logNav = $(`
+<div id="pdHistoryLogsNav" class="pd_log_nav">
+  <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
+  <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
+  <h2 class="pd_history_logs_key pd_custom_tips" title="共有0天的争夺记录">现在</h2>
+  <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
+  <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
+</div>
+`).insertBefore('#pdLogStat');
+
+    /**
+     * 获取历史争夺记录的标题字符串
+     * @param {number} timestamp 争夺记录的时间戳（0表示现在）
+     * @returns {string} 标题字符串
+     */
+    const getKeyTitleStr = timestamp => {
+        if (parseInt(timestamp) === 0) return '现在';
+        let date = new Date(parseInt(timestamp));
+        return Util.getDateString(date) + ' ' + Util.getTimeString(date, ':', false);
+    };
+
+    let historyLogs = LootLog.read();
+    let keyList = [];
+    if (!$.isEmptyObject(historyLogs)) {
+        keyList = Util.getObjectKeyList(historyLogs, 1);
+        let latestKey = parseInt(keyList[keyList.length - 1]);
+        if (!/你被击败了/.test(log) || latestKey <= Util.getDate('-1d').getTime() || historyLogs[latestKey].log.join('').trim() !== logList.join('').trim()) keyList.push(0);
+    } else keyList.push(0);
+    let curIndex = keyList.length - 1;
+
+    let totalDays = keyList[curIndex] === 0 ? keyList.length - 1 : keyList.length;
+    $logNav.find('.pd_history_logs_key').attr('title', `共有${ totalDays }天的争夺记录`).text(getKeyTitleStr(keyList[curIndex]));
+    if (keyList.length > 1) {
+        $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
+        $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
+    }
+    $logNav.on('click', 'a[data-name]', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        if ($this.hasClass('pd_disabled_link')) return;
+        let name = $this.data('name');
+        if (name === 'start') {
+            curIndex = 0;
+        } else if (name === 'prev') {
+            if (curIndex > 0) curIndex--;else return;
+        } else if (name === 'next') {
+            if (curIndex < keyList.length - 1) curIndex++;else return;
+        } else if (name === 'end') {
+            curIndex = keyList.length - 1;
+        }
+        $logNav.find('.pd_history_logs_key').text(getKeyTitleStr(keyList[curIndex]));
+        let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
+        showEnhanceLog(curLogList, curPointsLogList);
+        showLogStat(curLogList);
+        if (curIndex > 0) {
+            $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
+        } else {
+            $logNav.find('[data-name="start"], [data-name="prev"]').removeAttr('title').addClass('pd_disabled_link');
+        }
+        if (curIndex < keyList.length - 1) {
+            $logNav.find('[data-name="next"]').attr('title', getKeyTitleStr(keyList[curIndex + 1])).removeClass('pd_disabled_link');
+            $logNav.find('[data-name="end"]').attr('title', getKeyTitleStr(keyList[keyList.length - 1])).removeClass('pd_disabled_link');
+        } else {
+            $logNav.find('[data-name="next"], [data-name="end"]').removeAttr('title').addClass('pd_disabled_link');
+        }
+    });
+
+    if (!log.includes('本日无争夺记录')) {
+        let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
+        showEnhanceLog(curLogList, curPointsLogList);
+    }
 };
 
 /**
@@ -6199,6 +6300,27 @@ const getLifeInfo = function (logList, level) {
 };
 
 /**
+ * 获取临时点数分配记录列表
+ * @param {string[]} logList 各层争夺记录列表
+ * @returns {string[]} 点数分配记录列表
+ */
+const getTempPointsLogList = function (logList) {
+    let pointsLogList = sessionStorage.getItem(_Const2.default.tempPointsLogListStorageName);
+    if (!pointsLogList) return [];
+    try {
+        pointsLogList = JSON.parse(pointsLogList);
+    } catch (ex) {
+        return [];
+    }
+    if (!pointsLogList || $.type(pointsLogList) !== 'array') return [];
+    if (pointsLogList.length > logList.length) {
+        sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
+        return [];
+    }
+    return pointsLogList;
+};
+
+/**
  * 获取自动争夺Cookies有效期
  * @returns {Date} Cookies有效期的Date对象
  */
@@ -6284,7 +6406,80 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./Msg":14,"./Public":17,"./Script":19,"./Util":21}],14:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],14:[function(require,module,exports){
+/* 争夺记录模块 */
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.record = exports.clear = exports.write = exports.read = undefined;
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
+
+var _Const = require('./Const');
+
+var _Const2 = _interopRequireDefault(_Const);
+
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// 保存争夺记录的键值名称
+const name = _Const2.default.storagePrefix + 'loot_log';
+
+/**
+ * 读取争夺记录
+ * @returns {{}} 争夺记录对象
+ */
+const read = exports.read = function () {
+    let log = {};
+    let options = Util.readData(name + '_' + _Info2.default.uid);
+    if (!options) return log;
+    try {
+        options = JSON.parse(options);
+    } catch (ex) {
+        return log;
+    }
+    if (!options || $.type(options) !== 'object') return log;
+    log = options;
+    return log;
+};
+
+/**
+ * 写入争夺记录
+ * @param {{}} log 争夺记录对象
+ */
+const write = exports.write = log => Util.writeData(name + '_' + _Info2.default.uid, JSON.stringify(log));
+
+/**
+ * 清除临时日志
+ */
+const clear = exports.clear = () => Util.deleteData(name + '_' + _Info2.default.uid);
+
+/**
+ * 记录新的争夺记录
+ * @param {string[]} logList 各层争夺记录列表
+ * @param {string[]} pointsLogList 点数分配记录列表
+ */
+const record = exports.record = function (logList, pointsLogList) {
+    let log = read();
+    let overdueDate = Util.getDate(`-${ Config.lootLogSaveDays }d`).getTime();
+    $.each(Util.getObjectKeyList(log, 1), function (i, key) {
+        key = parseInt(key);
+        if (isNaN(key) || key <= overdueDate) delete log[key];else return false;
+    });
+    log[new Date().getTime()] = { log: logList, points: pointsLogList };
+    write(log);
+};
+
+},{"./Const":6,"./Info":9,"./Util":22}],15:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -6412,7 +6607,7 @@ const destroy = exports.destroy = function () {
     $('.pd_mask').remove();
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 /* 其它模块 */
 'use strict';
 
@@ -6908,7 +7103,7 @@ const handleProfilePage = exports.handleProfilePage = function () {
     }));
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":14,"./Public":17,"./TmpLog":20,"./Util":21}],16:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -7234,7 +7429,7 @@ const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function (
     }
 };
 
-},{"./Const":6,"./Info":9,"./Msg":14,"./Script":19,"./Util":21}],17:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":22}],18:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
@@ -8585,7 +8780,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
     if (typeof callback === 'function') callback($dialog);
 };
 
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":14,"./Read":18,"./Script":19,"./TmpLog":20,"./Util":21}],18:[function(require,module,exports){
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
@@ -9287,7 +9482,7 @@ const getThreadTitle = exports.getThreadTitle = function () {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
 
-},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":14,"./Post":16,"./Public":17,"./Script":19,"./Util":21}],19:[function(require,module,exports){
+},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":22}],20:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
@@ -9486,7 +9681,7 @@ const showDialog = exports.showDialog = function (showIndex = null) {
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about">
     <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
-    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出自定义脚本</a>
+    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出所有脚本</a>
   </span>
   <button type="submit">确定</button>
   <button name="cancel" type="button">取消</button>
@@ -9630,7 +9825,7 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./Msg":14,"./Other":15,"./Post":16,"./Public":17,"./Read":18,"./TmpLog":20,"./Util":21}],20:[function(require,module,exports){
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -9647,6 +9842,12 @@ var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
 
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 保存临时日志的键值名称
@@ -9658,8 +9859,7 @@ const name = _Const2.default.storagePrefix + 'tmp_log';
  */
 const read = exports.read = function () {
     let log = {};
-    let options = null;
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') options = GM_getValue(name + '_' + _Info2.default.uid);else options = localStorage.getItem(name + '_' + _Info2.default.uid);
+    let options = Util.readData(name + '_' + _Info2.default.uid);
     if (!options) return log;
     try {
         options = JSON.parse(options);
@@ -9680,17 +9880,14 @@ const read = exports.read = function () {
 
 /**
  * 写入临时日志
+ * @param {{}} log 临时日志对象
  */
-const write = exports.write = function (log) {
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_setValue(name + '_' + _Info2.default.uid, JSON.stringify(log));else localStorage.setItem(name + '_' + _Info2.default.uid, JSON.stringify(log));
-};
+const write = exports.write = log => Util.writeData(name + '_' + _Info2.default.uid, JSON.stringify(log));
 
 /**
  * 清除临时日志
  */
-const clear = exports.clear = function () {
-    if (_Info2.default.storageType === 'ByUid' || _Info2.default.storageType === 'Global') GM_deleteValue(name + '_' + _Info2.default.uid);else localStorage.removeItem(name + '_' + _Info2.default.uid);
-};
+const clear = exports.clear = () => Util.deleteData(name + '_' + _Info2.default.uid);
 
 /**
  * 获取指定名称的临时日志内容
@@ -9725,14 +9922,14 @@ const deleteValue = exports.deleteValue = function (key) {
     }
 };
 
-},{"./Const":6,"./Info":9}],21:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":22}],22:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -10268,6 +10465,34 @@ const selectInverse = exports.selectInverse = function ($nodes) {
         $this.prop('checked', !$this.prop('checked'));
     });
     return false;
+};
+
+/**
+ * 读取数据
+ * @param {string} key 关键字
+ * @param {string} storageType 存储类型
+ */
+const readData = exports.readData = (key, storageType = _Info2.default.storageType) => {
+    return storageType === 'ByUid' || storageType === 'Global' ? GM_getValue(key) : localStorage.getItem(key);
+};
+
+/**
+ * 写入数据
+ * @param {string} key 关键字
+ * @param {string} value 值
+ * @param {string} storageType 存储类型
+ */
+const writeData = exports.writeData = (key, value, storageType = _Info2.default.storageType) => {
+    if (storageType === 'ByUid' || storageType === 'Global') GM_setValue(key, value);else localStorage.setItem(key, value);
+};
+
+/**
+ * 删除数据
+ * @param {string} key 关键字
+ * @param {string} storageType 存储类型
+ */
+const deleteData = exports.deleteData = (key, storageType = _Info2.default.storageType) => {
+    if (storageType === 'ByUid' || storageType === 'Global') GM_deleteValue(key);else localStorage.removeItem(key);
 };
 
 },{"./Const":6,"./Info":9}]},{},[1]);
