@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        实时计算点数分配方案
-// @version     2.0.9-beta
+// @version     2.1.0-beta
 // @trigger     start
 // @author      bch
 // @homepage    read.php?tid=589364
@@ -420,6 +420,10 @@ function getNextAttackedTimes(currentLevel, npcFlag, levelPoints) {
 function restLifeInNextLevelByPoints(currentLevel, currentLife, npcFlag, levelPoints) {
 // 通过配点参数计算攻略下一层玩家的剩余生命值，加点参数是独立存在，不依赖与npc种类，故可以随便用（计算量更大）
 
+    if (levelPoints["体质"] < 1) {
+        return 0;
+    }
+
     let npcParam = getParamForNPCNextLevel(currentLevel, npcFlag, levelPoints); //计算下一层npc参数
     let attackedTimes = getNextAttackedTimes(currentLevel, npcFlag, levelPoints); // 玩家被攻击次数
     let playerDamage = 0; // 计算受到伤害
@@ -696,6 +700,7 @@ function getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchR
 
 let restLifeRatioByTenth = 0.85;  // 预计到达每10层boss的血的保留比
 let minRestLifeRatioUnlucky = 0.1;  // 极限区的遭遇强化怪血的保留比
+let riskingForBossFlag = 0;  // 若该标志为1，则在判定可以过最终boss时，采用冒险的策略，优先保证到boss时的血量
 
 function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
 // 计算最优方案将考虑强化npc的场合
@@ -725,13 +730,22 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
         restLifeRatioUnlucky = minRestLifeRatioUnlucky;
     }
     else {
-        // 在每10层第1楼预测攻击boss情况，调整对强化怪的牺牲加点
+        // 预测攻击最终boss情况，调整对强化怪的牺牲加点
         playerPropability = Math.max(playerPropability0 - 0.2, 0.01); // 放宽打败boss条件
         npcPropability = Math.min(npcPropability0 + 0.2, 0.99); // 放宽打败boss条件
         let levelStrategyTenth = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9, Math.floor(currentLife * (restLifeRatioByTenth + (1 - restLifeRatioByTenth) / 9 * (currentLevel % 10))), 1, searchRangeBoss, 1, 1);
         playerPropability = playerPropability0; // 恢复默认概率
         npcPropability = npcPropability0; // 恢复默认概率
-
+        if (levelStrategyTenth["被攻击次数"] >= 0 && riskingForBossFlag == 1) {
+            // 可能需要为过最终boss冒险
+            let levelStrategyTenth = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9, Math.floor(currentLife * (restLifeRatioByTenth + (1 - restLifeRatioByTenth) / 9 * (currentLevel % 10))), 1, searchRangeBoss, 1, 1);
+            if (levelStrategyTenth["被攻击次数"] === -1) {
+                // 对最终boss胜率不高，需要冒险
+                playerPropability = Math.max(playerPropability0 - 0.2, 0.01); // 修改默认概率，节省点数损耗
+                npcPropability = Math.min(npcPropability0 + 0.1, 0.99); // 放宽打败boss条件
+                riskingProbability = 0;  // 启用冒险机制，保证回血
+            }
+        }
         if (levelStrategyTenth["被攻击次数"] === -1) {
             // 打不过boss，进入极限区
             strongHoldLevel = 9 - (currentLevel % 10);
@@ -739,7 +753,7 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
             restLifeRatioUnlucky = minRestLifeRatioUnlucky;
         }
     }
-
+    console.log("默认概率： " + playerPropability + "  " + npcPropability);
     if (restLife / currentLife <= 0.85) {
         // 进入极限区，最后7、8层听天由命
         return {levelStrategy: levelStrategy, npcFlag: npcFlag};
@@ -919,17 +933,17 @@ if (location.pathname === '/kf_fw_ig_index.php') {
             '  <legend>自定义脚本参数</legend>' +
             '  <label>' +
             '    默认事件发生概率' +
-            '    <input class="pd_input" name="playerPropability0" type="number" value="' + playerPropability0 + '" min="0.1" max="0.9" step="0.1" style="width: 42px;">' +
+            '    <input class="pd_input" name="playerPropability0" type="number" value="' + playerPropability0 + '" min="0.1" max="0.9" step="0.01" style="width: 42px;">' +
             '    <span class="pd_cfg_tips" title="默认事件发生概率，取值在0到1之间（不含0和1），取值越大越保险，但是更消耗点数（损失最大生命值）">[?]</span>' +
             '  </label><br>' +
             '  <label>' +
             '    默认NPC事件发生概率' +
-            '    <input class="pd_input" name="npcPropability0" type="number" value="' + npcPropability0 + '" min="0.1" max="0.9" step="0.1" style="width: 42px;">' +
+            '    <input class="pd_input" name="npcPropability0" type="number" value="' + npcPropability0 + '" min="0.1" max="0.9" step="0.01" style="width: 42px;">' +
             '    <span class="pd_cfg_tips" title="默认NPC事件发生概率，取值在0到1之间（不含0和1），取值越小越保险，但是更消耗点数（损失最大生命值）">[?]</span>' +
             '  </label><br>' +
             '  <label>' +
             '    遭遇强化怪时剩余血量与当前血量之比的临界值' +
-            '    <input class="pd_input" name="restLifeRatioUnlucky0" type="number" value="' + restLifeRatioUnlucky0 + '" min="0" max="1" step="0.1" style="width: 42px;">' +
+            '    <input class="pd_input" name="restLifeRatioUnlucky0" type="number" value="' + restLifeRatioUnlucky0 + '" min="0" max="1" step="0.01" style="width: 42px;">' +
             '    <span class="pd_cfg_tips" title="针对强化怪加点后在遭遇强化怪时剩余血量与当前血量之比的临界值，取值在0到1之间（含0和1），取0或1时将忽略强化怪（计算快、赌运气，适合回血和省点数）。' +
             '计算时若针对强化怪加点后在遭遇强化怪时剩余血量与当前血量之比小于该值，仍忽略强化怪，只针对普通怪最优加点。将数值调小时，收入更稳定，但是收入期望会减少">[?]</span>' +
             '  </label><br>' +
@@ -969,6 +983,8 @@ Const.getCustomPoints = function (data) {
     strongHoldLevel = strongHoldLevel0;  // 需要计算中调整
     restLifeRatioLucky = 1 - (1 / strongHoldLevel);
     strongSecNum = Math.ceil(strongHoldLevel0 * 1.3);
+    playerPropability0 = 0.8;   // 默认事件发生概率初始值，脸越黑设得越大
+    npcPropability0 = 0.3; // 默认npc事件发生概率初始值，脸越黑设得越小
 
     console.log(data);
     console.log("统计强化怪个数： " + totalStrongNum);
