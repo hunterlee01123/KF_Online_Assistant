@@ -53,3 +53,18 @@ export const record = function (logList, pointsLogList) {
     log[new Date().getTime()] = {log: logList, points: pointsLogList};
     write(log);
 };
+
+/**
+ * 获取合并后的争夺记录
+ * @param {{}} log 当前争夺记录
+ * @param {{}} newLog 新争夺记录
+ * @returns {{}} 合并后的争夺记录
+ */
+export const getMergeLog = function (log, newLog) {
+    for (let key in newLog) {
+        if (!$.isNumeric(key) || parseInt(key) <= 0) continue;
+        if ($.type(newLog[key]) !== 'object' || !Array.isArray(newLog[key].log) || !Array.isArray(newLog[key].points)) continue;
+        log[key] = newLog[key];
+    }
+    return log;
+};

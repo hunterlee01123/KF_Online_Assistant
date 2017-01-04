@@ -13,7 +13,6 @@ import {
     Config as defConfig,
 } from './Config';
 import * as TmpLog from './TmpLog';
-import * as LootLog from './LootLog';
 import * as Public from './Public';
 import * as Script from './Script';
 
@@ -83,7 +82,7 @@ export const show = function () {
       <legend>争夺相关</legend>
       <label>
         <input name="autoLootEnabled" type="checkbox"> 自动争夺
-        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击">[?]</span>
+        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
@@ -93,7 +92,6 @@ export const show = function () {
         争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
         <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}">[?]</span>
       </label>
-      <a class="pd_cfg_ml" data-name="clearLootLog" href="#">清除记录</a>
     </fieldset>
     <fieldset>
       <legend>首页相关</legend>
@@ -389,12 +387,7 @@ export const show = function () {
         else if (name === 'openFollowUserDialog') showFollowUserDialog();
         else if (name === 'openBlockUserDialog') showBlockUserDialog();
         else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
-    }).find('[data-name="clearLootLog"]').click(function (e) {
-        e.preventDefault();
-        if (!confirm('是否清除所有争夺记录？')) return;
-        LootLog.clear();
-        alert('争夺记录已清除');
-    }).end().find('[data-name="customMySmColorSelect"]').change(function () {
+    }).find('[data-name="customMySmColorSelect"]').change(function () {
         $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
     }).end().find('[name="customMySmColor"]').change(function () {
         let color = $.trim($(this).val());

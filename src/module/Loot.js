@@ -58,8 +58,8 @@ export const enhanceLootIndexPage = function () {
     pointsLogList = getTempPointsLogList(logList);
     if (log.includes('本日无争夺记录'))
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
+    addLootLogHeader();
     showLogStat(logList);
-    addHistoryLogsNav();
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(Const.lootAttackingCookieName)) $(document).ready(autoLoot);
 };
@@ -841,7 +841,7 @@ const addAttackBtns = function () {
   <label>
     <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${Config.customPointsScriptEnabled ? 'checked' : ''} 
 ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定义脚本
-    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效）">[?]</span>
+    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效，需正确安装自定义脚本后此项才可勾选）">[?]</span>
   </label><br>
   <label>
     <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
@@ -885,7 +885,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
             if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
         Msg.destroy();
-        $('#pdHistoryLogsNav').find('[data-name="end"]').click();
+        $('#pdLootLogHeader').find('[data-name="end"]').click();
         let autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled ||
             Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') && type === 'auto';
         if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
@@ -1180,92 +1180,91 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
 };
 
 /**
- * 显示争夺记录统计
- * @param {string[]} logList 各层争夺记录列表
+ * 添加争夺记录头部区域
  */
-const showLogStat = function (logList) {
-    let {exp, kfb} = getTotalGain(logList);
-
-    let allEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
-        allEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
-    }
-    let latestEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
-        latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
-    }
-
-    let $logStat = $('#pdLogStat');
-    if (!$logStat.length) {
-        $logStat = $('<ul id="pdLogStat" style="padding: 5px; line-height: 2em;"></ul>').insertBefore($logBox);
-    }
-    $logStat.html(`
-<li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
-<li class="pd_stat">
-  <b>全部层数：</b>${allEnemyStatHtml ? allEnemyStatHtml : '无'}<br>
-  <b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml ? latestEnemyStatHtml : '无'}
-</li>
-`);
-};
-
-/**
- * 显示经过增强的争夺记录
- * @param {string[]} logList 各层争夺记录列表
- * @param {string[]} pointsLogList 点数分配记录列表
- */
-const showEnhanceLog = function (logList, pointsLogList) {
-    let list = [];
-    $.each(logList, function (level, levelLog) {
-        if (!levelLog) return;
-        list[level] = levelLog.replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
-            let color = '';
-            switch (enemy) {
-                case '普通':
-                    color = '#09c';
-                    break;
-                case '特别脆弱':
-                    color = '#c96';
-                    break;
-                case '特别缓慢':
-                    color = '#c69';
-                    break;
-                case '特别强壮':
-                    color = '#f93';
-                    break;
-                case '特别快速':
-                    color = '#f3c';
-                    break;
-                case 'BOSS':
-                    color = '#f00';
-                    break;
-                default:
-                    color = '#0075ea';
-            }
-            return `<span style="background-color: ${color};">[${enemy}的]</span>NPC`;
-        });
-
-        if (pointsLogList[level]) {
-            list[level] = list[level].replace(
-                '</li>', `</li><li class="pk_log_g" style="color: #666;">${pointsLogList[level]}</li>`.replace(/\n/g, '<br>')
-            );
-        }
-    });
-    $log.html(list.reverse().join(''));
-};
-
-/**
- * 添加历史争夺记录导航
- */
-const addHistoryLogsNav = function () {
-    let $logNav = $(`
-<div id="pdHistoryLogsNav" class="pd_log_nav">
-  <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
-  <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
-  <h2 class="pd_history_logs_key pd_custom_tips" title="共有0天的争夺记录">现在</h2>
-  <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
-  <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
+const addLootLogHeader = function () {
+    $(`
+<div id="pdLootLogHeader" style="padding: 0 5px 5px; line-height: 2em;">
+  <div class="pd_log_nav">
+    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
+    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
+    <h2 class="pd_history_logs_key pd_custom_tips" title="共有0天的争夺记录">现在</h2>
+    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
+    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
+  </div>
+  <div style="text-align: right;">
+    <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">导入/导出争夺记录</a>
+    <a class="pd_btn_link pd_highlight" data-name="clearLootLog" href="#">清除记录</a>
+  </div>
+  <ul id="pdLogStat"></ul>
 </div>
-`).insertBefore('#pdLogStat');
+`).insertBefore($logBox).find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
+        e.preventDefault();
+        showImportOrExportLootLogDialog();
+    }).end().find('[data-name="clearLootLog"]').click(function (e) {
+        e.preventDefault();
+        if (!confirm('是否清除所有争夺记录？')) return;
+        LootLog.clear();
+        alert('争夺记录已清除');
+        location.reload();
+    });
+
+    handleLootLogNav();
+};
+
+/**
+ * 显示导入或导出争夺记录对话框
+ */
+const showImportOrExportLootLogDialog = function () {
+    const dialogName = 'pdImOrExLootLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let log = LootLog.read();
+    let html = `
+<div class="pd_cfg_main">
+  <strong>导入争夺记录：</strong>将争夺记录内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
+  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
+  <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
+</div>
+<div class="pd_cfg_btns">
+  <button name="merge" type="button">合并记录</button>
+  <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
+  <button name="close" type="button">关闭</button>
+</div>`;
+
+    let $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
+    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
+        e.preventDefault();
+        let name = $(this).attr('name');
+        if (!confirm(`是否将文本框中的争夺记录${name === 'overwrite' ? '覆盖' : '合并'}到本地争夺记录？`)) return;
+        let newLog = $.trim($dialog.find('[name="lootLog"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
+        }
+        catch (ex) {
+            alert('争夺记录有错误');
+            return;
+        }
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert('争夺记录有错误');
+            return;
+        }
+        if (name === 'merge') log = LootLog.getMergeLog(log, newLog);
+        else log = newLog;
+        LootLog.write(log);
+        alert('争夺记录已导入');
+        location.reload();
+    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+
+    Dialog.show(dialogName);
+    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select();
+};
+
+/**
+ * 处理争夺记录导航
+ */
+const handleLootLogNav = function () {
+    let $logNav = $('#pdLootLogHeader').find('.pd_log_nav');
 
     /**
      * 获取历史争夺记录的标题字符串
@@ -1340,6 +1339,74 @@ const addHistoryLogsNav = function () {
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
         showEnhanceLog(curLogList, curPointsLogList);
     }
+};
+
+/**
+ * 显示争夺记录统计
+ * @param {string[]} logList 各层争夺记录列表
+ */
+const showLogStat = function (logList) {
+    let {exp, kfb} = getTotalGain(logList);
+    let allEnemyStatHtml = '';
+    for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
+        allEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
+    }
+    let latestEnemyStatHtml = '';
+    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
+        latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
+    }
+    $('#pdLogStat').html(`
+<li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
+<li class="pd_stat">
+  <b>全部层数：</b>${allEnemyStatHtml ? allEnemyStatHtml : '无'}<br>
+  <b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml ? latestEnemyStatHtml : '无'}
+</li>
+`);
+};
+
+/**
+ * 显示经过增强的争夺记录
+ * @param {string[]} logList 各层争夺记录列表
+ * @param {string[]} pointsLogList 点数分配记录列表
+ */
+const showEnhanceLog = function (logList, pointsLogList) {
+    let list = [];
+    $.each(logList, function (level, levelLog) {
+        if (!levelLog) return;
+        list[level] = levelLog.replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
+            let color = '';
+            switch (enemy) {
+                case '普通':
+                    color = '#09c';
+                    break;
+                case '特别脆弱':
+                    color = '#c96';
+                    break;
+                case '特别缓慢':
+                    color = '#c69';
+                    break;
+                case '特别强壮':
+                    color = '#f93';
+                    break;
+                case '特别快速':
+                    color = '#f3c';
+                    break;
+                case 'BOSS':
+                    color = '#f00';
+                    break;
+                default:
+                    color = '#0075ea';
+            }
+            return `<span style="background-color: ${color};">[${enemy}的]</span>NPC`;
+        });
+
+        if (pointsLogList[level]) {
+            list[level] = list[level].replace(
+                '</li>', `</li><li class="pk_log_g" style="color: #666;">${pointsLogList[level]}</li>`.replace(/\n/g, '<br>')
+            );
+        }
+    });
+    $log.html(list.reverse().join(''));
 };
 
 /**
@@ -1456,7 +1523,7 @@ const getTempPointsLogList = function (logList) {
     catch (ex) {
         return [];
     }
-    if (!pointsLogList || $.type(pointsLogList) !== 'array') return [];
+    if (!pointsLogList || !Array.isArray(pointsLogList)) return [];
     if (pointsLogList.length > logList.length) {
         sessionStorage.removeItem(Const.tempPointsLogListStorageName);
         return [];
