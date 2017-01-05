@@ -16,16 +16,16 @@ Firefox + Greasemonkey专用（如上面两个版本无法使用，请安装此�
 __注：如发现脚本无法生效或功能异常，请尝试安装其它版本（通用版及ES5版本的兼容性最好）__
 
 ## 安装方法
-1. __Firefox：__ 安装[Greasemonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/)扩展 或 [Tampermonkey](https://addons.mozilla.org/zh-CN/firefox/addon/tampermonkey/)扩展，重启浏览器后打开脚本下载地址安装脚本即可
-2. __Chrome（及各种采用Chrome内核的浏览器，如360、搜狗、百度、猎豹、QQ浏览器等）：__  
-安装[Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)扩展（需翻墙），然后打开脚本下载地址安装脚本即可  
+1. __Firefox：__ 安装[Greasemonkey](https://addons.mozilla.org/firefox/addon/greasemonkey/)扩展 或 [Tampermonkey](https://addons.mozilla.org/firefox/addon/tampermonkey/)扩展，重启浏览器后访问脚本下载地址安装脚本即可
+2. __Chrome（及各种采用Chromium内核的浏览器，如360、搜狗、百度、猎豹、QQ浏览器等）：__  
+安装[Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)扩展（需翻墙），然后访问脚本下载地址安装脚本即可  
 __（注意：安装脚本的时候请点击“安装”按钮，不要点“安装在Chrome”的按钮【[见251楼](http://bbs.2dkf.com/read.php?tid=508450&spid=12484531)】）__  
-_（各种采用了Chrome内核的国产浏览器也可尝试到各自的应用市场里搜索Tampermonkey扩展）_
-3. __Edge：__ 安装[Tampermonkey](https://www.microsoft.com/store/apps/9nblggh5162s)扩展，然后打开脚本下载地址安装脚本即可
-4. __Opera：__ 安装[Violent monkey](https://addons.opera.com/zh-cn/extensions/details/violent-monkey/?display=zh)扩展，然后打开脚本下载地址安装脚本即可
-5. __傲游浏览器：__ 安装[暴力猴](http://extension.maxthon.cn/detail/index.php?view_id=1680)扩展，然后打开脚本下载地址安装脚本即可
-6. __手机浏览器及其它不支持油猴脚本的浏览器：__ [详情请见此贴](http://bbs.2dkf.com/read.php?tid=509273)
-7. __自带脚本的反向代理服务器：__ 无需安装任何插件即可使用KFOL助手，[详情请见此贴](http://bbs.2dkf.com/read.php?tid=540148)
+_（各种采用了Chromium内核的国产浏览器也可尝试到各自的应用市场里搜索Tampermonkey扩展）_
+3. __Edge：__ 安装[Tampermonkey](https://www.microsoft.com/store/apps/9nblggh5162s)扩展，然后访问脚本下载地址安装脚本即可
+4. __Opera：__ 安装[Violent monkey](https://addons.opera.com/extensions/details/violent-monkey/)扩展 或 [Tampermonkey](https://addons.opera.com/extensions/details/tampermonkey-beta/)扩展，然后访问脚本下载地址安装脚本即可
+5. __傲游浏览器：__ 安装[暴力猴](http://extension.maxthon.cn/detail/index.php?view_id=1680)扩展，然后访问脚本下载地址安装脚本即可
+6. __手机浏览器：__ [详情请见此贴](http://bbs.2dkf.com/read.php?tid=509273)
+7. __自带脚本的反向代理服务器：__ 无需安装任何扩展即可使用KFOL助手，[详情请见此贴](http://bbs.2dkf.com/read.php?tid=540148)
 
 ## 使用说明
 安装完脚本后请点击论坛页面上方的助手设置链接，打开设置界面进行相应设置，如不清楚各选项的意思可将鼠标停留在其之后的问号上即可获得相应提示 __（自动领取每日奖励等功能默认关闭，请自行开启）__  
