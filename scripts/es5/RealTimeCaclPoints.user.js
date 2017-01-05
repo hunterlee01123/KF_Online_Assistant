@@ -7,7 +7,7 @@
 // @include     http://*9moe.com/kf_fw_ig_index.php*
 // @include     http://*kfgal.com/kf_fw_ig_index.php*
 // @include     https://*.miaola.info/kf_fw_ig_index.php*
-// @version     2.2.0
+// @version     2.2.1
 // @grant       none
 // @run-at      document-end
 // @trigger     start
@@ -1138,7 +1138,10 @@ if (location.pathname === '/kf_fw_ig_index.php') {
         if (typeof Const === 'undefined' && typeof require === 'function') {
             var _Const = require('./Const').default;
             _Const.getCustomPoints = getCustomPoints;
-        } else Const.getCustomPoints = getCustomPoints;
+        } else {
+            var w = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+            w.Const.getCustomPoints = getCustomPoints;
+        }
         $('[name="customPointsScriptEnabled"]').prop('disabled', false).triggerHandler('click');
 
         $('#pdAttackBtns').append('<fieldset style="margin-bottom: 10px; margin-right: 7px; padding: 0 6px 6px; border: 1px solid #ccf;">' + '  <legend>自定义脚本参数</legend>' + '  <label>' + '    默认事件发生概率' + '    <input class="pd_input" name="playerPropability0" type="number" value="' + playerPropability0 + '" min="0.1" max="0.9" step="0.01" style="width: 42px;">' + '    <span class="pd_cfg_tips" title="默认事件发生概率，取值在0到1之间（不含0和1），取值越大越保险，但是更消耗点数（损失最大生命值）">[?]</span>' + '  </label><br>' + '  <label>' + '    默认NPC事件发生概率' + '    <input class="pd_input" name="npcPropability0" type="number" value="' + npcPropability0 + '" min="0.1" max="0.9" step="0.01" style="width: 42px;">' + '    <span class="pd_cfg_tips" title="默认NPC事件发生概率，取值在0到1之间（不含0和1），取值越小越保险，但是更消耗点数（损失最大生命值）">[?]</span>' + '  </label><br>' + '  <label>' + '    遭遇强化怪时剩余血量与当前血量之比的临界值' + '    <input class="pd_input" name="restLifeRatioUnlucky0" type="number" value="' + restLifeRatioUnlucky0 + '" min="0" max="1" step="0.01" style="width: 42px;">' + '    <span class="pd_cfg_tips" title="针对强化怪加点后在遭遇强化怪时剩余血量与当前血量之比的临界值，取值在0到1之间（含0和1），取0或1时将忽略强化怪（计算快、赌运气，适合回血和省点数）。' + '计算时若针对强化怪加点后在遭遇强化怪时剩余血量与当前血量之比小于该值，仍忽略强化怪，只针对普通怪最优加点。将数值调小时，收入更稳定，但是收入期望会减少">[?]</span>' + '  </label><br>' + '  <label>' + '    冒险机制所需条件发生概率的临界值' + '    <input class="pd_input" name="riskingProbability" type="number" value="' + riskingProbability + '" min="0" step="0.001" style="width: 56px;">' + '    <span class="pd_cfg_tips" title="采取冒险机制所需条件发生的概率的临界值，一般取值0到1。取0则一直使用冒险机制，取大于1的数将停用冒险机制。' + '目前等同于下一层强化怪不出现的概率的临界值，即下一层强化怪不出现的概率大于该值时，采用冒险机制。该值调得越大越保险，但是点数、生命损耗越快">[?]</span>' + '  </label>' + '</fieldset>');

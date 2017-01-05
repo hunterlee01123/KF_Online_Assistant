@@ -7,7 +7,7 @@
 // @include     http://*9moe.com/kf_fw_ig_index.php*
 // @include     http://*kfgal.com/kf_fw_ig_index.php*
 // @include     https://*.miaola.info/kf_fw_ig_index.php*
-// @version     2.2.0
+// @version     2.2.1
 // @grant       none
 // @run-at      document-end
 // @trigger     start
@@ -1169,7 +1169,10 @@ if (location.pathname === '/kf_fw_ig_index.php') {
             let Const = require('./Const').default;
             Const.getCustomPoints = getCustomPoints;
         }
-        else Const.getCustomPoints = getCustomPoints;
+        else {
+            let w = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+            w.Const.getCustomPoints = getCustomPoints;
+        }
         $('[name="customPointsScriptEnabled"]').prop('disabled', false).triggerHandler('click');
 
         $('#pdAttackBtns').append(
