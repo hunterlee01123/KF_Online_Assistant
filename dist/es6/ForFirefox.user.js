@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.1.2
+// @version     9.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -27,6 +27,8 @@ var _Info = require('./module/Info');
 
 var _Info2 = _interopRequireDefault(_Info);
 
+var _Config = require('./module/Config');
+
 var _Util = require('./module/Util');
 
 var Util = _interopRequireWildcard(_Util);
@@ -35,7 +37,29 @@ var _Const = require('./module/Const');
 
 var _Const2 = _interopRequireDefault(_Const);
 
-var _Config = require('./module/Config');
+var _Msg = require('./module/Msg');
+
+var Msg = _interopRequireWildcard(_Msg);
+
+var _Dialog = require('./module/Dialog');
+
+var Dialog = _interopRequireWildcard(_Dialog);
+
+var _Log = require('./module/Log');
+
+var Log = _interopRequireWildcard(_Log);
+
+var _TmpLog = require('./module/TmpLog');
+
+var TmpLog = _interopRequireWildcard(_TmpLog);
+
+var _LootLog = require('./module/LootLog');
+
+var LootLog = _interopRequireWildcard(_LootLog);
+
+var _Script = require('./module/Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 var _Public = require('./module/Public');
 
@@ -73,16 +97,47 @@ var _Loot = require('./module/Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
 
-var _Script = require('./module/Script');
+var _ConfigDialog = require('./module/ConfigDialog');
 
-var Script = _interopRequireWildcard(_Script);
+var ConfigDialog = _interopRequireWildcard(_ConfigDialog);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.1.2';
+const version = '9.2';
+
+/**
+ * 导出模块
+ */
+const exportModule = function () {
+    try {
+        _Info2.default.w.Info = require('./module/Info').default;
+        _Info2.default.w.Util = require('./module/Util');
+        _Info2.default.w.Const = require('./module/Const').default;
+        _Info2.default.w.Msg = require('./module/Msg');
+        _Info2.default.w.Dialog = require('./module/Dialog');
+        _Info2.default.w.Log = require('./module/Log');
+        _Info2.default.w.TmpLog = require('./module/TmpLog');
+        _Info2.default.w.LootLog = require('./module/LootLog');
+        _Info2.default.w.Public = require('./module/Public');
+        _Info2.default.w.Index = require('./module/Index');
+        _Info2.default.w.Read = require('./module/Read');
+        _Info2.default.w.Post = require('./module/Post');
+        _Info2.default.w.Other = require('./module/Other');
+        _Info2.default.w.Bank = require('./module/Bank');
+        _Info2.default.w.Card = require('./module/Card');
+        _Info2.default.w.Item = require('./module/Item');
+        _Info2.default.w.Loot = require('./module/Loot');
+        _Info2.default.w.Script = require('./module/Script');
+        const Conf = require('./module/Config');
+        _Info2.default.w.readConfig = Conf.read;
+        _Info2.default.w.writeConfig = Conf.write;
+    } catch (ex) {
+        console.log(ex);
+    }
+};
 
 /**
  * 初始化
@@ -93,6 +148,7 @@ const init = function () {
     _Info2.default.version = version;
     if (!Public.getUidAndUserName()) return;
     Public.addPolyfill();
+    exportModule();
     (0, _Config.init)();
     Public.checkBrowserType();
     Public.appendCss();
@@ -238,7 +294,7 @@ const init = function () {
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/Const":6,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Loot":13,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/Util":22}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/TmpLog":21,"./module/Util":22}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -889,7 +945,7 @@ const Config = exports.Config = {
     // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
     autoChangeLevelPointsEnabled: false,
     // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
-    customPointsScriptEnabled: false,
+    customPointsScriptEnabled: true,
     // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
@@ -1146,10 +1202,6 @@ var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
 
-var _LootLog = require('./LootLog');
-
-var LootLog = _interopRequireWildcard(_LootLog);
-
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -1228,7 +1280,7 @@ const show = exports.show = function () {
       <legend>争夺相关</legend>
       <label>
         <input name="autoLootEnabled" type="checkbox"> 自动争夺
-        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击">[?]</span>
+        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
@@ -1238,7 +1290,6 @@ const show = exports.show = function () {
         争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
         <span class="pd_cfg_tips" title="默认值：${ _Config.Config.lootLogSaveDays }">[?]</span>
       </label>
-      <a class="pd_cfg_ml" data-name="clearLootLog" href="#">清除记录</a>
     </fieldset>
     <fieldset>
       <legend>首页相关</legend>
@@ -1522,12 +1573,7 @@ const show = exports.show = function () {
         if (name === 'openRumCommandDialog') showRunCommandDialog();
         if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
         if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
-    }).find('[data-name="clearLootLog"]').click(function (e) {
-        e.preventDefault();
-        if (!confirm('是否清除所有争夺记录？')) return;
-        LootLog.clear();
-        alert('争夺记录已清除');
-    }).end().find('[data-name="customMySmColorSelect"]').change(function () {
+    }).find('[data-name="customMySmColorSelect"]').change(function () {
         $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
     }).end().find('[name="customMySmColor"]').change(function () {
         let color = $.trim($(this).val());
@@ -2434,7 +2480,7 @@ const showBlockThreadDialog = function () {
     $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./LootLog":14,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -5032,10 +5078,12 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     logList = getLogList(log);
     pointsLogList = getTempPointsLogList(logList);
     if (log.includes('本日无争夺记录')) $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
+    addLootLogHeader();
     showLogStat(logList);
-    addHistoryLogsNav();
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) $(document).ready(autoLoot);
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
+        $(document).ready(setTimeout(autoLoot, 500));
+    }
 };
 
 /**
@@ -5734,7 +5782,7 @@ const addAttackBtns = function () {
   <label>
     <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${ Config.customPointsScriptEnabled ? 'checked' : '' } 
 ${ typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '' }> 使用自定义脚本
-    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效）">[?]</span>
+    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效，需正确安装自定义脚本后此项才可勾选）">[?]</span>
   </label><br>
   <label>
     <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${ Config.unusedPointNumAlertEnabled ? 'checked' : '' }>
@@ -5775,7 +5823,7 @@ ${ typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '' }> �
             if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
         Msg.destroy();
-        $('#pdHistoryLogsNav').find('[data-name="end"]').click();
+        $('#pdLootLogHeader').find('[data-name="end"]').click();
         let autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
         if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
         lootAttack({ type, targetLevel, autoChangeLevelPointsEnabled, safeId });
@@ -5788,8 +5836,10 @@ ${ typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '' }> �
             Config[name] = $this.prop('checked');
             (0, _Config.write)();
         }
-    }).find('[name="customPointsScriptEnabled"]:not([disabled])').click(function () {
-        $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $(this).prop('checked'));
+    }).find('[name="customPointsScriptEnabled"]').click(function () {
+        let $this = $(this);
+        if ($this.prop('disabled')) return;
+        $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $this.prop('checked'));
     }).triggerHandler('click');
 };
 
@@ -6046,90 +6096,89 @@ const lootAttack = function ({ type, targetLevel, autoChangeLevelPointsEnabled, 
 };
 
 /**
- * 显示争夺记录统计
- * @param {string[]} logList 各层争夺记录列表
+ * 添加争夺记录头部区域
  */
-const showLogStat = function (logList) {
-    let { exp, kfb } = getTotalGain(logList);
-
-    let allEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
-        allEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
-    }
-    let latestEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
-        latestEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
-    }
-
-    let $logStat = $('#pdLogStat');
-    if (!$logStat.length) {
-        $logStat = $('<ul id="pdLogStat" style="padding: 5px; line-height: 2em;"></ul>').insertBefore($logBox);
-    }
-    $logStat.html(`
-<li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${ kfb.toLocaleString() }</em></i> <i>经验值<em>+${ exp.toLocaleString() }</em></i></li>
-<li class="pd_stat">
-  <b>全部层数：</b>${ allEnemyStatHtml ? allEnemyStatHtml : '无' }<br>
-  <b>最近${ _Const2.default.enemyStatLatestLevelNum }层：</b>${ latestEnemyStatHtml ? latestEnemyStatHtml : '无' }
-</li>
-`);
-};
-
-/**
- * 显示经过增强的争夺记录
- * @param {string[]} logList 各层争夺记录列表
- * @param {string[]} pointsLogList 点数分配记录列表
- */
-const showEnhanceLog = function (logList, pointsLogList) {
-    let list = [];
-    $.each(logList, function (level, levelLog) {
-        if (!levelLog) return;
-        list[level] = levelLog.replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
-            let color = '';
-            switch (enemy) {
-                case '普通':
-                    color = '#09c';
-                    break;
-                case '特别脆弱':
-                    color = '#c96';
-                    break;
-                case '特别缓慢':
-                    color = '#c69';
-                    break;
-                case '特别强壮':
-                    color = '#f93';
-                    break;
-                case '特别快速':
-                    color = '#f3c';
-                    break;
-                case 'BOSS':
-                    color = '#f00';
-                    break;
-                default:
-                    color = '#0075ea';
-            }
-            return `<span style="background-color: ${ color };">[${ enemy }的]</span>NPC`;
-        });
-
-        if (pointsLogList[level]) {
-            list[level] = list[level].replace('</li>', `</li><li class="pk_log_g" style="color: #666;">${ pointsLogList[level] }</li>`.replace(/\n/g, '<br>'));
-        }
-    });
-    $log.html(list.reverse().join(''));
-};
-
-/**
- * 添加历史争夺记录导航
- */
-const addHistoryLogsNav = function () {
-    let $logNav = $(`
-<div id="pdHistoryLogsNav" class="pd_log_nav">
-  <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
-  <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
-  <h2 class="pd_history_logs_key pd_custom_tips" title="共有0天的争夺记录">现在</h2>
-  <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
-  <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
+const addLootLogHeader = function () {
+    $(`
+<div id="pdLootLogHeader" style="padding: 0 5px 5px; line-height: 2em;">
+  <div class="pd_log_nav">
+    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
+    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
+    <h2 class="pd_history_logs_key pd_custom_tips" title="共有0天的争夺记录">现在</h2>
+    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
+    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
+  </div>
+  <div style="text-align: right;">
+    <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">导入/导出争夺记录</a>
+    <a class="pd_btn_link pd_highlight" data-name="clearLootLog" href="#">清除记录</a>
+  </div>
+  <ul id="pdLogStat"></ul>
 </div>
-`).insertBefore('#pdLogStat');
+`).insertBefore($logBox).find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
+        e.preventDefault();
+        showImportOrExportLootLogDialog();
+    }).end().find('[data-name="clearLootLog"]').click(function (e) {
+        e.preventDefault();
+        if (!confirm('是否清除所有争夺记录？')) return;
+        LootLog.clear();
+        alert('争夺记录已清除');
+        location.reload();
+    });
+
+    handleLootLogNav();
+};
+
+/**
+ * 显示导入或导出争夺记录对话框
+ */
+const showImportOrExportLootLogDialog = function () {
+    const dialogName = 'pdImOrExLootLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let log = LootLog.read();
+    let html = `
+<div class="pd_cfg_main">
+  <strong>导入争夺记录：</strong>将争夺记录内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
+  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
+  <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
+</div>
+<div class="pd_cfg_btns">
+  <button name="merge" type="button">合并记录</button>
+  <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
+  <button name="close" type="button">关闭</button>
+</div>`;
+
+    let $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
+    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
+        e.preventDefault();
+        let name = $(this).attr('name');
+        if (!confirm(`是否将文本框中的争夺记录${ name === 'overwrite' ? '覆盖' : '合并' }到本地争夺记录？`)) return;
+        let newLog = $.trim($dialog.find('[name="lootLog"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
+        } catch (ex) {
+            alert('争夺记录有错误');
+            return;
+        }
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert('争夺记录有错误');
+            return;
+        }
+        if (name === 'merge') log = LootLog.getMergeLog(log, newLog);else log = newLog;
+        LootLog.write(log);
+        alert('争夺记录已导入');
+        location.reload();
+    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+
+    Dialog.show(dialogName);
+    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select();
+};
+
+/**
+ * 处理争夺记录导航
+ */
+const handleLootLogNav = function () {
+    let $logNav = $('#pdLootLogHeader').find('.pd_log_nav');
 
     /**
      * 获取历史争夺记录的标题字符串
@@ -6195,6 +6244,72 @@ const addHistoryLogsNav = function () {
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
         showEnhanceLog(curLogList, curPointsLogList);
     }
+};
+
+/**
+ * 显示争夺记录统计
+ * @param {string[]} logList 各层争夺记录列表
+ */
+const showLogStat = function (logList) {
+    let { exp, kfb } = getTotalGain(logList);
+    let allEnemyStatHtml = '';
+    for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
+        allEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
+    }
+    let latestEnemyStatHtml = '';
+    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
+        latestEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
+    }
+    $('#pdLogStat').html(`
+<li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${ kfb.toLocaleString() }</em></i> <i>经验值<em>+${ exp.toLocaleString() }</em></i></li>
+<li class="pd_stat">
+  <b>全部层数：</b>${ allEnemyStatHtml ? allEnemyStatHtml : '无' }<br>
+  <b>最近${ _Const2.default.enemyStatLatestLevelNum }层：</b>${ latestEnemyStatHtml ? latestEnemyStatHtml : '无' }
+</li>
+`);
+};
+
+/**
+ * 显示经过增强的争夺记录
+ * @param {string[]} logList 各层争夺记录列表
+ * @param {string[]} pointsLogList 点数分配记录列表
+ */
+const showEnhanceLog = function (logList, pointsLogList) {
+    let list = [];
+    $.each(logList, function (level, levelLog) {
+        if (!levelLog) return;
+        list[level] = levelLog.replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
+            let color = '';
+            switch (enemy) {
+                case '普通':
+                    color = '#09c';
+                    break;
+                case '特别脆弱':
+                    color = '#c96';
+                    break;
+                case '特别缓慢':
+                    color = '#c69';
+                    break;
+                case '特别强壮':
+                    color = '#f93';
+                    break;
+                case '特别快速':
+                    color = '#f3c';
+                    break;
+                case 'BOSS':
+                    color = '#f00';
+                    break;
+                default:
+                    color = '#0075ea';
+            }
+            return `<span style="background-color: ${ color };">[${ enemy }的]</span>NPC`;
+        });
+
+        if (pointsLogList[level]) {
+            list[level] = list[level].replace('</li>', `</li><li class="pk_log_g" style="color: #666;">${ pointsLogList[level] }</li>`.replace(/\n/g, '<br>'));
+        }
+    });
+    $log.html(list.reverse().join(''));
 };
 
 /**
@@ -6312,7 +6427,7 @@ const getTempPointsLogList = function (logList) {
     } catch (ex) {
         return [];
     }
-    if (!pointsLogList || $.type(pointsLogList) !== 'array') return [];
+    if (!pointsLogList || !Array.isArray(pointsLogList)) return [];
     if (pointsLogList.length > logList.length) {
         sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
         return [];
@@ -6413,7 +6528,7 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.record = exports.clear = exports.write = exports.read = undefined;
+exports.getMergeLog = exports.record = exports.clear = exports.write = exports.read = undefined;
 
 var _Info = require('./Info');
 
@@ -6477,6 +6592,21 @@ const record = exports.record = function (logList, pointsLogList) {
     });
     log[new Date().getTime()] = { log: logList, points: pointsLogList };
     write(log);
+};
+
+/**
+ * 获取合并后的争夺记录
+ * @param {{}} log 当前争夺记录
+ * @param {{}} newLog 新争夺记录
+ * @returns {{}} 合并后的争夺记录
+ */
+const getMergeLog = exports.getMergeLog = function (log, newLog) {
+    for (let key in newLog) {
+        if (!$.isNumeric(key) || parseInt(key) <= 0) continue;
+        if ($.type(newLog[key]) !== 'object' || !Array.isArray(newLog[key].log) || !Array.isArray(newLog[key].points)) continue;
+        log[key] = newLog[key];
+    }
+    return log;
 };
 
 },{"./Const":6,"./Info":9,"./Util":22}],15:[function(require,module,exports){
@@ -9521,6 +9651,10 @@ var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
 
+var _LootLog = require('./LootLog');
+
+var LootLog = _interopRequireWildcard(_LootLog);
+
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -9825,7 +9959,7 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 

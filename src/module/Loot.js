@@ -61,7 +61,9 @@ export const enhanceLootIndexPage = function () {
     addLootLogHeader();
     showLogStat(logList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(Const.lootAttackingCookieName)) $(document).ready(autoLoot);
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(Const.lootAttackingCookieName)) {
+        $(document).ready(setTimeout(autoLoot, 500));
+    }
 };
 
 /**
@@ -900,9 +902,11 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
                 Config[name] = $this.prop('checked');
                 writeConfig();
             }
-        }).find('[name="customPointsScriptEnabled"]:not([disabled])')
+        }).find('[name="customPointsScriptEnabled"]')
         .click(function () {
-            $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $(this).prop('checked'));
+            let $this = $(this);
+            if ($this.prop('disabled')) return;
+            $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $this.prop('checked'));
         }).triggerHandler('click');
 };
 

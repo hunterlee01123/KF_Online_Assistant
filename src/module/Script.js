@@ -9,6 +9,7 @@ import Const from './Const';
 import * as Msg from './Msg';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
+import * as LootLog from './LootLog';
 import * as Public from './Public';
 import * as Index from './Index';
 import * as Read from './Read';

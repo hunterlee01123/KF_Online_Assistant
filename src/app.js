@@ -1,8 +1,14 @@
 'use strict';
 import Info from './module/Info';
+import {init as initConfig} from './module/Config';
 import * as Util from './module/Util';
 import Const from './module/Const';
-import {init as initConfig} from './module/Config';
+import * as Msg from './module/Msg';
+import * as Dialog from './module/Dialog';
+import * as Log from './module/Log';
+import * as TmpLog from './module/TmpLog';
+import * as LootLog from './module/LootLog';
+import * as Script from './module/Script';
 import * as Public from './module/Public';
 import * as Index from './module/Index';
 import * as Read from './module/Read';
@@ -12,10 +18,42 @@ import * as Bank from './module/Bank';
 import * as Card from './module/Card';
 import * as Item from './module/Item';
 import * as Loot from './module/Loot';
-import * as Script from './module/Script';
+import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '9.1.2';
+const version = '9.2';
+
+/**
+ * 导出模块
+ */
+const exportModule = function () {
+    try {
+        Info.w.Info = require('./module/Info').default;
+        Info.w.Util = require('./module/Util');
+        Info.w.Const = require('./module/Const').default;
+        Info.w.Msg = require('./module/Msg');
+        Info.w.Dialog = require('./module/Dialog');
+        Info.w.Log = require('./module/Log');
+        Info.w.TmpLog = require('./module/TmpLog');
+        Info.w.LootLog = require('./module/LootLog');
+        Info.w.Public = require('./module/Public');
+        Info.w.Index = require('./module/Index');
+        Info.w.Read = require('./module/Read');
+        Info.w.Post = require('./module/Post');
+        Info.w.Other = require('./module/Other');
+        Info.w.Bank = require('./module/Bank');
+        Info.w.Card = require('./module/Card');
+        Info.w.Item = require('./module/Item');
+        Info.w.Loot = require('./module/Loot');
+        Info.w.Script = require('./module/Script');
+        const Conf = require('./module/Config');
+        Info.w.readConfig = Conf.read;
+        Info.w.writeConfig = Conf.write;
+    }
+    catch (ex) {
+        console.log(ex);
+    }
+};
 
 /**
  * 初始化
@@ -26,6 +64,7 @@ const init = function () {
     Info.version = version;
     if (!Public.getUidAndUserName()) return;
     Public.addPolyfill();
+    exportModule();
     initConfig();
     Public.checkBrowserType();
     Public.appendCss();
