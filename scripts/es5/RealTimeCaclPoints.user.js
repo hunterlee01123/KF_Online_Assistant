@@ -7,7 +7,7 @@
 // @include     http://*9moe.com/kf_fw_ig_index.php*
 // @include     http://*kfgal.com/kf_fw_ig_index.php*
 // @include     https://*.miaola.info/kf_fw_ig_index.php*
-// @version     2.2.1
+// @version     2.2.2
 // @grant       none
 // @run-at      document-end
 // @trigger     start
@@ -894,7 +894,7 @@ function getTotalStrongNum() {
     // 因强化怪分布可能存在前期稀疏，后期扎堆的可能，故分段进行统计
     var startNum = currentLevel - currentLevel % strongSecNum;
     for (var i = startNum; i <= currentLevel; i++) {
-        if (enemyList[i] === "特别强壮" || enemyList[i] === "特别快速") {
+        if (/强壮|快速/.test(enemyList[i])) {
             totalStrongNum++;
         }
     }
