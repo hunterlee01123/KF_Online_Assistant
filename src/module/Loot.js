@@ -852,7 +852,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   </label>
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
-    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在3~5秒之间）">[?]</span>
+    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在4~6秒之间）">[?]</span>
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
@@ -888,10 +888,10 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
         }
         Msg.destroy();
         $('#pdLootLogHeader').find('[data-name="end"]').click();
-        let autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled ||
+        let autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled ||
             Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') && type === 'auto';
-        if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
-        lootAttack({type, targetLevel, autoChangeLevelPointsEnabled, safeId});
+        if (!autoChangePointsEnabled && !checkPoints($points)) return;
+        lootAttack({type, targetLevel, autoChangePointsEnabled, safeId});
     }).on('click', '.pd_cfg_tips', () => false)
         .on('click', '[type="checkbox"]', function () {
             let $this = $(this);
@@ -914,17 +914,16 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
  * 争夺攻击
  * @param {string} type 攻击类型，auto：自动攻击；manual：手动攻击
  * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止，仅限自动攻击有效）
- * @param {boolean} autoChangeLevelPointsEnabled 是否自动修改为相应层数的点数分配方案
+ * @param {boolean} autoChangePointsEnabled 是否自动修改点数分配方案
  * @param {string} safeId SafeID
  */
-const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, safeId}) {
-    let currentLevel = getCurrentLevel(logList);
-    if (targetLevel > 0 && targetLevel <= currentLevel) return;
+export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled, safeId}) {
+    let initCurrentLevel = getCurrentLevel(logList);
+    if (targetLevel > 0 && targetLevel <= initCurrentLevel) return;
     let $wait = Msg.wait(
-        `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${currentLevel}</em></i>` +
+        `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${initCurrentLevel}</em></i>` +
         '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>'
     );
-    let retryNum = 0;
 
     /**
      * 修改点数分配方案
@@ -1033,6 +1032,23 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
     };
 
     /**
+     * 准备攻击（用于自动修改点数分配方案）
+     * @param {number} currentLevel 当前层数（设为-1表示采用当前点数分配方案）
+     * @param {number} interval 下次攻击的间隔时间
+     */
+    const ready = function (currentLevel, interval = Const.lootAttackInterval) {
+        changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
+            if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+        }).fail(function (result) {
+            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), Const.defAjaxInterval);
+        }).always(function (result) {
+            if (result !== 'success' && result !== 'timeout') {
+                Msg.remove($wait);
+            }
+        });
+    };
+
+    /**
      * 攻击
      */
     const attack = function () {
@@ -1044,143 +1060,125 @@ const lootAttack = function ({type, targetLevel, autoChangeLevelPointsEnabled, s
         }).done(function (html) {
             if (Config.autoLootEnabled) Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
             if (!/你\(\d+\)遭遇了/.test(html)) {
-                if (!$.trim(html)) {
-                    retryNum++;
-                    if (retryNum < 5) {
-                        setTimeout(attack, Const.defAjaxInterval);
-                        return;
-                    }
-                }
-                completeAttack();
+                setTimeout(check, Const.defAjaxInterval);
                 return;
             }
-            retryNum = 0;
-
             log = html + log;
-            logList = getLogList(log);
-            showEnhanceLog(logList, pointsLogList);
-            showLogStat(logList);
-            let currentLevel = getCurrentLevel(logList);
-            console.log('【争夺攻击】当前层数：' + currentLevel);
-            let $countdown = $('.pd_countdown:last');
-            $countdown.text(currentLevel);
-            let {life: currentLife} = getLifeInfo(logList, currentLevel);
-            $properties.find('#pdCurrentLife').text(currentLife);
+            after();
+        }).fail(function () {
+            console.log('【争夺攻击】超时重试...');
+            setTimeout(check, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
+        });
+    };
 
-            let isFail = /你被击败了/.test(html);
-            let isStop = isFail || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) ||
-                $countdown.closest('.pd_msg').data('stop');
-            if (isStop) {
-                if (Config.autoLootEnabled) {
-                    Util.deleteCookie(Const.lootCheckingCookieName);
-                    Util.deleteCookie(Const.lootAttackingCookieName);
-                    Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
-                }
-                if (isFail) {
-                    completeAttack();
-                }
-                else {
-                    Msg.remove($wait);
-                    Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
-                }
+    /**
+     * 攻击之后
+     * @param {boolean} isChecked 是否已检查过争夺记录
+     */
+    const after = function (isChecked = false) {
+        logList = getLogList(log);
+        showEnhanceLog(logList, pointsLogList);
+        showLogStat(logList);
+        let currentLevel = getCurrentLevel(logList);
+        console.log('【争夺攻击】当前层数：' + currentLevel);
+        let $countdown = $('.pd_countdown:last');
+        $countdown.text(currentLevel);
+        let {life: currentLife} = getLifeInfo(logList, currentLevel);
+        $properties.find('#pdCurrentLife').text(currentLife);
+
+        let isFail = /你被击败了/.test(log);
+        let isStop = isFail || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) || $countdown.closest('.pd_msg').data('stop');
+        if (isStop) {
+            if (Config.autoLootEnabled) {
+                Util.deleteCookie(Const.lootCheckingCookieName);
+                Util.deleteCookie(Const.lootAttackingCookieName);
+                Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
+            }
+            if (isFail) {
+                if (isChecked) finish();
+                else setTimeout(check, Const.defAjaxInterval);
             }
             else {
-                if (autoChangeLevelPointsEnabled) {
-                    setTimeout(() => readyAttack(currentLevel), Const.defAjaxInterval);
-                }
-                else {
-                    setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
-                }
-            }
-        }).fail(function () {
-            if ($('.pd_countdown:last').closest('.pd_msg').data('stop')) {
                 Msg.remove($wait);
-                return;
+                Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
             }
-            console.log('【争夺攻击】超时重试...');
-            $('#pdAttackProcess').append('<li>【争夺攻击】超时重试&hellip;</li>');
-            setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
-        });
+        }
+        else {
+            if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), Const.defAjaxInterval);
+            else setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
+        }
     };
 
     /**
-     * 准备攻击（用于自动修改各层点数分配方案）
-     * @param {number} currentLevel 当前层数（设为-1表示采用当前点数分配方案）
-     * @param {number} interval 下次攻击的间隔时间
+     * 检查争夺记录
      */
-    const readyAttack = function (currentLevel, interval = Const.lootAttackInterval) {
-        changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
-            if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
-        }).fail(function (result) {
-            if (result === 'timeout') setTimeout(() => readyAttack(currentLevel, interval), Const.defAjaxInterval);
-        }).always(function (result) {
-            if (result !== 'success' && result !== 'timeout') {
-                Msg.remove($wait);
-            }
-        });
-    };
-
-    /**
-     * 完成攻击
-     */
-    const completeAttack = function () {
+    const check = function () {
+        console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
             url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
             timeout: Const.defAjaxTimeout,
             success (html) {
-                Msg.remove($wait);
-                let logHtml = $('#pk_text', html).html();
-                if (!/你被击败了/.test(logHtml)) return;
-                if (Config.autoLootEnabled) Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
-                sessionStorage.removeItem(Const.tempPointsLogListStorageName);
-                log = logHtml;
-                logList = getLogList(log);
-                showEnhanceLog(logList, pointsLogList);
-
-                let allEnemyList = {};
-                for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
-                    allEnemyList[enemy.replace('特别', '')] = num;
+                let $log = $('#pk_text', html);
+                if (!$log.length) {
+                    Msg.remove($wait);
+                    return;
                 }
-                let allEnemyStat = '';
-                for (let [enemy, num] of Util.entries(allEnemyList)) {
-                    allEnemyStat += enemy + '`+' + num + '` ';
-                }
-
-                let latestEnemyList = {};
-                for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
-                    latestEnemyList[enemy.replace('特别', '')] = num;
-                }
-                let latestEnemyStat = '';
-                for (let [enemy, num] of Util.entries(latestEnemyList)) {
-                    latestEnemyStat += enemy + '`+' + num + '` ';
-                }
-
-                let currentLevel = getCurrentLevel(logList);
-                let {exp, kfb} = getTotalGain(logList);
-                if (exp > 0 && kfb > 0) {
-                    Log.push(
-                        '争夺攻击',
-                        `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${Const.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`,
-                        {gain: {'KFB': kfb, '经验值': exp}}
-                    );
-                    LootLog.record(logList, pointsLogList);
-                }
-                Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
-
-                if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-                    Util.deleteCookie(Const.getDailyBonusCookieName);
-                    Public.getDailyBonus();
-                }
-                Script.runFunc('Loot.lootAttack_complete_');
+                log = $log.html();
+                after(true);
             },
             error () {
-                setTimeout(completeAttack, Const.defAjaxInterval);
+                setTimeout(check, Const.defAjaxInterval);
             }
-        })
+        });
     };
 
-    readyAttack(autoChangeLevelPointsEnabled ? currentLevel : -1, 0);
+    /**
+     * 完成攻击（被击败后）
+     */
+    const finish = function () {
+        Msg.remove($wait);
+        if (Config.autoLootEnabled) Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+        sessionStorage.removeItem(Const.tempPointsLogListStorageName);
+
+        let allEnemyList = {};
+        for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
+            allEnemyList[enemy.replace('特别', '')] = num;
+        }
+        let allEnemyStat = '';
+        for (let [enemy, num] of Util.entries(allEnemyList)) {
+            allEnemyStat += enemy + '`+' + num + '` ';
+        }
+
+        let latestEnemyList = {};
+        for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
+            latestEnemyList[enemy.replace('特别', '')] = num;
+        }
+        let latestEnemyStat = '';
+        for (let [enemy, num] of Util.entries(latestEnemyList)) {
+            latestEnemyStat += enemy + '`+' + num + '` ';
+        }
+
+        let currentLevel = getCurrentLevel(logList);
+        let {exp, kfb} = getTotalGain(logList);
+        if (exp > 0 && kfb > 0) {
+            Log.push(
+                '争夺攻击',
+                `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${Const.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`,
+                {gain: {'KFB': kfb, '经验值': exp}}
+            );
+            LootLog.record(logList, pointsLogList);
+        }
+        Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
+
+        if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
+            Util.deleteCookie(Const.getDailyBonusCookieName);
+            Public.getDailyBonus();
+        }
+        Script.runFunc('Loot.lootAttack_complete_');
+    };
+
+    ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
 };
 
 /**
@@ -1606,8 +1604,8 @@ const autoLoot = function () {
     }
     Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
     Util.deleteCookie(Const.lootCompleteCookieName);
-    let autoChangeLevelPointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
-    lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangeLevelPointsEnabled, safeId});
+    let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
+    lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId});
 };
 
 /**
