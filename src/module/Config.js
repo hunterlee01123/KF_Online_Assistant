@@ -47,6 +47,8 @@ export const Config = {
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
+    // 是否显示分层NPC统计，true：开启；false：关闭
+    showLevelEnemyStatEnabled: false,
     // 历史争夺记录保存天数
     lootLogSaveDays: 15,
 

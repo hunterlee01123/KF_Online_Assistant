@@ -69,9 +69,9 @@ export const create = function (id, title, content, style = '') {
  * @param {string} id 对话框ID
  */
 export const show = function (id) {
-    let $box = $('#' + id);
-    if (!$box.length) return;
-    $box.find('.pd_cfg_main')
+    let $dialog = $('#' + id);
+    if (!$dialog.length) return;
+    $dialog.find('.pd_cfg_main')
         .css('max-height', $(window).height() - 80)
         .end()
         .find('legend [type="checkbox"]')
@@ -82,13 +82,13 @@ export const show = function (id) {
         .each(function () {
             $(this).triggerHandler('click');
         });
-    let boxWidth = $box.width(), windowWidth = $(window).width();
-    let left = windowWidth / 2 - boxWidth / 2;
-    if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
+    let dialogWidth = $dialog.width(), windowWidth = $(window).width();
+    let left = windowWidth / 2 - dialogWidth / 2;
+    if (left + dialogWidth > windowWidth) left = windowWidth - dialogWidth - 20;
     if (left < 0) left = 0;
-    let top = $(window).height() / 2 - $box.height() / 2;
+    let top = $(window).height() / 2 - $dialog.height() / 2;
     if (top < 0) top = 0;
-    $box.css({top, left}).fadeIn('fast');
+    $dialog.css({top, left}).fadeIn('fast');
 };
 
 /**

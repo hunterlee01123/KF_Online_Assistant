@@ -1143,7 +1143,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
 
         let allEnemyList = {};
         for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
-            allEnemyList[enemy.replace('特别', '')] = num;
+            allEnemyList[enemy] = num;
         }
         let allEnemyStat = '';
         for (let [enemy, num] of Util.entries(allEnemyList)) {
@@ -1152,7 +1152,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
 
         let latestEnemyList = {};
         for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
-            latestEnemyList[enemy.replace('特别', '')] = num;
+            latestEnemyList[enemy] = num;
         }
         let latestEnemyStat = '';
         for (let [enemy, num] of Util.entries(latestEnemyList)) {
@@ -1195,12 +1195,23 @@ const addLootLogHeader = function () {
     <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
   </div>
   <div style="text-align: right;">
+    <label>
+      <input class="pd_input" name="showLevelEnemyStatEnabled" type="checkbox" ${Config.showLevelEnemyStatEnabled ? 'checked' : ''}> 显示分层统计
+    </label>
     <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">导入/导出争夺记录</a>
     <a class="pd_btn_link pd_highlight" data-name="clearLootLog" href="#">清除记录</a>
   </div>
-  <ul id="pdLogStat"></ul>
+  <ul class="pd_stat" id="pdLogStat"></ul>
 </div>
-`).insertBefore($logBox).find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
+`).insertBefore($logBox).find('[name="showLevelEnemyStatEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config.showLevelEnemyStatEnabled !== checked) {
+            readConfig();
+            Config.showLevelEnemyStatEnabled = checked;
+            writeConfig();
+            showLogStat(logList);
+        }
+    }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLootLogDialog();
     }).end().find('[data-name="clearLootLog"]').click(function (e) {
@@ -1357,13 +1368,27 @@ const showLogStat = function (logList) {
     for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
         latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
-    $('#pdLogStat').html(`
-<li class="pd_stat"><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
-<li class="pd_stat">
-  <b>全部层数：</b>${allEnemyStatHtml ? allEnemyStatHtml : '无'}<br>
-  <b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml ? latestEnemyStatHtml : '无'}
+    let $logStat = $('#pdLogStat');
+    $logStat.html(`
+<li><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
+<li>
+  <b>全部层数：</b>${allEnemyStatHtml}<br>
+  <b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml}
 </li>
 `);
+
+    if (Config.showLevelEnemyStatEnabled) {
+        let levelEnemyStatHtml = '';
+        for (let i = 1; i < logList.length; i += 10) {
+            levelEnemyStatHtml += `&nbsp;&nbsp;<b>${i}-${i + 9 < logList.length ? i + 9 : logList.length - 1}：</b>`;
+            let html = '';
+            for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= i && level < i + 10)))) {
+                html += `<i>${enemy}<em>+${num}</em></i> `;
+            }
+            levelEnemyStatHtml += (html ? html : '无') + '<br>';
+        }
+        $logStat.append(`<li><b>分层统计：</b>${levelEnemyStatHtml ? '<br>' + levelEnemyStatHtml : '无'}</li>`);
+    }
 };
 
 /**
@@ -1452,10 +1477,10 @@ const getTotalGain = function (logList) {
 const getEnemyStatList = function (logList) {
     let enemyStatList = {
         '普通': 0,
-        '特别强壮': 0,
-        '特别快速': 0,
-        '特别脆弱': 0,
-        '特别缓慢': 0,
+        '强壮': 0,
+        '快速': 0,
+        '脆弱': 0,
+        '缓慢': 0,
         'BOSS': 0,
         '大魔王': 0,
     };
@@ -1463,9 +1488,8 @@ const getEnemyStatList = function (logList) {
         if (!enemy || !(enemy in enemyStatList)) return;
         enemyStatList[enemy]++;
     });
-    for (let [enemy, num] of Util.entries(enemyStatList)) {
-        if (!num) delete enemyStatList[enemy];
-    }
+    if (!enemyStatList['BOSS']) delete enemyStatList['BOSS'];
+    if (!enemyStatList['大魔王']) delete enemyStatList['大魔王'];
     return enemyStatList;
 };
 
@@ -1482,7 +1506,7 @@ const getEnemyList = function (logList) {
         let matches = /\[([^\]]+)的]NPC/.exec(Util.removeHtmlTag(levelLog));
         if (matches) {
             let enemy = matches[1];
-            enemy = enemy.replace('(后续更新前此路不通)', '');
+            enemy = enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
             enemyList[level] = enemy;
         }
     }

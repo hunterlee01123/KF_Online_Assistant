@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.2
+// @version     9.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.2';
+var version = '9.3';
 
 /**
  * 导出模块
@@ -1079,6 +1079,8 @@ var Config = exports.Config = {
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
+    // 是否显示分层NPC统计，true：开启；false：关闭
+    showLevelEnemyStatEnabled: false,
     // 历史争夺记录保存天数
     lootLogSaveDays: 15,
 
@@ -2514,7 +2516,7 @@ var Const = {
 
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval: function lootAttackInterval() {
-        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 3000; // 慢速情况
+        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 4000; // 慢速情况
         else return Math.floor(Math.random() * 100) + 200; // 正常情况
     },
 
@@ -2654,21 +2656,21 @@ var create = exports.create = function create(id, title, content) {
  * @param {string} id 对话框ID
  */
 var show = exports.show = function show(id) {
-    var $box = $('#' + id);
-    if (!$box.length) return;
-    $box.find('.pd_cfg_main').css('max-height', $(window).height() - 80).end().find('legend [type="checkbox"]').each(function () {
+    var $dialog = $('#' + id);
+    if (!$dialog.length) return;
+    $dialog.find('.pd_cfg_main').css('max-height', $(window).height() - 80).end().find('legend [type="checkbox"]').each(function () {
         $(this).triggerHandler('click');
     }).end().find('input[data-disabled]').each(function () {
         $(this).triggerHandler('click');
     });
-    var boxWidth = $box.width(),
+    var dialogWidth = $dialog.width(),
         windowWidth = $(window).width();
-    var left = windowWidth / 2 - boxWidth / 2;
-    if (left + boxWidth > windowWidth) left = windowWidth - boxWidth - 20;
+    var left = windowWidth / 2 - dialogWidth / 2;
+    if (left + dialogWidth > windowWidth) left = windowWidth - dialogWidth - 20;
     if (left < 0) left = 0;
-    var top = $(window).height() / 2 - $box.height() / 2;
+    var top = $(window).height() / 2 - $dialog.height() / 2;
     if (top < 0) top = 0;
-    $box.css({ top: top, left: left }).fadeIn('fast');
+    $dialog.css({ top: top, left: left }).fadeIn('fast');
 };
 
 /**
@@ -5568,7 +5570,7 @@ var showLogText = function showLogText(log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addUserLinkInPkListPage = exports.checkLoot = exports.enhanceLootIndexPage = undefined;
+exports.addUserLinkInPkListPage = exports.checkLoot = exports.lootAttack = exports.enhanceLootIndexPage = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -6412,7 +6414,7 @@ var addAttackBtns = function addAttackBtns() {
     if (!safeId) return;
     $logBox.off('click');
 
-    $('\n<div id="pdAttackBtns" style="line-height: 2.2em; margin-bottom: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label><br>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~5\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').appendTo($points).on('click', 'button[name$="Attack"]', function () {
+    $('\n<div id="pdAttackBtns" style="line-height: 2.2em; margin-bottom: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label><br>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').appendTo($points).on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -6438,9 +6440,9 @@ var addAttackBtns = function addAttackBtns() {
         }
         Msg.destroy();
         $('#pdLootLogHeader').find('[data-name="end"]').click();
-        var autoChangeLevelPointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
-        if (!autoChangeLevelPointsEnabled && !checkPoints($points)) return;
-        lootAttack({ type: type, targetLevel: targetLevel, autoChangeLevelPointsEnabled: autoChangeLevelPointsEnabled, safeId: safeId });
+        var autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
+        if (!autoChangePointsEnabled && !checkPoints($points)) return;
+        lootAttack({ type: type, targetLevel: targetLevel, autoChangePointsEnabled: autoChangePointsEnabled, safeId: safeId });
     }).on('click', '.pd_cfg_tips', function () {
         return false;
     }).on('click', '[type="checkbox"]', function () {
@@ -6463,19 +6465,18 @@ var addAttackBtns = function addAttackBtns() {
  * 争夺攻击
  * @param {string} type 攻击类型，auto：自动攻击；manual：手动攻击
  * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止，仅限自动攻击有效）
- * @param {boolean} autoChangeLevelPointsEnabled 是否自动修改为相应层数的点数分配方案
+ * @param {boolean} autoChangePointsEnabled 是否自动修改点数分配方案
  * @param {string} safeId SafeID
  */
-var lootAttack = function lootAttack(_ref) {
+var lootAttack = exports.lootAttack = function lootAttack(_ref) {
     var type = _ref.type,
         targetLevel = _ref.targetLevel,
-        autoChangeLevelPointsEnabled = _ref.autoChangeLevelPointsEnabled,
+        autoChangePointsEnabled = _ref.autoChangePointsEnabled,
         safeId = _ref.safeId;
 
-    var currentLevel = getCurrentLevel(logList);
-    if (targetLevel > 0 && targetLevel <= currentLevel) return;
-    var $wait = Msg.wait('<strong>\u6B63\u5728\u653B\u51FB\u4E2D\uFF0C\u8BF7\u7A0D\u7B49&hellip;</strong><i>\u5F53\u524D\u5C42\u6570\uFF1A<em class="pd_countdown">' + currentLevel + '</em></i>' + '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>');
-    var retryNum = 0;
+    var initCurrentLevel = getCurrentLevel(logList);
+    if (targetLevel > 0 && targetLevel <= initCurrentLevel) return;
+    var $wait = Msg.wait('<strong>\u6B63\u5728\u653B\u51FB\u4E2D\uFF0C\u8BF7\u7A0D\u7B49&hellip;</strong><i>\u5F53\u524D\u5C42\u6570\uFF1A<em class="pd_countdown">' + initCurrentLevel + '</em></i>' + '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>');
 
     /**
      * 修改点数分配方案
@@ -6484,9 +6485,9 @@ var lootAttack = function lootAttack(_ref) {
      */
     var changePoints = function changePoints(nextLevel) {
         if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') {
-            var _currentLevel = getCurrentLevel(logList);
+            var currentLevel = getCurrentLevel(logList);
 
-            var _getLifeInfo = getLifeInfo(logList, _currentLevel),
+            var _getLifeInfo = getLifeInfo(logList, currentLevel),
                 currentLife = _getLifeInfo.life,
                 currentInitLife = _getLifeInfo.initLife;
 
@@ -6494,7 +6495,7 @@ var lootAttack = function lootAttack(_ref) {
             var points = null;
             try {
                 points = _Const2.default.getCustomPoints({
-                    currentLevel: _currentLevel,
+                    currentLevel: currentLevel,
                     currentLife: currentLife,
                     currentInitLife: currentInitLife,
                     levelPointList: Config.levelPointList,
@@ -6630,6 +6631,27 @@ var lootAttack = function lootAttack(_ref) {
     };
 
     /**
+     * 准备攻击（用于自动修改点数分配方案）
+     * @param {number} currentLevel 当前层数（设为-1表示采用当前点数分配方案）
+     * @param {number} interval 下次攻击的间隔时间
+     */
+    var ready = function ready(currentLevel) {
+        var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Const2.default.lootAttackInterval;
+
+        changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
+            if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+        }).fail(function (result) {
+            if (result === 'timeout') setTimeout(function () {
+                return ready(currentLevel, interval);
+            }, _Const2.default.defAjaxInterval);
+        }).always(function (result) {
+            if (result !== 'success' && result !== 'timeout') {
+                Msg.remove($wait);
+            }
+        });
+    };
+
+    /**
      * 攻击
      */
     var attack = function attack() {
@@ -6641,251 +6663,239 @@ var lootAttack = function lootAttack(_ref) {
         }).done(function (html) {
             if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate('+' + _Const2.default.lootAttackingExpires + 'm'));
             if (!/你\(\d+\)遭遇了/.test(html)) {
-                if (!$.trim(html)) {
-                    retryNum++;
-                    if (retryNum < 5) {
-                        setTimeout(attack, _Const2.default.defAjaxInterval);
-                        return;
-                    }
-                }
-                completeAttack();
+                setTimeout(check, _Const2.default.defAjaxInterval);
                 return;
             }
-            retryNum = 0;
-
             log = html + log;
-            logList = getLogList(log);
-            showEnhanceLog(logList, pointsLogList);
-            showLogStat(logList);
-            var currentLevel = getCurrentLevel(logList);
-            console.log('【争夺攻击】当前层数：' + currentLevel);
-            var $countdown = $('.pd_countdown:last');
-            $countdown.text(currentLevel);
-
-            var _getLifeInfo2 = getLifeInfo(logList, currentLevel),
-                currentLife = _getLifeInfo2.life;
-
-            $properties.find('#pdCurrentLife').text(currentLife);
-
-            var isFail = /你被击败了/.test(html);
-            var isStop = isFail || type !== 'auto' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
-            if (isStop) {
-                if (Config.autoLootEnabled) {
-                    Util.deleteCookie(_Const2.default.lootCheckingCookieName);
-                    Util.deleteCookie(_Const2.default.lootAttackingCookieName);
-                    Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
-                }
-                if (isFail) {
-                    completeAttack();
-                } else {
-                    Msg.remove($wait);
-                    Msg.show('<strong>\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC</strong>', -1);
-                }
-            } else {
-                if (autoChangeLevelPointsEnabled) {
-                    setTimeout(function () {
-                        return readyAttack(currentLevel);
-                    }, _Const2.default.defAjaxInterval);
-                } else {
-                    setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
-                }
-            }
+            after();
         }).fail(function () {
-            if ($('.pd_countdown:last').closest('.pd_msg').data('stop')) {
-                Msg.remove($wait);
-                return;
-            }
             console.log('【争夺攻击】超时重试...');
-            $('#pdAttackProcess').append('<li>【争夺攻击】超时重试&hellip;</li>');
-            setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+            setTimeout(check, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
         });
     };
 
     /**
-     * 准备攻击（用于自动修改各层点数分配方案）
-     * @param {number} currentLevel 当前层数（设为-1表示采用当前点数分配方案）
-     * @param {number} interval 下次攻击的间隔时间
+     * 攻击之后
+     * @param {boolean} isChecked 是否已检查过争夺记录
      */
-    var readyAttack = function readyAttack(currentLevel) {
-        var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Const2.default.lootAttackInterval;
+    var after = function after() {
+        var isChecked = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-        changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
-            if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
-        }).fail(function (result) {
-            if (result === 'timeout') setTimeout(function () {
-                return readyAttack(currentLevel, interval);
-            }, _Const2.default.defAjaxInterval);
-        }).always(function (result) {
-            if (result !== 'success' && result !== 'timeout') {
-                Msg.remove($wait);
+        logList = getLogList(log);
+        showEnhanceLog(logList, pointsLogList);
+        showLogStat(logList);
+        var currentLevel = getCurrentLevel(logList);
+        console.log('【争夺攻击】当前层数：' + currentLevel);
+        var $countdown = $('.pd_countdown:last');
+        $countdown.text(currentLevel);
+
+        var _getLifeInfo2 = getLifeInfo(logList, currentLevel),
+            currentLife = _getLifeInfo2.life;
+
+        $properties.find('#pdCurrentLife').text(currentLife);
+
+        var isFail = /你被击败了/.test(log);
+        var isStop = isFail || type !== 'auto' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
+        if (isStop) {
+            if (Config.autoLootEnabled) {
+                Util.deleteCookie(_Const2.default.lootCheckingCookieName);
+                Util.deleteCookie(_Const2.default.lootAttackingCookieName);
+                Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
             }
-        });
+            if (isFail) {
+                if (isChecked) finish();else setTimeout(check, _Const2.default.defAjaxInterval);
+            } else {
+                Msg.remove($wait);
+                Msg.show('<strong>\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC</strong>', -1);
+            }
+        } else {
+            if (autoChangePointsEnabled) setTimeout(function () {
+                return ready(currentLevel);
+            }, _Const2.default.defAjaxInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+        }
     };
 
     /**
-     * 完成攻击
+     * 检查争夺记录
      */
-    var completeAttack = function completeAttack() {
+    var check = function check() {
+        console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
             url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
             timeout: _Const2.default.defAjaxTimeout,
             success: function success(html) {
-                Msg.remove($wait);
-                var logHtml = $('#pk_text', html).html();
-                if (!/你被击败了/.test(logHtml)) return;
-                if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
-                sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
-                log = logHtml;
-                logList = getLogList(log);
-                showEnhanceLog(logList, pointsLogList);
-
-                var allEnemyList = {};
-                var _iteratorNormalCompletion8 = true;
-                var _didIteratorError8 = false;
-                var _iteratorError8 = undefined;
-
-                try {
-                    for (var _iterator8 = Util.entries(getEnemyStatList(logList))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                        var _step8$value = _slicedToArray(_step8.value, 2),
-                            enemy = _step8$value[0],
-                            num = _step8$value[1];
-
-                        allEnemyList[enemy.replace('特别', '')] = num;
-                    }
-                } catch (err) {
-                    _didIteratorError8 = true;
-                    _iteratorError8 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                            _iterator8.return();
-                        }
-                    } finally {
-                        if (_didIteratorError8) {
-                            throw _iteratorError8;
-                        }
-                    }
+                var $log = $('#pk_text', html);
+                if (!$log.length) {
+                    Msg.remove($wait);
+                    return;
                 }
-
-                var allEnemyStat = '';
-                var _iteratorNormalCompletion9 = true;
-                var _didIteratorError9 = false;
-                var _iteratorError9 = undefined;
-
-                try {
-                    for (var _iterator9 = Util.entries(allEnemyList)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                        var _step9$value = _slicedToArray(_step9.value, 2),
-                            enemy = _step9$value[0],
-                            num = _step9$value[1];
-
-                        allEnemyStat += enemy + '`+' + num + '` ';
-                    }
-                } catch (err) {
-                    _didIteratorError9 = true;
-                    _iteratorError9 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                            _iterator9.return();
-                        }
-                    } finally {
-                        if (_didIteratorError9) {
-                            throw _iteratorError9;
-                        }
-                    }
-                }
-
-                var latestEnemyList = {};
-                var _iteratorNormalCompletion10 = true;
-                var _didIteratorError10 = false;
-                var _iteratorError10 = undefined;
-
-                try {
-                    for (var _iterator10 = Util.entries(getEnemyStatList(logList.filter(function (elem, level) {
-                        return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
-                    })))[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                        var _step10$value = _slicedToArray(_step10.value, 2),
-                            enemy = _step10$value[0],
-                            num = _step10$value[1];
-
-                        latestEnemyList[enemy.replace('特别', '')] = num;
-                    }
-                } catch (err) {
-                    _didIteratorError10 = true;
-                    _iteratorError10 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                            _iterator10.return();
-                        }
-                    } finally {
-                        if (_didIteratorError10) {
-                            throw _iteratorError10;
-                        }
-                    }
-                }
-
-                var latestEnemyStat = '';
-                var _iteratorNormalCompletion11 = true;
-                var _didIteratorError11 = false;
-                var _iteratorError11 = undefined;
-
-                try {
-                    for (var _iterator11 = Util.entries(latestEnemyList)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-                        var _step11$value = _slicedToArray(_step11.value, 2),
-                            enemy = _step11$value[0],
-                            num = _step11$value[1];
-
-                        latestEnemyStat += enemy + '`+' + num + '` ';
-                    }
-                } catch (err) {
-                    _didIteratorError11 = true;
-                    _iteratorError11 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                            _iterator11.return();
-                        }
-                    } finally {
-                        if (_didIteratorError11) {
-                            throw _iteratorError11;
-                        }
-                    }
-                }
-
-                var currentLevel = getCurrentLevel(logList);
-
-                var _getTotalGain = getTotalGain(logList),
-                    exp = _getTotalGain.exp,
-                    kfb = _getTotalGain.kfb;
-
-                if (exp > 0 && kfb > 0) {
-                    Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (\u5168\u90E8\uFF1A' + allEnemyStat.trim() + '\uFF1B\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A' + latestEnemyStat.trim() + ')', { gain: { 'KFB': kfb, '经验值': exp } });
-                    LootLog.record(logList, pointsLogList);
-                }
-                Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>', -1);
-
-                if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-                    Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
-                    Public.getDailyBonus();
-                }
-                Script.runFunc('Loot.lootAttack_complete_');
+                log = $log.html();
+                after(true);
             },
             error: function error() {
-                setTimeout(completeAttack, _Const2.default.defAjaxInterval);
+                setTimeout(check, _Const2.default.defAjaxInterval);
             }
         });
     };
 
-    readyAttack(autoChangeLevelPointsEnabled ? currentLevel : -1, 0);
+    /**
+     * 完成攻击（被击败后）
+     */
+    var finish = function finish() {
+        Msg.remove($wait);
+        if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
+        sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
+
+        var allEnemyList = {};
+        var _iteratorNormalCompletion8 = true;
+        var _didIteratorError8 = false;
+        var _iteratorError8 = undefined;
+
+        try {
+            for (var _iterator8 = Util.entries(getEnemyStatList(logList))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                var _step8$value = _slicedToArray(_step8.value, 2),
+                    enemy = _step8$value[0],
+                    num = _step8$value[1];
+
+                allEnemyList[enemy] = num;
+            }
+        } catch (err) {
+            _didIteratorError8 = true;
+            _iteratorError8 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                    _iterator8.return();
+                }
+            } finally {
+                if (_didIteratorError8) {
+                    throw _iteratorError8;
+                }
+            }
+        }
+
+        var allEnemyStat = '';
+        var _iteratorNormalCompletion9 = true;
+        var _didIteratorError9 = false;
+        var _iteratorError9 = undefined;
+
+        try {
+            for (var _iterator9 = Util.entries(allEnemyList)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                var _step9$value = _slicedToArray(_step9.value, 2),
+                    enemy = _step9$value[0],
+                    num = _step9$value[1];
+
+                allEnemyStat += enemy + '`+' + num + '` ';
+            }
+        } catch (err) {
+            _didIteratorError9 = true;
+            _iteratorError9 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                    _iterator9.return();
+                }
+            } finally {
+                if (_didIteratorError9) {
+                    throw _iteratorError9;
+                }
+            }
+        }
+
+        var latestEnemyList = {};
+        var _iteratorNormalCompletion10 = true;
+        var _didIteratorError10 = false;
+        var _iteratorError10 = undefined;
+
+        try {
+            for (var _iterator10 = Util.entries(getEnemyStatList(logList.filter(function (elem, level) {
+                return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
+            })))[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                var _step10$value = _slicedToArray(_step10.value, 2),
+                    enemy = _step10$value[0],
+                    num = _step10$value[1];
+
+                latestEnemyList[enemy] = num;
+            }
+        } catch (err) {
+            _didIteratorError10 = true;
+            _iteratorError10 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                    _iterator10.return();
+                }
+            } finally {
+                if (_didIteratorError10) {
+                    throw _iteratorError10;
+                }
+            }
+        }
+
+        var latestEnemyStat = '';
+        var _iteratorNormalCompletion11 = true;
+        var _didIteratorError11 = false;
+        var _iteratorError11 = undefined;
+
+        try {
+            for (var _iterator11 = Util.entries(latestEnemyList)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                var _step11$value = _slicedToArray(_step11.value, 2),
+                    enemy = _step11$value[0],
+                    num = _step11$value[1];
+
+                latestEnemyStat += enemy + '`+' + num + '` ';
+            }
+        } catch (err) {
+            _didIteratorError11 = true;
+            _iteratorError11 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                    _iterator11.return();
+                }
+            } finally {
+                if (_didIteratorError11) {
+                    throw _iteratorError11;
+                }
+            }
+        }
+
+        var currentLevel = getCurrentLevel(logList);
+
+        var _getTotalGain = getTotalGain(logList),
+            exp = _getTotalGain.exp,
+            kfb = _getTotalGain.kfb;
+
+        if (exp > 0 && kfb > 0) {
+            Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (\u5168\u90E8\uFF1A' + allEnemyStat.trim() + '\uFF1B\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A' + latestEnemyStat.trim() + ')', { gain: { 'KFB': kfb, '经验值': exp } });
+            LootLog.record(logList, pointsLogList);
+        }
+        Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>', -1);
+
+        if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
+            Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
+            Public.getDailyBonus();
+        }
+        Script.runFunc('Loot.lootAttack_complete_');
+    };
+
+    ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
 };
 
 /**
  * 添加争夺记录头部区域
  */
 var addLootLogHeader = function addLootLogHeader() {
-    $('\n<div id="pdLootLogHeader" style="padding: 0 5px 5px; line-height: 2em;">\n  <div class="pd_log_nav">\n    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>\n    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>\n    <h2 class="pd_history_logs_key pd_custom_tips" title="\u5171\u67090\u5929\u7684\u4E89\u593A\u8BB0\u5F55">\u73B0\u5728</h2>\n    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>\n    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>\n  </div>\n  <div style="text-align: right;">\n    <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u4E89\u593A\u8BB0\u5F55</a>\n    <a class="pd_btn_link pd_highlight" data-name="clearLootLog" href="#">\u6E05\u9664\u8BB0\u5F55</a>\n  </div>\n  <ul id="pdLogStat"></ul>\n</div>\n').insertBefore($logBox).find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
+    $('\n<div id="pdLootLogHeader" style="padding: 0 5px 5px; line-height: 2em;">\n  <div class="pd_log_nav">\n    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>\n    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>\n    <h2 class="pd_history_logs_key pd_custom_tips" title="\u5171\u67090\u5929\u7684\u4E89\u593A\u8BB0\u5F55">\u73B0\u5728</h2>\n    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>\n    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>\n  </div>\n  <div style="text-align: right;">\n    <label>\n      <input class="pd_input" name="showLevelEnemyStatEnabled" type="checkbox" ' + (Config.showLevelEnemyStatEnabled ? 'checked' : '') + '> \u663E\u793A\u5206\u5C42\u7EDF\u8BA1\n    </label>\n    <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u4E89\u593A\u8BB0\u5F55</a>\n    <a class="pd_btn_link pd_highlight" data-name="clearLootLog" href="#">\u6E05\u9664\u8BB0\u5F55</a>\n  </div>\n  <ul class="pd_stat" id="pdLogStat"></ul>\n</div>\n').insertBefore($logBox).find('[name="showLevelEnemyStatEnabled"]').click(function () {
+        var checked = $(this).prop('checked');
+        if (Config.showLevelEnemyStatEnabled !== checked) {
+            (0, _Config.read)();
+            Config.showLevelEnemyStatEnabled = checked;
+            (0, _Config.write)();
+            showLogStat(logList);
+        }
+    }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLootLogDialog();
     }).end().find('[data-name="clearLootLog"]').click(function (e) {
@@ -7076,7 +7086,52 @@ var showLogStat = function showLogStat(logList) {
         }
     }
 
-    $('#pdLogStat').html('\n<li class="pd_stat"><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n<li class="pd_stat">\n  <b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + (allEnemyStatHtml ? allEnemyStatHtml : '无') + '<br>\n  <b>\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A</b>' + (latestEnemyStatHtml ? latestEnemyStatHtml : '无') + '\n</li>\n');
+    var $logStat = $('#pdLogStat');
+    $logStat.html('\n<li><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n<li>\n  <b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + allEnemyStatHtml + '<br>\n  <b>\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A</b>' + latestEnemyStatHtml + '\n</li>\n');
+
+    if (Config.showLevelEnemyStatEnabled) {
+        var levelEnemyStatHtml = '';
+
+        var _loop = function _loop(i) {
+            levelEnemyStatHtml += '&nbsp;&nbsp;<b>' + i + '-' + (i + 9 < logList.length ? i + 9 : logList.length - 1) + '\uFF1A</b>';
+            var html = '';
+            var _iteratorNormalCompletion14 = true;
+            var _didIteratorError14 = false;
+            var _iteratorError14 = undefined;
+
+            try {
+                for (var _iterator14 = Util.entries(getEnemyStatList(logList.filter(function (elem, level) {
+                    return level >= i && level < i + 10;
+                })))[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                    var _step14$value = _slicedToArray(_step14.value, 2),
+                        enemy = _step14$value[0],
+                        num = _step14$value[1];
+
+                    html += '<i>' + enemy + '<em>+' + num + '</em></i> ';
+                }
+            } catch (err) {
+                _didIteratorError14 = true;
+                _iteratorError14 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                        _iterator14.return();
+                    }
+                } finally {
+                    if (_didIteratorError14) {
+                        throw _iteratorError14;
+                    }
+                }
+            }
+
+            levelEnemyStatHtml += (html ? html : '无') + '<br>';
+        };
+
+        for (var i = 1; i < logList.length; i += 10) {
+            _loop(i);
+        }
+        $logStat.append('<li><b>\u5206\u5C42\u7EDF\u8BA1\uFF1A</b>' + (levelEnemyStatHtml ? '<br>' + levelEnemyStatHtml : '无') + '</li>');
+    }
 };
 
 /**
@@ -7164,10 +7219,10 @@ var getTotalGain = function getTotalGain(logList) {
 var getEnemyStatList = function getEnemyStatList(logList) {
     var enemyStatList = {
         '普通': 0,
-        '特别强壮': 0,
-        '特别快速': 0,
-        '特别脆弱': 0,
-        '特别缓慢': 0,
+        '强壮': 0,
+        '快速': 0,
+        '脆弱': 0,
+        '缓慢': 0,
         'BOSS': 0,
         '大魔王': 0
     };
@@ -7175,33 +7230,8 @@ var getEnemyStatList = function getEnemyStatList(logList) {
         if (!enemy || !(enemy in enemyStatList)) return;
         enemyStatList[enemy]++;
     });
-    var _iteratorNormalCompletion14 = true;
-    var _didIteratorError14 = false;
-    var _iteratorError14 = undefined;
-
-    try {
-        for (var _iterator14 = Util.entries(enemyStatList)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-            var _step14$value = _slicedToArray(_step14.value, 2),
-                enemy = _step14$value[0],
-                num = _step14$value[1];
-
-            if (!num) delete enemyStatList[enemy];
-        }
-    } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                _iterator14.return();
-            }
-        } finally {
-            if (_didIteratorError14) {
-                throw _iteratorError14;
-            }
-        }
-    }
-
+    if (!enemyStatList['BOSS']) delete enemyStatList['BOSS'];
+    if (!enemyStatList['大魔王']) delete enemyStatList['大魔王'];
     return enemyStatList;
 };
 
@@ -7218,7 +7248,7 @@ var getEnemyList = function getEnemyList(logList) {
         var matches = /\[([^\]]+)的]NPC/.exec(Util.removeHtmlTag(levelLog));
         if (matches) {
             var enemy = matches[1];
-            enemy = enemy.replace('(后续更新前此路不通)', '');
+            enemy = enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
             enemyList[level] = enemy;
         }
     }
@@ -7341,8 +7371,8 @@ var autoLoot = function autoLoot() {
     }
     Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate('+' + _Const2.default.lootAttackingExpires + 'm'));
     Util.deleteCookie(_Const2.default.lootCompleteCookieName);
-    var autoChangeLevelPointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function';
-    lootAttack({ type: 'auto', targetLevel: Config.attackTargetLevel, autoChangeLevelPointsEnabled: autoChangeLevelPointsEnabled, safeId: safeId });
+    var autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function';
+    lootAttack({ type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled: autoChangePointsEnabled, safeId: safeId });
 };
 
 /**
