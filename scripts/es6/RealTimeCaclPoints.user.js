@@ -7,7 +7,7 @@
 // @include     http://*9moe.com/kf_fw_ig_index.php*
 // @include     http://*kfgal.com/kf_fw_ig_index.php*
 // @include     https://*.miaola.info/kf_fw_ig_index.php*
-// @version     2.2.2
+// @version     2.2.3.2
 // @grant       none
 // @run-at      document-end
 // @trigger     start
@@ -387,7 +387,7 @@ function restLifeInNextLevelByStrategy(currentLevel, currentLife, npcFlag, level
     let expectCriticalHitNum = attackedTimes - CritBinom(attackedTimes, 1 - npcParam["暴击率"], npcPropability); // 期望npc暴击次数
     let expectSkillNum = attackedTimes - CritBinom(attackedTimes, 1 - npcParam["技能率"], npcPropability); // 期望npc技能次数
     playerDamage += Math.ceil((attackedTimes + expectCriticalHitNum) * (1 - getPropertyByPoint("意志", levelPoints["意志"])) * npcParam["攻"]); //+暴击
-    playerDamage += Math.ceil((expectSkillNum * (expectSkillNum + 1) / 2 + expectSkillNum * (attackedTimes - expectSkillNum - 1)) * npcSKLAttack * npcParam["攻"]); //+技能
+    playerDamage += Math.ceil((expectSkillNum * (expectSkillNum + 1) / 2 + expectSkillNum * (attackedTimes - expectSkillNum - 1)) * npcSKLAttack * npcParam["攻"] * (1 - getPropertyByPoint("意志", levelPoints["意志"]))); //+技能
     if (currentLife === 0) {
         // currentLife为0表示刚开始打
         return Math.max(getPropertyByPoint("体质", levelPoints["体质"]) - playerDamage, 0);
@@ -442,7 +442,7 @@ function restLifeInNextLevelByPoints(currentLevel, currentLife, npcFlag, levelPo
     let expectCriticalHitNum = attackedTimes - CritBinom(attackedTimes, 1 - npcParam["暴击率"], npcPropability); // 期望npc暴击次数
     let expectSkillNum = attackedTimes - CritBinom(attackedTimes, 1 - npcParam["技能率"], npcPropability); // 期望npc技能次数
     playerDamage += Math.ceil((attackedTimes + expectCriticalHitNum) * (1 - getPropertyByPoint("意志", levelPoints["意志"])) * npcParam["攻"]); //+暴击
-    playerDamage += Math.ceil((expectSkillNum * (expectSkillNum + 1) / 2 + expectSkillNum * (attackedTimes - expectSkillNum - 1)) * npcSKLAttack * npcParam["攻"]); //+技能
+    playerDamage += Math.ceil((expectSkillNum * (expectSkillNum + 1) / 2 + expectSkillNum * (attackedTimes - expectSkillNum - 1)) * npcSKLAttack * npcParam["攻"] * (1 - getPropertyByPoint("意志", levelPoints["意志"]))); //+技能
     if (currentLife === 0) {
         // currentLife为0表示刚开始打
         return Math.max(getPropertyByPoint("体质", levelPoints["体质"]) - playerDamage, 0);
@@ -460,7 +460,6 @@ function sortNumber(a, b) {
 // 排序用
     return a - b;
 }
-
 
 function getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchRange, restLifeRatioLucky, restLifeRatioUnlucky) {
 // 根据下一层各种npc数值及玩家属性及剩余生命情况，计算出最优方案参数,minSpeedRatio,maxSpeedRatio为攻速比上下限，minAttackedNum,maxAttackedNum受攻击次数上下限，为寻找最优解提供搜索范围
@@ -707,23 +706,27 @@ function getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchR
     return levelStrategy;
 
 }
-
-let restLifeRatioByTenth = 0.85;  // 预计到达每10层boss的血的保留比
+let restLifeRatioByTenth = 0.95;  // 预计到达每10层boss的血的保留比
 let minRestLifeRatioUnlucky = 0.1;  // 极限区的遭遇强化怪血的保留比
 let riskingForBossFlag = 1;  // 若该标志为1，则在判定可以过最终boss时，采用冒险的策略，优先保证到boss时的血量
 let riskingTimesByTenth = -1;  // 倒推过最终BOSS需生命值的倒数层数整除10
 let riskingProbCoefficientBOSS = 2;  // 深度预测最终BOSS胜率的概率系数，一般取值在1至tryingTimes最大值之间
+let riskingProbLimitCoefficient = 2;  // 最终BOSS胜率的极限概率系数，与riskingProbCoefficientBOSS相加后可用于计算极限胜率
+
 
 function getDiffCoefficient(timesByTenth, riskingTimesByTenth) {
     let diffCoefficient = riskingTimesByTenth === 0 ? 1 : (timesByTenth / riskingTimesByTenth);
     return diffCoefficient;
 }
 
+let strongPointsFlag = 0;  // 为1时标记针对强化怪加点失败
+
 function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
 // 计算最优方案将考虑强化npc的场合
 
     // 记录npc种类，供控制台返回加点信息
     let npcFlag = 0;
+    strongPointsFlag = 0;
 
     if (currentLevel % 10 === 9) {
         // boss楼层加点
@@ -731,8 +734,7 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
         let levelStrategy = getOptimalNextLevelStrategy(currentLevel, currentLife, npcFlag, searchRangeBoss, 1, 1);
         return {levelStrategy: levelStrategy, npcFlag: npcFlag};
     }
-
-    if (strongHoldLevel < strongHoldLevel0) {
+    if (restLifeRatioUnlucky === minRestLifeRatioUnlucky) {
         // strongHoldLevel已经过调整，需逐层调整缩小极限区，避免遇强化怪不针对加点的风险
         strongHoldLevel = 9 - (currentLevel % 10);
         restLifeRatioLucky = 1 - (1 / strongHoldLevel);
@@ -751,47 +753,58 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
             // 可能需要为过最终boss冒险
             let timesByTenth = 0;
             let tempCurrentLife = currentLife;
+            let lowWinFlag = 0;  // 作为一般胜率下无法战胜最终BOSS的标记
+            // 划分极限区所需的对BOSS的胜率临界
             playerPropability = Math.max(playerPropability0 - riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth, riskingTimesByTenth) * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整默认概率
             npcPropability = Math.min(npcPropability0 + riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth, riskingTimesByTenth) * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99);  // 调整默认概率
             let templevelStrategyTenth = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9, Math.floor(currentLife * (restLifeRatioByTenth + (1 - restLifeRatioByTenth) / 9 * (currentLevel % 10))), 1, searchRangeBoss, 1, 1);
-            tempCurrentLife = restLifeInNextLevelByStrategy(currentLevel - (currentLevel % 10) + 9, Math.floor(tempCurrentLife * (restLifeRatioByTenth + (1 - restLifeRatioByTenth) / 9 * (currentLevel % 10))), 1, templevelStrategyTenth);
-            while (timesByTenth < riskingTimesByTenth) {
+            tempCurrentLife = templevelStrategyTenth["被攻击次数"] > -1 ? restLifeInNextLevelByStrategy(currentLevel - (currentLevel % 10) + 9, Math.floor(tempCurrentLife * (restLifeRatioByTenth + (1 - restLifeRatioByTenth) / 9 * (currentLevel % 10))), 1, templevelStrategyTenth) : tempCurrentLife;
+            while (timesByTenth < riskingTimesByTenth && templevelStrategyTenth["被攻击次数"] > -1) {
                 timesByTenth++;
-                playerPropability = timesByTenth < riskingTimesByTenth ? playerPropability0 : Math.max(playerPropability0 - riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth, riskingTimesByTenth) * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整默认概率
-                npcPropability = timesByTenth < riskingTimesByTenth ? npcPropability0 : Math.min(npcPropability0 + riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth, riskingTimesByTenth) * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整默认概率
-                //console.log("中间预测： " + playerPropability + "  " + npcPropability + "  " + timesByTenth + "  " + riskingTimesByTenth);
+                playerPropability = playerPropability0; // 调整默认概率
+                npcPropability = npcPropability0; // 调整默认概率
                 let templevelStrategyTenth1 = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10, Math.floor(tempCurrentLife * restLifeRatioByTenth), 1, searchRangeBoss, 1, 1);
                 templevelStrategyTenth["被攻击次数"] = templevelStrategyTenth1["被攻击次数"];
                 if (templevelStrategyTenth["被攻击次数"] === -1) {
+                    // 一般胜率下无法战胜最终BOSS，调整默认概率，越接近极限区，胜率越小，免于过多冒险
+                    playerPropability = Math.max(playerPropability0 - riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth, riskingTimesByTenth) * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整默认概率
+                    npcPropability = Math.min(npcPropability0 + riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth, riskingTimesByTenth) * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整默认概率
+                    let templevelStrategyTenth1 = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10, Math.floor(tempCurrentLife * restLifeRatioByTenth), 1, searchRangeBoss, 1, 1);
+                    templevelStrategyTenth["被攻击次数"] = templevelStrategyTenth1["被攻击次数"];
+                    //console.log("中间预测： " + playerPropability + "  " + npcPropability + "  " + timesByTenth + "  " + riskingTimesByTenth);
+                    //console.log("楼层： " + (currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10) + " 生命： " + Math.floor(tempCurrentLife * restLifeRatioByTenth));
+                    lowWinFlag = 1;
                     break;
                 }
                 tempCurrentLife = restLifeInNextLevelByStrategy(currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10, Math.floor(tempCurrentLife * restLifeRatioByTenth), 1, templevelStrategyTenth1);
             }
-            let lowWinFlag = 0;
-            if (timesByTenth < riskingTimesByTenth) {
+            if (templevelStrategyTenth["被攻击次数"] === -1 && timesByTenth < riskingTimesByTenth) {
                 // 接近极限区，未达到深度上限，需重新调整胜率（默认概率）进行判断
-                lowWinFlag = 1;
-                playerPropability = Math.max(playerPropability0 - riskingProbCoefficientBOSS * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整默认概率
-                npcPropability = Math.min(npcPropability0 + riskingProbCoefficientBOSS * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整默认概率
+                playerPropability = Math.max(playerPropability0 - riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth + 1, riskingTimesByTenth) * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整默认概率
+                npcPropability = Math.min(npcPropability0 + riskingProbCoefficientBOSS * getDiffCoefficient(timesByTenth + 1, riskingTimesByTenth) * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整默认概率
                 templevelStrategyTenth = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10, Math.floor(tempCurrentLife * restLifeRatioByTenth), 1, searchRangeBoss, 1, 1);
+                //console.log("预测BOSS的默认概率： " + playerPropability + "  " + npcPropability + "  " + timesByTenth + "  " + riskingTimesByTenth);
+                //console.log("楼层： " + (currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10) + " 生命： " + Math.floor(tempCurrentLife * restLifeRatioByTenth));
             }
-            //console.log("预测BOSS的默认概率： " + playerPropability + "  " + npcPropability + "  " + timesByTenth + "  " + riskingTimesByTenth);
             if (templevelStrategyTenth["被攻击次数"] === -1) {
                 // 预测极限胜率
-                playerPropability = Math.max(playerPropability0 - (riskingProbCoefficientBOSS + 1) * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整默认概率
-                npcPropability = Math.min(npcPropability0 + (riskingProbCoefficientBOSS + 1) * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整默认概率
+                playerPropability = Math.max(playerPropability0 - (riskingProbCoefficientBOSS + riskingProbLimitCoefficient) * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整默认概率
+                npcPropability = Math.min(npcPropability0 + (riskingProbCoefficientBOSS + riskingProbLimitCoefficient) * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整默认概率
                 templevelStrategyTenth = getOptimalNextLevelStrategy(currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10, Math.floor(tempCurrentLife * restLifeRatioByTenth), 1, searchRangeBoss, 1, 1);
                 //console.log("极限方案： " + playerPropability + "  " + npcPropability);
+                //console.log("楼层： " + (currentLevel - (currentLevel % 10) + 9 + timesByTenth * 10) + " 生命： " + Math.floor(tempCurrentLife * restLifeRatioByTenth));
                 //console.log(templevelStrategyTenth);
             }
             if (templevelStrategyTenth["被攻击次数"] > 0 && lowWinFlag === 1) {
-                // 对最终boss胜率不高，需要冒险
+                // 对最终boss胜率不高（低于一般胜率），需要冒险
                 //playerPropability = Math.max(playerPropability0 - 0.2,0.01); // 修改默认概率，节省点数损耗
                 //npcPropability = Math.min(npcPropability0 + 0.1,0.99); // 修改默认概率，节省点数损耗
                 //riskingProbability = 0;  // 启用冒险机制，保证回血
                 if (playerPropability < Math.max(playerPropability0 - riskingProbCoefficientBOSS * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01)) {
+                    // 极限胜率下可以战胜BOSS，需要相当冒险
                     restLifeRatioUnlucky = 1; // 对最终boss胜率太低，需忽略强化怪，保证回血
                 }
+                // 冒险需要调整的默认概率
                 playerPropability = Math.max(playerPropability0 - (2 - 1 * timesByTenth / riskingTimesByTenth) * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 修改默认概率，节省点数损耗
                 npcPropability = Math.min(npcPropability0 + (1 - 1 * timesByTenth / riskingTimesByTenth) * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 修改默认概率，节省点数损耗
 
@@ -805,6 +818,7 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
         }
         if (levelStrategyTenth["被攻击次数"] === -1) {
             // 打不过boss，进入极限区
+            console.log("进入极限区： ");
             strongHoldLevel = 9 - (currentLevel % 10);
             restLifeRatioLucky = 1 - (1 / strongHoldLevel);
             restLifeRatioUnlucky = minRestLifeRatioUnlucky;
@@ -856,6 +870,8 @@ function getOptimalNextLevelStrategyStronger(currentLevel, currentLife) {
         // 可通过打几层普通怪回复遭遇强化怪损失的HP，recoverLevel自行设定，一般认为接下来2至3层内不再遇强化怪，觉得脸黑可以减小recoverLevel
         return {levelStrategy: levelStrategy, npcFlag: npcFlag};
     }
+
+    strongPointsFlag = 1;
 
     // 缓冲区（针对强化怪加点有减少损失的可能）的处理
     if (restLife - unluckyRestLifeStrong > resurreLifeStrong * recoverLevel) {
@@ -1019,10 +1035,10 @@ let getCustomPoints = function (data) {
     };
 
     strongHoldLevel0 = testStrongFlag === 1 ? strongHoldLevel0 : Math.ceil((availablePoint + basePoints["力量"] + basePoints["体质"] + basePoints["敏捷"] + basePoints["灵活"] + basePoints["智力"] + basePoints["意志"]) / 400 * 10);
-    strongHoldLevel = strongHoldLevel0 * 2;  // 需要计算中调整
+    strongHoldLevel = testStrongFlag >= 1 ? strongHoldLevel : strongHoldLevel0 * 2;  // 需要计算中调整
     restLifeRatioLucky = 1 - (1 / strongHoldLevel);
     strongSecNum = Math.ceil(strongHoldLevel0 * 1.3);
-    riskingTimesByTenth = (riskingTimesByTenth < 0 && riskingForBossFlag === 1) ? Math.floor(strongSecNum / 20) : riskingTimesByTenth;
+    riskingTimesByTenth = (riskingTimesByTenth < 0 && riskingForBossFlag === 1) ? Math.floor(strongSecNum / 20) + 1 : riskingTimesByTenth;
 
     console.log(data);
     //console.log("统计强化怪个数： " + totalStrongNum);
@@ -1043,9 +1059,15 @@ let getCustomPoints = function (data) {
         riskingProbability = parseFloat($attackBtns.find('[name="riskingProbability"]').val());
     }
 
+    //playerPropability = playerPropability0; // 默认事件发生概率恢复初始值
+    //npcPropability = npcPropability0; // 默认npc事件发生概率恢复初始值
+    //if(restLifeRatioUnlucky > minRestLifeRatioUnlucky){
+    // 极限区不需要冒险
     riskFlag = riskingForHP();  // 调整随机参数，决定是否启用冒险机制
+    //}
     let npcFlag = 0;
     let levelStrategy;
+
     if (currentLevel % 10 === 9) {
         // boss楼层加点
         npcFlag = 1;
@@ -1056,24 +1078,27 @@ let getCustomPoints = function (data) {
         let result = getOptimalNextLevelStrategyStronger(currentLevel, currentLife);
         levelStrategy = result.levelStrategy;
         npcFlag = result.npcFlag;
-        if (lastInsuranceFlag === 1 && npcFlag === 0 && restLifeRatioUnlucky !== 1 && testStrongFlag !== 2 && strongHoldLevel < strongHoldLevel0 && lastFlag !== 1) {
+        //console.log("尝试强化怪，要求： " + lastInsuranceFlag + "  " + npcFlag + "  " + restLifeRatioUnlucky + "  " + testStrongFlag + "  " + strongPointsFlag + "  " + lastFlag);
+        if (lastInsuranceFlag === 1 && npcFlag === 0 && restLifeRatioUnlucky != 1 && testStrongFlag != 2 && strongPointsFlag === 1 && lastFlag != 1) {
             //  极限区中一般默认概率下无法针对强化怪加点，且未忽略强化怪，则调整默认概率，尝试对强化怪加点
+            console.log("尝试强化怪，放宽条件： " + testStrongFlag);
             testStrongFlag = 1;
             playerPropability = Math.max(playerPropability0 - 2 * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整事件发生概率
             npcPropability = Math.min(npcPropability0 + (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整npc事件发生概率
             let result1 = getOptimalNextLevelStrategyStronger(currentLevel, currentLife);
-
+            testStrongFlag = 0;
             let levelStrategy1 = result1.levelStrategy;
             let npcFlag1 = result1.npcFlag;
-            if (npcFlag1 === 0) {
+            if (npcFlag1 == 0) {
                 //  放宽条件
-                console.log("尝试强化怪，放宽条件： ");
+                testStrongFlag = 1;
                 playerPropability = Math.max(playerPropability0 - 2 * (playerPropability0 - 0) / tempPlayerPropabilityCoefficient, 0.01); // 调整事件发生概率
                 npcPropability = Math.min(npcPropability0 + 2 * (1 - npcPropability0) / tempNPCPropabilityCoefficient, 0.99); // 调整npc事件发生概率
                 let result2 = getOptimalNextLevelStrategyStronger(currentLevel, currentLife);
                 let levelStrategy2 = result2.levelStrategy;
                 let npcFlag2 = result2.npcFlag;
-                if (npcFlag2 !== 0) {
+                testStrongFlag = 0;
+                if (npcFlag2 != 0) {
                     levelStrategy["灵活"] = levelStrategy2["灵活"];
                     levelStrategy["智力"] = levelStrategy2["智力"];
                     levelStrategy["意志"] = levelStrategy2["意志"];
@@ -1085,7 +1110,7 @@ let getCustomPoints = function (data) {
                     //  调整默认概率后也无法针对强化怪加点，说明点数完全不够，恢复默认概率，且标记testStrongFlag，下面不再对强化怪进行搜索
                     playerPropability = playerPropability0; // 默认事件发生概率恢复初始值
                     npcPropability = npcPropability0; // 默认npc事件发生概率恢复初始值
-                    //testStrongFlag = 2;
+                    //testStrongFlag = restLifeRatioUnlucky === minRestLifeRatioUnlucky ? 2 : 0;
                 }
             }
             else {
@@ -1105,8 +1130,8 @@ let getCustomPoints = function (data) {
         if (lastTryingFlag === 1) {
             lastFlag = 1;
             let tryingTimes = 1;
-            playerPropability -= 0.1;
-            npcPropability += 0.1;
+            playerPropability -= 0.1
+            npcPropability += 0.1
             while (playerPropability > 0.01 && npcPropability < 0.99 && tryingTimes <= 3) {
                 // 修改默认概率，放宽条件
                 console.log(tryingTimes + "次尝试最终搜索：  默认事件概率 " + playerPropability + "  默认npc事件概率 " + npcPropability);
@@ -1129,6 +1154,7 @@ let getCustomPoints = function (data) {
             }
             if (tryingTimes > 3) {
                 // 尝试极限加点
+                console.log("等奇迹发生： ");
                 playerPropability = 0.01;
                 npcPropability = 0.99;
                 let lastResult = getOptimalNextLevelStrategyStronger(currentLevel, currentLife);
@@ -1142,16 +1168,14 @@ let getCustomPoints = function (data) {
             }
             if (levelStrategy["被攻击次数"] === -1) {
                 // 搜索最优方案失败，返回当前加点
-                console.log('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
+                //console.log('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
                 // alert('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
-                console.log('计算用时：' + (new Date() - startTime) + '毫秒');
                 return false;
             }
         }
         else {
             // 搜索最优方案失败，暂停攻击，由玩家手动加点
             // alert('搜索最优方案失败，暂停攻击，请修改相关参数或手动攻击');
-            console.log('计算用时：' + (new Date() - startTime) + '毫秒');
             return null;
         }
     }
@@ -1159,7 +1183,6 @@ let getCustomPoints = function (data) {
     console.log(levelStrategy);
     console.log(levelPoints);
     console.log((currentLevel + 1) + "层，" + npcFlag + "类怪物，预计剩余生命值：" + restLifeInNextLevelByStrategy(currentLevel, currentLife, npcFlag, levelStrategy));
-    console.log('计算用时：' + (new Date() - startTime) + '毫秒');
     return levelPoints;
 };
 
