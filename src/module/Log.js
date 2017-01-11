@@ -81,7 +81,7 @@ export const getMergeLog = function (log, newLog) {
                 if (index > -1) log[date][index] = newItem;
                 else log[date].push(newItem);
             }
-            log[date].sort((a, b) => a.time > b.time);
+            log[date].sort((a, b) => a.time > b.time ? 1 : -1);
         }
     }
     return log;

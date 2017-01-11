@@ -50,7 +50,7 @@ export const show = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
-  <button name="close" type="button">关闭</button>
+  <button data-action="close" type="button">关闭</button>
   <button name="clear" type="button">清除日志</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
@@ -132,27 +132,23 @@ export const show = function () {
         .end().find(`[name="statType"][value="${Config.logStatType}"]`).click()
         .end().find('[name="statDays"]').val(Config.logStatDays);
 
-    $dialog.find('[name="close"]').click(() => Dialog.close(dialogName))
-        .end().find('[name="clear"]')
-        .click(function (e) {
-            e.preventDefault();
-            if (confirm('是否清除所有日志？')) {
-                Log.clear();
-                alert('日志已清除');
-                location.reload();
-            }
-        }).end().find('[data-name="openImOrExLogDialog"]')
-        .click(function (e) {
-            e.preventDefault();
-            showImportOrExportLogDialog();
-        });
+    $dialog.find('[name="clear"]').click(function (e) {
+        e.preventDefault();
+        if (confirm('是否清除所有日志？')) {
+            Log.clear();
+            alert('日志已清除');
+            location.reload();
+        }
+    }).end().find('[data-name="openImOrExLogDialog"]').click(function (e) {
+        e.preventDefault();
+        showImportOrExportLogDialog();
+    });
 
     showLogContent(log, dateList[curIndex], $dialog);
     showLogStat(log, dateList[curIndex], $dialog);
 
     if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
     Script.runFunc('LogDialog.show_after_');
 };
 
@@ -181,10 +177,10 @@ const getLogContent = function (log, date, logSortType) {
         const sortTypeList = ['捐款', '领取每日奖励', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具',
             '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果',
             '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
-        logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type));
+        logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1);
     }
     else {
-        logList.sort((a, b) => a.time > b.time);
+        logList.sort((a, b) => a.time > b.time ? 1 : -1);
     }
 
     let content = '', curType = '';
@@ -411,11 +407,11 @@ const showImportOrExportLogDialog = function () {
   </div>
   <div data-name="logSetting">
     <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-    <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
+    <strong>导出日志：</strong>复制文本框里的内容并粘贴到别处即可<br>
     <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
   </div>
   <div data-name="logText" style="display: none;">
-    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可
+    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到别处即可
     <div>
       <label title="按时间顺序排序"><input type="radio" name="sortType2" value="time" checked> 按时间</label>
       <label title="按日志类别排序"><input type="radio" name="sortType2" value="type"> 按类别</label>
@@ -427,7 +423,7 @@ const showImportOrExportLogDialog = function () {
 <div class="pd_cfg_btns">
   <button name="merge" type="button">合并日志</button>
   <button name="overwrite" type="button" style="color: #f00;">覆盖日志</button>
-  <button name="close" type="button">关闭</button>
+  <button data-action="close" type="button">关闭</button>
 </div>`;
 
     let $dialog = Dialog.create(dialogName, '导入或导出日志', html);
@@ -461,11 +457,11 @@ const showImportOrExportLogDialog = function () {
         Log.write(log);
         alert('日志已导入');
         location.reload();
-    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+    });
 
     Dialog.show(dialogName);
-    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find(`[name="sortType2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');
+    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select().focus();
     Script.runFunc('LogDialog.showImportOrExportLogDialog_after_');
 };
 

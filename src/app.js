@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '9.3';
+const version = '9.3.1';
 
 /**
  * 导出模块
@@ -104,7 +104,7 @@ const init = function () {
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
         Read.addFloorGotoLink();
-        Read.addCopyBuyersListLink();
+        Read.addCopyBuyersListOption();
         Read.addStatRepliersLink();
         Read.handleBuyThreadBtn();
         if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();

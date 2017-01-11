@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.3
+// @version     9.3.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.3';
+const version = '9.3.1';
 
 /**
  * 导出模块
@@ -182,7 +182,7 @@ const init = function () {
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
         Read.addFloorGotoLink();
-        Read.addCopyBuyersListLink();
+        Read.addCopyBuyersListOption();
         Read.addStatRepliersLink();
         Read.handleBuyThreadBtn();
         if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
@@ -1517,8 +1517,8 @@ const show = exports.show = function () {
     <i style="color: #666; font-style: normal;">(V${ _Info2.default.version })</i>
     <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
   <button name="default" type="button">默认值</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
@@ -1546,7 +1546,7 @@ const show = exports.show = function () {
                 location.reload();
             }
         }
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[name="default"]').click(function () {
+    }).find('[name="default"]').click(function () {
         if (confirm('是否重置所有设置？')) {
             (0, _Config.clear)();
             alert('设置已重置');
@@ -1579,9 +1579,7 @@ const show = exports.show = function () {
     });
 
     setMainConfigValue($dialog);
-
     Dialog.show(dialogName);
-    $dialog.find('a:first').focus();
     Script.runFunc('ConfigDialog.show_after_');
 };
 
@@ -1728,7 +1726,7 @@ const showRunCommandDialog = function () {
 <div class="pd_cfg_btns">
   <button type="submit">运行</button>
   <button name="clear" type="button">清除</button>
-  <button name="close" type="button">关闭</button>
+  <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '运行命令', html);
     let $cmd = $dialog.find('[name="cmd"]');
@@ -1739,16 +1737,18 @@ const showRunCommandDialog = function () {
         if (content) Script.runCmd(content, true);
     }).end().find('[name="clear"]').click(function () {
         $cmd.val('').focus();
-    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+    });
 
-    Dialog.show(dialogName);
     $cmd.keydown(function (e) {
         if (e.ctrlKey && e.keyCode === 13) {
             $dialog.submit();
         } else if (e.ctrlKey && e.keyCode === 8) {
             $dialog.find('[name="clear"]').click();
         }
-    }).focus();
+    });
+
+    Dialog.show(dialogName);
+    $cmd.focus();
 };
 
 /**
@@ -1762,13 +1762,13 @@ const showImportOrExportSettingDialog = function () {
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
-    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
+    <strong>导出设置：</strong>复制文本框里的内容并粘贴到别处即可
   </div>
   <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
   <button type="submit">保存</button>
-  <button name="cancel" type="button">取消</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '导入或导出设置', html);
     let $setting = $dialog.find('[name="setting"]');
@@ -1792,9 +1792,9 @@ const showImportOrExportSettingDialog = function () {
         (0, _Config.write)();
         alert('设置已导入');
         location.reload();
-    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
     Dialog.show(dialogName);
-    $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select();
+    $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select().focus();
 };
 
 /**
@@ -1823,8 +1823,8 @@ const showCustomSmColorDialog = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExCustomSmColorConfigDialog" href="#">导入/导出配色方案</a></span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html, 'min-width: 327px;');
     let $customSmColorList = $dialog.find('[data-name="smColorList"]');
@@ -1911,24 +1911,24 @@ const showCustomSmColorDialog = function () {
             list.push({ min, max, color });
         });
         if (verification) {
-            list.sort((a, b) => Util.compareSmLevel(a.min, b.min) > 0);
+            list.sort((a, b) => Util.compareSmLevel(a.min, b.min) > 0 ? 1 : -1);
             Config.customSmColorConfigList = list;
             (0, _Config.write)();
             Dialog.close(dialogName);
         }
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName)).end().find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
+    }).find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
         e.preventDefault();
         let num = 1;
         if ($(this).is('[data-action="addFive"]')) num = 5;
         for (let i = 1; i <= num; i++) {
             $customSmColorList.append(getSmColorLineHtml());
         }
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-action="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有颜色？')) {
             $customSmColorList.empty();
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
     }).end().find('[data-name="openImOrExCustomSmColorConfigDialog"]').click(function (e) {
         e.preventDefault();
@@ -1936,7 +1936,6 @@ const showCustomSmColorDialog = function () {
     });
 
     Dialog.show(dialogName);
-    if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();else $dialog.find('[data-name="customSmColorAddBtns"] > a:first').focus();
 };
 
 /**
@@ -1952,8 +1951,8 @@ const showCustomCssDialog = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS规则收集贴</a></span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义CSS', html);
     let $content = $dialog.find('[name="customCssContent"]');
@@ -1963,7 +1962,7 @@ const showCustomCssDialog = function () {
         (0, _Config.write)();
         Dialog.close(dialogName);
         alert('自定义CSS修改成功（需刷新页面后才可生效）');
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
     $content.val(Config.customCssContent);
     Dialog.show(dialogName);
     $content.focus();
@@ -1981,8 +1980,8 @@ const showUserMemoDialog = function () {
   <textarea name="userMemoList" wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '用户备注', html);
     let $userMemoList = $dialog.find('[name="userMemoList"]');
@@ -2004,7 +2003,7 @@ const showUserMemoDialog = function () {
         }
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
     let content = '';
     for (let [user, memo] of Util.entries(Config.userMemoList)) {
         content += `${ user }:${ memo }\n`;
@@ -2049,29 +2048,11 @@ const showFollowUserDialog = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExFollowUserListDialog" href="#">导入/导出关注用户</a></span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '关注用户', html);
     let $followUserList = $dialog.find('#pdFollowUserList');
-    $dialog.submit(function (e) {
-        e.preventDefault();
-        Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
-        Config.highlightFollowUserThreadLinkEnabled = $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked');
-        Config.followUserList = [];
-        $followUserList.find('li').each(function () {
-            let $this = $(this);
-            let name = $.trim($this.find('[type="text"]').val());
-            if (name !== '' && Util.inFollowOrBlockUserList(name, Config.followUserList) === -1) {
-                Config.followUserList.push({ name });
-            }
-        });
-        (0, _Config.write)();
-        Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
-
-    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
-    $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
 
     /**
      * 添加关注用户
@@ -2081,15 +2062,27 @@ const showFollowUserDialog = function () {
         $(`
 <li>
   <input type="checkbox">
-  <input type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="${ name }">
+  <input name="username" type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="${ name }">
   <a class="pd_btn_link" data-name="delete" href="#">删除</a>
 </li>
 `).appendTo($followUserList);
     };
 
-    for (let user of Config.followUserList) {
-        addFollowUser(user.name);
-    }
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
+        Config.highlightFollowUserThreadLinkEnabled = $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked');
+        Config.followUserList = [];
+        $followUserList.find('li').each(function () {
+            let $this = $(this);
+            let name = $.trim($this.find('[name="username"]').val());
+            if (name !== '' && Util.inFollowOrBlockUserList(name, Config.followUserList) === -1) {
+                Config.followUserList.push({ name });
+            }
+        });
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+    });
 
     $followUserList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
@@ -2102,7 +2095,7 @@ const showFollowUserDialog = function () {
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
     });
 
@@ -2121,16 +2114,18 @@ const showFollowUserDialog = function () {
             }
         }
         $dialog.find('[name="addFollowUser"]').val('');
-        Dialog.show(dialogName);
-    });
-
-    $dialog.find('[data-name="openImOrExFollowUserListDialog"]').click(function (e) {
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="openImOrExFollowUserListDialog"]').click(function (e) {
         e.preventDefault();
         Public.showCommonImportOrExportConfigDialog('关注用户', 'followUserList');
     });
 
+    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
+    $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
+    for (let user of Config.followUserList) {
+        addFollowUser(user.name);
+    }
     Dialog.show(dialogName);
-    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').focus();
 };
 
 /**
@@ -2149,7 +2144,7 @@ const showBlockUserDialog = function () {
       </select>
     </label>
     <label class="pd_cfg_ml">
-      <input name="blockUserAtTipsEnabled" type="checkbox">屏蔽@提醒 <span class="pd_cfg_tips" title="屏蔽被屏蔽用户的@提醒">[?]</span>
+      <input name="blockUserAtTipsEnabled" type="checkbox"> 屏蔽@提醒 <span class="pd_cfg_tips" title="屏蔽被屏蔽用户的@提醒">[?]</span>
     </label><br>
     <label>版块屏蔽范围
       <select name="blockUserForumType">
@@ -2182,38 +2177,11 @@ const showBlockUserDialog = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExBlockUserListDialog" href="#">导入/导出屏蔽用户</a></span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '屏蔽用户', html);
     let $blockUserList = $dialog.find('#pdBlockUserList');
-    $dialog.submit(function (e) {
-        e.preventDefault();
-        Config.blockUserDefaultType = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
-        Config.blockUserAtTipsEnabled = $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked');
-        Config.blockUserForumType = parseInt($dialog.find('[name="blockUserForumType"]').val());
-        Config.blockUserFidList = [];
-        for (let fid of $.trim($dialog.find('[name="blockUserFidList"]').val()).split(',')) {
-            fid = parseInt(fid);
-            if (!isNaN(fid) && fid > 0) Config.blockUserFidList.push(fid);
-        }
-        Config.blockUserList = [];
-        $blockUserList.find('li').each(function () {
-            let $this = $(this);
-            let name = $.trim($this.find('input[type="text"]').val());
-            if (name !== '' && Util.inFollowOrBlockUserList(name, Config.blockUserList) === -1) {
-                let type = parseInt($this.find('select').val());
-                Config.blockUserList.push({ name, type });
-            }
-        });
-        (0, _Config.write)();
-        Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
-
-    $dialog.find('[name="blockUserDefaultType"]').val(Config.blockUserDefaultType);
-    $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked', Config.blockUserAtTipsEnabled);
-    $dialog.find('[name="blockUserForumType"]').val(Config.blockUserForumType);
-    $dialog.find('[name="blockUserFidList"]').val(Config.blockUserFidList.join(','));
 
     /**
      * 添加屏蔽用户
@@ -2224,17 +2192,37 @@ const showBlockUserDialog = function () {
         $(`
 <li>
   <input type="checkbox">
-  <input type="text" style="width: 150px; margin-left: 5px;" maxlength="15" value="${ name }">
-  <select style="margin-left: 5px;">
+  <input name="username" type="text" style="width: 150px; margin-left: 5px;" maxlength="15" value="${ name }">
+  <select name="blockType" style="margin-left: 5px;">
     <option value="0">屏蔽主题和回帖</option><option value="1">仅屏蔽主题</option><option value="2">仅屏蔽回帖</option>
   </select>
   <a class="pd_btn_link" data-name="delete" href="#">删除</a>
-</li>`).appendTo($blockUserList).find('select').val(type);
+</li>`).appendTo($blockUserList).find('[name="blockType"]').val(type);
     };
 
-    for (let user of Config.blockUserList) {
-        addBlockUser(user.name, user.type);
-    }
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        Config.blockUserDefaultType = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
+        Config.blockUserAtTipsEnabled = $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked');
+        Config.blockUserForumType = parseInt($dialog.find('[name="blockUserForumType"]').val());
+        let blockUserFidList = new Set();
+        for (let fid of $.trim($dialog.find('[name="blockUserFidList"]').val()).split(',')) {
+            fid = parseInt(fid);
+            if (!isNaN(fid) && fid > 0) blockUserFidList.add(fid);
+        }
+        Config.blockUserFidList = [...blockUserFidList];
+        Config.blockUserList = [];
+        $blockUserList.find('li').each(function () {
+            let $this = $(this);
+            let name = $.trim($this.find('[name="username"]').val());
+            if (name !== '' && Util.inFollowOrBlockUserList(name, Config.blockUserList) === -1) {
+                let type = parseInt($this.find('[name="blockType"]').val());
+                Config.blockUserList.push({ name, type });
+            }
+        });
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+    });
 
     $blockUserList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
@@ -2251,7 +2239,7 @@ const showBlockUserDialog = function () {
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
     });
 
@@ -2262,7 +2250,7 @@ const showBlockUserDialog = function () {
         }
     }).end().find('[data-name="add"]').click(function (e) {
         e.preventDefault();
-        let type = parseInt($('[name="blockUserDefaultType"]').val());
+        let type = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
         for (let name of $.trim($dialog.find('[name="addBlockUser"]').val()).split(',')) {
             name = $.trim(name);
             if (!name) continue;
@@ -2271,19 +2259,22 @@ const showBlockUserDialog = function () {
             }
         }
         $dialog.find('[name="addBlockUser"]').val('');
-        Dialog.show(dialogName);
-    });
-
-    $dialog.find('[name="blockUserForumType"]').change(function () {
-        $('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
+        Dialog.resize(dialogName);
+    }).end().find('[name="blockUserForumType"]').change(function () {
+        $dialog.find('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('[data-name="openImOrExBlockUserListDialog"]').click(function (e) {
         e.preventDefault();
         Public.showCommonImportOrExportConfigDialog('屏蔽用户', 'blockUserList');
     });
 
+    $dialog.find('[name="blockUserDefaultType"]').val(Config.blockUserDefaultType);
+    $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked', Config.blockUserAtTipsEnabled);
+    $dialog.find('[name="blockUserForumType"]').val(Config.blockUserForumType).triggerHandler('change');
+    $dialog.find('[name="blockUserFidList"]').val(Config.blockUserFidList.join(','));
+    for (let user of Config.blockUserList) {
+        addBlockUser(user.name, user.type);
+    }
     Dialog.show(dialogName);
-    $dialog.find('[name="blockUserForumType"]').triggerHandler('change');
-    $dialog.find('[name="blockUserDefaultType"]').focus();
 };
 
 /**
@@ -2320,16 +2311,37 @@ const showBlockThreadDialog = function () {
   <div data-name="blockThreadAddBtns" style="margin-top: 5px;">
     <a class="pd_btn_link" data-name="addOne" href="#">增加1个</a>
     <a class="pd_btn_link" data-name="addFive" href="#">增加5个</a>
-    <a class="pd_btn_link" data-name="clear" href="#">清除所有</a>
+    <a class="pd_btn_link pd_highlight" data-name="clear" href="#">清除所有</a>
   </div>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExBlockThreadListDialog" href="#">导入/导出屏蔽帖子</a></span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '屏蔽帖子', html, 'width: 768px;');
     let $blockThreadList = $dialog.find('#pdBlockThreadList');
+
+    /**
+     * 添加屏蔽帖子
+     * @param {string} keyWord 标题关键字
+     * @param {number} userType 屏蔽用户，0：所有；1：包括；2：排除
+     * @param {string[]} userList 用户名
+     * @param {number} fidType 屏蔽范围，0：所有；1：包括；2：排除
+     * @param {number[]} fidList 版块ID列表
+     */
+    const addBlockThread = function (keyWord, userType, userList, fidType, fidList) {
+        $(`
+<tr>
+  <td><input name="keyWord" type="text" style="width: 208px;" value="${ keyWord }"></td>
+  <td><select name="userType"><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>
+  <td><input name="userList" type="text" style="width: 188px;" value="${ userList.join(',') }" ${ userType === 0 ? 'disabled' : '' }></td>
+  <td><select name="fidType"><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>
+  <td><input name="fidList" type="text" style="width: 120px;" value="${ fidList.join(',') }" ${ fidType === 0 ? 'disabled' : '' }></td>
+  <td><a href="#" data-name="delete">删除</a></td>
+</tr>
+`).appendTo($blockThreadList).find('[name="userType"]').val(userType).end().find('[name="fidType"]').val(fidType);
+    };
 
     /**
      * 验证设置是否正确
@@ -2339,7 +2351,7 @@ const showBlockThreadDialog = function () {
         let flag = true;
         $blockThreadList.find('tr:gt(0)').each(function () {
             let $this = $(this);
-            let $txtKeyWord = $this.find('td:first-child > input');
+            let $txtKeyWord = $this.find('[name="keyWord"]');
             let keyWord = $txtKeyWord.val();
             if ($.trim(keyWord) === '') return;
             if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
@@ -2360,42 +2372,43 @@ const showBlockThreadDialog = function () {
         e.preventDefault();
         if (!verify()) return;
         Config.blockThreadDefForumType = parseInt($dialog.find('[name="blockThreadDefForumType"]').val());
-        Config.blockThreadDefFidList = [];
+        let blockThreadDefFidList = new Set();
         for (let fid of $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(',')) {
             fid = parseInt(fid);
-            if (!isNaN(fid) && fid > 0) Config.blockThreadDefFidList.push(fid);
+            if (!isNaN(fid) && fid > 0) blockThreadDefFidList.add(fid);
         }
+        Config.blockThreadDefFidList = [...blockThreadDefFidList];
         Config.blockThreadList = [];
         $blockThreadList.find('tr:gt(0)').each(function () {
             let $this = $(this);
-            let keyWord = $this.find('td:first-child > input').val();
+            let keyWord = $this.find('[name="keyWord"]').val();
             if ($.trim(keyWord) === '') return;
             let newObj = { keyWord };
 
-            let userType = parseInt($this.find('td:nth-child(2) > select').val());
+            let userType = parseInt($this.find('[name="userType"]').val());
             if (userType > 0) {
-                let userList = [];
-                for (let user of $.trim($this.find('td:nth-child(3) > input').val()).split(',')) {
+                let userList = new Set();
+                for (let user of $.trim($this.find('[name="userList"]').val()).split(',')) {
                     user = $.trim(user);
-                    if (user) userList.push(user);
+                    if (user) userList.add(user);
                 }
-                if (userList.length > 0) newObj[userType === 2 ? 'excludeUser' : 'includeUser'] = userList;
+                if (userList.size > 0) newObj[userType === 2 ? 'excludeUser' : 'includeUser'] = [...userList];
             }
 
-            let fidType = parseInt($this.find('td:nth-child(4) > select').val());
+            let fidType = parseInt($this.find('[name="fidType"]').val());
             if (fidType > 0) {
-                let fidList = [];
-                for (let fid of $.trim($this.find('td:nth-child(5) > input').val()).split(',')) {
+                let fidList = new Set();
+                for (let fid of $.trim($this.find('[name="fidList"]').val()).split(',')) {
                     fid = parseInt(fid);
-                    if (!isNaN(fid) && fid > 0) fidList.push(fid);
+                    if (!isNaN(fid) && fid > 0) fidList.add(fid);
                 }
-                if (fidList.length > 0) newObj[fidType === 2 ? 'excludeFid' : 'includeFid'] = fidList;
+                if (fidList.size > 0) newObj[fidType === 2 ? 'excludeFid' : 'includeFid'] = [...fidList];
             }
             Config.blockThreadList.push(newObj);
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
 
     $blockThreadList.on('change', 'select', function () {
         let $this = $(this);
@@ -2405,27 +2418,29 @@ const showBlockThreadDialog = function () {
         $(this).closest('tr').remove();
     });
 
-    /**
-     * 添加屏蔽帖子
-     * @param {string} keyWord 标题关键字
-     * @param {number} userType 屏蔽用户，0：所有；1：包括；2：排除
-     * @param {string[]} userList 用户名
-     * @param {number} fidType 屏蔽范围，0：所有；1：包括；2：排除
-     * @param {number[]} fidList 版块ID列表
-     */
-    const addBlockThread = function (keyWord, userType, userList, fidType, fidList) {
-        $(`
-<tr>
-  <td><input type="text" style="width: 208px;" value="${ keyWord }"></td>
-  <td><select><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>
-  <td><input type="text" style="width: 188px;" value="${ userList.join(',') }" ${ userType === 0 ? 'disabled' : '' }></td>
-  <td><select><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>
-  <td><input type="text" style="width: 120px;" value="${ fidList.join(',') }" ${ fidType === 0 ? 'disabled' : '' }></td>
-  <td><a href="#" data-name="delete">删除</a></td>
-</tr>
-`).appendTo($blockThreadList).find('td:nth-child(2) > select').val(userType).end().find('td:nth-child(4) > select').val(fidType);
-    };
+    $dialog.find('[data-name="addOne"], [data-name="addFive"]').click(function (e) {
+        e.preventDefault();
+        let num = 1;
+        if ($(this).is('[data-name="addFive"]')) num = 5;
+        for (let i = 1; i <= num; i++) {
+            addBlockThread('', 0, [], parseInt($dialog.find('[name="blockThreadDefForumType"]').val()), $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(','));
+        }
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="clear"]').click(function (e) {
+        e.preventDefault();
+        if (confirm('是否清除所有屏蔽关键字？')) {
+            $blockThreadList.find('tbody > tr:gt(0)').remove();
+            Dialog.resize(dialogName);
+        }
+    }).end().find('[name="blockThreadDefForumType"]').change(function () {
+        $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
+    }).end().find('[data-name="openImOrExBlockThreadListDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('屏蔽帖子', 'blockThreadList');
+    });
 
+    $dialog.find('[name="blockThreadDefForumType"]').val(Config.blockThreadDefForumType).triggerHandler('change');
+    $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
     for (let data of Config.blockThreadList) {
         let { keyWord, includeUser, excludeUser, includeFid, excludeFid } = data;
         let userType = 0;
@@ -2449,33 +2464,7 @@ const showBlockThreadDialog = function () {
         }
         addBlockThread(keyWord, userType, userList, fidType, fidList);
     }
-
-    $dialog.find('[data-name="addOne"], [data-name="addFive"]').click(function (e) {
-        e.preventDefault();
-        let num = 1;
-        if ($(this).is('[data-name="addFive"]')) num = 5;
-        for (let i = 1; i <= num; i++) {
-            addBlockThread('', 0, [], parseInt($dialog.find('[name="blockThreadDefForumType"]').val()), $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(','));
-        }
-        Dialog.show(dialogName);
-    }).end().find('[data-name="clear"]').click(function (e) {
-        e.preventDefault();
-        if (confirm('是否清除所有屏蔽关键字？')) {
-            $blockThreadList.find('tbody > tr:gt(0)').remove();
-            Dialog.show(dialogName);
-        }
-    });
-
-    $dialog.find('[name="blockThreadDefForumType"]').change(function () {
-        $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
-    }).end().find('[data-name="openImOrExBlockThreadListDialog"]').click(function (e) {
-        e.preventDefault();
-        Public.showCommonImportOrExportConfigDialog('屏蔽帖子', 'blockThreadList');
-    });
-
     Dialog.show(dialogName);
-    $dialog.find('[name="blockThreadDefForumType"]').val(Config.blockThreadDefForumType).focus().triggerHandler('change');
-    $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
 },{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
@@ -2613,7 +2602,7 @@ exports.default = Const;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.close = exports.show = exports.create = undefined;
+exports.close = exports.resize = exports.show = exports.create = undefined;
 
 var _Info = require('./Info');
 
@@ -2643,7 +2632,7 @@ const create = exports.create = function (id, title, content, style = '') {
     let html = `
 <form>
 <div class="pd_cfg_box" id="${ id }" style="${ style }">
-  <h1>${ title }<span>&times;</span></h1>
+  <h1>${ title }<span data-action="close">&times;</span></h1>
   ${ content }
 </div>
 </form>`;
@@ -2651,11 +2640,11 @@ const create = exports.create = function (id, title, content, style = '') {
     $dialog.on('click', '.pd_cfg_tips', function (e) {
         if (_Info2.default.isMobile) Public.showElementTitleTips(e, this.title);
         return false;
-    }).on('click', 'a.pd_disabled_link', () => false).keydown(function (e) {
+    }).on('click', 'a.pd_disabled_link', () => false).on('click', '[data-action="close"]', () => close(id)).keydown(function (e) {
         if (e.keyCode === 27) {
             return close(id);
         }
-    }).find('h1 > span').click(() => close(id)).end().find('legend [type="checkbox"]').click(function () {
+    }).find('legend [type="checkbox"]').click(function () {
         let $this = $(this);
         let checked = $this.prop('checked');
         if (Util.isOpera() || Util.isEdge()) $this.closest('fieldset').find('input, select, textarea, button').not('legend input').prop('disabled', !checked);else $this.closest('fieldset').prop('disabled', !checked);
@@ -2672,9 +2661,7 @@ const create = exports.create = function (id, title, content, style = '') {
         });
     });
     if (!_Info2.default.isMobile) {
-        $(window).on('resize.' + id, function () {
-            show(id);
-        });
+        $(window).on('resize.' + id, () => resize(id));
     }
     return $dialog;
 };
@@ -2691,6 +2678,17 @@ const show = exports.show = function (id) {
     }).end().find('input[data-disabled]').each(function () {
         $(this).triggerHandler('click');
     });
+    $dialog.fadeIn('fast');
+    resize(id);
+    $dialog.find('input:first, select:first, a:first, textarea:first, button:first').eq(0).focus();
+};
+
+/**
+ * 调整对话框大小和位置
+ * @param {string} id 对话框ID
+ */
+const resize = exports.resize = function (id) {
+    let $dialog = $('#' + id);
     let dialogWidth = $dialog.width(),
         windowWidth = $(window).width();
     let left = windowWidth / 2 - dialogWidth / 2;
@@ -2698,7 +2696,7 @@ const show = exports.show = function (id) {
     if (left < 0) left = 0;
     let top = $(window).height() / 2 - $dialog.height() / 2;
     if (top < 0) top = 0;
-    $dialog.css({ top, left }).fadeIn('fast');
+    $dialog.css({ top, left });
 };
 
 /**
@@ -4477,7 +4475,7 @@ const getMergeLog = exports.getMergeLog = function (log, newLog) {
                 let index = log[date].findIndex(item => newItem['time'] === item['time'] && newItem['type'] === item['type']);
                 if (index > -1) log[date][index] = newItem;else log[date].push(newItem);
             }
-            log[date].sort((a, b) => a.time > b.time);
+            log[date].sort((a, b) => a.time > b.time ? 1 : -1);
         }
     }
     return log;
@@ -4556,7 +4554,7 @@ const show = exports.show = function () {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
-  <button name="close" type="button">关闭</button>
+  <button data-action="close" type="button">关闭</button>
   <button name="clear" type="button">清除日志</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
@@ -4629,7 +4627,7 @@ const show = exports.show = function () {
         }
     }).end().find(`[name="sortType"][value="${ Config.logSortType }"]`).click().end().find(`[name="statType"][value="${ Config.logStatType }"]`).click().end().find('[name="statDays"]').val(Config.logStatDays);
 
-    $dialog.find('[name="close"]').click(() => Dialog.close(dialogName)).end().find('[name="clear"]').click(function (e) {
+    $dialog.find('[name="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有日志？')) {
             Log.clear();
@@ -4646,7 +4644,6 @@ const show = exports.show = function () {
 
     if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
     Script.runFunc('LogDialog.show_after_');
 };
 
@@ -4672,9 +4669,9 @@ const getLogContent = function (log, date, logSortType) {
     let logList = log[date];
     if (logSortType === 'type') {
         const sortTypeList = ['捐款', '领取每日奖励', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
-        logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type));
+        logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1);
     } else {
-        logList.sort((a, b) => a.time > b.time);
+        logList.sort((a, b) => a.time > b.time ? 1 : -1);
     }
 
     let content = '',
@@ -4895,11 +4892,11 @@ const showImportOrExportLogDialog = function () {
   </div>
   <div data-name="logSetting">
     <strong>导入日志：</strong>将日志内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-    <strong>导出日志：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
+    <strong>导出日志：</strong>复制文本框里的内容并粘贴到别处即可<br>
     <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
   </div>
   <div data-name="logText" style="display: none;">
-    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到文本文件里即可
+    <strong>导出日志文本</strong>：复制文本框里的内容并粘贴到别处即可
     <div>
       <label title="按时间顺序排序"><input type="radio" name="sortType2" value="time" checked> 按时间</label>
       <label title="按日志类别排序"><input type="radio" name="sortType2" value="type"> 按类别</label>
@@ -4911,7 +4908,7 @@ const showImportOrExportLogDialog = function () {
 <div class="pd_cfg_btns">
   <button name="merge" type="button">合并日志</button>
   <button name="overwrite" type="button" style="color: #f00;">覆盖日志</button>
-  <button name="close" type="button">关闭</button>
+  <button data-action="close" type="button">关闭</button>
 </div>`;
 
     let $dialog = Dialog.create(dialogName, '导入或导出日志', html);
@@ -4943,11 +4940,11 @@ const showImportOrExportLogDialog = function () {
         Log.write(log);
         alert('日志已导入');
         location.reload();
-    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+    });
 
     Dialog.show(dialogName);
-    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find(`[name="sortType2"][value="${ Config.logSortType }"]`).prop('checked', true).triggerHandler('click');
+    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select().focus();
     Script.runFunc('LogDialog.showImportOrExportLogDialog_after_');
 };
 
@@ -5528,8 +5525,8 @@ const showLevelPointListConfigDialog = function (callback) {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配方案</a></span>
-  <button type="submit">确定</button>
-  <button type="button" name="cancel">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
@@ -5637,7 +5634,7 @@ const showLevelPointListConfigDialog = function (callback) {
         (0, _Config.write)();
         Dialog.close(dialogName);
         setLevelPointListSelect(Config.levelPointList);
-    }).find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="add"]').click(function (e) {
+    }).find('[data-name="add"]').click(function (e) {
         e.preventDefault();
         let points = { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 };
         if (saveType === 1) {
@@ -5647,27 +5644,27 @@ const showLevelPointListConfigDialog = function (callback) {
         }
         addLevelPointHtml(0, points);
         $levelPointList.find('[name="level"]:last').focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-name="deleteSelect"]').click(function (e) {
         e.preventDefault();
         let $checked = $levelPointList.find('[type="checkbox"]:checked');
         if (!$checked.length || !confirm('是否删除所选层数？')) return;
         let $line = $checked.closest('tr');
         $line.next('tr').addBack().remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
         e.preventDefault();
         Public.showCommonImportOrExportConfigDialog('各层点数分配方案', 'levelPointList', null, function () {
             $('#pdLevelPointListConfigDialog').remove();
             showLevelPointListConfigDialog($dialog => $dialog.submit());
         });
-    }).end().find('[data-name="openCustomScriptDialog"]').click(() => Script.showDialog()).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    }).end().find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')));
 
     $levelPointList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
         $line.next('tr').addBack().remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('change', '.pd_point', function () {
         let $this = $(this);
         let name = $this.attr('name');
@@ -5758,7 +5755,6 @@ const showLevelPointListConfigDialog = function (callback) {
     }
 
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
     if (typeof callback === 'function') callback($dialog);
 };
 
@@ -6145,13 +6141,13 @@ const showImportOrExportLootLogDialog = function () {
     let html = `
 <div class="pd_cfg_main">
   <strong>导入争夺记录：</strong>将争夺记录内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
+  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到别处即可<br>
   <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
   <button name="merge" type="button">合并记录</button>
   <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
-  <button name="close" type="button">关闭</button>
+  <button data-action="close" type="button">关闭</button>
 </div>`;
 
     let $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
@@ -6175,10 +6171,10 @@ const showImportOrExportLootLogDialog = function () {
         LootLog.write(log);
         alert('争夺记录已导入');
         location.reload();
-    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+    });
 
     Dialog.show(dialogName);
-    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select();
+    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select().focus();
 };
 
 /**
@@ -8282,7 +8278,9 @@ const followUsers = exports.followUsers = function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
                 $this.addClass('pd_highlight');
-                if (Config.highlightFollowUserThreadLinkEnabled) $this.parent('td').prev('td').prev('td').find('div > a[href^="read.php?tid="]').addClass('pd_highlight');
+                if (Config.highlightFollowUserThreadLinkEnabled) {
+                    $this.parent('td').prev('td').prev('td').find('div > a[href^="read.php?tid="]').addClass('pd_highlight');
+                }
             }
         });
     } else if (location.pathname === '/read.php') {
@@ -8313,8 +8311,8 @@ const followUsers = exports.followUsers = function () {
  * 屏蔽用户
  */
 const blockUsers = exports.blockUsers = function () {
-    if (Config.blockUserList.length === 0) return;
-    let blockNum = 0;
+    if (!Config.blockUserList.length) return;
+    let num = 0;
     if (_Info2.default.isInHomePage) {
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
             let $this = $(this);
@@ -8322,19 +8320,19 @@ const blockUsers = exports.blockUsers = function () {
             if (!matches) return;
             let index = Util.inFollowOrBlockUserList(matches[1], Config.blockUserList);
             if (index > -1 && Config.blockUserList[index].type < 2) {
-                blockNum++;
+                num++;
                 $this.parent('li').remove();
             }
         });
     } else if (location.pathname === '/thread.php') {
         let fid = parseInt($('input[name="f_fid"]:first').val());
         if (!fid) return;
-        if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
+        if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         $('a.bl[href^="profile.php?action=show&uid="]').each(function () {
             let $this = $(this);
             let index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
             if (index > -1 && Config.blockUserList[index].type < 2) {
-                blockNum++;
+                num++;
                 $this.closest('tr').remove();
             }
         });
@@ -8342,7 +8340,7 @@ const blockUsers = exports.blockUsers = function () {
         if (Config.blockUserForumType > 0) {
             let fid = parseInt($('input[name="fid"]:first').val());
             if (!fid) return;
-            if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
+            if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         }
         let page = Util.getCurrentThreadPage();
         $('.readidmsbottom > a, .readidmleft > a').each(function (i) {
@@ -8351,7 +8349,7 @@ const blockUsers = exports.blockUsers = function () {
             if (index > -1) {
                 let type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
-                blockNum++;
+                num++;
                 let $lou = $this.closest('.readtext');
                 $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
             }
@@ -8374,12 +8372,12 @@ const blockUsers = exports.blockUsers = function () {
         $('.kf_share1 > tbody > tr > td:last-child').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.blockUserList) > -1) {
-                blockNum++;
+                num++;
                 $this.closest('tr').remove();
             }
         });
     }
-    if (blockNum > 0) console.log(`【屏蔽用户】共有${ blockNum }个帖子被屏蔽`);
+    if (num > 0) console.log(`【屏蔽用户】共有${ num }个帖子或回复被屏蔽`);
 };
 
 /**
@@ -8893,14 +8891,14 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
-    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
+    <strong>导出设置：</strong>复制文本框里的内容并粘贴到别处即可
   </div>
   <textarea name="commonConfig" style="width: 500px; height: 300px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"></span>
   <button type="submit">保存</button>
-  <button name="cancel" type="button">取消</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `导入或导出${ title }`, html);
 
@@ -8924,7 +8922,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
         alert('设置已导入');
         Dialog.close(dialogName);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
     Dialog.show(dialogName);
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
     if (typeof callback === 'function') callback($dialog);
@@ -8937,7 +8935,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -9101,30 +9099,34 @@ const adjustThreadContentFontSize = exports.adjustThreadContentFontSize = functi
 };
 
 /**
- * 添加复制购买人名单的链接
+ * 添加复制购买人名单的选项
  */
-const addCopyBuyersListLink = exports.addCopyBuyersListLink = function () {
-    $('<a style="margin:0 2px 0 5px;" href="#">复制名单</a>').insertAfter('.readtext select[name="buyers"]').click(function (e) {
-        e.preventDefault();
-        let buyerList = [];
-        $(this).prev('select').children('option').each(function (index) {
+const addCopyBuyersListOption = exports.addCopyBuyersListOption = function () {
+    $('.readtext select[name="buyers"]').each(function () {
+        $(this).find('option:first-child').after('<option value="copyList">复制名单</option>');
+    });
+    $(document).on('change', 'select[name="buyers"]', function () {
+        let $this = $(this);
+        if ($this.val() !== 'copyList') return;
+        let buyerList = $this.find('option').map(function (index) {
             let name = $(this).text();
-            if (!index || name === '-'.repeat(11)) return;
-            buyerList.push(name);
-        });
-        if (!buyerList.length) {
+            if (index === 0 || index === 1 || name.includes('-'.repeat(11))) return null;else return name;
+        }).get().join('\n');
+        $this.get(0).selectedIndex = 0;
+        if (!buyerList) {
             alert('暂时无人购买');
             return;
         }
+
         const dialogName = 'pdCopyBuyerListDialog';
         if ($('#' + dialogName).length > 0) return;
         let html = `
 <div class="pd_cfg_main">
-  <textarea style="width: 200px; height: 300px; margin: 5px 0;" readonly></textarea>
+  <textarea name="buyerList" style="width: 200px; height: 300px; margin: 5px 0;" readonly>${ buyerList }</textarea>
 </div>`;
         let $dialog = Dialog.create(dialogName, '购买人名单', html);
         Dialog.show(dialogName);
-        $dialog.find('textarea').val(buyerList.join('\n')).select().focus();
+        $dialog.find('[name="buyerList"]').select().focus();
     });
 };
 
@@ -9137,21 +9139,24 @@ const showStatRepliersDialog = exports.showStatRepliersDialog = function (replie
     let html = `
 <div class="pd_cfg_main">
   <div id="pdReplierListFilter" style="margin-top: 5px;">
-    <label><input type="checkbox" checked> 显示楼层号</label>
-    <label><input type="checkbox"> 去除重复</label>
-    <label><input type="checkbox"> 去除楼主</label>
+    <label><input name="showFloorNumEnabled" type="checkbox" checked> 显示楼层号</label>
+    <label><input name="removeRepeatedEnabled" type="checkbox"> 去除重复</label>
+    <label><input name="removeTopFloorEnabled" type="checkbox"> 去除楼主</label>
   </div>
   <div style="color: #f00;" id="pdReplierListStat"></div>
-  <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
+  <textarea name="replierList" style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
 </div>`;
     let $dialog = Dialog.create(dialogName, '回帖者名单', html);
+    let $replierListFilter = $dialog.find('#pdReplierListFilter');
 
-    let $filterNodes = $dialog.find('#pdReplierListFilter input');
-    $filterNodes.click(function () {
+    /**
+     * 显示回帖者名单
+     */
+    const showReplierList = function () {
         let list = [...replierList];
-        let isShowFloor = $filterNodes.eq(0).prop('checked'),
-            isRemoveRepeated = $filterNodes.eq(1).prop('checked'),
-            isRemoveTopFloor = $filterNodes.eq(2).prop('checked');
+        let isShowFloorNum = $replierListFilter.find('[name="showFloorNumEnabled"]').prop('checked'),
+            isRemoveRepeated = $replierListFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
+            isRemoveTopFloor = $replierListFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
         if (isRemoveRepeated) {
             list = list.map((elem, index, list) => list.indexOf(elem) === index ? elem : null);
         }
@@ -9163,16 +9168,16 @@ const showStatRepliersDialog = exports.showStatRepliersDialog = function (replie
         let num = 0;
         for (let [floor, userName] of list.entries()) {
             if (!userName) continue;
-            content += (isShowFloor ? floor + 'L：' : '') + userName + '\n';
+            content += (isShowFloorNum ? floor + 'L：' : '') + userName + '\n';
             num++;
         }
-        $dialog.find('textarea').val(content);
+        $dialog.find('[name="replierList"]').val(content);
         $dialog.find('#pdReplierListStat').html(`共有<b>${ num }</b>条项目`);
-    });
-    $dialog.find('#pdReplierListFilter input:first').triggerHandler('click');
+    };
 
+    $replierListFilter.on('click', '[type="checkbox"]', showReplierList);
+    showReplierList();
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
 };
 
 /**
@@ -9837,8 +9842,8 @@ const showDialog = exports.showDialog = function (showIndex = null) {
     <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
     <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出所有脚本</a>
   </span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
   <button class="pd_highlight" name="clear" type="button">清空</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
@@ -9861,9 +9866,9 @@ const showDialog = exports.showDialog = function (showIndex = null) {
         e.preventDefault();
         if (confirm('是否清空所有脚本？')) {
             $customScriptList.html('');
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
-    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
 
     /**
      * 添加自定义脚本
@@ -9906,7 +9911,7 @@ const showDialog = exports.showDialog = function (showIndex = null) {
         $customScriptList.find('.pd_custom_script_content').hide();
         addCustomScript();
         $customScriptList.find('.pd_custom_script_content:last').show().focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-name="insertSample"]').click(function (e) {
         e.preventDefault();
         let $content = $customScriptList.find('.pd_custom_script_content:visible');
@@ -9929,14 +9934,14 @@ const showDialog = exports.showDialog = function (showIndex = null) {
         e.preventDefault();
         $dialog.find('.pd_custom_script_content').hide();
         $(this).parent().next().show().focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         if (!confirm('是否删除此脚本？')) return;
         let $header = $(this).closest('.pd_custom_script_header');
         $header.next().remove();
         $header.remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('change', '.pd_custom_script_content', function () {
         let $this = $(this);
         let { name, version, homepage, trigger } = getScriptMeta($this.val());
@@ -9948,11 +9953,7 @@ const showDialog = exports.showDialog = function (showIndex = null) {
     });
 
     Dialog.show(dialogName);
-    if (typeof showIndex === 'number') {
-        $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
-    } else {
-        $dialog.find('a:first').focus();
-    }
+    if (typeof showIndex === 'number') $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
 };
 
 /**
@@ -10397,7 +10398,7 @@ const getObjectKeyList = exports.getObjectKeyList = function (obj, sortBy = 0) {
         list.push(key);
     }
     if (sortBy !== 0) {
-        list.sort((a, b) => sortBy > 0 ? a > b : a < b);
+        list.sort((a, b) => sortBy > 0 ? a > b ? 1 : -1 : a < b ? 1 : -1);
     }
     return list;
 };
@@ -10411,7 +10412,7 @@ const getObjectKeyList = exports.getObjectKeyList = function (obj, sortBy = 0) {
  */
 const getSortedObjectKeyList = exports.getSortedObjectKeyList = function (sortKeyList, obj, sortBy = 0) {
     let list = getObjectKeyList(obj, sortBy);
-    list.sort((a, b) => sortKeyList.indexOf(a) > sortKeyList.indexOf(b));
+    list.sort((a, b) => sortKeyList.indexOf(a) > sortKeyList.indexOf(b) ? 1 : -1);
     return list;
 };
 
@@ -10426,13 +10427,13 @@ const getStatFormatNumber = exports.getStatFormatNumber = num => num >= 0 ? `<em
  * 检测浏览器是否为Opera
  * @returns {boolean} 是否为Opera
  */
-const isOpera = exports.isOpera = () => typeof window.opera !== 'undefined';
+const isOpera = exports.isOpera = () => typeof _Info2.default.w.opera !== 'undefined';
 
 /**
  * 检测浏览器是否为Edge
  * @returns {boolean} 是否为Edge
  */
-const isEdge = exports.isEdge = () => navigator.appVersion && navigator.appVersion.indexOf('Edge') > 0;
+const isEdge = exports.isEdge = () => navigator.appVersion && navigator.appVersion.includes('Edge');
 
 /**
  * 比较神秘等级高低

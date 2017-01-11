@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.3
+// @version     9.3.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.3';
+var version = '9.3.1';
 
 /**
  * 导出模块
@@ -183,7 +183,7 @@ var init = function init() {
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
         Read.addFloorGotoLink();
-        Read.addCopyBuyersListLink();
+        Read.addCopyBuyersListOption();
         Read.addStatRepliersLink();
         Read.handleBuyThreadBtn();
         if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
@@ -1369,6 +1369,8 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 /**
  * 显示设置对话框
  */
@@ -1377,7 +1379,7 @@ var show = exports.show = function show() {
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     Script.runFunc('ConfigDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u4E89\u593A\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset hidden>\n      <legend>\n        <label><input name="autoDonationEnabled" type="checkbox"> \u81EA\u52A8KFB\u6350\u6B3E</label>\n      </legend>\n      <label>\n        KFB\u6350\u6B3E\u989D\u5EA6\n        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>\n        <span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5728 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u6350\u6B3E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u6350\u6B3E\uFF0824\u5C0F\u65F6\u5236\uFF09\uFF0C\u4F8B\uFF1A22:30:00\uFF08\u6CE8\u610F\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u9519\u8FC7\u6350\u6B3E\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u4E89\u593A\u8BB0\u5F55\u4FDD\u5B58\u5929\u6570 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveDays + '">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 130px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86KF\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u663E\u793A\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="batchBuyThreadEnabled" type="checkbox"> \u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u7684\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="buyThreadViaAjaxEnabled" type="checkbox"> \u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSideBarFastNavEnabled" type="checkbox"> \u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\n        <span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u4E89\u593A\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset hidden>\n      <legend>\n        <label><input name="autoDonationEnabled" type="checkbox"> \u81EA\u52A8KFB\u6350\u6B3E</label>\n      </legend>\n      <label>\n        KFB\u6350\u6B3E\u989D\u5EA6\n        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>\n        <span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5728 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u6350\u6B3E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u6350\u6B3E\uFF0824\u5C0F\u65F6\u5236\uFF09\uFF0C\u4F8B\uFF1A22:30:00\uFF08\u6CE8\u610F\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u9519\u8FC7\u6350\u6B3E\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u4E89\u593A\u8BB0\u5F55\u4FDD\u5B58\u5929\u6570 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveDays + '">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 130px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86KF\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u663E\u793A\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="batchBuyThreadEnabled" type="checkbox"> \u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u7684\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="buyThreadViaAjaxEnabled" type="checkbox"> \u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSideBarFastNavEnabled" type="checkbox"> \u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\n        <span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
     var $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
     $dialog.submit(function (e) {
@@ -1403,9 +1405,7 @@ var show = exports.show = function show() {
                 location.reload();
             }
         }
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
-    }).end().find('[name="default"]').click(function () {
+    }).find('[name="default"]').click(function () {
         if (confirm('是否重置所有设置？')) {
             (0, _Config.clear)();
             alert('设置已重置');
@@ -1438,9 +1438,7 @@ var show = exports.show = function show() {
     });
 
     setMainConfigValue($dialog);
-
     Dialog.show(dialogName);
-    $dialog.find('a:first').focus();
     Script.runFunc('ConfigDialog.show_after_');
 };
 
@@ -1578,7 +1576,7 @@ var showRunCommandDialog = function showRunCommandDialog() {
     var dialogName = 'pdRunCommandDialog';
     if ($('#' + dialogName).length > 0) return;
     Dialog.close('pdConfigDialog');
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\n    \u8FD0\u884C\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+Enter</b>\uFF1B\u6E05\u9664\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+\u9000\u683C\u952E</b><br>\n    \u6309<b>F12\u952E</b>\u53EF\u6253\u5F00\u6D4F\u89C8\u5668\u63A7\u5236\u53F0\u67E5\u770B\u6D88\u606F\uFF08\u9700\u5207\u6362\u81F3\u63A7\u5236\u53F0\u6216Console\u6807\u7B7E\uFF09\n  </div>\n  <textarea name="cmd" wrap="off" style="width: 750px; height: 300px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button type="submit">\u8FD0\u884C</button>\n  <button name="clear" type="button">\u6E05\u9664</button>\n  <button name="close" type="button">\u5173\u95ED</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\n    \u8FD0\u884C\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+Enter</b>\uFF1B\u6E05\u9664\u547D\u4EE4\u5FEB\u6377\u952E\uFF1A<b>Ctrl+\u9000\u683C\u952E</b><br>\n    \u6309<b>F12\u952E</b>\u53EF\u6253\u5F00\u6D4F\u89C8\u5668\u63A7\u5236\u53F0\u67E5\u770B\u6D88\u606F\uFF08\u9700\u5207\u6362\u81F3\u63A7\u5236\u53F0\u6216Console\u6807\u7B7E\uFF09\n  </div>\n  <textarea name="cmd" wrap="off" style="width: 750px; height: 300px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button type="submit">\u8FD0\u884C</button>\n  <button name="clear" type="button">\u6E05\u9664</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '运行命令', html);
     var $cmd = $dialog.find('[name="cmd"]');
 
@@ -1588,18 +1586,18 @@ var showRunCommandDialog = function showRunCommandDialog() {
         if (content) Script.runCmd(content, true);
     }).end().find('[name="clear"]').click(function () {
         $cmd.val('').focus();
-    }).end().find('[name="close"]').click(function () {
-        return Dialog.close(dialogName);
     });
 
-    Dialog.show(dialogName);
     $cmd.keydown(function (e) {
         if (e.ctrlKey && e.keyCode === 13) {
             $dialog.submit();
         } else if (e.ctrlKey && e.keyCode === 8) {
             $dialog.find('[name="clear"]').click();
         }
-    }).focus();
+    });
+
+    Dialog.show(dialogName);
+    $cmd.focus();
 };
 
 /**
@@ -1609,7 +1607,7 @@ var showImportOrExportSettingDialog = function showImportOrExportSettingDialog()
     var dialogName = 'pdImOrExSettingDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button type="submit">\u4FDD\u5B58</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u522B\u5904\u5373\u53EF\n  </div>\n  <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '导入或导出设置', html);
     var $setting = $dialog.find('[name="setting"]');
     $dialog.submit(function (e) {
@@ -1632,11 +1630,9 @@ var showImportOrExportSettingDialog = function showImportOrExportSettingDialog()
         (0, _Config.write)();
         alert('设置已导入');
         location.reload();
-    }).end().find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
     Dialog.show(dialogName);
-    $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select();
+    $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select().focus();
 };
 
 /**
@@ -1645,7 +1641,7 @@ var showImportOrExportSettingDialog = function showImportOrExportSettingDialog()
 var showCustomSmColorDialog = function showCustomSmColorDialog() {
     var dialogName = 'pdCustomSmColorDialog';
     if ($('#' + dialogName).length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    <strong>\n      \u793A\u4F8B\uFF08<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">\u5E38\u7528\u914D\u8272\u8868</a> / \n      <a target="_blank" href="read.php?tid=488016">\u914D\u8272\u65B9\u6848\u6536\u96C6\u8D34</a>\uFF09\uFF1A\n    </strong><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>4-4 <b>\u989C\u8272\uFF1A</b><span style="color: #0000ff;">#0000ff</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>10-99 <b>\u989C\u8272\uFF1A</b><span style="color: #5ad465;">#5ad465</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>5000-MAX <b>\u989C\u8272\uFF1A</b><span style="color: #ff0000;">#ff0000</span>\n  </div>\n  <ul data-name="smColorList"></ul>\n  <div style="margin-top: 5px;" data-name="customSmColorAddBtns">\n    <a class="pd_btn_link" data-action="addOne" href="#">\u589E\u52A01\u4E2A</a>\n    <a class="pd_btn_link" data-action="addFive" href="#">\u589E\u52A05\u4E2A</a>\n    <a class="pd_btn_link" data-action="clear" href="#">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExCustomSmColorConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u914D\u8272\u65B9\u6848</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    <strong>\n      \u793A\u4F8B\uFF08<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">\u5E38\u7528\u914D\u8272\u8868</a> / \n      <a target="_blank" href="read.php?tid=488016">\u914D\u8272\u65B9\u6848\u6536\u96C6\u8D34</a>\uFF09\uFF1A\n    </strong><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>4-4 <b>\u989C\u8272\uFF1A</b><span style="color: #0000ff;">#0000ff</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>10-99 <b>\u989C\u8272\uFF1A</b><span style="color: #5ad465;">#5ad465</span><br>\n    <b>\u7B49\u7EA7\u8303\u56F4\uFF1A</b>5000-MAX <b>\u989C\u8272\uFF1A</b><span style="color: #ff0000;">#ff0000</span>\n  </div>\n  <ul data-name="smColorList"></ul>\n  <div style="margin-top: 5px;" data-name="customSmColorAddBtns">\n    <a class="pd_btn_link" data-action="addOne" href="#">\u589E\u52A01\u4E2A</a>\n    <a class="pd_btn_link" data-action="addFive" href="#">\u589E\u52A05\u4E2A</a>\n    <a class="pd_btn_link" data-action="clear" href="#">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExCustomSmColorConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u914D\u8272\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html, 'min-width: 327px;');
     var $customSmColorList = $dialog.find('[data-name="smColorList"]');
 
@@ -1753,27 +1749,25 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
         });
         if (verification) {
             list.sort(function (a, b) {
-                return Util.compareSmLevel(a.min, b.min) > 0;
+                return Util.compareSmLevel(a.min, b.min) > 0 ? 1 : -1;
             });
             Config.customSmColorConfigList = list;
             (0, _Config.write)();
             Dialog.close(dialogName);
         }
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
-    }).end().find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
+    }).find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
         e.preventDefault();
         var num = 1;
         if ($(this).is('[data-action="addFive"]')) num = 5;
         for (var i = 1; i <= num; i++) {
             $customSmColorList.append(getSmColorLineHtml());
         }
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-action="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有颜色？')) {
             $customSmColorList.empty();
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
     }).end().find('[data-name="openImOrExCustomSmColorConfigDialog"]').click(function (e) {
         e.preventDefault();
@@ -1783,7 +1777,6 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
     });
 
     Dialog.show(dialogName);
-    if ($customSmColorList.find('input').length > 0) $customSmColorList.find('input:first').focus();else $dialog.find('[data-name="customSmColorAddBtns"] > a:first').focus();
 };
 
 /**
@@ -1792,7 +1785,7 @@ var showCustomSmColorDialog = function showCustomSmColorDialog() {
 var showCustomCssDialog = function showCustomCssDialog() {
     var dialogName = 'pdCustomCssDialog';
     if ($('#' + dialogName).length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <strong>\u81EA\u5B9A\u4E49CSS\u5185\u5BB9\uFF1A</strong><br>\n  <textarea name="customCssContent" wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS\u89C4\u5219\u6536\u96C6\u8D34</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <strong>\u81EA\u5B9A\u4E49CSS\u5185\u5BB9\uFF1A</strong><br>\n  <textarea name="customCssContent" wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS\u89C4\u5219\u6536\u96C6\u8D34</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '自定义CSS', html);
     var $content = $dialog.find('[name="customCssContent"]');
     $dialog.submit(function (e) {
@@ -1801,8 +1794,6 @@ var showCustomCssDialog = function showCustomCssDialog() {
         (0, _Config.write)();
         Dialog.close(dialogName);
         alert('自定义CSS修改成功（需刷新页面后才可生效）');
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
     $content.val(Config.customCssContent);
     Dialog.show(dialogName);
@@ -1815,7 +1806,7 @@ var showCustomCssDialog = function showCustomCssDialog() {
 var showUserMemoDialog = function showUserMemoDialog() {
     var dialogName = 'pdUserMemoDialog';
     if ($('#' + dialogName).length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  \u6309\u7167\u201C\u7528\u6237\u540D:\u5907\u6CE8\u201D\u7684\u683C\u5F0F\uFF08\u6CE8\u610F\u662F\u82F1\u6587\u5192\u53F7\uFF09\uFF0C\u6BCF\u884C\u4E00\u4E2A<br>\n  <textarea name="userMemoList" wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  \u6309\u7167\u201C\u7528\u6237\u540D:\u5907\u6CE8\u201D\u7684\u683C\u5F0F\uFF08\u6CE8\u610F\u662F\u82F1\u6587\u5192\u53F7\uFF09\uFF0C\u6BCF\u884C\u4E00\u4E2A<br>\n  <textarea name="userMemoList" wrap="off" style="width: 320px; height: 400px; white-space: pre;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '用户备注', html);
     var $userMemoList = $dialog.find('[name="userMemoList"]');
     $dialog.submit(function (e) {
@@ -1864,8 +1855,6 @@ var showUserMemoDialog = function showUserMemoDialog() {
 
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
     var content = '';
     var _iteratorNormalCompletion3 = true;
@@ -1906,9 +1895,18 @@ var showUserMemoDialog = function showUserMemoDialog() {
 var showFollowUserDialog = function showFollowUserDialog() {
     var dialogName = 'pdFollowUserDialog';
     if ($('#' + dialogName).length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label>\n      <input name="highlightFollowUserThreadInHpEnabled" type="checkbox"> \u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u9996\u9875\u5E16\u5B50\u94FE\u63A5\n      <span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u9996\u9875\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span>\n    </label><br>\n    <label>\n      <input name="highlightFollowUserThreadLinkEnabled" type="checkbox"> \u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u5E16\u5B50\u94FE\u63A5\n      <span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u7248\u5757\u9875\u9762\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span>\n    </label><br>\n  </div>\n  <ul id="pdFollowUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>\n  <div style="margin-top: 5px;">\n    <div style="display: inline-block;">\n      <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n      <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    </div>\n    <div style="float: right;">\n      <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n    </div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input name="addFollowUser" style="width: 200px;" type="text">\n    <a class="pd_btn_link" data-name="add" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExFollowUserListDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5173\u6CE8\u7528\u6237</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label>\n      <input name="highlightFollowUserThreadInHpEnabled" type="checkbox"> \u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u9996\u9875\u5E16\u5B50\u94FE\u63A5\n      <span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u9996\u9875\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span>\n    </label><br>\n    <label>\n      <input name="highlightFollowUserThreadLinkEnabled" type="checkbox"> \u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u7684\u5E16\u5B50\u94FE\u63A5\n      <span class="pd_cfg_tips" title="\u9AD8\u4EAE\u6240\u5173\u6CE8\u7528\u6237\u5728\u7248\u5757\u9875\u9762\u4E0B\u7684\u5E16\u5B50\u94FE\u63A5">[?]</span>\n    </label><br>\n  </div>\n  <ul id="pdFollowUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>\n  <div style="margin-top: 5px;">\n    <div style="display: inline-block;">\n      <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n      <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    </div>\n    <div style="float: right;">\n      <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n    </div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input name="addFollowUser" style="width: 200px;" type="text">\n    <a class="pd_btn_link" data-name="add" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExFollowUserListDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5173\u6CE8\u7528\u6237</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '关注用户', html);
     var $followUserList = $dialog.find('#pdFollowUserList');
+
+    /**
+     * 添加关注用户
+     * @param {string} name 用户名
+     */
+    var addFollowUser = function addFollowUser(name) {
+        $('\n<li>\n  <input type="checkbox">\n  <input name="username" type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="' + name + '">\n  <a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a>\n</li>\n').appendTo($followUserList);
+    };
+
     $dialog.submit(function (e) {
         e.preventDefault();
         Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
@@ -1916,52 +1914,14 @@ var showFollowUserDialog = function showFollowUserDialog() {
         Config.followUserList = [];
         $followUserList.find('li').each(function () {
             var $this = $(this);
-            var name = $.trim($this.find('[type="text"]').val());
+            var name = $.trim($this.find('[name="username"]').val());
             if (name !== '' && Util.inFollowOrBlockUserList(name, Config.followUserList) === -1) {
                 Config.followUserList.push({ name: name });
             }
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
-
-    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
-    $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
-
-    /**
-     * 添加关注用户
-     * @param {string} name 用户名
-     */
-    var addFollowUser = function addFollowUser(name) {
-        $('\n<li>\n  <input type="checkbox">\n  <input type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="' + name + '">\n  <a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a>\n</li>\n').appendTo($followUserList);
-    };
-
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
-
-    try {
-        for (var _iterator4 = Config.followUserList[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-            var user = _step4.value;
-
-            addFollowUser(user.name);
-        }
-    } catch (err) {
-        _didIteratorError4 = true;
-        _iteratorError4 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                _iterator4.return();
-            }
-        } finally {
-            if (_didIteratorError4) {
-                throw _iteratorError4;
-            }
-        }
-    }
 
     $followUserList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
@@ -1978,7 +1938,7 @@ var showFollowUserDialog = function showFollowUserDialog() {
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
     });
 
@@ -1989,13 +1949,13 @@ var showFollowUserDialog = function showFollowUserDialog() {
         }
     }).end().find('[data-name="add"]').click(function (e) {
         e.preventDefault();
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
-        var _iteratorError5 = undefined;
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
 
         try {
-            for (var _iterator5 = $.trim($dialog.find('[name="addFollowUser"]').val()).split(',')[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                var name = _step5.value;
+            for (var _iterator4 = $.trim($dialog.find('[name="addFollowUser"]').val()).split(',')[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                var name = _step4.value;
 
                 name = $.trim(name);
                 if (!name) continue;
@@ -2004,31 +1964,55 @@ var showFollowUserDialog = function showFollowUserDialog() {
                 }
             }
         } catch (err) {
-            _didIteratorError5 = true;
-            _iteratorError5 = err;
+            _didIteratorError4 = true;
+            _iteratorError4 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                    _iterator5.return();
+                if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                    _iterator4.return();
                 }
             } finally {
-                if (_didIteratorError5) {
-                    throw _iteratorError5;
+                if (_didIteratorError4) {
+                    throw _iteratorError4;
                 }
             }
         }
 
         $dialog.find('[name="addFollowUser"]').val('');
-        Dialog.show(dialogName);
-    });
-
-    $dialog.find('[data-name="openImOrExFollowUserListDialog"]').click(function (e) {
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="openImOrExFollowUserListDialog"]').click(function (e) {
         e.preventDefault();
         Public.showCommonImportOrExportConfigDialog('关注用户', 'followUserList');
     });
 
+    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
+    $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
+
+    try {
+        for (var _iterator5 = Config.followUserList[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            var user = _step5.value;
+
+            addFollowUser(user.name);
+        }
+    } catch (err) {
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
+            }
+        } finally {
+            if (_didIteratorError5) {
+                throw _iteratorError5;
+            }
+        }
+    }
+
     Dialog.show(dialogName);
-    $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').focus();
 };
 
 /**
@@ -2037,15 +2021,25 @@ var showFollowUserDialog = function showFollowUserDialog() {
 var showBlockUserDialog = function showBlockUserDialog() {
     var dialogName = 'pdBlockUserDialog';
     if ($('#' + dialogName).length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px; line-height: 24px;">\n    <label>\n      \u9ED8\u8BA4\u5C4F\u853D\u7C7B\u578B\n      <select name="blockUserDefaultType">\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n    </label>\n    <label class="pd_cfg_ml">\n      <input name="blockUserAtTipsEnabled" type="checkbox">\u5C4F\u853D@\u63D0\u9192 <span class="pd_cfg_tips" title="\u5C4F\u853D\u88AB\u5C4F\u853D\u7528\u6237\u7684@\u63D0\u9192">[?]</span>\n    </label><br>\n    <label>\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select name="blockUserForumType">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label><br>\n    <label>\u7248\u5757ID\u5217\u8868\n      <input name="blockUserFidList" type="text" style="width: 220px;"> \n      <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span>\n    </label>\n  </div>\n  <ul id="pdBlockUserList" style="margin-top: 5px; min-width: 362px; line-height: 24px;"></ul>\n  <div style="margin-top: 5px;">\n    <div style="display: inline-block;">\n      <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n      <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    </div>\n    <div style="float: right;">\n      <a class="pd_btn_link" data-name="modify" href="#">\u4FEE\u6539\u4E3A</a>\n      <select>\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n      <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n    </div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input name="addBlockUser" style="width: 200px;" type="text">\n    <a class="pd_btn_link" data-name="add" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExBlockUserListDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u7528\u6237</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px; line-height: 24px;">\n    <label>\n      \u9ED8\u8BA4\u5C4F\u853D\u7C7B\u578B\n      <select name="blockUserDefaultType">\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n    </label>\n    <label class="pd_cfg_ml">\n      <input name="blockUserAtTipsEnabled" type="checkbox"> \u5C4F\u853D@\u63D0\u9192 <span class="pd_cfg_tips" title="\u5C4F\u853D\u88AB\u5C4F\u853D\u7528\u6237\u7684@\u63D0\u9192">[?]</span>\n    </label><br>\n    <label>\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select name="blockUserForumType">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label><br>\n    <label>\u7248\u5757ID\u5217\u8868\n      <input name="blockUserFidList" type="text" style="width: 220px;"> \n      <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span>\n    </label>\n  </div>\n  <ul id="pdBlockUserList" style="margin-top: 5px; min-width: 362px; line-height: 24px;"></ul>\n  <div style="margin-top: 5px;">\n    <div style="display: inline-block;">\n      <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n      <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    </div>\n    <div style="float: right;">\n      <a class="pd_btn_link" data-name="modify" href="#">\u4FEE\u6539\u4E3A</a>\n      <select>\n        <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n      </select>\n      <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n    </div>\n  </div>\n  <div style="margin-top: 5px;" title="\u6DFB\u52A0\u591A\u4E2A\u7528\u6237\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">\n    <input name="addBlockUser" style="width: 200px;" type="text">\n    <a class="pd_btn_link" data-name="add" href="#">\u6DFB\u52A0</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExBlockUserListDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u7528\u6237</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '屏蔽用户', html);
     var $blockUserList = $dialog.find('#pdBlockUserList');
+
+    /**
+     * 添加屏蔽用户
+     * @param {string} name 用户名
+     * @param {number} type 屏蔽类型
+     */
+    var addBlockUser = function addBlockUser(name, type) {
+        $('\n<li>\n  <input type="checkbox">\n  <input name="username" type="text" style="width: 150px; margin-left: 5px;" maxlength="15" value="' + name + '">\n  <select name="blockType" style="margin-left: 5px;">\n    <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n  </select>\n  <a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a>\n</li>').appendTo($blockUserList).find('[name="blockType"]').val(type);
+    };
+
     $dialog.submit(function (e) {
         e.preventDefault();
         Config.blockUserDefaultType = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
         Config.blockUserAtTipsEnabled = $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked');
         Config.blockUserForumType = parseInt($dialog.find('[name="blockUserForumType"]').val());
-        Config.blockUserFidList = [];
+        var blockUserFidList = new Set();
         var _iteratorNormalCompletion6 = true;
         var _didIteratorError6 = false;
         var _iteratorError6 = undefined;
@@ -2055,7 +2049,7 @@ var showBlockUserDialog = function showBlockUserDialog() {
                 var fid = _step6.value;
 
                 fid = parseInt(fid);
-                if (!isNaN(fid) && fid > 0) Config.blockUserFidList.push(fid);
+                if (!isNaN(fid) && fid > 0) blockUserFidList.add(fid);
             }
         } catch (err) {
             _didIteratorError6 = true;
@@ -2072,59 +2066,19 @@ var showBlockUserDialog = function showBlockUserDialog() {
             }
         }
 
+        Config.blockUserFidList = [].concat(_toConsumableArray(blockUserFidList));
         Config.blockUserList = [];
         $blockUserList.find('li').each(function () {
             var $this = $(this);
-            var name = $.trim($this.find('input[type="text"]').val());
+            var name = $.trim($this.find('[name="username"]').val());
             if (name !== '' && Util.inFollowOrBlockUserList(name, Config.blockUserList) === -1) {
-                var type = parseInt($this.find('select').val());
+                var type = parseInt($this.find('[name="blockType"]').val());
                 Config.blockUserList.push({ name: name, type: type });
             }
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
-
-    $dialog.find('[name="blockUserDefaultType"]').val(Config.blockUserDefaultType);
-    $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked', Config.blockUserAtTipsEnabled);
-    $dialog.find('[name="blockUserForumType"]').val(Config.blockUserForumType);
-    $dialog.find('[name="blockUserFidList"]').val(Config.blockUserFidList.join(','));
-
-    /**
-     * 添加屏蔽用户
-     * @param {string} name 用户名
-     * @param {number} type 屏蔽类型
-     */
-    var addBlockUser = function addBlockUser(name, type) {
-        $('\n<li>\n  <input type="checkbox">\n  <input type="text" style="width: 150px; margin-left: 5px;" maxlength="15" value="' + name + '">\n  <select style="margin-left: 5px;">\n    <option value="0">\u5C4F\u853D\u4E3B\u9898\u548C\u56DE\u5E16</option><option value="1">\u4EC5\u5C4F\u853D\u4E3B\u9898</option><option value="2">\u4EC5\u5C4F\u853D\u56DE\u5E16</option>\n  </select>\n  <a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a>\n</li>').appendTo($blockUserList).find('select').val(type);
-    };
-
-    var _iteratorNormalCompletion7 = true;
-    var _didIteratorError7 = false;
-    var _iteratorError7 = undefined;
-
-    try {
-        for (var _iterator7 = Config.blockUserList[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-            var user = _step7.value;
-
-            addBlockUser(user.name, user.type);
-        }
-    } catch (err) {
-        _didIteratorError7 = true;
-        _iteratorError7 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                _iterator7.return();
-            }
-        } finally {
-            if (_didIteratorError7) {
-                throw _iteratorError7;
-            }
-        }
-    }
 
     $blockUserList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
@@ -2145,7 +2099,7 @@ var showBlockUserDialog = function showBlockUserDialog() {
         if (!$checked.length) return;
         if (confirm('是否删除所选用户？')) {
             $checked.remove();
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
     });
 
@@ -2156,14 +2110,14 @@ var showBlockUserDialog = function showBlockUserDialog() {
         }
     }).end().find('[data-name="add"]').click(function (e) {
         e.preventDefault();
-        var type = parseInt($('[name="blockUserDefaultType"]').val());
-        var _iteratorNormalCompletion8 = true;
-        var _didIteratorError8 = false;
-        var _iteratorError8 = undefined;
+        var type = parseInt($dialog.find('[name="blockUserDefaultType"]').val());
+        var _iteratorNormalCompletion7 = true;
+        var _didIteratorError7 = false;
+        var _iteratorError7 = undefined;
 
         try {
-            for (var _iterator8 = $.trim($dialog.find('[name="addBlockUser"]').val()).split(',')[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                var name = _step8.value;
+            for (var _iterator7 = $.trim($dialog.find('[name="addBlockUser"]').val()).split(',')[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                var name = _step7.value;
 
                 name = $.trim(name);
                 if (!name) continue;
@@ -2172,34 +2126,59 @@ var showBlockUserDialog = function showBlockUserDialog() {
                 }
             }
         } catch (err) {
-            _didIteratorError8 = true;
-            _iteratorError8 = err;
+            _didIteratorError7 = true;
+            _iteratorError7 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                    _iterator8.return();
+                if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                    _iterator7.return();
                 }
             } finally {
-                if (_didIteratorError8) {
-                    throw _iteratorError8;
+                if (_didIteratorError7) {
+                    throw _iteratorError7;
                 }
             }
         }
 
         $dialog.find('[name="addBlockUser"]').val('');
-        Dialog.show(dialogName);
-    });
-
-    $dialog.find('[name="blockUserForumType"]').change(function () {
-        $('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
+        Dialog.resize(dialogName);
+    }).end().find('[name="blockUserForumType"]').change(function () {
+        $dialog.find('[name="blockUserFidList"]').prop('disabled', parseInt($(this).val()) === 0);
     }).end().find('[data-name="openImOrExBlockUserListDialog"]').click(function (e) {
         e.preventDefault();
         Public.showCommonImportOrExportConfigDialog('屏蔽用户', 'blockUserList');
     });
 
+    $dialog.find('[name="blockUserDefaultType"]').val(Config.blockUserDefaultType);
+    $dialog.find('[name="blockUserAtTipsEnabled"]').prop('checked', Config.blockUserAtTipsEnabled);
+    $dialog.find('[name="blockUserForumType"]').val(Config.blockUserForumType).triggerHandler('change');
+    $dialog.find('[name="blockUserFidList"]').val(Config.blockUserFidList.join(','));
+    var _iteratorNormalCompletion8 = true;
+    var _didIteratorError8 = false;
+    var _iteratorError8 = undefined;
+
+    try {
+        for (var _iterator8 = Config.blockUserList[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            var user = _step8.value;
+
+            addBlockUser(user.name, user.type);
+        }
+    } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                _iterator8.return();
+            }
+        } finally {
+            if (_didIteratorError8) {
+                throw _iteratorError8;
+            }
+        }
+    }
+
     Dialog.show(dialogName);
-    $dialog.find('[name="blockUserForumType"]').triggerHandler('change');
-    $dialog.find('[name="blockUserDefaultType"]').focus();
 };
 
 /**
@@ -2208,9 +2187,21 @@ var showBlockUserDialog = function showBlockUserDialog() {
 var showBlockThreadDialog = function showBlockThreadDialog() {
     var dialogName = 'pdBlockThreadDialog';
     if ($('#' + dialogName).length > 0) return;
-    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    \u6807\u9898\u5173\u952E\u5B57\u53EF\u4F7F\u7528\u666E\u901A\u5B57\u7B26\u4E32\u6216\u6B63\u5219\u8868\u8FBE\u5F0F\uFF0C\u6B63\u5219\u8868\u8FBE\u5F0F\u8BF7\u4F7F\u7528<code>/abc/</code>\u7684\u683C\u5F0F\uFF0C\u4F8B\uFF1A<code>/\u5173\u952E\u5B57A.*\u5173\u952E\u5B57B/i</code><br>\n    \u7528\u6237\u540D\u548C\u7248\u5757ID\u4E3A\u53EF\u9009\u9879\uFF08\u591A\u4E2A\u7528\u6237\u540D\u6216\u7248\u5757ID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09<br>\n    <label>\n      \u9ED8\u8BA4\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select name="blockThreadDefForumType">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label>\n    <label style="margin-left: 5px;">\u9ED8\u8BA4\u7248\u5757ID\u5217\u8868 <input name="blockThreadDefFidList" type="text" style="width: 150px;"></label>\n  </div>\n  <table id="pdBlockThreadList" style="line-height: 22px; text-align: center;">\n    <tbody>\n      <tr>\n        <th style="width: 220px;">\u6807\u9898\u5173\u952E\u5B57(\u5FC5\u586B)</th>\n        <th style="width: 62px;">\u5C4F\u853D\u7528\u6237</th>\n        <th style="width: 200px;">\u7528\u6237\u540D <span class="pd_cfg_tips" title="\u591A\u4E2A\u7528\u6237\u540D\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 62px;">\u5C4F\u853D\u8303\u56F4</th>\n        <th style="width: 132px;">\u7248\u5757ID <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 35px;"></th>\n      </tr>\n    </tbody>\n  </table>\n  <div data-name="blockThreadAddBtns" style="margin-top: 5px;">\n    <a class="pd_btn_link" data-name="addOne" href="#">\u589E\u52A01\u4E2A</a>\n    <a class="pd_btn_link" data-name="addFive" href="#">\u589E\u52A05\u4E2A</a>\n    <a class="pd_btn_link" data-name="clear" href="#">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExBlockThreadListDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u5E16\u5B50</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">\n    \u6807\u9898\u5173\u952E\u5B57\u53EF\u4F7F\u7528\u666E\u901A\u5B57\u7B26\u4E32\u6216\u6B63\u5219\u8868\u8FBE\u5F0F\uFF0C\u6B63\u5219\u8868\u8FBE\u5F0F\u8BF7\u4F7F\u7528<code>/abc/</code>\u7684\u683C\u5F0F\uFF0C\u4F8B\uFF1A<code>/\u5173\u952E\u5B57A.*\u5173\u952E\u5B57B/i</code><br>\n    \u7528\u6237\u540D\u548C\u7248\u5757ID\u4E3A\u53EF\u9009\u9879\uFF08\u591A\u4E2A\u7528\u6237\u540D\u6216\u7248\u5757ID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09<br>\n    <label>\n      \u9ED8\u8BA4\u7248\u5757\u5C4F\u853D\u8303\u56F4\n      <select name="blockThreadDefForumType">\n        <option value="0">\u6240\u6709\u7248\u5757</option><option value="1">\u5305\u62EC\u6307\u5B9A\u7248\u5757</option><option value="2">\u6392\u9664\u6307\u5B9A\u7248\u5757</option>\n      </select>\n    </label>\n    <label style="margin-left: 5px;">\u9ED8\u8BA4\u7248\u5757ID\u5217\u8868 <input name="blockThreadDefFidList" type="text" style="width: 150px;"></label>\n  </div>\n  <table id="pdBlockThreadList" style="line-height: 22px; text-align: center;">\n    <tbody>\n      <tr>\n        <th style="width: 220px;">\u6807\u9898\u5173\u952E\u5B57(\u5FC5\u586B)</th>\n        <th style="width: 62px;">\u5C4F\u853D\u7528\u6237</th>\n        <th style="width: 200px;">\u7528\u6237\u540D <span class="pd_cfg_tips" title="\u591A\u4E2A\u7528\u6237\u540D\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 62px;">\u5C4F\u853D\u8303\u56F4</th>\n        <th style="width: 132px;">\u7248\u5757ID <span class="pd_cfg_tips" title="\u7248\u5757URL\u4E2D\u7684fid\u53C2\u6570\uFF0C\u591A\u4E2AID\u8BF7\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694">[?]</span></th>\n        <th style="width: 35px;"></th>\n      </tr>\n    </tbody>\n  </table>\n  <div data-name="blockThreadAddBtns" style="margin-top: 5px;">\n    <a class="pd_btn_link" data-name="addOne" href="#">\u589E\u52A01\u4E2A</a>\n    <a class="pd_btn_link" data-name="addFive" href="#">\u589E\u52A05\u4E2A</a>\n    <a class="pd_btn_link pd_highlight" data-name="clear" href="#">\u6E05\u9664\u6240\u6709</a>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExBlockThreadListDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5C4F\u853D\u5E16\u5B50</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '屏蔽帖子', html, 'width: 768px;');
     var $blockThreadList = $dialog.find('#pdBlockThreadList');
+
+    /**
+     * 添加屏蔽帖子
+     * @param {string} keyWord 标题关键字
+     * @param {number} userType 屏蔽用户，0：所有；1：包括；2：排除
+     * @param {string[]} userList 用户名
+     * @param {number} fidType 屏蔽范围，0：所有；1：包括；2：排除
+     * @param {number[]} fidList 版块ID列表
+     */
+    var addBlockThread = function addBlockThread(keyWord, userType, userList, fidType, fidList) {
+        $('\n<tr>\n  <td><input name="keyWord" type="text" style="width: 208px;" value="' + keyWord + '"></td>\n  <td><select name="userType"><option value="0">\u6240\u6709</option><option value="1">\u5305\u62EC</option><option value="2">\u6392\u9664</option></select></td>\n  <td><input name="userList" type="text" style="width: 188px;" value="' + userList.join(',') + '" ' + (userType === 0 ? 'disabled' : '') + '></td>\n  <td><select name="fidType"><option value="0">\u6240\u6709</option><option value="1">\u5305\u62EC</option><option value="2">\u6392\u9664</option></select></td>\n  <td><input name="fidList" type="text" style="width: 120px;" value="' + fidList.join(',') + '" ' + (fidType === 0 ? 'disabled' : '') + '></td>\n  <td><a href="#" data-name="delete">\u5220\u9664</a></td>\n</tr>\n').appendTo($blockThreadList).find('[name="userType"]').val(userType).end().find('[name="fidType"]').val(fidType);
+    };
 
     /**
      * 验证设置是否正确
@@ -2220,7 +2211,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
         var flag = true;
         $blockThreadList.find('tr:gt(0)').each(function () {
             var $this = $(this);
-            var $txtKeyWord = $this.find('td:first-child > input');
+            var $txtKeyWord = $this.find('[name="keyWord"]');
             var keyWord = $txtKeyWord.val();
             if ($.trim(keyWord) === '') return;
             if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
@@ -2241,7 +2232,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
         e.preventDefault();
         if (!verify()) return;
         Config.blockThreadDefForumType = parseInt($dialog.find('[name="blockThreadDefForumType"]').val());
-        Config.blockThreadDefFidList = [];
+        var blockThreadDefFidList = new Set();
         var _iteratorNormalCompletion9 = true;
         var _didIteratorError9 = false;
         var _iteratorError9 = undefined;
@@ -2251,7 +2242,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
                 var fid = _step9.value;
 
                 fid = parseInt(fid);
-                if (!isNaN(fid) && fid > 0) Config.blockThreadDefFidList.push(fid);
+                if (!isNaN(fid) && fid > 0) blockThreadDefFidList.add(fid);
             }
         } catch (err) {
             _didIteratorError9 = true;
@@ -2268,26 +2259,27 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
             }
         }
 
+        Config.blockThreadDefFidList = [].concat(_toConsumableArray(blockThreadDefFidList));
         Config.blockThreadList = [];
         $blockThreadList.find('tr:gt(0)').each(function () {
             var $this = $(this);
-            var keyWord = $this.find('td:first-child > input').val();
+            var keyWord = $this.find('[name="keyWord"]').val();
             if ($.trim(keyWord) === '') return;
             var newObj = { keyWord: keyWord };
 
-            var userType = parseInt($this.find('td:nth-child(2) > select').val());
+            var userType = parseInt($this.find('[name="userType"]').val());
             if (userType > 0) {
-                var userList = [];
+                var userList = new Set();
                 var _iteratorNormalCompletion10 = true;
                 var _didIteratorError10 = false;
                 var _iteratorError10 = undefined;
 
                 try {
-                    for (var _iterator10 = $.trim($this.find('td:nth-child(3) > input').val()).split(',')[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                    for (var _iterator10 = $.trim($this.find('[name="userList"]').val()).split(',')[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
                         var user = _step10.value;
 
                         user = $.trim(user);
-                        if (user) userList.push(user);
+                        if (user) userList.add(user);
                     }
                 } catch (err) {
                     _didIteratorError10 = true;
@@ -2304,22 +2296,22 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
                     }
                 }
 
-                if (userList.length > 0) newObj[userType === 2 ? 'excludeUser' : 'includeUser'] = userList;
+                if (userList.size > 0) newObj[userType === 2 ? 'excludeUser' : 'includeUser'] = [].concat(_toConsumableArray(userList));
             }
 
-            var fidType = parseInt($this.find('td:nth-child(4) > select').val());
+            var fidType = parseInt($this.find('[name="fidType"]').val());
             if (fidType > 0) {
-                var fidList = [];
+                var fidList = new Set();
                 var _iteratorNormalCompletion11 = true;
                 var _didIteratorError11 = false;
                 var _iteratorError11 = undefined;
 
                 try {
-                    for (var _iterator11 = $.trim($this.find('td:nth-child(5) > input').val()).split(',')[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                    for (var _iterator11 = $.trim($this.find('[name="fidList"]').val()).split(',')[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
                         var fid = _step11.value;
 
                         fid = parseInt(fid);
-                        if (!isNaN(fid) && fid > 0) fidList.push(fid);
+                        if (!isNaN(fid) && fid > 0) fidList.add(fid);
                     }
                 } catch (err) {
                     _didIteratorError11 = true;
@@ -2336,14 +2328,12 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
                     }
                 }
 
-                if (fidList.length > 0) newObj[fidType === 2 ? 'excludeFid' : 'includeFid'] = fidList;
+                if (fidList.size > 0) newObj[fidType === 2 ? 'excludeFid' : 'includeFid'] = [].concat(_toConsumableArray(fidList));
             }
             Config.blockThreadList.push(newObj);
         });
         (0, _Config.write)();
         Dialog.close(dialogName);
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
 
     $blockThreadList.on('change', 'select', function () {
@@ -2354,18 +2344,29 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
         $(this).closest('tr').remove();
     });
 
-    /**
-     * 添加屏蔽帖子
-     * @param {string} keyWord 标题关键字
-     * @param {number} userType 屏蔽用户，0：所有；1：包括；2：排除
-     * @param {string[]} userList 用户名
-     * @param {number} fidType 屏蔽范围，0：所有；1：包括；2：排除
-     * @param {number[]} fidList 版块ID列表
-     */
-    var addBlockThread = function addBlockThread(keyWord, userType, userList, fidType, fidList) {
-        $('\n<tr>\n  <td><input type="text" style="width: 208px;" value="' + keyWord + '"></td>\n  <td><select><option value="0">\u6240\u6709</option><option value="1">\u5305\u62EC</option><option value="2">\u6392\u9664</option></select></td>\n  <td><input type="text" style="width: 188px;" value="' + userList.join(',') + '" ' + (userType === 0 ? 'disabled' : '') + '></td>\n  <td><select><option value="0">\u6240\u6709</option><option value="1">\u5305\u62EC</option><option value="2">\u6392\u9664</option></select></td>\n  <td><input type="text" style="width: 120px;" value="' + fidList.join(',') + '" ' + (fidType === 0 ? 'disabled' : '') + '></td>\n  <td><a href="#" data-name="delete">\u5220\u9664</a></td>\n</tr>\n').appendTo($blockThreadList).find('td:nth-child(2) > select').val(userType).end().find('td:nth-child(4) > select').val(fidType);
-    };
+    $dialog.find('[data-name="addOne"], [data-name="addFive"]').click(function (e) {
+        e.preventDefault();
+        var num = 1;
+        if ($(this).is('[data-name="addFive"]')) num = 5;
+        for (var i = 1; i <= num; i++) {
+            addBlockThread('', 0, [], parseInt($dialog.find('[name="blockThreadDefForumType"]').val()), $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(','));
+        }
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="clear"]').click(function (e) {
+        e.preventDefault();
+        if (confirm('是否清除所有屏蔽关键字？')) {
+            $blockThreadList.find('tbody > tr:gt(0)').remove();
+            Dialog.resize(dialogName);
+        }
+    }).end().find('[name="blockThreadDefForumType"]').change(function () {
+        $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
+    }).end().find('[data-name="openImOrExBlockThreadListDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('屏蔽帖子', 'blockThreadList');
+    });
 
+    $dialog.find('[name="blockThreadDefForumType"]').val(Config.blockThreadDefForumType).triggerHandler('change');
+    $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
@@ -2415,32 +2416,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
         }
     }
 
-    $dialog.find('[data-name="addOne"], [data-name="addFive"]').click(function (e) {
-        e.preventDefault();
-        var num = 1;
-        if ($(this).is('[data-name="addFive"]')) num = 5;
-        for (var i = 1; i <= num; i++) {
-            addBlockThread('', 0, [], parseInt($dialog.find('[name="blockThreadDefForumType"]').val()), $.trim($dialog.find('[name="blockThreadDefFidList"]').val()).split(','));
-        }
-        Dialog.show(dialogName);
-    }).end().find('[data-name="clear"]').click(function (e) {
-        e.preventDefault();
-        if (confirm('是否清除所有屏蔽关键字？')) {
-            $blockThreadList.find('tbody > tr:gt(0)').remove();
-            Dialog.show(dialogName);
-        }
-    });
-
-    $dialog.find('[name="blockThreadDefForumType"]').change(function () {
-        $dialog.find('[name="blockThreadDefFidList"]').prop('disabled', parseInt($(this).val()) === 0);
-    }).end().find('[data-name="openImOrExBlockThreadListDialog"]').click(function (e) {
-        e.preventDefault();
-        Public.showCommonImportOrExportConfigDialog('屏蔽帖子', 'blockThreadList');
-    });
-
     Dialog.show(dialogName);
-    $dialog.find('[name="blockThreadDefForumType"]').val(Config.blockThreadDefForumType).focus().triggerHandler('change');
-    $dialog.find('[name="blockThreadDefFidList"]').val(Config.blockThreadDefFidList.join(','));
 };
 
 },{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
@@ -2581,7 +2557,7 @@ exports.default = Const;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.close = exports.show = exports.create = undefined;
+exports.close = exports.resize = exports.show = exports.create = undefined;
 
 var _Info = require('./Info');
 
@@ -2610,20 +2586,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var create = exports.create = function create(id, title, content) {
     var style = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
 
-    var html = '\n<form>\n<div class="pd_cfg_box" id="' + id + '" style="' + style + '">\n  <h1>' + title + '<span>&times;</span></h1>\n  ' + content + '\n</div>\n</form>';
+    var html = '\n<form>\n<div class="pd_cfg_box" id="' + id + '" style="' + style + '">\n  <h1>' + title + '<span data-action="close">&times;</span></h1>\n  ' + content + '\n</div>\n</form>';
     var $dialog = $(html).appendTo('body');
     $dialog.on('click', '.pd_cfg_tips', function (e) {
         if (_Info2.default.isMobile) Public.showElementTitleTips(e, this.title);
         return false;
     }).on('click', 'a.pd_disabled_link', function () {
         return false;
+    }).on('click', '[data-action="close"]', function () {
+        return close(id);
     }).keydown(function (e) {
         if (e.keyCode === 27) {
             return close(id);
         }
-    }).find('h1 > span').click(function () {
-        return close(id);
-    }).end().find('legend [type="checkbox"]').click(function () {
+    }).find('legend [type="checkbox"]').click(function () {
         var $this = $(this);
         var checked = $this.prop('checked');
         if (Util.isOpera() || Util.isEdge()) $this.closest('fieldset').find('input, select, textarea, button').not('legend input').prop('disabled', !checked);else $this.closest('fieldset').prop('disabled', !checked);
@@ -2641,7 +2617,7 @@ var create = exports.create = function create(id, title, content) {
     });
     if (!_Info2.default.isMobile) {
         $(window).on('resize.' + id, function () {
-            show(id);
+            return resize(id);
         });
     }
     return $dialog;
@@ -2659,6 +2635,17 @@ var show = exports.show = function show(id) {
     }).end().find('input[data-disabled]').each(function () {
         $(this).triggerHandler('click');
     });
+    $dialog.fadeIn('fast');
+    resize(id);
+    $dialog.find('input:first, select:first, a:first, textarea:first, button:first').eq(0).focus();
+};
+
+/**
+ * 调整对话框大小和位置
+ * @param {string} id 对话框ID
+ */
+var resize = exports.resize = function resize(id) {
+    var $dialog = $('#' + id);
     var dialogWidth = $dialog.width(),
         windowWidth = $(window).width();
     var left = windowWidth / 2 - dialogWidth / 2;
@@ -2666,7 +2653,7 @@ var show = exports.show = function show(id) {
     if (left < 0) left = 0;
     var top = $(window).height() / 2 - $dialog.height() / 2;
     if (top < 0) top = 0;
-    $dialog.css({ top: top, left: left }).fadeIn('fast');
+    $dialog.css({ top: top, left: left });
 };
 
 /**
@@ -4732,7 +4719,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
             }
 
             log[date].sort(function (a, b) {
-                return a.time > b.time;
+                return a.time > b.time ? 1 : -1;
             });
         }
     }
@@ -4782,7 +4769,7 @@ var show = exports.show = function show() {
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     Script.runFunc('LogDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_log_nav">\n    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>\n    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>\n    <h2 class="pd_log_date pd_custom_tips">\u6682\u65E0\u65E5\u5FD7</h2>\n    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>\n    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>\n  </div>\n  <fieldset>\n    <legend>\u65E5\u5FD7\u5185\u5BB9</legend>\n    <div>\n      <strong>\u6392\u5E8F\u65B9\u5F0F\uFF1A</strong>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="sortType" value="time" checked> \u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="sortType" value="type"> \u6309\u7C7B\u522B</label>\n    </div>\n    <div class="pd_stat pd_log_content">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n  <fieldset>\n    <legend>\u7EDF\u8BA1\u7ED3\u679C</legend>\n    <div>\n      <strong>\u7EDF\u8BA1\u8303\u56F4\uFF1A</strong>\n      <label title="\u663E\u793A\u5F53\u5929\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="current" checked> \u5F53\u5929</label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="custom"></label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input name="statDays" type="text" style="width: 22px;" maxlength="3"> \u5929\u5185</label>\n      <label title="\u663E\u793A\u5168\u90E8\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="all"> \u5168\u90E8</label>\n    </div>\n    <div class="pd_stat" data-name="stat">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</a></span>\n  <button name="close" type="button">\u5173\u95ED</button>\n  <button name="clear" type="button">\u6E05\u9664\u65E5\u5FD7</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_log_nav">\n    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>\n    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>\n    <h2 class="pd_log_date pd_custom_tips">\u6682\u65E0\u65E5\u5FD7</h2>\n    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>\n    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>\n  </div>\n  <fieldset>\n    <legend>\u65E5\u5FD7\u5185\u5BB9</legend>\n    <div>\n      <strong>\u6392\u5E8F\u65B9\u5F0F\uFF1A</strong>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="sortType" value="time" checked> \u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="sortType" value="type"> \u6309\u7C7B\u522B</label>\n    </div>\n    <div class="pd_stat pd_log_content">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n  <fieldset>\n    <legend>\u7EDF\u8BA1\u7ED3\u679C</legend>\n    <div>\n      <strong>\u7EDF\u8BA1\u8303\u56F4\uFF1A</strong>\n      <label title="\u663E\u793A\u5F53\u5929\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="current" checked> \u5F53\u5929</label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="custom"></label>\n      <label title="\u663E\u793A\u8DDD\u8BE5\u65E5N\u5929\u5185\u7684\u7EDF\u8BA1\u7ED3\u679C"><input name="statDays" type="text" style="width: 22px;" maxlength="3"> \u5929\u5185</label>\n      <label title="\u663E\u793A\u5168\u90E8\u7EDF\u8BA1\u7ED3\u679C"><input type="radio" name="statType" value="all"> \u5168\u90E8</label>\n    </div>\n    <div class="pd_stat" data-name="stat">\u6682\u65E0\u65E5\u5FD7</div>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</a></span>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n  <button name="clear" type="button">\u6E05\u9664\u65E5\u5FD7</button>\n</div>';
     var $dialog = Dialog.create(dialogName, 'KFOL助手日志', html, 'width: 880px;');
     var $logNav = $dialog.find('.pd_log_nav');
 
@@ -4853,9 +4840,7 @@ var show = exports.show = function show() {
         }
     }).end().find('[name="sortType"][value="' + Config.logSortType + '"]').click().end().find('[name="statType"][value="' + Config.logStatType + '"]').click().end().find('[name="statDays"]').val(Config.logStatDays);
 
-    $dialog.find('[name="close"]').click(function () {
-        return Dialog.close(dialogName);
-    }).end().find('[name="clear"]').click(function (e) {
+    $dialog.find('[name="clear"]').click(function (e) {
         e.preventDefault();
         if (confirm('是否清除所有日志？')) {
             Log.clear();
@@ -4872,7 +4857,6 @@ var show = exports.show = function show() {
 
     if ($(window).height() <= 750) $dialog.find('.pd_log_content').css('height', '192px');
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
     Script.runFunc('LogDialog.show_after_');
 };
 
@@ -4900,12 +4884,12 @@ var getLogContent = function getLogContent(log, date, logSortType) {
         (function () {
             var sortTypeList = ['捐款', '领取每日奖励', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
             logList.sort(function (a, b) {
-                return sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type);
+                return sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1;
             });
         })();
     } else {
         logList.sort(function (a, b) {
-            return a.time > b.time;
+            return a.time > b.time ? 1 : -1;
         });
     }
 
@@ -5471,7 +5455,7 @@ var showImportOrExportLogDialog = function showImportOrExportLogDialog() {
     var dialogName = 'pdImOrExLogDialog';
     if ($('#' + dialogName).length > 0) return;
     var log = Log.read();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label style="color: #f00;"><input type="radio" name="logType" value="setting" checked> \u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</label>\n    <label style="color: #00f;"><input type="radio" name="logType" value="text"> \u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</label>\n  </div>\n  <div data-name="logSetting">\n    <strong>\u5BFC\u5165\u65E5\u5FD7\uFF1A</strong>\u5C06\u65E5\u5FD7\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF<br>\n    <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n  </div>\n  <div data-name="logText" style="display: none;">\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</strong>\uFF1A\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n    <div>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="sortType2" value="time" checked> \u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="sortType2" value="type"> \u6309\u7C7B\u522B</label>\n      <label title="\u5728\u65E5\u5FD7\u6587\u672C\u91CC\u663E\u793A\u6BCF\u65E5\u4EE5\u53CA\u5168\u90E8\u6570\u636E\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="checkbox" name="showStat" checked> \u663E\u793A\u7EDF\u8BA1</label>\n    </div>\n    <textarea name="text" style="width: 600px; height: 400px;" readonly></textarea>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="merge" type="button">\u5408\u5E76\u65E5\u5FD7</button>\n  <button name="overwrite" type="button" style="color: #f00;">\u8986\u76D6\u65E5\u5FD7</button>\n  <button name="close" type="button">\u5173\u95ED</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <label style="color: #f00;"><input type="radio" name="logType" value="setting" checked> \u5BFC\u5165/\u5BFC\u51FA\u65E5\u5FD7</label>\n    <label style="color: #00f;"><input type="radio" name="logType" value="text"> \u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</label>\n  </div>\n  <div data-name="logSetting">\n    <strong>\u5BFC\u5165\u65E5\u5FD7\uFF1A</strong>\u5C06\u65E5\u5FD7\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u522B\u5904\u5373\u53EF<br>\n    <textarea name="setting" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n  </div>\n  <div data-name="logText" style="display: none;">\n    <strong>\u5BFC\u51FA\u65E5\u5FD7\u6587\u672C</strong>\uFF1A\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u522B\u5904\u5373\u53EF\n    <div>\n      <label title="\u6309\u65F6\u95F4\u987A\u5E8F\u6392\u5E8F"><input type="radio" name="sortType2" value="time" checked> \u6309\u65F6\u95F4</label>\n      <label title="\u6309\u65E5\u5FD7\u7C7B\u522B\u6392\u5E8F"><input type="radio" name="sortType2" value="type"> \u6309\u7C7B\u522B</label>\n      <label title="\u5728\u65E5\u5FD7\u6587\u672C\u91CC\u663E\u793A\u6BCF\u65E5\u4EE5\u53CA\u5168\u90E8\u6570\u636E\u7684\u7EDF\u8BA1\u7ED3\u679C"><input type="checkbox" name="showStat" checked> \u663E\u793A\u7EDF\u8BA1</label>\n    </div>\n    <textarea name="text" style="width: 600px; height: 400px;" readonly></textarea>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="merge" type="button">\u5408\u5E76\u65E5\u5FD7</button>\n  <button name="overwrite" type="button" style="color: #f00;">\u8986\u76D6\u65E5\u5FD7</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
 
     var $dialog = Dialog.create(dialogName, '导入或导出日志', html);
     $dialog.find('[name="sortType2"], [name="showStat"]').click(function () {
@@ -5502,13 +5486,11 @@ var showImportOrExportLogDialog = function showImportOrExportLogDialog() {
         Log.write(log);
         alert('日志已导入');
         location.reload();
-    }).end().find('[name="close"]').click(function () {
-        return Dialog.close(dialogName);
     });
 
     Dialog.show(dialogName);
-    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select();
     $dialog.find('[name="sortType2"][value="' + Config.logSortType + '"]').prop('checked', true).triggerHandler('click');
+    $dialog.find('[name="setting"]').val(JSON.stringify(log)).select().focus();
     Script.runFunc('LogDialog.showImportOrExportLogDialog_after_');
 };
 
@@ -6131,7 +6113,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     var dialogName = 'pdLevelPointListConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a><br>\n    <label class="pd_highlight" style="line-height: 2em;">\n      \u4FDD\u5B58\u65B9\u5F0F\uFF1A <select name="saveType"><option value="0">\u4EC5\u70B9\u6570</option><option value="1">\u70B9\u6570+\u9053\u5177</option></select>\n      <span class="pd_cfg_tips" title="\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848\u4E2D\u6570\u503C\u7684\u4FDD\u5B58\u65B9\u5F0F\uFF0C\u4EC5\u70B9\u6570\uFF1A\u4EC5\u6309\u7167\u70B9\u6570\u6765\u4FDD\u5B58\uFF1B\u70B9\u6570+\u9053\u5177\uFF1A\u6309\u7167\u70B9\u6570\u4E0E\u9053\u5177\u52A0\u6210\u4E4B\u548C\u6765\u4FDD\u5B58">[?]</span>\n    </label>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button type="button" name="cancel">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a><br>\n    <label class="pd_highlight" style="line-height: 2em;">\n      \u4FDD\u5B58\u65B9\u5F0F\uFF1A <select name="saveType"><option value="0">\u4EC5\u70B9\u6570</option><option value="1">\u70B9\u6570+\u9053\u5177</option></select>\n      <span class="pd_cfg_tips" title="\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848\u4E2D\u6570\u503C\u7684\u4FDD\u5B58\u65B9\u5F0F\uFF0C\u4EC5\u70B9\u6570\uFF1A\u4EC5\u6309\u7167\u70B9\u6570\u6765\u4FDD\u5B58\uFF1B\u70B9\u6570+\u9053\u5177\uFF1A\u6309\u7167\u70B9\u6570\u4E0E\u9053\u5177\u52A0\u6210\u4E4B\u548C\u6765\u4FDD\u5B58">[?]</span>\n    </label>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
     var saveType = Config.levelPointList.type === 1 ? 1 : 0;
@@ -6221,11 +6203,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         (0, _Config.write)();
         Dialog.close(dialogName);
         setLevelPointListSelect(Config.levelPointList);
-    }).find('[data-name="selectAll"]').click(function () {
-        return Util.selectAll($levelPointList.find('[type="checkbox"]'));
-    }).end().find('[data-name="selectInverse"]').click(function () {
-        return Util.selectInverse($levelPointList.find('[type="checkbox"]'));
-    }).end().find('[data-name="add"]').click(function (e) {
+    }).find('[data-name="add"]').click(function (e) {
         e.preventDefault();
         var points = { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 };
         if (saveType === 1) {
@@ -6258,14 +6236,14 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         }
         addLevelPointHtml(0, points);
         $levelPointList.find('[name="level"]:last').focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-name="deleteSelect"]').click(function (e) {
         e.preventDefault();
         var $checked = $levelPointList.find('[type="checkbox"]:checked');
         if (!$checked.length || !confirm('是否删除所选层数？')) return;
         var $line = $checked.closest('tr');
         $line.next('tr').addBack().remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
         e.preventDefault();
         Public.showCommonImportOrExportConfigDialog('各层点数分配方案', 'levelPointList', null, function () {
@@ -6274,17 +6252,17 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
                 return $dialog.submit();
             });
         });
-    }).end().find('[data-name="openCustomScriptDialog"]').click(function () {
-        return Script.showDialog();
-    }).end().find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
+    }).end().find('[data-name="selectAll"]').click(function () {
+        return Util.selectAll($levelPointList.find('[type="checkbox"]'));
+    }).end().find('[data-name="selectInverse"]').click(function () {
+        return Util.selectInverse($levelPointList.find('[type="checkbox"]'));
     });
 
     $levelPointList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         var $line = $(this).closest('tr');
         $line.next('tr').addBack().remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('change', '.pd_point', function () {
         var $this = $(this);
         var name = $this.attr('name');
@@ -6398,7 +6376,6 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     }
 
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
     if (typeof callback === 'function') callback($dialog);
 };
 
@@ -6912,7 +6889,7 @@ var showImportOrExportLootLogDialog = function showImportOrExportLootLogDialog()
     var dialogName = 'pdImOrExLootLogDialog';
     if ($('#' + dialogName).length > 0) return;
     var log = LootLog.read();
-    var html = '\n<div class="pd_cfg_main">\n  <strong>\u5BFC\u5165\u4E89\u593A\u8BB0\u5F55\uFF1A</strong>\u5C06\u4E89\u593A\u8BB0\u5F55\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n  <strong>\u5BFC\u51FA\u4E89\u593A\u8BB0\u5F55\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF<br>\n  <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button name="merge" type="button">\u5408\u5E76\u8BB0\u5F55</button>\n  <button name="overwrite" type="button" style="color: #f00;">\u8986\u76D6\u8BB0\u5F55</button>\n  <button name="close" type="button">\u5173\u95ED</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <strong>\u5BFC\u5165\u4E89\u593A\u8BB0\u5F55\uFF1A</strong>\u5C06\u4E89\u593A\u8BB0\u5F55\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n  <strong>\u5BFC\u51FA\u4E89\u593A\u8BB0\u5F55\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u522B\u5904\u5373\u53EF<br>\n  <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button name="merge" type="button">\u5408\u5E76\u8BB0\u5F55</button>\n  <button name="overwrite" type="button" style="color: #f00;">\u8986\u76D6\u8BB0\u5F55</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
 
     var $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
     $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
@@ -6935,12 +6912,10 @@ var showImportOrExportLootLogDialog = function showImportOrExportLootLogDialog()
         LootLog.write(log);
         alert('争夺记录已导入');
         location.reload();
-    }).end().find('[name="close"]').click(function () {
-        return Dialog.close(dialogName);
     });
 
     Dialog.show(dialogName);
-    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select();
+    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select().focus();
 };
 
 /**
@@ -9149,7 +9124,9 @@ var followUsers = exports.followUsers = function followUsers() {
             var $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
                 $this.addClass('pd_highlight');
-                if (Config.highlightFollowUserThreadLinkEnabled) $this.parent('td').prev('td').prev('td').find('div > a[href^="read.php?tid="]').addClass('pd_highlight');
+                if (Config.highlightFollowUserThreadLinkEnabled) {
+                    $this.parent('td').prev('td').prev('td').find('div > a[href^="read.php?tid="]').addClass('pd_highlight');
+                }
             }
         });
     } else if (location.pathname === '/read.php') {
@@ -9180,8 +9157,8 @@ var followUsers = exports.followUsers = function followUsers() {
  * 屏蔽用户
  */
 var blockUsers = exports.blockUsers = function blockUsers() {
-    if (Config.blockUserList.length === 0) return;
-    var blockNum = 0;
+    if (!Config.blockUserList.length) return;
+    var num = 0;
     if (_Info2.default.isInHomePage) {
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
             var $this = $(this);
@@ -9189,19 +9166,19 @@ var blockUsers = exports.blockUsers = function blockUsers() {
             if (!matches) return;
             var index = Util.inFollowOrBlockUserList(matches[1], Config.blockUserList);
             if (index > -1 && Config.blockUserList[index].type < 2) {
-                blockNum++;
+                num++;
                 $this.parent('li').remove();
             }
         });
     } else if (location.pathname === '/thread.php') {
         var fid = parseInt($('input[name="f_fid"]:first').val());
         if (!fid) return;
-        if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
+        if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         $('a.bl[href^="profile.php?action=show&uid="]').each(function () {
             var $this = $(this);
             var index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
             if (index > -1 && Config.blockUserList[index].type < 2) {
-                blockNum++;
+                num++;
                 $this.closest('tr').remove();
             }
         });
@@ -9212,9 +9189,9 @@ var blockUsers = exports.blockUsers = function blockUsers() {
                 if (!_fid) return {
                         v: void 0
                     };
-                if (Config.blockUserForumType === 1 && $.inArray(_fid, Config.blockUserFidList) === -1) return {
+                if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(_fid)) return {
                         v: void 0
-                    };else if (Config.blockUserForumType === 2 && $.inArray(_fid, Config.blockUserFidList) > -1) return {
+                    };else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(_fid)) return {
                         v: void 0
                     };
             }
@@ -9225,7 +9202,7 @@ var blockUsers = exports.blockUsers = function blockUsers() {
                 if (index > -1) {
                     var type = Config.blockUserList[index].type;
                     if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
-                    blockNum++;
+                    num++;
                     var $lou = $this.closest('.readtext');
                     $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
                 }
@@ -9272,12 +9249,12 @@ var blockUsers = exports.blockUsers = function blockUsers() {
         $('.kf_share1 > tbody > tr > td:last-child').each(function () {
             var $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.blockUserList) > -1) {
-                blockNum++;
+                num++;
                 $this.closest('tr').remove();
             }
         });
     }
-    if (blockNum > 0) console.log('\u3010\u5C4F\u853D\u7528\u6237\u3011\u5171\u6709' + blockNum + '\u4E2A\u5E16\u5B50\u88AB\u5C4F\u853D');
+    if (num > 0) console.log('\u3010\u5C4F\u853D\u7528\u6237\u3011\u5171\u6709' + num + '\u4E2A\u5E16\u5B50\u6216\u56DE\u590D\u88AB\u5C4F\u853D');
 };
 
 /**
@@ -9843,7 +9820,7 @@ var showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfi
     var dialogName = 'pdCommonImOrExConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u6587\u672C\u6587\u4EF6\u91CC\u5373\u53EF\n  </div>\n  <textarea name="commonConfig" style="width: 500px; height: 300px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div>\n    <strong>\u5BFC\u5165\u8BBE\u7F6E\uFF1A</strong>\u5C06\u8BBE\u7F6E\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u4FDD\u5B58\u6309\u94AE\u5373\u53EF<br>\n    <strong>\u5BFC\u51FA\u8BBE\u7F6E\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u522B\u5904\u5373\u53EF\n  </div>\n  <textarea name="commonConfig" style="width: 500px; height: 300px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '\u5BFC\u5165\u6216\u5BFC\u51FA' + title, html);
 
     $dialog.submit(function (e) {
@@ -9866,8 +9843,6 @@ var showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfi
         alert('设置已导入');
         Dialog.close(dialogName);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
-    }).find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
     Dialog.show(dialogName);
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
@@ -9881,7 +9856,7 @@ var showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfi
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListLink = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -10063,27 +10038,31 @@ var adjustThreadContentFontSize = exports.adjustThreadContentFontSize = function
 };
 
 /**
- * 添加复制购买人名单的链接
+ * 添加复制购买人名单的选项
  */
-var addCopyBuyersListLink = exports.addCopyBuyersListLink = function addCopyBuyersListLink() {
-    $('<a style="margin:0 2px 0 5px;" href="#">复制名单</a>').insertAfter('.readtext select[name="buyers"]').click(function (e) {
-        e.preventDefault();
-        var buyerList = [];
-        $(this).prev('select').children('option').each(function (index) {
+var addCopyBuyersListOption = exports.addCopyBuyersListOption = function addCopyBuyersListOption() {
+    $('.readtext select[name="buyers"]').each(function () {
+        $(this).find('option:first-child').after('<option value="copyList">复制名单</option>');
+    });
+    $(document).on('change', 'select[name="buyers"]', function () {
+        var $this = $(this);
+        if ($this.val() !== 'copyList') return;
+        var buyerList = $this.find('option').map(function (index) {
             var name = $(this).text();
-            if (!index || name === '-'.repeat(11)) return;
-            buyerList.push(name);
-        });
-        if (!buyerList.length) {
+            if (index === 0 || index === 1 || name.includes('-'.repeat(11))) return null;else return name;
+        }).get().join('\n');
+        $this.get(0).selectedIndex = 0;
+        if (!buyerList) {
             alert('暂时无人购买');
             return;
         }
+
         var dialogName = 'pdCopyBuyerListDialog';
         if ($('#' + dialogName).length > 0) return;
-        var html = '\n<div class="pd_cfg_main">\n  <textarea style="width: 200px; height: 300px; margin: 5px 0;" readonly></textarea>\n</div>';
+        var html = '\n<div class="pd_cfg_main">\n  <textarea name="buyerList" style="width: 200px; height: 300px; margin: 5px 0;" readonly>' + buyerList + '</textarea>\n</div>';
         var $dialog = Dialog.create(dialogName, '购买人名单', html);
         Dialog.show(dialogName);
-        $dialog.find('textarea').val(buyerList.join('\n')).select().focus();
+        $dialog.find('[name="buyerList"]').select().focus();
     });
 };
 
@@ -10093,15 +10072,18 @@ var addCopyBuyersListLink = exports.addCopyBuyersListLink = function addCopyBuye
  */
 var showStatRepliersDialog = exports.showStatRepliersDialog = function showStatRepliersDialog(replierList) {
     var dialogName = 'pdReplierListDialog';
-    var html = '\n<div class="pd_cfg_main">\n  <div id="pdReplierListFilter" style="margin-top: 5px;">\n    <label><input type="checkbox" checked> \u663E\u793A\u697C\u5C42\u53F7</label>\n    <label><input type="checkbox"> \u53BB\u9664\u91CD\u590D</label>\n    <label><input type="checkbox"> \u53BB\u9664\u697C\u4E3B</label>\n  </div>\n  <div style="color: #f00;" id="pdReplierListStat"></div>\n  <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div id="pdReplierListFilter" style="margin-top: 5px;">\n    <label><input name="showFloorNumEnabled" type="checkbox" checked> \u663E\u793A\u697C\u5C42\u53F7</label>\n    <label><input name="removeRepeatedEnabled" type="checkbox"> \u53BB\u9664\u91CD\u590D</label>\n    <label><input name="removeTopFloorEnabled" type="checkbox"> \u53BB\u9664\u697C\u4E3B</label>\n  </div>\n  <div style="color: #f00;" id="pdReplierListStat"></div>\n  <textarea name="replierList" style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>\n</div>';
     var $dialog = Dialog.create(dialogName, '回帖者名单', html);
+    var $replierListFilter = $dialog.find('#pdReplierListFilter');
 
-    var $filterNodes = $dialog.find('#pdReplierListFilter input');
-    $filterNodes.click(function () {
+    /**
+     * 显示回帖者名单
+     */
+    var showReplierList = function showReplierList() {
         var list = [].concat(_toConsumableArray(replierList));
-        var isShowFloor = $filterNodes.eq(0).prop('checked'),
-            isRemoveRepeated = $filterNodes.eq(1).prop('checked'),
-            isRemoveTopFloor = $filterNodes.eq(2).prop('checked');
+        var isShowFloorNum = $replierListFilter.find('[name="showFloorNumEnabled"]').prop('checked'),
+            isRemoveRepeated = $replierListFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
+            isRemoveTopFloor = $replierListFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
         if (isRemoveRepeated) {
             list = list.map(function (elem, index, list) {
                 return list.indexOf(elem) === index ? elem : null;
@@ -10128,7 +10110,7 @@ var showStatRepliersDialog = exports.showStatRepliersDialog = function showStatR
                     userName = _step2$value[1];
 
                 if (!userName) continue;
-                content += (isShowFloor ? floor + 'L：' : '') + userName + '\n';
+                content += (isShowFloorNum ? floor + 'L：' : '') + userName + '\n';
                 num++;
             }
         } catch (err) {
@@ -10146,13 +10128,13 @@ var showStatRepliersDialog = exports.showStatRepliersDialog = function showStatR
             }
         }
 
-        $dialog.find('textarea').val(content);
+        $dialog.find('[name="replierList"]').val(content);
         $dialog.find('#pdReplierListStat').html('\u5171\u6709<b>' + num + '</b>\u6761\u9879\u76EE');
-    });
-    $dialog.find('#pdReplierListFilter input:first').triggerHandler('click');
+    };
 
+    $replierListFilter.on('click', '[type="checkbox"]', showReplierList);
+    showReplierList();
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
 };
 
 /**
@@ -10883,7 +10865,7 @@ var showDialog = exports.showDialog = function showDialog() {
     var dialogName = 'pdCustomScriptDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <a class="pd_highlight pd_btn_link" data-name="addNewScript" href="#">\u6DFB\u52A0\u65B0\u811A\u672C</a>\n    <a class="pd_btn_link" data-name="insertSample" href="#">\u63D2\u5165\u8303\u4F8B</a>\n  </div>\n  <div data-name="customScriptList"></div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">\u81EA\u5B9A\u4E49\u811A\u672C\u6536\u96C6\u8D34</a>\n    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u6240\u6709\u811A\u672C</a>\n  </span>\n  <button type="submit">\u786E\u5B9A</button>\n  <button name="cancel" type="button">\u53D6\u6D88</button>\n  <button class="pd_highlight" name="clear" type="button">\u6E05\u7A7A</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;">\n    <a class="pd_highlight pd_btn_link" data-name="addNewScript" href="#">\u6DFB\u52A0\u65B0\u811A\u672C</a>\n    <a class="pd_btn_link" data-name="insertSample" href="#">\u63D2\u5165\u8303\u4F8B</a>\n  </div>\n  <div data-name="customScriptList"></div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">\u81EA\u5B9A\u4E49\u811A\u672C\u6536\u96C6\u8D34</a>\n    <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u6240\u6709\u811A\u672C</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button class="pd_highlight" name="clear" type="button">\u6E05\u7A7A</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
     var $customScriptList = $dialog.find('[data-name="customScriptList"]');
 
@@ -10904,10 +10886,8 @@ var showDialog = exports.showDialog = function showDialog() {
         e.preventDefault();
         if (confirm('是否清空所有脚本？')) {
             $customScriptList.html('');
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
-    }).end().find('[name="cancel"]').click(function () {
-        return Dialog.close(dialogName);
     });
 
     /**
@@ -10967,7 +10947,7 @@ var showDialog = exports.showDialog = function showDialog() {
         $customScriptList.find('.pd_custom_script_content').hide();
         addCustomScript();
         $customScriptList.find('.pd_custom_script_content:last').show().focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-name="insertSample"]').click(function (e) {
         e.preventDefault();
         var $content = $customScriptList.find('.pd_custom_script_content:visible');
@@ -10981,14 +10961,14 @@ var showDialog = exports.showDialog = function showDialog() {
         e.preventDefault();
         $dialog.find('.pd_custom_script_content').hide();
         $(this).parent().next().show().focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         if (!confirm('是否删除此脚本？')) return;
         var $header = $(this).closest('.pd_custom_script_header');
         $header.next().remove();
         $header.remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('change', '.pd_custom_script_content', function () {
         var $this = $(this);
 
@@ -11006,11 +10986,7 @@ var showDialog = exports.showDialog = function showDialog() {
     });
 
     Dialog.show(dialogName);
-    if (typeof showIndex === 'number') {
-        $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
-    } else {
-        $dialog.find('a:first').focus();
-    }
+    if (typeof showIndex === 'number') $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
 };
 
 /**
@@ -11521,7 +11497,7 @@ var getObjectKeyList = exports.getObjectKeyList = function getObjectKeyList(obj)
     }
     if (sortBy !== 0) {
         list.sort(function (a, b) {
-            return sortBy > 0 ? a > b : a < b;
+            return sortBy > 0 ? a > b ? 1 : -1 : a < b ? 1 : -1;
         });
     }
     return list;
@@ -11539,7 +11515,7 @@ var getSortedObjectKeyList = exports.getSortedObjectKeyList = function getSorted
 
     var list = getObjectKeyList(obj, sortBy);
     list.sort(function (a, b) {
-        return sortKeyList.indexOf(a) > sortKeyList.indexOf(b);
+        return sortKeyList.indexOf(a) > sortKeyList.indexOf(b) ? 1 : -1;
     });
     return list;
 };
@@ -11558,7 +11534,7 @@ var getStatFormatNumber = exports.getStatFormatNumber = function getStatFormatNu
  * @returns {boolean} 是否为Opera
  */
 var isOpera = exports.isOpera = function isOpera() {
-    return typeof window.opera !== 'undefined';
+    return typeof _Info2.default.w.opera !== 'undefined';
 };
 
 /**
@@ -11566,7 +11542,7 @@ var isOpera = exports.isOpera = function isOpera() {
  * @returns {boolean} 是否为Edge
  */
 var isEdge = exports.isEdge = function isEdge() {
-    return navigator.appVersion && navigator.appVersion.indexOf('Edge') > 0;
+    return navigator.appVersion && navigator.appVersion.includes('Edge');
 };
 
 /**

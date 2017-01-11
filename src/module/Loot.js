@@ -566,8 +566,8 @@ const showLevelPointListConfigDialog = function (callback) {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配方案</a></span>
-  <button type="submit">确定</button>
-  <button type="button" name="cancel">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
@@ -676,48 +676,43 @@ const showLevelPointListConfigDialog = function (callback) {
         writeConfig();
         Dialog.close(dialogName);
         setLevelPointListSelect(Config.levelPointList);
-    }).find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]')))
-        .end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')))
-        .end().find('[data-name="add"]')
-        .click(function (e) {
-            e.preventDefault();
-            let points = {'力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1};
-            if (saveType === 1) {
-                for (let [key, num] of extraPointList) {
-                    if (key in points) points[key] = num + 1;
-                }
+    }).find('[data-name="add"]').click(function (e) {
+        e.preventDefault();
+        let points = {'力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1};
+        if (saveType === 1) {
+            for (let [key, num] of extraPointList) {
+                if (key in points) points[key] = num + 1;
             }
-            addLevelPointHtml(0, points);
-            $levelPointList.find('[name="level"]:last').focus();
-            Dialog.show(dialogName);
-        }).end().find('[data-name="deleteSelect"]')
-        .click(function (e) {
-            e.preventDefault();
-            let $checked = $levelPointList.find('[type="checkbox"]:checked');
-            if (!$checked.length || !confirm('是否删除所选层数？')) return;
-            let $line = $checked.closest('tr');
-            $line.next('tr').addBack().remove();
-            Dialog.show(dialogName);
-        }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]')
-        .click(function (e) {
-            e.preventDefault();
-            Public.showCommonImportOrExportConfigDialog(
-                '各层点数分配方案',
-                'levelPointList',
-                null,
-                function () {
-                    $('#pdLevelPointListConfigDialog').remove();
-                    showLevelPointListConfigDialog($dialog => $dialog.submit());
-                }
-            );
-        }).end().find('[data-name="openCustomScriptDialog"]').click(() => Script.showDialog())
-        .end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
+        }
+        addLevelPointHtml(0, points);
+        $levelPointList.find('[name="level"]:last').focus();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="deleteSelect"]').click(function (e) {
+        e.preventDefault();
+        let $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length || !confirm('是否删除所选层数？')) return;
+        let $line = $checked.closest('tr');
+        $line.next('tr').addBack().remove();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog(
+            '各层点数分配方案',
+            'levelPointList',
+            null,
+            function () {
+                $('#pdLevelPointListConfigDialog').remove();
+                showLevelPointListConfigDialog($dialog => $dialog.submit());
+            }
+        );
+    }).end().find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]')))
+        .end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')));
 
     $levelPointList.on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
         $line.next('tr').addBack().remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('change', '.pd_point', function () {
         let $this = $(this);
         let name = $this.attr('name');
@@ -821,7 +816,6 @@ const showLevelPointListConfigDialog = function (callback) {
     }
 
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
     if (typeof callback === 'function') callback($dialog);
 };
 
@@ -1235,13 +1229,13 @@ const showImportOrExportLootLogDialog = function () {
     let html = `
 <div class="pd_cfg_main">
   <strong>导入争夺记录：</strong>将争夺记录内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到文本文件里即可<br>
+  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到别处即可<br>
   <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
   <button name="merge" type="button">合并记录</button>
   <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
-  <button name="close" type="button">关闭</button>
+  <button data-action="close" type="button">关闭</button>
 </div>`;
 
     let $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
@@ -1267,10 +1261,10 @@ const showImportOrExportLootLogDialog = function () {
         LootLog.write(log);
         alert('争夺记录已导入');
         location.reload();
-    }).end().find('[name="close"]').click(() => Dialog.close(dialogName));
+    });
 
     Dialog.show(dialogName);
-    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select();
+    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select().focus();
 };
 
 /**

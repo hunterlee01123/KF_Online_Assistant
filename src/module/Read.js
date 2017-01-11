@@ -141,33 +141,36 @@ export const adjustThreadContentFontSize = function () {
 };
 
 /**
- * 添加复制购买人名单的链接
+ * 添加复制购买人名单的选项
  */
-export const addCopyBuyersListLink = function () {
-    $('<a style="margin:0 2px 0 5px;" href="#">复制名单</a>')
-        .insertAfter('.readtext select[name="buyers"]')
-        .click(function (e) {
-            e.preventDefault();
-            let buyerList = [];
-            $(this).prev('select').children('option').each(function (index) {
-                let name = $(this).text();
-                if (!index || name === '-'.repeat(11)) return;
-                buyerList.push(name);
-            });
-            if (!buyerList.length) {
-                alert('暂时无人购买');
-                return;
-            }
-            const dialogName = 'pdCopyBuyerListDialog';
-            if ($('#' + dialogName).length > 0) return;
-            let html = `
+export const addCopyBuyersListOption = function () {
+    $('.readtext select[name="buyers"]').each(function () {
+        $(this).find('option:first-child').after('<option value="copyList">复制名单</option>');
+    });
+    $(document).on('change', 'select[name="buyers"]', function () {
+        let $this = $(this);
+        if ($this.val() !== 'copyList') return;
+        let buyerList = $this.find('option').map(function (index) {
+            let name = $(this).text();
+            if (index === 0 || index === 1 || name.includes('-'.repeat(11))) return null;
+            else return name;
+        }).get().join('\n');
+        $this.get(0).selectedIndex = 0;
+        if (!buyerList) {
+            alert('暂时无人购买');
+            return;
+        }
+
+        const dialogName = 'pdCopyBuyerListDialog';
+        if ($('#' + dialogName).length > 0) return;
+        let html = `
 <div class="pd_cfg_main">
-  <textarea style="width: 200px; height: 300px; margin: 5px 0;" readonly></textarea>
+  <textarea name="buyerList" style="width: 200px; height: 300px; margin: 5px 0;" readonly>${buyerList}</textarea>
 </div>`;
-            let $dialog = Dialog.create(dialogName, '购买人名单', html);
-            Dialog.show(dialogName);
-            $dialog.find('textarea').val(buyerList.join('\n')).select().focus();
-        });
+        let $dialog = Dialog.create(dialogName, '购买人名单', html);
+        Dialog.show(dialogName);
+        $dialog.find('[name="buyerList"]').select().focus();
+    });
 };
 
 /**
@@ -179,21 +182,24 @@ export const showStatRepliersDialog = function (replierList) {
     let html = `
 <div class="pd_cfg_main">
   <div id="pdReplierListFilter" style="margin-top: 5px;">
-    <label><input type="checkbox" checked> 显示楼层号</label>
-    <label><input type="checkbox"> 去除重复</label>
-    <label><input type="checkbox"> 去除楼主</label>
+    <label><input name="showFloorNumEnabled" type="checkbox" checked> 显示楼层号</label>
+    <label><input name="removeRepeatedEnabled" type="checkbox"> 去除重复</label>
+    <label><input name="removeTopFloorEnabled" type="checkbox"> 去除楼主</label>
   </div>
   <div style="color: #f00;" id="pdReplierListStat"></div>
-  <textarea style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
+  <textarea name="replierList" style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
 </div>`;
     let $dialog = Dialog.create(dialogName, '回帖者名单', html);
+    let $replierListFilter = $dialog.find('#pdReplierListFilter');
 
-    let $filterNodes = $dialog.find('#pdReplierListFilter input');
-    $filterNodes.click(function () {
+    /**
+     * 显示回帖者名单
+     */
+    const showReplierList = function () {
         let list = [...replierList];
-        let isShowFloor = $filterNodes.eq(0).prop('checked'),
-            isRemoveRepeated = $filterNodes.eq(1).prop('checked'),
-            isRemoveTopFloor = $filterNodes.eq(2).prop('checked');
+        let isShowFloorNum = $replierListFilter.find('[name="showFloorNumEnabled"]').prop('checked'),
+            isRemoveRepeated = $replierListFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
+            isRemoveTopFloor = $replierListFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
         if (isRemoveRepeated) {
             list = list.map((elem, index, list) => list.indexOf(elem) === index ? elem : null);
         }
@@ -205,16 +211,16 @@ export const showStatRepliersDialog = function (replierList) {
         let num = 0;
         for (let [floor, userName] of list.entries()) {
             if (!userName) continue;
-            content += (isShowFloor ? floor + 'L：' : '') + userName + '\n';
+            content += (isShowFloorNum ? floor + 'L：' : '') + userName + '\n';
             num++;
         }
-        $dialog.find('textarea').val(content);
+        $dialog.find('[name="replierList"]').val(content);
         $dialog.find('#pdReplierListStat').html(`共有<b>${num}</b>条项目`);
-    });
-    $dialog.find('#pdReplierListFilter input:first').triggerHandler('click');
+    };
 
+    $replierListFilter.on('click', '[type="checkbox"]', showReplierList);
+    showReplierList();
     Dialog.show(dialogName);
-    $dialog.find('input:first').focus();
 };
 
 /**

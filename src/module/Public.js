@@ -684,8 +684,9 @@ export const followUsers = function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
                 $this.addClass('pd_highlight');
-                if (Config.highlightFollowUserThreadLinkEnabled)
+                if (Config.highlightFollowUserThreadLinkEnabled) {
                     $this.parent('td').prev('td').prev('td').find('div > a[href^="read.php?tid="]').addClass('pd_highlight');
+                }
             }
         });
     }
@@ -720,8 +721,8 @@ export const followUsers = function () {
  * 屏蔽用户
  */
 export const blockUsers = function () {
-    if (Config.blockUserList.length === 0) return;
-    let blockNum = 0;
+    if (!Config.blockUserList.length) return;
+    let num = 0;
     if (Info.isInHomePage) {
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
             let $this = $(this);
@@ -729,7 +730,7 @@ export const blockUsers = function () {
             if (!matches) return;
             let index = Util.inFollowOrBlockUserList(matches[1], Config.blockUserList);
             if (index > -1 && Config.blockUserList[index].type < 2) {
-                blockNum++;
+                num++;
                 $this.parent('li').remove();
             }
         });
@@ -737,13 +738,13 @@ export const blockUsers = function () {
     else if (location.pathname === '/thread.php') {
         let fid = parseInt($('input[name="f_fid"]:first').val());
         if (!fid) return;
-        if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
-        else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
+        if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;
+        else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         $('a.bl[href^="profile.php?action=show&uid="]').each(function () {
             let $this = $(this);
             let index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
             if (index > -1 && Config.blockUserList[index].type < 2) {
-                blockNum++;
+                num++;
                 $this.closest('tr').remove();
             }
         });
@@ -752,8 +753,8 @@ export const blockUsers = function () {
         if (Config.blockUserForumType > 0) {
             let fid = parseInt($('input[name="fid"]:first').val());
             if (!fid) return;
-            if (Config.blockUserForumType === 1 && $.inArray(fid, Config.blockUserFidList) === -1) return;
-            else if (Config.blockUserForumType === 2 && $.inArray(fid, Config.blockUserFidList) > -1) return;
+            if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;
+            else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         }
         let page = Util.getCurrentThreadPage();
         $('.readidmsbottom > a, .readidmleft > a').each(function (i) {
@@ -763,7 +764,7 @@ export const blockUsers = function () {
                 let type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;
                 else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
-                blockNum++;
+                num++;
                 let $lou = $this.closest('.readtext');
                 $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
             }
@@ -789,12 +790,12 @@ export const blockUsers = function () {
         $('.kf_share1 > tbody > tr > td:last-child').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.blockUserList) > -1) {
-                blockNum++;
+                num++;
                 $this.closest('tr').remove();
             }
         });
     }
-    if (blockNum > 0) console.log(`【屏蔽用户】共有${blockNum}个帖子被屏蔽`);
+    if (num > 0) console.log(`【屏蔽用户】共有${num}个帖子或回复被屏蔽`);
 };
 
 /**
@@ -1339,14 +1340,14 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
-    <strong>导出设置：</strong>复制文本框里的内容并粘贴到文本文件里即可
+    <strong>导出设置：</strong>复制文本框里的内容并粘贴到别处即可
   </div>
   <textarea name="commonConfig" style="width: 500px; height: 300px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about"></span>
   <button type="submit">保存</button>
-  <button name="cancel" type="button">取消</button>
+  <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
 
@@ -1372,7 +1373,7 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
         Dialog.close(dialogName);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
         else location.reload();
-    }).find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
     Dialog.show(dialogName);
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
     if (typeof callback === 'function') callback($dialog);

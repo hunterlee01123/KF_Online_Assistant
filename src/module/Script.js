@@ -142,8 +142,8 @@ export const showDialog = function (showIndex = null) {
     <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
     <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出所有脚本</a>
   </span>
-  <button type="submit">确定</button>
-  <button name="cancel" type="button">取消</button>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
   <button class="pd_highlight" name="clear" type="button">清空</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '自定义脚本', html, 'min-width: 776px;');
@@ -166,9 +166,9 @@ export const showDialog = function (showIndex = null) {
         e.preventDefault();
         if (confirm('是否清空所有脚本？')) {
             $customScriptList.html('');
-            Dialog.show(dialogName);
+            Dialog.resize(dialogName);
         }
-    }).end().find('[name="cancel"]').click(() => Dialog.close(dialogName));
+    });
 
     /**
      * 添加自定义脚本
@@ -211,7 +211,7 @@ export const showDialog = function (showIndex = null) {
         $customScriptList.find('.pd_custom_script_content').hide();
         addCustomScript();
         $customScriptList.find('.pd_custom_script_content:last').show().focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).end().find('[data-name="insertSample"]').click(function (e) {
         e.preventDefault();
         let $content = $customScriptList.find('.pd_custom_script_content:visible');
@@ -234,14 +234,14 @@ export const showDialog = function (showIndex = null) {
         e.preventDefault();
         $dialog.find('.pd_custom_script_content').hide();
         $(this).parent().next().show().focus();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         if (!confirm('是否删除此脚本？')) return;
         let $header = $(this).closest('.pd_custom_script_header');
         $header.next().remove();
         $header.remove();
-        Dialog.show(dialogName);
+        Dialog.resize(dialogName);
     }).on('change', '.pd_custom_script_content', function () {
         let $this = $(this);
         let {name, version, homepage, trigger} = getScriptMeta($this.val());
@@ -253,14 +253,8 @@ export const showDialog = function (showIndex = null) {
             .css('color', trigger === 'start' ? '#f00' : '#00f');
     });
 
-
     Dialog.show(dialogName);
-    if (typeof showIndex === 'number') {
-        $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
-    }
-    else {
-        $dialog.find('a:first').focus();
-    }
+    if (typeof showIndex === 'number') $customScriptList.find('.pd_custom_script_name').eq(showIndex).click();
 };
 
 /**

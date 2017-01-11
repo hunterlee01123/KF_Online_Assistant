@@ -321,7 +321,7 @@ export const getObjectKeyList = function (obj, sortBy = 0) {
         list.push(key);
     }
     if (sortBy !== 0) {
-        list.sort((a, b) => sortBy > 0 ? a > b : a < b);
+        list.sort((a, b) => sortBy > 0 ? (a > b ? 1 : -1) : (a < b ? 1 : -1));
     }
     return list;
 };
@@ -335,7 +335,7 @@ export const getObjectKeyList = function (obj, sortBy = 0) {
  */
 export const getSortedObjectKeyList = function (sortKeyList, obj, sortBy = 0) {
     let list = getObjectKeyList(obj, sortBy);
-    list.sort((a, b) => sortKeyList.indexOf(a) > sortKeyList.indexOf(b));
+    list.sort((a, b) => sortKeyList.indexOf(a) > sortKeyList.indexOf(b) ? 1 : -1);
     return list;
 };
 
@@ -350,13 +350,13 @@ export const getStatFormatNumber = num => num >= 0 ? `<em>+${num.toLocaleString(
  * 检测浏览器是否为Opera
  * @returns {boolean} 是否为Opera
  */
-export const isOpera = () => typeof window.opera !== 'undefined';
+export const isOpera = () => typeof Info.w.opera !== 'undefined';
 
 /**
  * 检测浏览器是否为Edge
  * @returns {boolean} 是否为Edge
  */
-export const isEdge = () => navigator.appVersion && navigator.appVersion.indexOf('Edge') > 0;
+export const isEdge = () => navigator.appVersion && navigator.appVersion.includes('Edge');
 
 /**
  * 比较神秘等级高低
