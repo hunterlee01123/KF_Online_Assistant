@@ -197,4 +197,4 @@ gulp.task('build', function (cb) {
 });
 
 // 默认任务
-gulp.task('default', ['build', 'watch']);
+gulp.task('default', ['build']);
