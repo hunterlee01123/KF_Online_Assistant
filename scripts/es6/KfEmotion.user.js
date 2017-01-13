@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0
+// @version     4.1.0.1
 // @author      eddie32
-// @description KF论坛专用的回复表情, 插图扩展插件, 在发帖时快速输入自定义表情和论坛BBCODE
+// @modifier    喵拉布丁
+// @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
 // @homepage    https://github.com/liu599/KF-Emotion-UserScript
-// @include     https://*miaola.info/*
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
@@ -17,368 +17,217 @@
 // ==/UserScript==
 'use strict';
 
-// B站和tora酱
-let w4 = [];
-for (let j = 0; j < 16; j++) {
-    w4[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/2233 (' +
-        (j + 1) + ').gif';
-}
-for (let j = 16; j < 30; j++) {
-    w4[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/bilibiliTV (' +
-        (j + 1 - 17) + ').png';
-}
-// tora酱
-let w5 = [];
-for (let j = 0; j < 14; j++) {
-    w5[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/tora/0' +
-        ((j) >= 9 ? (j + 1) : ('0' + (j + 1))) + '.jpg';
-}
-w4 = w4.concat(w5);
-
-
-//阿卡林
-let ACSmile1 = [];
-for (let j = 0; j < 20; j++) {
-    ACSmile1[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/Dynamic/akari' +
-        (j + 1) + '.gif';
+// 灰企鹅
+const KfSmileList = [];
+const KFSmileCodeList = [];
+let kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
+if (typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined') kfImgPath = Info.imgPath;
+for (let i = 0; i < 48; i++) {
+    KfSmileList.push(`/${kfImgPath}/post/smile/em/em${(i) >= 9 ? (i + 1) : ('0' + (i + 1))}.gif`);
+    KFSmileCodeList.push(`[s:${i + 10}]`);
 }
 
-let AkariSmile1 = [];
-for (let j = 0; j < 71; j++) {
-    AkariSmile1[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/akari/akari' +
-        (j + 1) + '.png';
+// AC娘表情
+const AcSmileList = [];
+for (let i = 0; i < 50; i++) {
+    AcSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/New/${i + 1}.png`);
 }
-AkariSmile1 = AkariSmile1.concat(ACSmile1);
-
-// KF拓展, New Game以及巫女控
-let kfaux = [];
-for (let j = 0; j < 19; j++) {
-    kfaux[j] = 'http://ss.nekohand.moe/Asource/EmotionPic/KFEM (' +
-        (j + 1) + ').gif';
+for (let i = 50; i < 90; i++) {
+    AcSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/Niming/${(i - 50) >= 9 ? (i - 49) : ('0' + (i - 49))}.gif`);
 }
 
-let NG = [];
-for (let j = 0; j < 62; j++) {
-    NG[j] = 'http://nekohand.moe/spsmile/01Sora/0xx' +
-        (j + 2) + '.png';
+// 常用表情
+const CommonSmileList = [];
+for (let i = 0; i < 62; i++) {
+    CommonSmileList.push(`http://nekohand.moe/spsmile/01Sora/0xx${i + 2}.png`);
 }
-NG = NG.concat(kfaux);
-
-// ACFUN new
-let ACSmile4 = [];
-for (let j = 0; j < 50; j++) {
-    ACSmile4[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/New/' +
-        (j + 1) + '.png';
-}
-for (let j = 50; j < 90; j++) {
-    ACSmile4[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/Niming/' +
-        ((j - 50) >= 9 ? (j - 49) : ('0' + (j - 49))) + '.gif';
+for (let i = 0; i < 19; i++) {
+    CommonSmileList.push(`http://ss.nekohand.moe/Asource/EmotionPic/KFEM (${i + 1}).gif`);
 }
 
-let functionDescription = ["出售贴sell=售价", "引用", "隐藏hide=神秘等级", "插入代码", "删除线", "跑马灯", "文字颜色", "粗体",
-    "下划线", "斜体", "水平线", "背景色", "插入图片"];
-
-// KF 内置
-let KFSmileURL = [];
-let KFSmileCode = [];
-for (let j = 0; j < 48; j++) {
-    KFSmileURL[j] = (typeof imgpath != 'undefined' ? imgpath : '') + '/post/smile/em/em' +
-        ((j) >= 9 ? (j + 1) : ('0' + (j + 1))) + '.gif';
-    KFSmileCode[j] = '[s:' + (j + 10) + ']';
+// 阿卡林表情
+const AkarinSmileList = [];
+for (let i = 0; i < 71; i++) {
+    AkarinSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/akari/akari${i + 1}.png`);
+}
+for (let i = 0; i < 20; i++) {
+    AkarinSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/Dynamic/akari${i + 1}.gif`);
 }
 
-// lovelive专用小
-let LoveliveSmalltargetURL = [];
-for (let j = 0; j < 40; j++) {
-    LoveliveSmalltargetURL[j] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion02/Small/Lovelive2nd' +
-        (j + 1) + '.png';
-    LoveliveSmalltargetURL[j + 40] = 'http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/Small/Lovelive' +
-        (j + 1) + '.png';
+// B站和tora酱表情
+const BiliBiliSmileList = [];
+for (let i = 0; i < 16; i++) {
+    BiliBiliSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/2233 (${i + 1}).gif`);
+}
+for (let i = 16; i < 30; i++) {
+    BiliBiliSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/bilibiliTV (${i + 1 - 17}).png`);
+}
+for (let i = 0; i < 14; i++) {
+    BiliBiliSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/tora/0${(i) >= 9 ? (i + 1) : ('0' + (i + 1))}.jpg`);
 }
 
-// 表情菜单
-let MenuList = {
-    item4: {datatype: 'imageLink', title: 'kf固有', addr: KFSmileURL, ref: KFSmileCode},
-    item1: {
+// lovelive表情（小）
+const LoveliveSmallSmileList = [];
+for (let i = 0; i < 40; i++) {
+    LoveliveSmallSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion02/Small/Lovelive2nd${i + 1}.png`);
+    LoveliveSmallSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/Small/Lovelive${i + 1}.png`);
+}
+
+/**
+ * 表情菜单
+ */
+const MenuList = {
+    KfSmile: {datatype: 'imageLink', title: 'KF自带', addr: KfSmileList, ref: KFSmileCodeList},
+    Shortcut: {
         datatype: 'plain',
         title: '快捷',
-        addr: ["[sell=100][/sell]", "[quote][/quote]", "[hide=100][/hide]", "[code][/code]",
-            "[strike][/strike]", "[fly][/fly]", "[color=#00FF00][/color]", "[b][/b]", "[u][/u]", "[i][/i]", "[hr]", "[backcolor=][/backcolor]", "[img][/img]"],
-        ref: functionDescription
+        addr: [
+            '[sell=100][/sell]', '[quote][/quote]', '[hide=100][/hide]', '[code][/code]', '[strike][/strike]', '[fly][/fly]',
+            '[color=#00FF00][/color]', '[b][/b]', '[u][/u]', '[i][/i]', '[hr]', '[backcolor=][/backcolor]', '[img][/img]'
+        ],
+        ref: [
+            '出售贴sell=售价', '引用', '隐藏hide=神秘等级', '插入代码', '删除线', '跑马灯', '文字颜色', '粗体', '下划线', '斜体', '水平线', '背景色', '插入图片'
+        ]
     },
-    item2: {
-        datatype: 'plain', title: '颜文字', addr: ["(●・ 8 ・●)",
-            "╰(๑◕ ▽ ◕๑)╯", "(﹡ˆˆ﹡)", "〜♪♪", "(ﾟДﾟ≡ﾟДﾟ)", "(＾o＾)ﾉ", "(|||ﾟДﾟ)", "(`ε´ )", "(╬ﾟдﾟ)", "(|||ﾟдﾟ)", "(￣∇￣)", "(￣3￣)", "(￣ｰ￣)", "(￣ . ￣)", "(￣︿￣)", "(￣︶￣)", "(*´ω`*)", "(・ω・)", "(⌒▽⌒)", "(￣▽￣）", "(=・ω・=)", "(｀・ω・´)", "(〜￣△￣)〜", "(･∀･)",
-            "(°∀°)ﾉ", "(￣3￣)", "╮(￣▽￣)╭", "( ´_ゝ｀)", "←_←", "→_→", "(&lt;_&lt;)", "(&gt;_&gt;)", "(;¬_¬)", "(▔□▔)/", "(ﾟДﾟ≡ﾟдﾟ)!?", "Σ(ﾟдﾟ;)", "Σ( ￣□￣||)",
-            "(´；ω；`)", "（/TДT)/", "(^・ω・^ )", "(｡･ω･｡)", "(●￣(ｴ)￣●)", "ε=ε=(ノ≧∇≦)ノ", "(´･_･`)", "(-_-#)", "（￣へ￣）", "(￣ε(#￣) Σ", "ヽ(`Д´)ﾉ", "(╯°口°)╯(┴—┴", "（#-_-)┯━┯", "_(:3」∠)_", "(笑)", "(汗)", "(泣)", "(苦笑)", "(´・ω・`)", "(╯°□°）╯︵ ┻━┻", "(╯‵□′)╯︵┻━┻", "( ´ρ`)", "( ﾟωﾟ)", "(oﾟωﾟo)", "(　^ω^)", "(｡◕∀◕｡)", "/( ◕‿‿◕ )\\", "ε٩( º∀º )۶з", "(￣ε(#￣)☆╰╮(￣▽￣///)",
-            "（●´3｀）~♪", "_(:з」∠)_", "хорошо!", "＼(^o^)／", "(•̅灬•̅ )", "(ﾟДﾟ)", "まったく、小学生は最高だぜ！！", "ε=ε=ε=┏(゜ロ゜;)┛",
-            "(；°ほ°)", "もうこの国は駄目だぁ", "ヽ(✿ﾟ▽ﾟ)ノ", "焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！", "お疲れ様でした"]
+    Emoji: {
+        datatype: 'plain',
+        title: '颜文字',
+        addr: [
+            '(●・ 8 ・●)', '╰(๑◕ ▽ ◕๑)╯', '(﹡ˆˆ﹡)', '〜♪♪', '(ﾟДﾟ≡ﾟДﾟ)', '(＾o＾)ﾉ', '(|||ﾟДﾟ)', '(`ε´ )', '(╬ﾟдﾟ)', '(|||ﾟдﾟ)', '(￣∇￣)', '(￣3￣)', '(￣ｰ￣)', '(￣ . ￣)', '(￣︿￣)', '(￣︶￣)', '(*´ω`*)', '(・ω・)', '(⌒▽⌒)', '(￣▽￣）', '(=・ω・=)', '(｀・ω・´)', '(〜￣△￣)〜', '(･∀･)',
+            '(°∀°)ﾉ', '(￣3￣)', '╮(￣▽￣)╭', '( ´_ゝ｀)', '←_←', '→_→', '(&lt;_&lt;)', '(&gt;_&gt;)', '(;¬_¬)', '(▔□▔)/', '(ﾟДﾟ≡ﾟдﾟ)!?', 'Σ(ﾟдﾟ;)', 'Σ( ￣□￣||)',
+            '(´；ω；`)', '（/TДT)/', '(^・ω・^ )', '(｡･ω･｡)', '(●￣(ｴ)￣●)', 'ε=ε=(ノ≧∇≦)ノ', '(´･_･`)', '(-_-#)', '（￣へ￣）', '(￣ε(#￣) Σ', 'ヽ(`Д´)ﾉ', '(╯°口°)╯(┴—┴', '（#-_-)┯━┯', '_(:3」∠)_', '(笑)', '(汗)', '(泣)', '(苦笑)', '(´・ω・`)', '(╯°□°）╯︵ ┻━┻', '(╯‵□′)╯︵┻━┻', '( ´ρ`)', '( ﾟωﾟ)', '(oﾟωﾟo)', '(　^ω^)', '(｡◕∀◕｡)', '/( ◕‿‿◕ )\\', 'ε٩( º∀º )۶з', '(￣ε(#￣)☆╰╮(￣▽￣///)',
+            '（●´3｀）~♪', '_(:з」∠)_', 'хорошо!', '＼(^o^)／', '(•̅灬•̅ )', '(ﾟДﾟ)', 'まったく、小学生は最高だぜ！！', 'ε=ε=ε=┏(゜ロ゜;)┛',
+            '(；°ほ°)', 'もうこの国は駄目だぁ', 'ヽ(✿ﾟ▽ﾟ)ノ', '焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！', 'お疲れ様でした'
+        ]
     },
-    item5: {datatype: 'image', title: 'ACFUN', addr: ACSmile4},
-    item6: {datatype: 'image', title: '常用', addr: NG},
-    item7: {datatype: 'image', title: 'Akari', addr: AkariSmile1},
-    item8: {datatype: 'image', title: 'BiliBili', addr: w4},
-    item3: {datatype: 'image', title: 'LoveLive', addr: LoveliveSmalltargetURL}
+    Acfun: {datatype: 'image', title: 'ACFUN', addr: AcSmileList},
+    Common: {datatype: 'image', title: '常用', addr: CommonSmileList},
+    Akari: {datatype: 'image', title: 'Akari', addr: AkarinSmileList},
+    BiliBili: {datatype: 'image', title: 'BiliBili', addr: BiliBiliSmileList},
+    LoveLive: {datatype: 'image', title: 'LoveLive', addr: LoveliveSmallSmileList},
 };
 
-/* Event 函数 */
-let EventUtil = {
-    getEvent: function (event) {
-        return event ? event : window.event;
-    },
-    getTarget: function (event) {
-        return event.target || event.srcElement;
-    },
-    preventDefault: function (event) {
-        if (event.preventDefault) {
-            event.preventDefault();
-        } else {
-            event.returnValue = false;
-        }
-    },
-    stopPropagation: function (event) {
-        if (event.stopPropagation) {
-            event.stopPropagation();
-        } else {
-            event.cancelBubble = true;
-        }
-    },
-    addHandler: function (element, type, handler) {
-        if (element.addEventListener) {
-            element.addEventListener(type, handler, false);  //DOM2
-        } else if (element.attachEvent) {
-            element.attachEvent("on" + type, handler);  //IE
-        } else {
-            element["on" + type] = handler;  //DOM 0 
-        }
-    },
-    removeHandler: function (element, type, handler) {
-        if (element.removeEventListener) {
-            element.removeEventListener(type, handler, false); //DOM2
-        } else if (element.detachEvent) {
-            element.detachEvent("on" + type, handler); //IE
-        } else {
-            element["on" + type] = null; //DOM 0 
-        }
+/**
+ * 添加BBCode
+ * @param textArea 文本框
+ * @param {string} code BBCode
+ * @param {string} selText 选择文本
+ */
+const addCode = function (textArea, code, selText = '') {
+    let startPos = !selText ? (code.indexOf('[img]') > -1 ? code.length : code.indexOf(']') + 1) : code.indexOf(selText);
+    if (typeof textArea.selectionStart !== 'undefined') {
+        let prePos = textArea.selectionStart;
+        textArea.value = textArea.value.substring(0, prePos) + code + textArea.value.substring(textArea.selectionEnd);
+        textArea.selectionStart = prePos + startPos;
+        textArea.selectionEnd = prePos + startPos + selText.length;
+    }
+    else {
+        textArea.value += code;
     }
 };
 
-let EleUtil = {
-    create: function (ele) {
-        return document.createElement(ele);
-    },
-    selectID: function (ele) {
-        return document.getElementById(ele);
-    },
-    select: function (selector) {
-        return document.querySelector(selector);
-    }
-};
-
-let createItems = {
-    createContainer: function (key) {
-        let ItemContainer = EleUtil.create('div');
-        ItemContainer.id = 'eddie32' + key;
-        EleUtil.selectID("toggleWindow").style.height = '100px';
-        EleUtil.selectID("toggleWindow").appendChild(ItemContainer);
-        return ItemContainer;
-    },
-    createImages: function (key) {
-        let outerContainer = createItems.createContainer(key);
-        //console.log(MenuList[key]);
-        let imgList = MenuList[key].addr;
-        let imgLength = imgList.length;
-        for (let k = 0; k < imgLength; k++) {
-            let imgItem = EleUtil.create('img');
-            imgItem.src = imgList[k];
-            imgItem.className = 'Ems';
-            imgItem.onclick = expandMenu.attachEmotion;
-            //imgItem.style.cssText = 'cursor:pointer;padding: 10px 10px:width: 75px;height: 75px;';
-            outerContainer.appendChild(imgItem);
+/**
+ * 获取表情面板内容
+ * @param {string} key 菜单关键字
+ * @returns {string} 表情面板内容
+ */
+const getSmilePanelContent = function (key) {
+    let content = '';
+    let data = MenuList[key];
+    if (!data) return content;
+    for (let i = 0; i < data.addr.length; i++) {
+        if (data.datatype === 'image') {
+            content += `<img class="kfe-smile" src="${data.addr[i]}" alt="[表情]">`;
         }
-    },
-    createPlainText: function (key) {
-        let outerContainer = createItems.createContainer(key);
-        //console.log(MenuList[key]);
-        let txtList = MenuList[key].addr;
-        let txtLength = txtList.length;
-        for (let k = 0; k < txtLength; k++) {
-            let txtItem = EleUtil.create('span');
-            txtItem.style.cssText = "cursor:pointer; margin: 10px 10px;";
-            txtItem.innerHTML = '<a data-sign=' + encodeURI(txtList[k]) + ' class="txtBtnEmotion">' + txtList[k] + '</a>';
-            if (MenuList[key].ref) {
-                txtItem.innerHTML = '<a data-sign=' + encodeURI(txtList[k]) + ' class="txtBtnEmotion">' + MenuList[key].ref[k] + '</a>';
-                EleUtil.selectID("toggleWindow").style.height = '50px';
-            }
-            txtItem.onclick = expandMenu.attachEmotion;
-            txtItem.style.cssText = 'cursor:pointer;padding: 10px 10px:width: 50px;';
-            outerContainer.appendChild(txtItem);
+        else if (data.datatype === 'imageLink') {
+            let ref = typeof data.ref !== 'undefined' && typeof data.ref[i] !== 'undefined' ? data.ref[i] : '';
+            content += `<img class="kfe-smile" data-code="${ref}" src="${data.addr[i]}" alt="[表情]">`;
         }
-    },
-    createImageLink: function (key) {
-        //console.log(MenuList[key]);
-        let outerContainer = createItems.createContainer(key);
-        let imgList = MenuList[key].addr;
-        let refList = MenuList[key].ref;
-        let imgLength = imgList.length;
-        for (let k = 0; k < imgLength; k++) {
-            let imgItem = EleUtil.create('img');
-            imgItem.dataset.link = refList[k];
-            imgItem.src = imgList[k];
-            imgItem.className = 'Ems';
-            imgItem.onclick = expandMenu.attachEmotion;
-            imgItem.style.cssText = 'width: 50px !important;height: 50px !important;';
-            outerContainer.appendChild(imgItem);
+        else if (data.datatype === 'plain') {
+            let ref = typeof data.ref !== 'undefined' && typeof data.ref[i] !== 'undefined' ? data.ref[i] : data.addr[i];
+            content += `<a class="kfe-smile-text" data-code="${data.addr[i]}" href="#">${ref}</a>`;
         }
     }
+    return `<div class="kfe-smile-panel" data-key="${key}">${content}</div>`;
 };
 
-let expandMenu = {
-    init: function (event) {
-        createMenu.clear();
-        let eventTarget = EventUtil.getTarget(event);
-        EleUtil.selectID("toggleWindow").style.display = "block";
-        EleUtil.selectID("toggleWindow").style.width = EleUtil.select("textarea").style.width;
-        let dataType = eventTarget.attributes[2].nodeValue;
-        let dataKey = eventTarget.attributes[1].nodeValue;
-        if (EleUtil.select("#eddie32" + dataKey)) {
-            console.log(EleUtil.select("#eddie32" + dataKey));
-            EleUtil.select("#eddie32" + dataKey).style.display = 'block';
-            if (dataKey == 'item1') EleUtil.selectID("toggleWindow").style.height = '50px';
-            else EleUtil.selectID("toggleWindow").style.height = '100px';
-            return;
-        }
-        if (dataType == 'plain') {
-            createItems.createPlainText(dataKey);
-        } else if (dataType == 'image') {
-            createItems.createImages(dataKey);
-        } else if (dataType == 'imageLink') {
-            createItems.createImageLink(dataKey);
-        }
-    },
-    attachEmotion: function (event) {
-        let eventTarget = EventUtil.getTarget(event);
-        console.log(eventTarget);
-        let emotionAddress;
-
-        if (eventTarget.attributes.length == 2) {
-            if (eventTarget.src) {
-                let addressTarget = eventTarget.src;
-                emotionAddress = expandMenu.addressParse(addressTarget, 'image');
-            } else {
-                console.log(eventTarget.attributes);
-                let addressTarget = eventTarget.attributes[0].nodeValue;
-                emotionAddress = expandMenu.addressParse(addressTarget, 'plain');
-            }
-        }
-        else {
-            console.log(eventTarget.attributes);
-            let addressTarget = eventTarget.attributes[0].nodeValue;
-            emotionAddress = expandMenu.addressParse(addressTarget, 'plain');
-        }
-
-        let selectTextArea = EleUtil.select("textarea");
-        let ovalue = selectTextArea.value;
-        let startPos = selectTextArea.selectionStart;
-        let endPos = selectTextArea.selectionEnd;
-        selectTextArea.value = ovalue.slice(0, startPos) + emotionAddress + ovalue.slice(startPos);
-        // console.log(eventTarget);
-        // console.log(emotionAddress);
-    },
-    addressParse: function (addStr, pattern) {
-        let stringReturn;
-        if (pattern === 'image') {
-            stringReturn = '[img]' + addStr + '[/img]';
-        }
-        if (pattern === 'plain') {
-            stringReturn = decodeURI(addStr);
-        }
-        if (pattern === 'imageLink') {
-            stringReturn = addStr;
-        }
-        return stringReturn;
-    }
+/**
+ * 获取子菜单内容
+ * @returns {string} 子菜单内容
+ */
+const getSubMenuContent = function () {
+    let content = '';
+    $.each(MenuList, function (key, data) {
+        content += `<a class="kfe-sub-menu" data-key="${key}" href="#" title="${data.title}">${data.title}</a>`;
+    });
+    return content;
 };
 
-let createMenu = {
-    defaultID: 'emotion0000',
-    main: function () {
-        let mainMenu = EleUtil.create('div');
-        mainMenu.innerHTML = '<span title="made by eddie32 version 4.0.0" style="cursor:pointer;"><b>囧⑨</b></span>';
-        mainMenu.id = createMenu.defaultID;
-        // mainMenu.style.cssText = 'padding:5px 5px;width: 780px; vertical-align: middle;  \
-        //                        font: 14px/20px "Hiragino Sans GB","Microsoft YaHei","Arial","sans-serif"';
-        let MenuLength = Object.keys(MenuList).length;
-        for (let i = 0; i < MenuLength; i++) {
-            let MenuKey = Object.keys(MenuList)[i];
-            let MenuTitle = MenuList[MenuKey].title;
-            let MenuType = MenuList[MenuKey].datatype;
-            if (!MenuType || !MenuTitle) console.log('dataerror  ' + MenuKey);
-            let testMenu = createMenu.subs(MenuTitle, expandMenu.init, MenuKey, MenuType);
-            mainMenu.appendChild(testMenu);
-        }
-        let closeBtn = EleUtil.create('span');
-        closeBtn.innerHTML = '[-]';
-        closeBtn.className = "subMenu";
-        closeBtn.id = 'closeEM';
-        closeBtn.onclick = createMenu.clear;
-        mainMenu.appendChild(closeBtn);
-        let itemWindow = EleUtil.create('div');
-        itemWindow.id = "toggleWindow";
-        //itemWindow.style.cssText = '';
-        //itemWindow.style.display = 'none';
-        mainMenu.appendChild(itemWindow);
-        let styleItem = EleUtil.create('style');
-        styleItem.innerHTML = '#emotion0000 {padding:5px 5px; vertical-align: middle;  \
-                                 font: 14px/20px "Hiragino Sans GB","Microsoft YaHei","Arial","sans-serif"} \
-                               #toggleWindow a{padding: 3px 3px;line-height:2} \
-                               #toggleWindow { height: 120px; padding: 3px 3px; overflow: auto; margin-top:14px;display:none}\
-                               a.subBut{text-decoration: none;} \
-                               .Ems{cursor:pointer;padding: 10px 10px:width: 75px;height: 75px;display:inline-block;} \
-                               a.subBut:hover{color: deeppink;} \
-                               a.txtBtnEmotion{text-decoration:none;} \
-                               a.txtBtnEmotion:hover{background: #2b2b2b;color: #fff} \
-                               .subMenu{cursor:pointer; width:200px; margin-left: 7px; margin-right: 5px; margin-bottom:5px; background: #fff !important; \
-                                 font: 14px/16px "Hiragino Sans GB","Microsoft YaHei","Arial","sans-serif"} \
-                               .subMenu:hover{border-bottom: 2px solid deeppink}';
-        mainMenu.appendChild(styleItem);
-        return mainMenu;
-    },
-    subs: function (title, func, subid, subtype) {
-        let subMenu = EleUtil.create('span');
-        subMenu.id = subid;
-        subMenu.className = "subMenu";
-        let subcontent = '<a class="subBut" data-kid=' + subid + ' date-type=' + subtype + '>' + title + '</a>';
-        //EleUtil.selectClass(".subBut").style.cssText = 'width: 30px; margin-right: 5px';
-        subMenu.onclick = func;
-        subMenu.title = title;
-        // subMenu.dataset.hook = 'item1';
-        subMenu.innerHTML = subcontent;
-        return subMenu;
-    },
-    clear: function () {
-        //EleUtil.selectID("toggleWindow").innerHTML = '';
-        let toggleWindow = EleUtil.selectID("toggleWindow");
-        toggleWindow.style.display = "none";
-        let togWinChildren = toggleWindow.childNodes;
-        for (let j = 0; j < togWinChildren.length; j++) {
-            //console.log(togWinChildren[j]);
-            togWinChildren[j].style.display = 'none';
-        }
-    }
+/**
+ * 创建容器
+ * @param textArea 文本框
+ */
+const createContainer = function (textArea) {
+    let $container = $(`
+<div class="kfe-container">
+  <div class="kfe-menu">
+    <span title="made by eddie32 version 4.0.0; modified by 喵拉布丁" style="cursor: pointer;"><b>囧⑨</b></span>
+    ${getSubMenuContent()}
+    <span class="kfe-close-panel">[-]</span>
+  </div>
+</div>
+`).insertBefore($(textArea));
+    $container.on('click', '.kfe-sub-menu', function (e) {
+        e.preventDefault();
+        let key = $(this).data('key');
+        if (!key) return;
+        $container.find(`.kfe-smile-panel`).hide();
+        let $panel = $container.find(`.kfe-smile-panel[data-key="${key}"]`);
+        if ($panel.length > 0) $panel.show();
+        else $(getSmilePanelContent(key)).appendTo($container).show();
+    }).on('click', '.kfe-smile, .kfe-smile-text', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        let code = $this.data('code');
+        if (!code) code = `[img]${$this.attr('src')}[/img]`;
+        addCode(textArea, code);
+        if (/(Mobile|MIDP)/i.test(navigator.userAgent)) textArea.blur();
+        else textArea.focus();
+    }).find('.kfe-close-panel').click(function () {
+        $container.find('.kfe-smile-panel').hide();
+    });
 };
 
-let KFE = {
-    init: function () {
-        let mainEmotionMenu = createMenu.main();
-        //console.log(mainEmotionMenu);
-        let textareas = document.getElementsByTagName('textarea');
-        if (!textareas.length) {
-            return;
-        }
-        let textarea = EleUtil.select("textarea");
-        textarea.parentNode.insertBefore(mainEmotionMenu, textarea);
-    }
+/**
+ * 添加CSS
+ */
+const appendCss = function () {
+    $('head').append(`
+<style>
+  .kfe-container { padding: 5px; vertical-align: middle; font: 12px/1.7em "sans-serif"; }
+  .kfe-menu { margin-bottom: 5px; }
+  .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }
+  .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }
+  .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }
+  .kfe-smile-panel[data-key="Shortcut"] { height: 50px; }
+  .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }
+  .kfe-smile-text { display: inline-block; padding: 3px 5px; }
+  .kfe-smile-text:hover { color: #fff !important; background-color: #2b2b2b; text-decoration: none; }
+  .kfe-close-panel { cursor: pointer; }
+</style>
+`);
 };
 
-KFE.init();
+/**
+ * 初始化
+ */
+const init = function () {
+    let $textAreas = $('textarea');
+    if (!$textAreas.length) return;
+    appendCss();
+    $textAreas.each(function () {
+        createContainer(this);
+    });
+};
+
+init();
