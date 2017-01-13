@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.2
+// @version     4.1.0.3
 // @author      eddie32
 // @modifier    喵拉布丁
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
@@ -18,11 +18,14 @@
 // ==/UserScript==
 'use strict';
 
+// 网站是否为KfMobile
+const isKfMobile = typeof Info !== 'undefined';
+
 // 灰企鹅
 const KfSmileList = [];
 const KFSmileCodeList = [];
 let kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
-if (typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined') kfImgPath = Info.imgPath; // KfMobile
+if (isKfMobile) kfImgPath = Info.imgPath;
 for (let i = 0; i < 48; i++) {
     KfSmileList.push(`/${kfImgPath}/post/smile/em/em${(i) >= 9 ? (i + 1) : ('0' + (i + 1))}.gif`);
     KFSmileCodeList.push(`[s:${i + 10}]`);
@@ -132,40 +135,51 @@ const addCode = function (textArea, code, selText = '') {
 };
 
 /**
- * 获取表情面板内容
- * @param {string} key 菜单关键字
- * @returns {string} 表情面板内容
+ * 显示放大的表情图片
+ * @param {jQuery} $img 表情图片对象
  */
-const getSmilePanelContent = function (key) {
-    let content = '';
-    let data = MenuList[key];
-    if (!data) return content;
-    for (let i = 0; i < data.addr.length; i++) {
-        if (data.datatype === 'image') {
-            content += `<img class="kfe-smile" src="${data.addr[i]}" alt="[表情]">`;
-        }
-        else if (data.datatype === 'imageLink') {
-            let ref = typeof data.ref !== 'undefined' && typeof data.ref[i] !== 'undefined' ? data.ref[i] : '';
-            content += `<img class="kfe-smile" data-code="${ref}" src="${data.addr[i]}" alt="[表情]">`;
-        }
-        else if (data.datatype === 'plain') {
-            let ref = typeof data.ref !== 'undefined' && typeof data.ref[i] !== 'undefined' ? data.ref[i] : data.addr[i];
-            content += `<a class="kfe-smile-text" data-code="${data.addr[i]}" href="#">${ref}</a>`;
-        }
-    }
-    return `<div class="kfe-smile-panel" data-key="${key}">${content}</div>`;
+const showZoomInImage = function ($img) {
+    if ($img.get(0).naturalWidth <= $img.height()) return;
+    let offset = $img.offset();
+    let $zoomIn = $(`<img class="kfe-zoom-in" src="${$img.attr('src')}" alt="[预览图片]">`).appendTo('body');
+    $zoomIn.css({top: offset.top - $zoomIn.outerHeight(), left: offset.left});
 };
 
 /**
- * 获取子菜单内容
+ * 获取表情面板的HTML代码
+ * @param {string} key 菜单关键字
+ * @returns {string} 表情面板内容
+ */
+const getSmilePanelHtml = function (key) {
+    let data = MenuList[key];
+    if (!data) return '';
+    let html = '';
+    for (let i = 0; i < data.addr.length; i++) {
+        if (data.datatype === 'image') {
+            html += `<img class="kfe-smile" src="${data.addr[i]}" alt="[表情]">`;
+        }
+        else if (data.datatype === 'imageLink') {
+            let ref = typeof data.ref !== 'undefined' && typeof data.ref[i] !== 'undefined' ? data.ref[i] : '';
+            html += `<img class="kfe-smile" data-code="${ref}" src="${data.addr[i]}" alt="[表情]">`;
+        }
+        else if (data.datatype === 'plain') {
+            let ref = typeof data.ref !== 'undefined' && typeof data.ref[i] !== 'undefined' ? data.ref[i] : data.addr[i];
+            html += `<a class="kfe-smile-text" data-code="${data.addr[i]}" href="#">${ref}</a>`;
+        }
+    }
+    return `<div class="kfe-smile-panel" data-key="${key}">${html}</div>`;
+};
+
+/**
+ * 获取子菜单的HTML代码
  * @returns {string} 子菜单内容
  */
-const getSubMenuContent = function () {
-    let content = '';
+const getSubMenuHtml = function () {
+    let html = '';
     $.each(MenuList, function (key, data) {
-        content += `<a class="kfe-sub-menu" data-key="${key}" href="#" title="${data.title}">${data.title}</a>`;
+        html += `<a class="kfe-sub-menu" data-key="${key}" href="#" title="${data.title}">${data.title}</a>`;
     });
-    return content;
+    return html;
 };
 
 /**
@@ -177,7 +191,7 @@ const createContainer = function (textArea) {
 <div class="kfe-container">
   <div class="kfe-menu">
     <span title="made by eddie32 version 4.0.0; modified by 喵拉布丁" style="cursor: pointer;"><b>囧⑨</b></span>
-    ${getSubMenuContent()}
+    ${getSubMenuHtml()}
     <span class="kfe-close-panel">[-]</span>
   </div>
 </div>
@@ -189,7 +203,7 @@ const createContainer = function (textArea) {
         $container.find(`.kfe-smile-panel`).hide();
         let $panel = $container.find(`.kfe-smile-panel[data-key="${key}"]`);
         if ($panel.length > 0) $panel.show();
-        else $(getSmilePanelContent(key)).appendTo($container).show();
+        else $(getSmilePanelHtml(key)).appendTo($container).show();
     }).on('click', '.kfe-smile, .kfe-smile-text', function (e) {
         e.preventDefault();
         let $this = $(this);
@@ -198,6 +212,11 @@ const createContainer = function (textArea) {
         addCode(textArea, code);
         if (/(Mobile|MIDP)/i.test(navigator.userAgent)) textArea.blur();
         else textArea.focus();
+    }).on('mouseenter', '.kfe-smile', function () {
+        $('.kfe-zoom-in').remove();
+        showZoomInImage($(this));
+    }).on('mouseleave', '.kfe-smile', function () {
+        $('.kfe-zoom-in').remove();
     }).find('.kfe-close-panel').click(function () {
         $container.find('.kfe-smile-panel').hide();
     });
@@ -219,10 +238,13 @@ const appendCss = function () {
   .kfe-smile-text { display: inline-block; padding: 3px 5px; }
   .kfe-smile-text:hover { color: #fff !important; background-color: #2b2b2b; text-decoration: none; }
   .kfe-close-panel { cursor: pointer; }
+  .kfe-zoom-in {
+    position: absolute; max-width: 150px; max-height: 150px; background-color: #fcfcfc; border: 3px solid rgba(242, 242, 242, 0.6);
+    border-radius: 2px; box-shadow: 0 0 3px rgb(102, 102, 102);
+  }
 </style>
 `);
-    // KfMobile
-    if (typeof Info !== 'undefined') {
+    if (isKfMobile) {
         $('head').append(`
 <style>
   #readPage .kfe-container, #writeMessagePage .kfe-container { margin-top: -10px; }

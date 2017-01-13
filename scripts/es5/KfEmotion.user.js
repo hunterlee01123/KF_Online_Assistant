@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.2
+// @version     4.1.0.3
 // @author      eddie32
 // @modifier    喵拉布丁
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
@@ -18,12 +18,15 @@
 // ==/UserScript==
 'use strict';
 
-// 灰企鹅
+// 网站是否为KfMobile
 
+var isKfMobile = typeof Info !== 'undefined';
+
+// 灰企鹅
 var KfSmileList = [];
 var KFSmileCodeList = [];
 var kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
-if (typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined') kfImgPath = Info.imgPath; // KfMobile
+if (isKfMobile) kfImgPath = Info.imgPath;
 for (var i = 0; i < 48; i++) {
     KfSmileList.push('/' + kfImgPath + '/post/smile/em/em' + (i >= 9 ? i + 1 : '0' + (i + 1)) + '.gif');
     KFSmileCodeList.push('[s:' + (i + 10) + ']');
@@ -119,38 +122,49 @@ var addCode = function addCode(textArea, code) {
 };
 
 /**
- * 获取表情面板内容
- * @param {string} key 菜单关键字
- * @returns {string} 表情面板内容
+ * 显示放大的表情图片
+ * @param {jQuery} $img 表情图片对象
  */
-var getSmilePanelContent = function getSmilePanelContent(key) {
-    var content = '';
-    var data = MenuList[key];
-    if (!data) return content;
-    for (var _i11 = 0; _i11 < data.addr.length; _i11++) {
-        if (data.datatype === 'image') {
-            content += '<img class="kfe-smile" src="' + data.addr[_i11] + '" alt="[\u8868\u60C5]">';
-        } else if (data.datatype === 'imageLink') {
-            var ref = typeof data.ref !== 'undefined' && typeof data.ref[_i11] !== 'undefined' ? data.ref[_i11] : '';
-            content += '<img class="kfe-smile" data-code="' + ref + '" src="' + data.addr[_i11] + '" alt="[\u8868\u60C5]">';
-        } else if (data.datatype === 'plain') {
-            var _ref = typeof data.ref !== 'undefined' && typeof data.ref[_i11] !== 'undefined' ? data.ref[_i11] : data.addr[_i11];
-            content += '<a class="kfe-smile-text" data-code="' + data.addr[_i11] + '" href="#">' + _ref + '</a>';
-        }
-    }
-    return '<div class="kfe-smile-panel" data-key="' + key + '">' + content + '</div>';
+var showZoomInImage = function showZoomInImage($img) {
+    if ($img.get(0).naturalWidth <= $img.height()) return;
+    var offset = $img.offset();
+    var $zoomIn = $('<img class="kfe-zoom-in" src="' + $img.attr('src') + '" alt="[\u9884\u89C8\u56FE\u7247]">').appendTo('body');
+    $zoomIn.css({ top: offset.top - $zoomIn.outerHeight(), left: offset.left });
 };
 
 /**
- * 获取子菜单内容
+ * 获取表情面板的HTML代码
+ * @param {string} key 菜单关键字
+ * @returns {string} 表情面板内容
+ */
+var getSmilePanelHtml = function getSmilePanelHtml(key) {
+    var data = MenuList[key];
+    if (!data) return '';
+    var html = '';
+    for (var _i11 = 0; _i11 < data.addr.length; _i11++) {
+        if (data.datatype === 'image') {
+            html += '<img class="kfe-smile" src="' + data.addr[_i11] + '" alt="[\u8868\u60C5]">';
+        } else if (data.datatype === 'imageLink') {
+            var ref = typeof data.ref !== 'undefined' && typeof data.ref[_i11] !== 'undefined' ? data.ref[_i11] : '';
+            html += '<img class="kfe-smile" data-code="' + ref + '" src="' + data.addr[_i11] + '" alt="[\u8868\u60C5]">';
+        } else if (data.datatype === 'plain') {
+            var _ref = typeof data.ref !== 'undefined' && typeof data.ref[_i11] !== 'undefined' ? data.ref[_i11] : data.addr[_i11];
+            html += '<a class="kfe-smile-text" data-code="' + data.addr[_i11] + '" href="#">' + _ref + '</a>';
+        }
+    }
+    return '<div class="kfe-smile-panel" data-key="' + key + '">' + html + '</div>';
+};
+
+/**
+ * 获取子菜单的HTML代码
  * @returns {string} 子菜单内容
  */
-var getSubMenuContent = function getSubMenuContent() {
-    var content = '';
+var getSubMenuHtml = function getSubMenuHtml() {
+    var html = '';
     $.each(MenuList, function (key, data) {
-        content += '<a class="kfe-sub-menu" data-key="' + key + '" href="#" title="' + data.title + '">' + data.title + '</a>';
+        html += '<a class="kfe-sub-menu" data-key="' + key + '" href="#" title="' + data.title + '">' + data.title + '</a>';
     });
-    return content;
+    return html;
 };
 
 /**
@@ -158,14 +172,14 @@ var getSubMenuContent = function getSubMenuContent() {
  * @param textArea 文本框
  */
 var createContainer = function createContainer(textArea) {
-    var $container = $('\n<div class="kfe-container">\n  <div class="kfe-menu">\n    <span title="made by eddie32 version 4.0.0; modified by \u55B5\u62C9\u5E03\u4E01" style="cursor: pointer;"><b>\u56E7\u2468</b></span>\n    ' + getSubMenuContent() + '\n    <span class="kfe-close-panel">[-]</span>\n  </div>\n</div>\n').insertBefore($(textArea));
+    var $container = $('\n<div class="kfe-container">\n  <div class="kfe-menu">\n    <span title="made by eddie32 version 4.0.0; modified by \u55B5\u62C9\u5E03\u4E01" style="cursor: pointer;"><b>\u56E7\u2468</b></span>\n    ' + getSubMenuHtml() + '\n    <span class="kfe-close-panel">[-]</span>\n  </div>\n</div>\n').insertBefore($(textArea));
     $container.on('click', '.kfe-sub-menu', function (e) {
         e.preventDefault();
         var key = $(this).data('key');
         if (!key) return;
         $container.find('.kfe-smile-panel').hide();
         var $panel = $container.find('.kfe-smile-panel[data-key="' + key + '"]');
-        if ($panel.length > 0) $panel.show();else $(getSmilePanelContent(key)).appendTo($container).show();
+        if ($panel.length > 0) $panel.show();else $(getSmilePanelHtml(key)).appendTo($container).show();
     }).on('click', '.kfe-smile, .kfe-smile-text', function (e) {
         e.preventDefault();
         var $this = $(this);
@@ -173,6 +187,11 @@ var createContainer = function createContainer(textArea) {
         if (!code) code = '[img]' + $this.attr('src') + '[/img]';
         addCode(textArea, code);
         if (/(Mobile|MIDP)/i.test(navigator.userAgent)) textArea.blur();else textArea.focus();
+    }).on('mouseenter', '.kfe-smile', function () {
+        $('.kfe-zoom-in').remove();
+        showZoomInImage($(this));
+    }).on('mouseleave', '.kfe-smile', function () {
+        $('.kfe-zoom-in').remove();
     }).find('.kfe-close-panel').click(function () {
         $container.find('.kfe-smile-panel').hide();
     });
@@ -182,9 +201,8 @@ var createContainer = function createContainer(textArea) {
  * 添加CSS
  */
 var appendCss = function appendCss() {
-    $('head').append('\n<style>\n  .kfe-container { padding: 5px; vertical-align: middle; font: 12px/1.7em "sans-serif"; }\n  .kfe-menu { margin-bottom: 5px; }\n  .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }\n  .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }\n  .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }\n  .kfe-smile-panel[data-key="Shortcut"] { height: auto; }\n  .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }\n  .kfe-smile-text { display: inline-block; padding: 3px 5px; }\n  .kfe-smile-text:hover { color: #fff !important; background-color: #2b2b2b; text-decoration: none; }\n  .kfe-close-panel { cursor: pointer; }\n</style>\n');
-    // KfMobile
-    if (typeof Info !== 'undefined') {
+    $('head').append('\n<style>\n  .kfe-container { padding: 5px; vertical-align: middle; font: 12px/1.7em "sans-serif"; }\n  .kfe-menu { margin-bottom: 5px; }\n  .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }\n  .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }\n  .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }\n  .kfe-smile-panel[data-key="Shortcut"] { height: auto; }\n  .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }\n  .kfe-smile-text { display: inline-block; padding: 3px 5px; }\n  .kfe-smile-text:hover { color: #fff !important; background-color: #2b2b2b; text-decoration: none; }\n  .kfe-close-panel { cursor: pointer; }\n  .kfe-zoom-in {\n    position: absolute; max-width: 150px; max-height: 150px; background-color: #fcfcfc; border: 3px solid rgba(242, 242, 242, 0.6);\n    border-radius: 2px; box-shadow: 0 0 3px rgb(102, 102, 102);\n  }\n</style>\n');
+    if (isKfMobile) {
         $('head').append('\n<style>\n  #readPage .kfe-container, #writeMessagePage .kfe-container { margin-top: -10px; }\n  .kfe-menu { white-space: nowrap; overflow-x: auto; }\n</style>\n');
     }
 };
