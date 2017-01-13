@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.3
+// @version     4.1.0.4
 // @author      eddie32
-// @modifier    喵拉布丁
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
 // @homepage    https://github.com/liu599/KF-Emotion-UserScript
@@ -15,11 +14,14 @@
 // @grant       none
 // @license     MIT
 // @run-at      document-end
+// @modifier    喵拉布丁
+// @modifier-source  https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/scripts/es6/KfEmotion.user.js
 // ==/UserScript==
 'use strict';
+// 版本号
 
+var version = '4.1.0.4';
 // 网站是否为KfMobile
-
 var isKfMobile = typeof Info !== 'undefined';
 
 // 灰企鹅
@@ -172,7 +174,7 @@ var getSubMenuHtml = function getSubMenuHtml() {
  * @param textArea 文本框
  */
 var createContainer = function createContainer(textArea) {
-    var $container = $('\n<div class="kfe-container">\n  <div class="kfe-menu">\n    <span title="made by eddie32 version 4.0.0; modified by \u55B5\u62C9\u5E03\u4E01" style="cursor: pointer;"><b>\u56E7\u2468</b></span>\n    ' + getSubMenuHtml() + '\n    <span class="kfe-close-panel">[-]</span>\n  </div>\n</div>\n').insertBefore($(textArea));
+    var $container = $('\n<div class="kfe-container">\n  <div class="kfe-menu">\n    <span title="made by eddie32 version ' + version + '; modified by \u55B5\u62C9\u5E03\u4E01" style="cursor: pointer;"><b>\u56E7\u2468</b></span>\n    ' + getSubMenuHtml() + '\n    <span class="kfe-close-panel">[-]</span>\n  </div>\n</div>\n').insertBefore($(textArea));
     $container.on('click', '.kfe-sub-menu', function (e) {
         e.preventDefault();
         var key = $(this).data('key');

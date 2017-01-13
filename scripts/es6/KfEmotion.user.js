@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.3
+// @version     4.1.0.4
 // @author      eddie32
-// @modifier    喵拉布丁
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
 // @homepage    https://github.com/liu599/KF-Emotion-UserScript
@@ -15,9 +14,12 @@
 // @grant       none
 // @license     MIT
 // @run-at      document-end
+// @modifier    喵拉布丁
+// @modifier-source  https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/scripts/es6/KfEmotion.user.js
 // ==/UserScript==
 'use strict';
-
+// 版本号
+const version = '4.1.0.4';
 // 网站是否为KfMobile
 const isKfMobile = typeof Info !== 'undefined';
 
@@ -190,7 +192,7 @@ const createContainer = function (textArea) {
     let $container = $(`
 <div class="kfe-container">
   <div class="kfe-menu">
-    <span title="made by eddie32 version 4.0.0; modified by 喵拉布丁" style="cursor: pointer;"><b>囧⑨</b></span>
+    <span title="made by eddie32 version ${version}; modified by 喵拉布丁" style="cursor: pointer;"><b>囧⑨</b></span>
     ${getSubMenuHtml()}
     <span class="kfe-close-panel">[-]</span>
   </div>
