@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.1
+// @version     4.1.0.2
 // @author      eddie32
 // @modifier    喵拉布丁
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
@@ -10,6 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
+// @include     https://*miaola.info/*
 // @copyright   2014-2017, eddie32
 // @grant       none
 // @license     MIT
@@ -22,7 +23,7 @@
 var KfSmileList = [];
 var KFSmileCodeList = [];
 var kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
-if (typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined') kfImgPath = Info.imgPath;
+if (typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined') kfImgPath = Info.imgPath; // KfMobile
 for (var i = 0; i < 48; i++) {
     KfSmileList.push('/' + kfImgPath + '/post/smile/em/em' + (i >= 9 ? i + 1 : '0' + (i + 1)) + '.gif');
     KFSmileCodeList.push('[s:' + (i + 10) + ']');
@@ -106,7 +107,7 @@ var MenuList = {
 var addCode = function addCode(textArea, code) {
     var selText = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 
-    var startPos = !selText ? code.indexOf('[img]') > -1 ? code.length : code.indexOf(']') + 1 : code.indexOf(selText);
+    var startPos = !selText ? code.indexOf('[img]') > -1 || code.indexOf(']') < 0 ? code.length : code.indexOf(']') + 1 : code.indexOf(selText);
     if (typeof textArea.selectionStart !== 'undefined') {
         var prePos = textArea.selectionStart;
         textArea.value = textArea.value.substring(0, prePos) + code + textArea.value.substring(textArea.selectionEnd);
@@ -181,7 +182,11 @@ var createContainer = function createContainer(textArea) {
  * 添加CSS
  */
 var appendCss = function appendCss() {
-    $('head').append('\n<style>\n  .kfe-container { padding: 5px; vertical-align: middle; font: 12px/1.7em "sans-serif"; }\n  .kfe-menu { margin-bottom: 5px; }\n  .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }\n  .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }\n  .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }\n  .kfe-smile-panel[data-key="Shortcut"] { height: 50px; }\n  .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }\n  .kfe-smile-text { display: inline-block; padding: 3px 5px; }\n  .kfe-smile-text:hover { color: #fff !important; background-color: #2b2b2b; text-decoration: none; }\n  .kfe-close-panel { cursor: pointer; }\n</style>\n');
+    $('head').append('\n<style>\n  .kfe-container { padding: 5px; vertical-align: middle; font: 12px/1.7em "sans-serif"; }\n  .kfe-menu { margin-bottom: 5px; }\n  .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }\n  .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }\n  .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }\n  .kfe-smile-panel[data-key="Shortcut"] { height: auto; }\n  .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }\n  .kfe-smile-text { display: inline-block; padding: 3px 5px; }\n  .kfe-smile-text:hover { color: #fff !important; background-color: #2b2b2b; text-decoration: none; }\n  .kfe-close-panel { cursor: pointer; }\n</style>\n');
+    // KfMobile
+    if (typeof Info !== 'undefined') {
+        $('head').append('\n<style>\n  #readPage .kfe-container, #writeMessagePage .kfe-container { margin-top: -10px; }\n  .kfe-menu { white-space: nowrap; overflow-x: auto; }\n</style>\n');
+    }
 };
 
 /**

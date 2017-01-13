@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.1
+// @version     4.1.0.2
 // @author      eddie32
 // @modifier    喵拉布丁
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
@@ -10,6 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
+// @include     https://*miaola.info/*
 // @copyright   2014-2017, eddie32
 // @grant       none
 // @license     MIT
@@ -21,7 +22,7 @@
 const KfSmileList = [];
 const KFSmileCodeList = [];
 let kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
-if (typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined') kfImgPath = Info.imgPath;
+if (typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined') kfImgPath = Info.imgPath; // KfMobile
 for (let i = 0; i < 48; i++) {
     KfSmileList.push(`/${kfImgPath}/post/smile/em/em${(i) >= 9 ? (i + 1) : ('0' + (i + 1))}.gif`);
     KFSmileCodeList.push(`[s:${i + 10}]`);
@@ -93,11 +94,15 @@ const MenuList = {
         datatype: 'plain',
         title: '颜文字',
         addr: [
-            '(●・ 8 ・●)', '╰(๑◕ ▽ ◕๑)╯', '(﹡ˆˆ﹡)', '〜♪♪', '(ﾟДﾟ≡ﾟДﾟ)', '(＾o＾)ﾉ', '(|||ﾟДﾟ)', '(`ε´ )', '(╬ﾟдﾟ)', '(|||ﾟдﾟ)', '(￣∇￣)', '(￣3￣)', '(￣ｰ￣)', '(￣ . ￣)', '(￣︿￣)', '(￣︶￣)', '(*´ω`*)', '(・ω・)', '(⌒▽⌒)', '(￣▽￣）', '(=・ω・=)', '(｀・ω・´)', '(〜￣△￣)〜', '(･∀･)',
-            '(°∀°)ﾉ', '(￣3￣)', '╮(￣▽￣)╭', '( ´_ゝ｀)', '←_←', '→_→', '(&lt;_&lt;)', '(&gt;_&gt;)', '(;¬_¬)', '(▔□▔)/', '(ﾟДﾟ≡ﾟдﾟ)!?', 'Σ(ﾟдﾟ;)', 'Σ( ￣□￣||)',
-            '(´；ω；`)', '（/TДT)/', '(^・ω・^ )', '(｡･ω･｡)', '(●￣(ｴ)￣●)', 'ε=ε=(ノ≧∇≦)ノ', '(´･_･`)', '(-_-#)', '（￣へ￣）', '(￣ε(#￣) Σ', 'ヽ(`Д´)ﾉ', '(╯°口°)╯(┴—┴', '（#-_-)┯━┯', '_(:3」∠)_', '(笑)', '(汗)', '(泣)', '(苦笑)', '(´・ω・`)', '(╯°□°）╯︵ ┻━┻', '(╯‵□′)╯︵┻━┻', '( ´ρ`)', '( ﾟωﾟ)', '(oﾟωﾟo)', '(　^ω^)', '(｡◕∀◕｡)', '/( ◕‿‿◕ )\\', 'ε٩( º∀º )۶з', '(￣ε(#￣)☆╰╮(￣▽￣///)',
-            '（●´3｀）~♪', '_(:з」∠)_', 'хорошо!', '＼(^o^)／', '(•̅灬•̅ )', '(ﾟДﾟ)', 'まったく、小学生は最高だぜ！！', 'ε=ε=ε=┏(゜ロ゜;)┛',
-            '(；°ほ°)', 'もうこの国は駄目だぁ', 'ヽ(✿ﾟ▽ﾟ)ノ', '焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！', 'お疲れ様でした'
+            '(●・ 8 ・●)', '╰(๑◕ ▽ ◕๑)╯', '(﹡ˆˆ﹡)', '〜♪♪', '(ﾟДﾟ≡ﾟДﾟ)', '(＾o＾)ﾉ', '(|||ﾟДﾟ)', '(`ε´ )', '(╬ﾟдﾟ)', '(|||ﾟдﾟ)', '(￣∇￣)',
+            '(￣3￣)', '(￣ｰ￣)', '(￣ . ￣)', '(￣︿￣)', '(￣︶￣)', '(*´ω`*)', '(・ω・)', '(⌒▽⌒)', '(￣▽￣）', '(=・ω・=)', '(｀・ω・´)',
+            '(〜￣△￣)〜', '(･∀･)', '(°∀°)ﾉ', '(￣3￣)', '╮(￣▽￣)╭', '( ´_ゝ｀)', '←_←', '→_→', '(&lt;_&lt;)', '(&gt;_&gt;)', '(;¬_¬)',
+            '(▔□▔)/', '(ﾟДﾟ≡ﾟдﾟ)!?', 'Σ(ﾟдﾟ;)', 'Σ( ￣□￣||)', '(´；ω；`)', '（/TДT)/', '(^・ω・^ )', '(｡･ω･｡)', '(●￣(ｴ)￣●)', 'ε=ε=(ノ≧∇≦)ノ',
+            '(´･_･`)', '(-_-#)', '（￣へ￣）', '(￣ε(#￣) Σ', 'ヽ(`Д´)ﾉ', '(╯°口°)╯(┴—┴', '（#-_-)┯━┯', '_(:3」∠)_', '(笑)', '(汗)', '(泣)',
+            '(苦笑)', '(´・ω・`)', '(╯°□°）╯︵ ┻━┻', '(╯‵□′)╯︵┻━┻', '( ´ρ`)', '( ﾟωﾟ)', '(oﾟωﾟo)', '(　^ω^)', '(｡◕∀◕｡)', '/( ◕‿‿◕ )\\',
+            'ε٩( º∀º )۶з', '(￣ε(#￣)☆╰╮(￣▽￣///)', '（●´3｀）~♪', '_(:з」∠)_', 'хорошо!', '＼(^o^)／', '(•̅灬•̅ )', '(ﾟДﾟ)',
+            'まったく、小学生は最高だぜ！！', 'ε=ε=ε=┏(゜ロ゜;)┛', '(；°ほ°)', 'もうこの国は駄目だぁ', 'ヽ(✿ﾟ▽ﾟ)ノ',
+            '焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！', 'お疲れ様でした'
         ]
     },
     Acfun: {datatype: 'image', title: 'ACFUN', addr: AcSmileList},
@@ -114,7 +119,7 @@ const MenuList = {
  * @param {string} selText 选择文本
  */
 const addCode = function (textArea, code, selText = '') {
-    let startPos = !selText ? (code.indexOf('[img]') > -1 ? code.length : code.indexOf(']') + 1) : code.indexOf(selText);
+    let startPos = !selText ? (code.indexOf('[img]') > -1 || code.indexOf(']') < 0 ? code.length : code.indexOf(']') + 1) : code.indexOf(selText);
     if (typeof textArea.selectionStart !== 'undefined') {
         let prePos = textArea.selectionStart;
         textArea.value = textArea.value.substring(0, prePos) + code + textArea.value.substring(textArea.selectionEnd);
@@ -209,13 +214,22 @@ const appendCss = function () {
   .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }
   .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }
   .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }
-  .kfe-smile-panel[data-key="Shortcut"] { height: 50px; }
+  .kfe-smile-panel[data-key="Shortcut"] { height: auto; }
   .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }
   .kfe-smile-text { display: inline-block; padding: 3px 5px; }
   .kfe-smile-text:hover { color: #fff !important; background-color: #2b2b2b; text-decoration: none; }
   .kfe-close-panel { cursor: pointer; }
 </style>
 `);
+    // KfMobile
+    if (typeof Info !== 'undefined') {
+        $('head').append(`
+<style>
+  #readPage .kfe-container, #writeMessagePage .kfe-container { margin-top: -10px; }
+  .kfe-menu { white-space: nowrap; overflow-x: auto; }
+</style>
+`);
+    }
 };
 
 /**
