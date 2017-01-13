@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.5
+// @version     4.1.0.6
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -20,7 +20,7 @@
 'use strict';
 // 版本号
 
-var version = '4.1.0.5';
+var version = '4.1.0.6';
 // 网站是否为KfMobile
 var isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
@@ -131,7 +131,12 @@ var showZoomInImage = function showZoomInImage($img) {
     if ($img.get(0).naturalWidth <= $img.height()) return;
     var offset = $img.offset();
     var $zoomIn = $('<img class="kfe-zoom-in" src="' + $img.attr('src') + '" alt="[\u9884\u89C8\u56FE\u7247]">').appendTo('body');
-    $zoomIn.css({ top: offset.top - $zoomIn.outerHeight(), left: offset.left });
+    var windowWidth = $(window).width();
+    var zoomInWidth = $zoomIn.outerWidth();
+    var top = offset.top - $zoomIn.outerHeight() - 5;
+    var left = offset.left + $img.width() / 2 - zoomInWidth / 2;
+    if (left < 0) left = 0;else if (left + zoomInWidth > windowWidth) left = windowWidth - zoomInWidth;
+    $zoomIn.css({ top: top, left: left });
 };
 
 /**
