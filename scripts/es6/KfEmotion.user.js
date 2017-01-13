@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.4
+// @version     4.1.0.5
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -19,9 +19,9 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-const version = '4.1.0.4';
+const version = '4.1.0.5';
 // 网站是否为KfMobile
-const isKfMobile = typeof Info !== 'undefined';
+const isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
 // 灰企鹅
 const KfSmileList = [];
