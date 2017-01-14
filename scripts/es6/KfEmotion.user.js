@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.6
+// @version     4.1.0.7
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -15,22 +15,22 @@
 // @license     MIT
 // @run-at      document-end
 // @modifier    喵拉布丁
-// @modifier-source  https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/scripts/es6/KfEmotion.user.js
+// @modifier-source https://raw.githubusercontent.com/miaolapd/KF_Online_Assistant/master/scripts/es6/KfEmotion.user.js
 // ==/UserScript==
 'use strict';
 // 版本号
-const version = '4.1.0.6';
+const version = '4.1.0.7';
 // 网站是否为KfMobile
 const isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
 // 灰企鹅
 const KfSmileList = [];
-const KFSmileCodeList = [];
+const KfSmileCodeList = [];
 let kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
 if (isKfMobile) kfImgPath = Info.imgPath;
 for (let i = 0; i < 48; i++) {
     KfSmileList.push(`/${kfImgPath}/post/smile/em/em${(i) >= 9 ? (i + 1) : ('0' + (i + 1))}.gif`);
-    KFSmileCodeList.push(`[s:${i + 10}]`);
+    KfSmileCodeList.push(`[s:${i + 10}]`);
 }
 
 // AC娘表情
@@ -83,7 +83,7 @@ for (let i = 0; i < 40; i++) {
  * 表情菜单
  */
 const MenuList = {
-    KfSmile: {datatype: 'imageLink', title: 'KF自带', addr: KfSmileList, ref: KFSmileCodeList},
+    KfSmile: {datatype: 'imageLink', title: 'KF自带', addr: KfSmileList, ref: KfSmileCodeList},
     Shortcut: {
         datatype: 'plain',
         title: '快捷',
@@ -206,9 +206,12 @@ const createContainer = function (textArea) {
 `).insertBefore($(textArea));
     $container.on('click', '.kfe-sub-menu', function (e) {
         e.preventDefault();
-        let key = $(this).data('key');
+        let $this = $(this);
+        let key = $this.data('key');
         if (!key) return;
-        $container.find(`.kfe-smile-panel`).hide();
+        $container.find('.kfe-sub-menu').removeClass('kfe-sub-menu-active');
+        $this.addClass('kfe-sub-menu-active');
+        $container.find('.kfe-smile-panel').hide();
         let $panel = $container.find(`.kfe-smile-panel[data-key="${key}"]`);
         if ($panel.length > 0) $panel.show();
         else $(getSmilePanelHtml(key)).appendTo($container).show();
@@ -240,6 +243,7 @@ const appendCss = function () {
   .kfe-menu { margin-bottom: 5px; }
   .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }
   .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }
+  .kfe-sub-menu-active { border-color: darkturquoise; }
   .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }
   .kfe-smile-panel[data-key="Shortcut"] { height: auto; }
   .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }
