@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.7
+// @version     4.1.0.8
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -19,7 +19,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-const version = '4.1.0.7';
+const version = '4.1.0.8';
 // 网站是否为KfMobile
 const isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
@@ -89,10 +89,10 @@ const MenuList = {
         title: '快捷',
         addr: [
             '[sell=100][/sell]', '[quote][/quote]', '[hide=100][/hide]', '[code][/code]', '[strike][/strike]', '[fly][/fly]',
-            '[color=#00FF00][/color]', '[b][/b]', '[u][/u]', '[i][/i]', '[hr]', '[backcolor=][/backcolor]', '[img][/img]'
+            '[color=#00FF00][/color]', '[b][/b]', '[u][/u]', '[i][/i]', '[hr]', '[backcolor=][/backcolor]', '[url=][/url]', '[img][/img]'
         ],
         ref: [
-            '出售贴sell=售价', '引用', '隐藏hide=神秘等级', '插入代码', '删除线', '跑马灯', '文字颜色', '粗体', '下划线', '斜体', '水平线', '背景色', '插入图片'
+            '出售贴sell=售价', '引用', '隐藏hide=神秘等级', '插入代码', '删除线', '跑马灯', '文字颜色', '粗体', '下划线', '斜体', '水平线', '背景色', '插入链接', '插入图片'
         ]
     },
     Emoji: {
@@ -242,8 +242,8 @@ const appendCss = function () {
   .kfe-container { padding: 5px; vertical-align: middle; font: 12px/1.7em "sans-serif"; }
   .kfe-menu { margin-bottom: 5px; }
   .kfe-sub-menu { margin: 0 7px; text-decoration: none; border-bottom: 2px solid transparent; }
-  .kfe-sub-menu:hover { text-decoration: none; border-color: deeppink; }
-  .kfe-sub-menu-active { border-color: darkturquoise; }
+  .kfe-sub-menu:hover, .kfe-sub-menu:focus { text-decoration: none; border-color: deeppink; }
+  a.kfe-sub-menu-active { color: black }
   .kfe-smile-panel { display: none; height: 120px; padding: 5px 3px; overflow-y: auto; border-top: 1px solid #ddd; }
   .kfe-smile-panel[data-key="Shortcut"] { height: auto; }
   .kfe-smile { display: inline-block; max-width: 60px; max-height: 60px; cursor: pointer; }
