@@ -31,7 +31,7 @@ const Const = {
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
     showRefreshModeTipsInterval: 1,
     // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
-    getDailyBonusSpecialInterval: 60,
+    getDailyBonusSpecialInterval: 30,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）

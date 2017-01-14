@@ -257,7 +257,7 @@ export const importKfSmileEnhanceExtension = function () {
     let script = document.createElement('script');
     script.type = 'text/javascript';
     script.charset = 'utf-8';
-    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
+    script.src = 'https://kf.miaola.info/KfEmotion.min.user.js' + (typeof Info.w.resTimestamp !== 'undefined' ? '?ts=' + Info.w.resTimestamp : '');
     document.body.appendChild(script);
 };
 

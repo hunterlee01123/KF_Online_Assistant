@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.3.1
+// @version     9.3.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.3.1';
+const version = '9.3.2';
 
 /**
  * 导出模块
@@ -969,7 +969,7 @@ const Config = exports.Config = {
     showFastGotoThreadPageEnabled: false,
     // 在帖子页数快捷链接中显示页数链接的最大数量
     maxFastGotoThreadPageNum: 5,
-    // 帖子每页楼层数量，用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目
+    // 帖子每页楼层数量，用于电梯直达和帖子页数快捷链接等功能，如果修改了论坛设置里的“文章列表每页个数”，请在此修改成相同的数目
     perPageFloorNum: 10,
     // 是否在版块页面中高亮今日新发表帖子的发表时间，true：开启；false：关闭
     highlightNewPostEnabled: true,
@@ -990,7 +990,7 @@ const Config = exports.Config = {
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
     batchBuyThreadEnabled: true,
-    // 是否开启显示用户的自定义备注的功能，true：开启；false：关闭
+    // 是否在楼层内的用户名旁显示该用户的自定义备注，true：开启；false：关闭
     userMemoEnabled: false,
     // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
     userMemoList: {},
@@ -1004,7 +1004,7 @@ const Config = exports.Config = {
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
     autoSavePostContentWhenSubmitEnabled: false,
-    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
+    // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
@@ -1048,7 +1048,7 @@ const Config = exports.Config = {
     blockUserFidList: [],
     // 屏蔽用户列表，格式：[{name:'用户名', type:屏蔽类型}]，例：[{name:'张三', type:0}, {name:'李四', type:1}]
     blockUserList: [],
-    // 是否开启屏蔽标题包含指定关键字的帖子的功能，true：开启；false：关闭
+    // 是否开启屏蔽标题中包含指定关键字的帖子的功能，true：开启；false：关闭
     blockThreadEnabled: false,
     // 屏蔽帖子的默认版块屏蔽范围，0：所有版块；1：包括指定的版块；2：排除指定的版块
     blockThreadDefForumType: 0,
@@ -1333,7 +1333,7 @@ const show = exports.show = function () {
           <option value="20">20</option>
           <option value="30">30</option>
         </select>
-        <span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span>
+        <span class="pd_cfg_tips" title="用于电梯直达和帖子页数快捷链接等功能，如果修改了论坛设置里的“文章列表每页个数”，请在此修改成相同的数目">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         帖子内容字体大小 <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px
@@ -1364,7 +1364,7 @@ const show = exports.show = function () {
       <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">详细设置&raquo;</a><br>
       <label>
         <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> 显示用户备注
-        <span class="pd_cfg_tips" title="显示用户的自定义备注，请点击详细设置自定义用户备注">[?]</span>
+        <span class="pd_cfg_tips" title="在楼层内的用户名旁显示该用户的自定义备注，请点击详细设置自定义用户备注">[?]</span>
       </label>
       <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">详细设置&raquo;</a><br>
       <label>
@@ -1488,7 +1488,7 @@ const show = exports.show = function () {
       <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">详细设置&raquo;</a><br>
       <label>
         <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> 屏蔽帖子
-        <span class="pd_cfg_tips" title="开启屏蔽标题包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
+        <span class="pd_cfg_tips" title="开启屏蔽标题中包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
       </label>
       <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
     </fieldset>
@@ -2505,7 +2505,7 @@ const Const = {
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
     showRefreshModeTipsInterval: 1,
     // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
-    getDailyBonusSpecialInterval: 60,
+    getDailyBonusSpecialInterval: 30,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
@@ -6425,8 +6425,8 @@ const getLifeInfo = function (logList, level) {
         initLife = 0;
     let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
     if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
-    let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[level]);
-    if (lifeMatches) life = lifeMatches[2] === '满值' ? initLife : parseInt(lifeMatches[1]);
+    let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值))/.exec(logList[level]);
+    if (lifeMatches) life = lifeMatches[2] === '满值' ? parseInt($properties.find('#pdPro_s2').text()) : parseInt(lifeMatches[1]);
     return { life, initLife };
 };
 
@@ -7523,7 +7523,7 @@ const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = fu
     let script = document.createElement('script');
     script.type = 'text/javascript';
     script.charset = 'utf-8';
-    script.src = 'https://kf.miaola.info/kfe.min.user.js?' + Util.getDateString(new Date(), '');
+    script.src = 'https://kf.miaola.info/KfEmotion.min.user.js' + (typeof _Info2.default.w.resTimestamp !== 'undefined' ? '?ts=' + _Info2.default.w.resTimestamp : '');
     document.body.appendChild(script);
 };
 
@@ -9491,14 +9491,9 @@ const addUserMemo = exports.addUserMemo = function () {
     $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        let memo = '';
-        for (let name of Object.keys(Config.userMemoList)) {
-            if (name === userName) {
-                memo = Config.userMemoList[name];
-                break;
-            }
-        }
-        if (!memo) return;
+        let key = Object.keys(Config.userMemoList).find(name => name === userName);
+        if (!key) return;
+        let memo = Config.userMemoList[key];
         if ($this.is('.readidmleft > a')) {
             $this.after(`<span class="pd_user_memo_tips" title="备注：${ memo }">[?]</span>`);
         } else {

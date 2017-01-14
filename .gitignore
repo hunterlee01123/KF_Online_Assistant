@@ -4,6 +4,7 @@ wiki/
 vps/
 push.sh
 copy.bat
+copyScripts.bat
 build.bat
 buildCustomScripts.bat
 myGulpFile.js

@@ -1524,8 +1524,8 @@ const getLifeInfo = function (logList, level) {
     let life = 0, initLife = 0;
     let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
     if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
-    let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值)])/.exec(logList[level]);
-    if (lifeMatches) life = lifeMatches[2] === '满值' ? initLife : parseInt(lifeMatches[1]);
+    let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值))/.exec(logList[level]);
+    if (lifeMatches) life = lifeMatches[2] === '满值' ? parseInt($properties.find('#pdPro_s2').text()) : parseInt(lifeMatches[1]);
     return {life, initLife};
 };
 

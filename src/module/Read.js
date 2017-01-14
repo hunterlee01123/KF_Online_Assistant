@@ -576,14 +576,9 @@ export const addUserMemo = function () {
     $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        let memo = '';
-        for (let name of Object.keys(Config.userMemoList)) {
-            if (name === userName) {
-                memo = Config.userMemoList[name];
-                break;
-            }
-        }
-        if (!memo) return;
+        let key = Object.keys(Config.userMemoList).find(name => name === userName);
+        if (!key) return;
+        let memo = Config.userMemoList[key];
         if ($this.is('.readidmleft > a')) {
             $this.after(`<span class="pd_user_memo_tips" title="备注：${memo}">[?]</span>`);
         }

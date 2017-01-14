@@ -70,7 +70,7 @@ export const Config = {
     showFastGotoThreadPageEnabled: false,
     // 在帖子页数快捷链接中显示页数链接的最大数量
     maxFastGotoThreadPageNum: 5,
-    // 帖子每页楼层数量，用于电梯直达和帖子页数快捷链接功能，如果修改了KF设置里的“文章列表每页个数”，请在此修改成相同的数目
+    // 帖子每页楼层数量，用于电梯直达和帖子页数快捷链接等功能，如果修改了论坛设置里的“文章列表每页个数”，请在此修改成相同的数目
     perPageFloorNum: 10,
     // 是否在版块页面中高亮今日新发表帖子的发表时间，true：开启；false：关闭
     highlightNewPostEnabled: true,
@@ -91,7 +91,7 @@ export const Config = {
     multiQuoteEnabled: true,
     // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
     batchBuyThreadEnabled: true,
-    // 是否开启显示用户的自定义备注的功能，true：开启；false：关闭
+    // 是否在楼层内的用户名旁显示该用户的自定义备注，true：开启；false：关闭
     userMemoEnabled: false,
     // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
     userMemoList: {},
@@ -105,7 +105,7 @@ export const Config = {
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
     autoSavePostContentWhenSubmitEnabled: false,
-    // 是否开启绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
+    // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
@@ -149,7 +149,7 @@ export const Config = {
     blockUserFidList: [],
     // 屏蔽用户列表，格式：[{name:'用户名', type:屏蔽类型}]，例：[{name:'张三', type:0}, {name:'李四', type:1}]
     blockUserList: [],
-    // 是否开启屏蔽标题包含指定关键字的帖子的功能，true：开启；false：关闭
+    // 是否开启屏蔽标题中包含指定关键字的帖子的功能，true：开启；false：关闭
     blockThreadEnabled: false,
     // 屏蔽帖子的默认版块屏蔽范围，0：所有版块；1：包括指定的版块；2：排除指定的版块
     blockThreadDefForumType: 0,
