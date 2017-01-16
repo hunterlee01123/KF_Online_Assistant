@@ -502,7 +502,7 @@ export const handleProfilePage = function () {
             .replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
                 let now = new Date();
                 let html = date;
-                if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) < now.getFullYear())
+                if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear())
                     html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
                 return '注册时间：' + html;
             })

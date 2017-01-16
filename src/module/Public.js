@@ -949,7 +949,7 @@ ${Const.customTileSideBarContent}
     <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_mybp.php">物品装备</a></li>
+    <li><a href="kf_fw_ig_mybp.php">角色物品</a></li>
     <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
     <li><a href="profile.php?action=modify">设置</a></li>
     <li><a href="hack.php?H_name=bank">银行</a></li>

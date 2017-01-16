@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.3.2
+// @version     9.3.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.3.2';
+var version = '9.3.3';
 
 /**
  * 导出模块
@@ -2492,7 +2492,7 @@ var Const = {
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval: function lootAttackInterval() {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 4000; // 慢速情况
-        else return Math.floor(Math.random() * 100) + 200; // 正常情况
+        else return Math.floor(Math.random() * 200) + 400; // 正常情况
     },
 
     // 银行相关操作的时间间隔（毫秒）
@@ -6552,9 +6552,10 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                         propertiesText = '';
                     $points.find('.pd_point').each(function () {
                         var $this = $(this);
-                        var name = $this.attr('name');
-                        var value = $.trim($this.val());
-                        pointsText += getPointNameByFieldName(name) + '\uFF1A' + value + '\uFF0C';
+                        var pointName = getPointNameByFieldName($this.attr('name'));
+                        var point = parseInt($.trim($this.val()));
+                        var extraPoint = extraPointList.get(pointName);
+                        pointsText += pointName + '\uFF1A' + point + '+' + extraPoint + '=' + (point + extraPoint) + '\uFF0C';
                     });
                     pointsText = pointsText.replace(/，$/, '');
                     var _iteratorNormalCompletion7 = true;
@@ -7249,8 +7250,8 @@ var getLifeInfo = function getLifeInfo(logList, level) {
         initLife = 0;
     var initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
     if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
-    var lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值))/.exec(logList[level]);
-    if (lifeMatches) life = lifeMatches[2] === '满值' ? parseInt($properties.find('#pdPro_s2').text()) : parseInt(lifeMatches[1]);
+    var lifeMatches = /生命值\[(\d+)\s*\/\s*\d+/.exec(logList[level]);
+    if (lifeMatches) life = parseInt(lifeMatches[1]);
     return { life: life, initLife: initLife };
 };
 
@@ -8142,7 +8143,7 @@ var handleProfilePage = exports.handleProfilePage = function handleProfilePage()
     }).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, function (m, date, year, month, day) {
         var now = new Date();
         var html = date;
-        if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) < now.getFullYear()) html = '<span class="pd_custom_tips pd_highlight" title="\u4ECA\u5929\u662F\u8BE5\u7528\u6237\u6CE8\u518C' + (now.getFullYear() - parseInt(year)) + '\u5468\u5E74\u7EAA\u5FF5\u65E5">' + date + '</span>';
+        if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = '<span class="pd_custom_tips pd_highlight" title="\u4ECA\u5929\u662F\u8BE5\u7528\u6237\u6CE8\u518C' + (now.getFullYear() - parseInt(year)) + '\u5468\u5E74\u7EAA\u5FF5\u65E5">' + date + '</span>';
         return '注册时间：' + html;
     }));
 };
@@ -9402,7 +9403,7 @@ var addFastNavForSideBar = exports.addFastNavForSideBar = function addFastNavFor
         }
         $menu.find('> a:last').before('\n<span style="color: #ff9999;">\u5FEB\u6377\u5BFC\u822A</span><br>\n<a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a> | <a href="personal.php?action=post">\u56DE\u590D</a> | <a href="kf_growup.php">\u7B49\u7EA7</a><br>\n<a href="kf_fw_ig_index.php">\u4E89\u593A</a> | <a href="kf_fw_ig_mybp.php">\u7269\u54C1</a> | <a href="kf_fw_ig_shop.php">\u5546\u5E97</a><br>\n<a href="profile.php?action=modify">\u8BBE\u7F6E</a> | <a href="hack.php?H_name=bank">\u94F6\u884C</a> | <a href="profile.php?action=favor">\u6536\u85CF</a><br>\n' + _Const2.default.customTileSideBarContent + '\n');
     } else {
-        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_mybp.php">\u7269\u54C1\u88C5\u5907</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
+        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_mybp.php">\u89D2\u8272\u7269\u54C1</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
     }
 };
 

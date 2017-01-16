@@ -992,9 +992,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     let pointsText = '', propertiesText = '';
                     $points.find('.pd_point').each(function () {
                         let $this = $(this);
-                        let name = $this.attr('name');
-                        let value = $.trim($this.val());
-                        pointsText += `${getPointNameByFieldName(name)}：${value}，`;
+                        let pointName = getPointNameByFieldName($this.attr('name'));
+                        let point = parseInt($.trim($this.val()));
+                        let extraPoint = extraPointList.get(pointName);
+                        pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
                     });
                     pointsText = pointsText.replace(/，$/, '');
                     for (let [key, value] of propertyList) {
@@ -1524,8 +1525,8 @@ const getLifeInfo = function (logList, level) {
     let life = 0, initLife = 0;
     let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
     if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
-    let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值))/.exec(logList[level]);
-    if (lifeMatches) life = lifeMatches[2] === '满值' ? parseInt($properties.find('#pdPro_s2').text()) : parseInt(lifeMatches[1]);
+    let lifeMatches = /生命值\[(\d+)\s*\/\s*\d+/.exec(logList[level]);
+    if (lifeMatches) life = parseInt(lifeMatches[1]);
     return {life, initLife};
 };
 

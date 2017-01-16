@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.3.2
+// @version     9.3.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.3.2';
+const version = '9.3.3';
 
 /**
  * 导出模块
@@ -2535,7 +2535,7 @@ const Const = {
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval() {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 4000; // 慢速情况
-        else return Math.floor(Math.random() * 100) + 200; // 正常情况
+        else return Math.floor(Math.random() * 200) + 400; // 正常情况
     },
     // 银行相关操作的时间间隔（毫秒）
     bankActionInterval: 5000,
@@ -5917,9 +5917,10 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                         propertiesText = '';
                     $points.find('.pd_point').each(function () {
                         let $this = $(this);
-                        let name = $this.attr('name');
-                        let value = $.trim($this.val());
-                        pointsText += `${ getPointNameByFieldName(name) }：${ value }，`;
+                        let pointName = getPointNameByFieldName($this.attr('name'));
+                        let point = parseInt($.trim($this.val()));
+                        let extraPoint = extraPointList.get(pointName);
+                        pointsText += `${ pointName }：${ point }+${ extraPoint }=${ point + extraPoint }，`;
                     });
                     pointsText = pointsText.replace(/，$/, '');
                     for (let [key, value] of propertyList) {
@@ -6425,8 +6426,8 @@ const getLifeInfo = function (logList, level) {
         initLife = 0;
     let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
     if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
-    let lifeMatches = /生命值(?:\[回复最大值的\d+%]至\[(\d+)]|回复至\[(满值))/.exec(logList[level]);
-    if (lifeMatches) life = lifeMatches[2] === '满值' ? parseInt($properties.find('#pdPro_s2').text()) : parseInt(lifeMatches[1]);
+    let lifeMatches = /生命值\[(\d+)\s*\/\s*\d+/.exec(logList[level]);
+    if (lifeMatches) life = parseInt(lifeMatches[1]);
     return { life, initLife };
 };
 
@@ -7244,7 +7245,7 @@ const handleProfilePage = exports.handleProfilePage = function () {
     $area.html($area.html().replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${ num }">${ parseInt(num).toLocaleString() }</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${ num }">${ parseInt(num).toLocaleString() }</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${ num }">${ parseInt(num).toLocaleString() }</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
         let now = new Date();
         let html = date;
-        if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) < now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${ now.getFullYear() - parseInt(year) }周年纪念日">${ date }</span>`;
+        if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${ now.getFullYear() - parseInt(year) }周年纪念日">${ date }</span>`;
         return '注册时间：' + html;
     }));
 };
@@ -8524,7 +8525,7 @@ ${ _Const2.default.customTileSideBarContent }
     <li><a href="guanjianci.php?gjc=${ _Info2.default.userName }">@提醒</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_mybp.php">物品装备</a></li>
+    <li><a href="kf_fw_ig_mybp.php">角色物品</a></li>
     <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
     <li><a href="profile.php?action=modify">设置</a></li>
     <li><a href="hack.php?H_name=bank">银行</a></li>
