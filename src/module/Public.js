@@ -949,7 +949,7 @@ ${Const.customTileSideBarContent}
     <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_mybp.php">角色物品</a></li>
+    <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
     <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
     <li><a href="profile.php?action=modify">设置</a></li>
     <li><a href="hack.php?H_name=bank">银行</a></li>
@@ -964,7 +964,7 @@ ${Const.customTileSideBarContent}
 
 /**
  * 自动活期存款
- * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
+ * @param {boolean} isRead 是否读取个人信息页面以获得当前所持有KFB的信息
  */
 export const autoSaveCurrentDeposit = function (isRead = false) {
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 &&
@@ -975,15 +975,15 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
 
     /**
      * 活期存款
-     * @param {number} income 当前拥有的KFB
+     * @param {number} cash 当前持有的KFB
      */
-    const saveCurrentDeposit = function (income) {
-        if (income < Config.saveCurrentDepositAfterKfb) return;
-        let multiple = Math.floor((income - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
-        if (income - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb)
+    const saveCurrentDeposit = function (cash) {
+        if (cash < Config.saveCurrentDepositAfterKfb) return;
+        let multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
+        if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb)
             multiple++;
         let money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > income) return;
+        if (money <= 0 || money > cash) return;
         console.log('自动活期存款Start');
         $.post('hack.php?H_name=bank',
             {action: 'save', btype: 1, savemoney: money},
@@ -993,7 +993,7 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
                 if (/完成存款/.test(msg)) {
                     Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
                     console.log(`共有${money}KFB已自动存入活期存款`);
-                    Msg.show(`共有<em>${money}</em>KFB已自动存入活期存款`);
+                    Msg.show(`共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款`);
                 }
             });
     };
@@ -1001,7 +1001,7 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
     if (isRead) {
         console.log('获取当前持有KFB Start');
         $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
-            let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
+            let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
     }

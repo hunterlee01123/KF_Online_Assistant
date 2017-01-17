@@ -1317,7 +1317,7 @@ const buyItems = function (buyNum, type, kfb, url) {
 <li class="pd_stat">
   <b>统计结果：</b><br>
   共有<em>${successNum}</em>个道具购买成功，<i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i> ${itemStatHtml}<br>
-  <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php" target="_blank">物品装备页面</a>查看)</span>
+  <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php">角色/物品页面</a>查看)</span>
 </li>
 `);
 
