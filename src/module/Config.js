@@ -89,8 +89,6 @@ export const Config = {
     modifyKfOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
-    // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
-    batchBuyThreadEnabled: true,
     // 是否在楼层内的用户名旁显示该用户的自定义备注，true：开启；false：关闭
     userMemoEnabled: false,
     // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}

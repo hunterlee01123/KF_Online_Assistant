@@ -64,14 +64,11 @@ export const create = function (id, title, content, style = '') {
 export const show = function (id) {
     let $dialog = $('#' + id);
     if (!$dialog.length) return;
-    $dialog.find('.pd_cfg_main').css('max-height', $(window).height() - 80)
-        .end().find('legend [type="checkbox"]')
-        .each(function () {
-            $(this).triggerHandler('click');
-        }).end().find('input[data-disabled]')
-        .each(function () {
-            $(this).triggerHandler('click');
-        });
+    $dialog.find('legend [type="checkbox"]').each(function () {
+        $(this).triggerHandler('click');
+    }).end().find('input[data-disabled]').each(function () {
+        $(this).triggerHandler('click');
+    });
     $dialog.fadeIn('fast');
     resize(id);
     $dialog.find('input:first, select:first, a:first, textarea:first, button:first').eq(0).focus();
@@ -83,11 +80,13 @@ export const show = function (id) {
  */
 export const resize = function (id) {
     let $dialog = $('#' + id);
-    let dialogWidth = $dialog.width(), windowWidth = $(window).width();
+    let windowHeight = $(window).height();
+    $dialog.find('.pd_cfg_main').css('max-height', windowHeight - 80);
+    let dialogWidth = $dialog.outerWidth(), windowWidth = $(window).width();
     let left = windowWidth / 2 - dialogWidth / 2;
     if (left + dialogWidth > windowWidth) left = windowWidth - dialogWidth - 20;
     if (left < 0) left = 0;
-    let top = $(window).height() / 2 - $dialog.height() / 2;
+    let top = windowHeight / 2 - $dialog.outerHeight() / 2;
     if (top < 0) top = 0;
     $dialog.css({top, left});
 };

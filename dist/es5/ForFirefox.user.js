@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.3.3
+// @version     9.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.3.3';
+var version = '9.4';
 
 /**
  * 导出模块
@@ -187,10 +187,9 @@ var init = function init() {
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
         Read.addFloorGotoLink();
-        Read.addCopyBuyersListOption();
-        Read.addStatRepliersLink();
+        Read.addStatAndBuyThreadBtn();
         Read.handleBuyThreadBtn();
-        if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
+        Read.addCopyBuyersListOption();
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
@@ -1121,8 +1120,6 @@ var Config = exports.Config = {
     modifyKfOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
-    // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
-    batchBuyThreadEnabled: true,
     // 是否在楼层内的用户名旁显示该用户的自定义备注，true：开启；false：关闭
     userMemoEnabled: false,
     // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
@@ -1383,7 +1380,7 @@ var show = exports.show = function show() {
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     Script.runFunc('ConfigDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u4E89\u593A\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset hidden>\n      <legend>\n        <label><input name="autoDonationEnabled" type="checkbox"> \u81EA\u52A8KFB\u6350\u6B3E</label>\n      </legend>\n      <label>\n        KFB\u6350\u6B3E\u989D\u5EA6\n        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>\n        <span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5728 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u6350\u6B3E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u6350\u6B3E\uFF0824\u5C0F\u65F6\u5236\uFF09\uFF0C\u4F8B\uFF1A22:30:00\uFF08\u6CE8\u610F\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u9519\u8FC7\u6350\u6B3E\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u4E89\u593A\u8BB0\u5F55\u4FDD\u5B58\u5929\u6570 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveDays + '">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 130px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u7B49\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86\u8BBA\u575B\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u5728\u697C\u5C42\u5185\u7684\u7528\u6237\u540D\u65C1\u663E\u793A\u8BE5\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="batchBuyThreadEnabled" type="checkbox"> \u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u6279\u91CF\u8D2D\u4E70\u5E16\u5B50\u7684\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="buyThreadViaAjaxEnabled" type="checkbox"> \u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSideBarFastNavEnabled" type="checkbox"> \u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\n        <span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u4E2D\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u4E89\u593A\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset hidden>\n      <legend>\n        <label><input name="autoDonationEnabled" type="checkbox"> \u81EA\u52A8KFB\u6350\u6B3E</label>\n      </legend>\n      <label>\n        KFB\u6350\u6B3E\u989D\u5EA6\n        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>\n        <span class="pd_cfg_tips" title="\u53D6\u503C\u8303\u56F4\u57281-5000\u7684\u6574\u6570\u4E4B\u95F4\uFF1B\u53EF\u8BBE\u7F6E\u4E3A\u767E\u5206\u6BD4\uFF0C\u8868\u793A\u6350\u6B3E\u989D\u5EA6\u4E3A\u5F53\u524D\u6240\u6301\u73B0\u91D1\u7684\u767E\u5206\u6BD4\uFF08\u6700\u591A\u4E0D\u8D85\u8FC75000KFB\uFF09\uFF0C\u4F8B\uFF1A80%">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5728 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u6350\u6B3E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u6350\u6B3E\uFF0824\u5C0F\u65F6\u5236\uFF09\uFF0C\u4F8B\uFF1A22:30:00\uFF08\u6CE8\u610F\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u9519\u8FC7\u6350\u6B3E\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u4E89\u593A\u8BB0\u5F55\u4FDD\u5B58\u5929\u6570 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveDays + '">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 130px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u7B49\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86\u8BBA\u575B\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u5728\u697C\u5C42\u5185\u7684\u7528\u6237\u540D\u65C1\u663E\u793A\u8BE5\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="buyThreadViaAjaxEnabled" type="checkbox"> \u4F7F\u7528Ajax\u8D2D\u4E70\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9875\u9762\u4E0A\u65B9\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSideBarFastNavEnabled" type="checkbox"> \u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\n        <span class="pd_cfg_tips" title="\u4E3A\u4FA7\u8FB9\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u4E2D\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
     var $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
     $dialog.submit(function (e) {
@@ -2445,10 +2442,10 @@ var Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
-    // 在当天的指定时间之后领取每日奖励（北京时间），例：01:05:00
-    getDailyBonusAfterTime: '01:05:00',
-    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:05:00
-    lootAfterTime: '00:05:00',
+    // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
+    getDailyBonusAfterTime: '00:35:00',
+    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:10:00
+    lootAfterTime: '00:10:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
@@ -2493,7 +2490,7 @@ var Const = {
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval: function lootAttackInterval() {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 4000; // 慢速情况
-        else return Math.floor(Math.random() * 200) + 400; // 正常情况
+        else return Math.floor(Math.random() * 200) + 200; // 正常情况
     },
 
     // 银行相关操作的时间间隔（毫秒）
@@ -2501,8 +2498,8 @@ var Const = {
 
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
-    // 统计回帖者名单最大能访问的帖子页数
-    statRepliersMaxPage: 300,
+    // 统计楼层最大能访问的帖子页数
+    statFloorMaxPage: 300,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义侧边栏导航内容
@@ -2634,7 +2631,7 @@ var create = exports.create = function create(id, title, content) {
 var show = exports.show = function show(id) {
     var $dialog = $('#' + id);
     if (!$dialog.length) return;
-    $dialog.find('.pd_cfg_main').css('max-height', $(window).height() - 80).end().find('legend [type="checkbox"]').each(function () {
+    $dialog.find('legend [type="checkbox"]').each(function () {
         $(this).triggerHandler('click');
     }).end().find('input[data-disabled]').each(function () {
         $(this).triggerHandler('click');
@@ -2650,12 +2647,14 @@ var show = exports.show = function show(id) {
  */
 var resize = exports.resize = function resize(id) {
     var $dialog = $('#' + id);
-    var dialogWidth = $dialog.width(),
+    var windowHeight = $(window).height();
+    $dialog.find('.pd_cfg_main').css('max-height', windowHeight - 80);
+    var dialogWidth = $dialog.outerWidth(),
         windowWidth = $(window).width();
     var left = windowWidth / 2 - dialogWidth / 2;
     if (left + dialogWidth > windowWidth) left = windowWidth - dialogWidth - 20;
     if (left < 0) left = 0;
-    var top = $(window).height() / 2 - $dialog.height() / 2;
+    var top = windowHeight / 2 - $dialog.outerHeight() / 2;
     if (top < 0) top = 0;
     $dialog.css({ top: top, left: left });
 };
@@ -4271,7 +4270,7 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                         }
                     }
 
-                    $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF1A</b><br>\n  \u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u8D2D\u4E70\u6210\u529F\uFF0C<i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i> ' + itemStatHtml + '<br>\n  <span style="color: #666;">(\u8BF7\u5230<a href="kf_fw_ig_mybp.php" target="_blank">\u7269\u54C1\u88C5\u5907\u9875\u9762</a>\u67E5\u770B)</span>\n</li>\n');
+                    $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF1A</b><br>\n  \u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u8D2D\u4E70\u6210\u529F\uFF0C<i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i> ' + itemStatHtml + '<br>\n  <span style="color: #666;">(\u8BF7\u5230<a href="kf_fw_ig_mybp.php">\u89D2\u8272/\u7269\u54C1\u9875\u9762</a>\u67E5\u770B)</span>\n</li>\n');
 
                     console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F\uFF0CKFB-' + totalKfb);
                     Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + type + '\u3011\u8D2D\u4E70\u6210\u529F</strong><i>KFB<ins>-' + totalKfb.toLocaleString() + '</ins></i>', -1);
@@ -5552,7 +5551,7 @@ var showLogText = function showLogText(log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addUserLinkInPkListPage = exports.checkLoot = exports.lootAttack = exports.enhanceLootIndexPage = undefined;
+exports.addUserLinkInPkListPage = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.lootAttack = exports.getRealProperty = exports.enhanceLootIndexPage = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -5620,6 +5619,8 @@ var $log = void 0;
 var log = '';
 // 各层争夺记录列表
 var logList = [];
+// 各层战斗信息列表
+var levelInfoList = [];
 // 当前争夺属性
 var propertyList = new Map();
 // 道具加成点数列表
@@ -5639,20 +5640,22 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     propertyList = getLootPropertyList();
     extraPointList = getExtraPointList();
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(3) > td').html());
+
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
+    log = $log.html();
+    logList = getLogList(log);
+    levelInfoList = getLevelInfoList(logList);
+    pointsLogList = getTempPointsLogList(logList);
 
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
 
-    log = $log.html();
-    logList = getLogList(log);
-    pointsLogList = getTempPointsLogList(logList);
     if (log.includes('本日无争夺记录')) $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     addLootLogHeader();
-    showLogStat(logList);
+    showLogStat(levelInfoList);
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
         $(document).ready(setTimeout(autoLoot, 500));
@@ -5664,7 +5667,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
  */
 var handlePropertiesArea = function handlePropertiesArea() {
     var tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    var html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_d2" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span> <span id="pdNew_d2"></span>').replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_i1" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span> <span id="pdNew_i1"></span>').replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>');
+    var html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_d2" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ' + ('<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span>')).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_i1" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ' + ('<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span>')).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
@@ -5915,9 +5918,21 @@ var showNewLootProperty = function showNewLootProperty($point) {
             diffValue = newValue - propertyList.get('防御');
             break;
     }
-    $('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
+    $properties.find('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
 
-    if (point !== oriPoint) $('#pdNew_' + name).text('(' + ((diffValue >= 0 ? '+' : '') + diffValue) + ')').css('color', diffValue >= 0 ? '#f03' : '#393');else $('#pdNew_' + name).text('');
+    if (pointName === '灵活' || pointName === '智力') {
+        var nextLevel = getCurrentLevel(logList) + 1;
+        var text = '';
+        if (nextLevel % 10 === 0) {
+            text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, 'BOSS') + '%';
+        } else {
+            text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '普通') + '%';
+            text += '|' + getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '快速') + '%';
+        }
+        $properties.find('#pdReal_' + name).text('(' + text + ')').attr('title', '\u7B2C' + nextLevel + '\u5C42\u7684\u5B9E\u9645' + (pointName === '灵活' ? '暴击几率' : '技能释放概率') + ' (' + (nextLevel % 10 === 0 ? 'BOSS' : '普通|快速') + ')');
+    }
+
+    if (point !== oriPoint) $properties.find('#pdNew_' + name).text('(' + ((diffValue >= 0 ? '+' : '') + diffValue) + ')').css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
 };
 
 /**
@@ -5995,6 +6010,25 @@ var getPointByProperty = function getPointByProperty(pointName, num) {
     if (!isFinite(value) || value < 1) value = 1;
     if (type === 1 && value <= extraPointList.get(pointName)) value = extraPointList.get(pointName) + 1;
     return value;
+};
+
+/**
+ * 获取实际的争夺属性（暴击几率或技能释放概率）
+ * @param {string} pointName 点数名称
+ * @param {number} totalPoint 合计点数
+ * @param {number} level 指定层数
+ * @param {string} enemy 遭遇敌人名称
+ * @returns {number} 实际的争夺属性
+ */
+var getRealProperty = exports.getRealProperty = function getRealProperty(pointName, totalPoint, level, enemy) {
+    var npcStepNum = 2; // NPC递增数值
+    var antiCoefficient = 3; // 抵消系数
+    var coefficient = { '普通': 1, '强壮': 1, '快速': 1.5, '脆弱': 1, '缓慢': 1, 'BOSS': 1.2 }; // NPC强化系数列表
+    var cardinalNum = pointName === '灵活' ? 100 : 90; // 基数
+
+    var npcPoint = Math.round(level * npcStepNum * coefficient[enemy]);
+    var realPoint = Math.max(totalPoint - Math.round((npcPoint + totalPoint) / antiCoefficient), 0);
+    return Math.round(realPoint / (realPoint + cardinalNum) * 100);
 };
 
 /**
@@ -6456,6 +6490,60 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
     var $wait = Msg.wait('<strong>\u6B63\u5728\u653B\u51FB\u4E2D\uFF0C\u8BF7\u7A0D\u7B49&hellip;</strong><i>\u5F53\u524D\u5C42\u6570\uFF1A<em class="pd_countdown">' + initCurrentLevel + '</em></i>' + '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>');
 
     /**
+     * 记录点数分配记录
+     * @param {boolean} isSubmit 是否提交分配点数
+     */
+    var recordPointsLog = function recordPointsLog() {
+        var isSubmit = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+        propertyList = getLootPropertyList();
+        var pointsText = '',
+            propertiesText = '';
+        $points.find('.pd_point').each(function () {
+            var $this = $(this);
+            var pointName = getPointNameByFieldName($this.attr('name'));
+            var point = parseInt($.trim($this.val()));
+            var extraPoint = extraPointList.get(pointName);
+            pointsText += pointName + '\uFF1A' + point + '+' + extraPoint + '=' + (point + extraPoint) + '\uFF0C';
+        });
+        pointsText = pointsText.replace(/，$/, '');
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
+        var _iteratorError6 = undefined;
+
+        try {
+            for (var _iterator6 = propertyList[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                var _step6$value = _slicedToArray(_step6.value, 2),
+                    key = _step6$value[0],
+                    value = _step6$value[1];
+
+                if (key === '可分配属性点' || key === '生命值') continue;
+                var unit = '';
+                if (key.endsWith('率') || key === '防御') unit = '%';
+                propertiesText += key + '\uFF1A' + value + unit + '\uFF0C';
+            }
+        } catch (err) {
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                    _iterator6.return();
+                }
+            } finally {
+                if (_didIteratorError6) {
+                    throw _iteratorError6;
+                }
+            }
+        }
+
+        propertiesText = propertiesText.replace(/，$/, '');
+        pointsLogList[getCurrentLevel(logList) + 1] = '\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09\n\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09';
+        sessionStorage.setItem(_Const2.default.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
+        if (isSubmit) console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09\uFF1B\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09');
+    };
+
+    /**
      * 修改点数分配方案
      * @param {number} nextLevel 下一层（设为-1表示采用当前点数分配方案）
      * @returns {Deferred} Deferred对象
@@ -6463,12 +6551,14 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
     var changePoints = function changePoints(nextLevel) {
         if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') {
             var currentLevel = getCurrentLevel(logList);
-
-            var _getLifeInfo = getLifeInfo(logList, currentLevel),
-                currentLife = _getLifeInfo.life,
-                currentInitLife = _getLifeInfo.initLife;
-
-            var enemyList = getEnemyList(logList);
+            var info = levelInfoList[currentLevel];
+            var currentLife = 0,
+                currentInitLife = 0;
+            if (info) {
+                currentLife = info.life;
+                currentInitLife = info.initLife;
+            }
+            var enemyList = getEnemyList(levelInfoList);
             var points = null;
             try {
                 points = _Const2.default.getCustomPoints({
@@ -6490,27 +6580,27 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 console.log(ex);
             }
             if ($.type(points) === 'object') {
-                var _iteratorNormalCompletion6 = true;
-                var _didIteratorError6 = false;
-                var _iteratorError6 = undefined;
+                var _iteratorNormalCompletion7 = true;
+                var _didIteratorError7 = false;
+                var _iteratorError7 = undefined;
 
                 try {
-                    for (var _iterator6 = Object.keys(points)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                        var key = _step6.value;
+                    for (var _iterator7 = Object.keys(points)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                        var key = _step7.value;
 
                         $points.find('[name="' + getFieldNameByPointName(key) + '"]').val(points[key]).trigger('change');
                     }
                 } catch (err) {
-                    _didIteratorError6 = true;
-                    _iteratorError6 = err;
+                    _didIteratorError7 = true;
+                    _iteratorError7 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                            _iterator6.return();
+                        if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                            _iterator7.return();
                         }
                     } finally {
-                        if (_didIteratorError6) {
-                            throw _iteratorError6;
+                        if (_didIteratorError7) {
+                            throw _iteratorError7;
                         }
                     }
                 }
@@ -6519,7 +6609,10 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             } else if (typeof points === 'number') {
                 nextLevel = parseInt(points);
                 nextLevel = nextLevel > 1 ? nextLevel : 1;
-            } else if (points === false) return $.Deferred().resolve('success');else return $.Deferred().resolve('error');
+            } else if (points === false) {
+                recordPointsLog();
+                return $.Deferred().resolve('success');
+            } else return $.Deferred().resolve('error');
         }
 
         var changeLevel = nextLevel > 0 ? Math.max.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList).filter(function (level) {
@@ -6548,55 +6641,10 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                     msg = _Util$getResponseMsg.msg;
 
                 if (/已经重新配置加点！/.test(msg)) {
-                    propertyList = getLootPropertyList();
-                    var pointsText = '',
-                        propertiesText = '';
-                    $points.find('.pd_point').each(function () {
-                        var $this = $(this);
-                        var pointName = getPointNameByFieldName($this.attr('name'));
-                        var point = parseInt($.trim($this.val()));
-                        var extraPoint = extraPointList.get(pointName);
-                        pointsText += pointName + '\uFF1A' + point + '+' + extraPoint + '=' + (point + extraPoint) + '\uFF0C';
-                    });
-                    pointsText = pointsText.replace(/，$/, '');
-                    var _iteratorNormalCompletion7 = true;
-                    var _didIteratorError7 = false;
-                    var _iteratorError7 = undefined;
-
-                    try {
-                        for (var _iterator7 = propertyList[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                            var _step7$value = _slicedToArray(_step7.value, 2),
-                                _key = _step7$value[0],
-                                value = _step7$value[1];
-
-                            if (_key === '可分配属性点' || _key === '生命值') continue;
-                            var unit = '';
-                            if (_key.endsWith('率') || _key === '防御') unit = '%';
-                            propertiesText += _key + '\uFF1A' + value + unit + '\uFF0C';
-                        }
-                    } catch (err) {
-                        _didIteratorError7 = true;
-                        _iteratorError7 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                                _iterator7.return();
-                            }
-                        } finally {
-                            if (_didIteratorError7) {
-                                throw _iteratorError7;
-                            }
-                        }
-                    }
-
-                    propertiesText = propertiesText.replace(/，$/, '');
-                    pointsLogList[getCurrentLevel(logList) + 1] = '\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09\n\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09';
-                    sessionStorage.setItem(_Const2.default.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
-                    console.log('\u3010\u5206\u914D\u70B9\u6570\u3011' + (changeLevel > 0 ? '\u5DF2\u4FEE\u6539\u4E3A\u7B2C' + changeLevel + '\u5C42\u7684\u65B9\u6848' : '已修改点数设置') + '\uFF1B' + ('\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09\uFF1B\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09'));
-
+                    recordPointsLog(true);
                     $points.find('.pd_point').each(function () {
                         this.defaultValue = $(this).val();
-                    }).trigger('change');
+                    });
                     return 'success';
                 } else {
                     alert((changeLevel ? '\u7B2C' + changeLevel + '\u5C42\u65B9\u6848\uFF1A' : '') + msg);
@@ -6605,7 +6653,10 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             }, function () {
                 return 'timeout';
             });
-        } else return $.Deferred().resolve('success');
+        } else {
+            recordPointsLog();
+            return $.Deferred().resolve('success');
+        }
     };
 
     /**
@@ -6660,17 +6711,18 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         var isChecked = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
         logList = getLogList(log);
-        showEnhanceLog(logList, pointsLogList);
-        showLogStat(logList);
+        levelInfoList = getLevelInfoList(logList);
+        showEnhanceLog(logList, levelInfoList, pointsLogList);
+        showLogStat(levelInfoList);
         var currentLevel = getCurrentLevel(logList);
         console.log('【争夺攻击】当前层数：' + currentLevel);
         var $countdown = $('.pd_countdown:last');
         $countdown.text(currentLevel);
-
-        var _getLifeInfo2 = getLifeInfo(logList, currentLevel),
-            currentLife = _getLifeInfo2.life;
-
-        $properties.find('#pdCurrentLife').text(currentLife);
+        $points.find('.pd_point').each(function () {
+            showNewLootProperty($(this));
+        });
+        var info = levelInfoList[currentLevel];
+        $properties.find('#pdCurrentLife').text(info ? info.life : 0);
 
         var isFail = /你被击败了/.test(log);
         var isStop = isFail || type !== 'auto' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
@@ -6731,7 +6783,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         var _iteratorError8 = undefined;
 
         try {
-            for (var _iterator8 = Util.entries(getEnemyStatList(logList))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            for (var _iterator8 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
                 var _step8$value = _slicedToArray(_step8.value, 2),
                     enemy = _step8$value[0],
                     num = _step8$value[1];
@@ -6787,7 +6839,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         var _iteratorError10 = undefined;
 
         try {
-            for (var _iterator10 = Util.entries(getEnemyStatList(logList.filter(function (elem, level) {
+            for (var _iterator10 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
                 return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
             })))[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
                 var _step10$value = _slicedToArray(_step10.value, 2),
@@ -6841,7 +6893,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
 
         var currentLevel = getCurrentLevel(logList);
 
-        var _getTotalGain = getTotalGain(logList),
+        var _getTotalGain = getTotalGain(levelInfoList),
             exp = _getTotalGain.exp,
             kfb = _getTotalGain.kfb;
 
@@ -6871,7 +6923,7 @@ var addLootLogHeader = function addLootLogHeader() {
             (0, _Config.read)();
             Config.showLevelEnemyStatEnabled = checked;
             (0, _Config.write)();
-            showLogStat(logList);
+            showLogStat(levelInfoList);
         }
     }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
@@ -6971,9 +7023,10 @@ var handleLootLogNav = function handleLootLogNav() {
         }
         $logNav.find('.pd_history_logs_key').text(getKeyTitleStr(keyList[curIndex]));
         var curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        var curLevelInfoList = getLevelInfoList(curLogList);
         var curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
-        showEnhanceLog(curLogList, curPointsLogList);
-        showLogStat(curLogList);
+        showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
+        showLogStat(curLevelInfoList);
         if (curIndex > 0) {
             $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
             $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
@@ -6990,17 +7043,18 @@ var handleLootLogNav = function handleLootLogNav() {
 
     if (!log.includes('本日无争夺记录')) {
         var curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        var curLevelInfoList = getLevelInfoList(curLogList);
         var curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
-        showEnhanceLog(curLogList, curPointsLogList);
+        showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
     }
 };
 
 /**
  * 显示争夺记录统计
- * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  */
-var showLogStat = function showLogStat(logList) {
-    var _getTotalGain2 = getTotalGain(logList),
+var showLogStat = function showLogStat(levelInfoList) {
+    var _getTotalGain2 = getTotalGain(levelInfoList),
         exp = _getTotalGain2.exp,
         kfb = _getTotalGain2.kfb;
 
@@ -7010,7 +7064,7 @@ var showLogStat = function showLogStat(logList) {
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.entries(getEnemyStatList(logList))[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        for (var _iterator12 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
             var _step12$value = _slicedToArray(_step12.value, 2),
                 enemy = _step12$value[0],
                 num = _step12$value[1];
@@ -7038,8 +7092,8 @@ var showLogStat = function showLogStat(logList) {
     var _iteratorError13 = undefined;
 
     try {
-        for (var _iterator13 = Util.entries(getEnemyStatList(logList.filter(function (elem, level) {
-            return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
+        for (var _iterator13 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
+            return level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum;
         })))[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
             var _step13$value = _slicedToArray(_step13.value, 2),
                 enemy = _step13$value[0],
@@ -7069,14 +7123,14 @@ var showLogStat = function showLogStat(logList) {
         var levelEnemyStatHtml = '';
 
         var _loop = function _loop(i) {
-            levelEnemyStatHtml += '&nbsp;&nbsp;<b>' + i + '-' + (i + 9 < logList.length ? i + 9 : logList.length - 1) + '\uFF1A</b>';
+            levelEnemyStatHtml += '&nbsp;&nbsp;<b>' + i + '-' + (i + 9 < levelInfoList.length ? i + 9 : levelInfoList.length - 1) + '\uFF1A</b>';
             var html = '';
             var _iteratorNormalCompletion14 = true;
             var _didIteratorError14 = false;
             var _iteratorError14 = undefined;
 
             try {
-                for (var _iterator14 = Util.entries(getEnemyStatList(logList.filter(function (elem, level) {
+                for (var _iterator14 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
                     return level >= i && level < i + 10;
                 })))[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
                     var _step14$value = _slicedToArray(_step14.value, 2),
@@ -7103,7 +7157,7 @@ var showLogStat = function showLogStat(logList) {
             levelEnemyStatHtml += (html ? html : '无') + '<br>';
         };
 
-        for (var i = 1; i < logList.length; i += 10) {
+        for (var i = 1; i < levelInfoList.length; i += 10) {
             _loop(i);
         }
         $logStat.append('<li><b>\u5206\u5C42\u7EDF\u8BA1\uFF1A</b>' + (levelEnemyStatHtml ? '<br>' + levelEnemyStatHtml : '无') + '</li>');
@@ -7113,44 +7167,66 @@ var showLogStat = function showLogStat(logList) {
 /**
  * 显示经过增强的争夺记录
  * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  * @param {string[]} pointsLogList 点数分配记录列表
  */
-var showEnhanceLog = function showEnhanceLog(logList, pointsLogList) {
+var showEnhanceLog = function showEnhanceLog(logList, levelInfoList, pointsLogList) {
     var list = [];
     $.each(logList, function (level, levelLog) {
         if (!levelLog) return;
-        list[level] = levelLog.replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
-            var color = '';
-            switch (enemy) {
-                case '普通':
-                    color = '#09c';
-                    break;
-                case '特别脆弱':
-                    color = '#c96';
-                    break;
-                case '特别缓慢':
-                    color = '#c69';
-                    break;
-                case '特别强壮':
-                    color = '#f93';
-                    break;
-                case '特别快速':
-                    color = '#f3c';
-                    break;
-                case 'BOSS':
-                    color = '#f00';
-                    break;
-                default:
-                    color = '#0075ea';
-            }
-            return '<span style="background-color: ' + color + ';">[' + enemy + '\u7684]</span>NPC';
-        });
+        var matches = /\[([^\]]+)的]NPC/.exec(levelLog);
+        if (!matches) return;
+        var enemy = matches[1];
+        var color = '';
+        switch (enemy) {
+            case '普通':
+                color = '#09c';
+                break;
+            case '特别脆弱':
+                color = '#c96';
+                break;
+            case '特别缓慢':
+                color = '#c69';
+                break;
+            case '特别强壮':
+                color = '#f93';
+                break;
+            case '特别快速':
+                color = '#f3c';
+                break;
+            case 'BOSS':
+                color = '#f00';
+                break;
+            default:
+                color = '#0075ea';
+        }
+        list[level] = levelLog.replace(matches[0], '<span style="background-color: ' + color + ';">[' + enemy + '\u7684]</span>NPC');
 
         if (pointsLogList[level]) {
-            list[level] = list[level].replace('</li>', ('</li><li class="pk_log_g" style="color: #666;">' + pointsLogList[level] + '</li>').replace(/\n/g, '<br>'));
+            var levelPointsLog = pointsLogList[level];
+            enemy = enemy.replace('特别', '');
+            var pointMatches = /灵活：\d+\+\d+=(\d+)/.exec(levelPointsLog);
+            if (pointMatches) {
+                var realCriticalStrikePercent = getRealProperty('灵活', parseInt(pointMatches[1]), level, enemy);
+                levelPointsLog = levelPointsLog.replace(/(暴击几率：\d+%)/, '$1<span class="pd_custom_tips" title="\u5B9E\u9645\u66B4\u51FB\u51E0\u7387">(' + realCriticalStrikePercent + '%)</span>');
+            }
+            pointMatches = /智力：\d+\+\d+=(\d+)/.exec(levelPointsLog);
+            if (pointMatches) {
+                var realSkillPercent = getRealProperty('智力', parseInt(pointMatches[1]), level, enemy);
+                levelPointsLog = levelPointsLog.replace(/(技能释放概率：\d+%)/, '$1<span class="pd_custom_tips" title="\u5B9E\u9645\u6280\u80FD\u91CA\u653E\u6982\u7387">(' + realSkillPercent + '%)</span>');
+            }
+            list[level] = list[level].replace('</li>', ('</li><li class="pk_log_g" style="color: #666;">' + levelPointsLog + '</li>').replace(/\n/g, '<br>'));
         }
     });
     $log.html(list.reverse().join(''));
+};
+
+/**
+ * 获取争夺记录
+ * @returns {string} 争夺记录
+ */
+var getLog = exports.getLog = function getLog() {
+    return log;
 };
 
 /**
@@ -7158,7 +7234,7 @@ var showEnhanceLog = function showEnhanceLog(logList, pointsLogList) {
  * @param log 争夺记录
  * @returns {string[]} 各层争夺记录列表
  */
-var getLogList = function getLogList(log) {
+var getLogList = exports.getLogList = function getLogList(log) {
     var logList = [];
     var matches = log.match(/<li class="pk_log_j">.+?(?=\s*<li class="pk_log_j">|\s*$)/g);
     for (var i in matches) {
@@ -7169,30 +7245,70 @@ var getLogList = function getLogList(log) {
 };
 
 /**
- * 获取当前的争夺总收获
- * @param {string[]} logList 各层争夺记录列表
- * @returns {{exp: number, kfb: number}} exp：经验；kfb：KFB
+ * 获取该层的战斗信息
+ * @param {string} levelLog 该层的争夺记录
+ * @returns {{enemy: string, life: number, initLife: number, kfb: number, exp: number}} enemy：遭遇敌人名称；life：该层剩余生命值；initLife：该层初始生命值；kfb：KFB；exp：经验
  */
-var getTotalGain = function getTotalGain(logList) {
-    var exp = 0,
-        kfb = 0;
+var getLevelInfo = exports.getLevelInfo = function getLevelInfo(levelLog) {
+    var info = { enemy: '', life: 0, initLife: 0, kfb: 0, exp: 0 };
+    if (!levelLog) return info;
+    levelLog = Util.removeHtmlTag(levelLog.replace(/<\/li>/g, '</li>\n'));
+
+    var matches = /你\((\d+)\)遭遇了\[([^\]]+)的]NPC/.exec(levelLog);
+    if (matches) {
+        info.initLife = parseInt(matches[1]);
+        info.enemy = matches[2];
+        info.enemy = info.enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
+    }
+
+    matches = /生命值\[(\d+)\s*\/\s*\d+]/.exec(levelLog);
+    if (matches) info.life = parseInt(matches[1]);
+
+    matches = /获得\s*\[\s*(\d+)\s*]\s*经验和\s*\[\s*(\d+)\s*]\s*KFB/.exec(levelLog);
+    if (matches) {
+        info.exp += parseInt(matches[1]);
+        info.kfb += parseInt(matches[2]);
+    }
+
+    return info;
+};
+
+/**
+ * 获取各层战斗信息列表
+ * @param {string[]} logList 各层争夺记录列表
+ * @returns {{}[]} 各层战斗信息列表
+ */
+var getLevelInfoList = exports.getLevelInfoList = function getLevelInfoList(logList) {
+    var levelInfoList = [];
     $.each(logList, function (level, levelLog) {
         if (!levelLog) return;
-        var matches = /获得\s*\[\s*(\d+)\s*]\s*经验和\s*\[\s*(\d+)\s*]\s*KFB/.exec(Util.removeHtmlTag(levelLog));
-        if (matches) {
-            exp += parseInt(matches[1]);
-            kfb += parseInt(matches[2]);
-        }
+        levelInfoList[level] = getLevelInfo(levelLog);
     });
-    return { exp: exp, kfb: kfb };
+    return levelInfoList;
+};
+
+/**
+ * 获取当前的争夺总收获
+ * @param {{}[]} levelInfoList 各层战斗信息列表
+ * @returns {{kfb: number, exp: number}} kfb：KFB；exp：经验
+ */
+var getTotalGain = function getTotalGain(levelInfoList) {
+    var totalKfb = 0,
+        totalExp = 0;
+    $.each(levelInfoList, function (level, info) {
+        if (!info) return;
+        totalKfb += info.kfb;
+        totalExp += info.exp;
+    });
+    return { kfb: totalKfb, exp: totalExp };
 };
 
 /**
  * 获取遭遇敌人统计列表
- * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  * @returns {{}} 遭遇敌人列表
  */
-var getEnemyStatList = function getEnemyStatList(logList) {
+var getEnemyStatList = function getEnemyStatList(levelInfoList) {
     var enemyStatList = {
         '普通': 0,
         '强壮': 0,
@@ -7202,7 +7318,7 @@ var getEnemyStatList = function getEnemyStatList(logList) {
         'BOSS': 0,
         '大魔王': 0
     };
-    $.each(getEnemyList(logList), function (level, enemy) {
+    $.each(getEnemyList(levelInfoList), function (level, enemy) {
         if (!enemy || !(enemy in enemyStatList)) return;
         enemyStatList[enemy]++;
     });
@@ -7213,21 +7329,15 @@ var getEnemyStatList = function getEnemyStatList(logList) {
 
 /**
  * 获取各层敌人列表
- * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  * @returns {[]} 各层敌人列表
  */
-var getEnemyList = function getEnemyList(logList) {
+var getEnemyList = function getEnemyList(levelInfoList) {
     var enemyList = [];
-    for (var level in logList) {
-        var levelLog = logList[level];
-        if (!levelLog) continue;
-        var matches = /\[([^\]]+)的]NPC/.exec(Util.removeHtmlTag(levelLog));
-        if (matches) {
-            var enemy = matches[1];
-            enemy = enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
-            enemyList[level] = enemy;
-        }
-    }
+    $.each(levelInfoList, function (level, info) {
+        if (!info) return;
+        if (info.enemy) enemyList[level] = info.enemy;
+    });
     return enemyList;
 };
 
@@ -7238,22 +7348,6 @@ var getEnemyList = function getEnemyList(logList) {
  */
 var getCurrentLevel = function getCurrentLevel(logList) {
     return logList.length - 1 >= 1 ? logList.length - 1 : 0;
-};
-
-/**
- * 获取指定层数的生命值信息
- * @param {string[]} logList 各层争夺记录列表
- * @param {number} level 指定层数
- * @returns {{life: number, initLife: number}} life：该层剩余生命值；initLife：该层初始生命值
- */
-var getLifeInfo = function getLifeInfo(logList, level) {
-    var life = 0,
-        initLife = 0;
-    var initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
-    if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
-    var lifeMatches = /生命值\[(\d+)\s*\/\s*\d+/.exec(logList[level]);
-    if (lifeMatches) life = parseInt(lifeMatches[1]);
-    return { life: life, initLife: initLife };
 };
 
 /**
@@ -8610,7 +8704,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1001; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pages .pd_fast_goto_page { margin-left: 8px; }\n  .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1002; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1000;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');
@@ -9404,13 +9498,13 @@ var addFastNavForSideBar = exports.addFastNavForSideBar = function addFastNavFor
         }
         $menu.find('> a:last').before('\n<span style="color: #ff9999;">\u5FEB\u6377\u5BFC\u822A</span><br>\n<a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a> | <a href="personal.php?action=post">\u56DE\u590D</a> | <a href="kf_growup.php">\u7B49\u7EA7</a><br>\n<a href="kf_fw_ig_index.php">\u4E89\u593A</a> | <a href="kf_fw_ig_mybp.php">\u7269\u54C1</a> | <a href="kf_fw_ig_shop.php">\u5546\u5E97</a><br>\n<a href="profile.php?action=modify">\u8BBE\u7F6E</a> | <a href="hack.php?H_name=bank">\u94F6\u884C</a> | <a href="profile.php?action=favor">\u6536\u85CF</a><br>\n' + _Const2.default.customTileSideBarContent + '\n');
     } else {
-        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_mybp.php">\u89D2\u8272\u7269\u54C1</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
+        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_mybp.php">\u89D2\u8272/\u7269\u54C1</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
     }
 };
 
 /**
  * 自动活期存款
- * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
+ * @param {boolean} isRead 是否读取个人信息页面以获得当前所持有KFB的信息
  */
 var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveCurrentDeposit() {
     var isRead = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
@@ -9422,14 +9516,14 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
 
     /**
      * 活期存款
-     * @param {number} income 当前拥有的KFB
+     * @param {number} cash 当前持有的KFB
      */
-    var saveCurrentDeposit = function saveCurrentDeposit(income) {
-        if (income < Config.saveCurrentDepositAfterKfb) return;
-        var multiple = Math.floor((income - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
-        if (income - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
+    var saveCurrentDeposit = function saveCurrentDeposit(cash) {
+        if (cash < Config.saveCurrentDepositAfterKfb) return;
+        var multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
+        if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
         var money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > income) return;
+        if (money <= 0 || money > cash) return;
         console.log('自动活期存款Start');
         $.post('hack.php?H_name=bank', { action: 'save', btype: 1, savemoney: money }, function (html) {
             showFormatLog('自动存款', html);
@@ -9440,7 +9534,7 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
             if (/完成存款/.test(msg)) {
                 Log.push('自动存款', '\u5171\u6709`' + money + '`KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
                 console.log('\u5171\u6709' + money + 'KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
-                Msg.show('\u5171\u6709<em>' + money + '</em>KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
+                Msg.show('\u5171\u6709<em>' + money.toLocaleString() + '</em>KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
             }
         });
     };
@@ -9448,7 +9542,7 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
     if (isRead) {
         console.log('获取当前持有KFB Start');
         $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + new Date().getTime(), function (html) {
-            var matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
+            var matches = /论坛货币：(\d+)\s*KFB/.exec(html);
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
     } else {
@@ -9861,7 +9955,9 @@ var showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfi
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -9935,12 +10031,12 @@ var addFloorGotoLink = exports.addFloorGotoLink = function addFloorGotoLink() {
  * 添加快速跳转到指定楼层的输入框
  */
 var addFastGotoFloorInput = exports.addFastGotoFloorInput = function addFastGotoFloorInput() {
-    $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8"> <span>楼</span></li></form>').prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
+    $('\n<form>\n<li class="pd_fast_goto_floor">\n  \u7535\u68AF\u76F4\u8FBE <input class="pd_input" style="width: 30px;" type="text" maxlength="8">\n  <span data-name="submit" style="cursor: pointer;">\u697C</span>\n</li>\n</form>\n').prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
         e.preventDefault();
         var floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
         location.href = 'read.php?tid=' + Util.getUrlParam('tid') + '&page=' + (parseInt(floor / Config.perPageFloorNum) + 1) + '&floor=' + floor;
-    }).find('span').click(function () {
+    }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
     }).end().closest('div').next().css({ 'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
 };
@@ -10072,86 +10168,14 @@ var addCopyBuyersListOption = exports.addCopyBuyersListOption = function addCopy
 };
 
 /**
- * 显示统计回帖者名单对话框
- * @param {string[]} replierList 回帖者名单列表
+ * 添加统计和购买帖子的按钮
  */
-var showStatRepliersDialog = exports.showStatRepliersDialog = function showStatRepliersDialog(replierList) {
-    var dialogName = 'pdReplierListDialog';
-    var html = '\n<div class="pd_cfg_main">\n  <div id="pdReplierListFilter" style="margin-top: 5px;">\n    <label><input name="showFloorNumEnabled" type="checkbox" checked> \u663E\u793A\u697C\u5C42\u53F7</label>\n    <label><input name="removeRepeatedEnabled" type="checkbox"> \u53BB\u9664\u91CD\u590D</label>\n    <label><input name="removeTopFloorEnabled" type="checkbox"> \u53BB\u9664\u697C\u4E3B</label>\n  </div>\n  <div style="color: #f00;" id="pdReplierListStat"></div>\n  <textarea name="replierList" style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>\n</div>';
-    var $dialog = Dialog.create(dialogName, '回帖者名单', html);
-    var $replierListFilter = $dialog.find('#pdReplierListFilter');
-
-    /**
-     * 显示回帖者名单
-     */
-    var showReplierList = function showReplierList() {
-        var list = [].concat(_toConsumableArray(replierList));
-        var isShowFloorNum = $replierListFilter.find('[name="showFloorNumEnabled"]').prop('checked'),
-            isRemoveRepeated = $replierListFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
-            isRemoveTopFloor = $replierListFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
-        if (isRemoveRepeated) {
-            list = list.map(function (elem, index, list) {
-                return list.indexOf(elem) === index ? elem : null;
-            });
-        }
-        if (isRemoveTopFloor) {
-            (function () {
-                var topFloor = $('.readtext:first').find('.readidmsbottom, .readidmleft').find('a').text();
-                list = list.map(function (elem) {
-                    return elem !== topFloor ? elem : null;
-                });
-            })();
-        }
-        var content = '';
-        var num = 0;
-        var _iteratorNormalCompletion2 = true;
-        var _didIteratorError2 = false;
-        var _iteratorError2 = undefined;
-
-        try {
-            for (var _iterator2 = list.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                var _step2$value = _slicedToArray(_step2.value, 2),
-                    floor = _step2$value[0],
-                    userName = _step2$value[1];
-
-                if (!userName) continue;
-                content += (isShowFloorNum ? floor + 'L：' : '') + userName + '\n';
-                num++;
-            }
-        } catch (err) {
-            _didIteratorError2 = true;
-            _iteratorError2 = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                    _iterator2.return();
-                }
-            } finally {
-                if (_didIteratorError2) {
-                    throw _iteratorError2;
-                }
-            }
-        }
-
-        $dialog.find('[name="replierList"]').val(content);
-        $dialog.find('#pdReplierListStat').html('\u5171\u6709<b>' + num + '</b>\u6761\u9879\u76EE');
-    };
-
-    $replierListFilter.on('click', '[type="checkbox"]', showReplierList);
-    showReplierList();
-    Dialog.show(dialogName);
-};
-
-/**
- * 添加统计回帖者名单的链接
- */
-var addStatRepliersLink = exports.addStatRepliersLink = function addStatRepliersLink() {
-    if (Util.getCurrentThreadPage() !== 1) return;
-    $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages').find('a').click(function (e) {
+var addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function addStatAndBuyThreadBtn() {
+    $('<span style="margin: 0 5px;">|</span><a data-name="statAndBuyThread" title="统计回帖者名单以及批量购买帖子" href="#">统计和购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]').filter('[data-name="statAndBuyThread"]').click(function (e) {
         e.preventDefault();
-        if ($('#pdReplierListDialog').length > 0) return;
+        if ($('#pdStatFloorDialog').length > 0) return;
 
-        var tid = Util.getUrlParam('tid');
+        var tid = parseInt(Util.getUrlParam('tid'));
         if (!tid) return;
         var value = $.trim(prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
         if (value === '') return;
@@ -10177,59 +10201,355 @@ var addStatRepliersLink = exports.addStatRepliersLink = function addStatRepliers
         var startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
         var endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
         if (endPage > maxPage) endPage = maxPage;
-        if (endPage - startPage > _Const2.default.statRepliersMaxPage) {
-            alert('需访问的总页数不可超过' + _Const2.default.statRepliersMaxPage);
+        if (endPage - startPage > _Const2.default.statFloorMaxPage) {
+            alert('需访问的总页数不可超过' + _Const2.default.statFloorMaxPage);
             return;
         }
 
-        Msg.wait('<strong>\u6B63\u5728\u7EDF\u8BA1\u56DE\u5E16\u540D\u5355\u4E2D&hellip;</strong><i>\u5269\u4F59\u9875\u6570\uFF1A<em class="pd_countdown">' + (endPage - startPage + 1) + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-        var isStop = false;
-        $(document).clearQueue('StatRepliers');
-        var replierList = [];
-        $.each(new Array(endPage), function (index) {
-            if (index + 1 < startPage) return;
-            $(document).queue('StatRepliers', function () {
-                $.ajax({
-                    type: 'GET',
-                    url: 'read.php?tid=' + tid + '&page=' + (index + 1) + '&t=' + new Date().getTime(),
-                    timeout: _Const2.default.defAjaxTimeout,
-                    success: function success(html) {
-                        var matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        for (var i in matches) {
-                            var floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
-                            if (!floorMatches) continue;
-                            var floor = parseInt(floorMatches[1]);
-                            if (floor < startFloor) continue;
-                            if (floor > endFloor) {
-                                isStop = true;
-                                break;
-                            }
-                            replierList[floor] = floorMatches[2];
-                        }
-                    },
-                    error: function error() {
-                        isStop = true;
-                        alert('因连接超时，统计回帖名单操作中止');
-                    },
-                    complete: function complete() {
-                        var $countdown = $('.pd_countdown:last');
-                        $countdown.text(parseInt($countdown.text()) - 1);
-                        isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                        if (isStop) $(document).clearQueue('StatRepliers');
+        Msg.destroy();
+        Msg.wait('<strong>\u6B63\u5728\u7EDF\u8BA1\u697C\u5C42\u4E2D&hellip;</strong><i>\u5269\u4F59\u9875\u6570\uFF1A<em class="pd_countdown">' + (endPage - startPage + 1) + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        statFloor(tid, startPage, endPage, startFloor, endFloor);
+    });
+};
 
-                        if (isStop || index === endPage - 1) {
-                            Msg.destroy();
-                            showStatRepliersDialog(replierList);
-                        } else {
-                            setTimeout(function () {
-                                return $(document).dequeue('StatRepliers');
-                            }, _Const2.default.defAjaxInterval);
-                        }
+/**
+ * 统计楼层
+ * @param {number} tid 帖子ID
+ * @param {number} startPage 开始页数
+ * @param {number} endPage 结束页数
+ * @param {number} startFloor 开始楼层号
+ * @param {number} endFloor 结束楼层号
+ */
+var statFloor = function statFloor(tid, startPage, endPage, startFloor, endFloor) {
+    var isStop = false;
+    var floorList = [];
+
+    /**
+     * 统计
+     * @param {number} page 第几页
+     */
+    var stat = function stat(page) {
+        $.ajax({
+            type: 'GET',
+            url: 'read.php?tid=' + tid + '&page=' + page + '&t=' + new Date().getTime(),
+            timeout: _Const2.default.defAjaxTimeout,
+            success: function success(html) {
+                $('.readtext', html).each(function () {
+                    var data = {};
+                    var $floor = $(this);
+                    var $floorHeader = $floor.prev('.readlou');
+                    var floor = parseInt($floor.prev('.readlou').find('> div:nth-child(2) > span:first-child').text());
+                    if (!floor) return;
+                    if (floor < startFloor) return;
+                    if (floor > endFloor) {
+                        isStop = true;
+                        return false;
                     }
+                    data.pid = parseInt($floorHeader.prev('a').attr('name'));
+                    var $user = $floor.find('.readidms, .readidm');
+                    data.userName = $user.find('a[href^="profile.php?action=show&uid="]').text();
+                    data.smLevel = '';
+                    if ($user.hasClass('readidms')) {
+                        var matches = /(\S+)级神秘/.exec($user.find('.readidmsbottom').text());
+                        if (matches) data.smLevel = matches[1];
+                    } else {
+                        data.smLevel = $user.find('.readidmright').text().trim();
+                    }
+
+                    var $buy = $floor.find('[value="愿意购买,支付KFB"]:first');
+                    if ($buy.length > 0) {
+                        var _matches = /此帖售价\s*(\d+)\s*KFB/.exec($buy.parent('legend').text());
+                        if (_matches) data.sell = parseInt(_matches[1]);
+                        _matches = /location\.href="(.+)"/i.exec($buy.attr('onclick'));
+                        if (_matches) data.buyUrl = _matches[1];
+                    }
+                    floorList[floor] = data;
                 });
+
+                var $countdown = $('.pd_countdown:last');
+                $countdown.text(parseInt($countdown.text()) - 1);
+                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
+            },
+            error: function error() {
+                setTimeout(function () {
+                    return stat(page);
+                }, _Const2.default.defAjaxInterval);
+            },
+            complete: function complete() {
+                if (isStop || page >= endPage) {
+                    Msg.destroy();
+                    showStatFloorDialog(floorList);
+                } else {
+                    setTimeout(function () {
+                        return stat(page + 1);
+                    }, _Const2.default.defAjaxInterval);
+                }
+            }
+        });
+    };
+
+    stat(startPage);
+};
+
+/**
+ * 显示统计楼层对话框
+ * @param {{}[]} floorList 楼层信息列表
+ */
+var showStatFloorDialog = exports.showStatFloorDialog = function showStatFloorDialog(floorList) {
+    var dialogName = 'pdStatFloorDialog';
+    var html = '\n<div class="pd_cfg_main">\n  <div id="pdStatFloorFilter" style="margin-top: 5px;">\n    <label><input name="removeRepeatedEnabled" type="checkbox"> \u53BB\u9664\u91CD\u590D</label>\n    <label><input name="removeTopFloorEnabled" type="checkbox"> \u53BB\u9664\u697C\u4E3B</label>\n  </div>\n  <div id="pdStatFloorSelectBtns">\n    <label style="margin-left: 3px;">\u552E\u4EF7\u533A\u95F4\uFF1A</label>\n    <input name="startSell" type="number" value="1" min="1" max="100" style="width: 45px;"> -\n    <input name="endSell" type="number" value="100" min="1" max="100" style="width: 45px;">\n    <label style="margin-left: 3px;">\n    \u6BCF\u540D\u7528\u6237\u9650\u9009 <input name="limitNum" type="number" min="0" style="width: 35px;"> \u4E2A\n    </label>\n    <a class="pd_btn_link" data-name="selectFilter" href="#">\u7B5B\u9009</a><br>\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n  </div>\n  <div class="pd_highlight" style="text-align: center;">\n    \u5171\u663E\u793A<b id="pdStatFloorShowCount">0</b>\u6761\u9879\u76EE\uFF0C\u5171\u9009\u62E9<b id="pdStatFloorSelectCount">0</b>\u6761\u9879\u76EE\n  </div>\n  <table style="line-height: 1.8em; text-align: center;">\n    <thead>\n      <tr>\n        <th style="width: 30px;"></th>\n        <th style="width: 70px;">\u697C\u5C42\u53F7</th>\n        <th style="width: 120px;">\u7528\u6237\u540D</th>\n        <th style="width: 80px;">\u795E\u79D8\u7B49\u7EA7</th>\n        <th style="width: 90px;">\u552E\u4EF7(KFB) <span class="pd_cfg_tips" title="\u6CE8\uFF1A\u552E\u4EF7\u4FE1\u606F\u5728\u7EDF\u8BA1\u540E\u53EF\u80FD\u4F1A\u53D1\u751F\u53D8\u5316\uFF0C\u5EFA\u8BAE\u5C3D\u5FEB\u8D2D\u4E70\u5E16\u5B50">[?]</span></th>\n      </tr>\n    </thead>\n    <tbody id="pdStatFloorList"></tbody>\n  </table>\n  <textarea name="statFloorListContent" style="margin-top: 8px; width: 250px; height: 300px;" hidden></textarea>\n</div>\n\n<div class="pd_cfg_btns">\n  <button name="copyList" type="button" style="color: #00f;" title="\u590D\u5236\u6240\u6709\u6216\u6240\u9009\u697C\u5C42\u7684\u7528\u6237\u540D\u5355">\u590D\u5236\u540D\u5355</button>\n  <button name="buyThread" type="button" style="color: #f00;" title="\u6279\u91CF\u8D2D\u4E70\u6240\u9009\u697C\u5C42\u7684\u5E16\u5B50">\u8D2D\u4E70\u5E16\u5B50</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '统计楼层', html);
+    var $statFloorFilter = $dialog.find('#pdStatFloorFilter');
+    var $statFloorList = $dialog.find('#pdStatFloorList');
+    var $statFloorListContent = $dialog.find('[name="statFloorListContent"]');
+    var tid = Util.getUrlParam('tid');
+
+    /**
+     * 显示统计楼层列表
+     */
+    var showStatFloorList = function showStatFloorList() {
+        var list = [].concat(_toConsumableArray(floorList));
+        var isRemoveRepeated = $statFloorFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
+            isRemoveTopFloor = $statFloorFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
+        if (isRemoveRepeated) {
+            list = list.map(function (data, index, list) {
+                if (!data) return null;else return list.findIndex(function (data2) {
+                    return data2 && data2.userName === data.userName;
+                }) === index ? data : null;
+            });
+        }
+        if (isRemoveTopFloor) {
+            var $topFloor = $('.readtext:first');
+            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
+                (function () {
+                    var topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
+                    list = list.map(function (data) {
+                        return data && data.userName !== topFloorUserName ? data : null;
+                    });
+                })();
+            }
+        }
+        var content = '',
+            copyContent = '';
+        var num = 0;
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
+        try {
+            for (var _iterator2 = list.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var _step2$value = _slicedToArray(_step2.value, 2),
+                    floor = _step2$value[0],
+                    data = _step2$value[1];
+
+                if (!data) continue;
+                content += '\n<tr>\n  <td>\n    <label>\n      <input data-sell="' + (data.sell ? data.sell : 0) + '" data-url="' + (data.buyUrl ? data.buyUrl : '') + '" type="checkbox" value="' + data.userName + '">\n    </label>\n  </td>\n  <td><a href="read.php?tid=' + tid + '&spid=' + data.pid + '" target="_blank">' + floor + '\u697C</a></td>\n  <td><a href="profile.php?action=show&username=' + data.userName + '" target="_blank" style="color: #000;">' + data.userName + '</a></td>\n  <td style="color: #f39;">' + data.smLevel + '</td>\n  <td class="pd_stat">' + (data.sell ? '<em>' + data.sell + '</em>' : '<span class="pd_notice">无</span>') + '</td>\n</tr>';
+                copyContent += data.userName + '\n';
+                num++;
+            }
+        } catch (err) {
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                    _iterator2.return();
+                }
+            } finally {
+                if (_didIteratorError2) {
+                    throw _iteratorError2;
+                }
+            }
+        }
+
+        $statFloorList.html(content);
+        $statFloorListContent.val(copyContent).data('copy-text', copyContent);
+        $dialog.find('#pdStatFloorShowCount').text(num);
+        $dialog.find('#pdStatFloorSelectCount').text(0);
+    };
+
+    $dialog.find('#pdStatFloorSelectBtns').on('click', '[data-name]', function (e) {
+        e.preventDefault();
+        var name = $(this).data('name');
+        if (name === 'selectAll') Util.selectAll($statFloorList.find('[type="checkbox"]'));else if (name === 'selectInverse') Util.selectInverse($statFloorList.find('[type="checkbox"]'));else if (name === 'selectFilter') {
+            var _ret2 = function () {
+                var startSell = parseInt($dialog.find('[name="startSell"]').val());
+                var endSell = parseInt($dialog.find('[name="endSell"]').val());
+                var limitNum = parseInt($dialog.find('[name="limitNum"]').val());
+                if (!limitNum || limitNum < 0) limitNum = 0;
+                if (!startSell || startSell < 1 || !endSell || endSell < 1) return {
+                        v: void 0
+                    };
+                var userStat = {};
+                $statFloorList.find('[type="checkbox"]').each(function () {
+                    var $this = $(this);
+                    var sell = parseInt($this.data('sell'));
+                    var isChecked = sell > 0 && sell >= startSell && sell <= endSell;
+                    if (isChecked && limitNum > 0) {
+                        var userName = $this.val();
+                        if (!(userName in userStat)) userStat[userName] = 0;
+                        userStat[userName]++;
+                        if (userStat[userName] > limitNum) isChecked = false;
+                    }
+                    $this.prop('checked', isChecked);
+                });
+            }();
+
+            if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+        }
+        $dialog.find('#pdStatFloorSelectCount').text($statFloorList.find('[type="checkbox"]:checked').length);
+    }).end().find('[name="copyList"]').click(function () {
+        var $this = $(this);
+        if ($this.text() === '取消复制') {
+            $this.text('复制名单');
+            $statFloorListContent.prop('hidden', true);
+            $statFloorList.closest('table').prop('hidden', false);
+            Dialog.resize(dialogName);
+            return;
+        }
+        var type = 'all';
+        var checked = $statFloorList.find('[type="checkbox"]:checked');
+        if (checked.length > 0) {
+            type = 'select';
+            var copyContent = '';
+            checked.each(function () {
+                copyContent += $(this).val() + '\n';
+            });
+            $statFloorListContent.val(copyContent).data('copy-text', copyContent);
+        }
+        if (!Util.copyText($statFloorListContent, (type === 'all' ? '所有' : '所选') + '用户名单已复制')) {
+            $this.text('取消复制');
+            $statFloorList.closest('table').prop('hidden', true);
+            $statFloorListContent.prop('hidden', false).select().focus();
+            Dialog.resize(dialogName);
+        }
+    }).end().find('[name="buyThread"]').click(function () {
+        var threadList = [];
+        var totalSell = 0;
+        $statFloorList.find('[type="checkbox"]:checked').each(function () {
+            var $this = $(this);
+            var url = $this.data('url');
+            var sell = parseInt($this.data('sell'));
+            if (url && sell > 0) {
+                threadList.push({ url: url, sell: sell });
+                totalSell += sell;
+            }
+        });
+        if (!threadList.length) {
+            alert('请选择要购买的楼层');
+            return;
+        }
+        if (!confirm('\u4F60\u5171\u9009\u62E9\u4E86' + threadList.length + '\u4E2A\u697C\u5C42\uFF0C\u603B\u552E\u4EF7' + totalSell.toLocaleString() + 'KFB\uFF0C' + ('\u5747\u4EF7' + Util.getFixedNumLocStr(totalSell / threadList.length, 2) + 'KFB\uFF0C\u662F\u5426\u6279\u91CF\u8D2D\u4E70\uFF1F'))) return;
+        Msg.destroy();
+        Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u5E16\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + threadList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        buyThreads(threadList);
+    });
+
+    if (Util.getCurrentThreadPage() !== 1) $statFloorFilter.find('[name="removeTopFloorEnabled"]').prop('disabled', true).parent('label').attr('title', '请在第1页进行统计');
+    $statFloorFilter.on('click', '[type="checkbox"]', showStatFloorList);
+    showStatFloorList();
+    Dialog.show(dialogName);
+    Script.runFunc('Read.showStatFloorDialog_after_');
+};
+
+/**
+ * 购买帖子
+ * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
+ */
+var buyThreads = exports.buyThreads = function buyThreads(threadList) {
+    var successNum = 0,
+        failNum = 0,
+        totalSell = 0;
+    $(document).clearQueue('BuyThread');
+    $.each(threadList, function (index, _ref) {
+        var url = _ref.url,
+            sell = _ref.sell;
+
+        $(document).queue('BuyThread', function () {
+            $.ajax({
+                type: 'GET',
+                url: url + '&t=' + new Date().getTime(),
+                timeout: _Const2.default.defAjaxTimeout,
+                success: function success(html) {
+                    Public.showFormatLog('购买帖子', html);
+
+                    var _Util$getResponseMsg = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg.msg;
+
+                    if (/操作完成/.test(msg)) {
+                        successNum++;
+                        totalSell += sell;
+                    } else failNum++;
+                },
+                error: function error() {
+                    failNum++;
+                },
+                complete: function complete() {
+                    var $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    var isStop = $countdown.closest('.pd_msg').data('stop');
+                    if (isStop) $(document).clearQueue('BuyThread');
+
+                    if (isStop || index === threadList.length - 1) {
+                        Msg.destroy();
+                        if (successNum > 0) {
+                            Log.push('购买帖子', '\u5171\u6709`' + successNum + '`\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F', { pay: { 'KFB': -totalSell } });
+                        }
+                        console.log('\u5171\u6709' + successNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F\uFF0C\u5171\u6709' + failNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25\uFF0CKFB-' + totalSell);
+                        Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25' : '') + '</strong>' + ('<i>KFB<ins>-' + totalSell + '</ins></i>'), -1);
+                        Script.runFunc('Read.buyThreads_after_', threadList);
+                    } else {
+                        setTimeout(function () {
+                            return $(document).dequeue('BuyThread');
+                        }, _Const2.default.defAjaxInterval);
+                    }
+                }
             });
         });
-        $(document).dequeue('StatRepliers');
+    });
+    $(document).dequeue('BuyThread');
+};
+
+/**
+ * 处理购买帖子按钮
+ */
+var handleBuyThreadBtn = exports.handleBuyThreadBtn = function handleBuyThreadBtn() {
+    $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
+        var $this = $(this);
+        var matches = /此帖售价\s*(\d+)\s*KFB/.exec($this.closest('legend').contents().eq(0).text());
+        if (!matches) return;
+        var sell = parseInt(matches[1]);
+        matches = /location\.href="(.+?)"/i.exec($this.attr('onclick'));
+        if (!matches) return;
+        $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (e) {
+            e.preventDefault();
+            var $this = $(this);
+            var sell = $this.data('sell');
+            var url = $this.data('url');
+            if (!sell || !url) return;
+            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm('\u6B64\u8D34\u552E\u4EF7' + sell + 'KFB\uFF0C\u662F\u5426\u8D2D\u4E70\uFF1F')) return;
+            if (Config.buyThreadViaAjaxEnabled) {
+                (function () {
+                    var $wait = Msg.wait('正在购买帖子&hellip;');
+                    $.get(url + '&t=' + new Date().getTime(), function (html) {
+                        Public.showFormatLog('购买帖子', html);
+
+                        var _Util$getResponseMsg2 = Util.getResponseMsg(html),
+                            msg = _Util$getResponseMsg2.msg;
+
+                        Msg.remove($wait);
+                        if (/操作完成/.test(msg)) {
+                            location.reload();
+                        } else if (/您已经购买此帖/.test(msg)) {
+                            alert('你已经购买过此帖');
+                            location.reload();
+                        } else {
+                            alert('帖子购买失败');
+                        }
+                    });
+                })();
+            } else location.href = url;
+        });
     });
 };
 
@@ -10296,163 +10616,6 @@ var modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function modifyK
         var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola|kfer)\.\w+?\/).+/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
-};
-
-/**
- * 处理购买帖子按钮
- */
-var handleBuyThreadBtn = exports.handleBuyThreadBtn = function handleBuyThreadBtn() {
-    $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
-        var $this = $(this);
-        var matches = /此帖售价\s*(\d+)\s*KFB/i.exec($this.closest('legend').contents().eq(0).text());
-        if (!matches) return;
-        var sell = parseInt(matches[1]);
-        matches = /location\.href="(.+?)"/i.exec($this.attr('onclick'));
-        if (!matches) return;
-        $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (e) {
-            e.preventDefault();
-            var $this = $(this);
-            var sell = $this.data('sell');
-            var url = $this.data('url');
-            if (!sell || !url) return;
-            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm('\u6B64\u8D34\u552E\u4EF7' + sell + 'KFB\uFF0C\u662F\u5426\u8D2D\u4E70\uFF1F')) return;
-            if (Config.buyThreadViaAjaxEnabled) {
-                (function () {
-                    var $wait = Msg.wait('正在购买帖子&hellip;');
-                    $.get(url, function (html) {
-                        Public.showFormatLog('购买帖子', html);
-
-                        var _Util$getResponseMsg = Util.getResponseMsg(html),
-                            msg = _Util$getResponseMsg.msg;
-
-                        Msg.remove($wait);
-                        if (/操作完成/.test(msg)) {
-                            location.reload();
-                        } else if (/您已经购买此帖/.test(msg)) {
-                            alert('你已经购买过此帖');
-                            location.reload();
-                        } else {
-                            alert('帖子购买失败');
-                        }
-                    });
-                })();
-            } else location.href = url;
-        });
-    });
-};
-
-/**
- * 添加批量购买帖子的按钮
- */
-var addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function addBatchBuyThreadButton() {
-    var $btns = $('.readtext input[type="button"][value="愿意购买,支付KFB"]');
-    if ($btns.length === 0) return;
-    $btns.each(function () {
-        var $this = $(this);
-        var sell = $this.data('sell');
-        var url = $this.data('url');
-        if (!sell || !url) return;
-        $this.after('<input class="pd_buy_thread" style="margin-left: 10px; vertical-align: middle;" type="checkbox" data-sell="' + sell + '" data-url="' + url + '">');
-    });
-    $('<span style="margin: 0 5px;">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]').filter('a').click(function (e) {
-        e.preventDefault();
-        Msg.destroy();
-        var threadList = [];
-        var totalSell = 0;
-        $('.pd_buy_thread:checked').each(function () {
-            var $this = $(this);
-            var url = $this.data('url');
-            var sell = parseInt($this.data('sell'));
-            if (url && !isNaN(sell)) {
-                threadList.push({ url: url, sell: sell });
-                totalSell += sell;
-            }
-        });
-        if (!threadList.length) {
-            alert('请选择要购买的帖子');
-            return;
-        }
-        if (confirm('\u4F60\u5171\u9009\u62E9\u4E86' + threadList.length + '\u4E2A\u5E16\u5B50\uFF0C\u603B\u552E\u4EF7' + totalSell.toLocaleString() + 'KFB\uFF0C' + ('\u5747\u4EF7' + Util.getFixedNumLocStr(totalSell / threadList.length, 2) + 'KFB\uFF0C\u662F\u5426\u6279\u91CF\u8D2D\u4E70\uFF1F'))) {
-            Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u5E16\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + threadList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-            buyThreads(threadList);
-        }
-    }).parent().mouseenter(function () {
-        $('\n<span style="margin-left: 5px;">\n  [<a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n  <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>]\n</span>\n').insertAfter($(this).find('.pd_buy_thread_btn')).find('[data-name="selectAll"]').click(function (e) {
-            e.preventDefault();
-            var $buyThread = $('.pd_buy_thread');
-            $buyThread.prop('checked', true);
-            alert('\u5171\u9009\u62E9\u4E86' + $buyThread.length + '\u9879');
-        }).end().find('[data-name="selectInverse"]').click(function (e) {
-            e.preventDefault();
-            var totalNum = 0;
-            $('.pd_buy_thread').each(function () {
-                var $this = $(this);
-                $this.prop('checked', !$this.prop('checked'));
-                if ($this.prop('checked')) totalNum++;
-            });
-            alert('\u5171\u9009\u62E9\u4E86' + totalNum + '\u9879');
-        });
-    }).mouseleave(function () {
-        $(this).find('.pd_buy_thread_btn').next('span').remove();
-    });
-};
-
-/**
- * 购买指定的一系列帖子
- * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
- */
-var buyThreads = exports.buyThreads = function buyThreads(threadList) {
-    var successNum = 0,
-        failNum = 0,
-        totalSell = 0;
-    $(document).clearQueue('BuyThreads');
-    $.each(threadList, function (index, _ref) {
-        var url = _ref.url,
-            sell = _ref.sell;
-
-        $(document).queue('BuyThreads', function () {
-            $.ajax({
-                type: 'GET',
-                url: url + '&t=' + new Date().getTime(),
-                timeout: _Const2.default.defAjaxTimeout,
-                success: function success(html) {
-                    Public.showFormatLog('购买帖子', html);
-
-                    var _Util$getResponseMsg2 = Util.getResponseMsg(html),
-                        msg = _Util$getResponseMsg2.msg;
-
-                    if (/操作完成/.test(msg)) {
-                        successNum++;
-                        totalSell += sell;
-                    } else failNum++;
-                },
-                error: function error() {
-                    failNum++;
-                },
-                complete: function complete() {
-                    var $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    var isStop = $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('BuyThreads');
-
-                    if (isStop || index === threadList.length - 1) {
-                        Msg.destroy();
-                        if (successNum > 0) {
-                            Log.push('购买帖子', '\u5171\u6709`' + successNum + '`\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F', { pay: { 'KFB': -totalSell } });
-                        }
-                        console.log('\u5171\u6709' + successNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F\uFF0C\u5171\u6709' + failNum + '\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25\uFF0CKFB-' + totalSell);
-                        Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u5E16\u5B50\u8D2D\u4E70\u5931\u8D25' : '') + '</strong>' + ('<i>KFB<ins>-' + totalSell + '</ins></i>'), -1);
-                        Script.runFunc('Read.buyThreads_after_', threadList);
-                    } else {
-                        setTimeout(function () {
-                            return $(document).dequeue('BuyThreads');
-                        }, _Const2.default.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('BuyThreads');
 };
 
 /**
@@ -11458,7 +11621,7 @@ var htmlDecode = exports.htmlDecode = function htmlDecode(str) {
  * @returns {string} 去除HTML标签的文本
  */
 var removeHtmlTag = exports.removeHtmlTag = function removeHtmlTag(html) {
-    return html.replace(/<[^>]+>/g, '');
+    return html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '');
 };
 
 /**
@@ -11643,7 +11806,7 @@ var copyText = exports.copyText = function copyText($target) {
     if (!('execCommand' in document) || !$target.length) return false;
     var copyText = $target.data('copy-text');
     if (copyText) {
-        $target = $('<span class="text-hide">' + copyText + '</span>').insertAfter($target);
+        $target = $('<span class="pd_hide">' + copyText.replace(/\n/g, '<br>') + '</span>').insertAfter($target);
     }
     if ($excludeElem) $excludeElem.prop('hidden', true);
     var s = window.getSelection();

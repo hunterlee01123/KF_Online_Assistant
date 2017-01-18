@@ -80,6 +80,7 @@ export const appendCss = function () {
     border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
   }
   .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }
   .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }
   .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
   .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }
@@ -98,8 +99,8 @@ export const appendCss = function () {
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   
   /* 消息框 */
-  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
-  .pd_msg_container { position: ${Info.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1001; }
+  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
+  .pd_msg_container { position: ${Info.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1002; }
   .pd_msg {
     border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;
     font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;
@@ -119,8 +120,6 @@ export const appendCss = function () {
   .readlou .pd_goto_link { color: #000; }
   .readlou .pd_goto_link:hover { color: #51d; }
   .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
-  .pages .pd_fast_goto_page { margin-left: 8px; }
-  .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }
   .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
   .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
   .pd_user_memo_tips:hover { color: #ddd; }
@@ -159,7 +158,7 @@ export const appendCss = function () {
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
-    position: ${Info.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1002;
+    position: ${Info.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1000;
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
     -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }

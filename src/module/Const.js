@@ -15,10 +15,10 @@ const Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
-    // 在当天的指定时间之后领取每日奖励（北京时间），例：01:05:00
-    getDailyBonusAfterTime: '01:05:00',
-    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:05:00
-    lootAfterTime: '00:05:00',
+    // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
+    getDailyBonusAfterTime: '00:35:00',
+    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:10:00
+    lootAfterTime: '00:10:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
@@ -68,8 +68,8 @@ const Const = {
 
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
-    // 统计回帖者名单最大能访问的帖子页数
-    statRepliersMaxPage: 300,
+    // 统计楼层最大能访问的帖子页数
+    statFloorMaxPage: 300,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义侧边栏导航内容

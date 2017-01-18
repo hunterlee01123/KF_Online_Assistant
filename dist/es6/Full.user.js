@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.3.3
+// @version     9.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.3.3';
+const version = '9.4';
 
 /**
  * 导出模块
@@ -185,10 +185,9 @@ const init = function () {
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
         Read.addFloorGotoLink();
-        Read.addCopyBuyersListOption();
-        Read.addStatRepliersLink();
+        Read.addStatAndBuyThreadBtn();
         Read.handleBuyThreadBtn();
-        if (Config.batchBuyThreadEnabled) Read.addBatchBuyThreadButton();
+        Read.addCopyBuyersListOption();
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
@@ -991,8 +990,6 @@ const Config = exports.Config = {
     modifyKfOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
     multiQuoteEnabled: true,
-    // 是否在帖子页面开启批量购买帖子的功能，true：开启；false：关闭
-    batchBuyThreadEnabled: true,
     // 是否在楼层内的用户名旁显示该用户的自定义备注，true：开启；false：关闭
     userMemoEnabled: false,
     // 用户自定义备注列表，格式：{'用户名':'备注'}，例：{'李四':'张三的马甲','王五':'张三的另一个马甲'}
@@ -1383,12 +1380,12 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题12】">[?]</span>
       </label><br>
       <label>
-        <input name="batchBuyThreadEnabled" type="checkbox"> 开启批量购买帖子功能
-        <span class="pd_cfg_tips" title="在帖子页面开启批量购买帖子的功能">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
         <input name="buyThreadViaAjaxEnabled" type="checkbox"> 使用Ajax购买帖子
         <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label><br>
       <label>
         <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> 写帖子时阻止关闭页面
@@ -1397,10 +1394,6 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
-      </label><br>
-      <label>
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
-        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>
   </div>
@@ -2492,10 +2485,10 @@ const Const = {
     forumTimezoneOffset: -8,
     // KFB捐款额度的最大值
     maxDonationKfb: 5000,
-    // 在当天的指定时间之后领取每日奖励（北京时间），例：01:05:00
-    getDailyBonusAfterTime: '01:05:00',
-    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:05:00
-    lootAfterTime: '00:05:00',
+    // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
+    getDailyBonusAfterTime: '00:35:00',
+    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:10:00
+    lootAfterTime: '00:10:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
@@ -2538,15 +2531,15 @@ const Const = {
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval() {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 4000; // 慢速情况
-        else return Math.floor(Math.random() * 200) + 400; // 正常情况
+        else return Math.floor(Math.random() * 200) + 200; // 正常情况
     },
     // 银行相关操作的时间间隔（毫秒）
     bankActionInterval: 5000,
 
     // 购买帖子提醒的最低售价（KFB）
     minBuyThreadWarningSell: 6,
-    // 统计回帖者名单最大能访问的帖子页数
-    statRepliersMaxPage: 300,
+    // 统计楼层最大能访问的帖子页数
+    statFloorMaxPage: 300,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义侧边栏导航内容
@@ -2676,7 +2669,7 @@ const create = exports.create = function (id, title, content, style = '') {
 const show = exports.show = function (id) {
     let $dialog = $('#' + id);
     if (!$dialog.length) return;
-    $dialog.find('.pd_cfg_main').css('max-height', $(window).height() - 80).end().find('legend [type="checkbox"]').each(function () {
+    $dialog.find('legend [type="checkbox"]').each(function () {
         $(this).triggerHandler('click');
     }).end().find('input[data-disabled]').each(function () {
         $(this).triggerHandler('click');
@@ -2692,12 +2685,14 @@ const show = exports.show = function (id) {
  */
 const resize = exports.resize = function (id) {
     let $dialog = $('#' + id);
-    let dialogWidth = $dialog.width(),
+    let windowHeight = $(window).height();
+    $dialog.find('.pd_cfg_main').css('max-height', windowHeight - 80);
+    let dialogWidth = $dialog.outerWidth(),
         windowWidth = $(window).width();
     let left = windowWidth / 2 - dialogWidth / 2;
     if (left + dialogWidth > windowWidth) left = windowWidth - dialogWidth - 20;
     if (left < 0) left = 0;
-    let top = $(window).height() / 2 - $dialog.height() / 2;
+    let top = windowHeight / 2 - $dialog.outerHeight() / 2;
     if (top < 0) top = 0;
     $dialog.css({ top, left });
 };
@@ -4164,7 +4159,7 @@ const buyItems = function (buyNum, type, kfb, url) {
 <li class="pd_stat">
   <b>统计结果：</b><br>
   共有<em>${ successNum }</em>个道具购买成功，<i>KFB<ins>-${ totalKfb.toLocaleString() }</ins></i> ${ itemStatHtml }<br>
-  <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php" target="_blank">物品装备页面</a>查看)</span>
+  <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php">角色/物品页面</a>查看)</span>
 </li>
 `);
 
@@ -4983,7 +4978,7 @@ const showLogText = function (log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addUserLinkInPkListPage = exports.checkLoot = exports.lootAttack = exports.enhanceLootIndexPage = undefined;
+exports.addUserLinkInPkListPage = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.lootAttack = exports.getRealProperty = exports.enhanceLootIndexPage = undefined;
 
 var _Info = require('./Info');
 
@@ -5045,6 +5040,8 @@ let $log;
 let log = '';
 // 各层争夺记录列表
 let logList = [];
+// 各层战斗信息列表
+let levelInfoList = [];
 // 当前争夺属性
 let propertyList = new Map();
 // 道具加成点数列表
@@ -5064,20 +5061,22 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     propertyList = getLootPropertyList();
     extraPointList = getExtraPointList();
     itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(3) > td').html());
+
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
+    log = $log.html();
+    logList = getLogList(log);
+    levelInfoList = getLevelInfoList(logList);
+    pointsLogList = getTempPointsLogList(logList);
 
     handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
 
-    log = $log.html();
-    logList = getLogList(log);
-    pointsLogList = getTempPointsLogList(logList);
     if (log.includes('本日无争夺记录')) $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     addLootLogHeader();
-    showLogStat(logList);
+    showLogStat(levelInfoList);
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
         $(document).ready(setTimeout(autoLoot, 500));
@@ -5089,7 +5088,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  */
 const handlePropertiesArea = function () {
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_d2"></span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span> <span id="pdNew_i1"></span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>');
+    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` + `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` + `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
@@ -5334,9 +5333,21 @@ const showNewLootProperty = function ($point) {
             diffValue = newValue - propertyList.get('防御');
             break;
     }
-    $('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
+    $properties.find('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
 
-    if (point !== oriPoint) $('#pdNew_' + name).text(`(${ (diffValue >= 0 ? '+' : '') + diffValue })`).css('color', diffValue >= 0 ? '#f03' : '#393');else $('#pdNew_' + name).text('');
+    if (pointName === '灵活' || pointName === '智力') {
+        let nextLevel = getCurrentLevel(logList) + 1;
+        let text = '';
+        if (nextLevel % 10 === 0) {
+            text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, 'BOSS') + '%';
+        } else {
+            text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '普通') + '%';
+            text += '|' + getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '快速') + '%';
+        }
+        $properties.find('#pdReal_' + name).text(`(${ text })`).attr('title', `第${ nextLevel }层的实际${ pointName === '灵活' ? '暴击几率' : '技能释放概率' } (${ nextLevel % 10 === 0 ? 'BOSS' : '普通|快速' })`);
+    }
+
+    if (point !== oriPoint) $properties.find('#pdNew_' + name).text(`(${ (diffValue >= 0 ? '+' : '') + diffValue })`).css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
 };
 
 /**
@@ -5410,6 +5421,25 @@ const getPointByProperty = function (pointName, num, type = 0) {
     if (!isFinite(value) || value < 1) value = 1;
     if (type === 1 && value <= extraPointList.get(pointName)) value = extraPointList.get(pointName) + 1;
     return value;
+};
+
+/**
+ * 获取实际的争夺属性（暴击几率或技能释放概率）
+ * @param {string} pointName 点数名称
+ * @param {number} totalPoint 合计点数
+ * @param {number} level 指定层数
+ * @param {string} enemy 遭遇敌人名称
+ * @returns {number} 实际的争夺属性
+ */
+const getRealProperty = exports.getRealProperty = function (pointName, totalPoint, level, enemy) {
+    const npcStepNum = 2; // NPC递增数值
+    const antiCoefficient = 3; // 抵消系数
+    const coefficient = { '普通': 1, '强壮': 1, '快速': 1.5, '脆弱': 1, '缓慢': 1, 'BOSS': 1.2 }; // NPC强化系数列表
+    const cardinalNum = pointName === '灵活' ? 100 : 90; // 基数
+
+    let npcPoint = Math.round(level * npcStepNum * coefficient[enemy]);
+    let realPoint = Math.max(totalPoint - Math.round((npcPoint + totalPoint) / antiCoefficient), 0);
+    return Math.round(realPoint / (realPoint + cardinalNum) * 100);
 };
 
 /**
@@ -5853,6 +5883,34 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
     let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${ initCurrentLevel }</em></i>` + '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>');
 
     /**
+     * 记录点数分配记录
+     * @param {boolean} isSubmit 是否提交分配点数
+     */
+    const recordPointsLog = function (isSubmit = false) {
+        propertyList = getLootPropertyList();
+        let pointsText = '',
+            propertiesText = '';
+        $points.find('.pd_point').each(function () {
+            let $this = $(this);
+            let pointName = getPointNameByFieldName($this.attr('name'));
+            let point = parseInt($.trim($this.val()));
+            let extraPoint = extraPointList.get(pointName);
+            pointsText += `${ pointName }：${ point }+${ extraPoint }=${ point + extraPoint }，`;
+        });
+        pointsText = pointsText.replace(/，$/, '');
+        for (let [key, value] of propertyList) {
+            if (key === '可分配属性点' || key === '生命值') continue;
+            let unit = '';
+            if (key.endsWith('率') || key === '防御') unit = '%';
+            propertiesText += `${ key }：${ value }${ unit }，`;
+        }
+        propertiesText = propertiesText.replace(/，$/, '');
+        pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${ pointsText }）\n争夺属性（${ propertiesText }）`;
+        sessionStorage.setItem(_Const2.default.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
+        if (isSubmit) console.log(`【分配点数】点数方案（${ pointsText }）；争夺属性（${ propertiesText }）`);
+    };
+
+    /**
      * 修改点数分配方案
      * @param {number} nextLevel 下一层（设为-1表示采用当前点数分配方案）
      * @returns {Deferred} Deferred对象
@@ -5860,8 +5918,14 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
     const changePoints = function (nextLevel) {
         if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') {
             let currentLevel = getCurrentLevel(logList);
-            let { life: currentLife, initLife: currentInitLife } = getLifeInfo(logList, currentLevel);
-            let enemyList = getEnemyList(logList);
+            let info = levelInfoList[currentLevel];
+            let currentLife = 0,
+                currentInitLife = 0;
+            if (info) {
+                currentLife = info.life;
+                currentInitLife = info.initLife;
+            }
+            let enemyList = getEnemyList(levelInfoList);
             let points = null;
             try {
                 points = _Const2.default.getCustomPoints({
@@ -5890,7 +5954,10 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             } else if (typeof points === 'number') {
                 nextLevel = parseInt(points);
                 nextLevel = nextLevel > 1 ? nextLevel : 1;
-            } else if (points === false) return $.Deferred().resolve('success');else return $.Deferred().resolve('error');
+            } else if (points === false) {
+                recordPointsLog();
+                return $.Deferred().resolve('success');
+            } else return $.Deferred().resolve('error');
         }
 
         let changeLevel = nextLevel > 0 ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : -1;
@@ -5915,38 +5982,20 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             }).then(function (html) {
                 let { msg } = Util.getResponseMsg(html);
                 if (/已经重新配置加点！/.test(msg)) {
-                    propertyList = getLootPropertyList();
-                    let pointsText = '',
-                        propertiesText = '';
-                    $points.find('.pd_point').each(function () {
-                        let $this = $(this);
-                        let pointName = getPointNameByFieldName($this.attr('name'));
-                        let point = parseInt($.trim($this.val()));
-                        let extraPoint = extraPointList.get(pointName);
-                        pointsText += `${ pointName }：${ point }+${ extraPoint }=${ point + extraPoint }，`;
-                    });
-                    pointsText = pointsText.replace(/，$/, '');
-                    for (let [key, value] of propertyList) {
-                        if (key === '可分配属性点' || key === '生命值') continue;
-                        let unit = '';
-                        if (key.endsWith('率') || key === '防御') unit = '%';
-                        propertiesText += `${ key }：${ value }${ unit }，`;
-                    }
-                    propertiesText = propertiesText.replace(/，$/, '');
-                    pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${ pointsText }）\n争夺属性（${ propertiesText }）`;
-                    sessionStorage.setItem(_Const2.default.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
-                    console.log(`【分配点数】${ changeLevel > 0 ? `已修改为第${ changeLevel }层的方案` : '已修改点数设置' }；` + `点数方案（${ pointsText }）；争夺属性（${ propertiesText }）`);
-
+                    recordPointsLog(true);
                     $points.find('.pd_point').each(function () {
                         this.defaultValue = $(this).val();
-                    }).trigger('change');
+                    });
                     return 'success';
                 } else {
                     alert((changeLevel ? `第${ changeLevel }层方案：` : '') + msg);
                     return 'error';
                 }
             }, () => 'timeout');
-        } else return $.Deferred().resolve('success');
+        } else {
+            recordPointsLog();
+            return $.Deferred().resolve('success');
+        }
     };
 
     /**
@@ -5995,14 +6044,18 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
      */
     const after = function (isChecked = false) {
         logList = getLogList(log);
-        showEnhanceLog(logList, pointsLogList);
-        showLogStat(logList);
+        levelInfoList = getLevelInfoList(logList);
+        showEnhanceLog(logList, levelInfoList, pointsLogList);
+        showLogStat(levelInfoList);
         let currentLevel = getCurrentLevel(logList);
         console.log('【争夺攻击】当前层数：' + currentLevel);
         let $countdown = $('.pd_countdown:last');
         $countdown.text(currentLevel);
-        let { life: currentLife } = getLifeInfo(logList, currentLevel);
-        $properties.find('#pdCurrentLife').text(currentLife);
+        $points.find('.pd_point').each(function () {
+            showNewLootProperty($(this));
+        });
+        let info = levelInfoList[currentLevel];
+        $properties.find('#pdCurrentLife').text(info ? info.life : 0);
 
         let isFail = /你被击败了/.test(log);
         let isStop = isFail || type !== 'auto' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
@@ -6056,7 +6109,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
 
         let allEnemyList = {};
-        for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
+        for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
             allEnemyList[enemy] = num;
         }
         let allEnemyStat = '';
@@ -6065,7 +6118,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         }
 
         let latestEnemyList = {};
-        for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
+        for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
             latestEnemyList[enemy] = num;
         }
         let latestEnemyStat = '';
@@ -6074,7 +6127,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         }
 
         let currentLevel = getCurrentLevel(logList);
-        let { exp, kfb } = getTotalGain(logList);
+        let { exp, kfb } = getTotalGain(levelInfoList);
         if (exp > 0 && kfb > 0) {
             Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近${ _Const2.default.enemyStatLatestLevelNum }层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
             LootLog.record(logList, pointsLogList);
@@ -6119,7 +6172,7 @@ const addLootLogHeader = function () {
             (0, _Config.read)();
             Config.showLevelEnemyStatEnabled = checked;
             (0, _Config.write)();
-            showLogStat(logList);
+            showLogStat(levelInfoList);
         }
     }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
@@ -6229,9 +6282,10 @@ const handleLootLogNav = function () {
         }
         $logNav.find('.pd_history_logs_key').text(getKeyTitleStr(keyList[curIndex]));
         let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        let curLevelInfoList = getLevelInfoList(curLogList);
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
-        showEnhanceLog(curLogList, curPointsLogList);
-        showLogStat(curLogList);
+        showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
+        showLogStat(curLevelInfoList);
         if (curIndex > 0) {
             $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
             $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
@@ -6248,23 +6302,24 @@ const handleLootLogNav = function () {
 
     if (!log.includes('本日无争夺记录')) {
         let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
+        let curLevelInfoList = getLevelInfoList(curLogList);
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
-        showEnhanceLog(curLogList, curPointsLogList);
+        showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
     }
 };
 
 /**
  * 显示争夺记录统计
- * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  */
-const showLogStat = function (logList) {
-    let { exp, kfb } = getTotalGain(logList);
+const showLogStat = function (levelInfoList) {
+    let { exp, kfb } = getTotalGain(levelInfoList);
     let allEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(logList))) {
+    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
         allEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
     }
     let latestEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
+    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum)))) {
         latestEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
     }
     let $logStat = $('#pdLogStat');
@@ -6278,10 +6333,10 @@ const showLogStat = function (logList) {
 
     if (Config.showLevelEnemyStatEnabled) {
         let levelEnemyStatHtml = '';
-        for (let i = 1; i < logList.length; i += 10) {
-            levelEnemyStatHtml += `&nbsp;&nbsp;<b>${ i }-${ i + 9 < logList.length ? i + 9 : logList.length - 1 }：</b>`;
+        for (let i = 1; i < levelInfoList.length; i += 10) {
+            levelEnemyStatHtml += `&nbsp;&nbsp;<b>${ i }-${ i + 9 < levelInfoList.length ? i + 9 : levelInfoList.length - 1 }：</b>`;
             let html = '';
-            for (let [enemy, num] of Util.entries(getEnemyStatList(logList.filter((elem, level) => level >= i && level < i + 10)))) {
+            for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= i && level < i + 10)))) {
                 html += `<i>${ enemy }<em>+${ num }</em></i> `;
             }
             levelEnemyStatHtml += (html ? html : '无') + '<br>';
@@ -6293,52 +6348,72 @@ const showLogStat = function (logList) {
 /**
  * 显示经过增强的争夺记录
  * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  * @param {string[]} pointsLogList 点数分配记录列表
  */
-const showEnhanceLog = function (logList, pointsLogList) {
+const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
     let list = [];
     $.each(logList, function (level, levelLog) {
         if (!levelLog) return;
-        list[level] = levelLog.replace(/\[([^\]]+)的]NPC/g, function (match, enemy) {
-            let color = '';
-            switch (enemy) {
-                case '普通':
-                    color = '#09c';
-                    break;
-                case '特别脆弱':
-                    color = '#c96';
-                    break;
-                case '特别缓慢':
-                    color = '#c69';
-                    break;
-                case '特别强壮':
-                    color = '#f93';
-                    break;
-                case '特别快速':
-                    color = '#f3c';
-                    break;
-                case 'BOSS':
-                    color = '#f00';
-                    break;
-                default:
-                    color = '#0075ea';
-            }
-            return `<span style="background-color: ${ color };">[${ enemy }的]</span>NPC`;
-        });
+        let matches = /\[([^\]]+)的]NPC/.exec(levelLog);
+        if (!matches) return;
+        let enemy = matches[1];
+        let color = '';
+        switch (enemy) {
+            case '普通':
+                color = '#09c';
+                break;
+            case '特别脆弱':
+                color = '#c96';
+                break;
+            case '特别缓慢':
+                color = '#c69';
+                break;
+            case '特别强壮':
+                color = '#f93';
+                break;
+            case '特别快速':
+                color = '#f3c';
+                break;
+            case 'BOSS':
+                color = '#f00';
+                break;
+            default:
+                color = '#0075ea';
+        }
+        list[level] = levelLog.replace(matches[0], `<span style="background-color: ${ color };">[${ enemy }的]</span>NPC`);
 
         if (pointsLogList[level]) {
-            list[level] = list[level].replace('</li>', `</li><li class="pk_log_g" style="color: #666;">${ pointsLogList[level] }</li>`.replace(/\n/g, '<br>'));
+            let levelPointsLog = pointsLogList[level];
+            enemy = enemy.replace('特别', '');
+            let pointMatches = /灵活：\d+\+\d+=(\d+)/.exec(levelPointsLog);
+            if (pointMatches) {
+                let realCriticalStrikePercent = getRealProperty('灵活', parseInt(pointMatches[1]), level, enemy);
+                levelPointsLog = levelPointsLog.replace(/(暴击几率：\d+%)/, `$1<span class="pd_custom_tips" title="实际暴击几率">(${ realCriticalStrikePercent }%)</span>`);
+            }
+            pointMatches = /智力：\d+\+\d+=(\d+)/.exec(levelPointsLog);
+            if (pointMatches) {
+                let realSkillPercent = getRealProperty('智力', parseInt(pointMatches[1]), level, enemy);
+                levelPointsLog = levelPointsLog.replace(/(技能释放概率：\d+%)/, `$1<span class="pd_custom_tips" title="实际技能释放概率">(${ realSkillPercent }%)</span>`);
+            }
+            list[level] = list[level].replace('</li>', `</li><li class="pk_log_g" style="color: #666;">${ levelPointsLog }</li>`.replace(/\n/g, '<br>'));
         }
     });
     $log.html(list.reverse().join(''));
 };
 
 /**
+ * 获取争夺记录
+ * @returns {string} 争夺记录
+ */
+const getLog = exports.getLog = () => log;
+
+/**
  * 获取各层争夺记录列表
  * @param log 争夺记录
  * @returns {string[]} 各层争夺记录列表
  */
-const getLogList = function (log) {
+const getLogList = exports.getLogList = function (log) {
     let logList = [];
     let matches = log.match(/<li class="pk_log_j">.+?(?=\s*<li class="pk_log_j">|\s*$)/g);
     for (let i in matches) {
@@ -6349,30 +6424,70 @@ const getLogList = function (log) {
 };
 
 /**
- * 获取当前的争夺总收获
- * @param {string[]} logList 各层争夺记录列表
- * @returns {{exp: number, kfb: number}} exp：经验；kfb：KFB
+ * 获取该层的战斗信息
+ * @param {string} levelLog 该层的争夺记录
+ * @returns {{enemy: string, life: number, initLife: number, kfb: number, exp: number}} enemy：遭遇敌人名称；life：该层剩余生命值；initLife：该层初始生命值；kfb：KFB；exp：经验
  */
-const getTotalGain = function (logList) {
-    let exp = 0,
-        kfb = 0;
+const getLevelInfo = exports.getLevelInfo = function (levelLog) {
+    let info = { enemy: '', life: 0, initLife: 0, kfb: 0, exp: 0 };
+    if (!levelLog) return info;
+    levelLog = Util.removeHtmlTag(levelLog.replace(/<\/li>/g, '</li>\n'));
+
+    let matches = /你\((\d+)\)遭遇了\[([^\]]+)的]NPC/.exec(levelLog);
+    if (matches) {
+        info.initLife = parseInt(matches[1]);
+        info.enemy = matches[2];
+        info.enemy = info.enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
+    }
+
+    matches = /生命值\[(\d+)\s*\/\s*\d+]/.exec(levelLog);
+    if (matches) info.life = parseInt(matches[1]);
+
+    matches = /获得\s*\[\s*(\d+)\s*]\s*经验和\s*\[\s*(\d+)\s*]\s*KFB/.exec(levelLog);
+    if (matches) {
+        info.exp += parseInt(matches[1]);
+        info.kfb += parseInt(matches[2]);
+    }
+
+    return info;
+};
+
+/**
+ * 获取各层战斗信息列表
+ * @param {string[]} logList 各层争夺记录列表
+ * @returns {{}[]} 各层战斗信息列表
+ */
+const getLevelInfoList = exports.getLevelInfoList = function (logList) {
+    let levelInfoList = [];
     $.each(logList, function (level, levelLog) {
         if (!levelLog) return;
-        let matches = /获得\s*\[\s*(\d+)\s*]\s*经验和\s*\[\s*(\d+)\s*]\s*KFB/.exec(Util.removeHtmlTag(levelLog));
-        if (matches) {
-            exp += parseInt(matches[1]);
-            kfb += parseInt(matches[2]);
-        }
+        levelInfoList[level] = getLevelInfo(levelLog);
     });
-    return { exp, kfb };
+    return levelInfoList;
+};
+
+/**
+ * 获取当前的争夺总收获
+ * @param {{}[]} levelInfoList 各层战斗信息列表
+ * @returns {{kfb: number, exp: number}} kfb：KFB；exp：经验
+ */
+const getTotalGain = function (levelInfoList) {
+    let totalKfb = 0,
+        totalExp = 0;
+    $.each(levelInfoList, function (level, info) {
+        if (!info) return;
+        totalKfb += info.kfb;
+        totalExp += info.exp;
+    });
+    return { kfb: totalKfb, exp: totalExp };
 };
 
 /**
  * 获取遭遇敌人统计列表
- * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  * @returns {{}} 遭遇敌人列表
  */
-const getEnemyStatList = function (logList) {
+const getEnemyStatList = function (levelInfoList) {
     let enemyStatList = {
         '普通': 0,
         '强壮': 0,
@@ -6382,7 +6497,7 @@ const getEnemyStatList = function (logList) {
         'BOSS': 0,
         '大魔王': 0
     };
-    $.each(getEnemyList(logList), function (level, enemy) {
+    $.each(getEnemyList(levelInfoList), function (level, enemy) {
         if (!enemy || !(enemy in enemyStatList)) return;
         enemyStatList[enemy]++;
     });
@@ -6393,21 +6508,15 @@ const getEnemyStatList = function (logList) {
 
 /**
  * 获取各层敌人列表
- * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
  * @returns {[]} 各层敌人列表
  */
-const getEnemyList = function (logList) {
+const getEnemyList = function (levelInfoList) {
     let enemyList = [];
-    for (let level in logList) {
-        let levelLog = logList[level];
-        if (!levelLog) continue;
-        let matches = /\[([^\]]+)的]NPC/.exec(Util.removeHtmlTag(levelLog));
-        if (matches) {
-            let enemy = matches[1];
-            enemy = enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
-            enemyList[level] = enemy;
-        }
-    }
+    $.each(levelInfoList, function (level, info) {
+        if (!info) return;
+        if (info.enemy) enemyList[level] = info.enemy;
+    });
     return enemyList;
 };
 
@@ -6417,22 +6526,6 @@ const getEnemyList = function (logList) {
  * @returns {number} 当前层数
  */
 const getCurrentLevel = logList => logList.length - 1 >= 1 ? logList.length - 1 : 0;
-
-/**
- * 获取指定层数的生命值信息
- * @param {string[]} logList 各层争夺记录列表
- * @param {number} level 指定层数
- * @returns {{life: number, initLife: number}} life：该层剩余生命值；initLife：该层初始生命值
- */
-const getLifeInfo = function (logList, level) {
-    let life = 0,
-        initLife = 0;
-    let initLifeMatches = /你\((\d+)\)遭遇了/.exec(logList[level]);
-    if (initLifeMatches) initLife = parseInt(initLifeMatches[1]);
-    let lifeMatches = /生命值\[(\d+)\s*\/\s*\d+/.exec(logList[level]);
-    if (lifeMatches) life = parseInt(lifeMatches[1]);
-    return { life, initLife };
-};
 
 /**
  * 获取临时点数分配记录列表
@@ -7703,6 +7796,7 @@ const appendCss = exports.appendCss = function () {
     border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
   }
   .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }
   .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }
   .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }
   .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }
@@ -7721,8 +7815,8 @@ const appendCss = exports.appendCss = function () {
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   
   /* 消息框 */
-  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
-  .pd_msg_container { position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; width: 100%; z-index: 1001; }
+  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
+  .pd_msg_container { position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; width: 100%; z-index: 1002; }
   .pd_msg {
     border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;
     font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;
@@ -7742,8 +7836,6 @@ const appendCss = exports.appendCss = function () {
   .readlou .pd_goto_link { color: #000; }
   .readlou .pd_goto_link:hover { color: #51d; }
   .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
-  .pages .pd_fast_goto_page { margin-left: 8px; }
-  .pd_fast_goto_floor span:hover, .pd_fast_goto_page span:hover { color: #51d; cursor: pointer; text-decoration: underline; }
   .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
   .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
   .pd_user_memo_tips:hover { color: #ddd; }
@@ -7782,7 +7874,7 @@ const appendCss = exports.appendCss = function () {
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
-    position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; border: 1px solid #9191ff; display: none; z-index: 1002;
+    position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; border: 1px solid #9191ff; display: none; z-index: 1000;
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
     -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
@@ -8528,7 +8620,7 @@ ${ _Const2.default.customTileSideBarContent }
     <li><a href="guanjianci.php?gjc=${ _Info2.default.userName }">@提醒</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_mybp.php">角色物品</a></li>
+    <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
     <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
     <li><a href="profile.php?action=modify">设置</a></li>
     <li><a href="hack.php?H_name=bank">银行</a></li>
@@ -8543,7 +8635,7 @@ ${ _Const2.default.customTileSideBarContent }
 
 /**
  * 自动活期存款
- * @param {boolean} isRead 是否读取个人信息页面以获得当前所拥有KFB的信息
+ * @param {boolean} isRead 是否读取个人信息页面以获得当前所持有KFB的信息
  */
 const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead = false) {
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
@@ -8553,14 +8645,14 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
 
     /**
      * 活期存款
-     * @param {number} income 当前拥有的KFB
+     * @param {number} cash 当前持有的KFB
      */
-    const saveCurrentDeposit = function (income) {
-        if (income < Config.saveCurrentDepositAfterKfb) return;
-        let multiple = Math.floor((income - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
-        if (income - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
+    const saveCurrentDeposit = function (cash) {
+        if (cash < Config.saveCurrentDepositAfterKfb) return;
+        let multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
+        if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
         let money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > income) return;
+        if (money <= 0 || money > cash) return;
         console.log('自动活期存款Start');
         $.post('hack.php?H_name=bank', { action: 'save', btype: 1, savemoney: money }, function (html) {
             showFormatLog('自动存款', html);
@@ -8568,7 +8660,7 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
             if (/完成存款/.test(msg)) {
                 Log.push('自动存款', `共有\`${ money }\`KFB已自动存入活期存款`);
                 console.log(`共有${ money }KFB已自动存入活期存款`);
-                Msg.show(`共有<em>${ money }</em>KFB已自动存入活期存款`);
+                Msg.show(`共有<em>${ money.toLocaleString() }</em>KFB已自动存入活期存款`);
             }
         });
     };
@@ -8576,7 +8668,7 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
     if (isRead) {
         console.log('获取当前持有KFB Start');
         $.get(`profile.php?action=show&uid=${ _Info2.default.uid }&t=${ new Date().getTime() }`, function (html) {
-            let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
+            let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
     } else {
@@ -8939,7 +9031,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.buyThreads = exports.addBatchBuyThreadButton = exports.handleBuyThreadBtn = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.addStatRepliersLink = exports.showStatRepliersDialog = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -9009,12 +9101,19 @@ const addFloorGotoLink = exports.addFloorGotoLink = function () {
  * 添加快速跳转到指定楼层的输入框
  */
 const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
-    $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8"> <span>楼</span></li></form>').prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
+    $(`
+<form>
+<li class="pd_fast_goto_floor">
+  电梯直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
+  <span data-name="submit" style="cursor: pointer;">楼</span>
+</li>
+</form>
+`).prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
         e.preventDefault();
         let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
         location.href = `read.php?tid=${ Util.getUrlParam('tid') }&page=${ parseInt(floor / Config.perPageFloorNum) + 1 }&floor=${ floor }`;
-    }).find('span').click(function () {
+    }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
     }).end().closest('div').next().css({ 'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
 };
@@ -9135,65 +9234,14 @@ const addCopyBuyersListOption = exports.addCopyBuyersListOption = function () {
 };
 
 /**
- * 显示统计回帖者名单对话框
- * @param {string[]} replierList 回帖者名单列表
+ * 添加统计和购买帖子的按钮
  */
-const showStatRepliersDialog = exports.showStatRepliersDialog = function (replierList) {
-    const dialogName = 'pdReplierListDialog';
-    let html = `
-<div class="pd_cfg_main">
-  <div id="pdReplierListFilter" style="margin-top: 5px;">
-    <label><input name="showFloorNumEnabled" type="checkbox" checked> 显示楼层号</label>
-    <label><input name="removeRepeatedEnabled" type="checkbox"> 去除重复</label>
-    <label><input name="removeTopFloorEnabled" type="checkbox"> 去除楼主</label>
-  </div>
-  <div style="color: #f00;" id="pdReplierListStat"></div>
-  <textarea name="replierList" style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
-</div>`;
-    let $dialog = Dialog.create(dialogName, '回帖者名单', html);
-    let $replierListFilter = $dialog.find('#pdReplierListFilter');
-
-    /**
-     * 显示回帖者名单
-     */
-    const showReplierList = function () {
-        let list = [...replierList];
-        let isShowFloorNum = $replierListFilter.find('[name="showFloorNumEnabled"]').prop('checked'),
-            isRemoveRepeated = $replierListFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
-            isRemoveTopFloor = $replierListFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
-        if (isRemoveRepeated) {
-            list = list.map((elem, index, list) => list.indexOf(elem) === index ? elem : null);
-        }
-        if (isRemoveTopFloor) {
-            let topFloor = $('.readtext:first').find('.readidmsbottom, .readidmleft').find('a').text();
-            list = list.map(elem => elem !== topFloor ? elem : null);
-        }
-        let content = '';
-        let num = 0;
-        for (let [floor, userName] of list.entries()) {
-            if (!userName) continue;
-            content += (isShowFloorNum ? floor + 'L：' : '') + userName + '\n';
-            num++;
-        }
-        $dialog.find('[name="replierList"]').val(content);
-        $dialog.find('#pdReplierListStat').html(`共有<b>${ num }</b>条项目`);
-    };
-
-    $replierListFilter.on('click', '[type="checkbox"]', showReplierList);
-    showReplierList();
-    Dialog.show(dialogName);
-};
-
-/**
- * 添加统计回帖者名单的链接
- */
-const addStatRepliersLink = exports.addStatRepliersLink = function () {
-    if (Util.getCurrentThreadPage() !== 1) return;
-    $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages').find('a').click(function (e) {
+const addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function () {
+    $('<span style="margin: 0 5px;">|</span><a data-name="statAndBuyThread" title="统计回帖者名单以及批量购买帖子" href="#">统计和购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]').filter('[data-name="statAndBuyThread"]').click(function (e) {
         e.preventDefault();
-        if ($('#pdReplierListDialog').length > 0) return;
+        if ($('#pdStatFloorDialog').length > 0) return;
 
-        let tid = Util.getUrlParam('tid');
+        let tid = parseInt(Util.getUrlParam('tid'));
         if (!tid) return;
         let value = $.trim(prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
         if (value === '') return;
@@ -9219,57 +9267,352 @@ const addStatRepliersLink = exports.addStatRepliersLink = function () {
         let startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
         let endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
         if (endPage > maxPage) endPage = maxPage;
-        if (endPage - startPage > _Const2.default.statRepliersMaxPage) {
-            alert('需访问的总页数不可超过' + _Const2.default.statRepliersMaxPage);
+        if (endPage - startPage > _Const2.default.statFloorMaxPage) {
+            alert('需访问的总页数不可超过' + _Const2.default.statFloorMaxPage);
             return;
         }
 
-        Msg.wait(`<strong>正在统计回帖名单中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${ endPage - startPage + 1 }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        let isStop = false;
-        $(document).clearQueue('StatRepliers');
-        let replierList = [];
-        $.each(new Array(endPage), function (index) {
-            if (index + 1 < startPage) return;
-            $(document).queue('StatRepliers', function () {
-                $.ajax({
-                    type: 'GET',
-                    url: `read.php?tid=${ tid }&page=${ index + 1 }&t=${ new Date().getTime() }`,
-                    timeout: _Const2.default.defAjaxTimeout,
-                    success(html) {
-                        let matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        for (let i in matches) {
-                            let floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
-                            if (!floorMatches) continue;
-                            let floor = parseInt(floorMatches[1]);
-                            if (floor < startFloor) continue;
-                            if (floor > endFloor) {
-                                isStop = true;
-                                break;
-                            }
-                            replierList[floor] = floorMatches[2];
-                        }
-                    },
-                    error() {
-                        isStop = true;
-                        alert('因连接超时，统计回帖名单操作中止');
-                    },
-                    complete() {
-                        let $countdown = $('.pd_countdown:last');
-                        $countdown.text(parseInt($countdown.text()) - 1);
-                        isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                        if (isStop) $(document).clearQueue('StatRepliers');
+        Msg.destroy();
+        Msg.wait(`<strong>正在统计楼层中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${ endPage - startPage + 1 }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        statFloor(tid, startPage, endPage, startFloor, endFloor);
+    });
+};
 
-                        if (isStop || index === endPage - 1) {
-                            Msg.destroy();
-                            showStatRepliersDialog(replierList);
-                        } else {
-                            setTimeout(() => $(document).dequeue('StatRepliers'), _Const2.default.defAjaxInterval);
-                        }
+/**
+ * 统计楼层
+ * @param {number} tid 帖子ID
+ * @param {number} startPage 开始页数
+ * @param {number} endPage 结束页数
+ * @param {number} startFloor 开始楼层号
+ * @param {number} endFloor 结束楼层号
+ */
+const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
+    let isStop = false;
+    let floorList = [];
+
+    /**
+     * 统计
+     * @param {number} page 第几页
+     */
+    const stat = function (page) {
+        $.ajax({
+            type: 'GET',
+            url: `read.php?tid=${ tid }&page=${ page }&t=${ new Date().getTime() }`,
+            timeout: _Const2.default.defAjaxTimeout,
+            success(html) {
+                $('.readtext', html).each(function () {
+                    let data = {};
+                    let $floor = $(this);
+                    let $floorHeader = $floor.prev('.readlou');
+                    let floor = parseInt($floor.prev('.readlou').find('> div:nth-child(2) > span:first-child').text());
+                    if (!floor) return;
+                    if (floor < startFloor) return;
+                    if (floor > endFloor) {
+                        isStop = true;
+                        return false;
                     }
+                    data.pid = parseInt($floorHeader.prev('a').attr('name'));
+                    let $user = $floor.find('.readidms, .readidm');
+                    data.userName = $user.find('a[href^="profile.php?action=show&uid="]').text();
+                    data.smLevel = '';
+                    if ($user.hasClass('readidms')) {
+                        let matches = /(\S+)级神秘/.exec($user.find('.readidmsbottom').text());
+                        if (matches) data.smLevel = matches[1];
+                    } else {
+                        data.smLevel = $user.find('.readidmright').text().trim();
+                    }
+
+                    let $buy = $floor.find('[value="愿意购买,支付KFB"]:first');
+                    if ($buy.length > 0) {
+                        let matches = /此帖售价\s*(\d+)\s*KFB/.exec($buy.parent('legend').text());
+                        if (matches) data.sell = parseInt(matches[1]);
+                        matches = /location\.href="(.+)"/i.exec($buy.attr('onclick'));
+                        if (matches) data.buyUrl = matches[1];
+                    }
+                    floorList[floor] = data;
                 });
+
+                let $countdown = $('.pd_countdown:last');
+                $countdown.text(parseInt($countdown.text()) - 1);
+                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
+            },
+            error() {
+                setTimeout(() => stat(page), _Const2.default.defAjaxInterval);
+            },
+            complete() {
+                if (isStop || page >= endPage) {
+                    Msg.destroy();
+                    showStatFloorDialog(floorList);
+                } else {
+                    setTimeout(() => stat(page + 1), _Const2.default.defAjaxInterval);
+                }
+            }
+        });
+    };
+
+    stat(startPage);
+};
+
+/**
+ * 显示统计楼层对话框
+ * @param {{}[]} floorList 楼层信息列表
+ */
+const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
+    const dialogName = 'pdStatFloorDialog';
+    let html = `
+<div class="pd_cfg_main">
+  <div id="pdStatFloorFilter" style="margin-top: 5px;">
+    <label><input name="removeRepeatedEnabled" type="checkbox"> 去除重复</label>
+    <label><input name="removeTopFloorEnabled" type="checkbox"> 去除楼主</label>
+  </div>
+  <div id="pdStatFloorSelectBtns">
+    <label style="margin-left: 3px;">售价区间：</label>
+    <input name="startSell" type="number" value="1" min="1" max="100" style="width: 45px;"> -
+    <input name="endSell" type="number" value="100" min="1" max="100" style="width: 45px;">
+    <label style="margin-left: 3px;">
+    每名用户限选 <input name="limitNum" type="number" min="0" style="width: 35px;"> 个
+    </label>
+    <a class="pd_btn_link" data-name="selectFilter" href="#">筛选</a><br>
+    <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+    <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
+  </div>
+  <div class="pd_highlight" style="text-align: center;">
+    共显示<b id="pdStatFloorShowCount">0</b>条项目，共选择<b id="pdStatFloorSelectCount">0</b>条项目
+  </div>
+  <table style="line-height: 1.8em; text-align: center;">
+    <thead>
+      <tr>
+        <th style="width: 30px;"></th>
+        <th style="width: 70px;">楼层号</th>
+        <th style="width: 120px;">用户名</th>
+        <th style="width: 80px;">神秘等级</th>
+        <th style="width: 90px;">售价(KFB) <span class="pd_cfg_tips" title="注：售价信息在统计后可能会发生变化，建议尽快购买帖子">[?]</span></th>
+      </tr>
+    </thead>
+    <tbody id="pdStatFloorList"></tbody>
+  </table>
+  <textarea name="statFloorListContent" style="margin-top: 8px; width: 250px; height: 300px;" hidden></textarea>
+</div>
+
+<div class="pd_cfg_btns">
+  <button name="copyList" type="button" style="color: #00f;" title="复制所有或所选楼层的用户名单">复制名单</button>
+  <button name="buyThread" type="button" style="color: #f00;" title="批量购买所选楼层的帖子">购买帖子</button>
+  <button data-action="close" type="button">关闭</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '统计楼层', html);
+    let $statFloorFilter = $dialog.find('#pdStatFloorFilter');
+    let $statFloorList = $dialog.find('#pdStatFloorList');
+    let $statFloorListContent = $dialog.find('[name="statFloorListContent"]');
+    let tid = Util.getUrlParam('tid');
+
+    /**
+     * 显示统计楼层列表
+     */
+    const showStatFloorList = function () {
+        let list = [...floorList];
+        let isRemoveRepeated = $statFloorFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
+            isRemoveTopFloor = $statFloorFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
+        if (isRemoveRepeated) {
+            list = list.map((data, index, list) => {
+                if (!data) return null;else return list.findIndex(data2 => data2 && data2.userName === data.userName) === index ? data : null;
+            });
+        }
+        if (isRemoveTopFloor) {
+            let $topFloor = $('.readtext:first');
+            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
+                let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
+                list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
+            }
+        }
+        let content = '',
+            copyContent = '';
+        let num = 0;
+        for (let [floor, data] of list.entries()) {
+            if (!data) continue;
+            content += `
+<tr>
+  <td>
+    <label>
+      <input data-sell="${ data.sell ? data.sell : 0 }" data-url="${ data.buyUrl ? data.buyUrl : '' }" type="checkbox" value="${ data.userName }">
+    </label>
+  </td>
+  <td><a href="read.php?tid=${ tid }&spid=${ data.pid }" target="_blank">${ floor }楼</a></td>
+  <td><a href="profile.php?action=show&username=${ data.userName }" target="_blank" style="color: #000;">${ data.userName }</a></td>
+  <td style="color: #f39;">${ data.smLevel }</td>
+  <td class="pd_stat">${ data.sell ? `<em>${ data.sell }</em>` : '<span class="pd_notice">无</span>' }</td>
+</tr>`;
+            copyContent += data.userName + '\n';
+            num++;
+        }
+        $statFloorList.html(content);
+        $statFloorListContent.val(copyContent).data('copy-text', copyContent);
+        $dialog.find('#pdStatFloorShowCount').text(num);
+        $dialog.find('#pdStatFloorSelectCount').text(0);
+    };
+
+    $dialog.find('#pdStatFloorSelectBtns').on('click', '[data-name]', function (e) {
+        e.preventDefault();
+        let name = $(this).data('name');
+        if (name === 'selectAll') Util.selectAll($statFloorList.find('[type="checkbox"]'));else if (name === 'selectInverse') Util.selectInverse($statFloorList.find('[type="checkbox"]'));else if (name === 'selectFilter') {
+            let startSell = parseInt($dialog.find('[name="startSell"]').val());
+            let endSell = parseInt($dialog.find('[name="endSell"]').val());
+            let limitNum = parseInt($dialog.find('[name="limitNum"]').val());
+            if (!limitNum || limitNum < 0) limitNum = 0;
+            if (!startSell || startSell < 1 || !endSell || endSell < 1) return;
+            let userStat = {};
+            $statFloorList.find('[type="checkbox"]').each(function () {
+                let $this = $(this);
+                let sell = parseInt($this.data('sell'));
+                let isChecked = sell > 0 && sell >= startSell && sell <= endSell;
+                if (isChecked && limitNum > 0) {
+                    let userName = $this.val();
+                    if (!(userName in userStat)) userStat[userName] = 0;
+                    userStat[userName]++;
+                    if (userStat[userName] > limitNum) isChecked = false;
+                }
+                $this.prop('checked', isChecked);
+            });
+        }
+        $dialog.find('#pdStatFloorSelectCount').text($statFloorList.find('[type="checkbox"]:checked').length);
+    }).end().find('[name="copyList"]').click(function () {
+        let $this = $(this);
+        if ($this.text() === '取消复制') {
+            $this.text('复制名单');
+            $statFloorListContent.prop('hidden', true);
+            $statFloorList.closest('table').prop('hidden', false);
+            Dialog.resize(dialogName);
+            return;
+        }
+        let type = 'all';
+        let checked = $statFloorList.find('[type="checkbox"]:checked');
+        if (checked.length > 0) {
+            type = 'select';
+            let copyContent = '';
+            checked.each(function () {
+                copyContent += $(this).val() + '\n';
+            });
+            $statFloorListContent.val(copyContent).data('copy-text', copyContent);
+        }
+        if (!Util.copyText($statFloorListContent, (type === 'all' ? '所有' : '所选') + '用户名单已复制')) {
+            $this.text('取消复制');
+            $statFloorList.closest('table').prop('hidden', true);
+            $statFloorListContent.prop('hidden', false).select().focus();
+            Dialog.resize(dialogName);
+        }
+    }).end().find('[name="buyThread"]').click(function () {
+        let threadList = [];
+        let totalSell = 0;
+        $statFloorList.find('[type="checkbox"]:checked').each(function () {
+            let $this = $(this);
+            let url = $this.data('url');
+            let sell = parseInt($this.data('sell'));
+            if (url && sell > 0) {
+                threadList.push({ url, sell });
+                totalSell += sell;
+            }
+        });
+        if (!threadList.length) {
+            alert('请选择要购买的楼层');
+            return;
+        }
+        if (!confirm(`你共选择了${ threadList.length }个楼层，总售价${ totalSell.toLocaleString() }KFB，` + `均价${ Util.getFixedNumLocStr(totalSell / threadList.length, 2) }KFB，是否批量购买？`)) return;
+        Msg.destroy();
+        Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${ threadList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        buyThreads(threadList);
+    });
+
+    if (Util.getCurrentThreadPage() !== 1) $statFloorFilter.find('[name="removeTopFloorEnabled"]').prop('disabled', true).parent('label').attr('title', '请在第1页进行统计');
+    $statFloorFilter.on('click', '[type="checkbox"]', showStatFloorList);
+    showStatFloorList();
+    Dialog.show(dialogName);
+    Script.runFunc('Read.showStatFloorDialog_after_');
+};
+
+/**
+ * 购买帖子
+ * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
+ */
+const buyThreads = exports.buyThreads = function (threadList) {
+    let successNum = 0,
+        failNum = 0,
+        totalSell = 0;
+    $(document).clearQueue('BuyThread');
+    $.each(threadList, function (index, { url, sell }) {
+        $(document).queue('BuyThread', function () {
+            $.ajax({
+                type: 'GET',
+                url: url + '&t=' + new Date().getTime(),
+                timeout: _Const2.default.defAjaxTimeout,
+                success(html) {
+                    Public.showFormatLog('购买帖子', html);
+                    let { msg } = Util.getResponseMsg(html);
+                    if (/操作完成/.test(msg)) {
+                        successNum++;
+                        totalSell += sell;
+                    } else failNum++;
+                },
+                error() {
+                    failNum++;
+                },
+                complete() {
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
+                    if (isStop) $(document).clearQueue('BuyThread');
+
+                    if (isStop || index === threadList.length - 1) {
+                        Msg.destroy();
+                        if (successNum > 0) {
+                            Log.push('购买帖子', `共有\`${ successNum }\`个帖子购买成功`, { pay: { 'KFB': -totalSell } });
+                        }
+                        console.log(`共有${ successNum }个帖子购买成功，共有${ failNum }个帖子购买失败，KFB-${ totalSell }`);
+                        Msg.show(`<strong>共有<em>${ successNum }</em>个帖子购买成功${ failNum > 0 ? `，共有<em>${ failNum }</em>个帖子购买失败` : '' }</strong>` + `<i>KFB<ins>-${ totalSell }</ins></i>`, -1);
+                        Script.runFunc('Read.buyThreads_after_', threadList);
+                    } else {
+                        setTimeout(() => $(document).dequeue('BuyThread'), _Const2.default.defAjaxInterval);
+                    }
+                }
             });
         });
-        $(document).dequeue('StatRepliers');
+    });
+    $(document).dequeue('BuyThread');
+};
+
+/**
+ * 处理购买帖子按钮
+ */
+const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
+    $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
+        let $this = $(this);
+        let matches = /此帖售价\s*(\d+)\s*KFB/.exec($this.closest('legend').contents().eq(0).text());
+        if (!matches) return;
+        let sell = parseInt(matches[1]);
+        matches = /location\.href="(.+?)"/i.exec($this.attr('onclick'));
+        if (!matches) return;
+        $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (e) {
+            e.preventDefault();
+            let $this = $(this);
+            let sell = $this.data('sell');
+            let url = $this.data('url');
+            if (!sell || !url) return;
+            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价${ sell }KFB，是否购买？`)) return;
+            if (Config.buyThreadViaAjaxEnabled) {
+                let $wait = Msg.wait('正在购买帖子&hellip;');
+                $.get(url + '&t=' + new Date().getTime(), function (html) {
+                    Public.showFormatLog('购买帖子', html);
+                    let { msg } = Util.getResponseMsg(html);
+                    Msg.remove($wait);
+                    if (/操作完成/.test(msg)) {
+                        location.reload();
+                    } else if (/您已经购买此帖/.test(msg)) {
+                        alert('你已经购买过此帖');
+                        location.reload();
+                    } else {
+                        alert('帖子购买失败');
+                    }
+                });
+            } else location.href = url;
+        });
     });
 };
 
@@ -9336,155 +9679,6 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
         let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola|kfer)\.\w+?\/).+/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
-};
-
-/**
- * 处理购买帖子按钮
- */
-const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
-    $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
-        let $this = $(this);
-        let matches = /此帖售价\s*(\d+)\s*KFB/i.exec($this.closest('legend').contents().eq(0).text());
-        if (!matches) return;
-        let sell = parseInt(matches[1]);
-        matches = /location\.href="(.+?)"/i.exec($this.attr('onclick'));
-        if (!matches) return;
-        $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (e) {
-            e.preventDefault();
-            let $this = $(this);
-            let sell = $this.data('sell');
-            let url = $this.data('url');
-            if (!sell || !url) return;
-            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价${ sell }KFB，是否购买？`)) return;
-            if (Config.buyThreadViaAjaxEnabled) {
-                let $wait = Msg.wait('正在购买帖子&hellip;');
-                $.get(url, function (html) {
-                    Public.showFormatLog('购买帖子', html);
-                    let { msg } = Util.getResponseMsg(html);
-                    Msg.remove($wait);
-                    if (/操作完成/.test(msg)) {
-                        location.reload();
-                    } else if (/您已经购买此帖/.test(msg)) {
-                        alert('你已经购买过此帖');
-                        location.reload();
-                    } else {
-                        alert('帖子购买失败');
-                    }
-                });
-            } else location.href = url;
-        });
-    });
-};
-
-/**
- * 添加批量购买帖子的按钮
- */
-const addBatchBuyThreadButton = exports.addBatchBuyThreadButton = function () {
-    let $btns = $('.readtext input[type="button"][value="愿意购买,支付KFB"]');
-    if ($btns.length === 0) return;
-    $btns.each(function () {
-        let $this = $(this);
-        let sell = $this.data('sell');
-        let url = $this.data('url');
-        if (!sell || !url) return;
-        $this.after(`<input class="pd_buy_thread" style="margin-left: 10px; vertical-align: middle;" type="checkbox" data-sell="${ sell }" data-url="${ url }">`);
-    });
-    $('<span style="margin: 0 5px;">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>').insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]').filter('a').click(function (e) {
-        e.preventDefault();
-        Msg.destroy();
-        let threadList = [];
-        let totalSell = 0;
-        $('.pd_buy_thread:checked').each(function () {
-            let $this = $(this);
-            let url = $this.data('url');
-            let sell = parseInt($this.data('sell'));
-            if (url && !isNaN(sell)) {
-                threadList.push({ url, sell });
-                totalSell += sell;
-            }
-        });
-        if (!threadList.length) {
-            alert('请选择要购买的帖子');
-            return;
-        }
-        if (confirm(`你共选择了${ threadList.length }个帖子，总售价${ totalSell.toLocaleString() }KFB，` + `均价${ Util.getFixedNumLocStr(totalSell / threadList.length, 2) }KFB，是否批量购买？`)) {
-            Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${ threadList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-            buyThreads(threadList);
-        }
-    }).parent().mouseenter(function () {
-        $(`
-<span style="margin-left: 5px;">
-  [<a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
-  <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>]
-</span>
-`).insertAfter($(this).find('.pd_buy_thread_btn')).find('[data-name="selectAll"]').click(function (e) {
-            e.preventDefault();
-            let $buyThread = $('.pd_buy_thread');
-            $buyThread.prop('checked', true);
-            alert(`共选择了${ $buyThread.length }项`);
-        }).end().find('[data-name="selectInverse"]').click(function (e) {
-            e.preventDefault();
-            let totalNum = 0;
-            $('.pd_buy_thread').each(function () {
-                let $this = $(this);
-                $this.prop('checked', !$this.prop('checked'));
-                if ($this.prop('checked')) totalNum++;
-            });
-            alert(`共选择了${ totalNum }项`);
-        });
-    }).mouseleave(function () {
-        $(this).find('.pd_buy_thread_btn').next('span').remove();
-    });
-};
-
-/**
- * 购买指定的一系列帖子
- * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
- */
-const buyThreads = exports.buyThreads = function (threadList) {
-    let successNum = 0,
-        failNum = 0,
-        totalSell = 0;
-    $(document).clearQueue('BuyThreads');
-    $.each(threadList, function (index, { url, sell }) {
-        $(document).queue('BuyThreads', function () {
-            $.ajax({
-                type: 'GET',
-                url: url + '&t=' + new Date().getTime(),
-                timeout: _Const2.default.defAjaxTimeout,
-                success(html) {
-                    Public.showFormatLog('购买帖子', html);
-                    let { msg } = Util.getResponseMsg(html);
-                    if (/操作完成/.test(msg)) {
-                        successNum++;
-                        totalSell += sell;
-                    } else failNum++;
-                },
-                error() {
-                    failNum++;
-                },
-                complete() {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    let isStop = $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('BuyThreads');
-
-                    if (isStop || index === threadList.length - 1) {
-                        Msg.destroy();
-                        if (successNum > 0) {
-                            Log.push('购买帖子', `共有\`${ successNum }\`个帖子购买成功`, { pay: { 'KFB': -totalSell } });
-                        }
-                        console.log(`共有${ successNum }个帖子购买成功，共有${ failNum }个帖子购买失败，KFB-${ totalSell }`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>个帖子购买成功${ failNum > 0 ? `，共有<em>${ failNum }</em>个帖子购买失败` : '' }</strong>` + `<i>KFB<ins>-${ totalSell }</ins></i>`, -1);
-                        Script.runFunc('Read.buyThreads_after_', threadList);
-                    } else {
-                        setTimeout(() => $(document).dequeue('BuyThreads'), _Const2.default.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('BuyThreads');
 };
 
 /**
@@ -10382,7 +10576,7 @@ const htmlDecode = exports.htmlDecode = function (str) {
  * @param html HTML代码
  * @returns {string} 去除HTML标签的文本
  */
-const removeHtmlTag = exports.removeHtmlTag = html => html.replace(/<[^>]+>/g, '');
+const removeHtmlTag = exports.removeHtmlTag = html => html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '');
 
 /**
  * 获取指定对象的关键字列表
@@ -10541,7 +10735,7 @@ const copyText = exports.copyText = function ($target, msg = '', $excludeElem = 
     if (!('execCommand' in document) || !$target.length) return false;
     let copyText = $target.data('copy-text');
     if (copyText) {
-        $target = $(`<span class="text-hide">${ copyText }</span>`).insertAfter($target);
+        $target = $(`<span class="pd_hide">${ copyText.replace(/\n/g, '<br>') }</span>`).insertAfter($target);
     }
     if ($excludeElem) $excludeElem.prop('hidden', true);
     let s = window.getSelection();

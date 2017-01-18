@@ -474,7 +474,7 @@ export const copyText = function ($target, msg = '', $excludeElem = null) {
     if (!('execCommand' in document) || !$target.length) return false;
     let copyText = $target.data('copy-text');
     if (copyText) {
-        $target = $(`<span class="text-hide">${copyText}</span>`).insertAfter($target);
+        $target = $(`<span class="pd_hide">${copyText.replace(/\n/g, '<br>')}</span>`).insertAfter($target);
     }
     if ($excludeElem) $excludeElem.prop('hidden', true);
     let s = window.getSelection();

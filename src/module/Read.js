@@ -38,18 +38,23 @@ export const addFloorGotoLink = function () {
  * 添加快速跳转到指定楼层的输入框
  */
 export const addFastGotoFloorInput = function () {
-    $('<form><li class="pd_fast_goto_floor">电梯直达 <input class="pd_input" style="width:30px" type="text" maxlength="8"> <span>楼</span></li></form>')
-        .prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul'))
+    $(`
+<form>
+<li class="pd_fast_goto_floor">
+  电梯直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
+  <span data-name="submit" style="cursor: pointer;">楼</span>
+</li>
+</form>
+`).prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul'))
         .submit(function (e) {
             e.preventDefault();
             let floor = parseInt($(this).find('input').val());
             if (!floor || floor < 0) return;
             location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
         })
-        .find('span')
-        .click(function () {
-            $(this).closest('form').submit();
-        })
+        .find('[data-name="submit"]').click(function () {
+        $(this).closest('form').submit();
+    })
         .end().closest('div').next()
         .css({'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'});
 };
@@ -174,149 +179,412 @@ export const addCopyBuyersListOption = function () {
 };
 
 /**
- * 显示统计回帖者名单对话框
- * @param {string[]} replierList 回帖者名单列表
+ * 添加统计和购买帖子的按钮
  */
-export const showStatRepliersDialog = function (replierList) {
-    const dialogName = 'pdReplierListDialog';
-    let html = `
-<div class="pd_cfg_main">
-  <div id="pdReplierListFilter" style="margin-top: 5px;">
-    <label><input name="showFloorNumEnabled" type="checkbox" checked> 显示楼层号</label>
-    <label><input name="removeRepeatedEnabled" type="checkbox"> 去除重复</label>
-    <label><input name="removeTopFloorEnabled" type="checkbox"> 去除楼主</label>
-  </div>
-  <div style="color: #f00;" id="pdReplierListStat"></div>
-  <textarea name="replierList" style="width: 250px; height: 300px; margin: 5px 0;" readonly></textarea>
-</div>`;
-    let $dialog = Dialog.create(dialogName, '回帖者名单', html);
-    let $replierListFilter = $dialog.find('#pdReplierListFilter');
+export const addStatAndBuyThreadBtn = function () {
+    $('<span style="margin: 0 5px;">|</span><a data-name="statAndBuyThread" title="统计回帖者名单以及批量购买帖子" href="#">统计和购买</a>')
+        .insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
+        .filter('[data-name="statAndBuyThread"]')
+        .click(function (e) {
+            e.preventDefault();
+            if ($('#pdStatFloorDialog').length > 0) return;
 
-    /**
-     * 显示回帖者名单
-     */
-    const showReplierList = function () {
-        let list = [...replierList];
-        let isShowFloorNum = $replierListFilter.find('[name="showFloorNumEnabled"]').prop('checked'),
-            isRemoveRepeated = $replierListFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
-            isRemoveTopFloor = $replierListFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
-        if (isRemoveRepeated) {
-            list = list.map((elem, index, list) => list.indexOf(elem) === index ? elem : null);
-        }
-        if (isRemoveTopFloor) {
-            let topFloor = $('.readtext:first').find('.readidmsbottom, .readidmleft').find('a').text();
-            list = list.map(elem => elem !== topFloor ? elem : null);
-        }
-        let content = '';
-        let num = 0;
-        for (let [floor, userName] of list.entries()) {
-            if (!userName) continue;
-            content += (isShowFloorNum ? floor + 'L：' : '') + userName + '\n';
-            num++;
-        }
-        $dialog.find('[name="replierList"]').val(content);
-        $dialog.find('#pdReplierListStat').html(`共有<b>${num}</b>条项目`);
-    };
+            let tid = parseInt(Util.getUrlParam('tid'));
+            if (!tid) return;
+            let value = $.trim(prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
+            if (value === '') return;
+            if (!/^\d+(-\d+)?$/.test(value)) {
+                alert('统计楼层格式不正确');
+                return;
+            }
+            let startFloor = 0, endFloor = 0;
+            let valueArr = value.split('-');
+            if (valueArr.length === 2) {
+                startFloor = parseInt(valueArr[0]);
+                endFloor = parseInt(valueArr[1]);
+            }
+            else endFloor = parseInt(valueArr[0]);
+            if (endFloor < startFloor) {
+                alert('统计楼层格式不正确');
+                return;
+            }
+            let matches = /(\d+)页/.exec($('.pages:eq(0) > li:last-child > a').text());
+            let maxPage = matches ? parseInt(matches[1]) : 1;
+            if (startFloor === 0) startFloor = 1;
+            if (endFloor === 0) endFloor = maxPage * Config.perPageFloorNum - 1;
+            let startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
+            let endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
+            if (endPage > maxPage) endPage = maxPage;
+            if (endPage - startPage > Const.statFloorMaxPage) {
+                alert('需访问的总页数不可超过' + Const.statFloorMaxPage);
+                return;
+            }
 
-    $replierListFilter.on('click', '[type="checkbox"]', showReplierList);
-    showReplierList();
-    Dialog.show(dialogName);
+            Msg.destroy();
+            Msg.wait(
+                `<strong>正在统计楼层中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${endPage - startPage + 1}</em></i>` +
+                `<a class="pd_stop_action" href="#">停止操作</a>`
+            );
+            statFloor(tid, startPage, endPage, startFloor, endFloor);
+        });
 };
 
 /**
- * 添加统计回帖者名单的链接
+ * 统计楼层
+ * @param {number} tid 帖子ID
+ * @param {number} startPage 开始页数
+ * @param {number} endPage 结束页数
+ * @param {number} startFloor 开始楼层号
+ * @param {number} endFloor 结束楼层号
  */
-export const addStatRepliersLink = function () {
-    if (Util.getCurrentThreadPage() !== 1) return;
-    $('<li><a href="#" title="统计回帖者名单">[统计回帖]</a></li>').prependTo('.readtext:first + .readlou > div > .pages')
-        .find('a').click(function (e) {
-        e.preventDefault();
-        if ($('#pdReplierListDialog').length > 0) return;
+const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
+    let isStop = false;
+    let floorList = [];
 
-        let tid = Util.getUrlParam('tid');
-        if (!tid) return;
-        let value = $.trim(prompt('统计到第几楼？（0表示统计所有楼层，可用m-n的方式来设定统计楼层的区间范围）', 0));
-        if (value === '') return;
-        if (!/^\d+(-\d+)?$/.test(value)) {
-            alert('统计楼层格式不正确');
-            return;
-        }
-        let startFloor = 0, endFloor = 0;
-        let valueArr = value.split('-');
-        if (valueArr.length === 2) {
-            startFloor = parseInt(valueArr[0]);
-            endFloor = parseInt(valueArr[1]);
-        }
-        else endFloor = parseInt(valueArr[0]);
-        if (endFloor < startFloor) {
-            alert('统计楼层格式不正确');
-            return;
-        }
-        let matches = /(\d+)页/.exec($('.pages:eq(0) > li:last-child > a').text());
-        let maxPage = matches ? parseInt(matches[1]) : 1;
-        if (startFloor === 0) startFloor = 1;
-        if (endFloor === 0) endFloor = maxPage * Config.perPageFloorNum - 1;
-        let startPage = Math.floor(startFloor / Config.perPageFloorNum) + 1;
-        let endPage = Math.floor(endFloor / Config.perPageFloorNum) + 1;
-        if (endPage > maxPage) endPage = maxPage;
-        if (endPage - startPage > Const.statRepliersMaxPage) {
-            alert('需访问的总页数不可超过' + Const.statRepliersMaxPage);
-            return;
-        }
-
-        Msg.wait(
-            `<strong>正在统计回帖名单中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${endPage - startPage + 1}</em></i>` +
-            `<a class="pd_stop_action" href="#">停止操作</a>`
-        );
-        let isStop = false;
-        $(document).clearQueue('StatRepliers');
-        let replierList = [];
-        $.each(new Array(endPage), function (index) {
-            if (index + 1 < startPage) return;
-            $(document).queue('StatRepliers', function () {
-                $.ajax({
-                    type: 'GET',
-                    url: `read.php?tid=${tid}&page=${index + 1}&t=${new Date().getTime()}`,
-                    timeout: Const.defAjaxTimeout,
-                    success (html) {
-                        let matches = html.match(/<span style=".+?">\d+楼<\/span> <span style=".+?">(.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+" target="_blank" style=".+?">.+?<\/a>/gi);
-                        for (let i in matches) {
-                            let floorMatches = /<span style=".+?">(\d+)楼<\/span>(?:.|\n|\r\n)+?<a href="profile\.php\?action=show&uid=\d+".+?>(.+?)<\/a>/i.exec(matches[i]);
-                            if (!floorMatches) continue;
-                            let floor = parseInt(floorMatches[1]);
-                            if (floor < startFloor) continue;
-                            if (floor > endFloor) {
-                                isStop = true;
-                                break;
-                            }
-                            replierList[floor] = floorMatches[2];
-                        }
-                    },
-                    error () {
+    /**
+     * 统计
+     * @param {number} page 第几页
+     */
+    const stat = function (page) {
+        $.ajax({
+            type: 'GET',
+            url: `read.php?tid=${tid}&page=${page}&t=${new Date().getTime()}`,
+            timeout: Const.defAjaxTimeout,
+            success (html) {
+                $('.readtext', html).each(function () {
+                    let data = {};
+                    let $floor = $(this);
+                    let $floorHeader = $floor.prev('.readlou');
+                    let floor = parseInt($floor.prev('.readlou').find('> div:nth-child(2) > span:first-child').text());
+                    if (!floor) return;
+                    if (floor < startFloor) return;
+                    if (floor > endFloor) {
                         isStop = true;
-                        alert('因连接超时，统计回帖名单操作中止');
-                    },
-                    complete () {
-                        let $countdown = $('.pd_countdown:last');
-                        $countdown.text(parseInt($countdown.text()) - 1);
-                        isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                        if (isStop) $(document).clearQueue('StatRepliers');
-
-                        if (isStop || index === endPage - 1) {
-                            Msg.destroy();
-                            showStatRepliersDialog(replierList);
-                        }
-                        else {
-                            setTimeout(() => $(document).dequeue('StatRepliers'), Const.defAjaxInterval);
-                        }
+                        return false;
                     }
+                    data.pid = parseInt($floorHeader.prev('a').attr('name'));
+                    let $user = $floor.find('.readidms, .readidm');
+                    data.userName = $user.find('a[href^="profile.php?action=show&uid="]').text();
+                    data.smLevel = '';
+                    if ($user.hasClass('readidms')) {
+                        let matches = /(\S+)级神秘/.exec($user.find('.readidmsbottom').text());
+                        if (matches) data.smLevel = matches[1];
+                    }
+                    else {
+                        data.smLevel = $user.find('.readidmright').text().trim();
+                    }
+
+                    let $buy = $floor.find('[value="愿意购买,支付KFB"]:first');
+                    if ($buy.length > 0) {
+                        let matches = /此帖售价\s*(\d+)\s*KFB/.exec($buy.parent('legend').text());
+                        if (matches) data.sell = parseInt(matches[1]);
+                        matches = /location\.href="(.+)"/i.exec($buy.attr('onclick'));
+                        if (matches) data.buyUrl = matches[1];
+                    }
+                    floorList[floor] = data;
                 });
-            });
+
+                let $countdown = $('.pd_countdown:last');
+                $countdown.text(parseInt($countdown.text()) - 1);
+                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
+            },
+            error () {
+                setTimeout(() => stat(page), Const.defAjaxInterval);
+            },
+            complete () {
+                if (isStop || page >= endPage) {
+                    Msg.destroy();
+                    showStatFloorDialog(floorList);
+                }
+                else {
+                    setTimeout(() => stat(page + 1), Const.defAjaxInterval);
+                }
+            }
         });
-        $(document).dequeue('StatRepliers');
-    });
+    };
+
+    stat(startPage);
 };
 
+/**
+ * 显示统计楼层对话框
+ * @param {{}[]} floorList 楼层信息列表
+ */
+export const showStatFloorDialog = function (floorList) {
+    const dialogName = 'pdStatFloorDialog';
+    let html = `
+<div class="pd_cfg_main">
+  <div id="pdStatFloorFilter" style="margin-top: 5px;">
+    <label><input name="removeRepeatedEnabled" type="checkbox"> 去除重复</label>
+    <label><input name="removeTopFloorEnabled" type="checkbox"> 去除楼主</label>
+  </div>
+  <div id="pdStatFloorSelectBtns">
+    <label style="margin-left: 3px;">售价区间：</label>
+    <input name="startSell" type="number" value="1" min="1" max="100" style="width: 45px;"> -
+    <input name="endSell" type="number" value="100" min="1" max="100" style="width: 45px;">
+    <label style="margin-left: 3px;">
+    每名用户限选 <input name="limitNum" type="number" min="0" style="width: 35px;"> 个
+    </label>
+    <a class="pd_btn_link" data-name="selectFilter" href="#">筛选</a><br>
+    <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+    <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
+  </div>
+  <div class="pd_highlight" style="text-align: center;">
+    共显示<b id="pdStatFloorShowCount">0</b>条项目，共选择<b id="pdStatFloorSelectCount">0</b>条项目
+  </div>
+  <table style="line-height: 1.8em; text-align: center;">
+    <thead>
+      <tr>
+        <th style="width: 30px;"></th>
+        <th style="width: 70px;">楼层号</th>
+        <th style="width: 120px;">用户名</th>
+        <th style="width: 80px;">神秘等级</th>
+        <th style="width: 90px;">售价(KFB) <span class="pd_cfg_tips" title="注：售价信息在统计后可能会发生变化，建议尽快购买帖子">[?]</span></th>
+      </tr>
+    </thead>
+    <tbody id="pdStatFloorList"></tbody>
+  </table>
+  <textarea name="statFloorListContent" style="margin-top: 8px; width: 250px; height: 300px;" hidden></textarea>
+</div>
+
+<div class="pd_cfg_btns">
+  <button name="copyList" type="button" style="color: #00f;" title="复制所有或所选楼层的用户名单">复制名单</button>
+  <button name="buyThread" type="button" style="color: #f00;" title="批量购买所选楼层的帖子">购买帖子</button>
+  <button data-action="close" type="button">关闭</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '统计楼层', html);
+    let $statFloorFilter = $dialog.find('#pdStatFloorFilter');
+    let $statFloorList = $dialog.find('#pdStatFloorList');
+    let $statFloorListContent = $dialog.find('[name="statFloorListContent"]');
+    let tid = Util.getUrlParam('tid');
+
+    /**
+     * 显示统计楼层列表
+     */
+    const showStatFloorList = function () {
+        let list = [...floorList];
+        let isRemoveRepeated = $statFloorFilter.find('[name="removeRepeatedEnabled"]').prop('checked'),
+            isRemoveTopFloor = $statFloorFilter.find('[name="removeTopFloorEnabled"]').prop('checked');
+        if (isRemoveRepeated) {
+            list = list.map((data, index, list) => {
+                if (!data) return null;
+                else return list.findIndex(data2 => data2 && data2.userName === data.userName) === index ? data : null;
+            });
+        }
+        if (isRemoveTopFloor) {
+            let $topFloor = $('.readtext:first');
+            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
+                let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
+                list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
+            }
+        }
+        let content = '', copyContent = '';
+        let num = 0;
+        for (let [floor, data] of list.entries()) {
+            if (!data) continue;
+            content += `
+<tr>
+  <td>
+    <label>
+      <input data-sell="${data.sell ? data.sell : 0}" data-url="${data.buyUrl ? data.buyUrl : ''}" type="checkbox" value="${data.userName}">
+    </label>
+  </td>
+  <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
+  <td><a href="profile.php?action=show&username=${data.userName}" target="_blank" style="color: #000;">${data.userName}</a></td>
+  <td style="color: #f39;">${data.smLevel}</td>
+  <td class="pd_stat">${data.sell ? `<em>${data.sell}</em>` : '<span class="pd_notice">无</span>'}</td>
+</tr>`;
+            copyContent += data.userName + '\n';
+            num++;
+        }
+        $statFloorList.html(content);
+        $statFloorListContent.val(copyContent).data('copy-text', copyContent);
+        $dialog.find('#pdStatFloorShowCount').text(num);
+        $dialog.find('#pdStatFloorSelectCount').text(0);
+    };
+
+    $dialog.find('#pdStatFloorSelectBtns').on('click', '[data-name]', function (e) {
+        e.preventDefault();
+        let name = $(this).data('name');
+        if (name === 'selectAll') Util.selectAll($statFloorList.find('[type="checkbox"]'));
+        else if (name === 'selectInverse') Util.selectInverse($statFloorList.find('[type="checkbox"]'));
+        else if (name === 'selectFilter') {
+            let startSell = parseInt($dialog.find('[name="startSell"]').val());
+            let endSell = parseInt($dialog.find('[name="endSell"]').val());
+            let limitNum = parseInt($dialog.find('[name="limitNum"]').val());
+            if (!limitNum || limitNum < 0) limitNum = 0;
+            if (!startSell || startSell < 1 || !endSell || endSell < 1) return;
+            let userStat = {};
+            $statFloorList.find('[type="checkbox"]').each(function () {
+                let $this = $(this);
+                let sell = parseInt($this.data('sell'));
+                let isChecked = sell > 0 && sell >= startSell && sell <= endSell;
+                if (isChecked && limitNum > 0) {
+                    let userName = $this.val();
+                    if (!(userName in userStat)) userStat[userName] = 0;
+                    userStat[userName]++;
+                    if (userStat[userName] > limitNum) isChecked = false;
+                }
+                $this.prop('checked', isChecked);
+            });
+        }
+        $dialog.find('#pdStatFloorSelectCount').text($statFloorList.find('[type="checkbox"]:checked').length);
+    }).end().find('[name="copyList"]').click(function () {
+        let $this = $(this);
+        if ($this.text() === '取消复制') {
+            $this.text('复制名单');
+            $statFloorListContent.prop('hidden', true);
+            $statFloorList.closest('table').prop('hidden', false);
+            Dialog.resize(dialogName);
+            return;
+        }
+        let type = 'all';
+        let checked = $statFloorList.find('[type="checkbox"]:checked');
+        if (checked.length > 0) {
+            type = 'select';
+            let copyContent = '';
+            checked.each(function () {
+                copyContent += $(this).val() + '\n';
+            });
+            $statFloorListContent.val(copyContent).data('copy-text', copyContent);
+        }
+        if (!Util.copyText($statFloorListContent, (type === 'all' ? '所有' : '所选') + '用户名单已复制')) {
+            $this.text('取消复制');
+            $statFloorList.closest('table').prop('hidden', true);
+            $statFloorListContent.prop('hidden', false).select().focus();
+            Dialog.resize(dialogName);
+        }
+    }).end().find('[name="buyThread"]').click(function () {
+        let threadList = [];
+        let totalSell = 0;
+        $statFloorList.find('[type="checkbox"]:checked').each(function () {
+            let $this = $(this);
+            let url = $this.data('url');
+            let sell = parseInt($this.data('sell'));
+            if (url && sell > 0) {
+                threadList.push({url, sell});
+                totalSell += sell;
+            }
+        });
+        if (!threadList.length) {
+            alert('请选择要购买的楼层');
+            return;
+        }
+        if (!confirm(
+                `你共选择了${threadList.length}个楼层，总售价${totalSell.toLocaleString()}KFB，` +
+                `均价${Util.getFixedNumLocStr(totalSell / threadList.length, 2)}KFB，是否批量购买？`
+            )
+        ) return;
+        Msg.destroy();
+        Msg.wait(
+            `<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${threadList.length}</em></i>` +
+            `<a class="pd_stop_action" href="#">停止操作</a>`
+        );
+        buyThreads(threadList);
+    });
+
+    if (Util.getCurrentThreadPage() !== 1)
+        $statFloorFilter.find('[name="removeTopFloorEnabled"]').prop('disabled', true).parent('label').attr('title', '请在第1页进行统计');
+    $statFloorFilter.on('click', '[type="checkbox"]', showStatFloorList);
+    showStatFloorList();
+    Dialog.show(dialogName);
+    Script.runFunc('Read.showStatFloorDialog_after_');
+};
+
+/**
+ * 购买帖子
+ * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
+ */
+export const buyThreads = function (threadList) {
+    let successNum = 0, failNum = 0, totalSell = 0;
+    $(document).clearQueue('BuyThread');
+    $.each(threadList, function (index, {url, sell}) {
+        $(document).queue('BuyThread', function () {
+            $.ajax({
+                type: 'GET',
+                url: url + '&t=' + new Date().getTime(),
+                timeout: Const.defAjaxTimeout,
+                success (html) {
+                    Public.showFormatLog('购买帖子', html);
+                    let {msg} = Util.getResponseMsg(html);
+                    if (/操作完成/.test(msg)) {
+                        successNum++;
+                        totalSell += sell;
+                    }
+                    else failNum++;
+                },
+                error () {
+                    failNum++;
+                },
+                complete () {
+                    let $countdown = $('.pd_countdown:last');
+                    $countdown.text(parseInt($countdown.text()) - 1);
+                    let isStop = $countdown.closest('.pd_msg').data('stop');
+                    if (isStop) $(document).clearQueue('BuyThread');
+
+                    if (isStop || index === threadList.length - 1) {
+                        Msg.destroy();
+                        if (successNum > 0) {
+                            Log.push('购买帖子', `共有\`${successNum}\`个帖子购买成功`, {pay: {'KFB': -totalSell}});
+                        }
+                        console.log(`共有${successNum}个帖子购买成功，共有${failNum}个帖子购买失败，KFB-${totalSell}`);
+                        Msg.show(
+                            `<strong>共有<em>${successNum}</em>个帖子购买成功${failNum > 0 ? `，共有<em>${failNum}</em>个帖子购买失败` : ''}</strong>` +
+                            `<i>KFB<ins>-${totalSell}</ins></i>`
+                            , -1
+                        );
+                        Script.runFunc('Read.buyThreads_after_', threadList);
+                    }
+                    else {
+                        setTimeout(() => $(document).dequeue('BuyThread'), Const.defAjaxInterval);
+                    }
+                }
+            });
+        });
+    });
+    $(document).dequeue('BuyThread');
+};
+
+/**
+ * 处理购买帖子按钮
+ */
+export const handleBuyThreadBtn = function () {
+    $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
+        let $this = $(this);
+        let matches = /此帖售价\s*(\d+)\s*KFB/.exec($this.closest('legend').contents().eq(0).text());
+        if (!matches) return;
+        let sell = parseInt(matches[1]);
+        matches = /location\.href="(.+?)"/i.exec($this.attr('onclick'));
+        if (!matches) return;
+        $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (e) {
+            e.preventDefault();
+            let $this = $(this);
+            let sell = $this.data('sell');
+            let url = $this.data('url');
+            if (!sell || !url) return;
+            if (sell >= Const.minBuyThreadWarningSell && !confirm(`此贴售价${sell}KFB，是否购买？`)) return;
+            if (Config.buyThreadViaAjaxEnabled) {
+                let $wait = Msg.wait('正在购买帖子&hellip;');
+                $.get(url + '&t=' + new Date().getTime(), function (html) {
+                    Public.showFormatLog('购买帖子', html);
+                    let {msg} = Util.getResponseMsg(html);
+                    Msg.remove($wait);
+                    if (/操作完成/.test(msg)) {
+                        location.reload();
+                    }
+                    else if (/您已经购买此帖/.test(msg)) {
+                        alert('你已经购买过此帖');
+                        location.reload();
+                    }
+                    else {
+                        alert('帖子购买失败');
+                    }
+                });
+            }
+            else location.href = url;
+        });
+    });
+};
 
 /**
  * 获取多重引用数据
@@ -394,178 +662,6 @@ export const modifyKFOtherDomainLink = function () {
         let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola|kfer)\.\w+?\/).+/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
-};
-
-/**
- * 处理购买帖子按钮
- */
-export const handleBuyThreadBtn = function () {
-    $('.readtext input[type="button"][value="愿意购买,支付KFB"]').each(function () {
-        let $this = $(this);
-        let matches = /此帖售价\s*(\d+)\s*KFB/i.exec($this.closest('legend').contents().eq(0).text());
-        if (!matches) return;
-        let sell = parseInt(matches[1]);
-        matches = /location\.href="(.+?)"/i.exec($this.attr('onclick'));
-        if (!matches) return;
-        $this.data('sell', sell).data('url', matches[1]).removeAttr('onclick').click(function (e) {
-            e.preventDefault();
-            let $this = $(this);
-            let sell = $this.data('sell');
-            let url = $this.data('url');
-            if (!sell || !url) return;
-            if (sell >= Const.minBuyThreadWarningSell && !confirm(`此贴售价${sell}KFB，是否购买？`)) return;
-            if (Config.buyThreadViaAjaxEnabled) {
-                let $wait = Msg.wait('正在购买帖子&hellip;');
-                $.get(url, function (html) {
-                    Public.showFormatLog('购买帖子', html);
-                    let {msg} = Util.getResponseMsg(html);
-                    Msg.remove($wait);
-                    if (/操作完成/.test(msg)) {
-                        location.reload();
-                    }
-                    else if (/您已经购买此帖/.test(msg)) {
-                        alert('你已经购买过此帖');
-                        location.reload();
-                    }
-                    else {
-                        alert('帖子购买失败');
-                    }
-                });
-            }
-            else location.href = url;
-        });
-    });
-};
-
-/**
- * 添加批量购买帖子的按钮
- */
-export const addBatchBuyThreadButton = function () {
-    let $btns = $('.readtext input[type="button"][value="愿意购买,支付KFB"]');
-    if ($btns.length === 0) return;
-    $btns.each(function () {
-        let $this = $(this);
-        let sell = $this.data('sell');
-        let url = $this.data('url');
-        if (!sell || !url) return;
-        $this.after(
-            `<input class="pd_buy_thread" style="margin-left: 10px; vertical-align: middle;" type="checkbox" data-sell="${sell}" data-url="${url}">`
-        );
-    });
-    $('<span style="margin: 0 5px;">|</span><a class="pd_buy_thread_btn" title="批量购买所选帖子" href="#">批量购买</a>')
-        .insertAfter('td > a[href^="kf_tidfavor.php?action=favor&tid="]')
-        .filter('a')
-        .click(function (e) {
-            e.preventDefault();
-            Msg.destroy();
-            let threadList = [];
-            let totalSell = 0;
-            $('.pd_buy_thread:checked').each(function () {
-                let $this = $(this);
-                let url = $this.data('url');
-                let sell = parseInt($this.data('sell'));
-                if (url && !isNaN(sell)) {
-                    threadList.push({url, sell});
-                    totalSell += sell;
-                }
-            });
-            if (!threadList.length) {
-                alert('请选择要购买的帖子');
-                return;
-            }
-            if (confirm(
-                    `你共选择了${threadList.length}个帖子，总售价${totalSell.toLocaleString()}KFB，` +
-                    `均价${Util.getFixedNumLocStr(totalSell / threadList.length, 2)}KFB，是否批量购买？`
-                )
-            ) {
-                Msg.wait(
-                    `<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${threadList.length}</em></i>` +
-                    `<a class="pd_stop_action" href="#">停止操作</a>`
-                );
-                buyThreads(threadList);
-            }
-        }).parent().mouseenter(function () {
-        $(`
-<span style="margin-left: 5px;">
-  [<a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
-  <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>]
-</span>
-`).insertAfter($(this).find('.pd_buy_thread_btn'))
-            .find('[data-name="selectAll"]')
-            .click(function (e) {
-                e.preventDefault();
-                let $buyThread = $('.pd_buy_thread');
-                $buyThread.prop('checked', true);
-                alert(`共选择了${$buyThread.length}项`);
-            })
-            .end().find('[data-name="selectInverse"]')
-            .click(function (e) {
-                e.preventDefault();
-                let totalNum = 0;
-                $('.pd_buy_thread').each(function () {
-                    let $this = $(this);
-                    $this.prop('checked', !$this.prop('checked'));
-                    if ($this.prop('checked')) totalNum++;
-                });
-                alert(`共选择了${totalNum}项`);
-            });
-    }).mouseleave(function () {
-        $(this).find('.pd_buy_thread_btn').next('span').remove();
-    });
-};
-
-/**
- * 购买指定的一系列帖子
- * @param {{}[]} threadList 购买帖子列表，{url}：购买帖子的URL；{sell}：购买帖子的售价
- */
-export const buyThreads = function (threadList) {
-    let successNum = 0, failNum = 0, totalSell = 0;
-    $(document).clearQueue('BuyThreads');
-    $.each(threadList, function (index, {url, sell}) {
-        $(document).queue('BuyThreads', function () {
-            $.ajax({
-                type: 'GET',
-                url: url + '&t=' + new Date().getTime(),
-                timeout: Const.defAjaxTimeout,
-                success (html) {
-                    Public.showFormatLog('购买帖子', html);
-                    let {msg} = Util.getResponseMsg(html);
-                    if (/操作完成/.test(msg)) {
-                        successNum++;
-                        totalSell += sell;
-                    }
-                    else failNum++;
-                },
-                error () {
-                    failNum++;
-                },
-                complete () {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    let isStop = $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('BuyThreads');
-
-                    if (isStop || index === threadList.length - 1) {
-                        Msg.destroy();
-                        if (successNum > 0) {
-                            Log.push('购买帖子', `共有\`${successNum}\`个帖子购买成功`, {pay: {'KFB': -totalSell}});
-                        }
-                        console.log(`共有${successNum}个帖子购买成功，共有${failNum}个帖子购买失败，KFB-${totalSell}`);
-                        Msg.show(
-                            `<strong>共有<em>${successNum}</em>个帖子购买成功${failNum > 0 ? `，共有<em>${failNum}</em>个帖子购买失败` : ''}</strong>` +
-                            `<i>KFB<ins>-${totalSell}</ins></i>`
-                            , -1
-                        );
-                        Script.runFunc('Read.buyThreads_after_', threadList);
-                    }
-                    else {
-                        setTimeout(() => $(document).dequeue('BuyThreads'), Const.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('BuyThreads');
 };
 
 /**
