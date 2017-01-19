@@ -325,8 +325,8 @@ export const addPolyfill = function () {
 };
 
 /**
- * 获取定时模式下次操作的时间间隔（秒）
- * @returns {number} 定时模式下次操作的时间间隔（秒）
+ * 获取定时模式下次操作的时间间隔信息
+ * @returns {{action: string, interval: number}} action：下次操作的名称；interval：下次操作的时间间隔（秒）
  */
 export const getNextTimingInterval = function () {
     /*let donationInterval = -1;
@@ -371,19 +371,25 @@ export const getNextTimingInterval = function () {
         else getDailyBonusInterval = 0;
     }
 
-    let minArr = [lootInterval, getDailyBonusInterval].filter(interval => interval >= 0);
-    if (minArr.length > 0) {
-        let min = Math.min(...minArr);
-        return min > 0 ? min + 1 : 0;
+    let intervalList = [
+        {action: '自动争夺', interval: lootInterval},
+        {action: '自动获取每日奖励', interval: getDailyBonusInterval}
+    ];
+    let minAction = '', minInterval = -1;
+    for (let {action, interval} of intervalList) {
+        if (minInterval < 0 || interval < minInterval) {
+            minAction = action;
+            minInterval = interval;
+        }
     }
-    else return -1;
+    return {action: minInterval > 0 ? minAction : '', interval: minInterval};
 };
 
 /**
  * 启动定时模式
  */
 export const startTimingMode = function () {
-    let interval = getNextTimingInterval();
+    let {action, interval} = getNextTimingInterval();
     if (interval === -1) return;
     let oriTitle = document.title;
     let titleItvFunc = null;
@@ -406,12 +412,13 @@ export const startTimingMode = function () {
     /**
      * 显示定时模式标题提示
      * @param {number} interval 倒计时的时间间隔（秒）
+     * @param {string} action 下次操作的名称
      * @param {boolean} isShowTitle 是否立即显示标题
      */
-    const showRefreshModeTips = function (interval, isShowTitle = false) {
+    const showRefreshModeTips = function (interval, action = '', isShowTitle = false) {
         if (titleItvFunc) window.clearInterval(titleItvFunc);
         let showInterval = interval;
-        console.log('【定时模式】倒计时：' + getFormatIntervalTitle(1, showInterval));
+        console.log(`【定时模式】倒计时${action ? `(${action})` : ''}：` + getFormatIntervalTitle(1, showInterval));
         if (Config.showTimingModeTipsType.toLowerCase() !== 'never') {
             const showIntervalTitle = function () {
                 document.title = `${oriTitle} (定时: ${getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval)})`;
@@ -448,14 +455,14 @@ export const startTimingMode = function () {
                     Msg.remove($('.pd_refresh_notice').parent());
                     Msg.show(`<strong class="pd_refresh_notice">定时操作失败（原因：${errorText}），将在<em>${interval}</em>分钟后重试&hellip;</strong>`, -1);
                     setTimeout(handleError, interval * 60 * 1000);
-                    showRefreshModeTips(interval * 60, true);
+                    showRefreshModeTips(interval * 60, '', true);
                 }
                 else {
                     if (errorNum > 6) {
                         errorNum = 0;
                         interval = 15;
                         setTimeout(checkRefreshInterval, interval * 60 * 1000);
-                        showRefreshModeTips(interval * 60, true);
+                        showRefreshModeTips(interval * 60, '', true);
                     }
                     else {
                         errorNum++;
@@ -476,7 +483,7 @@ export const startTimingMode = function () {
             Loot.checkLoot();
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
 
-        let interval = getNextTimingInterval();
+        let {action, interval} = getNextTimingInterval();
         if (interval > 0) errorNum = 0;
         if (interval === 0 && prevInterval === 0) {
             prevInterval = -1;
@@ -490,11 +497,11 @@ export const startTimingMode = function () {
         }
         else if (interval === 0) interval = Const.actionFinishRetryInterval;
         setTimeout(checkRefreshInterval, interval * 1000);
-        showRefreshModeTips(interval, true);
+        showRefreshModeTips(interval, action, true);
     };
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
-    showRefreshModeTips(interval < 60 ? 60 : interval);
+    showRefreshModeTips(interval < 60 ? 60 : interval, action);
 };
 
 /**
