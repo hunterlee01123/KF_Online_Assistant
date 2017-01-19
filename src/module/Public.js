@@ -175,7 +175,7 @@ export const appendCss = function () {
   .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
   .pd_cfg_tips:hover { color: #ff0000; }
   #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
-  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }
+  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }
   .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }
   .pd_cfg_btns button { min-width: 80px; }

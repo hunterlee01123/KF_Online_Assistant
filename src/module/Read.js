@@ -320,10 +320,10 @@ export const showStatFloorDialog = function (floorList) {
   </div>
   <div id="pdStatFloorSelectBtns">
     <label style="margin-left: 3px;">售价区间：</label>
-    <input name="startSell" type="number" value="1" min="1" max="100" style="width: 45px;"> -
-    <input name="endSell" type="number" value="100" min="1" max="100" style="width: 45px;">
+    <input name="startSell" type="number" value="1" min="1" max="100" style="width: 40px;"> -
+    <input name="endSell" type="number" value="100" min="1" max="100" style="width: 40px;">
     <label style="margin-left: 3px;">
-    每名用户限选 <input name="limitNum" type="number" min="0" style="width: 35px;"> 个
+      每名用户限选 <input name="limitNum" type="number" min="0" style="width: 32px;"> 个
     </label>
     <a class="pd_btn_link" data-name="selectFilter" href="#">筛选</a><br>
     <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
@@ -336,10 +336,12 @@ export const showStatFloorDialog = function (floorList) {
     <thead>
       <tr>
         <th style="width: 30px;"></th>
-        <th style="width: 70px;">楼层号</th>
+        <th style="width: 65px;">楼层号</th>
         <th style="width: 120px;">用户名</th>
         <th style="width: 80px;">神秘等级</th>
-        <th style="width: 90px;">售价(KFB) <span class="pd_cfg_tips" title="注：售价信息在统计后可能会发生变化，建议尽快购买帖子">[?]</span></th>
+        <th style="width: 100px;">
+          售价(KFB) <span class="pd_cfg_tips" title="注：售价信息在统计后可能会发生变化，如有必要，建议尽快购买帖子">[?]</span>
+        </th>
       </tr>
     </thead>
     <tbody id="pdStatFloorList"></tbody>
@@ -457,6 +459,7 @@ export const showStatFloorDialog = function (floorList) {
     }).end().find('[name="buyThread"]').click(function () {
         let threadList = [];
         let totalSell = 0;
+        if (!$statFloorList.find('[type="checkbox"]:checked').length) $dialog.find('[data-name="selectAll"]').click();
         $statFloorList.find('[type="checkbox"]:checked').each(function () {
             let $this = $(this);
             let url = $this.data('url');
@@ -466,13 +469,10 @@ export const showStatFloorDialog = function (floorList) {
                 totalSell += sell;
             }
         });
-        if (!threadList.length) {
-            alert('请选择要购买的楼层');
-            return;
-        }
+        if (!threadList.length) return;
         if (!confirm(
-                `你共选择了${threadList.length}个楼层，总售价${totalSell.toLocaleString()}KFB，` +
-                `均价${Util.getFixedNumLocStr(totalSell / threadList.length, 2)}KFB，是否批量购买？`
+                `你共选择了${threadList.length}个项目，总售价 ${totalSell.toLocaleString()} KFB，` +
+                `均价 ${Util.getFixedNumLocStr(totalSell / threadList.length, 2)} KFB，是否批量购买？`
             )
         ) return;
         Msg.destroy();
@@ -562,8 +562,8 @@ export const handleBuyThreadBtn = function () {
             let sell = $this.data('sell');
             let url = $this.data('url');
             if (!sell || !url) return;
-            if (sell >= Const.minBuyThreadWarningSell && !confirm(`此贴售价${sell}KFB，是否购买？`)) return;
-            if (Config.buyThreadViaAjaxEnabled) {
+            if (sell >= Const.minBuyThreadWarningSell && !confirm(`此贴售价 ${sell} KFB，是否购买？`)) return;
+            if (Config.buyThreadNoJumpEnabled) {
                 let $wait = Msg.wait('正在购买帖子&hellip;');
                 $.get(url + '&t=' + new Date().getTime(), function (html) {
                     Public.showFormatLog('购买帖子', html);

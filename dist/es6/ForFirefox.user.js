@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.4
+// @version     9.4.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.4';
+const version = '9.4.1';
 
 /**
  * 导出模块
@@ -999,8 +999,8 @@ const Config = exports.Config = {
     parseMediaTagEnabled: true,
     // 是否在帖子和搜索页面通过左右键进行翻页，true：开启；false：关闭
     turnPageViaKeyboardEnabled: false,
-    // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
-    buyThreadViaAjaxEnabled: true,
+    // 是否在购买帖子时页面不跳转，true：开启；false：关闭
+    buyThreadNoJumpEnabled: true,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
@@ -1381,7 +1381,7 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题12】">[?]</span>
       </label><br>
       <label>
-        <input name="buyThreadViaAjaxEnabled" type="checkbox"> 使用Ajax购买帖子
+        <input name="buyThreadNoJumpEnabled" type="checkbox"> 购买帖子时不跳转
         <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
       </label>
       <label class="pd_cfg_ml">
@@ -6557,7 +6557,7 @@ const getAutoLootCookieDate = function () {
     let now = new Date();
     let date = Util.getTimezoneDateByTime('02:30:00');
     if (now > date) {
-        date = Util.getTimezoneDateByTime('00:00:30');
+        date = Util.getTimezoneDateByTime('00:01:00');
         date.setDate(date.getDate() + 1);
     }
     if (now > date) date.setDate(date.getDate() + 1);
@@ -7892,7 +7892,7 @@ const appendCss = exports.appendCss = function () {
   .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
   .pd_cfg_tips:hover { color: #ff0000; }
   #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
-  .pd_cfg_panel { display: inline-block; width: 380px; vertical-align: top; }
+  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }
   .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }
   .pd_cfg_btns button { min-width: 80px; }
@@ -9368,10 +9368,10 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
   </div>
   <div id="pdStatFloorSelectBtns">
     <label style="margin-left: 3px;">售价区间：</label>
-    <input name="startSell" type="number" value="1" min="1" max="100" style="width: 45px;"> -
-    <input name="endSell" type="number" value="100" min="1" max="100" style="width: 45px;">
+    <input name="startSell" type="number" value="1" min="1" max="100" style="width: 40px;"> -
+    <input name="endSell" type="number" value="100" min="1" max="100" style="width: 40px;">
     <label style="margin-left: 3px;">
-    每名用户限选 <input name="limitNum" type="number" min="0" style="width: 35px;"> 个
+      每名用户限选 <input name="limitNum" type="number" min="0" style="width: 32px;"> 个
     </label>
     <a class="pd_btn_link" data-name="selectFilter" href="#">筛选</a><br>
     <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
@@ -9384,10 +9384,12 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
     <thead>
       <tr>
         <th style="width: 30px;"></th>
-        <th style="width: 70px;">楼层号</th>
+        <th style="width: 65px;">楼层号</th>
         <th style="width: 120px;">用户名</th>
         <th style="width: 80px;">神秘等级</th>
-        <th style="width: 90px;">售价(KFB) <span class="pd_cfg_tips" title="注：售价信息在统计后可能会发生变化，建议尽快购买帖子">[?]</span></th>
+        <th style="width: 100px;">
+          售价(KFB) <span class="pd_cfg_tips" title="注：售价信息在统计后可能会发生变化，如有必要，建议尽快购买帖子">[?]</span>
+        </th>
       </tr>
     </thead>
     <tbody id="pdStatFloorList"></tbody>
@@ -9503,6 +9505,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
     }).end().find('[name="buyThread"]').click(function () {
         let threadList = [];
         let totalSell = 0;
+        if (!$statFloorList.find('[type="checkbox"]:checked').length) $dialog.find('[data-name="selectAll"]').click();
         $statFloorList.find('[type="checkbox"]:checked').each(function () {
             let $this = $(this);
             let url = $this.data('url');
@@ -9512,11 +9515,8 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
                 totalSell += sell;
             }
         });
-        if (!threadList.length) {
-            alert('请选择要购买的楼层');
-            return;
-        }
-        if (!confirm(`你共选择了${ threadList.length }个楼层，总售价${ totalSell.toLocaleString() }KFB，` + `均价${ Util.getFixedNumLocStr(totalSell / threadList.length, 2) }KFB，是否批量购买？`)) return;
+        if (!threadList.length) return;
+        if (!confirm(`你共选择了${ threadList.length }个项目，总售价 ${ totalSell.toLocaleString() } KFB，` + `均价 ${ Util.getFixedNumLocStr(totalSell / threadList.length, 2) } KFB，是否批量购买？`)) return;
         Msg.destroy();
         Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${ threadList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         buyThreads(threadList);
@@ -9596,8 +9596,8 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
             let sell = $this.data('sell');
             let url = $this.data('url');
             if (!sell || !url) return;
-            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价${ sell }KFB，是否购买？`)) return;
-            if (Config.buyThreadViaAjaxEnabled) {
+            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价 ${ sell } KFB，是否购买？`)) return;
+            if (Config.buyThreadNoJumpEnabled) {
                 let $wait = Msg.wait('正在购买帖子&hellip;');
                 $.get(url + '&t=' + new Date().getTime(), function (html) {
                     Public.showFormatLog('购买帖子', html);

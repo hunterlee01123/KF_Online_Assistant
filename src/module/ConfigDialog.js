@@ -184,7 +184,7 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题12】">[?]</span>
       </label><br>
       <label>
-        <input name="buyThreadViaAjaxEnabled" type="checkbox"> 使用Ajax购买帖子
+        <input name="buyThreadNoJumpEnabled" type="checkbox"> 购买帖子时不跳转
         <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
       </label>
       <label class="pd_cfg_ml">

@@ -1667,7 +1667,7 @@ const getAutoLootCookieDate = function () {
     let now = new Date();
     let date = Util.getTimezoneDateByTime('02:30:00');
     if (now > date) {
-        date = Util.getTimezoneDateByTime('00:00:30');
+        date = Util.getTimezoneDateByTime('00:01:00');
         date.setDate(date.getDate() + 1);
     }
     if (now > date) date.setDate(date.getDate() + 1);

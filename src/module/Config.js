@@ -97,8 +97,8 @@ export const Config = {
     parseMediaTagEnabled: true,
     // 是否在帖子和搜索页面通过左右键进行翻页，true：开启；false：关闭
     turnPageViaKeyboardEnabled: false,
-    // 是否使用Ajax的方式购买帖子（购买时页面不会跳转），true：开启；false：关闭
-    buyThreadViaAjaxEnabled: true,
+    // 是否在购买帖子时页面不跳转，true：开启；false：关闭
+    buyThreadNoJumpEnabled: true,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
