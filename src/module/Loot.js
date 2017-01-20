@@ -1262,6 +1262,9 @@ const addLootLogHeader = function () {
   </div>
   <div style="text-align: right;">
     <label>
+      <input class="pd_input" name="showLiteLootLogEnabled" type="checkbox" ${Config.showLiteLootLogEnabled ? 'checked' : ''}> 显示精简记录
+    </label>
+    <label>
       <input class="pd_input" name="showLevelEnemyStatEnabled" type="checkbox" ${Config.showLevelEnemyStatEnabled ? 'checked' : ''}> 显示分层统计
     </label>
     <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">导入/导出争夺记录</a>
@@ -1269,13 +1272,16 @@ const addLootLogHeader = function () {
   </div>
   <ul class="pd_stat" id="pdLogStat"></ul>
 </div>
-`).insertBefore($logBox).find('[name="showLevelEnemyStatEnabled"]').click(function () {
-        let checked = $(this).prop('checked');
-        if (Config.showLevelEnemyStatEnabled !== checked) {
+`).insertBefore($logBox).find('[type="checkbox"]').click(function () {
+        let $this = $(this);
+        let name = $this.attr('name');
+        let checked = $this.prop('checked');
+        if (name in Config && Config[name] !== checked) {
             readConfig();
-            Config.showLevelEnemyStatEnabled = checked;
+            Config[name] = $this.prop('checked');
             writeConfig();
-            showLogStat(levelInfoList);
+            if (name === 'showLiteLootLogEnabled') showEnhanceLog(logList, levelInfoList, pointsLogList);
+            else if (name === 'showLevelEnemyStatEnabled') showLogStat(levelInfoList);
         }
     }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
@@ -1526,6 +1532,13 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
     });
     $log.html(list.reverse().join(''));
 
+    if (Config.showLiteLootLogEnabled) {
+        if (!$('#pdLiteLootLogStyle').length) {
+            $('head').append('<style id="pdLiteLootLogStyle">.pk_log_g, .pk_log_i, .pk_log_u, .pk_log_v { display: none; }</style>');
+        }
+    }
+    else $('#pdLiteLootLogStyle').remove();
+    Script.runFunc('Loot.showEnhanceLog_after_');
 };
 
 /**

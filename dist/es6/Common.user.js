@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.4.1
+// @version     9.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.4.1';
+const version = '9.5';
 
 /**
  * 导出模块
@@ -168,7 +168,7 @@ const init = function () {
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
-        if (Config.autoLootEnabled && parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
+        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         Read.fastGotoFloor();
@@ -261,9 +261,16 @@ const init = function () {
     }
 
     let isAutoLootStarted = false;
-    if (Config.autoLootEnabled && location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootCompleteCookieName) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
-        isAutoLootStarted = true;
-        Loot.checkLoot();
+    if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+        if (Config.autoLootEnabled) {
+            if (!Util.getCookie(_Const2.default.lootAttackingCookieName)) {
+                isAutoLootStarted = true;
+                Loot.checkLoot();
+            }
+        } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+            isAutoLootStarted = true;
+            Loot.autoSaveLootLog();
+        }
     }
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
@@ -284,7 +291,7 @@ const init = function () {
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 
     let endDate = new Date();
-    console.log(`【KF Online助手】加载完毕，加载耗时：${ endDate - startDate }ms`);
+    console.log(`【KF Online助手】初始化耗时：${ endDate - startDate }ms`);
 };
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
@@ -935,6 +942,10 @@ const Config = exports.Config = {
     autoLootEnabled: false,
     // 自动争夺的目标攻击层数（设为0表示攻击到被击败为止）
     attackTargetLevel: 0,
+    // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
+    autoSaveLootLogInSpecialCaseEnabled: false,
+    // 历史争夺记录保存天数
+    lootLogSaveDays: 15,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
     // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
@@ -947,8 +958,8 @@ const Config = exports.Config = {
     slowAttackEnabled: false,
     // 是否显示分层NPC统计，true：开启；false：关闭
     showLevelEnemyStatEnabled: false,
-    // 历史争夺记录保存天数
-    lootLogSaveDays: 15,
+    // 是否显示精简争夺记录，true：开启；false：关闭
+    showLiteLootLogEnabled: false,
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -1274,12 +1285,16 @@ const show = exports.show = function () {
     <fieldset>
       <legend>争夺相关</legend>
       <label>
-        <input name="autoLootEnabled" type="checkbox"> 自动争夺
+        <input name="autoLootEnabled" type="checkbox" data-disabled="[name=autoSaveLootLogInSpecialCaseEnabled]" data-mutex="true"> 自动争夺
         <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
         <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
+      </label><br>
+      <label>
+        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> 在不使用助手争夺的情况下自动保存争夺记录
+        <span class="pd_cfg_tips" title="在不使用助手争夺的情况下自动检查并保存争夺记录（使用助手进行争夺的用户请勿勾选此选项）">[?]</span>
       </label><br>
       <label>
         争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
@@ -2484,8 +2499,8 @@ const Const = {
     maxDonationKfb: 5000,
     // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
     getDailyBonusAfterTime: '00:35:00',
-    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:10:00
-    lootAfterTime: '00:10:00',
+    // 在当天的指定时间之后检查争夺情况（北京时间），例：00:10:00
+    checkLootAfterTime: '00:10:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
@@ -2501,6 +2516,8 @@ const Const = {
     getDailyBonusSpecialInterval: 30,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
+    // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
+    checkLootInterval: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
@@ -2644,6 +2661,7 @@ const create = exports.create = function (id, title, content, style = '') {
     }).end().find('input[data-disabled]').click(function () {
         let $this = $(this);
         let checked = $this.prop('checked');
+        if ($this.data('mutex')) checked = !checked;
         $($this.data('disabled')).each(function () {
             let $this = $(this);
             if ($this.is('a')) {
@@ -4975,7 +4993,7 @@ const showLogText = function (log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addUserLinkInPkListPage = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.lootAttack = exports.getRealProperty = exports.enhanceLootIndexPage = undefined;
+exports.addUserLinkInPkListPage = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.lootAttack = exports.getRealProperty = exports.enhanceLootIndexPage = undefined;
 
 var _Info = require('./Info');
 
@@ -6063,7 +6081,10 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
             }
             if (isFail) {
-                if (isChecked) finish();else setTimeout(check, _Const2.default.defAjaxInterval);
+                if (isChecked) {
+                    Msg.remove($wait);
+                    recordLootInfo(logList, levelInfoList, pointsLogList);
+                } else setTimeout(check, _Const2.default.defAjaxInterval);
             } else {
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${ currentLevel }</em>层的NPC</strong>`, -1);
@@ -6097,48 +6118,50 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         });
     };
 
-    /**
-     * 完成攻击（被击败后）
-     */
-    const finish = function () {
-        Msg.remove($wait);
-        if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
-        sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
-
-        let allEnemyList = {};
-        for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
-            allEnemyList[enemy] = num;
-        }
-        let allEnemyStat = '';
-        for (let [enemy, num] of Util.entries(allEnemyList)) {
-            allEnemyStat += enemy + '`+' + num + '` ';
-        }
-
-        let latestEnemyList = {};
-        for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
-            latestEnemyList[enemy] = num;
-        }
-        let latestEnemyStat = '';
-        for (let [enemy, num] of Util.entries(latestEnemyList)) {
-            latestEnemyStat += enemy + '`+' + num + '` ';
-        }
-
-        let currentLevel = getCurrentLevel(logList);
-        let { exp, kfb } = getTotalGain(levelInfoList);
-        if (exp > 0 && kfb > 0) {
-            Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近${ _Const2.default.enemyStatLatestLevelNum }层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
-            LootLog.record(logList, pointsLogList);
-        }
-        Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>`, -1);
-
-        if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-            Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
-            Public.getDailyBonus();
-        }
-        Script.runFunc('Loot.lootAttack_complete_');
-    };
-
     ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
+};
+
+/**
+ * 记录争夺信息
+ * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
+ * @param {string[]} pointsLogList 点数分配记录列表
+ */
+const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
+    Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
+    sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
+
+    let allEnemyList = {};
+    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
+        allEnemyList[enemy] = num;
+    }
+    let allEnemyStat = '';
+    for (let [enemy, num] of Util.entries(allEnemyList)) {
+        allEnemyStat += enemy + '`+' + num + '` ';
+    }
+
+    let latestEnemyList = {};
+    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
+        latestEnemyList[enemy] = num;
+    }
+    let latestEnemyStat = '';
+    for (let [enemy, num] of Util.entries(latestEnemyList)) {
+        latestEnemyStat += enemy + '`+' + num + '` ';
+    }
+
+    let currentLevel = getCurrentLevel(logList);
+    let { kfb, exp } = getTotalGain(levelInfoList);
+    if (kfb > 0 && exp > 0) {
+        Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近${ _Const2.default.enemyStatLatestLevelNum }层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
+        LootLog.record(logList, pointsLogList);
+    }
+    Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>` + `<i>KFB<em>+${ kfb.toLocaleString() }</em></i><i>经验值<em>+${ exp.toLocaleString() }</em></i>`, -1);
+
+    if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
+        Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
+        Public.getDailyBonus();
+    }
+    Script.runFunc('Loot.recordLootLog_after_');
 };
 
 /**
@@ -6156,6 +6179,9 @@ const addLootLogHeader = function () {
   </div>
   <div style="text-align: right;">
     <label>
+      <input class="pd_input" name="showLiteLootLogEnabled" type="checkbox" ${ Config.showLiteLootLogEnabled ? 'checked' : '' }> 显示精简记录
+    </label>
+    <label>
       <input class="pd_input" name="showLevelEnemyStatEnabled" type="checkbox" ${ Config.showLevelEnemyStatEnabled ? 'checked' : '' }> 显示分层统计
     </label>
     <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">导入/导出争夺记录</a>
@@ -6163,13 +6189,15 @@ const addLootLogHeader = function () {
   </div>
   <ul class="pd_stat" id="pdLogStat"></ul>
 </div>
-`).insertBefore($logBox).find('[name="showLevelEnemyStatEnabled"]').click(function () {
-        let checked = $(this).prop('checked');
-        if (Config.showLevelEnemyStatEnabled !== checked) {
+`).insertBefore($logBox).find('[type="checkbox"]').click(function () {
+        let $this = $(this);
+        let name = $this.attr('name');
+        let checked = $this.prop('checked');
+        if (name in Config && Config[name] !== checked) {
             (0, _Config.read)();
-            Config.showLevelEnemyStatEnabled = checked;
+            Config[name] = $this.prop('checked');
             (0, _Config.write)();
-            showLogStat(levelInfoList);
+            if (name === 'showLiteLootLogEnabled') showEnhanceLog(logList, levelInfoList, pointsLogList);else if (name === 'showLevelEnemyStatEnabled') showLogStat(levelInfoList);
         }
     }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
@@ -6302,6 +6330,11 @@ const handleLootLogNav = function () {
         let curLevelInfoList = getLevelInfoList(curLogList);
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
         showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
+
+        if (Config.autoSaveLootLogInSpecialCaseEnabled && keyList[curIndex] === 0) {
+            Util.deleteCookie(_Const2.default.lootCompleteCookieName);
+            autoSaveLootLog();
+        }
     }
 };
 
@@ -6397,6 +6430,13 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
         }
     });
     $log.html(list.reverse().join(''));
+
+    if (Config.showLiteLootLogEnabled) {
+        if (!$('#pdLiteLootLogStyle').length) {
+            $('head').append('<style id="pdLiteLootLogStyle">.pk_log_g, .pk_log_i, .pk_log_u, .pk_log_v { display: none; }</style>');
+        }
+    } else $('#pdLiteLootLogStyle').remove();
+    Script.runFunc('Loot.showEnhanceLog_after_');
 };
 
 /**
@@ -6576,7 +6616,7 @@ const checkLoot = exports.checkLoot = function () {
                 if (Util.getCookie(_Const2.default.lootCheckingCookieName)) return;
                 let $log = $('#pk_text', html);
                 if (!$log.length) {
-                    Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate('+1h'));
+                    Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${ _Const2.default.checkLootInterval }m`));
                     return;
                 }
                 if (Config.attackTargetLevel > 0) {
@@ -6617,6 +6657,43 @@ const autoLoot = function () {
     Util.deleteCookie(_Const2.default.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function';
     lootAttack({ type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId });
+};
+
+/**
+ * 自动保存争夺记录
+ */
+const autoSaveLootLog = exports.autoSaveLootLog = function () {
+    console.log('检查争夺情况Start');
+    let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        timeout: _Const2.default.defAjaxTimeout,
+        success(html) {
+            Msg.remove($wait);
+            if (Util.getCookie(_Const2.default.lootCompleteCookieName)) return;
+            let $log = $('#pk_text', html);
+            let log = $log.html();
+            if (/你被击败了/.test(log)) {
+                Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
+                let logList = getLogList(log);
+                let levelInfoList = getLevelInfoList(logList);
+                let historyLogs = LootLog.read();
+                if (!$.isEmptyObject(historyLogs)) {
+                    let keyList = Util.getObjectKeyList(historyLogs, 1);
+                    let latestKey = parseInt(keyList[keyList.length - 1]);
+                    if (latestKey > Util.getDate('-1d').getTime() && historyLogs[latestKey].log.join('').trim() === logList.join('').trim()) return;
+                }
+                recordLootInfo(logList, levelInfoList, []);
+            } else {
+                Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${ _Const2.default.checkLootInterval }m`));
+            }
+        },
+        error() {
+            Msg.remove($wait);
+            setTimeout(autoSaveLootLog, _Const2.default.defAjaxInterval);
+        }
+    });
 };
 
 /**
@@ -7676,7 +7753,7 @@ const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function (
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.donation = exports.startTimingMode = exports.getNextTimingInterval = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.donation = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -8032,10 +8109,10 @@ const addPolyfill = exports.addPolyfill = function () {
 };
 
 /**
- * 获取定时模式下次操作的时间间隔（秒）
- * @returns {number} 定时模式下次操作的时间间隔（秒）
+ * 获取定时模式下次操作的时间间隔信息
+ * @returns {{action: string, interval: number}} action：下次操作的名称；interval：下次操作的时间间隔（秒）
  */
-const getNextTimingInterval = exports.getNextTimingInterval = function () {
+const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function () {
     /*let donationInterval = -1;
      if (Config.autoDonationEnabled) {
      let donationTime = Util.getDateByTime(Config.donationAfterTime);
@@ -8049,16 +8126,16 @@ const getNextTimingInterval = exports.getNextTimingInterval = function () {
      }
      }*/
 
-    let lootInterval = -1;
-    if (Config.autoLootEnabled) {
+    let checkLootInterval = -1;
+    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName));
         if (value > 0) {
-            let date = Util.getTimezoneDateByTime(_Const2.default.lootAfterTime);
+            let date = Util.getTimezoneDateByTime(_Const2.default.checkLootAfterTime);
             date.setDate(date.getDate() + 1);
             let now = new Date();
             if (now > date) date.setDate(date.getDate() + 1);
-            lootInterval = Math.floor((date - now) / 1000);
-        } else if (value < 0) lootInterval = 60 * 60;else if (Util.getCookie(_Const2.default.lootAttackingCookieName)) lootInterval = _Const2.default.lootAttackingExpires * 60;else lootInterval = 0;
+            checkLootInterval = Math.floor((date - now) / 1000);
+        } else if (value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else checkLootInterval = 0;
     }
 
     let getDailyBonusInterval = -1;
@@ -8073,18 +8150,23 @@ const getNextTimingInterval = exports.getNextTimingInterval = function () {
         } else if (value < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
     }
 
-    let minArr = [lootInterval, getDailyBonusInterval].filter(interval => interval >= 0);
-    if (minArr.length > 0) {
-        let min = Math.min(...minArr);
-        return min > 0 ? min + 1 : 0;
-    } else return -1;
+    let intervalList = [{ action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }];
+    let minAction = '',
+        minInterval = -1;
+    for (let { action, interval } of intervalList.filter(data => data.interval > -1)) {
+        if (minInterval < 0 || interval < minInterval) {
+            minAction = action;
+            minInterval = interval;
+        }
+    }
+    return { action: minInterval > 0 ? minAction : '', interval: minInterval };
 };
 
 /**
  * 启动定时模式
  */
 const startTimingMode = exports.startTimingMode = function () {
-    let interval = getNextTimingInterval();
+    let { action, interval } = getNextTimingIntervalInfo();
     if (interval === -1) return;
     let oriTitle = document.title;
     let titleItvFunc = null;
@@ -8107,12 +8189,13 @@ const startTimingMode = exports.startTimingMode = function () {
     /**
      * 显示定时模式标题提示
      * @param {number} interval 倒计时的时间间隔（秒）
+     * @param {string} action 下次操作的名称
      * @param {boolean} isShowTitle 是否立即显示标题
      */
-    const showRefreshModeTips = function (interval, isShowTitle = false) {
+    const showRefreshModeTips = function (interval, action = '', isShowTitle = false) {
         if (titleItvFunc) window.clearInterval(titleItvFunc);
         let showInterval = interval;
-        console.log('【定时模式】倒计时：' + getFormatIntervalTitle(1, showInterval));
+        console.log(`【定时模式】倒计时${ action ? `(${ action })` : '' }：` + getFormatIntervalTitle(1, showInterval));
         if (Config.showTimingModeTipsType.toLowerCase() !== 'never') {
             const showIntervalTitle = function () {
                 document.title = `${ oriTitle } (定时: ${ getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval) })`;
@@ -8149,13 +8232,13 @@ const startTimingMode = exports.startTimingMode = function () {
                     Msg.remove($('.pd_refresh_notice').parent());
                     Msg.show(`<strong class="pd_refresh_notice">定时操作失败（原因：${ errorText }），将在<em>${ interval }</em>分钟后重试&hellip;</strong>`, -1);
                     setTimeout(handleError, interval * 60 * 1000);
-                    showRefreshModeTips(interval * 60, true);
+                    showRefreshModeTips(interval * 60, '', true);
                 } else {
                     if (errorNum > 6) {
                         errorNum = 0;
                         interval = 15;
                         setTimeout(checkRefreshInterval, interval * 60 * 1000);
-                        showRefreshModeTips(interval * 60, true);
+                        showRefreshModeTips(interval * 60, '', true);
                     } else {
                         errorNum++;
                         checkRefreshInterval();
@@ -8171,10 +8254,16 @@ const startTimingMode = exports.startTimingMode = function () {
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         //if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
-        if (Config.autoLootEnabled && !Util.getCookie(_Const2.default.lootCompleteCookieName) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) Loot.checkLoot();
+        if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+            if (Config.autoLootEnabled) {
+                if (!Util.getCookie(_Const2.default.lootAttackingCookieName)) Loot.checkLoot();
+            } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+                Loot.autoSaveLootLog();
+            }
+        }
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) getDailyBonus();
 
-        let interval = getNextTimingInterval();
+        let { action, interval } = getNextTimingIntervalInfo();
         if (interval > 0) errorNum = 0;
         if (interval === 0 && prevInterval === 0) {
             prevInterval = -1;
@@ -8186,11 +8275,11 @@ const startTimingMode = exports.startTimingMode = function () {
             return;
         } else if (interval === 0) interval = _Const2.default.actionFinishRetryInterval;
         setTimeout(checkRefreshInterval, interval * 1000);
-        showRefreshModeTips(interval, true);
+        showRefreshModeTips(interval, action, true);
     };
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
-    showRefreshModeTips(interval < 60 ? 60 : interval);
+    showRefreshModeTips(interval < 60 ? 60 : interval, action);
 };
 
 /**
