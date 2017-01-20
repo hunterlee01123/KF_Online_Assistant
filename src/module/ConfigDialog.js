@@ -81,12 +81,16 @@ export const show = function () {
     <fieldset>
       <legend>争夺相关</legend>
       <label>
-        <input name="autoLootEnabled" type="checkbox"> 自动争夺
+        <input name="autoLootEnabled" type="checkbox" data-disabled="[name=autoSaveLootLogInSpecialCaseEnabled]" data-mutex="true"> 自动争夺
         <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
         <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
+      </label><br>
+      <label>
+        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> 在不使用助手争夺的情况下自动保存争夺记录
+        <span class="pd_cfg_tips" title="在不使用助手争夺的情况下自动检查并保存争夺记录（使用助手进行争夺的用户请勿勾选此选项）">[?]</span>
       </label><br>
       <label>
         争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>

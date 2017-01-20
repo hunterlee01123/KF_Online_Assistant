@@ -1152,7 +1152,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
             }
             if (isFail) {
-                if (isChecked) finish();
+                if (isChecked) {
+                    Msg.remove($wait);
+                    recordLootInfo(logList, levelInfoList, pointsLogList);
+                }
                 else setTimeout(check, Const.defAjaxInterval);
             }
             else {
@@ -1190,52 +1193,58 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         });
     };
 
-    /**
-     * 完成攻击（被击败后）
-     */
-    const finish = function () {
-        Msg.remove($wait);
-        if (Config.autoLootEnabled) Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
-        sessionStorage.removeItem(Const.tempPointsLogListStorageName);
-
-        let allEnemyList = {};
-        for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
-            allEnemyList[enemy] = num;
-        }
-        let allEnemyStat = '';
-        for (let [enemy, num] of Util.entries(allEnemyList)) {
-            allEnemyStat += enemy + '`+' + num + '` ';
-        }
-
-        let latestEnemyList = {};
-        for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
-            latestEnemyList[enemy] = num;
-        }
-        let latestEnemyStat = '';
-        for (let [enemy, num] of Util.entries(latestEnemyList)) {
-            latestEnemyStat += enemy + '`+' + num + '` ';
-        }
-
-        let currentLevel = getCurrentLevel(logList);
-        let {exp, kfb} = getTotalGain(levelInfoList);
-        if (exp > 0 && kfb > 0) {
-            Log.push(
-                '争夺攻击',
-                `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${Const.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`,
-                {gain: {'KFB': kfb, '经验值': exp}}
-            );
-            LootLog.record(logList, pointsLogList);
-        }
-        Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>`, -1);
-
-        if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-            Util.deleteCookie(Const.getDailyBonusCookieName);
-            Public.getDailyBonus();
-        }
-        Script.runFunc('Loot.lootAttack_complete_');
-    };
-
     ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
+};
+
+/**
+ * 记录争夺信息
+ * @param {string[]} logList 各层争夺记录列表
+ * @param {{}[]} levelInfoList 各层战斗信息列表
+ * @param {string[]} pointsLogList 点数分配记录列表
+ */
+const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
+    Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+    sessionStorage.removeItem(Const.tempPointsLogListStorageName);
+
+    let allEnemyList = {};
+    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
+        allEnemyList[enemy] = num;
+    }
+    let allEnemyStat = '';
+    for (let [enemy, num] of Util.entries(allEnemyList)) {
+        allEnemyStat += enemy + '`+' + num + '` ';
+    }
+
+    let latestEnemyList = {};
+    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= logList.length - Const.enemyStatLatestLevelNum)))) {
+        latestEnemyList[enemy] = num;
+    }
+    let latestEnemyStat = '';
+    for (let [enemy, num] of Util.entries(latestEnemyList)) {
+        latestEnemyStat += enemy + '`+' + num + '` ';
+    }
+
+    let currentLevel = getCurrentLevel(logList);
+    let {kfb, exp} = getTotalGain(levelInfoList);
+    if (kfb > 0 && exp > 0) {
+        Log.push(
+            '争夺攻击',
+            `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${Const.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`,
+            {gain: {'KFB': kfb, '经验值': exp}}
+        );
+        LootLog.record(logList, pointsLogList);
+    }
+    Msg.show(
+        `<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>` +
+        `<i>KFB<em>+${kfb.toLocaleString()}</em></i><i>经验值<em>+${exp.toLocaleString()}</em></i>`,
+        -1
+    );
+
+    if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
+        Util.deleteCookie(Const.getDailyBonusCookieName);
+        Public.getDailyBonus();
+    }
+    Script.runFunc('Loot.recordLootLog_after_');
 };
 
 /**
@@ -1410,6 +1419,11 @@ const handleLootLogNav = function () {
         let curLevelInfoList = getLevelInfoList(curLogList);
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
         showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
+
+        if (Config.autoSaveLootLogInSpecialCaseEnabled && keyList[curIndex] === 0) {
+            Util.deleteCookie(Const.lootCompleteCookieName);
+            autoSaveLootLog();
+        }
     }
 };
 
@@ -1511,6 +1525,7 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
         }
     });
     $log.html(list.reverse().join(''));
+
 };
 
 /**
@@ -1690,7 +1705,7 @@ export const checkLoot = function () {
                 if (Util.getCookie(Const.lootCheckingCookieName)) return;
                 let $log = $('#pk_text', html);
                 if (!$log.length) {
-                    Util.setCookie(Const.lootCompleteCookieName, -1, Util.getDate('+1h'));
+                    Util.setCookie(Const.lootCompleteCookieName, -1, Util.getDate(`+${Const.checkLootInterval}m`));
                     return;
                 }
                 if (Config.attackTargetLevel > 0) {
@@ -1732,6 +1747,44 @@ const autoLoot = function () {
     Util.deleteCookie(Const.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
     lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId});
+};
+
+/**
+ * 自动保存争夺记录
+ */
+export const autoSaveLootLog = function () {
+    console.log('检查争夺情况Start');
+    let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        timeout: Const.defAjaxTimeout,
+        success (html) {
+            Msg.remove($wait);
+            if (Util.getCookie(Const.lootCompleteCookieName)) return;
+            let $log = $('#pk_text', html);
+            let log = $log.html();
+            if (/你被击败了/.test(log)) {
+                Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+                let logList = getLogList(log);
+                let levelInfoList = getLevelInfoList(logList);
+                let historyLogs = LootLog.read();
+                if (!$.isEmptyObject(historyLogs)) {
+                    let keyList = Util.getObjectKeyList(historyLogs, 1);
+                    let latestKey = parseInt(keyList[keyList.length - 1]);
+                    if (latestKey > Util.getDate('-1d').getTime() && historyLogs[latestKey].log.join('').trim() === logList.join('').trim()) return;
+                }
+                recordLootInfo(logList, levelInfoList, []);
+            }
+            else {
+                Util.setCookie(Const.lootCompleteCookieName, -1, Util.getDate(`+${Const.checkLootInterval}m`));
+            }
+        },
+        error () {
+            Msg.remove($wait);
+            setTimeout(autoSaveLootLog, Const.defAjaxInterval);
+        }
+    });
 };
 
 /**

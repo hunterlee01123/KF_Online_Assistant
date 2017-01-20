@@ -17,8 +17,8 @@ const Const = {
     maxDonationKfb: 5000,
     // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
     getDailyBonusAfterTime: '00:35:00',
-    // 在当天的指定时间之后进行自动争夺（北京时间），例：00:10:00
-    lootAfterTime: '00:10:00',
+    // 在当天的指定时间之后检查争夺情况（北京时间），例：00:10:00
+    checkLootAfterTime: '00:10:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
@@ -34,6 +34,8 @@ const Const = {
     getDailyBonusSpecialInterval: 30,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
+    // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
+    checkLootInterval: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒

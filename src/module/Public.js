@@ -328,7 +328,7 @@ export const addPolyfill = function () {
  * 获取定时模式下次操作的时间间隔信息
  * @returns {{action: string, interval: number}} action：下次操作的名称；interval：下次操作的时间间隔（秒）
  */
-export const getNextTimingInterval = function () {
+export const getNextTimingIntervalInfo = function () {
     /*let donationInterval = -1;
      if (Config.autoDonationEnabled) {
      let donationTime = Util.getDateByTime(Config.donationAfterTime);
@@ -342,19 +342,19 @@ export const getNextTimingInterval = function () {
      }
      }*/
 
-    let lootInterval = -1;
-    if (Config.autoLootEnabled) {
+    let checkLootInterval = -1;
+    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
         if (value > 0) {
-            let date = Util.getTimezoneDateByTime(Const.lootAfterTime);
+            let date = Util.getTimezoneDateByTime(Const.checkLootAfterTime);
             date.setDate(date.getDate() + 1);
             let now = new Date();
             if (now > date) date.setDate(date.getDate() + 1);
-            lootInterval = Math.floor((date - now) / 1000);
+            checkLootInterval = Math.floor((date - now) / 1000);
         }
-        else if (value < 0) lootInterval = 60 * 60;
-        else if (Util.getCookie(Const.lootAttackingCookieName)) lootInterval = Const.lootAttackingExpires * 60;
-        else lootInterval = 0;
+        else if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
+        else if (Util.getCookie(Const.lootAttackingCookieName)) checkLootInterval = Const.lootAttackingExpires * 60;
+        else checkLootInterval = 0;
     }
 
     let getDailyBonusInterval = -1;
@@ -372,11 +372,11 @@ export const getNextTimingInterval = function () {
     }
 
     let intervalList = [
-        {action: '自动争夺', interval: lootInterval},
-        {action: '自动获取每日奖励', interval: getDailyBonusInterval}
+        {action: '检查争夺情况', interval: checkLootInterval},
+        {action: '自动获取每日奖励', interval: getDailyBonusInterval},
     ];
     let minAction = '', minInterval = -1;
-    for (let {action, interval} of intervalList) {
+    for (let {action, interval} of intervalList.filter(data => data.interval > -1)) {
         if (minInterval < 0 || interval < minInterval) {
             minAction = action;
             minInterval = interval;
@@ -389,7 +389,7 @@ export const getNextTimingInterval = function () {
  * 启动定时模式
  */
 export const startTimingMode = function () {
-    let {action, interval} = getNextTimingInterval();
+    let {action, interval} = getNextTimingIntervalInfo();
     if (interval === -1) return;
     let oriTitle = document.title;
     let titleItvFunc = null;
@@ -479,11 +479,17 @@ export const startTimingMode = function () {
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
         //if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
-        if (Config.autoLootEnabled && !Util.getCookie(Const.lootCompleteCookieName) && !Util.getCookie(Const.lootAttackingCookieName))
-            Loot.checkLoot();
+        if (!Util.getCookie(Const.lootCompleteCookieName)) {
+            if (Config.autoLootEnabled) {
+                if (!Util.getCookie(Const.lootAttackingCookieName)) Loot.checkLoot();
+            }
+            else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+                Loot.autoSaveLootLog();
+            }
+        }
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
 
-        let {action, interval} = getNextTimingInterval();
+        let {action, interval} = getNextTimingIntervalInfo();
         if (interval > 0) errorNum = 0;
         if (interval === 0 && prevInterval === 0) {
             prevInterval = -1;

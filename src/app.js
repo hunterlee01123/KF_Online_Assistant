@@ -88,7 +88,7 @@ const init = function () {
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
-        if (Config.autoLootEnabled && parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2)
+        if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2)
             $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
     }
     else if (location.pathname === '/read.php') {
@@ -205,11 +205,17 @@ const init = function () {
     }
 
     let isAutoLootStarted = false;
-    if (Config.autoLootEnabled && location.pathname !== '/kf_fw_ig_index.php'
-        && !Util.getCookie(Const.lootCompleteCookieName) && !Util.getCookie(Const.lootAttackingCookieName)
-    ) {
-        isAutoLootStarted = true;
-        Loot.checkLoot();
+    if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
+        if (Config.autoLootEnabled) {
+            if (!Util.getCookie(Const.lootAttackingCookieName)) {
+                isAutoLootStarted = true;
+                Loot.checkLoot();
+            }
+        }
+        else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+            isAutoLootStarted = true;
+            Loot.autoSaveLootLog();
+        }
     }
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
@@ -230,7 +236,7 @@ const init = function () {
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 
     let endDate = new Date();
-    console.log(`【KF Online助手】加载完毕，加载耗时：${endDate - startDate}ms`);
+    console.log(`【KF Online助手】初始化耗时：${endDate - startDate}ms`);
 };
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);

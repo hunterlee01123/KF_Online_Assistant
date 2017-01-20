@@ -40,6 +40,7 @@ export const create = function (id, title, content, style = '') {
     }).end().find('input[data-disabled]').click(function () {
         let $this = $(this);
         let checked = $this.prop('checked');
+        if ($this.data('mutex')) checked = !checked;
         $($this.data('disabled')).each(function () {
             let $this = $(this);
             if ($this.is('a')) {
