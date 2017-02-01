@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.5
+// @version     9.5.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.5';
+const version = '9.5.1';
 
 /**
  * 导出模块
@@ -8397,7 +8397,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
         url: 'kf_growup.php?t=' + new Date().getTime(),
         timeout: _Const2.default.defAjaxTimeout
     }).done(function (html) {
-        let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+)贡献\s*\+\s*(\d+)转账额度/.exec(html);
+        let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+(?:\.\d+)?)贡献\s*\+\s*(\d+)转账额度/.exec(html);
         if (matches) {
             if (Config.getBonusAfterLootCompleteEnabled && !/<div class="gro_divlv">\r\n争夺奖励/.test(html)) {
                 Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate(`+${ _Const2.default.getDailyBonusSpecialInterval }m`));
@@ -8413,7 +8413,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
             let gain = {};
             if (parseInt(matches[2]) > 0) gain['KFB'] = parseInt(matches[2]);
             if (parseInt(matches[3]) > 0) gain['经验值'] = parseInt(matches[3]);
-            if (parseInt(matches[4]) > 0) gain['贡献'] = parseInt(matches[4]);
+            if (parseFloat(matches[4]) > 0) gain['贡献'] = parseFloat(matches[4]);
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
             $.get(`${ url }&t=${ new Date().getTime() }`, function (html) {

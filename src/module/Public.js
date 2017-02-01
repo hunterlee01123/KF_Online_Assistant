@@ -628,7 +628,7 @@ export const getDailyBonus = function () {
         url: 'kf_growup.php?t=' + new Date().getTime(),
         timeout: Const.defAjaxTimeout,
     }).done(function (html) {
-        let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+)贡献\s*\+\s*(\d+)转账额度/.exec(html);
+        let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+(?:\.\d+)?)贡献\s*\+\s*(\d+)转账额度/.exec(html);
         if (matches) {
             if (Config.getBonusAfterLootCompleteEnabled && !/<div class="gro_divlv">\r\n争夺奖励/.test(html)) {
                 Util.setCookie(Const.getDailyBonusCookieName, -1, Util.getDate(`+${Const.getDailyBonusSpecialInterval}m`));
@@ -644,7 +644,7 @@ export const getDailyBonus = function () {
             let gain = {};
             if (parseInt(matches[2]) > 0) gain['KFB'] = parseInt(matches[2]);
             if (parseInt(matches[3]) > 0) gain['经验值'] = parseInt(matches[3]);
-            if (parseInt(matches[4]) > 0) gain['贡献'] = parseInt(matches[4]);
+            if (parseFloat(matches[4]) > 0) gain['贡献'] = parseFloat(matches[4]);
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
             $.get(`${url}&t=${new Date().getTime()}`, function (html) {
