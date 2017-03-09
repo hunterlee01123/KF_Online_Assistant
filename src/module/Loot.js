@@ -95,7 +95,7 @@ const handlePropertiesArea = function () {
         .replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>')
         .replace(
             '技能伤害：攻击+(体质*5)+(智力*5)',
-            '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>'
+            '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
         );
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
@@ -260,8 +260,8 @@ const getCurrentAssignedPoint = function ($points, type = 0) {
  * @returns {number} 技能伤害的值
  */
 const getSkillAttack = (s1, s2, i1, type = 0) => {
-    return (s1 + (type === 1 ? 0 : extraPointList.get('力量'))) * 5 + (s2 - (type === 1 ? extraPointList.get('体质') : 0)) * 5 +
-        (i1 - (type === 1 ? extraPointList.get('智力') : 0)) * 5;
+    return (s1 + (type === 1 ? 0 : extraPointList.get('力量'))) * 5 + (s2 + (type === 1 ? 0 : extraPointList.get('体质'))) * 5 +
+        (i1 + (type === 1 ? 0 : extraPointList.get('智力'))) * 5;
 };
 
 /**
@@ -659,7 +659,7 @@ const showLevelPointListConfigDialog = function (callback) {
   <td title="防御减伤">
     防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td class="pd_custom_tips" title="技能伤害：攻击+(体质*5)+(智力*5)">技伤：<span data-id="skillAttack">0</span></td>
+  <td class="pd_custom_tips" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5">技伤：<span data-id="skillAttack">0</span></td>
 </tr>
 `).appendTo($levelPointList).find('.pd_point').trigger('change');
         setPointsRange($points);

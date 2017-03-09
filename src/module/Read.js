@@ -274,12 +274,17 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
                         data.smLevel = $user.find('.readidmright').text().trim();
                     }
 
-                    let $buy = $floor.find('[value="愿意购买,支付KFB"]:first');
-                    if ($buy.length > 0) {
-                        let matches = /此帖售价\s*(\d+)\s*KFB/.exec($buy.parent('legend').text());
-                        if (matches) data.sell = parseInt(matches[1]);
-                        matches = /location\.href="(.+)"/i.exec($buy.attr('onclick'));
-                        if (matches) data.buyUrl = matches[1];
+                    let $buyer = $floor.find('[name="buyers"]:first');
+                    data.status = 0;
+                    if ($buyer.length > 0) {
+                        let $input = $buyer.next('input');
+                        data.status = $input.length > 0 ? 1 : 2;
+                        if (data.status === 1) {
+                            let matches = /此帖售价\s*(\d+)\s*KFB/.exec($buyer.parent('legend').text());
+                            if (matches) data.sell = parseInt(matches[1]);
+                            matches = /location\.href="(.+)"/i.exec($input.attr('onclick'));
+                            if (matches) data.buyUrl = matches[1];
+                        }
                     }
                     floorList[floor] = data;
                 });
@@ -388,13 +393,14 @@ export const showStatFloorDialog = function (floorList) {
 <tr>
   <td>
     <label>
-      <input data-sell="${data.sell ? data.sell : 0}" data-url="${data.buyUrl ? data.buyUrl : ''}" type="checkbox" value="${data.userName}">
+      <input data-status="${data.status}" data-sell="${data.sell ? data.sell : 0}" data-url="${data.buyUrl ? data.buyUrl : ''}"
+        type="checkbox" value="${data.userName}">
     </label>
   </td>
   <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
   <td><a href="profile.php?action=show&username=${data.userName}" target="_blank" style="color: #000;">${data.userName}</a></td>
   <td style="color: #f39;">${data.smLevel}</td>
-  <td class="pd_stat">${data.sell ? `<em>${data.sell}</em>` : '<span class="pd_notice">无</span>'}</td>
+  <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>
 </tr>`;
             copyContent += data.userName + '\n';
             num++;
@@ -419,12 +425,14 @@ export const showStatFloorDialog = function (floorList) {
             let userStat = {};
             $statFloorList.find('[type="checkbox"]').each(function () {
                 let $this = $(this);
+                let status = parseInt($this.data('status'));
+                if (!status) return;
                 let sell = parseInt($this.data('sell'));
-                let isChecked = sell > 0 && sell >= startSell && sell <= endSell;
+                let userName = $this.val();
+                if (!(userName in userStat)) userStat[userName] = 0;
+                userStat[userName]++;
+                let isChecked = status === 1 && sell >= startSell && sell <= endSell;
                 if (isChecked && limitNum > 0) {
-                    let userName = $this.val();
-                    if (!(userName in userStat)) userStat[userName] = 0;
-                    userStat[userName]++;
                     if (userStat[userName] > limitNum) isChecked = false;
                 }
                 $this.prop('checked', isChecked);

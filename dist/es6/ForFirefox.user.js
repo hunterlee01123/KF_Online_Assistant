@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.5.1
+// @version     9.5.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.5.1';
+const version = '9.5.2';
 
 /**
  * 导出模块
@@ -5107,7 +5107,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  */
 const handlePropertiesArea = function () {
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` + `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` + `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="技能伤害：攻击+(体质*5)+(智力*5)"></span>');
+    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` + `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` + `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
@@ -5243,7 +5243,7 @@ const getCurrentAssignedPoint = function ($points, type = 0) {
  * @returns {number} 技能伤害的值
  */
 const getSkillAttack = (s1, s2, i1, type = 0) => {
-    return (s1 + (type === 1 ? 0 : extraPointList.get('力量'))) * 5 + (s2 - (type === 1 ? extraPointList.get('体质') : 0)) * 5 + (i1 - (type === 1 ? extraPointList.get('智力') : 0)) * 5;
+    return (s1 + (type === 1 ? 0 : extraPointList.get('力量'))) * 5 + (s2 + (type === 1 ? 0 : extraPointList.get('体质'))) * 5 + (i1 + (type === 1 ? 0 : extraPointList.get('智力'))) * 5;
 };
 
 /**
@@ -5627,7 +5627,7 @@ const showLevelPointListConfigDialog = function (callback) {
   <td title="防御减伤">
     防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td class="pd_custom_tips" title="技能伤害：攻击+(体质*5)+(智力*5)">技伤：<span data-id="skillAttack">0</span></td>
+  <td class="pd_custom_tips" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5">技伤：<span data-id="skillAttack">0</span></td>
 </tr>
 `).appendTo($levelPointList).find('.pd_point').trigger('change');
         setPointsRange($points);
@@ -7577,10 +7577,10 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
                 break;
             case 'audio':
                 {
-                    text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐或虾米的单曲地址，将自动转换为外链地址）', 'http://');
+                    text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐的单曲地址，将自动转换为外链地址）', 'http://');
                     let matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
                     if (matches) text = `http://music.miaola.info/163/${ matches[1] }.mp3`;
-                    matches = /^https?:\/\/www\.xiami\.com\/song\/(\d+)/i.exec(text);
+                    matches = /^https?:\/\/www\.xiami\.com\/song\/(\w+)/i.exec(text);
                     if (matches) text = `http://music.miaola.info/xiami/${ matches[1] }.mp3`;
                 }
                 break;
@@ -9412,12 +9412,17 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
                         data.smLevel = $user.find('.readidmright').text().trim();
                     }
 
-                    let $buy = $floor.find('[value="愿意购买,支付KFB"]:first');
-                    if ($buy.length > 0) {
-                        let matches = /此帖售价\s*(\d+)\s*KFB/.exec($buy.parent('legend').text());
-                        if (matches) data.sell = parseInt(matches[1]);
-                        matches = /location\.href="(.+)"/i.exec($buy.attr('onclick'));
-                        if (matches) data.buyUrl = matches[1];
+                    let $buyer = $floor.find('[name="buyers"]:first');
+                    data.status = 0;
+                    if ($buyer.length > 0) {
+                        let $input = $buyer.next('input');
+                        data.status = $input.length > 0 ? 1 : 2;
+                        if (data.status === 1) {
+                            let matches = /此帖售价\s*(\d+)\s*KFB/.exec($buyer.parent('legend').text());
+                            if (matches) data.sell = parseInt(matches[1]);
+                            matches = /location\.href="(.+)"/i.exec($input.attr('onclick'));
+                            if (matches) data.buyUrl = matches[1];
+                        }
                     }
                     floorList[floor] = data;
                 });
@@ -9525,13 +9530,14 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
 <tr>
   <td>
     <label>
-      <input data-sell="${ data.sell ? data.sell : 0 }" data-url="${ data.buyUrl ? data.buyUrl : '' }" type="checkbox" value="${ data.userName }">
+      <input data-status="${ data.status }" data-sell="${ data.sell ? data.sell : 0 }" data-url="${ data.buyUrl ? data.buyUrl : '' }"
+        type="checkbox" value="${ data.userName }">
     </label>
   </td>
   <td><a href="read.php?tid=${ tid }&spid=${ data.pid }" target="_blank">${ floor }楼</a></td>
   <td><a href="profile.php?action=show&username=${ data.userName }" target="_blank" style="color: #000;">${ data.userName }</a></td>
   <td style="color: #f39;">${ data.smLevel }</td>
-  <td class="pd_stat">${ data.sell ? `<em>${ data.sell }</em>` : '<span class="pd_notice">无</span>' }</td>
+  <td class="pd_stat">${ data.status === 1 ? `<em>${ data.sell }</em>` : `<span class="pd_notice">${ !data.status ? '无' : '已买' }</span>` }</td>
 </tr>`;
             copyContent += data.userName + '\n';
             num++;
@@ -9554,12 +9560,14 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
             let userStat = {};
             $statFloorList.find('[type="checkbox"]').each(function () {
                 let $this = $(this);
+                let status = parseInt($this.data('status'));
+                if (!status) return;
                 let sell = parseInt($this.data('sell'));
-                let isChecked = sell > 0 && sell >= startSell && sell <= endSell;
+                let userName = $this.val();
+                if (!(userName in userStat)) userStat[userName] = 0;
+                userStat[userName]++;
+                let isChecked = status === 1 && sell >= startSell && sell <= endSell;
                 if (isChecked && limitNum > 0) {
-                    let userName = $this.val();
-                    if (!(userName in userStat)) userStat[userName] = 0;
-                    userStat[userName]++;
                     if (userStat[userName] > limitNum) isChecked = false;
                 }
                 $this.prop('checked', isChecked);
