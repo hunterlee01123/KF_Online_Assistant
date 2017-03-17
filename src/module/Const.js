@@ -13,8 +13,6 @@ const Const = {
 
     // UTC时间与论坛时间之间的时差（小时）
     forumTimezoneOffset: -8,
-    // KFB捐款额度的最大值
-    maxDonationKfb: 5000,
     // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
     getDailyBonusAfterTime: '00:35:00',
     // 在当天的指定时间之后检查争夺情况（北京时间），例：00:10:00
@@ -99,8 +97,6 @@ const Const = {
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
 
-    // 标记已进行KFB捐款的Cookie名称
-    donationCookieName: 'donation',
     // 标记已领取每日奖励的Cookie名称
     getDailyBonusCookieName: 'getDailyBonus',
     // 标记正在检查争夺情况的Cookie名称

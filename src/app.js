@@ -220,14 +220,7 @@ const init = function () {
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
 
-    let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && Info.isInHomePage;
-    let isDonationStarted = false;
-    /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
-     isDonationStarted = true;
-     Public.donation(autoSaveCurrentDepositAvailable);
-     }*/
-
-    if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
+    if (Config.autoSaveCurrentDepositEnabled && Info.isInHomePage) Public.autoSaveCurrentDeposit();
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) Public.changeIdColor();
 

@@ -19,13 +19,6 @@ export const Config = {
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
     showTimingModeTipsType: 'auto',
 
-    // 是否自动KFB捐款，true：开启；false：关闭
-    //autoDonationEnabled: false,
-    // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
-    //donationKfb: '1',
-    // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    //donationAfterTime: '00:05:00',
-
     // 是否自动领取每日奖励，true：开启；false：关闭
     autoGetDailyBonusEnabled: false,
     // 是否在完成争夺奖励后才领取每日奖励，true：开启；false：关闭
@@ -46,7 +39,7 @@ export const Config = {
     // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
     autoChangeLevelPointsEnabled: false,
     // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
-    customPointsScriptEnabled: true,
+    customPointsScriptEnabled: false,
     // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭

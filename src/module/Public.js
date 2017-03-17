@@ -329,19 +329,6 @@ export const addPolyfill = function () {
  * @returns {{action: string, interval: number}} action：下次操作的名称；interval：下次操作的时间间隔（秒）
  */
 export const getNextTimingIntervalInfo = function () {
-    /*let donationInterval = -1;
-     if (Config.autoDonationEnabled) {
-     let donationTime = Util.getDateByTime(Config.donationAfterTime);
-     let now = new Date();
-     if (!Util.getCookie(Const.donationCookieName) && now <= donationTime) {
-     donationInterval = Math.floor((donationTime - now) / 1000);
-     }
-     else {
-     donationTime.setDate(donationTime.getDate() + 1);
-     donationInterval = Math.floor((donationTime - now) / 1000);
-     }
-     }*/
-
     let checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
@@ -478,7 +465,6 @@ export const startTimingMode = function () {
      */
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
-        //if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
         if (!Util.getCookie(Const.lootCompleteCookieName)) {
             if (Config.autoLootEnabled) {
                 if (!Util.getCookie(Const.lootAttackingCookieName)) Loot.checkLoot();
@@ -508,100 +494,6 @@ export const startTimingMode = function () {
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
     showRefreshModeTips(interval < 60 ? 60 : interval, action);
-};
-
-/**
- * KFB捐款
- * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
- */
-export const donation = function (isAutoSaveCurrentDeposit = false) {
-    let now = new Date();
-    let date = Util.getDateByTime(Config.donationAfterTime);
-    if (now < date) {
-        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-        return;
-    }
-    Script.runFunc('Public.donation_before_');
-    console.log('KFB捐款Start');
-    let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
-
-    /**
-     * 获取捐款Cookies有效期
-     * @returns {Date} Cookies有效期的Date对象
-     */
-    const getCookieDate = function () {
-        let now = new Date();
-        let date = Util.getTimezoneDateByTime('02:30:00');
-        if (now > date) {
-            date = Util.getTimezoneDateByTime('00:00:00');
-            date.setDate(date.getDate() + 1);
-        }
-        if (now > date) date.setDate(date.getDate() + 1);
-        return date;
-    };
-
-    /**
-     * 使用指定的KFB捐款
-     * @param {number} kfb 指定的KFB
-     */
-    const donationSubmit = function (kfb) {
-        $.post('kf_growup.php?ok=1', {kfb: kfb}, function (html) {
-            Util.setCookie(Const.donationCookieName, 1, getCookieDate());
-            showFormatLog(`捐款${kfb}KFB`, html);
-            let {msg} = Util.getResponseMsg(html);
-            Msg.remove($wait);
-
-            let msgHtml = `<strong>捐款<em>${kfb}</em>KFB</strong>`;
-            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
-            if (!matches) {
-                if (/KFB不足。/.test(msg)) {
-                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
-                }
-                else return;
-            }
-            else {
-                msgHtml += `<i>经验值<em>+${matches[1]}</em></i>`;
-                let gain = {'经验值': parseInt(matches[1])};
-                if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
-                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' +
-                        (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${matches[2]}</em>${typeof matches[3] !== 'undefined' ? '' : ')'}</i>` : '') +
-                        (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${matches[3]}</em>)</i>` : '');
-                    if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
-                    if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
-                }
-                Log.push('捐款', `捐款\`${kfb}\`KFB`, {gain: gain, pay: {'KFB': -kfb}});
-            }
-            Msg.show(msgHtml);
-            if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Script.runFunc('Public.donation_after_', msg);
-        });
-    };
-
-    if (/%$/.test(Config.donationKfb)) {
-        $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
-            let matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
-            let income = 1;
-            if (matches) income = parseInt(matches[1]);
-            else console.log('当前持有KFB获取失败');
-            let donationKfb = parseInt(Config.donationKfb);
-            donationKfb = Math.floor(income * donationKfb / 100);
-            donationKfb = donationKfb > 0 ? donationKfb : 1;
-            donationKfb = donationKfb <= Const.maxDonationKfb ? donationKfb : Const.maxDonationKfb;
-            donationSubmit(donationKfb);
-        });
-    }
-    else {
-        $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
-            if (/>今天已经捐款</.test(html)) {
-                Msg.remove($wait);
-                Util.setCookie(Const.donationCookieName, 1, getCookieDate());
-                if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-            }
-            else {
-                donationSubmit(parseInt(Config.donationKfb));
-            }
-        });
-    }
 };
 
 /**
@@ -961,6 +853,7 @@ ${Const.customTileSideBarContent}
     <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
+    <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
     <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
     <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
     <li><a href="profile.php?action=modify">设置</a></li>

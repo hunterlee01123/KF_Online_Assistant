@@ -51,20 +51,6 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span>
       </label>
     </fieldset>
-    <fieldset hidden>
-      <legend>
-        <label><input name="autoDonationEnabled" type="checkbox"> 自动KFB捐款</label>
-      </legend>
-      <label>
-        KFB捐款额度
-        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>
-        <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        在 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后捐款
-        <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
-      </label>
-    </fieldset>
     <fieldset>
       <legend>
         <label><input name="autoGetDailyBonusEnabled" type="checkbox"> 自动领取每日奖励</label>
@@ -444,41 +430,6 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
-    /*let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
-     let donationKfb = $.trim($txtDonationKfb.val());
-     if (/%$/.test(donationKfb)) {
-     if (!/^1?\d?\d%$/.test(donationKfb)) {
-     alert('KFB捐款额度格式不正确');
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
-     alert('KFB捐款额度百分比的取值范围在1-100之间');
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     }
-     else {
-     if (!$.isNumeric(donationKfb)) {
-     alert('KFB捐款额度格式不正确');
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
-     alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     }
-
-     let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
-     let donationAfterTime = $.trim($txtDonationAfterTime.val());
-     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
-     alert('在指定时间之后捐款格式不正确');
-     $txtDonationAfterTime.select().focus();
-     return false;
-     }*/
-
     let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
