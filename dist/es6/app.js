@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.6.2';
+const version = '9.6.3';
 
 /**
  * 导出模块
@@ -5332,7 +5332,9 @@ const showNewLootProperty = function ($point) {
             text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '普通') + '%';
             text += '|' + getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '快速') + '%';
         }
-        $properties.find('#pdReal_' + name).text(`(${text})`).attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);
+        /*$properties.find('#pdReal_' + name).text(`(${text})`)
+            .attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);*/
+        // 临时禁用
     }
 
     if (point !== oriPoint) $properties.find('#pdNew_' + name).text(`(${(diffValue >= 0 ? '+' : '') + diffValue})`).css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
@@ -5951,6 +5953,8 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         }
 
         let changeLevel = nextLevel > 0 ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : -1;
+        let $levelPointListSelect = $('#pdLevelPointListSelect');
+        if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
         let isChange = false;
         $points.find('.pd_point').each(function () {
             if (this.defaultValue !== $(this).val()) {
@@ -5959,8 +5963,6 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             }
         });
         if (isChange) {
-            let $levelPointListSelect = $('#pdLevelPointListSelect');
-            if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
             if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
                 if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
             }
@@ -6717,7 +6719,7 @@ const promoteHalo = exports.promoteHalo = function () {
                 nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
                 let randomNum = parseFloat(matches[2]);
                 let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
-                Msg.show('<strong>' + (matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) + `</strong><i>${costResult.type}<ins>${-costResult.num}</ins></i>`, -1);
+                Msg.show('<strong>' + (matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) + `</strong><i>${costResult.type}<ins>${(-costResult.num).toLocaleString()}</ins></i>`, -1);
 
                 let pay = {};
                 pay[costResult.type] = -costResult.num;

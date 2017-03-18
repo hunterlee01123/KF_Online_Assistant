@@ -393,8 +393,9 @@ const showNewLootProperty = function ($point) {
             text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '普通') + '%';
             text += '|' + getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '快速') + '%';
         }
-        $properties.find('#pdReal_' + name).text(`(${text})`)
-            .attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);
+        /*$properties.find('#pdReal_' + name).text(`(${text})`)
+            .attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);*/
+        // 临时禁用
     }
 
     if (point !== oriPoint)
@@ -1048,6 +1049,9 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         }
 
         let changeLevel = nextLevel > 0 ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : -1;
+        let $levelPointListSelect = $('#pdLevelPointListSelect');
+        if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');
+        else $levelPointListSelect.get(0).selectedIndex = 0;
         let isChange = false;
         $points.find('.pd_point').each(function () {
             if (this.defaultValue !== $(this).val()) {
@@ -1056,9 +1060,6 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }
         });
         if (isChange) {
-            let $levelPointListSelect = $('#pdLevelPointListSelect');
-            if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');
-            else $levelPointListSelect.get(0).selectedIndex = 0;
             if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
                 if (confirm('可分配属性点尚未用完，是否继续？')) Info.w.unusedPointNumAlert = true;
                 else return $.Deferred().resolve('error');
@@ -1855,7 +1856,7 @@ export const promoteHalo = function () {
                     '<strong>' +
                     (matches[1] === '新数值为' ?
                         `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) +
-                    `</strong><i>${costResult.type}<ins>${-costResult.num}</ins></i>`
+                    `</strong><i>${costResult.type}<ins>${(-costResult.num).toLocaleString()}</ins></i>`
                     , -1
                 );
 

@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.6.2
+// @version     9.6.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.6.2';
+var version = '9.6.3';
 
 /**
  * 导出模块
@@ -5880,7 +5880,9 @@ var showNewLootProperty = function showNewLootProperty($point) {
             text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '普通') + '%';
             text += '|' + getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '快速') + '%';
         }
-        $properties.find('#pdReal_' + name).text('(' + text + ')').attr('title', '\u7B2C' + nextLevel + '\u5C42\u7684\u5B9E\u9645' + (pointName === '灵活' ? '暴击几率' : '技能释放概率') + ' (' + (nextLevel % 10 === 0 ? 'BOSS' : '普通|快速') + ')');
+        /*$properties.find('#pdReal_' + name).text(`(${text})`)
+            .attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);*/
+        // 临时禁用
     }
 
     if (point !== oriPoint) $properties.find('#pdNew_' + name).text('(' + ((diffValue >= 0 ? '+' : '') + diffValue) + ')').css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
@@ -6565,6 +6567,8 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         var changeLevel = nextLevel > 0 ? Math.max.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList).filter(function (level) {
             return level <= nextLevel;
         }))) : -1;
+        var $levelPointListSelect = $('#pdLevelPointListSelect');
+        if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
         var isChange = false;
         $points.find('.pd_point').each(function () {
             if (this.defaultValue !== $(this).val()) {
@@ -6573,8 +6577,6 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             }
         });
         if (isChange) {
-            var $levelPointListSelect = $('#pdLevelPointListSelect');
-            if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
             if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
                 if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
             }
@@ -7497,7 +7499,7 @@ var promoteHalo = exports.promoteHalo = function promoteHalo() {
                 nextTime = Util.getDate('+' + Config.promoteHaloInterval + 'h');
                 var randomNum = parseFloat(matches[2]);
                 var costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
-                Msg.show('<strong>' + (matches[1] === '新数值为' ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + ('</strong><i>' + costResult.type + '<ins>' + -costResult.num + '</ins></i>'), -1);
+                Msg.show('<strong>' + (matches[1] === '新数值为' ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + ('</strong><i>' + costResult.type + '<ins>' + (-costResult.num).toLocaleString() + '</ins></i>'), -1);
 
                 var pay = {};
                 pay[costResult.type] = -costResult.num;
