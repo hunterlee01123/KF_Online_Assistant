@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.5.2';
+const version = '9.6';
 
 /**
  * 导出模块
@@ -151,6 +151,7 @@ const init = function () {
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
+        Index.addPromoteHaloInterval();
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         Read.fastGotoFloor();
@@ -199,6 +200,8 @@ const init = function () {
         Loot.enhanceLootIndexPage();
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
+    } else if (location.pathname === '/kf_fw_ig_halo.php') {
+        $('.kf_fw_ig1').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', () => confirm('是否提升战力光环？'));
     } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
     } else if (/\/kf_fw_card_my\.php$/.test(location.href)) {
@@ -242,12 +245,18 @@ const init = function () {
         $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
     }
 
+    let isAutoPromoteHaloStarted = false;
+    if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
+        isAutoPromoteHaloStarted = true;
+        Loot.promoteHalo();
+    }
+
     let isAutoLootStarted = false;
     if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
             if (!Util.getCookie(_Const2.default.lootAttackingCookieName)) {
                 isAutoLootStarted = true;
-                Loot.checkLoot();
+                setTimeout(Loot.checkLoot, isAutoPromoteHaloStarted ? 20 * 1000 : 0);
             }
         } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
             isAutoLootStarted = true;
@@ -257,14 +266,7 @@ const init = function () {
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
 
-    let autoSaveCurrentDepositAvailable = Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage;
-    let isDonationStarted = false;
-    /*if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) {
-     isDonationStarted = true;
-     Public.donation(autoSaveCurrentDepositAvailable);
-     }*/
-
-    if (autoSaveCurrentDepositAvailable && !isDonationStarted) Public.autoSaveCurrentDeposit();
+    if (Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage) Public.autoSaveCurrentDeposit();
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
 
@@ -273,7 +275,7 @@ const init = function () {
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 
     let endDate = new Date();
-    console.log(`【KF Online助手】初始化耗时：${ endDate - startDate }ms`);
+    console.log(`【KF Online助手】初始化耗时：${endDate - startDate}ms`);
 };
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
@@ -325,7 +327,7 @@ const handleBankPage = exports.handleBankPage = function () {
     let $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("当前所持：")');
     if (!$account.length) return;
     let html = $account.html();
-    $account.html(html.replace(/当前所持：(-?\d+)KFB/, (m, kfb) => `当前所持：<b id="pdCash" data-num="${ kfb }">${ parseInt(kfb).toLocaleString() }</b> KFB`).replace(/活期存款：(-?\d+)KFB/, (m, kfb) => `活期存款：<b id="pdCurrentDeposit" data-num="${ kfb }">${ parseInt(kfb).toLocaleString() }</b> KFB`).replace(/定期存款：(-?\d+)KFB/, (m, kfb) => `定期存款：<b id="pdFixedDeposit" data-num="${ kfb }">${ parseInt(kfb).toLocaleString() }</b> KFB`).replace(/可获利息：(-?\d+)/, (m, kfb) => `可获利息：<b id="pdInterest" data-num="${ kfb }">${ parseInt(kfb).toLocaleString() }</b> KFB `).replace(/定期利息：([\d\.]+)%/, '定期利息：<b id="pdInterestRate" data-num="$1">$1</b>%').replace(/(，才可以获得利息）)/, '$1 <span id="pdExpireTime" style="color: #393;"></span>').replace(/(，取出定期将获得该数额的KFB利息\))/, '$1 <span id="pdExpectedInterest" style="color: #393;"></span>'));
+    $account.html(html.replace(/当前所持：(-?\d+)KFB/, (m, kfb) => `当前所持：<b id="pdCash" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB`).replace(/活期存款：(-?\d+)KFB/, (m, kfb) => `活期存款：<b id="pdCurrentDeposit" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB`).replace(/定期存款：(-?\d+)KFB/, (m, kfb) => `定期存款：<b id="pdFixedDeposit" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB`).replace(/可获利息：(-?\d+)/, (m, kfb) => `可获利息：<b id="pdInterest" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB `).replace(/定期利息：([\d\.]+)%/, '定期利息：<b id="pdInterestRate" data-num="$1">$1</b>%').replace(/(，才可以获得利息）)/, '$1 <span id="pdExpireTime" style="color: #393;"></span>').replace(/(，取出定期将获得该数额的KFB利息\))/, '$1 <span id="pdExpectedInterest" style="color: #393;"></span>'));
     $account.find('[data-num]').css('color', '#f60');
 
     let $interest = $('#pdInterest');
@@ -336,12 +338,12 @@ const handleBankPage = exports.handleBankPage = function () {
     if (fixedDeposit > 0 && interest === 0) {
         let time = parseInt(TmpLog.getValue(_Const2.default.fixedDepositDueTmpLogName));
         if (!isNaN(time) && time > new Date().getTime()) {
-            $('#pdExpireTime').text(`(到期时间：${ Util.getDateString(new Date(time)) } ${ Util.getTimeString(new Date(time), ':', false) })`);
+            $('#pdExpireTime').text(`(到期时间：${Util.getDateString(new Date(time))} ${Util.getTimeString(new Date(time), ':', false)})`);
         }
 
         let interestRate = parseFloat($('#pdInterestRate').data('num')) / 100;
         let anticipatedInterest = Math.round(fixedDeposit * interestRate * _Const2.default.fixedDepositDueTime);
-        $('#pdExpectedInterest').text(`(预期利息：${ anticipatedInterest.toLocaleString() } KFB)`);
+        $('#pdExpectedInterest').text(`(预期利息：${anticipatedInterest.toLocaleString()} KFB)`);
     }
 
     $('form[name="form1"], form[name="form2"]').submit(function () {
@@ -349,7 +351,7 @@ const handleBankPage = exports.handleBankPage = function () {
         let money = 0;
         if ($this.is('[name="form2"]')) money = parseInt($this.find('input[name="drawmoney"]').val());else money = parseInt($this.find('input[name="savemoney"]').val());
         if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
-            TmpLog.setValue(_Const2.default.fixedDepositDueTmpLogName, Util.getDate(`+${ _Const2.default.fixedDepositDueTime }d`).getTime());
+            TmpLog.setValue(_Const2.default.fixedDepositDueTmpLogName, Util.getDate(`+${_Const2.default.fixedDepositDueTime}d`).getTime());
         }
     });
 
@@ -369,7 +371,7 @@ const handleBankPage = exports.handleBankPage = function () {
     $fee.html($fee.html().replace(/\(手续费(\d+)%\)/, '(手续费<span id="pdFee" data-num="$1">$1</span>%)'));
 
     let $transferLimit = $('form[name="form3"] > span:first');
-    $transferLimit.html($transferLimit.html().replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${ num }">${ parseInt(num).toLocaleString() }</b>`));
+    $transferLimit.html($transferLimit.html().replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${num}">${parseInt(num).toLocaleString()}</b>`));
     addBatchTransferButton();
 };
 
@@ -386,7 +388,7 @@ const saveCurrentDeposit = function (money, cash, currentDeposit) {
         let { msg } = Util.getResponseMsg(html);
         if (/完成存款/.test(msg)) {
             Msg.remove($wait);
-            console.log(`共有${ money }KFB存入活期存款`);
+            console.log(`共有${money}KFB存入活期存款`);
             $('#pdCash').text((cash - money).toLocaleString()).data('num', cash - money);
             $('#pdCurrentDeposit').text((currentDeposit + money).toLocaleString()).data('num', currentDeposit + money);
             setTimeout(function () {
@@ -410,8 +412,8 @@ const drawCurrentDeposit = exports.drawCurrentDeposit = function (money) {
         let { msg } = Util.getResponseMsg(html);
         Msg.remove($wait);
         if (/完成取款/.test(msg)) {
-            console.log(`从活期存款中取出了${ money }KFB`);
-            Msg.show(`<strong>从活期存款中取出了<em>${ money.toLocaleString() }</em>KFB</strong>`, -1);
+            console.log(`从活期存款中取出了${money}KFB`);
+            Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
         } else Msg.show(msg, -1);
     });
 };
@@ -434,26 +436,26 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit, transfe
                 type: 'POST',
                 url: 'hack.php?H_name=bank',
                 timeout: _Const2.default.defAjaxTimeout,
-                data: `&action=virement&pwuser=${ Util.getGBKEncodeString(userName) }&to_money=${ money }&memo=${ Util.getGBKEncodeString(msg) }`,
+                data: `&action=virement&pwuser=${Util.getGBKEncodeString(userName)}&to_money=${money}&memo=${Util.getGBKEncodeString(msg)}`,
                 success(html) {
                     Public.showFormatLog('批量转账', html);
                     let { msg } = Util.getResponseMsg(html);
-                    let msgHtml = `${ userName } <em>+${ money.toLocaleString() }</em>`;
+                    let msgHtml = `${userName} <em>+${money.toLocaleString()}</em>`;
                     if (/完成转帐!/.test(msg)) {
                         successNum++;
                         successMoney += money;
                     } else {
                         failNum++;
                         if (/用户<b>.+?<\/b>不存在/.test(msg)) msg = '用户不存在';
-                        msgHtml += ` <span class="pd_notice">(错误：${ msg })</span>`;
+                        msgHtml += ` <span class="pd_notice">(错误：${msg})</span>`;
                     }
-                    $('.pd_result:last').append(`<li>${ msgHtml }</li>`);
+                    $('.pd_result:last').append(`<li>${msgHtml}</li>`);
                 },
                 error() {
                     failNum++;
                     $('.pd_result:last').append(`
 <li>
-  ${ userName }:${ money.toLocaleString() }
+  ${userName}:${money.toLocaleString()}
   <span class="pd_notice">(错误：连接超时，转账可能失败，请到<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span>
 </li>
 `);
@@ -466,12 +468,12 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit, transfe
 
                     if (isStop || index === users.length - 1) {
                         Msg.destroy();
-                        if (successNum > 0) Log.push('批量转账', `共有\`${ successNum }\`名用户转账成功`, { pay: { 'KFB': -successMoney } });
+                        if (successNum > 0) Log.push('批量转账', `共有\`${successNum}\`名用户转账成功`, { pay: { 'KFB': -successMoney } });
                         $('#pdCurrentDeposit').text((currentDeposit - successMoney).toLocaleString()).data('num', currentDeposit - successMoney);
                         $('#pdTransferLimit').text((transferLimit - successMoney).toLocaleString()).data('num', transferLimit - successMoney);
-                        console.log(`共有${ successNum }名用户转账成功，共有${ failNum }名用户转账失败，KFB-${ successMoney }`);
-                        $('.pd_result:last').append(`<li><b>共有<em>${ successNum }</em>名用户转账成功` + `${ failNum > 0 ? `，共有<em>${ failNum }</em>名用户转账失败` : '' }：</b>KFB <ins>-${ successMoney.toLocaleString() }</ins></li>`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>名用户转账成功` + `${ failNum > 0 ? `，共有<em>${ failNum }</em>名用户转账失败` : '' }</strong><i>KFB<ins>-${ successMoney.toLocaleString() }</ins></i>`, -1);
+                        console.log(`共有${successNum}名用户转账成功，共有${failNum}名用户转账失败，KFB-${successMoney}`);
+                        $('.pd_result:last').append(`<li><b>共有<em>${successNum}</em>名用户转账成功` + `${failNum > 0 ? `，共有<em>${failNum}</em>名用户转账失败` : ''}：</b>KFB <ins>-${successMoney.toLocaleString()}</ins></li>`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>名用户转账成功` + `${failNum > 0 ? `，共有<em>${failNum}</em>名用户转账失败` : ''}</strong><i>KFB<ins>-${successMoney.toLocaleString()}</ins></i>`, -1);
                     } else {
                         setTimeout(() => $(document).dequeue('Bank'), _Const2.default.bankActionInterval);
                     }
@@ -496,7 +498,7 @@ const batchTransferVerify = function ($transfer) {
         return false;
     }
     if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
-        alert(`转帐金额不能小于${ minTransferMoney }KFB`);
+        alert(`转帐金额不能小于${minTransferMoney}KFB`);
         $bankUsers.select().focus();
         return false;
     }
@@ -508,7 +510,7 @@ const batchTransferVerify = function ($transfer) {
             $bankMoney.select().focus();
             return false;
         } else if (money < minTransferMoney) {
-            alert(`转帐金额不能小于${ minTransferMoney }KFB`);
+            alert(`转帐金额不能小于${minTransferMoney}KFB`);
             $bankMoney.select().focus();
             return false;
         }
@@ -580,7 +582,7 @@ const addBatchTransferButton = function () {
             totalMoney += money;
         }
         totalMoney = Math.floor(totalMoney * (1 + fee));
-        if (!confirm(`共计 ${ users.length } 名用户，总额 ${ totalMoney.toLocaleString() } KFB，是否转账？`)) return;
+        if (!confirm(`共计 ${users.length} 名用户，总额 ${totalMoney.toLocaleString()} KFB，是否转账？`)) return;
 
         let $wait = Msg.wait('<strong>正在获取银行账户信息中&hellip;</strong>');
         $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
@@ -618,7 +620,7 @@ const addBatchTransferButton = function () {
                 });
                 $(document).dequeue('Bank');
             }
-            Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${ users.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+            Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
             $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
             batchTransfer(users, msg, isDeposited, currentDeposit, transferLimit);
         });
@@ -666,7 +668,7 @@ const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
         let interest = parseInt(matches[1]);
         if (interest > 0) {
             Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(7));
-            if (confirm(`您的定期存款已到期，共产生利息 ${ interest.toLocaleString() } KFB，是否前往银行取款？`)) {
+            if (confirm(`您的定期存款已到期，共产生利息 ${interest.toLocaleString()} KFB，是否前往银行取款？`)) {
                 location.href = 'hack.php?H_name=bank';
             }
         }
@@ -721,7 +723,7 @@ const convertCardsToVipTime = function (cardList, safeId) {
         $(document).queue('ConvertCardsToVipTime', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_card_doit.php?do=recard&id=${ cardId }&safeid=${ safeId }&t=${ new Date().getTime() }`,
+                url: `kf_fw_card_doit.php?do=recard&id=${cardId}&safeid=${safeId}&t=${new Date().getTime()}`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);
@@ -744,14 +746,14 @@ const convertCardsToVipTime = function (cardList, safeId) {
 
                     if (isStop || index === cardList.length - 1) {
                         if (successNum > 0) {
-                            Log.push('将卡片转换为VIP时间', `共有\`${ successNum }\`张卡片成功为VIP时间`, {
+                            Log.push('将卡片转换为VIP时间', `共有\`${successNum}\`张卡片成功为VIP时间`, {
                                 gain: { 'VIP小时': totalVipTime, '能量': totalEnergy },
                                 pay: { '卡片': -successNum }
                             });
                         }
                         Msg.destroy();
-                        console.log(`共有${ successNum }张卡片转换成功，共有${ failNum }张卡片转换失败，VIP小时+${ totalVipTime }，能量+${ totalEnergy }`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>张卡片转换成功${ failNum > 0 ? `，共有<em>${ failNum }</em>张卡片转换失败` : '' }</strong>` + `<i>VIP小时<em>+${ totalVipTime }</em></i><i>能量<em>+${ totalEnergy }</em></i>`, -1);
+                        console.log(`共有${successNum}张卡片转换成功，共有${failNum}张卡片转换失败，VIP小时+${totalVipTime}，能量+${totalEnergy}`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>张卡片转换成功${failNum > 0 ? `，共有<em>${failNum}</em>张卡片转换失败` : ''}</strong>` + `<i>VIP小时<em>+${totalVipTime}</em></i><i>能量<em>+${totalEnergy}</em></i>`, -1);
                         $('.kf_fw_ig2 .pd_card_chk:checked').closest('td').fadeOut('normal', function () {
                             let $parent = $(this).parent();
                             $(this).remove();
@@ -787,7 +789,7 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
             }).find('td').has('a').each(function () {
                 let matches = /kf_fw_card_my\.php\?id=(\d+)/.exec($(this).find('a').attr('href'));
                 if (matches) {
-                    $(this).css('position', 'relative').append(`<input class="pd_card_chk" type="checkbox" value="${ matches[1] }">`);
+                    $(this).css('position', 'relative').append(`<input class="pd_card_chk" type="checkbox" value="${matches[1]}">`);
                 }
             });
             let playedCardList = [];
@@ -802,7 +804,7 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
              */
             const uncheckPlayedCard = function () {
                 for (let id of playedCardList) {
-                    $cardLines.find('td').has(`a[href="kf_fw_card_my.php?id=${ id }"]`).find('[type="checkbox"]').prop('checked', false);
+                    $cardLines.find('td').has(`a[href="kf_fw_card_my.php?id=${id}"]`).find('[type="checkbox"]').prop('checked', false);
                 }
             };
 
@@ -821,7 +823,7 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
                     cardTypeList.add($(this).attr('src'));
                 });
                 for (let src of cardTypeList) {
-                    let $cardElems = $cardLines.find('td').has(`img[src="${ src }"]`);
+                    let $cardElems = $cardLines.find('td').has(`img[src="${src}"]`);
                     let totalNum = $cardElems.length;
                     let checkedNum = $cardElems.has('[type="checkbox"]:checked').length;
                     if (totalNum > 1) {
@@ -845,8 +847,8 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
                     cardList.push(parseInt($(this).val()));
                 });
                 if (!cardList.length) return;
-                if (!confirm(`共选择了${ cardList.length }张卡片，是否将卡片批量转换为VIP时间？`)) return;
-                Msg.wait(`<strong>正在批量转换中&hellip;</strong><i>剩余：<em class="pd_countdown">${ cardList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                if (!confirm(`共选择了${cardList.length}张卡片，是否将卡片批量转换为VIP时间？`)) return;
+                Msg.wait(`<strong>正在批量转换中&hellip;</strong><i>剩余：<em class="pd_countdown">${cardList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 convertCardsToVipTime(cardList, safeId);
             });
         } else {
@@ -901,17 +903,10 @@ const name = _Const2.default.storagePrefix + 'config';
  * 配置类
  */
 const Config = exports.Config = {
-    // 是否开启定时模式，可按时进行自动操作（包括自动领取每日奖励、自动争夺，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作），true：开启；false：关闭
+    // 是否开启定时模式，可按时进行自动操作（包括自动领取每日奖励、自动提升战力光环、自动争夺，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作），true：开启；false：关闭
     timingModeEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
     showTimingModeTipsType: 'auto',
-
-    // 是否自动KFB捐款，true：开启；false：关闭
-    //autoDonationEnabled: false,
-    // KFB捐款额度，取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%
-    //donationKfb: '1',
-    // 在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）
-    //donationAfterTime: '00:05:00',
 
     // 是否自动领取每日奖励，true：开启；false：关闭
     autoGetDailyBonusEnabled: false,
@@ -919,6 +914,13 @@ const Config = exports.Config = {
     getBonusAfterLootCompleteEnabled: false,
     // 是否在完成发言奖励后才领取每日奖励，true：开启；false：关闭
     getBonusAfterSpeakCompleteEnabled: false,
+
+    // 是否自动提升战力光环，true：开启；false：关闭
+    autoPromoteHaloEnabled: false,
+    // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；3：花费0.2贡献；4：花费2贡献
+    promoteHaloCostType: 1,
+    // 自动提升战力光环的间隔时间（小时），最低值：8
+    promoteHaloInterval: 8,
 
     // 是否自动争夺，true：开启；false：关闭
     autoLootEnabled: false,
@@ -933,7 +935,7 @@ const Config = exports.Config = {
     // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
     autoChangeLevelPointsEnabled: false,
     // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
-    customPointsScriptEnabled: true,
+    customPointsScriptEnabled: false,
     // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
@@ -1223,7 +1225,7 @@ const show = exports.show = function () {
       <legend>
         <label>
           <input name="timingModeEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励、自动争夺，需开启相关功能）
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励、自动提升战力光环、自动争夺，需开启相关功能）
 只在论坛首页和争夺首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
@@ -1237,20 +1239,6 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在首页的网页标题上显示定时模式提示的方案">[?]</span>
       </label>
     </fieldset>
-    <fieldset hidden>
-      <legend>
-        <label><input name="autoDonationEnabled" type="checkbox"> 自动KFB捐款</label>
-      </legend>
-      <label>
-        KFB捐款额度
-        <input name="donationKfb" type="text" maxlength="4" style="width: 32px;" required>
-        <span class="pd_cfg_tips" title="取值范围在1-5000的整数之间；可设置为百分比，表示捐款额度为当前所持现金的百分比（最多不超过5000KFB），例：80%">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        在 <input name="donationAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后捐款
-        <span class="pd_cfg_tips" title="在当天的指定时间之后捐款（24小时制），例：22:30:00（注意不要设置得太接近零点，以免错过捐款）">[?]</span>
-      </label>
-    </fieldset>
     <fieldset>
       <legend>
         <label><input name="autoGetDailyBonusEnabled" type="checkbox"> 自动领取每日奖励</label>
@@ -1262,6 +1250,26 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
         <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> 完成发言后才领取
         <span class="pd_cfg_tips" title="在完成发言奖励后才领取每日奖励">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>
+        <label><input name="autoPromoteHaloEnabled" type="checkbox"> 自动提升战力光环</label>
+        <span class="pd_cfg_tips" title="每隔指定时间花费指定代价自动提升战力光环">[?]</span>
+      </legend>
+      <label>
+        花费
+        <select name="promoteHaloCostType" required>
+          <option value="1">100KFB</option>
+          <option value="2">1000KFB</option>
+          <option value="11">0.2贡献</option>
+          <option value="12">2贡献</option>
+        </select>
+        <span class="pd_cfg_tips" title="提升战力光环的花费类型">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时
+        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间，最低值：8小时">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1280,42 +1288,7 @@ const show = exports.show = function () {
       </label><br>
       <label>
         争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.lootLogSaveDays }">[?]</span>
-      </label>
-    </fieldset>
-    <fieldset>
-      <legend>首页相关</legend>
-      <label>
-        @提醒
-        <select name="atTipsHandleType" style="width: 130px;">
-          <option value="no_highlight">取消已读提醒高亮</option>
-          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
-          <option value="hide_box_1">不显示已读提醒的消息框</option>
-          <option value="hide_box_2">永不显示消息框</option>
-          <option value="default">保持默认</option>
-          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
-        </select>
-        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
-        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
-      </label><br>
-      <label>
-        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
-        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
-        <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
-      </label><br>
-      <label>
-        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
-        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
-        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
+        <span class="pd_cfg_tips" title="默认值：${_Config.Config.lootLogSaveDays}">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1378,7 +1351,7 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${ _Info2.default.isInMiaolaDomain ? '' : 'disabled' }> 开启绯月表情增强插件
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label><br>
       <label>
@@ -1393,6 +1366,41 @@ const show = exports.show = function () {
   </div>
 
   <div class="pd_cfg_panel">
+    <fieldset>
+      <legend>首页相关</legend>
+      <label>
+        @提醒
+        <select name="atTipsHandleType" style="width: 130px;">
+          <option value="no_highlight">取消已读提醒高亮</option>
+          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
+          <option value="hide_box_1">不显示已读提醒的消息框</option>
+          <option value="hide_box_2">永不显示消息框</option>
+          <option value="default">保持默认</option>
+          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
+        </select>
+        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
+        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
+        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
+        <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
+        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
+        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
+      </label>
+    </fieldset>
     <fieldset>
       <legend>版块页面相关</legend>
       <label>
@@ -1435,7 +1443,7 @@ const show = exports.show = function () {
       </label>
       <label class="pd_cfg_ml">
         日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${ _Config.Config.logSaveDays }">[?]</span>
+        <span class="pd_cfg_tips" title="默认值：${_Config.Config.logSaveDays}">[?]</span>
       </label><br>
       <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
@@ -1504,7 +1512,7 @@ const show = exports.show = function () {
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about">
     <a target="_blank" href="read.php?tid=508450">By 喵拉布丁</a>
-    <i style="color: #666; font-style: normal;">(V${ _Info2.default.version })</i>
+    <i style="color: #666; font-style: normal;">(V${_Info2.default.version})</i>
     <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
   <button type="submit">保存</button>
@@ -1618,40 +1626,6 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
-    /*let $txtDonationKfb = $dialog.find('[name="donationKfb"]');
-     let donationKfb = $.trim($txtDonationKfb.val());
-     if (/%$/.test(donationKfb)) {
-     if (!/^1?\d?\d%$/.test(donationKfb)) {
-     alert('KFB捐款额度格式不正确');
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > 100) {
-     alert('KFB捐款额度百分比的取值范围在1-100之间');
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     }
-     else {
-     if (!$.isNumeric(donationKfb)) {
-     alert('KFB捐款额度格式不正确');
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     if (parseInt(donationKfb) <= 0 || parseInt(donationKfb) > Const.maxDonationKfb) {
-     alert(`KFB捐款额度的取值范围在1-${Const.maxDonationKfb}之间`);
-     $txtDonationKfb.select().focus();
-     return false;
-     }
-     }
-       let $txtDonationAfterTime = $dialog.find('[name="donationAfterTime"]');
-     let donationAfterTime = $.trim($txtDonationAfterTime.val());
-     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(donationAfterTime)) {
-     alert('在指定时间之后捐款格式不正确');
-     $txtDonationAfterTime.select().focus();
-     return false;
-     }*/
-
     let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {
@@ -1843,11 +1817,11 @@ const showCustomSmColorDialog = function () {
     const getSmColorLineHtml = function ({ min = '', max = '', color = '' } = {}) {
         return `
 <li>
-  <label>等级范围 <input name="min" type="text" maxlength="5" style="width: 30px;" value="${ min }"></label>
-  <label>- <input name="max" type="text" maxlength="5" style="width: 30px;" value="${ max }"></label>
+  <label>等级范围 <input name="min" type="text" maxlength="5" style="width: 30px;" value="${min}"></label>
+  <label>- <input name="max" type="text" maxlength="5" style="width: 30px;" value="${max}"></label>
   <label>
-    &nbsp;颜色 <input name="color" type="text" maxlength="7" style="width: 50px;" value="${ color }">
-    <input style="margin-left: 0;" type="color" value="${ color }">
+    &nbsp;颜色 <input name="color" type="text" maxlength="7" style="width: 50px;" value="${color}">
+    <input style="margin-left: 0;" type="color" value="${color}">
   </label>
   <a href="#">删除</a>
 </li>`;
@@ -1996,7 +1970,7 @@ const showUserMemoDialog = function () {
     });
     let content = '';
     for (let [user, memo] of Util.entries(Config.userMemoList)) {
-        content += `${ user }:${ memo }\n`;
+        content += `${user}:${memo}\n`;
     }
     $userMemoList.val(content);
     Dialog.show(dialogName);
@@ -2052,7 +2026,7 @@ const showFollowUserDialog = function () {
         $(`
 <li>
   <input type="checkbox">
-  <input name="username" type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="${ name }">
+  <input name="username" type="text" style="width: 178px; margin-left: 5px;" maxlength="15" value="${name}">
   <a class="pd_btn_link" data-name="delete" href="#">删除</a>
 </li>
 `).appendTo($followUserList);
@@ -2182,7 +2156,7 @@ const showBlockUserDialog = function () {
         $(`
 <li>
   <input type="checkbox">
-  <input name="username" type="text" style="width: 150px; margin-left: 5px;" maxlength="15" value="${ name }">
+  <input name="username" type="text" style="width: 150px; margin-left: 5px;" maxlength="15" value="${name}">
   <select name="blockType" style="margin-left: 5px;">
     <option value="0">屏蔽主题和回帖</option><option value="1">仅屏蔽主题</option><option value="2">仅屏蔽回帖</option>
   </select>
@@ -2323,11 +2297,11 @@ const showBlockThreadDialog = function () {
     const addBlockThread = function (keyWord, userType, userList, fidType, fidList) {
         $(`
 <tr>
-  <td><input name="keyWord" type="text" style="width: 208px;" value="${ keyWord }"></td>
+  <td><input name="keyWord" type="text" style="width: 208px;" value="${keyWord}"></td>
   <td><select name="userType"><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>
-  <td><input name="userList" type="text" style="width: 188px;" value="${ userList.join(',') }" ${ userType === 0 ? 'disabled' : '' }></td>
+  <td><input name="userList" type="text" style="width: 188px;" value="${userList.join(',')}" ${userType === 0 ? 'disabled' : ''}></td>
   <td><select name="fidType"><option value="0">所有</option><option value="1">包括</option><option value="2">排除</option></select></td>
-  <td><input name="fidList" type="text" style="width: 120px;" value="${ fidList.join(',') }" ${ fidType === 0 ? 'disabled' : '' }></td>
+  <td><input name="fidList" type="text" style="width: 120px;" value="${fidList.join(',')}" ${fidType === 0 ? 'disabled' : ''}></td>
   <td><a href="#" data-name="delete">删除</a></td>
 </tr>
 `).appendTo($blockThreadList).find('[name="userType"]').val(userType).end().find('[name="fidType"]').val(fidType);
@@ -2477,8 +2451,6 @@ const Const = {
 
     // UTC时间与论坛时间之间的时差（小时）
     forumTimezoneOffset: -8,
-    // KFB捐款额度的最大值
-    maxDonationKfb: 5000,
     // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
     getDailyBonusAfterTime: '00:35:00',
     // 在当天的指定时间之后检查争夺情况（北京时间），例：00:10:00
@@ -2496,6 +2468,8 @@ const Const = {
     showRefreshModeTipsInterval: 1,
     // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
     getDailyBonusSpecialInterval: 30,
+    // 提升战力光环的最小间隔时间（分钟）
+    minPromoteHaloInterval: 480,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
@@ -2563,10 +2537,10 @@ const Const = {
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
 
-    // 标记已进行KFB捐款的Cookie名称
-    donationCookieName: 'donation',
     // 标记已领取每日奖励的Cookie名称
     getDailyBonusCookieName: 'getDailyBonus',
+    // 标记已提升战力光环的Cookie名称
+    promoteHaloCookieName: 'promoteHalo',
     // 标记正在检查争夺情况的Cookie名称
     lootCheckingCookieName: 'lootChecking',
     // 标记正在进行争夺攻击的Cookie名称
@@ -2623,9 +2597,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const create = exports.create = function (id, title, content, style = '') {
     let html = `
 <form>
-<div class="pd_cfg_box" id="${ id }" style="${ style }">
-  <h1>${ title }<span data-action="close">&times;</span></h1>
-  ${ content }
+<div class="pd_cfg_box" id="${id}" style="${style}">
+  <h1>${title}<span data-action="close">&times;</span></h1>
+  ${content}
 </div>
 </form>`;
     let $dialog = $(html).appendTo('body');
@@ -2716,7 +2690,7 @@ const close = exports.close = function (id) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleIndexPersonalInfo = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.addPromoteHaloInterval = exports.handleIndexPersonalInfo = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
 
 var _Info = require('./Info');
 
@@ -2776,7 +2750,7 @@ const handleAtTips = exports.handleAtTips = function () {
                     } else if (cookieText !== atTipsText) {
                         Util.setCookie(_Const2.default.prevReadAtTipsCookieName, cookieText);
                     }
-                    Util.setCookie(_Const2.default.hideReadAtTipsCookieName, atTipsText, Util.getDate(`+${ _Const2.default.hideMarkReadAtTipsExpires }d`));
+                    Util.setCookie(_Const2.default.hideReadAtTipsCookieName, atTipsText, Util.getDate(`+${_Const2.default.hideMarkReadAtTipsExpires}d`));
                     $this.data('disabled', true);
                     handleBox();
                 });
@@ -2787,7 +2761,7 @@ const handleAtTips = exports.handleAtTips = function () {
         } else if (!$atTips.length && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
             let html = `
 <div style="width: 300px;">
-  <a class="indbox6" href="guanjianci.php?gjc=${ _Info2.default.userName }" target="_blank">最近无人${ type === 'at_change_to_cao' ? '艹' : '@' }你</a><br>
+  <a class="indbox6" href="guanjianci.php?gjc=${_Info2.default.userName}" target="_blank">最近无人${type === 'at_change_to_cao' ? '艹' : '@'}你</a><br>
   <div class="line"></div>
   <div class="c"></div>
 </div>
@@ -2822,8 +2796,8 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
         if (diff >= _Const2.default.smLevelUpAlertInterval) {
             let date = new Date(data.time);
             writeData(smLevel);
-            Log.push('神秘等级升级', `自\`${ Util.getDateString(date) }\`以来，你的神秘等级共上升了\`${ smLevel - data.smLevel }\`级 (Lv.\`${ data.smLevel }\`->Lv.\`${ smLevel }\`)`);
-            Msg.show(`自<em>${ Util.getDateString(date) }</em>以来，你的神秘等级共上升了<em>${ smLevel - data.smLevel }</em>级`);
+            Log.push('神秘等级升级', `自\`${Util.getDateString(date)}\`以来，你的神秘等级共上升了\`${smLevel - data.smLevel}\`级 (Lv.\`${data.smLevel}\`->Lv.\`${smLevel}\`)`);
+            Msg.show(`自<em>${Util.getDateString(date)}</em>以来，你的神秘等级共上升了<em>${smLevel - data.smLevel}</em>级`);
         } else if (diff < 0) {
             writeData(smLevel);
         }
@@ -2855,8 +2829,8 @@ const smRankChangeAlert = exports.smRankChangeAlert = function () {
             let date = new Date(data.time);
             let isUp = smRank < data.smRank;
             writeData(smRank);
-            Log.push('神秘系数排名变化', `自\`${ Util.getDateString(date) }\`以来，你的神秘系数排名共\`${ isUp ? '上升' : '下降' }\`了\`${ Math.abs(smRank - data.smRank) }\`名 ` + `(No.\`${ data.smRank }\`->No.\`${ smRank }\`)`);
-            Msg.show(`自<em>${ Util.getDateString(date) }</em>以来，你的神秘系数排名共<b style="color: ${ isUp ? '#F00' : '#393' }">${ isUp ? '上升' : '下降' }</b>了` + `<em>${ Math.abs(smRank - data.smRank) }</em>名`);
+            Log.push('神秘系数排名变化', `自\`${Util.getDateString(date)}\`以来，你的神秘系数排名共\`${isUp ? '上升' : '下降'}\`了\`${Math.abs(smRank - data.smRank)}\`名 ` + `(No.\`${data.smRank}\`->No.\`${smRank}\`)`);
+            Msg.show(`自<em>${Util.getDateString(date)}</em>以来，你的神秘系数排名共<b style="color: ${isUp ? '#F00' : '#393'}">${isUp ? '上升' : '下降'}</b>了` + `<em>${Math.abs(smRank - data.smRank)}</em>名`);
         } else if (diff < 0) {
             writeData(smRank);
         }
@@ -2869,7 +2843,7 @@ const smRankChangeAlert = exports.smRankChangeAlert = function () {
 const addThreadFastGotoLink = exports.addThreadFastGotoLink = function () {
     $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         let $this = $(this);
-        $this.css('position', 'relative').prepend(`<a class="pd_thread_goto" href="${ $this.find('a').attr('href') }&page=e#a">&raquo;</a>`);
+        $this.css('position', 'relative').prepend(`<a class="pd_thread_goto" href="${$this.find('a').attr('href')}&page=e#a">&raquo;</a>`);
     }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
         $(this).css('position', 'static').find('.pd_thread_goto').remove();
     });
@@ -2884,7 +2858,7 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
      * @param {number} hours VIP剩余时间（小时）
      */
     const addVipHoursTips = function (hours) {
-        $('a[href="kf_growup.php"]').parent().after(`<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${ hours > 0 ? 5 : 6 }">VIP会员 ` + `(${ hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限' })</a><div class="c"></div></div>`);
+        $('a[href="kf_growup.php"]').parent().after(`<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` + `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`);
     };
 
     let vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
@@ -2894,7 +2868,7 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
             let hours = 0;
             let matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
             if (matches) hours = parseInt(matches[1]);
-            Util.setCookie(_Const2.default.vipSurplusTimeCookieName, hours, Util.getDate(`+${ _Const2.default.vipSurplusTimeExpires }m`));
+            Util.setCookie(_Const2.default.vipSurplusTimeCookieName, hours, Util.getDate(`+${_Const2.default.vipSurplusTimeExpires}m`));
             addVipHoursTips(hours);
         });
     } else {
@@ -2921,7 +2895,7 @@ const handleIndexPersonalInfo = exports.handleIndexPersonalInfo = function () {
     let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
     if (matches) {
         let kfb = parseInt(matches[1]);
-        $kfb.html(`拥有<b>${ kfb.toLocaleString() }</b>KFB`).data('kfb', kfb);
+        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).data('kfb', kfb);
     }
 
     let $smLevel = $('a[href="kf_growup.php"]');
@@ -2929,8 +2903,18 @@ const handleIndexPersonalInfo = exports.handleIndexPersonalInfo = function () {
     if (matches) {
         let smLevel = parseInt(matches[1]);
         let smRank = matches[2];
-        $smLevel.html(`神秘<b>${ smLevel }</b>级 (系数排名第<b style="color: #00f;">${ smRank }</b>位)`).data('smLevel', smLevel).data('smRank', smRank);
+        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).data('smLevel', smLevel).data('smRank', smRank);
     }
+};
+
+/**
+ * 添加提升战力光环间隔时间
+ */
+const addPromoteHaloInterval = exports.addPromoteHaloInterval = function () {
+    let nextTime = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
+    if (!nextTime) return;
+    let interval = nextTime - new Date().getTime();
+    if (interval > 0) $('a[href="kf_fw_ig_index.php"]').text(`争夺奖励 (光环：${Math.ceil(interval / 60 / 1000)}分钟)`);
 };
 
 },{"./Const":6,"./Info":9,"./Log":11,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
@@ -3187,14 +3171,14 @@ const useOldItems = function (options, cycle) {
 
     if (cycle) {
         if (cycle.round === 1) {
-            console.log(`循环使用道具Start，使用道具数量：${ cycle.itemNum }，有效道具使用次数上限：${ cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制' }，` + `恢复道具成功次数上限：${ cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制' }`);
+            console.log(`循环使用道具Start，使用道具数量：${cycle.itemNum}，有效道具使用次数上限：${cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制'}，` + `恢复道具成功次数上限：${cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制'}`);
             $('.kf_fw_ig1:last').parent().append(`
 <ul class="pd_result">
   <li class="pd_stat">
     <strong>
-    对<em>${ cycle.itemNum }</em>个【Lv.${ settings.itemLevel }：${ settings.itemName }】道具的循环使用开始（当前道具恢复能量<em>${ cycle.totalEnergyNum }</em>点）<br>
-    （有效道具使用次数上限：<em>${ cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制' }</em>，
-    恢复道具成功次数上限：<em>${ cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制' }</em>）
+    对<em>${cycle.itemNum}</em>个【Lv.${settings.itemLevel}：${settings.itemName}】道具的循环使用开始（当前道具恢复能量<em>${cycle.totalEnergyNum}</em>点）<br>
+    （有效道具使用次数上限：<em>${cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制'}</em>，
+    恢复道具成功次数上限：<em>${cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制'}</em>）
     </strong>
   </li>
 </ul>
@@ -3202,12 +3186,12 @@ const useOldItems = function (options, cycle) {
         } else {
             $('.pd_result:last').append('<div class="pd_result_sep"></div>');
         }
-        $('.pd_result:last').append(`<li class="pd_stat" style="color: #ff3399;"><strong>第${ cycle.round }轮循环开始：</strong></li>`);
+        $('.pd_result:last').append(`<li class="pd_stat" style="color: #ff3399;"><strong>第${cycle.round}轮循环开始：</strong></li>`);
     }
     if (cycle) {
         $('.pd_result:last').append('<li><strong>使用结果：</strong></li>');
     } else {
-        $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${ settings.itemLevel }：${ settings.itemName }】使用结果：</strong></li></ul>`);
+        $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】使用结果：</strong></li></ul>`);
     }
 
     let successNum = 0,
@@ -3220,7 +3204,7 @@ const useOldItems = function (options, cycle) {
         $(document).queue('UseItems', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_ig_doit.php?id=${ itemId }&t=${ new Date().getTime() }`,
+                url: `kf_fw_ig_doit.php?id=${itemId}&t=${new Date().getTime()}`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('使用道具', html);
@@ -3238,7 +3222,7 @@ const useOldItems = function (options, cycle) {
                         failNum++;
                         if (/无法再使用/.test(msg)) nextRoundItemIdList = [];
                     }
-                    $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ msg }</li>`);
+                    $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                     if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
                         isStop = true;
                         console.log('有效道具使用次数到达设定上限，循环使用操作停止');
@@ -3262,7 +3246,7 @@ const useOldItems = function (options, cycle) {
                         if (stat['有效道具'] === 0) delete stat['有效道具'];
                         if (stat['无效道具'] === 0) delete stat['无效道具'];
                         if (!cycle && successNum > 0) {
-                            Log.push('使用道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具被使用`, {
+                            Log.push('使用道具', `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具被使用`, {
                                 gain: $.extend({}, stat, { '已使用道具': successNum }),
                                 pay: { '道具': -successNum }
                             });
@@ -3271,17 +3255,17 @@ const useOldItems = function (options, cycle) {
                             msgStat = '',
                             resultStat = '';
                         for (let type of Object.keys(stat)) {
-                            logStat += `，${ type }+${ stat[type] }`;
-                            msgStat += `<i>${ type }<em>+${ stat[type] }</em></i>`;
-                            resultStat += `<i>${ type }<em>+${ stat[type] }</em></i> `;
+                            logStat += `，${type}+${stat[type]}`;
+                            msgStat += `<i>${type}<em>+${stat[type]}</em></i>`;
+                            resultStat += `<i>${type}<em>+${stat[type]}</em></i> `;
                             if (cycle) {
                                 if (typeof cycle.stat[type] === 'undefined') cycle.stat[type] = stat[type];else cycle.stat[type] += stat[type];
                             }
                         }
-                        console.log(`共有${ successNum }个道具被使用${ failNum > 0 ? `，共有${ failNum }个道具未能使用` : '' }${ logStat }`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>个道具被使用${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具未能使用` : '' }</strong>${ msgStat }`, -1);
+                        console.log(`共有${successNum}个道具被使用${failNum > 0 ? `，共有${failNum}个道具未能使用` : ''}${logStat}`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>个道具被使用${failNum > 0 ? `，共有<em>${failNum}</em>个道具未能使用` : ''}</strong>${msgStat}`, -1);
                         if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
-                        $('.pd_result:last').append(`<li class="pd_stat"><b>统计结果（共有<em>${ successNum }</em>个道具被使用）：</b><br>${ resultStat }</li>`);
+                        $('.pd_result:last').append(`<li class="pd_stat"><b>统计结果（共有<em>${successNum}</em>个道具被使用）：</b><br>${resultStat}</li>`);
                         setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
                         if (settings.itemName === '零时迷子的碎片') showCurrentUsedItemNum();
 
@@ -3339,7 +3323,7 @@ const restoreItems = function (options, cycle) {
     if (cycle) {
         $('.pd_result:last').append('<li class="pd_result_sep_inner"></li><li><strong>恢复结果：</strong></li>');
     } else {
-        $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${ settings.itemLevel }：${ settings.itemName }】恢复结果：</strong></li></ul>`);
+        $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】恢复结果：</strong></li></ul>`);
     }
 
     let successNum = 0,
@@ -3353,7 +3337,7 @@ const restoreItems = function (options, cycle) {
         $(document).queue('RestoreItems', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_ig_doit.php?renew=${ settings.safeId }&id=${ itemId }&t=${ new Date().getTime() }`,
+                url: `kf_fw_ig_doit.php?renew=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('恢复道具', html);
@@ -3376,7 +3360,7 @@ const restoreItems = function (options, cycle) {
                             msg = '你的能量不足以恢复本道具<span class="pd_notice">（恢复操作中止）</span>';
                         }
                     }
-                    $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ msg }</li>`);
+                    $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                 },
                 complete() {
                     let $countdown = $('.pd_countdown:last');
@@ -3387,14 +3371,14 @@ const restoreItems = function (options, cycle) {
                     if (isStop || index === settings.itemIdList.length - 1) {
                         Msg.remove($countdown.closest('.pd_msg'));
                         if (!cycle && (successNum > 0 || failNum > 0)) {
-                            Log.push('恢复道具', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具恢复成功，共有\`${ failNum }\`个道具恢复失败`, {
+                            Log.push('恢复道具', `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具恢复成功，共有\`${failNum}\`个道具恢复失败`, {
                                 gain: { '道具': successNum },
                                 pay: { '已使用道具': -(successNum + failNum), '能量': -successEnergyNum }
                             });
                         }
-                        console.log(`共有${ successNum }个道具恢复成功，共有${ failNum }个道具恢复失败，能量-${ successEnergyNum }`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>个道具恢复成功，共有<em>${ failNum }</em>个道具恢复失败</strong>` + `<i>能量<ins>-${ successEnergyNum }</ins></i>`, -1);
-                        $('.pd_result:last').append(`<li class="pd_stat">共有<em>${ successNum }</em>个道具恢复成功，共有<em>${ failNum }</em>个道具恢复失败，` + `<i>能量<ins>-${ successEnergyNum }</ins></i></li>`);
+                        console.log(`共有${successNum}个道具恢复成功，共有${failNum}个道具恢复失败，能量-${successEnergyNum}`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>个道具恢复成功，共有<em>${failNum}</em>个道具恢复失败</strong>` + `<i>能量<ins>-${successEnergyNum}</ins></i>`, -1);
+                        $('.pd_result:last').append(`<li class="pd_stat">共有<em>${successNum}</em>个道具恢复成功，共有<em>${failNum}</em>个道具恢复失败，` + `<i>能量<ins>-${successEnergyNum}</ins></i></li>`);
                         setCurrentItemUsableAndUsedNum(settings.$itemLine, -(successNum + failNum), successNum, -successEnergyNum);
 
                         if (cycle) {
@@ -3465,33 +3449,33 @@ const cycleUseItems = function (type, options, cycle) {
         let resultStat = '';
         for (let key of Object.keys(stat)) {
             if (type > 0 && (key === '道具' || key === '已使用道具')) continue;
-            resultStat += `<i>${ key }${ Util.getStatFormatNumber(cycle.stat[key]) }</i> `;
+            resultStat += `<i>${key}${Util.getStatFormatNumber(cycle.stat[key])}</i> `;
         }
         $('.pd_result:last').append(`
-<li class="pd_result_sep${ type > 0 ? '_inner' : '' }"></li>
+<li class="pd_result_sep${type > 0 ? '_inner' : ''}"></li>
 <li class="pd_stat">
   <strong>
-    ${ type > 0 ? '截至目前为止的统计' : `【Lv.${ options.itemLevel }：${ options.itemName }】循环使用最终统计` }（当前道具恢复能量<em>${ cycle.totalEnergyNum }</em>点）：
+    ${type > 0 ? '截至目前为止的统计' : `【Lv.${options.itemLevel}：${options.itemName}】循环使用最终统计`}（当前道具恢复能量<em>${cycle.totalEnergyNum}</em>点）：
   </strong>
 </li>
 <li class="pd_stat">
-  ${ type > 0 ? '' : `共进行了<em>${ cycle.round }</em>轮循环：` }
-  <i>被使用次数<em>+${ cycle.countStat['被使用次数'] }</em></i>
-  <i>恢复成功次数<em>+${ cycle.countStat['恢复成功次数'] }</em></i>
-  <i>恢复失败次数<em>+${ cycle.countStat['恢复失败次数'] }</em></i>
+  ${type > 0 ? '' : `共进行了<em>${cycle.round}</em>轮循环：`}
+  <i>被使用次数<em>+${cycle.countStat['被使用次数']}</em></i>
+  <i>恢复成功次数<em>+${cycle.countStat['恢复成功次数']}</em></i>
+  <i>恢复失败次数<em>+${cycle.countStat['恢复失败次数']}</em></i>
 </li>
-<li class="pd_stat">${ resultStat }</li>
+<li class="pd_stat">${resultStat}</li>
 `);
     };
 
     if (type === 1) {
         showResult(type, cycle.stat);
-        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${options.itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         setTimeout(function () {
             useOldItems(options, cycle);
         }, cycle.round === 1 ? 500 : typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
     } else if (type === 2) {
-        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ options.itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${options.itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         setTimeout(() => restoreItems(options, cycle), typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
     } else {
         if (cycle.stat['道具'] === 0) delete cycle.stat['道具'];
@@ -3505,11 +3489,11 @@ const cycleUseItems = function (type, options, cycle) {
         }
 
         if (cycle.countStat['被使用次数'] > 0) {
-            Log.push('循环使用道具', `对\`${ cycle.itemNum }\`个【\`Lv.${ options.itemLevel }：${ options.itemName }\`】道具进行了\`${ cycle.round }\`轮循环使用` + `(被使用次数\`+${ cycle.countStat['被使用次数'] }\`，恢复成功次数\`+${ cycle.countStat['恢复成功次数'] }\`，` + `恢复失败次数\`+${ cycle.countStat['恢复失败次数'] }\`)`, { gain: gain, pay: pay });
+            Log.push('循环使用道具', `对\`${cycle.itemNum}\`个【\`Lv.${options.itemLevel}：${options.itemName}\`】道具进行了\`${cycle.round}\`轮循环使用` + `(被使用次数\`+${cycle.countStat['被使用次数']}\`，恢复成功次数\`+${cycle.countStat['恢复成功次数']}\`，` + `恢复失败次数\`+${cycle.countStat['恢复失败次数']}\`)`, { gain: gain, pay: pay });
         }
 
-        console.log(`共进行了${ cycle.round }轮循环，被使用次数+${ cycle.countStat['被使用次数'] }，恢复成功次数+${ cycle.countStat['恢复成功次数'] }，` + `恢复失败次数+${ cycle.countStat['恢复失败次数'] }，能量${ cycle.stat['能量'] }`);
-        Msg.show(`<strong>共进行了<em>${ cycle.round }</em>轮循环</strong><i>被使用次数<em>+${ cycle.countStat['被使用次数'] }</em></i>` + `<i>恢复成功次数<em>+${ cycle.countStat['恢复成功次数'] }</em></i><i>恢复失败次数<em>+${ cycle.countStat['恢复失败次数'] }</em></i>` + `<i>能量<ins>${ cycle.stat['能量'] }</ins></i><a href="#">清除消息框</a>`, -1).find('a').click(function (e) {
+        console.log(`共进行了${cycle.round}轮循环，被使用次数+${cycle.countStat['被使用次数']}，恢复成功次数+${cycle.countStat['恢复成功次数']}，` + `恢复失败次数+${cycle.countStat['恢复失败次数']}，能量${cycle.stat['能量']}`);
+        Msg.show(`<strong>共进行了<em>${cycle.round}</em>轮循环</strong><i>被使用次数<em>+${cycle.countStat['被使用次数']}</em></i>` + `<i>恢复成功次数<em>+${cycle.countStat['恢复成功次数']}</em></i><i>恢复失败次数<em>+${cycle.countStat['恢复失败次数']}</em></i>` + `<i>能量<ins>${cycle.stat['能量']}</ins></i><a href="#">清除消息框</a>`, -1).find('a').click(function (e) {
             e.preventDefault();
             Msg.destroy();
         });
@@ -3539,7 +3523,7 @@ const convertItemsToEnergy = function (options) {
         isTypeBatch: false
     };
     $.extend(settings, options);
-    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${ settings.itemLevel }：${ settings.itemName }】转换结果：</strong></li></ul>`);
+    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】转换结果：</strong></li></ul>`);
 
     let successNum = 0,
         failNum = 0;
@@ -3549,7 +3533,7 @@ const convertItemsToEnergy = function (options) {
         $(document).queue('ConvertItemsToEnergy', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_ig_doit.php?tomp=${ settings.safeId }&id=${ itemId }&t=${ new Date().getTime() }`,
+                url: `kf_fw_ig_doit.php?tomp=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('将道具转换为能量', html);
@@ -3574,11 +3558,11 @@ const convertItemsToEnergy = function (options) {
                         Msg.remove($countdown.closest('.pd_msg'));
                         let successEnergyNum = successNum * energyNum;
                         if (successNum > 0) {
-                            Log.push('将道具转换为能量', `共有\`${ successNum }\`个【\`Lv.${ settings.itemLevel }：${ settings.itemName }\`】道具成功转换为能量`, { gain: { '能量': successEnergyNum }, pay: { '已使用道具': -successNum } });
+                            Log.push('将道具转换为能量', `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具成功转换为能量`, { gain: { '能量': successEnergyNum }, pay: { '已使用道具': -successNum } });
                         }
-                        console.log(`共有${ successNum }个道具成功转换为能量${ failNum > 0 ? `，共有${ failNum }个道具转换失败` : '' }，能量+${ successEnergyNum }`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>个道具成功转换为能量${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具转换失败` : '' }</strong>` + `<i>能量<em>+${ successEnergyNum }</em></i>`, -1);
-                        $('.pd_result:last').append(`<li class="pd_stat">共有<em>${ successNum }</em>个道具成功转换为能量${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具转换失败` : '' }，` + `<i>能量<em>+${ successEnergyNum }</em></i></li>`);
+                        console.log(`共有${successNum}个道具成功转换为能量${failNum > 0 ? `，共有${failNum}个道具转换失败` : ''}，能量+${successEnergyNum}`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>个道具成功转换为能量${failNum > 0 ? `，共有<em>${failNum}</em>个道具转换失败` : ''}</strong>` + `<i>能量<em>+${successEnergyNum}</em></i>`, -1);
+                        $('.pd_result:last').append(`<li class="pd_stat">共有<em>${successNum}</em>个道具成功转换为能量${failNum > 0 ? `，共有<em>${failNum}</em>个道具转换失败` : ''}，` + `<i>能量<em>+${successEnergyNum}</em></i></li>`);
                         setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, null, successEnergyNum);
                         if (settings.isTypeBatch) $(document).dequeue('ConvertItemTypesToEnergy');
                     } else {
@@ -3625,7 +3609,7 @@ const addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOld
                 });
             });
             if (!itemTypeList.length) return;
-            let num = parseInt(prompt(`在指定种类道具中你要${ name === 'useItemTypes' ? '使用' : '转换' }多少个道具？（0表示不限制）`, 0));
+            let num = parseInt(prompt(`在指定种类道具中你要${name === 'useItemTypes' ? '使用' : '转换'}多少个道具？（0表示不限制）`, 0));
             if (isNaN(num) || num < 0) return;
             Msg.destroy();
 
@@ -3633,7 +3617,7 @@ const addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOld
             $(document).clearQueue(queueName);
             $.each(itemTypeList, function (index, data) {
                 $(document).queue(queueName, function () {
-                    let $wait = Msg.wait(`正在获取本种类${ name === 'useItemTypes' ? '未' : '已' }使用道具列表，请稍后&hellip;`);
+                    let $wait = Msg.wait(`正在获取本种类${name === 'useItemTypes' ? '未' : '已'}使用道具列表，请稍后&hellip;`);
                     $.ajax({
                         type: 'GET',
                         url: data.itemListUrl,
@@ -3648,7 +3632,7 @@ const addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOld
 
                             if (name === 'useItemTypes') {
                                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                                 useOldItems({
                                     type: 1,
                                     itemIdList: itemIdList,
@@ -3661,7 +3645,7 @@ const addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOld
                                 });
                             } else {
                                 console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                                 convertItemsToEnergy({
                                     type: 1,
                                     itemIdList: itemIdList,
@@ -3711,7 +3695,7 @@ const bindItemActionLinksClick = function ($element) {
         if (isNaN(itemTypeId) || itemTypeId <= 0) return;
 
         if ($this.is('.pd_items_batch_use')) {
-            let num = parseInt(prompt(`你要使用多少个【Lv.${ itemLevel }：${ itemName }】道具？（0表示不限制）`, itemUsableNum ? itemUsableNum : 0));
+            let num = parseInt(prompt(`你要使用多少个【Lv.${itemLevel}：${itemName}】道具？（0表示不限制）`, itemUsableNum ? itemUsableNum : 0));
             if (isNaN(num) || num < 0) return;
             Msg.destroy();
 
@@ -3725,7 +3709,7 @@ const bindItemActionLinksClick = function ($element) {
                     return;
                 }
                 console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 useOldItems({
                     type: 1,
                     itemIdList: itemIdList,
@@ -3737,7 +3721,7 @@ const bindItemActionLinksClick = function ($element) {
                 });
             });
         } else if ($this.is('.pd_items_cycle_use')) {
-            let value = prompt(`你要循环使用多少个【Lv.${ itemLevel }：${ itemName }】道具？\n` + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemUsableNum ? itemUsableNum : 0);
+            let value = prompt(`你要循环使用多少个【Lv.${itemLevel}：${itemName}】道具？\n` + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemUsableNum ? itemUsableNum : 0);
             if (value === null) return;
             value = $.trim(value);
             if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
@@ -3791,7 +3775,7 @@ const bindItemActionLinksClick = function ($element) {
                 });
             });
         } else if ($this.is('.pd_items_batch_restore')) {
-            let num = parseInt(prompt(`你要恢复多少个【Lv.${ itemLevel }：${ itemName }】道具？（0表示不限制）`, itemUsedNum ? itemUsedNum : 0));
+            let num = parseInt(prompt(`你要恢复多少个【Lv.${itemLevel}：${itemName}】道具？（0表示不限制）`, itemUsedNum ? itemUsedNum : 0));
             if (isNaN(num) || num < 0) return;
             Msg.destroy();
 
@@ -3805,7 +3789,7 @@ const bindItemActionLinksClick = function ($element) {
                     return;
                 }
                 console.log('批量恢复道具Start，恢复道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 restoreItems({
                     type: 1,
                     itemIdList: itemIdList,
@@ -3817,7 +3801,7 @@ const bindItemActionLinksClick = function ($element) {
                 });
             });
         } else if ($this.is('.pd_items_batch_convert')) {
-            let num = parseInt(prompt(`你要将多少个【Lv.${ itemLevel }：${ itemName }】道具转换为能量？（0表示不限制）`, itemUsedNum ? itemUsedNum : 0));
+            let num = parseInt(prompt(`你要将多少个【Lv.${itemLevel}：${itemName}】道具转换为能量？（0表示不限制）`, itemUsedNum ? itemUsedNum : 0));
             if (isNaN(num) || num < 0) return;
             Msg.destroy();
 
@@ -3831,7 +3815,7 @@ const bindItemActionLinksClick = function ($element) {
                     return;
                 }
                 console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 convertItemsToEnergy({
                     type: 1,
                     itemIdList: itemIdList,
@@ -3862,11 +3846,11 @@ const enhanceMyItemsPage = exports.enhanceMyItemsPage = function () {
             $this.find('td:nth-child(3)').wrapInner('<span class="pd_usable_num" style="margin-left: 5px;"></span>').append(' / <span class="pd_used_num pd_custom_tips">?</span>').after(`
 <td>
   <a class="pd_items_batch_use" href="#" title="批量使用指定数量的道具">批量使用</a>
-  <a class="pd_items_cycle_use pd_highlight ${ isDisabledLink }" href="#" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</a>
+  <a class="pd_items_cycle_use pd_highlight ${isDisabledLink}" href="#" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</a>
 </td>
 <td>
-  <a class="pd_items_batch_restore ${ isDisabledLink }" href="#" title="批量恢复指定数量的道具">批量恢复</a>
-  <a class="pd_items_batch_convert pd_highlight ${ isDisabledLink }" href="#" title="批量将指定数量的道具转换为能量">批量转换</a>
+  <a class="pd_items_batch_restore ${isDisabledLink}" href="#" title="批量恢复指定数量的道具">批量恢复</a>
+  <a class="pd_items_batch_convert pd_highlight ${isDisabledLink}" href="#" title="批量将指定数量的道具转换为能量">批量转换</a>
 </td>
 `);
             let $listLinkColumn = $this.find('td:last-child');
@@ -3874,7 +3858,7 @@ const enhanceMyItemsPage = exports.enhanceMyItemsPage = function () {
             if (matches) {
                 let itemTypeId = parseInt(matches[1]);
                 $this.data('itemTypeId', itemTypeId);
-                $listLinkColumn.find('a').text('未使用列表').after(`<a class="pd_highlight" href="kf_fw_ig_renew.php?lv=${ itemTypeId }">已使用列表</a>`);
+                $listLinkColumn.find('a').text('未使用列表').after(`<a class="pd_highlight" href="kf_fw_ig_renew.php?lv=${itemTypeId}">已使用列表</a>`);
             }
         }
     });
@@ -3953,9 +3937,9 @@ const showUsedItemEnergyTips = function () {
         let perConvertEnergy = getGainEnergyNumByLevel(itemLevel);
         totalRestoreEnergy += perRestoreEnergy * itemNum;
         totalConvertEnergy += perConvertEnergy * itemNum;
-        $this.attr('title', `全部恢复需要${ perRestoreEnergy * itemNum }点能量，全部转换可得${ perConvertEnergy * itemNum }点能量`);
+        $this.attr('title', `全部恢复需要${perRestoreEnergy * itemNum}点能量，全部转换可得${perConvertEnergy * itemNum}点能量`);
     });
-    $('.kf_fw_ig1:last > tbody > tr:nth-child(2) > td:nth-child(3) > .pd_used_num').attr('title', `全部恢复需要${ totalRestoreEnergy }点能量，全部转换可得${ totalConvertEnergy }点能量`);
+    $('.kf_fw_ig1:last > tbody > tr:nth-child(2) > td:nth-child(3) > .pd_used_num').attr('title', `全部恢复需要${totalRestoreEnergy}点能量，全部转换可得${totalConvertEnergy}点能量`);
 };
 
 /**
@@ -3971,7 +3955,7 @@ const showCurrentUsedItemNum = function (html = '') {
         let energyNum = getCurrentEnergyNum(html);
         let introMatches = /(1级道具转换得.+?点能量)。<br/.exec(html);
         if (location.pathname === '/kf_fw_ig_my.php') {
-            $('.kf_fw_ig_title1:last').find('span:has(.pd_total_energy_num)').remove().end().append(`<span class="pd_custom_tips" style="margin-left: 7px;" title="${ introMatches ? introMatches[1] : '' }">` + `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${ energyNum }</b> 点)</span>`);
+            $('.kf_fw_ig_title1:last').find('span:has(.pd_total_energy_num)').remove().end().append(`<span class="pd_custom_tips" style="margin-left: 7px;" title="${introMatches ? introMatches[1] : ''}">` + `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${energyNum}</b> 点)</span>`);
         }
 
         if ($('.pd_used_num').length > 0) {
@@ -4060,10 +4044,10 @@ const addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function () {
         let kfb = parseInt($line.find('td:nth-child(3)').text());
         let url = $this.prev('a').attr('href');
         if (!type.includes('道具') || !kfb || !url) return;
-        let num = parseInt(prompt(`你要购买多少个【${ type }】？（单价：${ kfb.toLocaleString() } KFB）`, 0));
+        let num = parseInt(prompt(`你要购买多少个【${type}】？（单价：${kfb.toLocaleString()} KFB）`, 0));
         if (!num || num < 0) return;
 
-        Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ num }</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
         buyItems(num, type, kfb, url);
     }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买该物品？'));
     $area.after('<div class="pd_item_btns"></div>');
@@ -4101,7 +4085,7 @@ const buyItems = function (buyNum, type, kfb, url) {
                     totalKfb += kfb;
                 } else {
                     isStop = true;
-                    $('.pd_result:last').append(`<li>${ msg }<span class="pd_notice">（购买中止）</span></li>`);
+                    $('.pd_result:last').append(`<li>${msg}<span class="pd_notice">（购买中止）</span></li>`);
                 }
                 setTimeout(getNewItemInfo, _Const2.default.defAjaxInterval);
             },
@@ -4131,8 +4115,8 @@ const buyItems = function (buyNum, type, kfb, url) {
                     if (!itemTypeList.includes(itemName)) return;
                     if (!(itemName in itemList)) itemList[itemName] = 0;
                     itemList[itemName]++;
-                    console.log(`获得了一个【Lv.${ getLevelByName(itemName) }：${ itemName }】道具`);
-                    $('.pd_result:last').append(`<li>获得了一个【<b class="pd_highlight">Lv.${ getLevelByName(itemName) }：${ itemName }</b>】道具</li>`);
+                    console.log(`获得了一个【Lv.${getLevelByName(itemName)}：${itemName}】道具`);
+                    $('.pd_result:last').append(`<li>获得了一个【<b class="pd_highlight">Lv.${getLevelByName(itemName)}：${itemName}</b>】道具</li>`);
                 });
                 myItemUrlList = list;
 
@@ -4145,23 +4129,23 @@ const buyItems = function (buyNum, type, kfb, url) {
                         if (!num) delete itemList[itemName];
                     }
                     if (successNum > 0 && !$.isEmptyObject(itemList)) {
-                        Log.push('购买道具', `共有\`${ successNum }\`个【\`${ type }\`】购买成功`, { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
+                        Log.push('购买道具', `共有\`${successNum}\`个【\`${type}\`】购买成功`, { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
                     }
 
                     let itemStatHtml = '';
                     for (let itemName of Util.getSortedObjectKeyList(itemTypeList, itemList)) {
-                        itemStatHtml += `<i>${ itemName }<em>+${ itemList[itemName] }</em></i> `;
+                        itemStatHtml += `<i>${itemName}<em>+${itemList[itemName]}</em></i> `;
                     }
                     $('.pd_result:last').append(`
 <li class="pd_stat">
   <b>统计结果：</b><br>
-  共有<em>${ successNum }</em>个道具购买成功，<i>KFB<ins>-${ totalKfb.toLocaleString() }</ins></i> ${ itemStatHtml }<br>
+  共有<em>${successNum}</em>个道具购买成功，<i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i> ${itemStatHtml}<br>
   <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php">角色/物品页面</a>查看)</span>
 </li>
 `);
 
-                    console.log(`共有${ successNum }个【${ type }】购买成功，KFB-${ totalKfb }`);
-                    Msg.show(`<strong>共有<em>${ successNum }</em>个【${ type }】购买成功</strong><i>KFB<ins>-${ totalKfb.toLocaleString() }</ins></i>`, -1);
+                    console.log(`共有${successNum}个【${type}】购买成功，KFB-${totalKfb}`);
+                    Msg.show(`<strong>共有<em>${successNum}</em>个【${type}】购买成功</strong><i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i>`, -1);
                     showKfbInItemShop();
                 } else {
                     let interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
@@ -4174,7 +4158,7 @@ const buyItems = function (buyNum, type, kfb, url) {
         });
     };
 
-    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【${ type }】购买结果：</strong></li></ul>`);
+    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【${type}】购买结果：</strong></li></ul>`);
     getNewItemInfo(true);
 };
 
@@ -4182,11 +4166,11 @@ const buyItems = function (buyNum, type, kfb, url) {
  * 在道具商店显示当前持有的KFB
  */
 const showKfbInItemShop = function () {
-    $.get(`profile.php?action=show&uid=${ _Info2.default.uid }&t=${ new Date().getTime() }`, function (html) {
+    $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${new Date().getTime()}`, function (html) {
         let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
         if (!matches) return;
         let cash = parseInt(matches[1]);
-        $('.kf_fw_ig_title1:last').find('span:last').remove().end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${ cash.toLocaleString() }</b> KFB)</span>`);
+        $('.kf_fw_ig_title1:last').find('span:last').remove().end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${cash.toLocaleString()}</b> KFB)</span>`);
     });
 };
 
@@ -4196,7 +4180,7 @@ const showKfbInItemShop = function () {
 const addSimulateManualHandleItemChecked = function () {
     $(`
 <label style="margin-right: 5px;">
-  <input name="simulateManualHandleItemEnabled" type="checkbox" ${ Config.simulateManualHandleItemEnabled ? 'checked' : '' }> 模拟手动操作道具
+  <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}> 模拟手动操作道具
   <span class="pd_cfg_tips" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用、恢复和购买道具">[?]</span>
 </label>
 `).prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
@@ -4220,7 +4204,7 @@ const addBatchUseItemsButton = exports.addBatchUseItemsButton = function () {
         if (!matches) return;
         let id = parseInt(matches[1]);
         let itemName = $this.find('td:nth-child(2)').text().trim();
-        $this.find('td:first-child').prepend(`<input class="pd_input" data-name="${ itemName }" type="checkbox" value="${ id }">`);
+        $this.find('td:first-child').prepend(`<input class="pd_input" data-name="${itemName}" type="checkbox" value="${id}">`);
     });
 
     $(`
@@ -4242,13 +4226,13 @@ const addBatchUseItemsButton = exports.addBatchUseItemsButton = function () {
             if (!itemList.has(itemName)) itemList.set(itemName, []);
             itemList.get(itemName).push(itemId);
         });
-        if (!confirm(`你共选择了${ itemList.size }个种类中的${ $checked.length }个道具，是否批量使用？`)) return;
+        if (!confirm(`你共选择了${itemList.size}个种类中的${$checked.length}个道具，是否批量使用？`)) return;
         Msg.destroy();
 
         $(document).clearQueue('UseItemTypes');
         $.each([...itemList], function (index, [itemName, itemIdList]) {
             $(document).queue('UseItemTypes', function () {
-                let $wait = Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${ itemIdList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+                let $wait = Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
                 let itemLevel = getLevelByName(itemName);
                 let interval = 0;
                 if (index > 0) interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
@@ -4282,7 +4266,7 @@ const addBatchUseItemsButton = exports.addBatchUseItemsButton = function () {
  */
 const useItems = function ({ itemLevel, itemName, itemIdList, $wait }) {
     let $area = $('.kf_fw_ig1:first');
-    $area.parent().append(`<ul class="pd_result"><li><strong>【Lv.${ itemLevel }：${ itemName }】使用结果：</strong></li></ul>`);
+    $area.parent().append(`<ul class="pd_result"><li><strong>【Lv.${itemLevel}：${itemName}】使用结果：</strong></li></ul>`);
     let successNum = 0,
         failNum = 0;
     let isStop = false;
@@ -4292,7 +4276,7 @@ const useItems = function ({ itemLevel, itemName, itemIdList, $wait }) {
         $(document).queue('UseItems', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_ig_mybp.php?do=1&id=${ itemId }&t=${ new Date().getTime() }`,
+                url: `kf_fw_ig_mybp.php?do=1&id=${itemId}&t=${new Date().getTime()}`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('使用道具', html);
@@ -4300,7 +4284,7 @@ const useItems = function ({ itemLevel, itemName, itemIdList, $wait }) {
                     if (/(成功|失败)！/.test(msg)) {
                         successNum++;
                         if (/成功！/.test(msg)) stat['有效道具']++;else stat['无效道具']++;
-                        $area.find(`[type="checkbox"][value="${ itemId }"]`).closest('tr').fadeOut('normal', function () {
+                        $area.find(`[type="checkbox"][value="${itemId}"]`).closest('tr').fadeOut('normal', function () {
                             $(this).remove();
                         });
                     } else {
@@ -4310,7 +4294,7 @@ const useItems = function ({ itemLevel, itemName, itemIdList, $wait }) {
                             $(document).clearQueue('UseItems');
                         }
                     }
-                    $('.pd_result:last').append(`<li><b>第${ index + 1 }次：</b>${ msg }</li>`);
+                    $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                 },
                 error() {
                     failNum++;
@@ -4330,21 +4314,21 @@ const useItems = function ({ itemLevel, itemName, itemIdList, $wait }) {
                         if (stat['有效道具'] === 0) delete stat['有效道具'];
                         if (stat['无效道具'] === 0) delete stat['无效道具'];
                         if (successNum > 0) {
-                            Log.push('使用道具', `共有\`${ successNum }\`个【\`Lv.${ itemLevel }：${ itemName }\`】道具被使用`, { gain: stat, pay: { '道具': -successNum } });
+                            Log.push('使用道具', `共有\`${successNum}\`个【\`Lv.${itemLevel}：${itemName}\`】道具被使用`, { gain: stat, pay: { '道具': -successNum } });
                         }
 
                         let logStat = '',
                             msgStat = '',
                             resultStat = '';
                         for (let [key, num] of Util.entries(stat)) {
-                            logStat += `，${ key }+${ num }`;
-                            msgStat += `<i>${ key }<em>+${ num }</em></i>`;
-                            resultStat += `<i>${ key }<em>+${ num }</em></i> `;
+                            logStat += `，${key}+${num}`;
+                            msgStat += `<i>${key}<em>+${num}</em></i>`;
+                            resultStat += `<i>${key}<em>+${num}</em></i> `;
                         }
-                        console.log(`共有${ successNum }个【Lv.${ itemLevel }：${ itemName }】道具被使用${ failNum > 0 ? `，共有${ failNum }个道具未能使用` : '' }${ logStat }`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>个【Lv.${ itemLevel }：${ itemName }】道具被使用` + `${ failNum > 0 ? `，共有<em>${ failNum }</em>个道具未能使用` : '' }</strong>${ msgStat }`, -1);
+                        console.log(`共有${successNum}个【Lv.${itemLevel}：${itemName}】道具被使用${failNum > 0 ? `，共有${failNum}个道具未能使用` : ''}${logStat}`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>个【Lv.${itemLevel}：${itemName}】道具被使用` + `${failNum > 0 ? `，共有<em>${failNum}</em>个道具未能使用` : ''}</strong>${msgStat}`, -1);
                         if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
-                        $('.pd_result:last').append(`<li class="pd_stat"><b>统计结果（共有<em>${ successNum }</em>个道具被使用）：</b>${ resultStat }</li>`);
+                        $('.pd_result:last').append(`<li class="pd_stat"><b>统计结果（共有<em>${successNum}</em>个道具被使用）：</b>${resultStat}</li>`);
                         $(document).dequeue('UseItemTypes');
                     } else {
                         setTimeout(() => $(document).dequeue('UseItems'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
@@ -4363,12 +4347,12 @@ const hideItemTypes = exports.hideItemTypes = function () {
     let $area = $('.kf_fw_ig1:first');
     let num = 0;
     for (let itemType of Config.hideItemTypeList) {
-        let $item = $area.find(`> tbody > tr:gt(1):has(td:nth-child(2):contains("${ itemType }"))`);
+        let $item = $area.find(`> tbody > tr:gt(1):has(td:nth-child(2):contains("${itemType}"))`);
         num += $item.length;
         $item.remove();
     }
     if (num > 0) {
-        $area.find('> tbody').append(`<tr><td colspan="4" style="color: #666; text-align: center;">共有${ num }个道具已被隐藏&hellip;</td></tr>`);
+        $area.find('> tbody').append(`<tr><td colspan="4" style="color: #666; text-align: center;">共有${num}个道具已被隐藏&hellip;</td></tr>`);
     }
 };
 
@@ -4438,7 +4422,7 @@ const clear = exports.clear = () => Util.deleteData(name + '_' + _Info2.default.
  */
 const push = exports.push = function (type, action, { gain = null, pay = null } = {}) {
     let log = read();
-    let overdueDate = Util.getDateString(Util.getDate(`-${ Config.logSaveDays }d`));
+    let overdueDate = Util.getDateString(Util.getDate(`-${Config.logSaveDays}d`));
     for (let date of Util.getObjectKeyList(log, 1)) {
         if (date <= overdueDate) delete log[date];else break;
     }
@@ -4561,7 +4545,7 @@ const show = exports.show = function () {
     if (!$.isEmptyObject(log)) {
         dateList = Util.getObjectKeyList(log, 1);
         curIndex = dateList.length - 1;
-        $logNav.find('.pd_log_date').attr('title', `总共记录了${ dateList.length }天的日志`).text(dateList[curIndex]);
+        $logNav.find('.pd_log_date').attr('title', `总共记录了${dateList.length}天的日志`).text(dateList[curIndex]);
         if (dateList.length > 1) {
             $logNav.find('[data-name="start"]').attr('title', dateList[0]).removeClass('pd_disabled_link');
             $logNav.find('[data-name="prev"]').attr('title', dateList[curIndex - 1]).removeClass('pd_disabled_link');
@@ -4620,7 +4604,7 @@ const show = exports.show = function () {
             $dialog.find('[name="statType"][value="custom"]:not(:checked)').click();
             showLogStat(log, dateList[curIndex], $dialog);
         }
-    }).end().find(`[name="sortType"][value="${ Config.logSortType }"]`).click().end().find(`[name="statType"][value="${ Config.logStatType }"]`).click().end().find('[name="statDays"]').val(Config.logStatDays);
+    }).end().find(`[name="sortType"][value="${Config.logSortType}"]`).click().end().find(`[name="statType"][value="${Config.logStatType}"]`).click().end().find('[name="statDays"]').val(Config.logStatDays);
 
     $dialog.find('[name="clear"]').click(function (e) {
         e.preventDefault();
@@ -4650,7 +4634,7 @@ const show = exports.show = function () {
  */
 const showLogContent = function (log, date, $dialog) {
     if (!Array.isArray(log[date])) return;
-    $dialog.find('.pd_log_content').html(getLogContent(log, date, Config.logSortType)).parent().find('legend:first-child').text(`日志内容 (共${ log[date].length }项)`);
+    $dialog.find('.pd_log_content').html(getLogContent(log, date, Config.logSortType)).parent().find('legend:first-child').text(`日志内容 (共${log[date].length}项)`);
 };
 
 /**
@@ -4663,7 +4647,7 @@ const showLogContent = function (log, date, $dialog) {
 const getLogContent = function (log, date, logSortType) {
     let logList = log[date];
     if (logSortType === 'type') {
-        const sortTypeList = ['捐款', '领取每日奖励', '争夺攻击', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+        const sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1);
     } else {
         logList.sort((a, b) => a.time > b.time ? 1 : -1);
@@ -4676,12 +4660,12 @@ const getLogContent = function (log, date, logSortType) {
         let d = new Date(time);
         if (logSortType === 'type') {
             if (curType !== type) {
-                content += `<h3>【${ type }】</h3>`;
+                content += `<h3>【${type}】</h3>`;
                 curType = type;
             }
-            content += `<p><b>${ Util.getTimeString(d) }：</b>${ action.replace(/`([^`]+?)`/g, '<b style="color: #f00;">$1</b>') }`;
+            content += `<p><b>${Util.getTimeString(d)}：</b>${action.replace(/`([^`]+?)`/g, '<b style="color: #f00;">$1</b>')}`;
         } else {
-            content += `<p><b>${ Util.getTimeString(d) } (${ type })：</b>${ action.replace(/`([^`]+?)`/g, '<b style="color: #f00;">$1</b>') }`;
+            content += `<p><b>${Util.getTimeString(d)} (${type})：</b>${action.replace(/`([^`]+?)`/g, '<b style="color: #f00;">$1</b>')}`;
         }
 
         let stat = '';
@@ -4690,10 +4674,10 @@ const getLogContent = function (log, date, logSortType) {
             for (let k of Object.keys(gain)) {
                 if (k === 'item') {
                     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, gain[k])) {
-                        stat += `<i>${ itemName }<em>+${ gain[k][itemName].toLocaleString() }</em></i> `;
+                        stat += `<i>${itemName}<em>+${gain[k][itemName].toLocaleString()}</em></i> `;
                     }
                 } else {
-                    stat += `<i>${ k }<em>+${ gain[k].toLocaleString() }</em></i> `;
+                    stat += `<i>${k}<em>+${gain[k].toLocaleString()}</em></i> `;
                 }
             }
         }
@@ -4702,10 +4686,10 @@ const getLogContent = function (log, date, logSortType) {
             for (let k of Object.keys(pay)) {
                 if (k === 'item') {
                     for (let itemName of Object.keys(pay[k])) {
-                        stat += `<i>${ itemName }<ins>${ pay[k][itemName].toLocaleString() }</ins></i> `;
+                        stat += `<i>${itemName}<ins>${pay[k][itemName].toLocaleString()}</ins></i> `;
                     }
                 } else {
-                    stat += `<i>${ k }<ins>${ pay[k].toLocaleString() }</ins></i> `;
+                    stat += `<i>${k}<ins>${pay[k].toLocaleString()}</ins></i> `;
                 }
             }
         }
@@ -4836,37 +4820,37 @@ const getLogStat = function (log, date, logStatType) {
     content += '<strong>收获：</strong>';
     for (let key of Util.getSortedObjectKeyList(sortStatTypeList, income)) {
         profit[key] = income[key];
-        content += `<i>${ key }<em>+${ income[key].toLocaleString() }</em></i> `;
+        content += `<i>${key}<em>+${income[key].toLocaleString()}</em></i> `;
     }
     content += '<br><strong>付出：</strong>';
     for (let key of Util.getSortedObjectKeyList(sortStatTypeList, expense)) {
         if (typeof profit[key] === 'undefined') profit[key] = expense[key];else profit[key] += expense[key];
-        content += `<i>${ key }<ins>${ expense[key].toLocaleString() }</ins></i> `;
+        content += `<i>${key}<ins>${expense[key].toLocaleString()}</ins></i> `;
     }
     content += '<br><strong>结余：</strong>';
     for (let key of Util.getSortedObjectKeyList(sortStatTypeList, profit)) {
-        content += `<i>${ key }${ Util.getStatFormatNumber(profit[key]) }</i> `;
+        content += `<i>${key}${Util.getStatFormatNumber(profit[key])}</i> `;
     }
 
     content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
-    content += `\n<strong>争夺攻击统计：</strong><i>次数<em>+${ lootCount }</em></i> `;
+    content += `\n<strong>争夺攻击统计：</strong><i>次数<em>+${lootCount}</em></i> `;
     if (lootCount > 0) {
-        content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${ (lootLevelStat.total / lootCount).toFixed(2) }</em>|` + `<em title="最小值">+${ lootLevelStat.min }</em>|<em title="最大值">+${ lootLevelStat.max }</em>)</span></i> `;
-        content += `<i>KFB<em>+${ lootKfbStat.total.toLocaleString() }</em><span class="pd_stat_extra">` + `(<em title="平均值">+${ Util.getFixedNumLocStr(lootKfbStat.total / lootCount) }</em>|` + `<em title="最小值">+${ lootKfbStat.min.toLocaleString() }</em>|<em title="最大值">+${ lootKfbStat.max.toLocaleString() }</em>)</span></i> `;
-        content += `<i>经验值<em>+${ lootExpStat.total.toLocaleString() }</em><span class="pd_stat_extra">` + `(<em title="平均值">+${ Util.getFixedNumLocStr(lootExpStat.total / lootCount) }</em>|` + `<em title="最小值">+${ lootExpStat.min.toLocaleString() }</em>|<em title="最大值">+${ lootExpStat.max.toLocaleString() }</em>)</span></i> `;
+        content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` + `<em title="最小值">+${lootLevelStat.min}</em>|<em title="最大值">+${lootLevelStat.max}</em>)</span></i> `;
+        content += `<i>KFB<em>+${lootKfbStat.total.toLocaleString()}</em><span class="pd_stat_extra">` + `(<em title="平均值">+${Util.getFixedNumLocStr(lootKfbStat.total / lootCount)}</em>|` + `<em title="最小值">+${lootKfbStat.min.toLocaleString()}</em>|<em title="最大值">+${lootKfbStat.max.toLocaleString()}</em>)</span></i> `;
+        content += `<i>经验值<em>+${lootExpStat.total.toLocaleString()}</em><span class="pd_stat_extra">` + `(<em title="平均值">+${Util.getFixedNumLocStr(lootExpStat.total / lootCount)}</em>|` + `<em title="最小值">+${lootExpStat.min.toLocaleString()}</em>|<em title="最大值">+${lootExpStat.max.toLocaleString()}</em>)</span></i> `;
     }
 
-    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${ buyItemNum.toLocaleString() }</em></i> ` + `<i>KFB<ins>-${ buyItemKfb.toLocaleString() }</ins></i> `;
+    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` + `<i>KFB<ins>-${buyItemKfb.toLocaleString()}</ins></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
-        content += `<i>${ itemName }<em>+${ buyItemStat[itemName].toLocaleString() }</em></i> `;
+        content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
     }
-    content += `<br><strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${ validItemNum.toLocaleString() }</em>` + `(<em title="3级以上有效道具">+${ highValidItemNum.toLocaleString() }</em>)</span></i> `;
+    content += `<br><strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${validItemNum.toLocaleString()}</em>` + `(<em title="3级以上有效道具">+${highValidItemNum.toLocaleString()}</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
-        content += `<i>${ itemName }<em>+${ validItemStat[itemName].toLocaleString() }</em></i> `;
+        content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;
     }
-    content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${ invalidItemNum.toLocaleString() }</em>` + `(<em title="3级以上无效道具">+${ highInvalidItemNum.toLocaleString() }</em>)</span></i> `;
+    content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${invalidItemNum.toLocaleString()}</em>` + `(<em title="3级以上无效道具">+${highInvalidItemNum.toLocaleString()}</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)) {
-        content += `<i>${ itemName }<em>+${ invalidItemStat[itemName].toLocaleString() }</em></i> `;
+        content += `<i>${itemName}<em>+${invalidItemStat[itemName].toLocaleString()}</em></i> `;
     }
 
     return content;
@@ -4912,13 +4896,13 @@ const showImportOrExportLogDialog = function () {
         $dialog.find('[name="text"]').select();
     }).end().find('[name="logType"]').click(function () {
         let type = $(this).val();
-        $dialog.find(`[data-name="log${ type === 'text' ? 'Setting' : 'Text' }"]`).hide();
-        $dialog.find(`[data-name="log${ type === 'text' ? 'Text' : 'Setting' }"]`).show();
-        $dialog.find(`[data-name="log${ type === 'text' ? 'Text' : 'Setting' }"]`).select();
+        $dialog.find(`[data-name="log${type === 'text' ? 'Setting' : 'Text'}"]`).hide();
+        $dialog.find(`[data-name="log${type === 'text' ? 'Text' : 'Setting'}"]`).show();
+        $dialog.find(`[data-name="log${type === 'text' ? 'Text' : 'Setting'}"]`).select();
     }).end().find('[name="merge"], [name="overwrite"]').click(function (e) {
         e.preventDefault();
         let name = $(this).attr('name');
-        if (!confirm(`是否将文本框中的日志${ name === 'overwrite' ? '覆盖' : '合并' }到本地日志？`)) return;
+        if (!confirm(`是否将文本框中的日志${name === 'overwrite' ? '覆盖' : '合并'}到本地日志？`)) return;
         let newLog = $.trim($dialog.find('[name="setting"]').val());
         if (!newLog) return;
         try {
@@ -4938,7 +4922,7 @@ const showImportOrExportLogDialog = function () {
     });
 
     Dialog.show(dialogName);
-    $dialog.find(`[name="sortType2"][value="${ Config.logSortType }"]`).prop('checked', true).triggerHandler('click');
+    $dialog.find(`[name="sortType2"][value="${Config.logSortType}"]`).prop('checked', true).triggerHandler('click');
     $dialog.find('[name="setting"]').val(JSON.stringify(log)).select().focus();
     Script.runFunc('LogDialog.showImportOrExportLogDialog_after_');
 };
@@ -4956,9 +4940,9 @@ const showLogText = function (log, $dialog) {
     for (let date of Object.keys(log)) {
         if (!Array.isArray(log[date])) continue;
         if (lastDate > date) lastDate = date;
-        content += `【${ date }】(共${ log[date].length }项)\n${ logSortType === 'type' ? '' : '\n' }` + getLogContent(log, date, logSortType).replace(/<h3>/g, '\n').replace(/<\/h3>/g, '\n').replace(/<\/p>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '').replace(/`/g, '');
+        content += `【${date}】(共${log[date].length}项)\n${logSortType === 'type' ? '' : '\n'}` + getLogContent(log, date, logSortType).replace(/<h3>/g, '\n').replace(/<\/h3>/g, '\n').replace(/<\/p>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '').replace(/`/g, '');
         if (isShowStat) {
-            content += `${ '-'.repeat(46) }\n合计：\n${ getLogStat(log, date, 'current').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '') }\n`;
+            content += `${'-'.repeat(46)}\n合计：\n${getLogStat(log, date, 'current').replace(/<br\s*\/?>/g, '\n').replace(/(<.+?>|<\/.+?>)/g, '')}\n`;
         }
         content += '='.repeat(46) + '\n';
     }
@@ -4975,7 +4959,7 @@ const showLogText = function (log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addUserLinkInPkListPage = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.lootAttack = exports.getRealProperty = exports.enhanceLootIndexPage = undefined;
+exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.addUserLinkInPkListPage = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.lootAttack = exports.getRealProperty = exports.enhanceLootIndexPage = undefined;
 
 var _Info = require('./Info');
 
@@ -5041,7 +5025,7 @@ let logList = [];
 let levelInfoList = [];
 // 当前争夺属性
 let propertyList = new Map();
-// 道具加成点数列表
+// 额外加成点数列表
 let extraPointList = new Map();
 // 道具使用情况列表
 let itemUsedNumList = new Map();
@@ -5085,28 +5069,33 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  */
 const handlePropertiesArea = function () {
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` + `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` + `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${ tipsIntro }">[?]</span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>');
+    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` + `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` + `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>')
+    /*.replace(
+     '技能伤害：攻击+(体质*5)+(智力*5)',
+     '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
+     )*/ /* 临时禁用 */;
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
+        return; // 临时禁用
         let $this = $(this);
         $this.hide();
         let name = $this.attr('id').replace('pdPro_', '');
         let step = 1;
         if (name === 's1') step = 5;else if (name === 's2') step = 20;else if (name === 'd1') step = 2;
-        $(`<input class="pd_input" data-name="${ name }" type="number" value="${ parseInt($this.text()) }" min="1" step="${ step }" ` + `style="width: 65px; margin-right: 5px;" title="${ $this.attr('title') }">`).insertAfter($this).focus().select().blur(function () {
+        $(`<input class="pd_input" data-name="${name}" type="number" value="${parseInt($this.text())}" min="1" step="${step}" ` + `style="width: 65px; margin-right: 5px;" title="${$this.attr('title')}">`).insertAfter($this).focus().select().blur(function () {
             let $this = $(this);
             let name = $this.data('name');
             let num = parseInt($this.val());
             if (num > 0) {
-                $points.find(`[name="${ name }"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+                $points.find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
             }
             $this.prev().show().end().remove();
         }).keydown(function (e) {
             let $this = $(this);
             if (e.keyCode === 13) $this.blur();else if (e.keyCode === 27) $this.val('').blur();
         });
-    }).find('[id^=pdPro_]').css('cursor', 'pointer');
+    }) /*.find('[id^=pdPro_]').css('cursor', 'pointer')*/ /* 临时禁用 */;
 };
 
 /**
@@ -5135,10 +5124,12 @@ const handlePointsArea = function () {
         let $this = $(this);
         let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         $('#pdSurplusPoint').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000').css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
+        return; // 临时禁用
         showNewLootProperty($this);
         showSumOfPoint($this);
         $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()), parseInt($lootArea.find('[name="s2"]').val()), parseInt($lootArea.find('[name="i1"]').val())));
     }).on('click', '.pd_point_sum', function () {
+        return; // 临时禁用
         let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         let $point = $(this).prev('span').prev('.pd_point');
@@ -5198,7 +5189,7 @@ const getLootPropertyList = function () {
 /**
  * 获取当前已分配的点数
  * @param {jQuery} $points 点数字段对象
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 当前已分配的点数
  */
 const getCurrentAssignedPoint = function ($points, type = 0) {
@@ -5217,7 +5208,7 @@ const getCurrentAssignedPoint = function ($points, type = 0) {
  * @param {number} s1 力量
  * @param {number} s2 体质
  * @param {number} i1 智力
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 技能伤害的值
  */
 const getSkillAttack = (s1, s2, i1, type = 0) => {
@@ -5341,17 +5332,17 @@ const showNewLootProperty = function ($point) {
             text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '普通') + '%';
             text += '|' + getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '快速') + '%';
         }
-        $properties.find('#pdReal_' + name).text(`(${ text })`).attr('title', `第${ nextLevel }层的实际${ pointName === '灵活' ? '暴击几率' : '技能释放概率' } (${ nextLevel % 10 === 0 ? 'BOSS' : '普通|快速' })`);
+        $properties.find('#pdReal_' + name).text(`(${text})`).attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);
     }
 
-    if (point !== oriPoint) $properties.find('#pdNew_' + name).text(`(${ (diffValue >= 0 ? '+' : '') + diffValue })`).css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
+    if (point !== oriPoint) $properties.find('#pdNew_' + name).text(`(${(diffValue >= 0 ? '+' : '') + diffValue})`).css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
 };
 
 /**
  * 根据指定的点数获得相应争夺属性的值
  * @param {string} pointName 点数名称
  * @param {number} point 点数的值
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 争夺属性的值
  */
 const getPropertyByPoint = function (pointName, point, type = 0) {
@@ -5388,7 +5379,7 @@ const getPropertyByPoint = function (pointName, point, type = 0) {
  * 根据指定的争夺属性获得相应点数的值
  * @param {string} pointName 点数名称
  * @param {number} num 争夺属性的值
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 点数的值
  */
 const getPointByProperty = function (pointName, num, type = 0) {
@@ -5445,7 +5436,7 @@ const getRealProperty = exports.getRealProperty = function (pointName, totalPoin
 const addLevelPointListSelect = function () {
     $(`
 <select id="pdLevelPointListSelect" style="margin: 5px 0;">
-  <option>点数分配方案${ Config.levelPointList.type == 1 ? '(*)' : '' }</option>
+  <option>点数分配方案${Config.levelPointList.type == 1 ? '(*)' : ''}</option>
   <option value="0">默认</option>
 </select>
 <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a>
@@ -5504,7 +5495,7 @@ const setLevelPointListSelect = function (levelPointList) {
     let pointListHtml = '';
     for (let level of Object.keys(levelPointList)) {
         if (!$.isNumeric(level)) continue;
-        pointListHtml += `<option value="${ level }">第${ level }层</option>`;
+        pointListHtml += `<option value="${level}">第${level}层</option>`;
     }
     $('#pdLevelPointListSelect').find('option:first').text('点数分配方案' + (Config.levelPointList.type === 1 ? '(*)' : '')).end().find('option:gt(1)').remove().end().append(pointListHtml);
 };
@@ -5523,8 +5514,8 @@ const showLevelPointListConfigDialog = function (callback) {
     （例：11-19层点数相同的话，则只保留第11层）<br>
     自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a><br>
     <label class="pd_highlight" style="line-height: 2em;">
-      保存方式： <select name="saveType"><option value="0">仅点数</option><option value="1">点数+道具</option></select>
-      <span class="pd_cfg_tips" title="各层点数分配方案中数值的保存方式，仅点数：仅按照点数来保存；点数+道具：按照点数与道具加成之和来保存">[?]</span>
+      保存方式： <select name="saveType"><option value="0">仅点数</option><option value="1" disabled>点数+额外加成</option></select> <!-- 临时禁用 -->
+      <span class="pd_cfg_tips" title="各层点数分配方案中数值的保存方式，仅点数：仅按照点数来保存；点数+额外加成：按照点数与额外加成之和来保存">[?]</span>
     </label>
   </div>
   <div style="overflow-y: auto; max-height: 400px;">
@@ -5573,15 +5564,15 @@ const showLevelPointListConfigDialog = function (callback) {
   <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
   <td style="text-align: left;">
     <label style="margin-right: 8px;">
-      第 <input name="level" type="text" value="${ level ? level : '' }" style="width: 30px;"> 层
+      第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层
     </label>
   </td>
-  <td><input class="pd_point" name="s1" type="number" value="${ points['力量'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="s2" type="number" value="${ points['体质'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d1" type="number" value="${ points['敏捷'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d2" type="number" value="${ points['灵活'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i1" type="number" value="${ points['智力'] }" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i2" type="number" value="${ points['意志'] }" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s1" type="number" value="${points['力量']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s2" type="number" value="${points['体质']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d1" type="number" value="${points['敏捷']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d2" type="number" value="${points['灵活']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i1" type="number" value="${points['智力']}" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i2" type="number" value="${points['意志']}" style="width: 50px;" required></td>
   <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
 </tr>
 <tr>
@@ -5609,6 +5600,7 @@ const showLevelPointListConfigDialog = function (callback) {
 </tr>
 `).appendTo($levelPointList).find('.pd_point').trigger('change');
         setPointsRange($points);
+        $points.eq(0).closest('tr').next('tr').find('[data-id^="pro_"], [data-id="skillAttack"]').prop('hidden', true); // 临时禁用
     };
 
     /**
@@ -5703,7 +5695,7 @@ const showLevelPointListConfigDialog = function (callback) {
 
         let $points = $this.closest('tr');
         let $properties = $points.next('tr');
-        $properties.find(`[data-id="pro_${ name }"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point, saveType)).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val()), parseInt($points.find('[name="i1"]').val()), saveType));
+        $properties.find(`[data-id="pro_${name}"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point, saveType)).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val()), parseInt($points.find('[name="i1"]').val()), saveType));
 
         let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'), saveType);
         $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
@@ -5712,7 +5704,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let name = $this.data('id').replace('pro_', '');
         let num = parseInt(prompt('请输入数值：', $this.text()));
         if (!num || num < 0) return;
-        $this.closest('tr').prev('tr').find(`[name="${ name }"]`).val(getPointByProperty(getPointNameByFieldName(name), num, saveType)).trigger('change');
+        $this.closest('tr').prev('tr').find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num, saveType)).trigger('change');
     }).on('click', '[data-id^="opt_"]', function (e) {
         e.preventDefault();
         let $this = $(this);
@@ -5720,7 +5712,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let $points = $this.closest('tr').prev('tr');
         let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'), saveType);
         if (!surplusPoint) return;
-        let $point = $points.find(`[name="${ name }"]`);
+        let $point = $points.find(`[name="${name}"]`);
         if (!$point.length) return;
         let num = parseInt($point.val());
         if (isNaN(num) || num < 0) num = 0;
@@ -5799,22 +5791,22 @@ const addAttackBtns = function () {
     $(`
 <div id="pdAttackBtns" style="line-height: 2.2em; margin-bottom: 5px;">
   <label>
-    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${ Config.autoChangeLevelPointsEnabled ? 'checked' : '' }>
+    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''}>
     自动修改点数分配方案
     <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效）">[?]</span>
   </label>
   <label>
-    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${ Config.customPointsScriptEnabled ? 'checked' : '' } 
-${ typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '' }> 使用自定义脚本
+    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${Config.customPointsScriptEnabled ? 'checked' : ''} 
+${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定义脚本
     <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效，需正确安装自定义脚本后此项才可勾选）">[?]</span>
   </label><br>
   <label>
-    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${ Config.unusedPointNumAlertEnabled ? 'checked' : '' }>
+    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
     有剩余属性点时提醒
     <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效）">[?]</span>
   </label>
   <label>
-    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${ Config.slowAttackEnabled ? 'checked' : '' }> 慢速
+    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
     <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在4~6秒之间）">[?]</span>
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
@@ -5877,13 +5869,14 @@ ${ typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '' }> �
 const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChangePointsEnabled, safeId }) {
     let initCurrentLevel = getCurrentLevel(logList);
     if (targetLevel > 0 && targetLevel <= initCurrentLevel) return;
-    let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${ initCurrentLevel }</em></i>` + '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>');
+    let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${initCurrentLevel}</em></i>` + '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>');
 
     /**
      * 记录点数分配记录
      * @param {boolean} isSubmit 是否提交分配点数
      */
     const recordPointsLog = function (isSubmit = false) {
+        return; // 临时禁用
         propertyList = getLootPropertyList();
         let pointsText = '',
             propertiesText = '';
@@ -5892,19 +5885,19 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             let pointName = getPointNameByFieldName($this.attr('name'));
             let point = parseInt($.trim($this.val()));
             let extraPoint = extraPointList.get(pointName);
-            pointsText += `${ pointName }：${ point }+${ extraPoint }=${ point + extraPoint }，`;
+            pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
         });
         pointsText = pointsText.replace(/，$/, '');
         for (let [key, value] of propertyList) {
             if (key === '可分配属性点' || key === '生命值') continue;
             let unit = '';
             if (key.endsWith('率') || key === '防御') unit = '%';
-            propertiesText += `${ key }：${ value }${ unit }，`;
+            propertiesText += `${key}：${value}${unit}，`;
         }
         propertiesText = propertiesText.replace(/，$/, '');
-        pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${ pointsText }）\n争夺属性（${ propertiesText }）`;
+        pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
         sessionStorage.setItem(_Const2.default.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
-        if (isSubmit) console.log(`【分配点数】点数方案（${ pointsText }）；争夺属性（${ propertiesText }）`);
+        if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
     };
 
     /**
@@ -5945,7 +5938,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             }
             if ($.type(points) === 'object') {
                 for (let key of Object.keys(points)) {
-                    $points.find(`[name="${ getFieldNameByPointName(key) }"]`).val(points[key]).trigger('change');
+                    $points.find(`[name="${getFieldNameByPointName(key)}"]`).val(points[key]).trigger('change');
                 }
                 nextLevel = -1;
             } else if (typeof points === 'number') {
@@ -5965,8 +5958,8 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 return false;
             }
         });
-        let $levelPointListSelect = $('#pdLevelPointListSelect');
-        if (isChange || changeLevel > 0 && changeLevel !== parseInt($levelPointListSelect.val())) {
+        if (isChange) {
+            let $levelPointListSelect = $('#pdLevelPointListSelect');
             if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
             if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
                 if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
@@ -5985,7 +5978,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                     });
                     return 'success';
                 } else {
-                    alert((changeLevel ? `第${ changeLevel }层方案：` : '') + msg);
+                    alert((changeLevel ? `第${changeLevel}层方案：` : '') + msg);
                     return 'error';
                 }
             }, () => 'timeout');
@@ -6022,7 +6015,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             data: { 'safeid': safeId },
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
-            if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${ _Const2.default.lootAttackingExpires }m`));
+            if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
             if (!/你\(\d+\)遭遇了/.test(html)) {
                 setTimeout(check, _Const2.default.defAjaxInterval);
                 return;
@@ -6069,7 +6062,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 } else setTimeout(check, _Const2.default.defAjaxInterval);
             } else {
                 Msg.remove($wait);
-                Msg.show(`<strong>你成功击败了第<em>${ currentLevel }</em>层的NPC</strong>`, -1);
+                Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
             }
         } else {
             if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), _Const2.default.defAjaxInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
@@ -6134,10 +6127,10 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     let currentLevel = getCurrentLevel(logList);
     let { kfb, exp } = getTotalGain(levelInfoList);
     if (kfb > 0 && exp > 0) {
-        Log.push('争夺攻击', `你成功击败了第\`${ currentLevel - 1 }\`层的NPC (全部：${ allEnemyStat.trim() }；最近${ _Const2.default.enemyStatLatestLevelNum }层：${ latestEnemyStat.trim() })`, { gain: { 'KFB': kfb, '经验值': exp } });
+        Log.push('争夺攻击', `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${_Const2.default.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`, { gain: { 'KFB': kfb, '经验值': exp } });
         LootLog.record(logList, pointsLogList);
     }
-    Msg.show(`<strong>你被第<em>${ currentLevel }</em>层的NPC击败了</strong>` + `<i>KFB<em>+${ kfb.toLocaleString() }</em></i><i>经验值<em>+${ exp.toLocaleString() }</em></i>`, -1);
+    Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>` + `<i>KFB<em>+${kfb.toLocaleString()}</em></i><i>经验值<em>+${exp.toLocaleString()}</em></i>`, -1);
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
         Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
@@ -6161,10 +6154,10 @@ const addLootLogHeader = function () {
   </div>
   <div style="text-align: right;">
     <label>
-      <input class="pd_input" name="showLiteLootLogEnabled" type="checkbox" ${ Config.showLiteLootLogEnabled ? 'checked' : '' }> 显示精简记录
+      <input class="pd_input" name="showLiteLootLogEnabled" type="checkbox" ${Config.showLiteLootLogEnabled ? 'checked' : ''}> 显示精简记录
     </label>
     <label>
-      <input class="pd_input" name="showLevelEnemyStatEnabled" type="checkbox" ${ Config.showLevelEnemyStatEnabled ? 'checked' : '' }> 显示分层统计
+      <input class="pd_input" name="showLevelEnemyStatEnabled" type="checkbox" ${Config.showLevelEnemyStatEnabled ? 'checked' : ''}> 显示分层统计
     </label>
     <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">导入/导出争夺记录</a>
     <a class="pd_btn_link pd_highlight" data-name="clearLootLog" href="#">清除记录</a>
@@ -6218,7 +6211,7 @@ const showImportOrExportLootLogDialog = function () {
     $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
         e.preventDefault();
         let name = $(this).attr('name');
-        if (!confirm(`是否将文本框中的争夺记录${ name === 'overwrite' ? '覆盖' : '合并' }到本地争夺记录？`)) return;
+        if (!confirm(`是否将文本框中的争夺记录${name === 'overwrite' ? '覆盖' : '合并'}到本地争夺记录？`)) return;
         let newLog = $.trim($dialog.find('[name="lootLog"]').val());
         if (!newLog) return;
         try {
@@ -6268,7 +6261,7 @@ const handleLootLogNav = function () {
     let curIndex = keyList.length - 1;
 
     let totalDays = keyList[curIndex] === 0 ? keyList.length - 1 : keyList.length;
-    $logNav.find('.pd_history_logs_key').attr('title', `共有${ totalDays }天的争夺记录`).text(getKeyTitleStr(keyList[curIndex]));
+    $logNav.find('.pd_history_logs_key').attr('title', `共有${totalDays}天的争夺记录`).text(getKeyTitleStr(keyList[curIndex]));
     if (keyList.length > 1) {
         $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
         $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
@@ -6328,32 +6321,32 @@ const showLogStat = function (levelInfoList) {
     let { exp, kfb } = getTotalGain(levelInfoList);
     let allEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
-        allEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
+        allEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
     let latestEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum)))) {
-        latestEnemyStatHtml += `<i>${ enemy }<em>+${ num }</em></i> `;
+        latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
     }
     let $logStat = $('#pdLogStat');
     $logStat.html(`
-<li><b>收获统计：</b><i>KFB<em>+${ kfb.toLocaleString() }</em></i> <i>经验值<em>+${ exp.toLocaleString() }</em></i></li>
+<li><b>收获统计：</b><i>KFB<em>+${kfb.toLocaleString()}</em></i> <i>经验值<em>+${exp.toLocaleString()}</em></i></li>
 <li>
-  <b>全部层数：</b>${ allEnemyStatHtml }<br>
-  <b>最近${ _Const2.default.enemyStatLatestLevelNum }层：</b>${ latestEnemyStatHtml }
+  <b>全部层数：</b>${allEnemyStatHtml}<br>
+  <b>最近${_Const2.default.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml}
 </li>
 `);
 
     if (Config.showLevelEnemyStatEnabled) {
         let levelEnemyStatHtml = '';
         for (let i = 1; i < levelInfoList.length; i += 10) {
-            levelEnemyStatHtml += `&nbsp;&nbsp;<b>${ i }-${ i + 9 < levelInfoList.length ? i + 9 : levelInfoList.length - 1 }：</b>`;
+            levelEnemyStatHtml += `&nbsp;&nbsp;<b>${i}-${i + 9 < levelInfoList.length ? i + 9 : levelInfoList.length - 1}：</b>`;
             let html = '';
             for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= i && level < i + 10)))) {
-                html += `<i>${ enemy }<em>+${ num }</em></i> `;
+                html += `<i>${enemy}<em>+${num}</em></i> `;
             }
             levelEnemyStatHtml += (html ? html : '无') + '<br>';
         }
-        $logStat.append(`<li><b>分层统计：</b>${ levelEnemyStatHtml ? '<br>' + levelEnemyStatHtml : '无' }</li>`);
+        $logStat.append(`<li><b>分层统计：</b>${levelEnemyStatHtml ? '<br>' + levelEnemyStatHtml : '无'}</li>`);
     }
 };
 
@@ -6393,7 +6386,7 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
             default:
                 color = '#0075ea';
         }
-        list[level] = levelLog.replace(matches[0], `<span style="background-color: ${ color };">[${ enemy }的]</span>NPC`);
+        list[level] = levelLog.replace(matches[0], `<span style="background-color: ${color};">[${enemy}的]</span>NPC`);
 
         if (pointsLogList[level]) {
             let levelPointsLog = pointsLogList[level];
@@ -6401,14 +6394,14 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
             let pointMatches = /灵活：\d+\+\d+=(\d+)/.exec(levelPointsLog);
             if (pointMatches) {
                 let realCriticalStrikePercent = getRealProperty('灵活', parseInt(pointMatches[1]), level, enemy);
-                levelPointsLog = levelPointsLog.replace(/(暴击几率：\d+%)/, `$1<span class="pd_custom_tips" title="实际暴击几率">(${ realCriticalStrikePercent }%)</span>`);
+                levelPointsLog = levelPointsLog.replace(/(暴击几率：\d+%)/, `$1<span class="pd_custom_tips" title="实际暴击几率">(${realCriticalStrikePercent}%)</span>`);
             }
             pointMatches = /智力：\d+\+\d+=(\d+)/.exec(levelPointsLog);
             if (pointMatches) {
                 let realSkillPercent = getRealProperty('智力', parseInt(pointMatches[1]), level, enemy);
-                levelPointsLog = levelPointsLog.replace(/(技能释放概率：\d+%)/, `$1<span class="pd_custom_tips" title="实际技能释放概率">(${ realSkillPercent }%)</span>`);
+                levelPointsLog = levelPointsLog.replace(/(技能释放概率：\d+%)/, `$1<span class="pd_custom_tips" title="实际技能释放概率">(${realSkillPercent}%)</span>`);
             }
-            list[level] = list[level].replace('</li>', `</li><li class="pk_log_g" style="color: #666;">${ levelPointsLog }</li>`.replace(/\n/g, '<br>'));
+            list[level] = list[level].replace('</li>', `</li><li class="pk_log_g" style="color: #666;">${levelPointsLog}</li>`.replace(/\n/g, '<br>'));
         }
     });
     $log.html(list.reverse().join(''));
@@ -6598,7 +6591,7 @@ const checkLoot = exports.checkLoot = function () {
                 if (Util.getCookie(_Const2.default.lootCheckingCookieName)) return;
                 let $log = $('#pk_text', html);
                 if (!$log.length) {
-                    Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${ _Const2.default.checkLootInterval }m`));
+                    Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
                     return;
                 }
                 if (Config.attackTargetLevel > 0) {
@@ -6635,7 +6628,7 @@ const autoLoot = function () {
         Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
         return;
     }
-    Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${ _Const2.default.lootAttackingExpires }m`));
+    Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
     Util.deleteCookie(_Const2.default.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function';
     lootAttack({ type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId });
@@ -6668,7 +6661,7 @@ const autoSaveLootLog = exports.autoSaveLootLog = function () {
                 }
                 recordLootInfo(logList, levelInfoList, []);
             } else {
-                Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${ _Const2.default.checkLootInterval }m`));
+                Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
             }
         },
         error() {
@@ -6685,9 +6678,89 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
     $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${ userName }" target="_blank">${ userName }</a>`);
+        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
+};
+
+/**
+ * 提升战力光环
+ */
+const promoteHalo = exports.promoteHalo = function () {
+    Script.runFunc('Loot.promoteHalo_before_');
+    console.log('提升战力光环Start');
+    let $wait = Msg.wait('<strong>正在提升战力光环，请稍候&hellip;</strong>');
+
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).done(function (html) {
+        let matches = /safeid=(\w+)"/.exec(html);
+        if (!matches) {
+            let nextTime = Util.getDate('+1h');
+            Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime.getTime(), nextTime);
+            Msg.remove($wait);
+            return;
+        }
+        let safeId = matches[1];
+        let promoteHaloCostType = Config.promoteHaloCostType;
+
+        $.get(`kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${new Date().getTime()}`, function (html) {
+            Public.showFormatLog('提升战力光环', html);
+            let { msg } = Util.getResponseMsg(html);
+            Msg.remove($wait);
+
+            let nextTime = Util.getDate('+15m');
+            let matches = /(新数值为|随机值为)\[(\d+(?:\.\d+)?)%]/.exec(msg);
+            if (matches) {
+                nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
+                let randomNum = parseFloat(matches[2]);
+                Msg.show('<strong>' + (matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) + '</strong>', -1);
+
+                let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
+                let pay = {};
+                pay[costResult.type] = -costResult.num;
+                Log.push('提升战力光环', matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【\`${randomNum}%\`】` : `你本次随机值为【\`${randomNum}%\`】，未超过光环效果`, { pay });
+            } else {
+                matches = /你的(贡献点数|KFB)不足/.exec(msg);
+                if (matches) {
+                    nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
+                    Msg.show(`<strong>${matches[1]}不足，无法提升战力光环</strong><a href="kf_fw_ig_halo.php" target="_blank">手动选择</a>`, -1);
+                }
+
+                matches = /你还需要等待(\d+)分钟/.exec(msg);
+                if (matches) {
+                    nextTime = Util.getDate(`+${Config.promoteHaloInterval * 60 - (_Const2.default.minPromoteHaloInterval - parseInt(matches[1]))}m`);
+                }
+            }
+            Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime.getTime(), nextTime);
+            Script.runFunc('Loot.promoteHalo_after_', msg);
+        }).fail(() => Msg.remove($wait));
+    }).fail(function () {
+        Msg.remove($wait);
+        setTimeout(promoteHalo, _Const2.default.defAjaxInterval);
+    });
+};
+
+/**
+ * 通过获取类型ID获取提升战力光环花费
+ * @param {number} id 提升战力光环的类型ID
+ * @returns {{type: string, num: number}} 花费对象，type：花费类型；num：花费数额
+ */
+const getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function (id) {
+    switch (id) {
+        case 1:
+            return { type: 'KFB', num: 100 };
+        case 2:
+            return { type: 'KFB', num: 1000 };
+        case 11:
+            return { type: '贡献', num: 0.2 };
+        case 12:
+            return { type: '贡献', num: 2 };
+        default:
+            return { type: 'KFB', num: 0 };
+    }
 };
 
 },{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],14:[function(require,module,exports){
@@ -6754,7 +6827,7 @@ const clear = exports.clear = () => Util.deleteData(name + '_' + _Info2.default.
  */
 const record = exports.record = function (logList, pointsLogList) {
     let log = read();
-    let overdueDate = Util.getDate(`-${ Config.lootLogSaveDays }d`).getTime();
+    let overdueDate = Util.getDate(`-${Config.lootLogSaveDays}d`).getTime();
     $.each(Util.getObjectKeyList(log, 1), function (i, key) {
         key = parseInt(key);
         if (isNaN(key) || key <= overdueDate) delete log[key];else return false;
@@ -6834,7 +6907,7 @@ const show = exports.show = function (options, duration) {
         $container = $('<div class="pd_msg_container"></div>').appendTo('body');
     }
 
-    let $msg = $(`<div class="pd_msg">${ settings.msg }</div>`).appendTo($container);
+    let $msg = $(`<div class="pd_msg">${settings.msg}</div>`).appendTo($container);
     $msg.on('click', '.pd_stop_action', function (e) {
         e.preventDefault();
         $(this).html('正在停止&hellip;').closest('.pd_msg').data('stop', true);
@@ -6978,13 +7051,13 @@ const addFastGotoThreadPageLink = exports.addFastGotoThreadPageLink = function (
         for (let i = 1; i < totalPageNum; i++) {
             if (i > Config.maxFastGotoThreadPageNum) {
                 if (i + 1 <= totalPageNum) {
-                    html += `..<a href="${ url }&page=${ totalPageNum }">${ totalPageNum }</a>`;
+                    html += `..<a href="${url}&page=${totalPageNum}">${totalPageNum}</a>`;
                 }
                 break;
             }
-            html += `<a href="${ url }&page=${ i + 1 }">${ i + 1 }</a>`;
+            html += `<a href="${url}&page=${i + 1}">${i + 1}</a>`;
         }
-        html = `<span class="pd_thread_page">&hellip;${ html }</span>`;
+        html = `<span class="pd_thread_page">&hellip;${html}</span>`;
         $link.after(html).parent().css('white-space', 'normal');
     });
 };
@@ -6993,7 +7066,7 @@ const addFastGotoThreadPageLink = exports.addFastGotoThreadPageLink = function (
  * 高亮at提醒页面中未读的消息
  */
 const highlightUnReadAtTipsMsg = exports.highlightUnReadAtTipsMsg = function () {
-    if ($('.kf_share1:first').text().trim() !== `含有关键词 “${ _Info2.default.userName }” 的内容`) return;
+    if ($('.kf_share1:first').text().trim() !== `含有关键词 “${_Info2.default.userName}” 的内容`) return;
     let timeString = Util.getCookie(_Const2.default.prevReadAtTipsCookieName);
     if (!timeString || !/^\d+日\d+时\d+分$/.test(timeString)) return;
     let prevString = '';
@@ -7021,7 +7094,7 @@ const addFastDrawMoneyLink = exports.addFastDrawMoneyLink = function () {
     let matches = /给你转帐(\d+)KFB/i.exec(html);
     if (matches) {
         let money = parseInt(matches[1]);
-        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行').replace(matches[0], `给你转帐<span class="pd_stat"><em>${ money.toLocaleString() }</em></span>KFB`));
+        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行').replace(matches[0], `给你转帐<span class="pd_stat"><em>${money.toLocaleString()}</em></span>KFB`));
 
         $('<br><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>').appendTo($msg).filter('a:eq(0)').click(function (e) {
             e.preventDefault();
@@ -7074,7 +7147,7 @@ const addFollowAndBlockAndMemoUserLink = exports.addFollowAndBlockAndMemoUserLin
             if (str !== '') {
                 $this.text('修改备注').data('memo', str);
                 let $info = $('.log1 > tbody > tr:last-child > td:last-child');
-                $info.html(`备注：${ str }<br>${ $info.html() }`);
+                $info.html(`备注：${str}<br>${$info.html()}`);
             }
         } else {
             let str = '关注';
@@ -7277,7 +7350,7 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
             $idColors.find('td:has(a)').each(function () {
                 let $this = $(this);
                 let matches = /&color=(\d+)/i.exec($this.find('a').attr('href'));
-                if (matches) $this.append(`<input type="checkbox" class="pd_input" value="${ matches[1] }">`);
+                if (matches) $this.append(`<input type="checkbox" class="pd_input" value="${matches[1]}">`);
             });
 
             $area.find('[name="autoChangeIdColorType"]').val(Config.autoChangeIdColorType);
@@ -7286,7 +7359,7 @@ const addAutoChangeIdColorButton = exports.addAutoChangeIdColorButton = function
                 $idColors.find('input').prop('disabled', $(this).prop('checked'));
             }).prop('checked', Config.changeAllAvailableIdColorEnabled).triggerHandler('click');
             for (let id of Config.customAutoChangeIdColorList) {
-                $idColors.find(`input[value="${ id }"]`).prop('checked', true);
+                $idColors.find(`input[value="${id}"]`).prop('checked', true);
             }
         } else {
             $this.parent().nextAll().remove();
@@ -7356,7 +7429,7 @@ const highlightRatingErrorSize = exports.highlightRatingErrorSize = function () 
         if (type === -1) {
             $ratingCell.css('color', '#ff9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
         } else if (type === 1) {
-            $ratingCell.addClass('pd_highlight pd_custom_tips').attr('title', `标题文件大小(${ titleSize.toLocaleString() }M)与认定文件大小(${ ratingSize.toLocaleString() }M)不一致`);
+            $ratingCell.addClass('pd_highlight pd_custom_tips').attr('title', `标题文件大小(${titleSize.toLocaleString()}M)与认定文件大小(${ratingSize.toLocaleString()}M)不一致`);
         }
     });
 };
@@ -7372,7 +7445,7 @@ const showSelfRatingErrorSizeSubmitWarning = exports.showSelfRatingErrorSizeSubm
         let title = $('.adp1 a[href^="read.php?tid="]').text();
         let { type, titleSize } = Public.checkRatingSize(title, ratingSize);
         if (type === 1) {
-            return confirm(`标题文件大小(${ titleSize.toLocaleString() }M)与认定文件大小(${ ratingSize.toLocaleString() }M)不一致，是否继续？`);
+            return confirm(`标题文件大小(${titleSize.toLocaleString()}M)与认定文件大小(${ratingSize.toLocaleString()}M)不一致，是否继续？`);
         }
     });
 };
@@ -7384,7 +7457,7 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
     $('.kf_no11:eq(2) > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${ userName }" target="_blank">${ userName }</a>`);
+        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
 };
@@ -7394,10 +7467,10 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
  */
 const handleProfilePage = exports.handleProfilePage = function () {
     let $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
-    $area.html($area.html().replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${ num }">${ parseInt(num).toLocaleString() }</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${ num }">${ parseInt(num).toLocaleString() }</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${ num }">${ parseInt(num).toLocaleString() }</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
+    $area.html($area.html().replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
         let now = new Date();
         let html = date;
-        if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${ now.getFullYear() - parseInt(year) }周年纪念日">${ date }</span>`;
+        if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
         return '注册时间：' + html;
     }));
 };
@@ -7476,7 +7549,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
     let keywords = new Set();
     let content = '';
     if (type === 2) {
-        Msg.wait(`<strong>正在获取引用内容中&hellip;</strong><i>剩余：<em class="pd_countdown">${ list.length }</em></i>`);
+        Msg.wait(`<strong>正在获取引用内容中&hellip;</strong><i>剩余：<em class="pd_countdown">${list.length}</em></i>`);
         $(document).clearQueue('MultiQuote');
     }
     $.each(list, function (index, data) {
@@ -7484,7 +7557,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
         keywords.add(data.userName);
         if (type === 2) {
             $(document).queue('MultiQuote', function () {
-                $.get(`post.php?action=quote&fid=${ fid }&tid=${ tid }&pid=${ data.pid }&article=${ data.floor }&t=${ new Date().getTime() }`, function (html) {
+                $.get(`post.php?action=quote&fid=${fid}&tid=${tid}&pid=${data.pid}&article=${data.floor}&t=${new Date().getTime()}`, function (html) {
                     let matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                     if (matches) {
                         content += Util.removeUnpairedBBCodeContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
@@ -7502,7 +7575,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
                 });
             });
         } else {
-            content += `[quote]回 ${ data.floor }楼(${ data.userName }) 的帖子[/quote]\n`;
+            content += `[quote]回 ${data.floor}楼(${data.userName}) 的帖子[/quote]\n`;
         }
     });
     $('input[name="diy_guanjianci"]').val([...keywords].join(','));
@@ -7557,18 +7630,18 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
                 {
                     text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐的单曲地址，将自动转换为外链地址）', 'http://');
                     let matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
-                    if (matches) text = `http://music.miaola.info/163/${ matches[1] }.mp3`;
+                    if (matches) text = `http://music.miaola.info/163/${matches[1]}.mp3`;
                     matches = /^https?:\/\/www\.xiami\.com\/song\/(\w+)/i.exec(text);
-                    if (matches) text = `http://music.miaola.info/xiami/${ matches[1] }.mp3`;
+                    if (matches) text = `http://music.miaola.info/xiami/${matches[1]}.mp3`;
                 }
                 break;
             case 'video':
                 {
                     text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
                     let matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
-                    if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
+                    if (matches) text = `http://video.miaola.info/youtube/${matches[1]}`;
                     matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
-                    if (matches) text = `http://video.miaola.info/youtube/${ matches[1] }`;
+                    if (matches) text = `http://video.miaola.info/youtube/${matches[1]}`;
                 }
                 break;
         }
@@ -7579,37 +7652,37 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
         switch (type) {
             case 'hide':
                 selText = Util.getSelText(textArea);
-                code = `[hide=${ text }]${ selText }[/hide]`;
+                code = `[hide=${text}]${selText}[/hide]`;
                 break;
             case 'left':
                 selText = Util.getSelText(textArea);
-                code = `[align=left]${ selText }[/align]`;
+                code = `[align=left]${selText}[/align]`;
                 break;
             case 'center':
                 selText = Util.getSelText(textArea);
-                code = `[align=center]${ selText }[/align]`;
+                code = `[align=center]${selText}[/align]`;
                 break;
             case 'right':
                 selText = Util.getSelText(textArea);
-                code = `[align=right]${ selText }[/align]`;
+                code = `[align=right]${selText}[/align]`;
                 break;
             case 'fly':
                 selText = Util.getSelText(textArea);
-                code = `[fly]${ selText }[/fly]`;
+                code = `[fly]${selText}[/fly]`;
                 break;
             case 'sub':
                 selText = Util.getSelText(textArea);
-                code = `[sub]${ selText }[/sub]`;
+                code = `[sub]${selText}[/sub]`;
                 break;
             case 'sup':
                 selText = Util.getSelText(textArea);
-                code = `[sup]${ selText }[/sup]`;
+                code = `[sup]${selText}[/sup]`;
                 break;
             case 'audio':
-                code = `[audio]${ text }[/audio]`;
+                code = `[audio]${text}[/audio]`;
                 break;
             case 'video':
-                code = `[video]${ text }[/video]`;
+                code = `[video]${text}[/video]`;
                 break;
         }
         if (!code) return;
@@ -7634,7 +7707,7 @@ const addExtraOptionInPostPage = exports.addExtraOptionInPostPage = function () 
 `).appendTo($('#menu_show').closest('td')).on('click', '[type="checkbox"]', function () {
         let $this = $(this);
         let inputName = $this.is('[name="autoAnalyzeUrl"]') ? 'atc_autourl' : 'atc_convert';
-        $('form[name="FORM"]').find(`[name="${ inputName }"]`).val($this.prop('checked') ? 1 : 0);
+        $('form[name="FORM"]').find(`[name="${inputName}"]`).val($this.prop('checked') ? 1 : 0);
     });
 
     $('<input type="button" value="预览帖子" style="margin-left: 7px;">').insertAfter('[type="submit"][name="Submit"]').click(function (e) {
@@ -7735,7 +7808,7 @@ const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function (
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.donation = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -7872,7 +7945,7 @@ const appendCss = exports.appendCss = function () {
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
-  .pd_msg_container { position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; width: 100%; z-index: 1002; }
+  .pd_msg_container { position: ${_Info2.default.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1002; }
   .pd_msg {
     border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;
     font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;
@@ -7930,7 +8003,7 @@ const appendCss = exports.appendCss = function () {
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
-    position: ${ _Info2.default.isMobile ? 'absolute' : 'fixed' }; border: 1px solid #9191ff; display: none; z-index: 1000;
+    position: ${_Info2.default.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1000;
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
     -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
@@ -7967,7 +8040,7 @@ const appendCss = exports.appendCss = function () {
 `);
 
     if (Config.customCssEnabled) {
-        $('head').append(`<style>${ Config.customCssContent }</style>`);
+        $('head').append(`<style>${Config.customCssContent}</style>`);
     }
 };
 
@@ -8004,7 +8077,7 @@ const preventCloseWindowWhenActioning = exports.preventCloseWindowWhenActioning 
  */
 const showFormatLog = exports.showFormatLog = function (msgType, html) {
     let { msg, url } = Util.getResponseMsg(html);
-    console.log(`【${ msgType }】回应：${ msg }${ url ? `；跳转地址：${ Util.getHostNameUrl() }${ url }` : '' }`);
+    console.log(`【${msgType}】回应：${msg}${url ? `；跳转地址：${Util.getHostNameUrl()}${url}` : ''}`);
 };
 
 /**
@@ -8095,18 +8168,11 @@ const addPolyfill = exports.addPolyfill = function () {
  * @returns {{action: string, interval: number}} action：下次操作的名称；interval：下次操作的时间间隔（秒）
  */
 const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function () {
-    /*let donationInterval = -1;
-     if (Config.autoDonationEnabled) {
-     let donationTime = Util.getDateByTime(Config.donationAfterTime);
-     let now = new Date();
-     if (!Util.getCookie(Const.donationCookieName) && now <= donationTime) {
-     donationInterval = Math.floor((donationTime - now) / 1000);
-     }
-     else {
-     donationTime.setDate(donationTime.getDate() + 1);
-     donationInterval = Math.floor((donationTime - now) / 1000);
-     }
-     }*/
+    let promoteHaloInterval = -1;
+    if (Config.autoPromoteHaloEnabled) {
+        let value = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
+        if (value > 0) promoteHaloInterval = Math.floor((new Date().getTime() - value) / 1000);else promoteHaloInterval = 0;
+    }
 
     let checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
@@ -8132,7 +8198,7 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
         } else if (value < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
     }
 
-    let intervalList = [{ action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }];
+    let intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }];
     let minAction = '',
         minInterval = -1;
     for (let { action, interval } of intervalList.filter(data => data.interval > -1)) {
@@ -8177,10 +8243,10 @@ const startTimingMode = exports.startTimingMode = function () {
     const showRefreshModeTips = function (interval, action = '', isShowTitle = false) {
         if (titleItvFunc) window.clearInterval(titleItvFunc);
         let showInterval = interval;
-        console.log(`【定时模式】倒计时${ action ? `(${ action })` : '' }：` + getFormatIntervalTitle(1, showInterval));
+        console.log(`【定时模式】倒计时${action ? `(${action})` : ''}：` + getFormatIntervalTitle(1, showInterval));
         if (Config.showTimingModeTipsType.toLowerCase() !== 'never') {
             const showIntervalTitle = function () {
-                document.title = `${ oriTitle } (定时: ${ getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval) })`;
+                document.title = `${oriTitle} (定时: ${getFormatIntervalTitle(interval < 60 ? 1 : 2, showInterval)})`;
                 showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
             };
             if (isShowTitle || Config.showTimingModeTipsType.toLowerCase() === 'always' || interval < 60) showIntervalTitle();else showInterval = interval < 60 ? showInterval - 1 : showInterval - 60;
@@ -8210,9 +8276,9 @@ const startTimingMode = exports.startTimingMode = function () {
             },
             complete() {
                 if (interval > 0) {
-                    console.log(`定时操作失败（原因：${ errorText }），将在${ interval }分钟后重试...`);
+                    console.log(`定时操作失败（原因：${errorText}），将在${interval}分钟后重试...`);
                     Msg.remove($('.pd_refresh_notice').parent());
-                    Msg.show(`<strong class="pd_refresh_notice">定时操作失败（原因：${ errorText }），将在<em>${ interval }</em>分钟后重试&hellip;</strong>`, -1);
+                    Msg.show(`<strong class="pd_refresh_notice">定时操作失败（原因：${errorText}），将在<em>${interval}</em>分钟后重试&hellip;</strong>`, -1);
                     setTimeout(handleError, interval * 60 * 1000);
                     showRefreshModeTips(interval * 60, '', true);
                 } else {
@@ -8235,14 +8301,21 @@ const startTimingMode = exports.startTimingMode = function () {
      */
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
-        //if (Config.autoDonationEnabled && !Util.getCookie(Const.donationCookieName)) donation();
+
+        let isAutoPromoteHaloStarted = false;
+        if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
+            isAutoPromoteHaloStarted = true;
+            Loot.promoteHalo();
+        }
+
         if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
-            if (Config.autoLootEnabled) {
+            if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
                 if (!Util.getCookie(_Const2.default.lootAttackingCookieName)) Loot.checkLoot();
             } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 Loot.autoSaveLootLog();
             }
         }
+
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) getDailyBonus();
 
         let { action, interval } = getNextTimingIntervalInfo();
@@ -8262,93 +8335,6 @@ const startTimingMode = exports.startTimingMode = function () {
 
     setTimeout(checkRefreshInterval, interval < 60 ? 60 * 1000 : interval * 1000);
     showRefreshModeTips(interval < 60 ? 60 : interval, action);
-};
-
-/**
- * KFB捐款
- * @param {boolean} isAutoSaveCurrentDeposit 是否在捐款完毕之后自动活期存款
- */
-const donation = exports.donation = function (isAutoSaveCurrentDeposit = false) {
-    let now = new Date();
-    let date = Util.getDateByTime(Config.donationAfterTime);
-    if (now < date) {
-        if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-        return;
-    }
-    Script.runFunc('Public.donation_before_');
-    console.log('KFB捐款Start');
-    let $wait = Msg.wait('<strong>正在进行捐款，请稍候&hellip;</strong>');
-
-    /**
-     * 获取捐款Cookies有效期
-     * @returns {Date} Cookies有效期的Date对象
-     */
-    const getCookieDate = function () {
-        let now = new Date();
-        let date = Util.getTimezoneDateByTime('02:30:00');
-        if (now > date) {
-            date = Util.getTimezoneDateByTime('00:00:00');
-            date.setDate(date.getDate() + 1);
-        }
-        if (now > date) date.setDate(date.getDate() + 1);
-        return date;
-    };
-
-    /**
-     * 使用指定的KFB捐款
-     * @param {number} kfb 指定的KFB
-     */
-    const donationSubmit = function (kfb) {
-        $.post('kf_growup.php?ok=1', { kfb: kfb }, function (html) {
-            Util.setCookie(_Const2.default.donationCookieName, 1, getCookieDate());
-            showFormatLog(`捐款${ kfb }KFB`, html);
-            let { msg } = Util.getResponseMsg(html);
-            Msg.remove($wait);
-
-            let msgHtml = `<strong>捐款<em>${ kfb }</em>KFB</strong>`;
-            let matches = /捐款获得(\d+)经验值(?:.*?补偿期(?:.*?\+(\d+)KFB)?(?:.*?(\d+)成长经验)?)?/i.exec(msg);
-            if (!matches) {
-                if (/KFB不足。/.test(msg)) {
-                    msgHtml += '<i class="pd_notice">KFB不足</i><a target="_blank" href="kf_growup.php">手动捐款</a>';
-                } else return;
-            } else {
-                msgHtml += `<i>经验值<em>+${ matches[1] }</em></i>`;
-                let gain = { '经验值': parseInt(matches[1]) };
-                if (typeof matches[2] !== 'undefined' || typeof matches[3] !== 'undefined') {
-                    msgHtml += '<i style="margin-left: 5px;">(补偿期:</i>' + (typeof matches[2] !== 'undefined' ? `<i>KFB<em>+${ matches[2] }</em>${ typeof matches[3] !== 'undefined' ? '' : ')' }</i>` : '') + (typeof matches[3] !== 'undefined' ? `<i>经验值<em>+${ matches[3] }</em>)</i>` : '');
-                    if (typeof matches[2] !== 'undefined') gain['KFB'] = parseInt(matches[2]);
-                    if (typeof matches[3] !== 'undefined') gain['经验值'] += parseInt(matches[3]);
-                }
-                Log.push('捐款', `捐款\`${ kfb }\`KFB`, { gain: gain, pay: { 'KFB': -kfb } });
-            }
-            Msg.show(msgHtml);
-            if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit(true);
-            Script.runFunc('Public.donation_after_', msg);
-        });
-    };
-
-    if (/%$/.test(Config.donationKfb)) {
-        $.get(`profile.php?action=show&uid=${ _Info2.default.uid }&t=${ new Date().getTime() }`, function (html) {
-            let matches = /论坛货币：(-?\d+)\s*KFB/i.exec(html);
-            let income = 1;
-            if (matches) income = parseInt(matches[1]);else console.log('当前持有KFB获取失败');
-            let donationKfb = parseInt(Config.donationKfb);
-            donationKfb = Math.floor(income * donationKfb / 100);
-            donationKfb = donationKfb > 0 ? donationKfb : 1;
-            donationKfb = donationKfb <= _Const2.default.maxDonationKfb ? donationKfb : _Const2.default.maxDonationKfb;
-            donationSubmit(donationKfb);
-        });
-    } else {
-        $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
-            if (/>今天已经捐款</.test(html)) {
-                Msg.remove($wait);
-                Util.setCookie(_Const2.default.donationCookieName, 1, getCookieDate());
-                if (isAutoSaveCurrentDeposit) autoSaveCurrentDeposit();
-            } else {
-                donationSubmit(parseInt(Config.donationKfb));
-            }
-        });
-    }
 };
 
 /**
@@ -8378,12 +8364,12 @@ const getDailyBonus = exports.getDailyBonus = function () {
         let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+(?:\.\d+)?)贡献\s*\+\s*(\d+)转账额度/.exec(html);
         if (matches) {
             if (Config.getBonusAfterLootCompleteEnabled && !/<div class="gro_divlv">\r\n争夺奖励/.test(html)) {
-                Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate(`+${ _Const2.default.getDailyBonusSpecialInterval }m`));
+                Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate(`+${_Const2.default.getDailyBonusSpecialInterval}m`));
                 Msg.remove($wait);
                 return;
             }
             if (Config.getBonusAfterSpeakCompleteEnabled && !/<div class="gro_divlv">\r\n发言奖励/.test(html)) {
-                Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate(`+${ _Const2.default.getDailyBonusSpecialInterval }m`));
+                Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate(`+${_Const2.default.getDailyBonusSpecialInterval}m`));
                 Msg.remove($wait);
                 return;
             }
@@ -8394,7 +8380,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
             if (parseFloat(matches[4]) > 0) gain['贡献'] = parseFloat(matches[4]);
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
-            $.get(`${ url }&t=${ new Date().getTime() }`, function (html) {
+            $.get(`${url}&t=${new Date().getTime()}`, function (html) {
                 Util.setCookie(_Const2.default.getDailyBonusCookieName, 1, getCookieDate());
                 showFormatLog('领取每日奖励', html);
                 let { msg } = Util.getResponseMsg(html);
@@ -8404,8 +8390,8 @@ const getDailyBonus = exports.getDailyBonus = function () {
                     let logStatText = '',
                         msgStatText = '';
                     for (let [key, num] of Util.entries(gain)) {
-                        logStatText += `${ key }+${ num } `;
-                        msgStatText += `<i>${ key }<em>+${ num.toLocaleString() }</em></i>`;
+                        logStatText += `${key}+${num} `;
+                        msgStatText += `<i>${key}<em>+${num.toLocaleString()}</em></i>`;
                     }
                     console.log('领取每日奖励，' + logStatText);
                     Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
@@ -8524,10 +8510,10 @@ const blockUsers = exports.blockUsers = function () {
             for (let data of Config.blockUserList) {
                 if (data.type === 1) continue;
                 try {
-                    let regex1 = new RegExp(`^Quote:引用(第\\d+楼|楼主)${ data.name }于`, 'i');
-                    let regex2 = new RegExp(`^Quote:回\\s*\\d+楼\\(${ data.name }\\)\\s*的帖子`, 'i');
+                    let regex1 = new RegExp(`^Quote:引用(第\\d+楼|楼主)${data.name}于`, 'i');
+                    let regex2 = new RegExp(`^Quote:回\\s*\\d+楼\\(${data.name}\\)\\s*的帖子`, 'i');
                     if (regex1.test(text) || regex2.test(text)) {
-                        $this.html(`<legend>Quote:</legend><mark class="pd_custom_tips" title="被屏蔽用户：${ data.name }">该用户已被屏蔽</mark>`);
+                        $this.html(`<legend>Quote:</legend><mark class="pd_custom_tips" title="被屏蔽用户：${data.name}">该用户已被屏蔽</mark>`);
                     }
                 } catch (ex) {}
             }
@@ -8541,7 +8527,7 @@ const blockUsers = exports.blockUsers = function () {
             }
         });
     }
-    if (num > 0) console.log(`【屏蔽用户】共有${ num }个帖子或回复被屏蔽`);
+    if (num > 0) console.log(`【屏蔽用户】共有${num}个帖子或回复被屏蔽`);
 };
 
 /**
@@ -8631,7 +8617,7 @@ const blockThread = exports.blockThread = function () {
             $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
         }
     }
-    if (num > 0) console.log(`【屏蔽帖子】共有${ num }个帖子被屏蔽`);
+    if (num > 0) console.log(`【屏蔽帖子】共有${num}个帖子被屏蔽`);
 };
 
 /**
@@ -8675,26 +8661,27 @@ const addFastNavForSideBar = exports.addFastNavForSideBar = function () {
         }
         $menu.find('> a:last').before(`
 <span style="color: #ff9999;">快捷导航</span><br>
-<a href="guanjianci.php?gjc=${ _Info2.default.userName }">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br>
+<a href="guanjianci.php?gjc=${_Info2.default.userName}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br>
 <a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_mybp.php">物品</a> | <a href="kf_fw_ig_shop.php">商店</a><br>
 <a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br>
-${ _Const2.default.customTileSideBarContent }
+${_Const2.default.customTileSideBarContent}
 `);
     } else {
         $menu.find('> ul > li:last-child').before(`
 <li class="r_cmenuho">
   <a href="javascript:;">快捷导航</a>
   <ul class="r_cmenu2">
-    <li><a href="guanjianci.php?gjc=${ _Info2.default.userName }">@提醒</a></li>
+    <li><a href="guanjianci.php?gjc=${_Info2.default.userName}">@提醒</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
+    <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
     <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
     <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
     <li><a href="profile.php?action=modify">设置</a></li>
     <li><a href="hack.php?H_name=bank">银行</a></li>
     <li><a href="profile.php?action=favor">收藏</a></li>
     <li><a href="personal.php?action=post">我的回复</a></li>
-    ${ _Const2.default.customSideBarContent }
+    ${_Const2.default.customSideBarContent}
   </ul>
 </li>
 `);
@@ -8726,16 +8713,16 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
             showFormatLog('自动存款', html);
             let { msg } = Util.getResponseMsg(html);
             if (/完成存款/.test(msg)) {
-                Log.push('自动存款', `共有\`${ money }\`KFB已自动存入活期存款`);
-                console.log(`共有${ money }KFB已自动存入活期存款`);
-                Msg.show(`共有<em>${ money.toLocaleString() }</em>KFB已自动存入活期存款`);
+                Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
+                console.log(`共有${money}KFB已自动存入活期存款`);
+                Msg.show(`共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款`);
             }
         });
     };
 
     if (isRead) {
         console.log('获取当前持有KFB Start');
-        $.get(`profile.php?action=show&uid=${ _Info2.default.uid }&t=${ new Date().getTime() }`, function (html) {
+        $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${new Date().getTime()}`, function (html) {
             let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
@@ -8755,7 +8742,7 @@ const changeIdColor = exports.changeIdColor = function () {
      * 写入Cookie
      */
     const setCookie = function () {
-        let nextTime = Util.getDate(`+${ Config.autoChangeIdColorInterval }h`);
+        let nextTime = Util.getDate(`+${Config.autoChangeIdColorInterval}h`);
         Util.setCookie(_Const2.default.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
 
@@ -8812,7 +8799,7 @@ const changeIdColor = exports.changeIdColor = function () {
                 nextId = idList[Math.floor(Math.random() * idList.length)];
             }
 
-            $.get(`kf_growup.php?ok=2&safeid=${ safeId }&color=${ nextId }&t=${ new Date().getTime() }`, function (html) {
+            $.get(`kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${new Date().getTime()}`, function (html) {
                 setCookie();
                 showFormatLog('自动更换ID颜色', html);
                 let { msg } = Util.getResponseMsg(html);
@@ -8835,7 +8822,7 @@ const changeIdColor = exports.changeIdColor = function () {
 const showElementTitleTips = exports.showElementTitleTips = function (e, title) {
     $('.pd_title_tips').remove();
     if (!title || !e.originalEvent) return;
-    $(`<div class="pd_title_tips">${ title.replace(/\n/g, '<br>') }</div>`).appendTo('body').css('left', e.originalEvent.pageX - 20).css('top', e.originalEvent.pageY + 15);
+    $(`<div class="pd_title_tips">${title.replace(/\n/g, '<br>')}</div>`).appendTo('body').css('left', e.originalEvent.pageX - 20).css('top', e.originalEvent.pageY + 15);
 };
 
 /**
@@ -9064,7 +9051,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, `导入或导出${ title }`, html);
+    let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
 
     $dialog.submit(function (e) {
         e.preventDefault();
@@ -9151,8 +9138,8 @@ const addFloorGotoLink = exports.addFloorGotoLink = function () {
         if (!/^\d+楼$/.test(floorText)) return;
         let linkName = $this.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
-        let url = `${ Util.getHostNameUrl() }read.php?tid=${ Util.getUrlParam('tid') }&spid=${ linkName }`;
-        $this.html(`<a class="pd_goto_link" href="${ url }" title="复制楼层链接">${ floorText }</a>`);
+        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}`;
+        $this.html(`<a class="pd_goto_link" href="${url}" title="复制楼层链接">${floorText}</a>`);
         $this.find('a').click(function (e) {
             e.preventDefault();
             let $this = $(this);
@@ -9180,7 +9167,7 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
         e.preventDefault();
         let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
-        location.href = `read.php?tid=${ Util.getUrlParam('tid') }&page=${ parseInt(floor / Config.perPageFloorNum) + 1 }&floor=${ floor }`;
+        location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
     }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
     }).end().closest('div').next().css({ 'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
@@ -9192,7 +9179,7 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
 const fastGotoFloor = exports.fastGotoFloor = function () {
     let floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    let $floorNode = $(`.readlou > div:nth-child(2) > span:contains("${ floor }楼")`);
+    let $floorNode = $(`.readlou > div:nth-child(2) > span:contains("${floor}楼")`);
     if (!$floorNode.length) return;
     let linkName = $floorNode.closest('.readlou').prev().attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
@@ -9213,8 +9200,8 @@ const modifyFloorSmColor = exports.modifyFloorSmColor = function ($elem, color) 
  * 修改本人的神秘颜色
  */
 const modifyMySmColor = exports.modifyMySmColor = function () {
-    let $my = $(`.readidmsbottom > a[href="profile.php?action=show&uid=${ _Info2.default.uid }"]`);
-    if (!$my.length) $my = $(`.readidmleft > a[href="profile.php?action=show&uid=${ _Info2.default.uid }"]`);
+    let $my = $(`.readidmsbottom > a[href="profile.php?action=show&uid=${_Info2.default.uid}"]`);
+    if (!$my.length) $my = $(`.readidmleft > a[href="profile.php?action=show&uid=${_Info2.default.uid}"]`);
     if ($my.length > 0) modifyFloorSmColor($my, Config.customMySmColor);
 };
 
@@ -9262,7 +9249,7 @@ const adjustThreadContentFontSize = exports.adjustThreadContentFontSize = functi
     if (Config.threadContentFontSize > 0 && Config.threadContentFontSize !== 12) {
         $('head').append(`
 <style>
-  .readtext td { font-size: ${ Config.threadContentFontSize }px; line-height: 1.6em; }
+  .readtext td { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; }
   .readtext td > div, .readtext td > .read_fds { font-size: 12px; }
 </style>
 `);
@@ -9293,7 +9280,7 @@ const addCopyBuyersListOption = exports.addCopyBuyersListOption = function () {
         if ($('#' + dialogName).length > 0) return;
         let html = `
 <div class="pd_cfg_main">
-  <textarea name="buyerList" style="width: 200px; height: 300px; margin: 5px 0;" readonly>${ buyerList }</textarea>
+  <textarea name="buyerList" style="width: 200px; height: 300px; margin: 5px 0;" readonly>${buyerList}</textarea>
 </div>`;
         let $dialog = Dialog.create(dialogName, '购买人名单', html);
         Dialog.show(dialogName);
@@ -9341,7 +9328,7 @@ const addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function () {
         }
 
         Msg.destroy();
-        Msg.wait(`<strong>正在统计楼层中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${ endPage - startPage + 1 }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在统计楼层中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${endPage - startPage + 1}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         statFloor(tid, startPage, endPage, startFloor, endFloor);
     });
 };
@@ -9365,7 +9352,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
     const stat = function (page) {
         $.ajax({
             type: 'GET',
-            url: `read.php?tid=${ tid }&page=${ page }&t=${ new Date().getTime() }`,
+            url: `read.php?tid=${tid}&page=${page}&t=${new Date().getTime()}`,
             timeout: _Const2.default.defAjaxTimeout,
             success(html) {
                 $('.readtext', html).each(function () {
@@ -9508,14 +9495,14 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
 <tr>
   <td>
     <label>
-      <input data-status="${ data.status }" data-sell="${ data.sell ? data.sell : 0 }" data-url="${ data.buyUrl ? data.buyUrl : '' }"
-        type="checkbox" value="${ data.userName }">
+      <input data-status="${data.status}" data-sell="${data.sell ? data.sell : 0}" data-url="${data.buyUrl ? data.buyUrl : ''}"
+        type="checkbox" value="${data.userName}">
     </label>
   </td>
-  <td><a href="read.php?tid=${ tid }&spid=${ data.pid }" target="_blank">${ floor }楼</a></td>
-  <td><a href="profile.php?action=show&username=${ data.userName }" target="_blank" style="color: #000;">${ data.userName }</a></td>
-  <td style="color: #f39;">${ data.smLevel }</td>
-  <td class="pd_stat">${ data.status === 1 ? `<em>${ data.sell }</em>` : `<span class="pd_notice">${ !data.status ? '无' : '已买' }</span>` }</td>
+  <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
+  <td><a href="profile.php?action=show&username=${data.userName}" target="_blank" style="color: #000;">${data.userName}</a></td>
+  <td style="color: #f39;">${data.smLevel}</td>
+  <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>
 </tr>`;
             copyContent += data.userName + '\n';
             num++;
@@ -9591,9 +9578,9 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
             }
         });
         if (!threadList.length) return;
-        if (!confirm(`你共选择了${ threadList.length }个项目，总售价 ${ totalSell.toLocaleString() } KFB，` + `均价 ${ Util.getFixedNumLocStr(totalSell / threadList.length, 2) } KFB，是否批量购买？`)) return;
+        if (!confirm(`你共选择了${threadList.length}个项目，总售价 ${totalSell.toLocaleString()} KFB，` + `均价 ${Util.getFixedNumLocStr(totalSell / threadList.length, 2)} KFB，是否批量购买？`)) return;
         Msg.destroy();
-        Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${ threadList.length }</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        Msg.wait(`<strong>正在购买帖子中&hellip;</strong><i>剩余：<em class="pd_countdown">${threadList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         buyThreads(threadList);
     });
 
@@ -9639,10 +9626,10 @@ const buyThreads = exports.buyThreads = function (threadList) {
                     if (isStop || index === threadList.length - 1) {
                         Msg.destroy();
                         if (successNum > 0) {
-                            Log.push('购买帖子', `共有\`${ successNum }\`个帖子购买成功`, { pay: { 'KFB': -totalSell } });
+                            Log.push('购买帖子', `共有\`${successNum}\`个帖子购买成功`, { pay: { 'KFB': -totalSell } });
                         }
-                        console.log(`共有${ successNum }个帖子购买成功，共有${ failNum }个帖子购买失败，KFB-${ totalSell }`);
-                        Msg.show(`<strong>共有<em>${ successNum }</em>个帖子购买成功${ failNum > 0 ? `，共有<em>${ failNum }</em>个帖子购买失败` : '' }</strong>` + `<i>KFB<ins>-${ totalSell }</ins></i>`, -1);
+                        console.log(`共有${successNum}个帖子购买成功，共有${failNum}个帖子购买失败，KFB-${totalSell}`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>个帖子购买成功${failNum > 0 ? `，共有<em>${failNum}</em>个帖子购买失败` : ''}</strong>` + `<i>KFB<ins>-${totalSell}</ins></i>`, -1);
                         Script.runFunc('Read.buyThreads_after_', threadList);
                     } else {
                         setTimeout(() => $(document).dequeue('BuyThread'), _Const2.default.defAjaxInterval);
@@ -9671,7 +9658,7 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
             let sell = $this.data('sell');
             let url = $this.data('url');
             if (!sell || !url) return;
-            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价 ${ sell } KFB，是否购买？`)) return;
+            if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价 ${sell} KFB，是否购买？`)) return;
             if (Config.buyThreadNoJumpEnabled) {
                 let $wait = Msg.wait('正在购买帖子&hellip;');
                 $.get(url + '&t=' + new Date().getTime(), function (html) {
@@ -9738,7 +9725,7 @@ const addMultiQuoteButton = exports.addMultiQuoteButton = function () {
         if (quoteList.length > 0) data.quoteList[page] = quoteList;else delete data.quoteList[page];
         localStorage[_Const2.default.multiQuoteStorageName] = JSON.stringify(data);
     });
-    $('.readlou:last').next('div').find('table > tbody > tr > td:last-child').css({ 'text-align': 'right', 'width': '320px' }).append(`<span class="b_tit2" style="margin-left: 5px;"><a style="display: inline-block;" href="#" title="多重回复">回复</a> ` + `<a style="display: inline-block;" href="${ replyUrl }&multiquote=1" title="多重引用">引用</a></span>`).find('.b_tit2 > a:eq(0)').click(function (e) {
+    $('.readlou:last').next('div').find('table > tbody > tr > td:last-child').css({ 'text-align': 'right', 'width': '320px' }).append(`<span class="b_tit2" style="margin-left: 5px;"><a style="display: inline-block;" href="#" title="多重回复">回复</a> ` + `<a style="display: inline-block;" href="${replyUrl}&multiquote=1" title="多重引用">引用</a></span>`).find('.b_tit2 > a:eq(0)').click(function (e) {
         e.preventDefault();
         Post.handleMultiQuote(1);
     });
@@ -9769,12 +9756,12 @@ const addUserMemo = exports.addUserMemo = function () {
         if (!key) return;
         let memo = Config.userMemoList[key];
         if ($this.is('.readidmleft > a')) {
-            $this.after(`<span class="pd_user_memo_tips" title="备注：${ memo }">[?]</span>`);
+            $this.after(`<span class="pd_user_memo_tips" title="备注：${memo}">[?]</span>`);
         } else {
             let memoText = memo;
             let maxLength = 24;
             if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-            $this.after(`<br><span class="pd_user_memo" title="备注：${ memo }">(${ memoText })</span>`);
+            $this.after(`<br><span class="pd_user_memo" title="备注：${memo}">(${memoText})</span>`);
         }
     });
 };
@@ -9805,7 +9792,7 @@ const addCopyCodeLink = exports.addCopyCodeLink = function () {
             if (height > 540) height = 540;
             $fieldset.html(`
 <legend><a class="pd_copy_code" href="#">还原代码</a></legend>
-<textarea wrap="off" class="pd_textarea" style="width: 100%; height: ${ height }px; line-height: 1.4em; white-space: pre;">${ html }</textarea>
+<textarea wrap="off" class="pd_textarea" style="width: 100%; height: ${height}px; line-height: 1.4em; white-space: pre;">${html}</textarea>
 `);
             $fieldset.find('textarea').select().focus();
         }
@@ -9823,7 +9810,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
     const addSmileCode = function (id) {
         let textArea = $('[name="atc_content"]').get(0);
         if (!textArea) return;
-        let code = `[s:${ id }]`;
+        let code = `[s:${id}]`;
         Util.addCode(textArea, code);
         if (_Info2.default.isMobile) textArea.blur();else textArea.focus();
     };
@@ -9856,9 +9843,9 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
         let smileCodeIdList = [57, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 45, 46, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 34, 33, 20, 19, 18, 17, 10, 11, 12, 13, 14, 15, 21, 22, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 16];
         let html = '';
         for (let i = 0; i < smileImageIdList.length; i++) {
-            html += `<img src="${ _Info2.default.w.imgpath }/post/smile/em/em${ smileImageIdList[i] }.gif" alt="[表情]" data-id="${ smileCodeIdList[i] }">`;
+            html += `<img src="${_Info2.default.w.imgpath}/post/smile/em/em${smileImageIdList[i]}.gif" alt="[表情]" data-id="${smileCodeIdList[i]}">`;
         }
-        html = `<div class="pd_panel" id="pdSmilePanel" style="width: 308px; height: 185px;">${ html }</div>`;
+        html = `<div class="pd_panel" id="pdSmilePanel" style="width: 308px; height: 185px;">${html}</div>`;
 
         let offset = $parent.offset();
         $panel = $(html).appendTo('body');
@@ -9878,7 +9865,7 @@ const parseMediaTag = exports.parseMediaTag = function () {
         let $this = $(this);
         let html = $this.html();
         if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
-            $this.html(html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g, '<audio src="$1" controls preload="none" style="margin: 3px 0;">[你的浏览器不支持audio标签]</audio>').replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g, `<video src="$1" controls preload="none" style="max-width: ${ Config.adjustThreadContentWidthEnabled ? 627 : 820 }px; margin:3px 0;">` + `[你的浏览器不支持video标签]</video>`));
+            $this.html(html.replace(/\[audio\]((?:http|ftp)[^<>]+?)\[\/audio\](?!<\/fieldset>)/g, '<audio src="$1" controls preload="none" style="margin: 3px 0;">[你的浏览器不支持audio标签]</audio>').replace(/\[video\]((?:http|ftp)[^<>]+?)\[\/video\](?!<\/fieldset>)/g, `<video src="$1" controls preload="none" style="max-width: ${Config.adjustThreadContentWidthEnabled ? 627 : 820}px; margin:3px 0;">` + `[你的浏览器不支持video标签]</video>`));
         }
     });
 };
@@ -9893,7 +9880,7 @@ const showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = fu
         if (/\[attachment=\d+\]/.test(html)) {
             let pid = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
             let tid = Util.getUrlParam('tid');
-            $this.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${ pid }&tid=${ tid }&aid=$1" alt="[附件图片]" style="max-width:550px" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${ pid }&tid=${ tid }&aid=$1');">`));
+            $this.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`));
         }
     });
 };
@@ -10158,16 +10145,16 @@ const showDialog = exports.showDialog = function (showIndex = null) {
     } = {}) {
         $customScriptList.append(`
 <div class="pd_custom_script_header">
-  <input type="checkbox" ${ enabled ? 'checked' : '' } title="是否启用此脚本">
-  <a class="pd_custom_script_name" href="#" style="margin-left: 5px;">[${ name }]</a>
-  <span data-name="version" style="margin-left: 5px; color: #666;" ${ !version ? 'hidden' : '' }>${ version }</span>
-  <span data-name="trigger" style="margin-left: 5px; color: ${ trigger === 'start' ? '#f00' : '#00f' };" title="脚本执行时机">
-    [${ trigger === 'start' ? '开始时' : '结束时' }]
+  <input type="checkbox" ${enabled ? 'checked' : ''} title="是否启用此脚本">
+  <a class="pd_custom_script_name" href="#" style="margin-left: 5px;">[${name}]</a>
+  <span data-name="version" style="margin-left: 5px; color: #666;" ${!version ? 'hidden' : ''}>${version}</span>
+  <span data-name="trigger" style="margin-left: 5px; color: ${trigger === 'start' ? '#f00' : '#00f'};" title="脚本执行时机">
+    [${trigger === 'start' ? '开始时' : '结束时'}]
   </span>
-  <a data-name="homepage" href="${ homepage }" target="_blank" style="margin-left: 5px;" ${ !homepage ? 'hidden' : '' }>[主页]</a>
+  <a data-name="homepage" href="${homepage}" target="_blank" style="margin-left: 5px;" ${!homepage ? 'hidden' : ''}>[主页]</a>
   <a data-name="delete" href="#" style="margin-left: 5px; color: #666;">[删除]</a>
 </div>
-<textarea class="pd_custom_script_content" wrap="off">${ content }</textarea>
+<textarea class="pd_custom_script_content" wrap="off">${content}</textarea>
 `);
     };
 
@@ -10186,9 +10173,9 @@ const showDialog = exports.showDialog = function (showIndex = null) {
         let $content = $customScriptList.find('.pd_custom_script_content:visible');
         $content.val(`
 // ==UserScript==
-// @name        ${ defScriptName }
+// @name        ${defScriptName}
 // @version     1.0
-// @author      ${ _Info2.default.userName }
+// @author      ${_Info2.default.userName}
 // @trigger     end
 // @homepage    read.php?tid=500968&spid=12318348
 // @description 这是一个未命名脚本
@@ -10215,10 +10202,10 @@ const showDialog = exports.showDialog = function (showIndex = null) {
         let $this = $(this);
         let { name, version, homepage, trigger } = getScriptMeta($this.val());
         let $header = $this.prev();
-        $header.find('.pd_custom_script_name').text(`[${ name ? name : defScriptName }]`);
+        $header.find('.pd_custom_script_name').text(`[${name ? name : defScriptName}]`);
         $header.find('[data-name="version"]').text(version).prop('hidden', !version);
         $header.find('[data-name="homepage"]').attr('href', homepage ? homepage : '').prop('hidden', !homepage);
-        $header.find('[data-name="trigger"]').html(`[${ trigger === 'start' ? '开始时' : '结束时' }]`).css('color', trigger === 'start' ? '#f00' : '#00f');
+        $header.find('[data-name="trigger"]').html(`[${trigger === 'start' ? '开始时' : '结束时'}]`).css('color', trigger === 'start' ? '#f00' : '#00f');
     });
 
     Dialog.show(dialogName);
@@ -10240,7 +10227,7 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
         let meta = getScriptMeta(content);
         let index = Config.customScriptList.findIndex(script => script.name === meta.name && script.author === meta.author);
         let type = index > -1 ? 1 : 0;
-        if (!confirm(`是否${ type === 1 ? '更新' : '安装' }此脚本？`)) return;
+        if (!confirm(`是否${type === 1 ? '更新' : '安装'}此脚本？`)) return;
         let script = $.extend(meta, { enabled: true, content });
         if (type === 1) Config.customScriptList[index] = script;else Config.customScriptList.push(script);
         (0, _Config.write)();
@@ -10373,7 +10360,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param {string} prefix Cookie名称前缀
  */
 const setCookie = exports.setCookie = function (name, value, date = null, prefix = _Info2.default.uid + '_' + _Const2.default.storagePrefix) {
-    document.cookie = `${ prefix }${ name }=${ encodeURI(value) }${ !date ? '' : ';expires=' + date.toUTCString() };path=/;`;
+    document.cookie = `${prefix}${name}=${encodeURI(value)}${!date ? '' : ';expires=' + date.toUTCString()};path=/;`;
 };
 
 /**
@@ -10383,7 +10370,7 @@ const setCookie = exports.setCookie = function (name, value, date = null, prefix
  * @returns {?string} Cookie值
  */
 const getCookie = exports.getCookie = function (name, prefix = _Info2.default.uid + '_' + _Const2.default.storagePrefix) {
-    let regex = new RegExp(`(^| )${ prefix }${ name }=([^;]*)(;|$)`);
+    let regex = new RegExp(`(^| )${prefix}${name}=([^;]*)(;|$)`);
     let matches = document.cookie.match(regex);
     if (!matches) return null;else return decodeURI(matches[2]);
 };
@@ -10394,7 +10381,7 @@ const getCookie = exports.getCookie = function (name, prefix = _Info2.default.ui
  * @param {string} prefix Cookie名称前缀
  */
 const deleteCookie = exports.deleteCookie = function (name, prefix = _Info2.default.uid + '_' + _Const2.default.storagePrefix) {
-    document.cookie = `${ prefix }${ name }=;expires=${ getDate('-1d').toUTCString() };path=/;`;
+    document.cookie = `${prefix}${name}=;expires=${getDate('-1d').toUTCString()};path=/;`;
 };
 
 /**
@@ -10562,7 +10549,7 @@ const isBetweenInTimeRange = exports.isBetweenInTimeRange = function (time, rang
  * @returns {string} 当前域名的URL
  */
 const getHostNameUrl = exports.getHostNameUrl = function () {
-    return `${ location.protocol }//${ location.host }/`;
+    return `${location.protocol}//${location.host}/`;
 };
 
 /**
@@ -10690,7 +10677,7 @@ const getSortedObjectKeyList = exports.getSortedObjectKeyList = function (sortKe
  * @param {number} num 待处理的数字
  * @returns {string} 经过格式化的数字字符串
  */
-const getStatFormatNumber = exports.getStatFormatNumber = num => num >= 0 ? `<em>+${ num.toLocaleString() }</em>` : `<ins>${ num.toLocaleString() }</ins>`;
+const getStatFormatNumber = exports.getStatFormatNumber = num => num >= 0 ? `<em>+${num.toLocaleString()}</em>` : `<ins>${num.toLocaleString()}</ins>`;
 
 /**
  * 检测浏览器是否为Opera
@@ -10811,7 +10798,7 @@ const copyText = exports.copyText = function ($target, msg = '', $excludeElem = 
     if (!('execCommand' in document) || !$target.length) return false;
     let copyText = $target.data('copy-text');
     if (copyText) {
-        $target = $(`<span class="pd_hide">${ copyText.replace(/\n/g, '<br>') }</span>`).insertAfter($target);
+        $target = $(`<span class="pd_hide">${copyText.replace(/\n/g, '<br>')}</span>`).insertAfter($target);
     }
     if ($excludeElem) $excludeElem.prop('hidden', true);
     let s = window.getSelection();

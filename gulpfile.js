@@ -63,7 +63,7 @@ const compileEs6 = function (bundler) {
  */
 const compileEs5 = function () {
     return browserify({entries: [srcPath + appFileName]})
-        .transform(babelify, {presets: ['es2015', 'es2016', 'es2017']})
+        .transform(babelify, {presets: ['es2015']})
         .bundle()
         .on('error', gutil.log.bind(gutil, 'Compile es5 Script Error:\n'))
         .pipe(source(appFileName))
