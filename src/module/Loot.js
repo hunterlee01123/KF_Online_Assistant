@@ -30,7 +30,7 @@ let logList = [];
 let levelInfoList = [];
 // 当前争夺属性
 let propertyList = new Map();
-// 道具加成点数列表
+// 额外加成点数列表
 let extraPointList = new Map();
 // 道具使用情况列表
 let itemUsedNumList = new Map();
@@ -93,13 +93,14 @@ const handlePropertiesArea = function () {
             `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`
         )
         .replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>')
-        .replace(
-            '技能伤害：攻击+(体质*5)+(智力*5)',
-            '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
-        );
+    /*.replace(
+     '技能伤害：攻击+(体质*5)+(智力*5)',
+     '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
+     )*/ /* 临时禁用 */;
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
+        return; // 临时禁用
         let $this = $(this);
         $this.hide();
         let name = $this.attr('id').replace('pdPro_', '');
@@ -124,7 +125,7 @@ const handlePropertiesArea = function () {
                 if (e.keyCode === 13) $this.blur();
                 else if (e.keyCode === 27) $this.val('').blur();
             });
-    }).find('[id^=pdPro_]').css('cursor', 'pointer');
+    })/*.find('[id^=pdPro_]').css('cursor', 'pointer')*/ /* 临时禁用 */;
 };
 
 /**
@@ -157,6 +158,7 @@ const handlePointsArea = function () {
         $('#pdSurplusPoint').text(surplusPoint)
             .css('color', surplusPoint !== 0 ? '#f00' : '#000')
             .css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
+        return; // 临时禁用
         showNewLootProperty($this);
         showSumOfPoint($this);
         $('#pdSkillAttack').text(
@@ -167,6 +169,7 @@ const handlePointsArea = function () {
             )
         );
     }).on('click', '.pd_point_sum', function () {
+        return; // 临时禁用
         let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         let $point = $(this).prev('span').prev('.pd_point');
@@ -237,7 +240,7 @@ const getLootPropertyList = function () {
 /**
  * 获取当前已分配的点数
  * @param {jQuery} $points 点数字段对象
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 当前已分配的点数
  */
 const getCurrentAssignedPoint = function ($points, type = 0) {
@@ -256,7 +259,7 @@ const getCurrentAssignedPoint = function ($points, type = 0) {
  * @param {number} s1 力量
  * @param {number} s2 体质
  * @param {number} i1 智力
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 技能伤害的值
  */
 const getSkillAttack = (s1, s2, i1, type = 0) => {
@@ -403,7 +406,7 @@ const showNewLootProperty = function ($point) {
  * 根据指定的点数获得相应争夺属性的值
  * @param {string} pointName 点数名称
  * @param {number} point 点数的值
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 争夺属性的值
  */
 const getPropertyByPoint = function (pointName, point, type = 0) {
@@ -440,7 +443,7 @@ const getPropertyByPoint = function (pointName, point, type = 0) {
  * 根据指定的争夺属性获得相应点数的值
  * @param {string} pointName 点数名称
  * @param {number} num 争夺属性的值
- * @param {number} type 类型，0：仅点数；1：点数+道具
+ * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 点数的值
  */
 const getPointByProperty = function (pointName, num, type = 0) {
@@ -577,8 +580,8 @@ const showLevelPointListConfigDialog = function (callback) {
     （例：11-19层点数相同的话，则只保留第11层）<br>
     自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a><br>
     <label class="pd_highlight" style="line-height: 2em;">
-      保存方式： <select name="saveType"><option value="0">仅点数</option><option value="1">点数+道具</option></select>
-      <span class="pd_cfg_tips" title="各层点数分配方案中数值的保存方式，仅点数：仅按照点数来保存；点数+道具：按照点数与道具加成之和来保存">[?]</span>
+      保存方式： <select name="saveType"><option value="0">仅点数</option><option value="1" disabled>点数+额外加成</option></select> <!-- 临时禁用 -->
+      <span class="pd_cfg_tips" title="各层点数分配方案中数值的保存方式，仅点数：仅按照点数来保存；点数+额外加成：按照点数与额外加成之和来保存">[?]</span>
     </label>
   </div>
   <div style="overflow-y: auto; max-height: 400px;">
@@ -663,6 +666,7 @@ const showLevelPointListConfigDialog = function (callback) {
 </tr>
 `).appendTo($levelPointList).find('.pd_point').trigger('change');
         setPointsRange($points);
+        $points.eq(0).closest('tr').next('tr').find('[data-id^="pro_"], [data-id="skillAttack"]').prop('hidden', true); // 临时禁用
     };
 
     /**
@@ -967,6 +971,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
      * @param {boolean} isSubmit 是否提交分配点数
      */
     const recordPointsLog = function (isSubmit = false) {
+        return; // 临时禁用
         propertyList = getLootPropertyList();
         let pointsText = '', propertiesText = '';
         $points.find('.pd_point').each(function () {
@@ -1050,8 +1055,8 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 return false;
             }
         });
-        let $levelPointListSelect = $('#pdLevelPointListSelect');
-        if (isChange || (changeLevel > 0 && changeLevel !== parseInt($levelPointListSelect.val()))) {
+        if (isChange) {
+            let $levelPointListSelect = $('#pdLevelPointListSelect');
             if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');
             else $levelPointListSelect.get(0).selectedIndex = 0;
             if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
@@ -1810,4 +1815,95 @@ export const addUserLinkInPkListPage = function () {
         $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === Info.userName) $this.find('a').addClass('pd_highlight');
     });
+};
+
+/**
+ * 提升战力光环
+ */
+export const promoteHalo = function () {
+    Script.runFunc('Loot.promoteHalo_before_');
+    console.log('提升战力光环Start');
+    let $wait = Msg.wait('<strong>正在提升战力光环，请稍候&hellip;</strong>');
+
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+        timeout: Const.defAjaxTimeout,
+    }).done(function (html) {
+        let matches = /safeid=(\w+)"/.exec(html);
+        if (!matches) {
+            let nextTime = Util.getDate('+1h');
+            Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
+            Msg.remove($wait);
+            return;
+        }
+        let safeId = matches[1];
+        let promoteHaloCostType = Config.promoteHaloCostType;
+
+        $.get(`kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${new Date().getTime()}`, function (html) {
+            Public.showFormatLog('提升战力光环', html);
+            let {msg} = Util.getResponseMsg(html);
+            Msg.remove($wait);
+
+            let nextTime = Util.getDate('+15m');
+            let matches = /(新数值为|随机值为)\[(\d+(?:\.\d+)?)%]/.exec(msg);
+            if (matches) {
+                nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
+                let randomNum = parseFloat(matches[2]);
+                Msg.show(
+                    '<strong>' +
+                    (matches[1] === '新数值为' ?
+                        `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) +
+                    '</strong>'
+                    , -1
+                );
+
+                let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
+                let pay = {};
+                pay[costResult.type] = -costResult.num;
+                Log.push(
+                    '提升战力光环',
+                    matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【\`${randomNum}%\`】` : `你本次随机值为【\`${randomNum}%\`】，未超过光环效果`,
+                    {pay}
+                );
+            }
+            else {
+                matches = /你的(贡献点数|KFB)不足/.exec(msg);
+                if (matches) {
+                    nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
+                    Msg.show(`<strong>${matches[1]}不足，无法提升战力光环</strong><a href="kf_fw_ig_halo.php" target="_blank">手动选择</a>`, -1);
+                }
+
+                matches = /你还需要等待(\d+)分钟/.exec(msg);
+                if (matches) {
+                    nextTime = Util.getDate(`+${Config.promoteHaloInterval * 60 - (Const.minPromoteHaloInterval - parseInt(matches[1]))}m`);
+                }
+            }
+            Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
+            Script.runFunc('Loot.promoteHalo_after_', msg);
+        }).fail(() => Msg.remove($wait));
+    }).fail(function () {
+        Msg.remove($wait);
+        setTimeout(promoteHalo, Const.defAjaxInterval);
+    });
+};
+
+/**
+ * 通过获取类型ID获取提升战力光环花费
+ * @param {number} id 提升战力光环的类型ID
+ * @returns {{type: string, num: number}} 花费对象，type：花费类型；num：花费数额
+ */
+export const getPromoteHaloCostByTypeId = function (id) {
+    switch (id) {
+        case 1:
+            return {type: 'KFB', num: 100};
+        case 2:
+            return {type: 'KFB', num: 1000};
+        case 11:
+            return {type: '贡献', num: 0.2};
+        case 12:
+            return {type: '贡献', num: 2};
+        default:
+            return {type: 'KFB', num: 0};
+    }
 };

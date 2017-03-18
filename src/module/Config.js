@@ -14,7 +14,7 @@ const name = Const.storagePrefix + 'config';
  * 配置类
  */
 export const Config = {
-    // 是否开启定时模式，可按时进行自动操作（包括自动领取每日奖励、自动争夺，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作），true：开启；false：关闭
+    // 是否开启定时模式，可按时进行自动操作（包括自动领取每日奖励、自动提升战力光环、自动争夺，需开启相关功能），只在论坛首页生效（不开启此模式的话只能在刷新页面后才会进行操作），true：开启；false：关闭
     timingModeEnabled: false,
     // 在首页的网页标题上显示定时模式提示的方案，auto：停留一分钟后显示；always：总是显示；never：不显示
     showTimingModeTipsType: 'auto',
@@ -25,6 +25,13 @@ export const Config = {
     getBonusAfterLootCompleteEnabled: false,
     // 是否在完成发言奖励后才领取每日奖励，true：开启；false：关闭
     getBonusAfterSpeakCompleteEnabled: false,
+
+    // 是否自动提升战力光环，true：开启；false：关闭
+    autoPromoteHaloEnabled: false,
+    // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；3：花费0.2贡献；4：花费2贡献
+    promoteHaloCostType: 1,
+    // 自动提升战力光环的间隔时间（小时），最低值：8
+    promoteHaloInterval: 8,
 
     // 是否自动争夺，true：开启；false：关闭
     autoLootEnabled: false,

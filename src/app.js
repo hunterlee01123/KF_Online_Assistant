@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '9.5.2';
+const version = '9.6';
 
 /**
  * 导出模块
@@ -90,6 +90,7 @@ const init = function () {
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2)
             $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
+        Index.addPromoteHaloInterval();
     }
     else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
@@ -148,6 +149,9 @@ const init = function () {
     else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     }
+    else if (location.pathname === '/kf_fw_ig_halo.php') {
+        $('.kf_fw_ig1').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', () => confirm('是否提升战力光环？'));
+    }
     else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
     }
@@ -204,12 +208,18 @@ const init = function () {
         $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
     }
 
+    let isAutoPromoteHaloStarted = false;
+    if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
+        isAutoPromoteHaloStarted = true;
+        Loot.promoteHalo();
+    }
+
     let isAutoLootStarted = false;
     if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
             if (!Util.getCookie(Const.lootAttackingCookieName)) {
                 isAutoLootStarted = true;
-                Loot.checkLoot();
+                setTimeout(Loot.checkLoot, isAutoPromoteHaloStarted ? 20 * 1000 : 0);
             }
         }
         else if (Config.autoSaveLootLogInSpecialCaseEnabled) {

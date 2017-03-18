@@ -30,6 +30,8 @@ const Const = {
     showRefreshModeTipsInterval: 1,
     // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
     getDailyBonusSpecialInterval: 30,
+    // 提升战力光环的最小间隔时间（分钟）
+    minPromoteHaloInterval: 480,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
@@ -99,6 +101,8 @@ const Const = {
 
     // 标记已领取每日奖励的Cookie名称
     getDailyBonusCookieName: 'getDailyBonus',
+    // 标记已提升战力光环的Cookie名称
+    promoteHaloCookieName: 'promoteHalo',
     // 标记正在检查争夺情况的Cookie名称
     lootCheckingCookieName: 'lootChecking',
     // 标记正在进行争夺攻击的Cookie名称

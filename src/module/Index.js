@@ -222,3 +222,13 @@ export const handleIndexPersonalInfo = function () {
             .data('smRank', smRank);
     }
 };
+
+/**
+ * 添加提升战力光环间隔时间
+ */
+export const addPromoteHaloInterval = function () {
+    let nextTime = parseInt(Util.getCookie(Const.promoteHaloCookieName));
+    if (!nextTime) return;
+    let interval = nextTime - new Date().getTime();
+    if (interval > 0) $('a[href="kf_fw_ig_index.php"]').text(`争夺奖励 (光环：${Math.ceil(interval / 60 / 1000)}分钟)`);
+};

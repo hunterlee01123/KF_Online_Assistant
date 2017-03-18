@@ -329,6 +329,13 @@ export const addPolyfill = function () {
  * @returns {{action: string, interval: number}} action：下次操作的名称；interval：下次操作的时间间隔（秒）
  */
 export const getNextTimingIntervalInfo = function () {
+    let promoteHaloInterval = -1;
+    if (Config.autoPromoteHaloEnabled) {
+        let value = parseInt(Util.getCookie(Const.promoteHaloCookieName));
+        if (value > 0) promoteHaloInterval = Math.floor((new Date().getTime() - value) / 1000);
+        else promoteHaloInterval = 0;
+    }
+
     let checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
@@ -359,6 +366,7 @@ export const getNextTimingIntervalInfo = function () {
     }
 
     let intervalList = [
+        {action: '提升战力光环', interval: promoteHaloInterval},
         {action: '检查争夺情况', interval: checkLootInterval},
         {action: '自动获取每日奖励', interval: getDailyBonusInterval},
     ];
@@ -465,14 +473,22 @@ export const startTimingMode = function () {
      */
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
+
+        let isAutoPromoteHaloStarted = false;
+        if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
+            isAutoPromoteHaloStarted = true;
+            Loot.promoteHalo();
+        }
+
         if (!Util.getCookie(Const.lootCompleteCookieName)) {
-            if (Config.autoLootEnabled) {
+            if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
                 if (!Util.getCookie(Const.lootAttackingCookieName)) Loot.checkLoot();
             }
             else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 Loot.autoSaveLootLog();
             }
         }
+
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
 
         let {action, interval} = getNextTimingIntervalInfo();
