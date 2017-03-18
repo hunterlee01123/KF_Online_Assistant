@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.6.1
+// @version     9.6.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.6.1';
+const version = '9.6.2';
 
 /**
  * 导出模块
@@ -6734,9 +6734,9 @@ const promoteHalo = exports.promoteHalo = function () {
             if (matches) {
                 nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
                 let randomNum = parseFloat(matches[2]);
-                Msg.show('<strong>' + (matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) + '</strong>', -1);
-
                 let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
+                Msg.show('<strong>' + (matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) + `</strong><i>${costResult.type}<ins>${-costResult.num}</ins></i>`, -1);
+
                 let pay = {};
                 pay[costResult.type] = -costResult.num;
                 Log.push('提升战力光环', matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【\`${randomNum}%\`】` : `你本次随机值为【\`${randomNum}%\`】，未超过光环效果`, { pay });
@@ -6764,7 +6764,7 @@ const promoteHalo = exports.promoteHalo = function () {
 /**
  * 通过获取类型ID获取提升战力光环花费
  * @param {number} id 提升战力光环的类型ID
- * @returns {{type: string, num: number}} 花费对象，type：花费类型；num：花费数额
+ * @returns {{type: string, num: number}} type：花费类型；num：花费数额
  */
 const getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function (id) {
     switch (id) {
@@ -8104,30 +8104,20 @@ const showFormatLog = exports.showFormatLog = function (msgType, html) {
 const addPolyfill = exports.addPolyfill = function () {
     if (!Array.prototype.includes) {
         Array.prototype.includes = function (searchElement /*, fromIndex = 0 */) {
-            'use strict';
-
-            if (this == null) {
-                throw new TypeError('Array.prototype.includes called on null or undefined');
-            }
+            if (this == null) throw new TypeError('Array.prototype.includes called on null or undefined');
             const O = Object(this);
             const len = parseInt(O.length) || 0;
             if (len === 0) return false;
             let n = parseInt(arguments[1]) || 0;
             let k;
-            if (n >= 0) {
-                k = n;
-            } else {
+            if (n >= 0) k = n;else {
                 k = len + n;
-                if (k < 0) {
-                    k = 0;
-                }
+                if (k < 0) k = 0;
             }
             let currentElement;
             while (k < len) {
                 currentElement = O[k];
-                if (searchElement === currentElement || searchElement !== searchElement && currentElement !== currentElement) {
-                    return true;
-                }
+                if (searchElement === currentElement || searchElement !== searchElement && currentElement !== currentElement) return true;
                 k++;
             }
             return false;
@@ -8146,11 +8136,7 @@ const addPolyfill = exports.addPolyfill = function () {
             while (filler.length < fillLen) {
                 const fLen = filler.length;
                 const remainingCodeUnits = fillLen - fLen;
-                if (fLen > remainingCodeUnits) {
-                    filler += filler.slice(0, remainingCodeUnits);
-                } else {
-                    filler += filler;
-                }
+                if (fLen > remainingCodeUnits) filler += filler.slice(0, remainingCodeUnits);else filler += filler;
             }
             const truncatedStringFiller = filler.slice(0, fillLen);
             return truncatedStringFiller + S;
@@ -8169,11 +8155,7 @@ const addPolyfill = exports.addPolyfill = function () {
             while (filler.length < fillLen) {
                 const fLen = filler.length;
                 const remainingCodeUnits = fillLen - fLen;
-                if (fLen > remainingCodeUnits) {
-                    filler += filler.slice(0, remainingCodeUnits);
-                } else {
-                    filler += filler;
-                }
+                if (fLen > remainingCodeUnits) filler += filler.slice(0, remainingCodeUnits);else filler += filler;
             }
             const truncatedStringFiller = filler.slice(0, fillLen);
             return S + truncatedStringFiller;
@@ -8189,7 +8171,7 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
     let promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         let value = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((new Date().getTime() - value) / 1000);else promoteHaloInterval = 0;
+        if (value > 0) promoteHaloInterval = Math.floor((value - new Date().getTime()) / 1000);else promoteHaloInterval = 0;
     }
 
     let checkLootInterval = -1;
@@ -10834,7 +10816,7 @@ const copyText = exports.copyText = function ($target, msg = '', $excludeElem = 
 /**
  * 获取服务器返回的消息
  * @param {string} html HTML代码
- * @returns {{type: number, msg: string, url: string}} 服务器返回的消息对象
+ * @returns {{type: number, msg: string, url: string}} type：消息类型（0：未能获得预期的回应；1：成功消息；-1：错误消息）；msg：消息内容
  */
 const getResponseMsg = exports.getResponseMsg = function (html) {
     let type = 0;

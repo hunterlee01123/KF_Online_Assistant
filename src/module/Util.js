@@ -492,7 +492,7 @@ export const copyText = function ($target, msg = '', $excludeElem = null) {
 /**
  * 获取服务器返回的消息
  * @param {string} html HTML代码
- * @returns {{type: number, msg: string, url: string}} 服务器返回的消息对象
+ * @returns {{type: number, msg: string, url: string}} type：消息类型（0：未能获得预期的回应；1：成功消息；-1：错误消息）；msg：消息内容
  */
 export const getResponseMsg = function (html) {
     let type = 0;

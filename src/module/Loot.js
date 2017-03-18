@@ -1850,15 +1850,15 @@ export const promoteHalo = function () {
             if (matches) {
                 nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
                 let randomNum = parseFloat(matches[2]);
+                let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
                 Msg.show(
                     '<strong>' +
                     (matches[1] === '新数值为' ?
                         `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) +
-                    '</strong>'
+                    `</strong><i>${costResult.type}<ins>${-costResult.num}</ins></i>`
                     , -1
                 );
 
-                let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
                 let pay = {};
                 pay[costResult.type] = -costResult.num;
                 Log.push(
@@ -1891,7 +1891,7 @@ export const promoteHalo = function () {
 /**
  * 通过获取类型ID获取提升战力光环花费
  * @param {number} id 提升战力光环的类型ID
- * @returns {{type: string, num: number}} 花费对象，type：花费类型；num：花费数额
+ * @returns {{type: string, num: number}} type：花费类型；num：花费数额
  */
 export const getPromoteHaloCostByTypeId = function (id) {
     switch (id) {

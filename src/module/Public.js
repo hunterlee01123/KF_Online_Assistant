@@ -246,31 +246,21 @@ export const showFormatLog = function (msgType, html) {
 export const addPolyfill = function () {
     if (!Array.prototype.includes) {
         Array.prototype.includes = function (searchElement /*, fromIndex = 0 */) {
-            'use strict';
-            if (this == null) {
-                throw new TypeError('Array.prototype.includes called on null or undefined');
-            }
+            if (this == null) throw new TypeError('Array.prototype.includes called on null or undefined');
             const O = Object(this);
             const len = parseInt(O.length) || 0;
             if (len === 0) return false;
             let n = parseInt(arguments[1]) || 0;
             let k;
-            if (n >= 0) {
-                k = n;
-            } else {
+            if (n >= 0) k = n;
+            else {
                 k = len + n;
-                if (k < 0) {
-                    k = 0;
-                }
+                if (k < 0) k = 0;
             }
             let currentElement;
             while (k < len) {
                 currentElement = O[k];
-                if (searchElement === currentElement ||
-                    (searchElement !== searchElement && currentElement !== currentElement)
-                ) {
-                    return true;
-                }
+                if (searchElement === currentElement || (searchElement !== searchElement && currentElement !== currentElement)) return true;
                 k++;
             }
             return false;
@@ -289,11 +279,8 @@ export const addPolyfill = function () {
             while (filler.length < fillLen) {
                 const fLen = filler.length;
                 const remainingCodeUnits = fillLen - fLen;
-                if (fLen > remainingCodeUnits) {
-                    filler += filler.slice(0, remainingCodeUnits);
-                } else {
-                    filler += filler;
-                }
+                if (fLen > remainingCodeUnits) filler += filler.slice(0, remainingCodeUnits);
+                else filler += filler;
             }
             const truncatedStringFiller = filler.slice(0, fillLen);
             return truncatedStringFiller + S;
@@ -312,11 +299,8 @@ export const addPolyfill = function () {
             while (filler.length < fillLen) {
                 const fLen = filler.length;
                 const remainingCodeUnits = fillLen - fLen;
-                if (fLen > remainingCodeUnits) {
-                    filler += filler.slice(0, remainingCodeUnits);
-                } else {
-                    filler += filler;
-                }
+                if (fLen > remainingCodeUnits) filler += filler.slice(0, remainingCodeUnits);
+                else filler += filler;
             }
             const truncatedStringFiller = filler.slice(0, fillLen);
             return S + truncatedStringFiller;
@@ -332,7 +316,7 @@ export const getNextTimingIntervalInfo = function () {
     let promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         let value = parseInt(Util.getCookie(Const.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((new Date().getTime() - value) / 1000);
+        if (value > 0) promoteHaloInterval = Math.floor((value - new Date().getTime()) / 1000);
         else promoteHaloInterval = 0;
     }
 

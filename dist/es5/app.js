@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.6.1';
+var version = '9.6.2';
 
 /**
  * 导出模块
@@ -7477,9 +7477,9 @@ var promoteHalo = exports.promoteHalo = function promoteHalo() {
             if (matches) {
                 nextTime = Util.getDate('+' + Config.promoteHaloInterval + 'h');
                 var randomNum = parseFloat(matches[2]);
-                Msg.show('<strong>' + (matches[1] === '新数值为' ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + '</strong>', -1);
-
                 var costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
+                Msg.show('<strong>' + (matches[1] === '新数值为' ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + ('</strong><i>' + costResult.type + '<ins>' + -costResult.num + '</ins></i>'), -1);
+
                 var pay = {};
                 pay[costResult.type] = -costResult.num;
                 Log.push('提升战力光环', matches[1] === '新数值为' ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010`' + randomNum + '%`\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010`' + randomNum + '%`\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C', { pay: pay });
@@ -7509,7 +7509,7 @@ var promoteHalo = exports.promoteHalo = function promoteHalo() {
 /**
  * 通过获取类型ID获取提升战力光环花费
  * @param {number} id 提升战力光环的类型ID
- * @returns {{type: string, num: number}} 花费对象，type：花费类型；num：花费数额
+ * @returns {{type: string, num: number}} type：花费类型；num：花费数额
  */
 var getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function getPromoteHaloCostByTypeId(id) {
     switch (id) {
@@ -8817,30 +8817,20 @@ var showFormatLog = exports.showFormatLog = function showFormatLog(msgType, html
 var addPolyfill = exports.addPolyfill = function addPolyfill() {
     if (!Array.prototype.includes) {
         Array.prototype.includes = function (searchElement /*, fromIndex = 0 */) {
-            'use strict';
-
-            if (this == null) {
-                throw new TypeError('Array.prototype.includes called on null or undefined');
-            }
+            if (this == null) throw new TypeError('Array.prototype.includes called on null or undefined');
             var O = Object(this);
             var len = parseInt(O.length) || 0;
             if (len === 0) return false;
             var n = parseInt(arguments[1]) || 0;
             var k = void 0;
-            if (n >= 0) {
-                k = n;
-            } else {
+            if (n >= 0) k = n;else {
                 k = len + n;
-                if (k < 0) {
-                    k = 0;
-                }
+                if (k < 0) k = 0;
             }
             var currentElement = void 0;
             while (k < len) {
                 currentElement = O[k];
-                if (searchElement === currentElement || searchElement !== searchElement && currentElement !== currentElement) {
-                    return true;
-                }
+                if (searchElement === currentElement || searchElement !== searchElement && currentElement !== currentElement) return true;
                 k++;
             }
             return false;
@@ -8861,11 +8851,7 @@ var addPolyfill = exports.addPolyfill = function addPolyfill() {
             while (filler.length < fillLen) {
                 var fLen = filler.length;
                 var remainingCodeUnits = fillLen - fLen;
-                if (fLen > remainingCodeUnits) {
-                    filler += filler.slice(0, remainingCodeUnits);
-                } else {
-                    filler += filler;
-                }
+                if (fLen > remainingCodeUnits) filler += filler.slice(0, remainingCodeUnits);else filler += filler;
             }
             var truncatedStringFiller = filler.slice(0, fillLen);
             return truncatedStringFiller + S;
@@ -8886,11 +8872,7 @@ var addPolyfill = exports.addPolyfill = function addPolyfill() {
             while (filler.length < fillLen) {
                 var fLen = filler.length;
                 var remainingCodeUnits = fillLen - fLen;
-                if (fLen > remainingCodeUnits) {
-                    filler += filler.slice(0, remainingCodeUnits);
-                } else {
-                    filler += filler;
-                }
+                if (fLen > remainingCodeUnits) filler += filler.slice(0, remainingCodeUnits);else filler += filler;
             }
             var truncatedStringFiller = filler.slice(0, fillLen);
             return S + truncatedStringFiller;
@@ -8906,7 +8888,7 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
     var promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         var value = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((new Date().getTime() - value) / 1000);else promoteHaloInterval = 0;
+        if (value > 0) promoteHaloInterval = Math.floor((value - new Date().getTime()) / 1000);else promoteHaloInterval = 0;
     }
 
     var checkLootInterval = -1;
@@ -11797,7 +11779,7 @@ var copyText = exports.copyText = function copyText($target) {
 /**
  * 获取服务器返回的消息
  * @param {string} html HTML代码
- * @returns {{type: number, msg: string, url: string}} 服务器返回的消息对象
+ * @returns {{type: number, msg: string, url: string}} type：消息类型（0：未能获得预期的回应；1：成功消息；-1：错误消息）；msg：消息内容
  */
 var getResponseMsg = exports.getResponseMsg = function getResponseMsg(html) {
     var type = 0;
