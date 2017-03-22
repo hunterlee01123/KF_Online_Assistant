@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.8
+// @version     4.5.0.1
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -20,7 +20,7 @@
 'use strict';
 // 版本号
 
-var version = '4.1.0.8';
+var version = '4.5.0.1';
 // 网站是否为KfMobile
 var isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
@@ -29,55 +29,57 @@ var KfSmileList = [];
 var KfSmileCodeList = [];
 var kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
 if (isKfMobile) kfImgPath = Info.imgPath;
-for (var i = 0; i < 48; i++) {
-    KfSmileList.push('/' + kfImgPath + '/post/smile/em/em' + (i >= 9 ? i + 1 : '0' + (i + 1)) + '.gif');
-    KfSmileCodeList.push('[s:' + (i + 10) + ']');
+for (var i = 1; i < 49; i++) {
+    KfSmileList.push('/' + kfImgPath + '/post/smile/em/em' + (i > 9 ? i : '0' + i) + '.gif');
+    KfSmileCodeList.push('[s:' + (i + 9) + ']');
 }
 
 // AC娘表情
 var AcSmileList = [];
-for (var _i = 0; _i < 50; _i++) {
-    AcSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/New/' + (_i + 1) + '.png');
+for (var _i = 1; _i < 51; _i++) {
+    AcSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds6/' + _i + '.png');
 }
-for (var _i2 = 50; _i2 < 90; _i2++) {
-    AcSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/Niming/' + (_i2 - 50 >= 9 ? _i2 - 49 : '0' + (_i2 - 49)) + '.gif');
+for (var _i2 = 1; _i2 < 40; _i2++) {
+    AcSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds5/' + (_i2 > 9 ? _i2 : '0' + _i2) + '.gif');
 }
 
 // 常用表情
 var CommonSmileList = [];
-for (var _i3 = 0; _i3 < 62; _i3++) {
-    CommonSmileList.push('http://nekohand.moe/spsmile/01Sora/0xx' + (_i3 + 2) + '.png');
-}
-for (var _i4 = 0; _i4 < 19; _i4++) {
-    CommonSmileList.push('http://ss.nekohand.moe/Asource/EmotionPic/KFEM (' + (_i4 + 1) + ').gif');
+for (var _i3 = 2; _i3 < 64; _i3++) {
+    CommonSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds4/0xx' + _i3 + '.png');
 }
 
-// 阿卡林表情
+// 阿卡林 from 摇曳百合
 var AkarinSmileList = [];
-for (var _i5 = 0; _i5 < 71; _i5++) {
-    AkarinSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/akari/akari' + (_i5 + 1) + '.png');
+for (var _i4 = 1; _i4 < 21; _i4++) {
+    AkarinSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds2/akari' + _i4 + '.gif');
 }
-for (var _i6 = 0; _i6 < 20; _i6++) {
-    AkarinSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/Dynamic/akari' + (_i6 + 1) + '.gif');
+for (var _i5 = 1; _i5 < 72; _i5++) {
+    AkarinSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds3/akari' + _i5 + '.png');
 }
 
 // B站和tora酱表情
 var BiliBiliSmileList = [];
-for (var _i7 = 0; _i7 < 16; _i7++) {
-    BiliBiliSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/2233 (' + (_i7 + 1) + ').gif');
+for (var _i6 = 1; _i6 < 17; _i6++) {
+    BiliBiliSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds/2233 (' + _i6 + ').gif');
 }
-for (var _i8 = 16; _i8 < 30; _i8++) {
-    BiliBiliSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/bilibiliTV (' + (_i8 + 1 - 17) + ').png');
+for (var _i7 = 1; _i7 < 14; _i7++) {
+    BiliBiliSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds/' + _i7 + '.png');
 }
-for (var _i9 = 0; _i9 < 14; _i9++) {
-    BiliBiliSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/tora/0' + (_i9 >= 9 ? _i9 + 1 : '0' + (_i9 + 1)) + '.jpg');
+for (var _i8 = 0; _i8 < 14; _i8++) {
+    BiliBiliSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds/bilibiliTV (' + _i8 + ').png');
+}
+for (var _i9 = 1; _i9 < 14; _i9++) {
+    BiliBiliSmileList.push('http://o6smnd6uw.bkt.clouddn.com/xds2/0' + (_i9 > 9 ? _i9 : '0' + _i9) + '.jpg');
 }
 
 // lovelive表情（小）
 var LoveliveSmallSmileList = [];
-for (var _i10 = 0; _i10 < 40; _i10++) {
-    LoveliveSmallSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion02/Small/Lovelive2nd' + (_i10 + 1) + '.png');
-    LoveliveSmallSmileList.push('http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/Small/Lovelive' + (_i10 + 1) + '.png');
+for (var _i10 = 1; _i10 < 41; _i10++) {
+    LoveliveSmallSmileList.push('http://o6smnd6uw.bkt.clouddn.com/lovelive/Lovelive2nd' + _i10 + '.png');
+}
+for (var _i11 = 1; _i11 < 41; _i11++) {
+    LoveliveSmallSmileList.push('http://o6smnd6uw.bkt.clouddn.com/lovelive/Lovelive' + _i11 + '.png');
 }
 
 /**
@@ -94,7 +96,7 @@ var MenuList = {
     Emoji: {
         datatype: 'plain',
         title: '颜文字',
-        addr: ['(●・ 8 ・●)', '╰(๑◕ ▽ ◕๑)╯', '(﹡ˆˆ﹡)', '〜♪♪', '(ﾟДﾟ≡ﾟДﾟ)', '(＾o＾)ﾉ', '(|||ﾟДﾟ)', '(`ε´ )', '(╬ﾟдﾟ)', '(|||ﾟдﾟ)', '(￣∇￣)', '(￣3￣)', '(￣ｰ￣)', '(￣ . ￣)', '(￣︿￣)', '(￣︶￣)', '(*´ω`*)', '(・ω・)', '(⌒▽⌒)', '(￣▽￣）', '(=・ω・=)', '(｀・ω・´)', '(〜￣△￣)〜', '(･∀･)', '(°∀°)ﾉ', '(￣3￣)', '╮(￣▽￣)╭', '( ´_ゝ｀)', '←_←', '→_→', '(&lt;_&lt;)', '(&gt;_&gt;)', '(;¬_¬)', '(▔□▔)/', '(ﾟДﾟ≡ﾟдﾟ)!?', 'Σ(ﾟдﾟ;)', 'Σ( ￣□￣||)', '(´；ω；`)', '（/TДT)/', '(^・ω・^ )', '(｡･ω･｡)', '(●￣(ｴ)￣●)', 'ε=ε=(ノ≧∇≦)ノ', '(´･_･`)', '(-_-#)', '（￣へ￣）', '(￣ε(#￣) Σ', 'ヽ(`Д´)ﾉ', '(╯°口°)╯(┴—┴', '（#-_-)┯━┯', '_(:3」∠)_', '(笑)', '(汗)', '(泣)', '(苦笑)', '(´・ω・`)', '(╯°□°）╯︵ ┻━┻', '(╯‵□′)╯︵┻━┻', '( ´ρ`)', '( ﾟωﾟ)', '(oﾟωﾟo)', '(　^ω^)', '(｡◕∀◕｡)', '/( ◕‿‿◕ )\\', 'ε٩( º∀º )۶з', '(￣ε(#￣)☆╰╮(￣▽￣///)', '（●´3｀）~♪', '_(:з」∠)_', 'хорошо!', '＼(^o^)／', '(•̅灬•̅ )', '(ﾟДﾟ)', 'まったく、小学生は最高だぜ！！', 'ε=ε=ε=┏(゜ロ゜;)┛', '(；°ほ°)', 'もうこの国は駄目だぁ', 'ヽ(✿ﾟ▽ﾟ)ノ', '焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！', 'お疲れ様でした']
+        addr: ['(●・ 8 ・●)', '╰(๑◕ ▽ ◕๑)╯', '(ゝω・)', '〜♪♪', '(ﾟДﾟ≡ﾟДﾟ)', '(＾o＾)ﾉ', '(|||ﾟДﾟ)', '(`ε´ )', '(╬ﾟдﾟ)', '(|||ﾟдﾟ)', '(￣∇￣)', '(￣3￣)', '(￣ｰ￣)', '(￣ . ￣)', '(￣︿￣)', '(￣︶￣)', '(*´ω`*)', '(・ω・)', '(⌒▽⌒)', '(￣▽￣）', '(=・ω・=)', '(｀・ω・´)', '(〜￣△￣)〜', '(･∀･)', '(°∀°)ﾉ', '(￣3￣)', '╮(￣▽￣)╭', '( ´_ゝ｀)', 'のヮの', '(ﾉ؂< ๑）诶嘿☆～', '(&lt;_&lt;)', '(&gt;_&gt;)', '(;¬_¬)', '(▔□▔)/', '(ﾟДﾟ≡ﾟдﾟ)!?', 'Σ(ﾟдﾟ;)', 'Σ( ￣□￣||)', '(´；ω；`)', '（/TДT)/', '(^・ω・^ )', '(｡･ω･｡)', '(●￣(ｴ)￣●)', 'ε=ε=(ノ≧∇≦)ノ', '(´･_･`)', '(-_-#)', '（￣へ￣）', '(￣ε(#￣) Σ', 'ヽ(`Д´)ﾉ', '(╯°口°)╯(┴—┴', '（#-_-)┯━┯', '_(:3」∠)_', '(笑)', '(汗)', '(泣)', '(苦笑)', '(´・ω・`)', '(╯°□°）╯︵ ┻━┻', '(╯‵□′)╯︵┻━┻', '( ´ρ`)', '( ﾟωﾟ)', '(oﾟωﾟo)', '(　^ω^)', '(｡◕∀◕｡)', '/( ◕‿‿◕ )\\', 'ε٩( º∀º )۶з', '(￣ε(#￣)☆╰╮(￣▽￣///)', '（●´3｀）~♪', '_(:з」∠)_', 'хорошо!', '＼(^o^)／', '(•̅灬•̅ )', '(ﾟДﾟ)', 'まったく、小学生は最高だぜ！！', 'ε=ε=ε=┏(゜ロ゜;)┛', '(；°ほ°)', '⎝≧⏝⏝≦⎠', 'ヽ(✿ﾟ▽ﾟ)ノ', '焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！', '|•ω•`)']
     },
     Acfun: { datatype: 'image', title: 'ACFUN', addr: AcSmileList },
     Common: { datatype: 'image', title: '常用', addr: CommonSmileList },
@@ -148,15 +150,15 @@ var getSmilePanelHtml = function getSmilePanelHtml(key) {
     var data = MenuList[key];
     if (!data) return '';
     var html = '';
-    for (var _i11 = 0; _i11 < data.addr.length; _i11++) {
+    for (var _i12 = 0; _i12 < data.addr.length; _i12++) {
         if (data.datatype === 'image') {
-            html += '<img class="kfe-smile" src="' + data.addr[_i11] + '" alt="[\u8868\u60C5]">';
+            html += '<img class="kfe-smile" src="' + data.addr[_i12] + '" alt="[\u8868\u60C5]">';
         } else if (data.datatype === 'imageLink') {
-            var ref = typeof data.ref !== 'undefined' && typeof data.ref[_i11] !== 'undefined' ? data.ref[_i11] : '';
-            html += '<img class="kfe-smile" data-code="' + ref + '" src="' + data.addr[_i11] + '" alt="[\u8868\u60C5]">';
+            var ref = typeof data.ref !== 'undefined' && typeof data.ref[_i12] !== 'undefined' ? data.ref[_i12] : '';
+            html += '<img class="kfe-smile" data-code="' + ref + '" src="' + data.addr[_i12] + '" alt="[\u8868\u60C5]">';
         } else if (data.datatype === 'plain') {
-            var _ref = typeof data.ref !== 'undefined' && typeof data.ref[_i11] !== 'undefined' ? data.ref[_i11] : data.addr[_i11];
-            html += '<a class="kfe-smile-text" data-code="' + data.addr[_i11] + '" href="#">' + _ref + '</a>';
+            var _ref = typeof data.ref !== 'undefined' && typeof data.ref[_i12] !== 'undefined' ? data.ref[_i12] : data.addr[_i12];
+            html += '<a class="kfe-smile-text" data-code="' + data.addr[_i12] + '" href="#">' + _ref + '</a>';
         }
     }
     return '<div class="kfe-smile-panel" data-key="' + key + '">' + html + '</div>';

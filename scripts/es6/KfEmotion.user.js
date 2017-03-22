@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.1.0.8
+// @version     4.5.0.1
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -19,7 +19,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-const version = '4.1.0.8';
+const version = '4.5.0.1';
 // 网站是否为KfMobile
 const isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
@@ -28,55 +28,57 @@ const KfSmileList = [];
 const KfSmileCodeList = [];
 let kfImgPath = typeof imgpath !== 'undefined' ? imgpath : '';
 if (isKfMobile) kfImgPath = Info.imgPath;
-for (let i = 0; i < 48; i++) {
-    KfSmileList.push(`/${kfImgPath}/post/smile/em/em${(i) >= 9 ? (i + 1) : ('0' + (i + 1))}.gif`);
-    KfSmileCodeList.push(`[s:${i + 10}]`);
+for (let i = 1; i < 49; i++) {
+    KfSmileList.push(`/${kfImgPath}/post/smile/em/em${(i) > 9 ? i : ('0' + i)}.gif`);
+    KfSmileCodeList.push(`[s:${i + 9}]`);
 }
 
 // AC娘表情
 const AcSmileList = [];
-for (let i = 0; i < 50; i++) {
-    AcSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/New/${i + 1}.png`);
+for (let i = 1; i < 51; i++) {
+    AcSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds6/${i}.png`);
 }
-for (let i = 50; i < 90; i++) {
-    AcSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/ACFUN/Niming/${(i - 50) >= 9 ? (i - 49) : ('0' + (i - 49))}.gif`);
+for (let i = 1; i < 40; i++) {
+    AcSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds5/${(i) > 9 ? i : ('0' + i)}.gif`);
 }
 
 // 常用表情
 const CommonSmileList = [];
-for (let i = 0; i < 62; i++) {
-    CommonSmileList.push(`http://nekohand.moe/spsmile/01Sora/0xx${i + 2}.png`);
-}
-for (let i = 0; i < 19; i++) {
-    CommonSmileList.push(`http://ss.nekohand.moe/Asource/EmotionPic/KFEM (${i + 1}).gif`);
+for (let i = 2; i < 64; i++) {
+    CommonSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds4/0xx${i}.png`);
 }
 
-// 阿卡林表情
+// 阿卡林 from 摇曳百合
 const AkarinSmileList = [];
-for (let i = 0; i < 71; i++) {
-    AkarinSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/akari/akari${i + 1}.png`);
+for (let i = 1; i < 21; i++) {
+    AkarinSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds2/akari${i}.gif`);
 }
-for (let i = 0; i < 20; i++) {
-    AkarinSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/Dynamic/akari${i + 1}.gif`);
+for (let i = 1; i < 72; i++) {
+    AkarinSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds3/akari${i}.png`);
 }
 
 // B站和tora酱表情
 const BiliBiliSmileList = [];
-for (let i = 0; i < 16; i++) {
-    BiliBiliSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/2233 (${i + 1}).gif`);
+for (let i = 1; i < 17; i++) {
+    BiliBiliSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds/2233 (${i}).gif`);
 }
-for (let i = 16; i < 30; i++) {
-    BiliBiliSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/BiliBili/bilibiliTV (${i + 1 - 17}).png`);
+for (let i = 1; i < 14; i++) {
+    BiliBiliSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds/${i}.png`);
 }
 for (let i = 0; i < 14; i++) {
-    BiliBiliSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/EmCol/tora/0${(i) >= 9 ? (i + 1) : ('0' + (i + 1))}.jpg`);
+    BiliBiliSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds/bilibiliTV (${i}).png`);
+}
+for (let i = 1; i < 14; i++) {
+    BiliBiliSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/xds2/0${(i) > 9 ? i : ('0' + i)}.jpg`);
 }
 
 // lovelive表情（小）
 const LoveliveSmallSmileList = [];
-for (let i = 0; i < 40; i++) {
-    LoveliveSmallSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion02/Small/Lovelive2nd${i + 1}.png`);
-    LoveliveSmallSmileList.push(`http://smile.nekohand.moe/blogAcc/LoveliveEmotion01/Small/Lovelive${i + 1}.png`);
+for (let i = 1; i < 41; i++) {
+    LoveliveSmallSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/lovelive/Lovelive2nd${i}.png`);
+}
+for (let i = 1; i < 41; i++) {
+    LoveliveSmallSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/lovelive/Lovelive${i}.png`);
 }
 
 /**
@@ -99,15 +101,15 @@ const MenuList = {
         datatype: 'plain',
         title: '颜文字',
         addr: [
-            '(●・ 8 ・●)', '╰(๑◕ ▽ ◕๑)╯', '(﹡ˆˆ﹡)', '〜♪♪', '(ﾟДﾟ≡ﾟДﾟ)', '(＾o＾)ﾉ', '(|||ﾟДﾟ)', '(`ε´ )', '(╬ﾟдﾟ)', '(|||ﾟдﾟ)', '(￣∇￣)',
+            '(●・ 8 ・●)', '╰(๑◕ ▽ ◕๑)╯', '(ゝω・)', '〜♪♪', '(ﾟДﾟ≡ﾟДﾟ)', '(＾o＾)ﾉ', '(|||ﾟДﾟ)', '(`ε´ )', '(╬ﾟдﾟ)', '(|||ﾟдﾟ)', '(￣∇￣)',
             '(￣3￣)', '(￣ｰ￣)', '(￣ . ￣)', '(￣︿￣)', '(￣︶￣)', '(*´ω`*)', '(・ω・)', '(⌒▽⌒)', '(￣▽￣）', '(=・ω・=)', '(｀・ω・´)',
-            '(〜￣△￣)〜', '(･∀･)', '(°∀°)ﾉ', '(￣3￣)', '╮(￣▽￣)╭', '( ´_ゝ｀)', '←_←', '→_→', '(&lt;_&lt;)', '(&gt;_&gt;)', '(;¬_¬)',
-            '(▔□▔)/', '(ﾟДﾟ≡ﾟдﾟ)!?', 'Σ(ﾟдﾟ;)', 'Σ( ￣□￣||)', '(´；ω；`)', '（/TДT)/', '(^・ω・^ )', '(｡･ω･｡)', '(●￣(ｴ)￣●)', 'ε=ε=(ノ≧∇≦)ノ',
-            '(´･_･`)', '(-_-#)', '（￣へ￣）', '(￣ε(#￣) Σ', 'ヽ(`Д´)ﾉ', '(╯°口°)╯(┴—┴', '（#-_-)┯━┯', '_(:3」∠)_', '(笑)', '(汗)', '(泣)',
-            '(苦笑)', '(´・ω・`)', '(╯°□°）╯︵ ┻━┻', '(╯‵□′)╯︵┻━┻', '( ´ρ`)', '( ﾟωﾟ)', '(oﾟωﾟo)', '(　^ω^)', '(｡◕∀◕｡)', '/( ◕‿‿◕ )\\',
-            'ε٩( º∀º )۶з', '(￣ε(#￣)☆╰╮(￣▽￣///)', '（●´3｀）~♪', '_(:з」∠)_', 'хорошо!', '＼(^o^)／', '(•̅灬•̅ )', '(ﾟДﾟ)',
-            'まったく、小学生は最高だぜ！！', 'ε=ε=ε=┏(゜ロ゜;)┛', '(；°ほ°)', 'もうこの国は駄目だぁ', 'ヽ(✿ﾟ▽ﾟ)ノ',
-            '焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！', 'お疲れ様でした'
+            '(〜￣△￣)〜', '(･∀･)', '(°∀°)ﾉ', '(￣3￣)', '╮(￣▽￣)╭', '( ´_ゝ｀)', 'のヮの', '(ﾉ؂< ๑）诶嘿☆～', '(&lt;_&lt;)', '(&gt;_&gt;)',
+            '(;¬_¬)', '(▔□▔)/', '(ﾟДﾟ≡ﾟдﾟ)!?', 'Σ(ﾟдﾟ;)', 'Σ( ￣□￣||)', '(´；ω；`)', '（/TДT)/', '(^・ω・^ )', '(｡･ω･｡)', '(●￣(ｴ)￣●)',
+            'ε=ε=(ノ≧∇≦)ノ', '(´･_･`)', '(-_-#)', '（￣へ￣）', '(￣ε(#￣) Σ', 'ヽ(`Д´)ﾉ', '(╯°口°)╯(┴—┴', '（#-_-)┯━┯', '_(:3」∠)_', '(笑)',
+            '(汗)', '(泣)', '(苦笑)', '(´・ω・`)', '(╯°□°）╯︵ ┻━┻', '(╯‵□′)╯︵┻━┻', '( ´ρ`)', '( ﾟωﾟ)', '(oﾟωﾟo)', '(　^ω^)', '(｡◕∀◕｡)',
+            '/( ◕‿‿◕ )\\', 'ε٩( º∀º )۶з', '(￣ε(#￣)☆╰╮(￣▽￣///)', '（●´3｀）~♪', '_(:з」∠)_', 'хорошо!', '＼(^o^)／', '(•̅灬•̅ )', '(ﾟДﾟ)',
+            'まったく、小学生は最高だぜ！！', 'ε=ε=ε=┏(゜ロ゜;)┛', '(；°ほ°)', '⎝≧⏝⏝≦⎠', 'ヽ(✿ﾟ▽ﾟ)ノ', '焔に舞い上がるスパークよ、邪悪な異性交際に、天罰を与え！',
+            '|•ω•`)'
         ]
     },
     Acfun: {datatype: 'image', title: 'ACFUN', addr: AcSmileList},
