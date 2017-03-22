@@ -21,14 +21,12 @@
         if ('Notification' in window && Notification.permission !== 'denied') {
             Notification.requestPermission(function (permission) {
                 if (permission === 'granted') {
-                    (function () {
-                        var notification = new Notification('【绯月Galgame】', { body: '你有新的短消息' });
-                        notification.onclick = function (e) {
-                            e.preventDefault();
-                            window.open('message.php');
-                            notification.close();
-                        };
-                    })();
+                    var notification = new Notification('【绯月Galgame】', { body: '你有新的短消息' });
+                    notification.onclick = function (e) {
+                        e.preventDefault();
+                        window.open('message.php');
+                        notification.close();
+                    };
                 }
             });
         }
