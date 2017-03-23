@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '9.6.3';
+const version = '9.7';
 
 /**
  * 导出模块
@@ -147,7 +147,10 @@ const init = function () {
         Loot.addUserLinkInPkListPage();
     }
     else if (location.pathname === '/kf_fw_ig_halo.php') {
-        $('.kf_fw_ig1').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', () => confirm('是否提升战力光环？'));
+        $('.kf_fw_ig1').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', () => {
+            if (!confirm('是否提升战力光环？')) return false;
+            TmpLog.deleteValue(Const.haloInfoTmpLogName);
+        });
     }
     else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();

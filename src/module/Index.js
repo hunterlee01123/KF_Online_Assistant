@@ -230,5 +230,10 @@ export const addPromoteHaloInterval = function () {
     let nextTime = parseInt(Util.getCookie(Const.promoteHaloCookieName));
     if (!nextTime) return;
     let interval = nextTime - new Date().getTime();
-    if (interval > 0) $('a[href="kf_fw_ig_index.php"]').text(`争夺奖励 (光环：${Math.ceil(interval / 60 / 1000)}分钟)`);
+    if (interval > 0) {
+        let minutes = Math.ceil(interval / 60 / 1000);
+        let hours = Math.floor(minutes / 60);
+        minutes -= hours * 60;
+        $('a[href="kf_fw_ig_index.php"]').text(`争夺奖励 (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)`);
+    }
 };

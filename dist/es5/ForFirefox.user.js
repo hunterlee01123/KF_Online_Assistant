@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.6.3
+// @version     9.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.6.3';
+var version = '9.7';
 
 /**
  * 导出模块
@@ -219,13 +219,12 @@ var init = function init() {
         Item.hideItemTypes();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.addBatchBuyItemsLink();
-    } else if (location.pathname === '/kf_fw_ig_index.php') {
-        Loot.enhanceLootIndexPage();
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
         $('.kf_fw_ig1').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', function () {
-            return confirm('是否提升战力光环？');
+            if (!confirm('是否提升战力光环？')) return false;
+            TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
         });
     } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
@@ -273,8 +272,9 @@ var init = function init() {
     var isAutoPromoteHaloStarted = false;
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
         isAutoPromoteHaloStarted = true;
-        Loot.promoteHalo();
+        Loot.promoteHalo(location.pathname === '/kf_fw_ig_index.php');
     }
+    if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
 
     var isAutoLootStarted = false;
     if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
@@ -2438,6 +2438,8 @@ var Const = {
     getDailyBonusSpecialInterval: 30,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
+    // 临时存储的战力光环信息的有效期（分钟）
+    tmpHaloInfoExpires: 90,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
@@ -2507,6 +2509,8 @@ var Const = {
     fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
+    // 存储战力光环信息的临时日志名称
+    haloInfoTmpLogName: 'HaloInfo',
 
     // 标记已领取每日奖励的Cookie名称
     getDailyBonusCookieName: 'getDailyBonus',
@@ -2887,7 +2891,12 @@ var addPromoteHaloInterval = exports.addPromoteHaloInterval = function addPromot
     var nextTime = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
     if (!nextTime) return;
     var interval = nextTime - new Date().getTime();
-    if (interval > 0) $('a[href="kf_fw_ig_index.php"]').text('\u4E89\u593A\u5956\u52B1 (\u5149\u73AF\uFF1A' + Math.ceil(interval / 60 / 1000) + '\u5206\u949F)');
+    if (interval > 0) {
+        var minutes = Math.ceil(interval / 60 / 1000);
+        var hours = Math.floor(minutes / 60);
+        minutes -= hours * 60;
+        $('a[href="kf_fw_ig_index.php"]').text('\u4E89\u593A\u5956\u52B1 (\u5149\u73AF\uFF1A' + (hours > 0 ? hours + '时' : '') + minutes + '\u5206)');
+    }
 };
 
 },{"./Const":6,"./Info":9,"./Log":11,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
@@ -5499,7 +5508,7 @@ var showLogText = function showLogText(log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.addUserLinkInPkListPage = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.lootAttack = exports.getRealProperty = exports.enhanceLootIndexPage = undefined;
+exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInPkListPage = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -5531,6 +5540,10 @@ var _Log = require('./Log');
 
 var Log = _interopRequireWildcard(_Log);
 
+var _TmpLog = require('./TmpLog');
+
+var TmpLog = _interopRequireWildcard(_TmpLog);
+
 var _LootLog = require('./LootLog');
 
 var LootLog = _interopRequireWildcard(_LootLog);
@@ -5559,6 +5572,8 @@ var $lootArea = void 0;
 var $properties = void 0;
 // 点数区域
 var $points = void 0;
+// 道具信息区域
+var $itemInfo = void 0;
 // 争夺记录区域容器
 var $logBox = void 0;
 // 争夺记录区域
@@ -5570,24 +5585,41 @@ var logList = [];
 // 各层战斗信息列表
 var levelInfoList = [];
 // 当前争夺属性
-var propertyList = new Map();
-// 额外加成点数列表
-var extraPointList = new Map();
+var propertyList = {};
+// 光环信息
+var haloInfo = {};
 // 道具使用情况列表
 var itemUsedNumList = new Map();
 // 点数分配记录列表
 var pointsLogList = [];
 
 /**
- * 增强争夺首页
+ * 初始化
  */
-var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIndexPage() {
+var init = exports.init = function init() {
     $lootArea = $('.kf_fw_ig1:first');
     $properties = $lootArea.find('> tbody > tr:nth-child(2) > td:first-child');
     $points = $lootArea.find('> tbody > tr:nth-child(2) > td:nth-child(2)');
+    $itemInfo = $lootArea.find('> tbody > tr:nth-child(3) > td');
+    $itemInfo.css('line-height', '2em');
+
+    var tmpHaloInfo = TmpLog.getValue(_Const2.default.haloInfoTmpLogName);
+    if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
+        var diff = new Date().getTime() - tmpHaloInfo.time;
+        if (diff >= 0 && diff < _Const2.default.tmpHaloInfoExpires * 60 * 1000) {
+            delete tmpHaloInfo.time;
+            setHaloInfo(tmpHaloInfo);
+            enhanceLootIndexPage();
+        } else readHaloInfo(true);
+    } else readHaloInfo(true);
+};
+
+/**
+ * 增强争夺首页
+ */
+var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIndexPage() {
     propertyList = getLootPropertyList();
-    extraPointList = getExtraPointList();
-    itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(3) > td').html());
+    itemUsedNumList = Item.getItemUsedInfo($itemInfo.html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -5615,15 +5647,10 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
  */
 var handlePropertiesArea = function handlePropertiesArea() {
     var tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    var html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_d2" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ' + ('<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span>')).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_i1" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ' + ('<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span>')).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>')
-    /*.replace(
-     '技能伤害：攻击+(体质*5)+(智力*5)',
-     '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
-     )*/ /* 临时禁用 */;
+    var html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_d2" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ' + ('<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span>')).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, '$1<span id="pdPro_i1" title="\u539F\u503C\uFF1A$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ' + ('<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="' + tipsIntro + '">[?]</span>')).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
-        return; // 临时禁用
         var $this = $(this);
         $this.hide();
         var name = $this.attr('id').replace('pdPro_', '');
@@ -5641,15 +5668,34 @@ var handlePropertiesArea = function handlePropertiesArea() {
             var $this = $(this);
             if (e.keyCode === 13) $this.blur();else if (e.keyCode === 27) $this.val('').blur();
         });
-    }) /*.find('[id^=pdPro_]').css('cursor', 'pointer')*/ /* 临时禁用 */;
+    }).find('[id^=pdPro_]').css('cursor', 'pointer');
 };
 
 /**
  * 处理点数区域
  */
 var handlePointsArea = function handlePointsArea() {
-    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point');
+    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
+
+    /**
+     * 显示剩余属性点
+     */
+    var showSurplusPoint = function showSurplusPoint() {
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        $('#pdSurplusPoint').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000').css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
+    };
+
+    /**
+     * 显示各项点数的额外加成
+     * @param {jQuery} $point 点数字段对象
+     */
+    var showExtraPoint = function showExtraPoint($point) {
+        var num = parseInt($point.val());
+        if (!num || num < 0) num = 1;
+        var extraNum = getExtraPoint(getPointNameByFieldName($point.attr('name')), num);
+        $point.next('.pd_extra_point').text('+' + extraNum);
+    };
 
     /**
      * 显示各项点数的和值
@@ -5657,26 +5703,27 @@ var handlePointsArea = function handlePointsArea() {
      */
     var showSumOfPoint = function showSumOfPoint($point) {
         var num = parseInt($point.val());
-        if (isNaN(num) || num < 0) num = 0;
-        var extraNum = parseInt($point.next('span').text());
-        var $sum = $point.next('span').next('.pd_point_sum');
-        if (!$sum.length) {
-            $sum = $('<span class="pd_point_sum" style="color: #ff0033; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>').insertAfter($point.next('span'));
-        }
-        $sum.text('=' + (num + extraNum));
+        if (!num || num < 0) num = 1;
+        var extraNum = parseInt($point.next('.pd_extra_point').text());
+        $point.next('.pd_extra_point').next('.pd_sum_point').text('=' + (num + extraNum));
+    };
+
+    /**
+     * 显示技能伤害数值
+     */
+    var showSkillAttack = function showSkillAttack() {
+        $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()) + parseInt($lootArea.find('[name="s1"]').next('.pd_extra_point').text()), parseInt($lootArea.find('[name="s2"]').val()) + parseInt($lootArea.find('[name="s2"]').next('.pd_extra_point').text()), parseInt($lootArea.find('[name="i1"]').val()) + parseInt($lootArea.find('[name="i1"]').next('.pd_extra_point').text())));
     };
 
     $points.on('change', '.pd_point', function () {
         var $this = $(this);
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
-        $('#pdSurplusPoint').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000').css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
-        return; // 临时禁用
+        showSurplusPoint();
         showNewLootProperty($this);
+        showExtraPoint($this);
         showSumOfPoint($this);
-        $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()), parseInt($lootArea.find('[name="s2"]').val()), parseInt($lootArea.find('[name="i1"]').val())));
-    }).on('click', '.pd_point_sum', function () {
-        return; // 临时禁用
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+        showSkillAttack();
+    }).on('click', '.pd_sum_point', function () {
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         var $point = $(this).prev('span').prev('.pd_point');
         if (!$point.length) return;
@@ -5695,7 +5742,7 @@ var handlePointsArea = function handlePointsArea() {
  * @returns {boolean} 检查结果
  */
 var checkPoints = function checkPoints($points) {
-    var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+    var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
     if (surplusPoint < 0) {
         alert('剩余属性点为负，请重新填写');
         return false;
@@ -5707,82 +5754,117 @@ var checkPoints = function checkPoints($points) {
 
 /**
  * 获取争夺属性列表
- * @returns {Map} 争夺属性
+ * @returns {{}} 争夺属性
  */
 var getLootPropertyList = function getLootPropertyList() {
-    var propertyList = new Map([['攻击力', 0], ['生命值', 0], ['最大生命值', 0], ['攻击速度', 0], ['暴击几率', 0], ['技能伤害', 0], ['技能释放概率', 0], ['防御', 0], ['可分配属性点', 0]]);
+    var propertyList = {
+        '攻击力': 0,
+        '生命值': 0,
+        '最大生命值': 0,
+        '攻击速度': 0,
+        '暴击几率': 0,
+        '技能伤害': 0,
+        '技能释放概率': 0,
+        '防御': 0,
+        '可分配属性点': 0
+    };
     var content = $properties.text();
     var matches = /攻击力：(\d+)/.exec(content);
-    if (matches) propertyList.set('攻击力', parseInt(matches[1]));
+    if (matches) propertyList['攻击力'] = parseInt(matches[1]);
     matches = /生命值：(\d+)\s*\(最大(\d+)\)/.exec(content);
     if (matches) {
-        propertyList.set('生命值', parseInt(matches[1]));
-        propertyList.set('最大生命值', parseInt(matches[2]));
+        propertyList['生命值'] = parseInt(matches[1]);
+        propertyList['最大生命值'] = parseInt(matches[2]);
     }
     matches = /攻击速度：(\d+)/.exec(content);
-    if (matches) propertyList.set('攻击速度', parseInt(matches[1]));
+    if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
     matches = /暴击几率：(\d+)%/.exec(content);
-    if (matches) propertyList.set('暴击几率', parseInt(matches[1]));
+    if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
     matches = /技能伤害：(\d+)/.exec(content);
-    if (matches) propertyList.set('技能伤害', parseInt(matches[1]));
+    if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
     matches = /技能释放概率：(\d+)%/.exec(content);
-    if (matches) propertyList.set('技能释放概率', parseInt(matches[1]));
+    if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);
     matches = /防御：(\d+)%/.exec(content);
-    if (matches) propertyList.set('防御', parseInt(matches[1]));
+    if (matches) propertyList['防御'] = parseInt(matches[1]);
     matches = /可分配属性点：(\d+)/.exec(content);
-    if (matches) propertyList.set('可分配属性点', parseInt(matches[1]));
+    if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
     return propertyList;
+};
+
+/**
+ * 显示新的争夺属性
+ * @param {jQuery} $point 点数字段对象
+ */
+var showNewLootProperty = function showNewLootProperty($point) {
+    var name = $point.attr('name');
+    var pointName = getPointNameByFieldName(name);
+    var point = parseInt($point.val());
+    if (isNaN(point) || point < 0) point = 0;
+    var oriPoint = parseInt($point.get(0).defaultValue);
+    var newValue = getPropertyByPoint(pointName, point),
+        diffValue = 0;
+    switch (pointName) {
+        case '力量':
+            diffValue = newValue - propertyList['攻击力'];
+            break;
+        case '体质':
+            diffValue = newValue - propertyList['最大生命值'];
+            break;
+        case '敏捷':
+            diffValue = newValue - propertyList['攻击速度'];
+            break;
+        case '灵活':
+            diffValue = newValue - propertyList['暴击几率'];
+            break;
+        case '智力':
+            diffValue = newValue - propertyList['技能释放概率'];
+            break;
+        case '意志':
+            diffValue = newValue - propertyList['防御'];
+            break;
+    }
+    $properties.find('#pdPro_' + name).text(newValue).css('color', diffValue !== 0 || oriPoint !== point ? '#00f' : '#000');
+    if (pointName === '灵活' || pointName === '智力') {
+        var nextLevel = getCurrentLevel(logList) + 1;
+        var text = '';
+        var extraPoint = getExtraPoint(pointName, point);
+        if (nextLevel % 10 === 0) {
+            text = getRealProperty(pointName, point + extraPoint, nextLevel, 'BOSS') + '%';
+        } else {
+            text = getRealProperty(pointName, point + extraPoint, nextLevel, '普通') + '%';
+            text += '|' + getRealProperty(pointName, point + extraPoint, nextLevel, '快速') + '%';
+        }
+        $properties.find('#pdReal_' + name).text('(' + text + ')').attr('title', '\u7B2C' + nextLevel + '\u5C42\u7684\u5B9E\u9645' + (pointName === '灵活' ? '暴击几率' : '技能释放概率') + ' (' + (nextLevel % 10 === 0 ? 'BOSS' : '普通|快速') + ')');
+    }
+
+    if (diffValue !== 0 || oriPoint !== point) $properties.find('#pdNew_' + name).text('(' + ((diffValue >= 0 ? '+' : '') + diffValue) + ')').css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
 };
 
 /**
  * 获取当前已分配的点数
  * @param {jQuery} $points 点数字段对象
- * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 当前已分配的点数
  */
-var getCurrentAssignedPoint = function getCurrentAssignedPoint($points) {
-    var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-
+var getCurrentAssignedPoint = exports.getCurrentAssignedPoint = function getCurrentAssignedPoint($points) {
     var usedPoint = 0;
     $points.each(function () {
         var $this = $(this);
         var name = $this.attr('name');
         var point = parseInt($this.val());
-        if (point && point > 0) usedPoint += point - (type === 1 ? extraPointList.get(getPointNameByFieldName(name)) : 0);
+        if (point && point > 0) usedPoint += point;
     });
     return usedPoint;
 };
 
 /**
  * 获取技能伤害的值
- * @param {number} s1 力量
- * @param {number} s2 体质
- * @param {number} i1 智力
- * @param {number} type 类型，0：仅点数；1：点数+额外加成
+ * @param {number} power 力量总和
+ * @param {number} life 体质总和
+ * @param {number} intelligence 智力总和
  * @returns {number} 技能伤害的值
  */
-var getSkillAttack = function getSkillAttack(s1, s2, i1) {
-    var type = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-
-    return (s1 + (type === 1 ? 0 : extraPointList.get('力量'))) * 5 + (s2 + (type === 1 ? 0 : extraPointList.get('体质'))) * 5 + (i1 + (type === 1 ? 0 : extraPointList.get('智力'))) * 5;
-};
-
-/**
- * 获取附加点数列表
- * @returns {Map} 附加点数列表
- */
-var getExtraPointList = function getExtraPointList() {
-    var extraPointList = new Map([['力量', 0], ['体质', 0], ['敏捷', 0], ['灵活', 0], ['智力', 0], ['意志', 0], ['耐力', 0], ['幸运', 0]]);
-    $points.find('[type="text"]').each(function () {
-        var $this = $(this);
-        var name = $this.attr('name');
-        var num = parseInt($this.next('span').text());
-        var key = getPointNameByFieldName(name);
-        if (!isNaN(num) && key) {
-            extraPointList.set(key, num);
-        }
-    });
-    return extraPointList;
+var getSkillAttack = exports.getSkillAttack = function getSkillAttack(power, life, intelligence) {
+    return power * 5 + life * 5 + intelligence * 5;
 };
 
 /**
@@ -5790,7 +5872,7 @@ var getExtraPointList = function getExtraPointList() {
  * @param {string} fieldName 字段名称
  * @returns {string} 点数名称
  */
-var getPointNameByFieldName = function getPointNameByFieldName(fieldName) {
+var getPointNameByFieldName = exports.getPointNameByFieldName = function getPointNameByFieldName(fieldName) {
     switch (fieldName) {
         case 's1':
             return '力量';
@@ -5818,7 +5900,7 @@ var getPointNameByFieldName = function getPointNameByFieldName(fieldName) {
  * @param {string} pointName 点数名称
  * @returns {string} 字段名称
  */
-var getFieldNameByPointName = function getFieldNameByPointName(pointName) {
+var getFieldNameByPointName = exports.getFieldNameByPointName = function getFieldNameByPointName(pointName) {
     switch (pointName) {
         case '力量':
             return 's1';
@@ -5842,130 +5924,89 @@ var getFieldNameByPointName = function getFieldNameByPointName(pointName) {
 };
 
 /**
- * 显示新的争夺属性
- * @param {jQuery} $point 点数字段对象
+ * 根据指定的点数获得相应额外加成点数
+ * @param {string} pointName 点数名称
+ * @param {number} point 点数的值
+ * @returns {number} 额外加成点数
  */
-var showNewLootProperty = function showNewLootProperty($point) {
-    var name = $point.attr('name');
-    var pointName = getPointNameByFieldName(name);
-    var point = parseInt($point.val());
-    if (isNaN(point) || point < 0) point = 0;
-    var oriPoint = parseInt($point.get(0).defaultValue);
-    var newValue = getPropertyByPoint(pointName, point),
-        diffValue = 0;
+var getExtraPoint = exports.getExtraPoint = function getExtraPoint(pointName, point) {
+    var elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
+    var haloPercent = haloInfo['全属性'];
     switch (pointName) {
         case '力量':
-            diffValue = newValue - propertyList.get('攻击力');
-            break;
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('蕾米莉亚同人漫画') + elapsedMedicine;
         case '体质':
-            diffValue = newValue - propertyList.get('最大生命值');
-            break;
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('蕾米莉亚同人漫画') + elapsedMedicine;
         case '敏捷':
-            diffValue = newValue - propertyList.get('攻击速度');
-            break;
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('十六夜同人漫画') + elapsedMedicine;
         case '灵活':
-            diffValue = newValue - propertyList.get('暴击几率');
-            break;
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('十六夜同人漫画') + elapsedMedicine;
         case '智力':
-            diffValue = newValue - propertyList.get('技能释放概率');
-            break;
+            return Math.floor(point * haloPercent) + elapsedMedicine;
         case '意志':
-            diffValue = newValue - propertyList.get('防御');
-            break;
+            return Math.floor(point * haloPercent) + elapsedMedicine;
+        default:
+            return 0;
     }
-    $properties.find('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
-
-    if (pointName === '灵活' || pointName === '智力') {
-        var nextLevel = getCurrentLevel(logList) + 1;
-        var text = '';
-        if (nextLevel % 10 === 0) {
-            text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, 'BOSS') + '%';
-        } else {
-            text = getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '普通') + '%';
-            text += '|' + getRealProperty(pointName, point + extraPointList.get(pointName), nextLevel, '快速') + '%';
-        }
-        /*$properties.find('#pdReal_' + name).text(`(${text})`)
-            .attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);*/
-        // 临时禁用
-    }
-
-    if (point !== oriPoint) $properties.find('#pdNew_' + name).text('(' + ((diffValue >= 0 ? '+' : '') + diffValue) + ')').css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
 };
 
 /**
  * 根据指定的点数获得相应争夺属性的值
  * @param {string} pointName 点数名称
  * @param {number} point 点数的值
- * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 争夺属性的值
  */
-var getPropertyByPoint = function getPropertyByPoint(pointName, point) {
-    var type = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-
-    var extraPoint = extraPointList.get(pointName);
-    if (!extraPoint || type === 1) extraPoint = 0;
-    var value = 0;
+var getPropertyByPoint = exports.getPropertyByPoint = function getPropertyByPoint(pointName, point) {
+    var pointValue = point + getExtraPoint(pointName, point);
     switch (pointName) {
         case '力量':
-            value = (point + extraPoint) * 5;
-            break;
+            return pointValue * 5 + haloInfo['攻击力'];
         case '体质':
-            value = (point + extraPoint) * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0);
-            break;
+            return pointValue * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0) + haloInfo['生命值'];
         case '敏捷':
-            value = (point + extraPoint) * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
-            break;
+            return pointValue * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
         case '灵活':
-            value = point + extraPoint;
-            value = Math.round(value / (value + 100) * 100);
-            break;
+            return Math.round(pointValue / (pointValue + 100) * 100);
         case '智力':
-            value = point + extraPoint;
-            value = Math.round(value / (value + 90) * 100);
-            break;
+            return Math.round(pointValue / (pointValue + 90) * 100);
         case '意志':
-            value = point + extraPoint;
-            value = Math.round(value / (value + 150) * 100);
-            break;
+            return Math.round(pointValue / (pointValue + 150) * 100);
+        default:
+            return 0;
     }
-    return value;
 };
 
 /**
  * 根据指定的争夺属性获得相应点数的值
  * @param {string} pointName 点数名称
  * @param {number} num 争夺属性的值
- * @param {number} type 类型，0：仅点数；1：点数+额外加成
  * @returns {number} 点数的值
  */
-var getPointByProperty = function getPointByProperty(pointName, num) {
-    var type = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-
+var getPointByProperty = exports.getPointByProperty = function getPointByProperty(pointName, num) {
+    var elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
+    var haloPercent = 1 + haloInfo['全属性'];
     var value = 0;
-    var extraPoint = extraPointList.get(pointName);
-    if (!extraPoint || type === 1) extraPoint = 0;
     switch (pointName) {
         case '力量':
-            value = Math.ceil(num / 5) - extraPoint;
+            value = Math.ceil((Math.ceil((num - haloInfo['攻击力']) / 5) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '体质':
-            value = Math.ceil((itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? num - 700 : num) / 20) - extraPoint;
+            value = Math.ceil((Math.ceil((num - haloInfo['生命值'] - (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0)) / 20) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '敏捷':
-            value = Math.ceil((itemUsedNumList.get('十六夜同人漫画') === 50 ? num - 100 : num) / 2) - extraPoint;
+            value = Math.ceil((Math.ceil((num - (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0)) / 2) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '灵活':
-            value = Math.ceil(100 * num / (100 - num)) - extraPoint;
+            value = Math.round((Math.floor(100 * num / (100 - num)) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '智力':
-            value = Math.ceil(90 * num / (100 - num)) - extraPoint;
+            value = Math.round((Math.floor(90 * num / (100 - num)) - elapsedMedicine) / haloPercent);
             break;
         case '意志':
-            value = Math.ceil(150 * num / (100 - num)) - extraPoint;
+            value = Math.round((Math.floor(150 * num / (100 - num)) - elapsedMedicine) / haloPercent);
             break;
     }
     if (!isFinite(value) || value < 1) value = 1;
-    if (type === 1 && value <= extraPointList.get(pointName)) value = extraPointList.get(pointName) + 1;
     return value;
 };
 
@@ -5992,7 +6033,7 @@ var getRealProperty = exports.getRealProperty = function getRealProperty(pointNa
  * 添加各层点数分配方案选择框
  */
 var addLevelPointListSelect = function addLevelPointListSelect() {
-    $('\n<select id="pdLevelPointListSelect" style="margin: 5px 0;">\n  <option>\u70B9\u6570\u5206\u914D\u65B9\u6848' + (Config.levelPointList.type == 1 ? '(*)' : '') + '</option>\n  <option value="0">\u9ED8\u8BA4</option>\n</select>\n<a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a>\n<a class="pd_btn_link" data-name="edit" href="#" title="\u7F16\u8F91\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848">\u7F16\u8F91</a><br>\n').prependTo($points).filter('#pdLevelPointListSelect').change(function () {
+    $('\n<select id="pdLevelPointListSelect" style="margin: 5px 0;">\n  <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n  <option value="0">\u9ED8\u8BA4</option>\n</select>\n<a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a>\n<a class="pd_btn_link" data-name="edit" href="#" title="\u7F16\u8F91\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848">\u7F16\u8F91</a>\n<a class="pd_btn_link" data-name="fill" href="#" title="\u8F93\u5165\u4E00\u4E32\u6570\u5B57\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D">\u586B\u5145</a><br>\n').prependTo($points).filter('#pdLevelPointListSelect').change(function () {
         var level = parseInt($(this).val());
         if (level > 0) {
             var points = Config.levelPointList[parseInt(level)];
@@ -6000,7 +6041,7 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
             $points.find('.pd_point').each(function () {
                 var $this = $(this);
                 var pointName = getPointNameByFieldName($this.attr('name'));
-                $this.val(points[pointName] - (Config.levelPointList.type === 1 ? extraPointList.get(pointName) : 0));
+                $this.val(points[pointName]);
             }).trigger('change');
         } else if (level === 0) {
             $points.find('.pd_point').each(function () {
@@ -6032,7 +6073,7 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
                 var point = parseInt($elem.val());
                 if (!point || point < 0) return;
                 var pointName = getPointNameByFieldName($elem.attr('name'));
-                points[pointName] = point + (Config.levelPointList.type === 1 ? extraPointList.get(pointName) : 0);
+                points[pointName] = point;
             }
         } catch (err) {
             _didIteratorError = true;
@@ -6056,6 +6097,14 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
     }).end().filter('[data-name="edit"]').click(function (e) {
         e.preventDefault();
         showLevelPointListConfigDialog();
+    }).end().filter('[data-name="fill"]').click(function (e) {
+        e.preventDefault();
+        var value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        if (!value) return;
+        var points = value.split(' ');
+        $points.find('.pd_point').each(function (index) {
+            if (index < points.length) $(this).val(parseInt(points[index]));else return false;
+        });
     });
     setLevelPointListSelect(Config.levelPointList);
 };
@@ -6092,7 +6141,7 @@ var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
         }
     }
 
-    $('#pdLevelPointListSelect').find('option:first').text('点数分配方案' + (Config.levelPointList.type === 1 ? '(*)' : '')).end().find('option:gt(1)').remove().end().append(pointListHtml);
+    $('#pdLevelPointListSelect').find('option:gt(1)').remove().end().append(pointListHtml);
 };
 
 /**
@@ -6102,10 +6151,9 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     var dialogName = 'pdLevelPointListConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a><br>\n    <label class="pd_highlight" style="line-height: 2em;">\n      \u4FDD\u5B58\u65B9\u5F0F\uFF1A <select name="saveType"><option value="0">\u4EC5\u70B9\u6570</option><option value="1" disabled>\u70B9\u6570+\u989D\u5916\u52A0\u6210</option></select> <!-- \u4E34\u65F6\u7981\u7528 -->\n      <span class="pd_cfg_tips" title="\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848\u4E2D\u6570\u503C\u7684\u4FDD\u5B58\u65B9\u5F0F\uFF0C\u4EC5\u70B9\u6570\uFF1A\u4EC5\u6309\u7167\u70B9\u6570\u6765\u4FDD\u5B58\uFF1B\u70B9\u6570+\u989D\u5916\u52A0\u6210\uFF1A\u6309\u7167\u70B9\u6570\u4E0E\u989D\u5916\u52A0\u6210\u4E4B\u548C\u6765\u4FDD\u5B58">[?]</span>\n    </label>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
     var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
-    var saveType = Config.levelPointList.type === 1 ? 1 : 0;
 
     /**
      * 添加各层点数分配的HTML
@@ -6113,21 +6161,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
      * @param {{}} points 点数对象
      */
     var addLevelPointHtml = function addLevelPointHtml(level, points) {
-        var $points = $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" value="' + points['力量'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" value="' + points['体质'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" value="' + points['敏捷'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" value="' + points['灵活'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" value="' + points['智力'] + '" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" value="' + points['意志'] + '" style="width: 50px;" required></td>\n  <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a></td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B">\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C">\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6">\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387">\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387">\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24">\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="[\u98DE\u8EAB\u5288\u65A9]\u4F24\u5BB3\uFF1A\u653B\u51FB+\u4F53\u8D28\u503C*5+\u667A\u529B\u503C*5">\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
-        setPointsRange($points);
-        $points.eq(0).closest('tr').next('tr').find('[data-id^="pro_"], [data-id="skillAttack"]').prop('hidden', true); // 临时禁用
-    };
-
-    /**
-     * 设置各点数字段的取值范围
-     * @param {jQuery} $points 点数字段集合
-     */
-    var setPointsRange = function setPointsRange($points) {
-        $points.each(function () {
-            var $this = $(this);
-            var name = $this.attr('name');
-            if (saveType === 1) $this.attr('min', extraPointList.get(getPointNameByFieldName(name)) + 1).removeAttr('max');else $this.attr('min', 1).attr('max', 9999);
-        });
+        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" value="' + points['力量'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" value="' + points['体质'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" value="' + points['敏捷'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" value="' + points['灵活'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" value="' + points['智力'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" value="' + points['意志'] + '" min="1" style="width: 50px;" required></td>\n  <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">\u5220\u9664</a></td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B">\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C">\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6">\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387">\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387">\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24">\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="[\u98DE\u8EAB\u5288\u65A9]\u4F24\u5BB3\uFF1A\u653B\u51FB+\u4F53\u8D28\u503C*5+\u667A\u529B\u503C*5">\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
     };
 
     $dialog.submit(function (e) {
@@ -6137,11 +6171,10 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         var prevPoints = {};
         var isError = false,
             isSurplus = false;
-        if (saveType === 1) levelPointList.type = 1;
         $levelPointList.find('tr:gt(0)').each(function () {
             var $this = $(this);
             if (!$this.find('.pd_point').length) return;
-            var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('.pd_point'), saveType);
+            var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
             if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) {
                 isError = true;
                 return false;
@@ -6196,34 +6229,6 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     }).find('[data-name="add"]').click(function (e) {
         e.preventDefault();
         var points = { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 };
-        if (saveType === 1) {
-            var _iteratorNormalCompletion4 = true;
-            var _didIteratorError4 = false;
-            var _iteratorError4 = undefined;
-
-            try {
-                for (var _iterator4 = extraPointList[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var _step4$value = _slicedToArray(_step4.value, 2),
-                        key = _step4$value[0],
-                        num = _step4$value[1];
-
-                    if (key in points) points[key] = num + 1;
-                }
-            } catch (err) {
-                _didIteratorError4 = true;
-                _iteratorError4 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                        _iterator4.return();
-                    }
-                } finally {
-                    if (_didIteratorError4) {
-                        throw _iteratorError4;
-                    }
-                }
-            }
-        }
         addLevelPointHtml(0, points);
         $levelPointList.find('[name="level"]:last').focus();
         Dialog.resize(dialogName);
@@ -6261,22 +6266,26 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
 
         var $points = $this.closest('tr');
         var $properties = $points.next('tr');
-        $properties.find('[data-id="pro_' + name + '"]').text(getPropertyByPoint(getPointNameByFieldName(name), point, saveType)).end().find('[data-id="skillAttack"]').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()), parseInt($points.find('[name="s2"]').val()), parseInt($points.find('[name="i1"]').val()), saveType));
+        $properties.find('[data-id="pro_' + name + '"]').text(getPropertyByPoint(getPointNameByFieldName(name), point));
+        var power = parseInt($points.find('[name="s1"]').val());
+        var life = parseInt($points.find('[name="s2"]').val());
+        var intelligence = parseInt($points.find('[name="i1"]').val());
+        $properties.find('[data-id="skillAttack"]').text(getSkillAttack(power + getExtraPoint('力量', power), life + getExtraPoint('体质', life), intelligence + getExtraPoint('智力', intelligence)));
 
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'), saveType);
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         var $this = $(this);
         var name = $this.data('id').replace('pro_', '');
         var num = parseInt(prompt('请输入数值：', $this.text()));
         if (!num || num < 0) return;
-        $this.closest('tr').prev('tr').find('[name="' + name + '"]').val(getPointByProperty(getPointNameByFieldName(name), num, saveType)).trigger('change');
+        $this.closest('tr').prev('tr').find('[name="' + name + '"]').val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
     }).on('click', '[data-id^="opt_"]', function (e) {
         e.preventDefault();
         var $this = $(this);
         var name = $this.data('id').replace('opt_', '');
         var $points = $this.closest('tr').prev('tr');
-        var surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'), saveType);
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         var $point = $points.find('[name="' + name + '"]');
         if (!$point.length) return;
@@ -6287,18 +6296,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         $point.val(num < min ? min : num).trigger('change');
     });
 
-    $dialog.find('[name="saveType"]').change(function () {
-        saveType = parseInt($(this).val());
-        setPointsRange($levelPointList.find('.pd_point'));
-        $dialog.find('.pd_point').each(function () {
-            var $this = $(this);
-            var name = $this.attr('name');
-            var point = parseInt($this.val());
-            if (!point || point < 0) point = 0;
-            if (saveType === 1) point += extraPointList.get(getPointNameByFieldName(name));else point -= extraPointList.get(getPointNameByFieldName(name));
-            $this.val(point);
-        }).trigger('change');
-    }).end().find('[name="modify"]').click(function () {
+    $dialog.find('[name="modify"]').click(function () {
         var $checked = $levelPointList.find('[type="checkbox"]:checked');
         if (!$checked.length) return;
         var data = {};
@@ -6336,31 +6334,30 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
     });
 
-    $dialog.find('[name="saveType"]').val(saveType);
-    var _iteratorNormalCompletion5 = true;
-    var _didIteratorError5 = false;
-    var _iteratorError5 = undefined;
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
 
     try {
-        for (var _iterator5 = Util.entries(Config.levelPointList)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var _step5$value = _slicedToArray(_step5.value, 2),
-                level = _step5$value[0],
-                points = _step5$value[1];
+        for (var _iterator4 = Util.entries(Config.levelPointList)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var _step4$value = _slicedToArray(_step4.value, 2),
+                level = _step4$value[0],
+                points = _step4$value[1];
 
             if (!$.isNumeric(level)) continue;
             addLevelPointHtml(level, points);
         }
     } catch (err) {
-        _didIteratorError5 = true;
-        _iteratorError5 = err;
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                _iterator5.return();
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                _iterator4.return();
             }
         } finally {
-            if (_didIteratorError5) {
-                throw _iteratorError5;
+            if (_didIteratorError4) {
+                throw _iteratorError4;
             }
         }
     }
@@ -6448,7 +6445,6 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
     var recordPointsLog = function recordPointsLog() {
         var isSubmit = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-        return; // 临时禁用
         propertyList = getLootPropertyList();
         var pointsText = '',
             propertiesText = '';
@@ -6456,19 +6452,19 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             var $this = $(this);
             var pointName = getPointNameByFieldName($this.attr('name'));
             var point = parseInt($.trim($this.val()));
-            var extraPoint = extraPointList.get(pointName);
+            var extraPoint = getExtraPoint(pointName, point);
             pointsText += pointName + '\uFF1A' + point + '+' + extraPoint + '=' + (point + extraPoint) + '\uFF0C';
         });
         pointsText = pointsText.replace(/，$/, '');
-        var _iteratorNormalCompletion6 = true;
-        var _didIteratorError6 = false;
-        var _iteratorError6 = undefined;
+        var _iteratorNormalCompletion5 = true;
+        var _didIteratorError5 = false;
+        var _iteratorError5 = undefined;
 
         try {
-            for (var _iterator6 = propertyList[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                var _step6$value = _slicedToArray(_step6.value, 2),
-                    key = _step6$value[0],
-                    value = _step6$value[1];
+            for (var _iterator5 = Util.entries(propertyList)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                var _step5$value = _slicedToArray(_step5.value, 2),
+                    key = _step5$value[0],
+                    value = _step5$value[1];
 
                 if (key === '可分配属性点' || key === '生命值') continue;
                 var unit = '';
@@ -6476,16 +6472,16 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 propertiesText += key + '\uFF1A' + value + unit + '\uFF0C';
             }
         } catch (err) {
-            _didIteratorError6 = true;
-            _iteratorError6 = err;
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                    _iterator6.return();
+                if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                    _iterator5.return();
                 }
             } finally {
-                if (_didIteratorError6) {
-                    throw _iteratorError6;
+                if (_didIteratorError5) {
+                    throw _iteratorError5;
                 }
             }
         }
@@ -6503,57 +6499,34 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
      */
     var changePoints = function changePoints(nextLevel) {
         if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') {
-            var currentLevel = getCurrentLevel(logList);
-            var info = levelInfoList[currentLevel];
-            var currentLife = 0,
-                currentInitLife = 0;
-            if (info) {
-                currentLife = info.life;
-                currentInitLife = info.initLife;
-            }
-            var enemyList = getEnemyList(levelInfoList);
             var points = null;
             try {
-                points = _Const2.default.getCustomPoints({
-                    currentLevel: currentLevel,
-                    currentLife: currentLife,
-                    currentInitLife: currentInitLife,
-                    levelPointList: Config.levelPointList,
-                    availablePoint: propertyList.get('可分配属性点'),
-                    propertyList: propertyList,
-                    extraPointList: extraPointList,
-                    itemUsedNumList: itemUsedNumList,
-                    log: log,
-                    logList: logList,
-                    enemyList: enemyList,
-                    getPointByProperty: getPointByProperty,
-                    getPropertyByPoint: getPropertyByPoint
-                });
+                points = _Const2.default.getCustomPoints($.extend(getLootInfo(), { getExtraPoint: getExtraPoint, getPointByProperty: getPointByProperty, getPropertyByPoint: getPropertyByPoint }));
             } catch (ex) {
                 console.log(ex);
             }
             if ($.type(points) === 'object') {
-                var _iteratorNormalCompletion7 = true;
-                var _didIteratorError7 = false;
-                var _iteratorError7 = undefined;
+                var _iteratorNormalCompletion6 = true;
+                var _didIteratorError6 = false;
+                var _iteratorError6 = undefined;
 
                 try {
-                    for (var _iterator7 = Object.keys(points)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                        var key = _step7.value;
+                    for (var _iterator6 = Object.keys(points)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                        var key = _step6.value;
 
                         $points.find('[name="' + getFieldNameByPointName(key) + '"]').val(points[key]).trigger('change');
                     }
                 } catch (err) {
-                    _didIteratorError7 = true;
-                    _iteratorError7 = err;
+                    _didIteratorError6 = true;
+                    _iteratorError6 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                            _iterator7.return();
+                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                            _iterator6.return();
                         }
                     } finally {
-                        if (_didIteratorError7) {
-                            throw _iteratorError7;
+                        if (_didIteratorError6) {
+                            throw _iteratorError6;
                         }
                     }
                 }
@@ -6729,6 +6702,35 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
 };
 
 /**
+ * 获取当前争夺信息
+ * @returns {{}} 当前争夺信息
+ */
+var getLootInfo = exports.getLootInfo = function getLootInfo() {
+    var currentLevel = getCurrentLevel(logList);
+    var info = levelInfoList[currentLevel];
+    var currentLife = 0,
+        currentInitLife = 0;
+    if (info) {
+        currentLife = info.life;
+        currentInitLife = info.initLife;
+    }
+    var enemyList = getEnemyList(levelInfoList);
+    return {
+        currentLevel: currentLevel,
+        currentLife: currentLife,
+        currentInitLife: currentInitLife,
+        levelPointList: Config.levelPointList,
+        availablePoint: propertyList['可分配属性点'],
+        haloInfo: haloInfo,
+        propertyList: propertyList,
+        itemUsedNumList: itemUsedNumList,
+        log: log,
+        logList: logList,
+        enemyList: enemyList
+    };
+};
+
+/**
  * 记录争夺信息
  * @param {string[]} logList 各层争夺记录列表
  * @param {{}[]} levelInfoList 各层战斗信息列表
@@ -6739,17 +6741,45 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
     sessionStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
 
     var allEnemyList = {};
+    var _iteratorNormalCompletion7 = true;
+    var _didIteratorError7 = false;
+    var _iteratorError7 = undefined;
+
+    try {
+        for (var _iterator7 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var _step7$value = _slicedToArray(_step7.value, 2),
+                enemy = _step7$value[0],
+                num = _step7$value[1];
+
+            allEnemyList[enemy] = num;
+        }
+    } catch (err) {
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
+            }
+        } finally {
+            if (_didIteratorError7) {
+                throw _iteratorError7;
+            }
+        }
+    }
+
+    var allEnemyStat = '';
     var _iteratorNormalCompletion8 = true;
     var _didIteratorError8 = false;
     var _iteratorError8 = undefined;
 
     try {
-        for (var _iterator8 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+        for (var _iterator8 = Util.entries(allEnemyList)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
             var _step8$value = _slicedToArray(_step8.value, 2),
                 enemy = _step8$value[0],
                 num = _step8$value[1];
 
-            allEnemyList[enemy] = num;
+            allEnemyStat += enemy + '`+' + num + '` ';
         }
     } catch (err) {
         _didIteratorError8 = true;
@@ -6766,18 +6796,20 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         }
     }
 
-    var allEnemyStat = '';
+    var latestEnemyList = {};
     var _iteratorNormalCompletion9 = true;
     var _didIteratorError9 = false;
     var _iteratorError9 = undefined;
 
     try {
-        for (var _iterator9 = Util.entries(allEnemyList)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+        for (var _iterator9 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
+            return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
+        })))[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
             var _step9$value = _slicedToArray(_step9.value, 2),
                 enemy = _step9$value[0],
                 num = _step9$value[1];
 
-            allEnemyStat += enemy + '`+' + num + '` ';
+            latestEnemyList[enemy] = num;
         }
     } catch (err) {
         _didIteratorError9 = true;
@@ -6794,20 +6826,18 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         }
     }
 
-    var latestEnemyList = {};
+    var latestEnemyStat = '';
     var _iteratorNormalCompletion10 = true;
     var _didIteratorError10 = false;
     var _iteratorError10 = undefined;
 
     try {
-        for (var _iterator10 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
-            return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
-        })))[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+        for (var _iterator10 = Util.entries(latestEnemyList)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
             var _step10$value = _slicedToArray(_step10.value, 2),
                 enemy = _step10$value[0],
                 num = _step10$value[1];
 
-            latestEnemyList[enemy] = num;
+            latestEnemyStat += enemy + '`+' + num + '` ';
         }
     } catch (err) {
         _didIteratorError10 = true;
@@ -6820,34 +6850,6 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         } finally {
             if (_didIteratorError10) {
                 throw _iteratorError10;
-            }
-        }
-    }
-
-    var latestEnemyStat = '';
-    var _iteratorNormalCompletion11 = true;
-    var _didIteratorError11 = false;
-    var _iteratorError11 = undefined;
-
-    try {
-        for (var _iterator11 = Util.entries(latestEnemyList)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _step11$value = _slicedToArray(_step11.value, 2),
-                enemy = _step11$value[0],
-                num = _step11$value[1];
-
-            latestEnemyStat += enemy + '`+' + num + '` ';
-        }
-    } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                _iterator11.return();
-            }
-        } finally {
-            if (_didIteratorError11) {
-                throw _iteratorError11;
             }
         }
     }
@@ -7007,7 +7009,7 @@ var handleLootLogNav = function handleLootLogNav() {
         var curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
         showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
 
-        if (Config.autoSaveLootLogInSpecialCaseEnabled && keyList[curIndex] === 0) {
+        if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了/.test(log) && keyList[curIndex] === 0) {
             Util.deleteCookie(_Const2.default.lootCompleteCookieName);
             autoSaveLootLog();
         }
@@ -7024,17 +7026,47 @@ var showLogStat = function showLogStat(levelInfoList) {
         kfb = _getTotalGain2.kfb;
 
     var allEnemyStatHtml = '';
+    var _iteratorNormalCompletion11 = true;
+    var _didIteratorError11 = false;
+    var _iteratorError11 = undefined;
+
+    try {
+        for (var _iterator11 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var _step11$value = _slicedToArray(_step11.value, 2),
+                enemy = _step11$value[0],
+                num = _step11$value[1];
+
+            allEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                _iterator11.return();
+            }
+        } finally {
+            if (_didIteratorError11) {
+                throw _iteratorError11;
+            }
+        }
+    }
+
+    var latestEnemyStatHtml = '';
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        for (var _iterator12 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
+            return level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum;
+        })))[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
             var _step12$value = _slicedToArray(_step12.value, 2),
                 enemy = _step12$value[0],
                 num = _step12$value[1];
 
-            allEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
+            latestEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError12 = true;
@@ -7051,36 +7083,6 @@ var showLogStat = function showLogStat(levelInfoList) {
         }
     }
 
-    var latestEnemyStatHtml = '';
-    var _iteratorNormalCompletion13 = true;
-    var _didIteratorError13 = false;
-    var _iteratorError13 = undefined;
-
-    try {
-        for (var _iterator13 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
-            return level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum;
-        })))[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var _step13$value = _slicedToArray(_step13.value, 2),
-                enemy = _step13$value[0],
-                num = _step13$value[1];
-
-            latestEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
-        }
-    } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion13 && _iterator13.return) {
-                _iterator13.return();
-            }
-        } finally {
-            if (_didIteratorError13) {
-                throw _iteratorError13;
-            }
-        }
-    }
-
     var $logStat = $('#pdLogStat');
     $logStat.html('\n<li><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n<li>\n  <b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + allEnemyStatHtml + '<br>\n  <b>\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A</b>' + latestEnemyStatHtml + '\n</li>\n');
 
@@ -7090,31 +7092,31 @@ var showLogStat = function showLogStat(levelInfoList) {
         var _loop = function _loop(i) {
             levelEnemyStatHtml += '&nbsp;&nbsp;<b>' + i + '-' + (i + 9 < levelInfoList.length ? i + 9 : levelInfoList.length - 1) + '\uFF1A</b>';
             var html = '';
-            var _iteratorNormalCompletion14 = true;
-            var _didIteratorError14 = false;
-            var _iteratorError14 = undefined;
+            var _iteratorNormalCompletion13 = true;
+            var _didIteratorError13 = false;
+            var _iteratorError13 = undefined;
 
             try {
-                for (var _iterator14 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
+                for (var _iterator13 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
                     return level >= i && level < i + 10;
-                })))[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-                    var _step14$value = _slicedToArray(_step14.value, 2),
-                        enemy = _step14$value[0],
-                        num = _step14$value[1];
+                })))[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+                    var _step13$value = _slicedToArray(_step13.value, 2),
+                        enemy = _step13$value[0],
+                        num = _step13$value[1];
 
                     html += '<i>' + enemy + '<em>+' + num + '</em></i> ';
                 }
             } catch (err) {
-                _didIteratorError14 = true;
-                _iteratorError14 = err;
+                _didIteratorError13 = true;
+                _iteratorError13 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                        _iterator14.return();
+                    if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                        _iterator13.return();
                     }
                 } finally {
-                    if (_didIteratorError14) {
-                        throw _iteratorError14;
+                    if (_didIteratorError13) {
+                        throw _iteratorError13;
                     }
                 }
             }
@@ -7467,9 +7469,79 @@ var addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function addUser
 };
 
 /**
+ * 读取战力光环页面信息
+ * @param {boolean} isInitLootPage 是否初始化争夺首页
+ */
+var readHaloInfo = function readHaloInfo() {
+    var isInitLootPage = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+    console.log('获取战力光环信息Start');
+    var $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
+    getHaloInfo().done(function (result) {
+        if ($.type(result) === 'object') {
+            setHaloInfo(result);
+            if (isInitLootPage) enhanceLootIndexPage();else $points.find('.pd_point').trigger('change');
+        }
+    }).always(function (result) {
+        Msg.remove($wait);
+        if (result === 'timeout') setTimeout(function () {
+            return readHaloInfo(isInitLootPage);
+        }, _Const2.default.defAjaxInterval);else if (result === 'error') Msg.show('<strong>战力光环信息获取失败！</strong>');
+    });
+};
+
+/**
+ * 获取战力光环信息
+ * @returns {Deferred} Deferred对象
+ */
+var getHaloInfo = exports.getHaloInfo = function getHaloInfo() {
+    return $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).then(function (html) {
+        var haloInfo = { '全属性': 0, '攻击力': 0, '生命值': 0 };
+        var matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
+        if (matches) {
+            haloInfo['全属性'] = parseFloat(matches[1]) / 100;
+            var extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
+            if (extraMatches) {
+                haloInfo['攻击力'] = parseInt(extraMatches[1]);
+                haloInfo['生命值'] = parseInt(extraMatches[2]);
+            }
+            TmpLog.setValue(_Const2.default.haloInfoTmpLogName, $.extend(haloInfo, { time: new Date().getTime() }));
+            return haloInfo;
+        } else return 'error';
+    }, function () {
+        return 'timeout';
+    });
+};
+
+/**
+ * 设置战力光环信息
+ * @param {{}} newHaloInfo 光环信息对象
+ */
+var setHaloInfo = exports.setHaloInfo = function setHaloInfo(newHaloInfo) {
+    haloInfo = newHaloInfo;
+    if (!$lootArea.find('#pdHaloInfo').length) {
+        $('<span id="pdHaloInfo"></span> <a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取">重新读取</a><br>').appendTo($itemInfo).filter('[data-name="reloadHaloInfo"]').click(function (e) {
+            e.preventDefault();
+            if (confirm('是否重新读取战力光环信息？')) {
+                TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
+                readHaloInfo();
+            }
+        });
+    }
+    $lootArea.find('#pdHaloInfo').text('\u6218\u529B\u5149\u73AF\uFF1A[\u5168\u5C5E\u6027+' + haloInfo['全属性'] * 100 + '%][\u653B\u51FB\u529B+' + haloInfo['攻击力'] + '][\u751F\u547D\u503C+' + haloInfo['生命值'] + ']');
+};
+
+/**
  * 提升战力光环
+ * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
 var promoteHalo = exports.promoteHalo = function promoteHalo() {
+    var isInitLootPage = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
     Script.runFunc('Loot.promoteHalo_before_');
     console.log('提升战力光环Start');
     var $wait = Msg.wait('<strong>正在提升战力光环，请稍候&hellip;</strong>');
@@ -7500,14 +7572,17 @@ var promoteHalo = exports.promoteHalo = function promoteHalo() {
             var nextTime = Util.getDate('+15m');
             var matches = /(新数值为|随机值为)\[(\d+(?:\.\d+)?)%]/.exec(msg);
             if (matches) {
+                var isNew = matches[1] === '新数值为';
+                if (isNew) TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
+
                 nextTime = Util.getDate('+' + Config.promoteHaloInterval + 'h');
                 var randomNum = parseFloat(matches[2]);
                 var costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
-                Msg.show('<strong>' + (matches[1] === '新数值为' ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + ('</strong><i>' + costResult.type + '<ins>' + (-costResult.num).toLocaleString() + '</ins></i>'), -1);
+                Msg.show('<strong>' + (isNew ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + ('</strong><i>' + costResult.type + '<ins>' + (-costResult.num).toLocaleString() + '</ins></i>'), -1);
 
                 var pay = {};
                 pay[costResult.type] = -costResult.num;
-                Log.push('提升战力光环', matches[1] === '新数值为' ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010`' + randomNum + '%`\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010`' + randomNum + '%`\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C', { pay: pay });
+                Log.push('提升战力光环', isNew ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010`' + randomNum + '%`\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010`' + randomNum + '%`\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C', { pay: pay });
             } else {
                 matches = /你的(贡献点数|KFB)不足/.exec(msg);
                 if (matches) {
@@ -7521,9 +7596,11 @@ var promoteHalo = exports.promoteHalo = function promoteHalo() {
                 }
             }
             Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime.getTime(), nextTime);
+            if (isInitLootPage) init();
             Script.runFunc('Loot.promoteHalo_after_', msg);
         }).fail(function () {
-            return Msg.remove($wait);
+            Msg.remove($wait);
+            if (isInitLootPage) init();
         });
     }).fail(function () {
         Msg.remove($wait);
@@ -7551,7 +7628,7 @@ var getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function g
     }
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],14:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],14:[function(require,module,exports){
 /* 争夺记录模块 */
 'use strict';
 
@@ -9493,7 +9570,7 @@ var addFastNavForSideBar = exports.addFastNavForSideBar = function addFastNavFor
         }
         $menu.find('> a:last').before('\n<span style="color: #ff9999;">\u5FEB\u6377\u5BFC\u822A</span><br>\n<a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a> | <a href="personal.php?action=post">\u56DE\u590D</a> | <a href="kf_growup.php">\u7B49\u7EA7</a><br>\n<a href="kf_fw_ig_index.php">\u4E89\u593A</a> | <a href="kf_fw_ig_mybp.php">\u7269\u54C1</a> | <a href="kf_fw_ig_shop.php">\u5546\u5E97</a><br>\n<a href="profile.php?action=modify">\u8BBE\u7F6E</a> | <a href="hack.php?H_name=bank">\u94F6\u884C</a> | <a href="profile.php?action=favor">\u6536\u85CF</a><br>\n' + _Const2.default.customTileSideBarContent + '\n');
     } else {
-        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n    <li><a href="kf_fw_ig_mybp.php">\u89D2\u8272/\u7269\u54C1</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
+        $menu.find('> ul > li:last-child').before('\n<li class="r_cmenuho">\n  <a href="javascript:;">\u5FEB\u6377\u5BFC\u822A</a>\n  <ul class="r_cmenu2">\n    <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n    <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n    <li><a href="kf_growup.php">\u7B49\u7EA7\u7ECF\u9A8C</a></li>\n    <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n    <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n    <li><a href="kf_fw_ig_mybp.php">\u89D2\u8272/\u7269\u54C1</a></li>\n    <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n    <li><a href="profile.php?action=modify">\u8BBE\u7F6E</a></li>\n    <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n    <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n    ' + _Const2.default.customSideBarContent + '\n  </ul>\n</li>\n');
     }
 };
 
