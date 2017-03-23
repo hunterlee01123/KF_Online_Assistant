@@ -5974,13 +5974,13 @@ var getPointByProperty = exports.getPointByProperty = function getPointByPropert
             value = Math.ceil((Math.ceil((num - (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0)) / 2) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '灵活':
-            value = Math.round((Math.floor(100 * num / (100 - num)) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
+            value = Math.floor((Math.round(100 * num / (100 - num)) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '智力':
-            value = Math.round((Math.floor(90 * num / (100 - num)) - elapsedMedicine) / haloPercent);
+            value = Math.floor((Math.round(90 * num / (100 - num)) - elapsedMedicine) / haloPercent);
             break;
         case '意志':
-            value = Math.round((Math.floor(150 * num / (100 - num)) - elapsedMedicine) / haloPercent);
+            value = Math.floor((Math.round(150 * num / (100 - num)) - elapsedMedicine) / haloPercent);
             break;
     }
     if (!isFinite(value) || value < 1) value = 1;
@@ -7480,7 +7480,7 @@ var getHaloInfo = exports.getHaloInfo = function getHaloInfo() {
         var haloInfo = { '全属性': 0, '攻击力': 0, '生命值': 0 };
         var matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
         if (matches) {
-            haloInfo['全属性'] = parseFloat(matches[1]) / 100;
+            haloInfo['全属性'] = parseFloat(matches[1]) * 10 / 1000;
             var extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
             if (extraMatches) {
                 haloInfo['攻击力'] = parseInt(extraMatches[1]);
@@ -7509,7 +7509,7 @@ var setHaloInfo = exports.setHaloInfo = function setHaloInfo(newHaloInfo) {
             }
         });
     }
-    $lootArea.find('#pdHaloInfo').text('\u6218\u529B\u5149\u73AF\uFF1A[\u5168\u5C5E\u6027+' + haloInfo['全属性'] * 100 + '%][\u653B\u51FB\u529B+' + haloInfo['攻击力'] + '][\u751F\u547D\u503C+' + haloInfo['生命值'] + ']');
+    $lootArea.find('#pdHaloInfo').text('\u6218\u529B\u5149\u73AF\uFF1A[\u5168\u5C5E\u6027+' + haloInfo['全属性'] * 1000 / 10 + '%][\u653B\u51FB\u529B+' + haloInfo['攻击力'] + '][\u751F\u547D\u503C+' + haloInfo['生命值'] + ']');
 };
 
 /**

@@ -491,13 +491,13 @@ export const getPointByProperty = function (pointName, num) {
             );
             break;
         case '灵活':
-            value = Math.round((Math.floor(100 * num / (100 - num)) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
+            value = Math.floor((Math.round(100 * num / (100 - num)) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '智力':
-            value = Math.round((Math.floor(90 * num / (100 - num)) - elapsedMedicine) / haloPercent);
+            value = Math.floor((Math.round(90 * num / (100 - num)) - elapsedMedicine) / haloPercent);
             break;
         case '意志':
-            value = Math.round((Math.floor(150 * num / (100 - num)) - elapsedMedicine) / haloPercent);
+            value = Math.floor((Math.round(150 * num / (100 - num)) - elapsedMedicine) / haloPercent);
             break;
     }
     if (!isFinite(value) || value < 1) value = 1;
@@ -1857,7 +1857,7 @@ export const getHaloInfo = function () {
         let haloInfo = {'全属性': 0, '攻击力': 0, '生命值': 0};
         let matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
         if (matches) {
-            haloInfo['全属性'] = parseFloat(matches[1]) / 100;
+            haloInfo['全属性'] = parseFloat(matches[1]) * 10 / 1000;
             let extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
             if (extraMatches) {
                 haloInfo['攻击力'] = parseInt(extraMatches[1]);
@@ -1888,7 +1888,7 @@ export const setHaloInfo = function (newHaloInfo) {
                 }
             });
     }
-    $lootArea.find('#pdHaloInfo').text(`战力光环：[全属性+${haloInfo['全属性'] * 100}%][攻击力+${haloInfo['攻击力']}][生命值+${haloInfo['生命值']}]`);
+    $lootArea.find('#pdHaloInfo').text(`战力光环：[全属性+${haloInfo['全属性'] * 1000 / 10}%][攻击力+${haloInfo['攻击力']}][生命值+${haloInfo['生命值']}]`);
 };
 
 /**
