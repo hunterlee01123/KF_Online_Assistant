@@ -7,6 +7,7 @@ import * as Dialog from './Dialog';
 import Const from './Const';
 import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
+import * as TmpLog from './TmpLog';
 import * as LootLog from './LootLog';
 import * as Script from './Script';
 import * as Public from './Public';
@@ -18,6 +19,8 @@ let $lootArea;
 let $properties;
 // 点数区域
 let $points;
+// 道具信息区域
+let $itemInfo;
 // 争夺记录区域容器
 let $logBox;
 // 争夺记录区域
@@ -29,24 +32,43 @@ let logList = [];
 // 各层战斗信息列表
 let levelInfoList = [];
 // 当前争夺属性
-let propertyList = new Map();
+let propertyList = {};
 // 光环信息
-let haloInfo = new Map();
+let haloInfo = {};
 // 道具使用情况列表
 let itemUsedNumList = new Map();
 // 点数分配记录列表
 let pointsLogList = [];
 
 /**
- * 增强争夺首页
+ * 初始化
  */
-export const enhanceLootIndexPage = function () {
+export const init = function () {
     $lootArea = $('.kf_fw_ig1:first');
     $properties = $lootArea.find('> tbody > tr:nth-child(2) > td:first-child');
     $points = $lootArea.find('> tbody > tr:nth-child(2) > td:nth-child(2)');
-    haloInfo = getHaloInfo();
+    $itemInfo = $lootArea.find('> tbody > tr:nth-child(3) > td');
+    $itemInfo.css('line-height', '2em');
+
+    let tmpHaloInfo = TmpLog.getValue(Const.haloInfoTmpLogName);
+    if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
+        let diff = new Date().getTime() - tmpHaloInfo.time;
+        if (diff >= 0 && diff < Const.tmpHaloInfoExpires * 60 * 1000) {
+            delete tmpHaloInfo.time;
+            setHaloInfo(tmpHaloInfo);
+            enhanceLootIndexPage();
+        }
+        else readHaloInfo(true);
+    }
+    else readHaloInfo(true);
+};
+
+/**
+ * 增强争夺首页
+ */
+export const enhanceLootIndexPage = function () {
     propertyList = getLootPropertyList();
-    itemUsedNumList = Item.getItemUsedInfo($lootArea.find('> tbody > tr:nth-child(3) > td').html());
+    itemUsedNumList = Item.getItemUsedInfo($itemInfo.html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -137,6 +159,16 @@ const handlePointsArea = function () {
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
     /**
+     * 显示剩余属性点
+     */
+    const showSurplusPoint = function () {
+        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        $('#pdSurplusPoint').text(surplusPoint)
+            .css('color', surplusPoint !== 0 ? '#f00' : '#000')
+            .css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
+    };
+
+    /**
      * 显示各项点数的额外加成
      * @param {jQuery} $point 点数字段对象
      */
@@ -173,16 +205,13 @@ const handlePointsArea = function () {
 
     $points.on('change', '.pd_point', function () {
         let $this = $(this);
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
-        $('#pdSurplusPoint').text(surplusPoint)
-            .css('color', surplusPoint !== 0 ? '#f00' : '#000')
-            .css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
+        showSurplusPoint();
         showNewLootProperty($this);
         showExtraPoint($this);
         showSumOfPoint($this);
         showSkillAttack();
     }).on('click', '.pd_sum_point', function () {
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         let $point = $(this).prev('span').prev('.pd_point');
         if (!$point.length) return;
@@ -190,18 +219,7 @@ const handlePointsArea = function () {
         if (isNaN(num) || num < 0) num = 0;
         num = num + surplusPoint;
         $point.val(num < 1 ? 1 : num).trigger('change');
-    }).find('form').submit(() => checkPoints($points));
-
-    $points.find('.pd_point').each(function () {
-        let $this = $(this);
-        if ($this.val() !== this.defaultValue) {
-            $this.trigger('change');
-        }
-        else {
-            showSumOfPoint($this);
-            showSkillAttack();
-        }
-    });
+    }).find('form').submit(() => checkPoints($points)).find('.pd_point').trigger('change');
 };
 
 /**
@@ -210,7 +228,7 @@ const handlePointsArea = function () {
  * @returns {boolean} 检查结果
  */
 const checkPoints = function ($points) {
-    let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+    let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
     if (surplusPoint < 0) {
         alert('剩余属性点为负，请重新填写');
         return false;
@@ -222,54 +240,41 @@ const checkPoints = function ($points) {
 };
 
 /**
- * 获取光环信息
- * @returns {Map} 光环信息
- */
-const getHaloInfo = function () {
-    let haloInfo = new Map([
-        ['全属性', 0],
-        ['攻击力', 0],
-        ['生命值', 0],
-    ]);
-    return haloInfo;
-};
-
-/**
  * 获取争夺属性列表
- * @returns {Map} 争夺属性
+ * @returns {{}} 争夺属性
  */
 const getLootPropertyList = function () {
-    let propertyList = new Map([
-        ['攻击力', 0],
-        ['生命值', 0],
-        ['最大生命值', 0],
-        ['攻击速度', 0],
-        ['暴击几率', 0],
-        ['技能伤害', 0],
-        ['技能释放概率', 0],
-        ['防御', 0],
-        ['可分配属性点', 0],
-    ]);
+    let propertyList = {
+        '攻击力': 0,
+        '生命值': 0,
+        '最大生命值': 0,
+        '攻击速度': 0,
+        '暴击几率': 0,
+        '技能伤害': 0,
+        '技能释放概率': 0,
+        '防御': 0,
+        '可分配属性点': 0,
+    };
     let content = $properties.text();
     let matches = /攻击力：(\d+)/.exec(content);
-    if (matches) propertyList.set('攻击力', parseInt(matches[1]));
+    if (matches) propertyList['攻击力'] = parseInt(matches[1]);
     matches = /生命值：(\d+)\s*\(最大(\d+)\)/.exec(content);
     if (matches) {
-        propertyList.set('生命值', parseInt(matches[1]));
-        propertyList.set('最大生命值', parseInt(matches[2]));
+        propertyList['生命值'] = parseInt(matches[1]);
+        propertyList['最大生命值'] = parseInt(matches[2]);
     }
     matches = /攻击速度：(\d+)/.exec(content);
-    if (matches) propertyList.set('攻击速度', parseInt(matches[1]));
+    if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
     matches = /暴击几率：(\d+)%/.exec(content);
-    if (matches) propertyList.set('暴击几率', parseInt(matches[1]));
+    if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
     matches = /技能伤害：(\d+)/.exec(content);
-    if (matches) propertyList.set('技能伤害', parseInt(matches[1]));
+    if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
     matches = /技能释放概率：(\d+)%/.exec(content);
-    if (matches) propertyList.set('技能释放概率', parseInt(matches[1]));
+    if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);
     matches = /防御：(\d+)%/.exec(content);
-    if (matches) propertyList.set('防御', parseInt(matches[1]));
+    if (matches) propertyList['防御'] = parseInt(matches[1]);
     matches = /可分配属性点：(\d+)/.exec(content);
-    if (matches) propertyList.set('可分配属性点', parseInt(matches[1]));
+    if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
     return propertyList;
 };
 
@@ -286,25 +291,25 @@ const showNewLootProperty = function ($point) {
     let newValue = getPropertyByPoint(pointName, point), diffValue = 0;
     switch (pointName) {
         case '力量':
-            diffValue = newValue - propertyList.get('攻击力');
+            diffValue = newValue - propertyList['攻击力'];
             break;
         case '体质':
-            diffValue = newValue - propertyList.get('最大生命值');
+            diffValue = newValue - propertyList['最大生命值'];
             break;
         case '敏捷':
-            diffValue = newValue - propertyList.get('攻击速度');
+            diffValue = newValue - propertyList['攻击速度'];
             break;
         case '灵活':
-            diffValue = newValue - propertyList.get('暴击几率');
+            diffValue = newValue - propertyList['暴击几率'];
             break;
         case '智力':
-            diffValue = newValue - propertyList.get('技能释放概率');
+            diffValue = newValue - propertyList['技能释放概率'];
             break;
         case '意志':
-            diffValue = newValue - propertyList.get('防御');
+            diffValue = newValue - propertyList['防御'];
             break;
     }
-    $properties.find('#pdPro_' + name).text(newValue).css('color', point !== oriPoint ? '#00f' : '#000');
+    $properties.find('#pdPro_' + name).text(newValue).css('color', diffValue !== 0 || oriPoint !== point ? '#00f' : '#000');
     if (pointName === '灵活' || pointName === '智力') {
         let nextLevel = getCurrentLevel(logList) + 1;
         let text = '';
@@ -320,7 +325,7 @@ const showNewLootProperty = function ($point) {
             .attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);
     }
 
-    if (point !== oriPoint)
+    if (diffValue !== 0 || oriPoint !== point)
         $properties.find('#pdNew_' + name).text(`(${(diffValue >= 0 ? '+' : '') + diffValue})`).css('color', diffValue >= 0 ? '#f03' : '#393');
     else $properties.find('#pdNew_' + name).text('');
 };
@@ -414,7 +419,7 @@ export const getFieldNameByPointName = function (pointName) {
  */
 export const getExtraPoint = function (pointName, point) {
     let elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
-    let haloPercent = haloInfo.get('全属性');
+    let haloPercent = haloInfo['全属性'];
     switch (pointName) {
         case '力量':
             return Math.floor(point * haloPercent) + itemUsedNumList.get('蕾米莉亚同人漫画') + elapsedMedicine;
@@ -443,9 +448,9 @@ export const getPropertyByPoint = function (pointName, point) {
     let pointValue = point + getExtraPoint(pointName, point);
     switch (pointName) {
         case '力量':
-            return pointValue * 5 + haloInfo.get('攻击力');
+            return pointValue * 5 + haloInfo['攻击力'];
         case '体质':
-            return pointValue * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0) + haloInfo.get('生命值');
+            return pointValue * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0) + haloInfo['生命值'];
         case '敏捷':
             return pointValue * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
         case '灵活':
@@ -467,15 +472,15 @@ export const getPropertyByPoint = function (pointName, point) {
  */
 export const getPointByProperty = function (pointName, num) {
     let elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
-    let haloPercent = 1 + haloInfo.get('全属性');
+    let haloPercent = 1 + haloInfo['全属性'];
     let value = 0;
     switch (pointName) {
         case '力量':
-            value = Math.ceil((Math.ceil((num - haloInfo.get('攻击力')) / 5) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
+            value = Math.ceil((Math.ceil((num - haloInfo['攻击力']) / 5) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
             break;
         case '体质':
             value = Math.ceil(
-                (Math.ceil(((num - haloInfo.get('生命值')) - (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0)) / 20)
+                (Math.ceil(((num - haloInfo['生命值']) - (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0)) / 20)
                 - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent
             );
             break;
@@ -694,7 +699,7 @@ const showLevelPointListConfigDialog = function (callback) {
         $levelPointList.find('tr:gt(0)').each(function () {
             let $this = $(this);
             if (!$this.find('.pd_point').length) return;
-            let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($this.find('.pd_point'));
+            let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
             if (surplusPoint > 0) isSurplus = true;
             else if (surplusPoint < 0) {
                 isError = true;
@@ -778,7 +783,7 @@ const showLevelPointListConfigDialog = function (callback) {
         );
 
 
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
     }).on('click', '[data-id^="pro_"]', function () {
         let $this = $(this);
@@ -791,7 +796,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let $this = $(this);
         let name = $this.data('id').replace('opt_', '');
         let $points = $this.closest('tr').prev('tr');
-        let surplusPoint = propertyList.get('可分配属性点') - getCurrentAssignedPoint($points.find('.pd_point'));
+        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
         let $point = $points.find(`[name="${name}"]`);
         if (!$point.length) return;
@@ -966,7 +971,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
         });
         pointsText = pointsText.replace(/，$/, '');
-        for (let [key, value] of propertyList) {
+        for (let [key, value] of Util.entries(propertyList)) {
             if (key === '可分配属性点' || key === '生命值') continue;
             let unit = '';
             if (key.endsWith('率') || key === '防御') unit = '%';
@@ -1183,7 +1188,7 @@ export const getLootInfo = function () {
         currentLife,
         currentInitLife,
         levelPointList: Config.levelPointList,
-        availablePoint: propertyList.get('可分配属性点'),
+        availablePoint: propertyList['可分配属性点'],
         haloInfo,
         propertyList,
         itemUsedNumList,
@@ -1810,9 +1815,77 @@ export const addUserLinkInPkListPage = function () {
 };
 
 /**
- * 提升战力光环
+ * 读取战力光环页面信息
+ * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
-export const promoteHalo = function () {
+const readHaloInfo = function (isInitLootPage = false) {
+    console.log('获取战力光环信息Start');
+    let $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
+    getHaloInfo().done(function (result) {
+        if ($.type(result) === 'object') {
+            setHaloInfo(result);
+            if (isInitLootPage) enhanceLootIndexPage();
+            else $points.find('.pd_point').trigger('change');
+        }
+    }).always(function (result) {
+        Msg.remove($wait);
+        if (result === 'timeout') setTimeout(readHaloInfo, Const.defAjaxInterval);
+        else if (result === 'error') Msg.show('<strong>战力光环信息获取失败！</strong>');
+    });
+};
+
+/**
+ * 获取战力光环信息
+ * @returns {Deferred} Deferred对象
+ */
+export const getHaloInfo = function () {
+    return $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+        timeout: Const.defAjaxTimeout,
+    }).then(function (html) {
+        let haloInfo = {'全属性': 0, '攻击力': 0, '生命值': 0};
+        let matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
+        if (matches) {
+            haloInfo['全属性'] = parseFloat(matches[1]) / 100;
+            let extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
+            if (extraMatches) {
+                haloInfo['攻击力'] = parseInt(extraMatches[1]);
+                haloInfo['生命值'] = parseInt(extraMatches[2]);
+            }
+            TmpLog.setValue(Const.haloInfoTmpLogName, $.extend(haloInfo, {time: new Date().getTime()}));
+            return haloInfo;
+        }
+        else return 'error';
+    }, () => 'timeout');
+};
+
+/**
+ * 设置战力光环信息
+ * @param {{}} newHaloInfo 光环信息对象
+ */
+export const setHaloInfo = function (newHaloInfo) {
+    haloInfo = newHaloInfo;
+    if (!$lootArea.find('#pdHaloInfo').length) {
+        $('<span id="pdHaloInfo"></span> <a data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取">重新读取</a><br>')
+            .appendTo($itemInfo)
+            .filter('[data-name="reloadHaloInfo"]')
+            .click(function (e) {
+                e.preventDefault();
+                if (confirm('是否重新读取战力光环信息？')) {
+                    TmpLog.deleteValue(Const.haloInfoTmpLogName);
+                    readHaloInfo();
+                }
+            });
+    }
+    $lootArea.find('#pdHaloInfo').text(`战力光环：[全属性+${haloInfo['全属性'] * 100}%][攻击力+${haloInfo['攻击力']}][生命值+${haloInfo['生命值']}]`);
+};
+
+/**
+ * 提升战力光环
+ * @param {boolean} isInitLootPage 是否初始化争夺首页
+ */
+export const promoteHalo = function (isInitLootPage = false) {
     Script.runFunc('Loot.promoteHalo_before_');
     console.log('提升战力光环Start');
     let $wait = Msg.wait('<strong>正在提升战力光环，请稍候&hellip;</strong>');
@@ -1840,12 +1913,15 @@ export const promoteHalo = function () {
             let nextTime = Util.getDate('+15m');
             let matches = /(新数值为|随机值为)\[(\d+(?:\.\d+)?)%]/.exec(msg);
             if (matches) {
+                let isNew = matches[1] === '新数值为';
+                if (isNew) TmpLog.deleteValue(Const.haloInfoTmpLogName);
+
                 nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
                 let randomNum = parseFloat(matches[2]);
                 let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
                 Msg.show(
                     '<strong>' +
-                    (matches[1] === '新数值为' ?
+                    (isNew ?
                         `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) +
                     `</strong><i>${costResult.type}<ins>${(-costResult.num).toLocaleString()}</ins></i>`
                     , -1
@@ -1855,7 +1931,7 @@ export const promoteHalo = function () {
                 pay[costResult.type] = -costResult.num;
                 Log.push(
                     '提升战力光环',
-                    matches[1] === '新数值为' ? `恭喜你提升了光环的效果！新数值为【\`${randomNum}%\`】` : `你本次随机值为【\`${randomNum}%\`】，未超过光环效果`,
+                    isNew ? `恭喜你提升了光环的效果！新数值为【\`${randomNum}%\`】` : `你本次随机值为【\`${randomNum}%\`】，未超过光环效果`,
                     {pay}
                 );
             }
@@ -1872,8 +1948,12 @@ export const promoteHalo = function () {
                 }
             }
             Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
+            if (isInitLootPage) init();
             Script.runFunc('Loot.promoteHalo_after_', msg);
-        }).fail(() => Msg.remove($wait));
+        }).fail(() => {
+            Msg.remove($wait);
+            if (isInitLootPage) init();
+        });
     }).fail(function () {
         Msg.remove($wait);
         setTimeout(promoteHalo, Const.defAjaxInterval);

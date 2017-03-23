@@ -32,6 +32,8 @@ const Const = {
     getDailyBonusSpecialInterval: 30,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
+    // 临时存储的战力光环信息的有效期（分钟）
+    tmpHaloInfoExpires: 60,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
@@ -98,6 +100,8 @@ const Const = {
     fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
+    // 存储战力光环信息的临时日志名称
+    haloInfoTmpLogName: 'HaloInfo',
 
     // 标记已领取每日奖励的Cookie名称
     getDailyBonusCookieName: 'getDailyBonus',

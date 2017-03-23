@@ -143,9 +143,6 @@ const init = function () {
     else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.addBatchBuyItemsLink();
     }
-    else if (location.pathname === '/kf_fw_ig_index.php') {
-        Loot.enhanceLootIndexPage();
-    }
     else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     }
@@ -211,8 +208,9 @@ const init = function () {
     let isAutoPromoteHaloStarted = false;
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
         isAutoPromoteHaloStarted = true;
-        Loot.promoteHalo();
+        Loot.promoteHalo(location.pathname === '/kf_fw_ig_index.php');
     }
+    if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
 
     let isAutoLootStarted = false;
     if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
