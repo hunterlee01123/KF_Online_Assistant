@@ -533,7 +533,8 @@ const addLevelPointListSelect = function () {
   <option value="0">默认</option>
 </select>
 <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a>
-<a class="pd_btn_link" data-name="edit" href="#" title="编辑各层点数分配方案">编辑</a><br>
+<a class="pd_btn_link" data-name="edit" href="#" title="编辑各层点数分配方案">编辑</a>
+<a class="pd_btn_link" data-name="fill" href="#" title="输入一串数字按顺序填充到各个点数字段中">填充</a><br>
 `).prependTo($points).filter('#pdLevelPointListSelect').change(function () {
         let level = parseInt($(this).val());
         if (level > 0) {
@@ -577,6 +578,15 @@ const addLevelPointListSelect = function () {
     }).end().filter('[data-name="edit"]').click(function (e) {
         e.preventDefault();
         showLevelPointListConfigDialog();
+    }).end().filter('[data-name="fill"]').click(function (e) {
+        e.preventDefault();
+        let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        if (!value) return;
+        let points = value.split(' ');
+        $points.find('.pd_point').each(function (index) {
+            if (index < points.length) $(this).val(parseInt(points[index]));
+            else return false;
+        });
     });
     setLevelPointListSelect(Config.levelPointList);
 };
@@ -1829,7 +1839,7 @@ const readHaloInfo = function (isInitLootPage = false) {
         }
     }).always(function (result) {
         Msg.remove($wait);
-        if (result === 'timeout') setTimeout(readHaloInfo, Const.defAjaxInterval);
+        if (result === 'timeout') setTimeout(() => readHaloInfo(isInitLootPage), Const.defAjaxInterval);
         else if (result === 'error') Msg.show('<strong>战力光环信息获取失败！</strong>');
     });
 };
@@ -1867,7 +1877,7 @@ export const getHaloInfo = function () {
 export const setHaloInfo = function (newHaloInfo) {
     haloInfo = newHaloInfo;
     if (!$lootArea.find('#pdHaloInfo').length) {
-        $('<span id="pdHaloInfo"></span> <a data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取">重新读取</a><br>')
+        $('<span id="pdHaloInfo"></span> <a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取">重新读取</a><br>')
             .appendTo($itemInfo)
             .filter('[data-name="reloadHaloInfo"]')
             .click(function (e) {

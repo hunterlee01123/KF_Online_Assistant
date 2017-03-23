@@ -851,6 +851,7 @@ ${Const.customTileSideBarContent}
   <a href="javascript:;">快捷导航</a>
   <ul class="r_cmenu2">
     <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
+    <li><a href="personal.php?action=post">我的回复</a></li>
     <li><a href="kf_growup.php">等级经验</a></li>
     <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
     <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
@@ -859,7 +860,6 @@ ${Const.customTileSideBarContent}
     <li><a href="profile.php?action=modify">设置</a></li>
     <li><a href="hack.php?H_name=bank">银行</a></li>
     <li><a href="profile.php?action=favor">收藏</a></li>
-    <li><a href="personal.php?action=post">我的回复</a></li>
     ${Const.customSideBarContent}
   </ul>
 </li>
