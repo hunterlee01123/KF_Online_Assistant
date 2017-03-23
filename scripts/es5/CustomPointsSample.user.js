@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        自定义争夺点数分配方案参考范例
-// @version     1.2
+// @version     1.3
 // @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13270735
@@ -18,14 +18,15 @@ var Const = require('./Const').default;
  * @param {number} data.currentInitLife 当前层数的初始生命值
  * @param {{}} data.levelPointList 用户设置的各层点数分配方案
  * @param {number} data.availablePoint 可分配属性点
- * @param {Map} data.propertyList 当前争夺属性列表
- * @param {Map} data.extraPointList 道具加成点数列表
+ * @param {{}} data.propertyList 当前争夺属性列表
+ * @param {{}} data.haloInfo 光环信息
  * @param {Map} data.itemUsedNumList 道具使用情况列表
  * @param {string} data.log 当前争夺记录
  * @param {string[]} data.logList 当前各层争夺记录列表
  * @param {string[]} data.enemyList 当前各层遭遇NPC列表
- * @param {function} data.getPropertyByPoint 根据指定的点数获得相应争夺属性的值（会根据用户的道具加成情况进行计算），例：data.getPropertyByPoint('力量', 5)
- * @param {function} data.getPointByProperty 根据指定的争夺属性获得相应点数的值（会根据用户的道具加成情况进行计算），例：data.getPointByProperty('力量', 400)
+ * @param {function} data.getExtraPoint 根据指定的点数获得相应额外加成点数，例：data.getExtraPoint('力量', 5)
+ * @param {function} data.getPropertyByPoint 根据指定的点数获得相应争夺属性的值（会根据用户的额外加成情况进行计算），例：data.getPropertyByPoint('力量', 5)
+ * @param {function} data.getPointByProperty 根据指定的争夺属性获得相应点数的值（会根据用户的额外加成情况进行计算），例：data.getPointByProperty('力量', 400)
  * @returns {?{}|number|boolean} 争夺点数分配方案，可返回点数设置对象或各层点数分配方案中的指定层数，返回null表示暂停连续攻击，返回false表示使用当前点数继续攻击
  */
 Const.getCustomPoints = function (data) {
