@@ -67,6 +67,7 @@ export const init = function () {
  * 增强争夺首页
  */
 export const enhanceLootIndexPage = function () {
+    Script.runFunc('Loot.enhanceLootIndexPage_before_');
     propertyList = getLootPropertyList();
     itemUsedNumList = Item.getItemUsedInfo($itemInfo.html());
 
@@ -90,6 +91,7 @@ export const enhanceLootIndexPage = function () {
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(Const.lootAttackingCookieName)) {
         $(document).ready(setTimeout(autoLoot, 500));
     }
+    Script.runFunc('Loot.enhanceLootIndexPage_after_');
 };
 
 /**
@@ -584,7 +586,7 @@ const addLevelPointListSelect = function () {
         if (!value) return;
         let points = value.split(' ');
         $points.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index]));
+            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');
             else return false;
         });
     });

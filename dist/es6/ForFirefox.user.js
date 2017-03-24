@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.7
+// @version     9.7.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.7';
+const version = '9.7.1';
 
 /**
  * 导出模块
@@ -2495,7 +2495,7 @@ const Const = {
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
     // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 90,
+    tmpHaloInfoExpires: 240,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
@@ -5096,6 +5096,7 @@ const init = exports.init = function () {
  * 增强争夺首页
  */
 const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
+    Script.runFunc('Loot.enhanceLootIndexPage_before_');
     propertyList = getLootPropertyList();
     itemUsedNumList = Item.getItemUsedInfo($itemInfo.html());
 
@@ -5118,6 +5119,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
         $(document).ready(setTimeout(autoLoot, 500));
     }
+    Script.runFunc('Loot.enhanceLootIndexPage_after_');
 };
 
 /**
@@ -5563,7 +5565,7 @@ const addLevelPointListSelect = function () {
         if (!value) return;
         let points = value.split(' ');
         $points.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index]));else return false;
+            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');else return false;
         });
     });
     setLevelPointListSelect(Config.levelPointList);

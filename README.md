@@ -10,7 +10,7 @@ __关于ES5和ES6版本的区别请参见【[常见问题2](https://git.oschina.
 __（部分浏览器可能无法使用或有功能异常，例如Firefox + Greasemonkey、搜狗浏览器等；Firefox浏览器如要使用此版本请安装Tampermonkey扩展）__  
 2. __通用版：__ [[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js)]  
 仅能使用默认的存储类型，绝大多数浏览器通用 __（如全功能版无法使用，请安装此版本）__  
-3. __For Firefox版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
+3. __Firefox特别版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
 Firefox + Greasemonkey专用（如上面两个版本无法使用，请安装此版），引入了一个额外的jQuery脚本，可使用全部的存储类型 __（代价是脚本初始化用时将翻倍，且在特殊情况下少数功能会受到限制，如只使用默认存储类型的话，强烈建议安装通用版）__
 
 __注：如发现脚本无法生效或功能异常，请尝试安装其它版本（通用版及ES5版本的兼容性最好）__
