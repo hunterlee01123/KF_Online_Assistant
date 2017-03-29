@@ -461,7 +461,7 @@ export const startTimingMode = function () {
         let isAutoPromoteHaloStarted = false;
         if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
             isAutoPromoteHaloStarted = true;
-            Loot.promoteHalo();
+            Loot.getPromoteHaloInfo();
         }
 
         if (!Util.getCookie(Const.lootCompleteCookieName)) {

@@ -67,7 +67,6 @@ export const show = function () {
     <fieldset>
       <legend>
         <label><input name="autoPromoteHaloEnabled" type="checkbox"> 自动提升战力光环</label>
-        <span class="pd_cfg_tips" title="每隔指定时间花费指定代价自动提升战力光环">[?]</span>
       </legend>
       <label>
         花费
@@ -82,6 +81,10 @@ export const show = function () {
       <label class="pd_cfg_ml">
         每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时
         <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间，最低值：8小时">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-disabled="[name=promoteHaloInterval]" data-mutex="true"> 自动判断
+        <span class="pd_cfg_tips" title="自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用）">[?]</span>
       </label>
     </fieldset>
     <fieldset>

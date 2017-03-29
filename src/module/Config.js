@@ -32,6 +32,8 @@ export const Config = {
     promoteHaloCostType: 1,
     // 自动提升战力光环的间隔时间（小时），最低值：8
     promoteHaloInterval: 8,
+    // 是否自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用），true：开启；false：关闭
+    promoteHaloAutoIntervalEnabled: true,
 
     // 是否自动争夺，true：开启；false：关闭
     autoLootEnabled: false,

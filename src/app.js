@@ -211,16 +211,16 @@ const init = function () {
     let isAutoPromoteHaloStarted = false;
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
         isAutoPromoteHaloStarted = true;
-        Loot.promoteHalo(location.pathname === '/kf_fw_ig_index.php');
+        Loot.getPromoteHaloInfo(location.pathname === '/kf_fw_ig_index.php');
     }
     if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
 
     let isAutoLootStarted = false;
     if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (!Util.getCookie(Const.lootAttackingCookieName)) {
+            if (!Util.getCookie(Const.lootAttackingCookieName) && !isAutoPromoteHaloStarted) {
                 isAutoLootStarted = true;
-                setTimeout(Loot.checkLoot, isAutoPromoteHaloStarted ? 20 * 1000 : 0);
+                Loot.checkLoot();
             }
         }
         else if (Config.autoSaveLootLogInSpecialCaseEnabled) {

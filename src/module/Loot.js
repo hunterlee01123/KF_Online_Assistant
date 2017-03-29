@@ -48,7 +48,10 @@ export const init = function () {
     $properties = $lootArea.find('> tbody > tr:nth-child(2) > td:first-child');
     $points = $lootArea.find('> tbody > tr:nth-child(2) > td:nth-child(2)');
     $itemInfo = $lootArea.find('> tbody > tr:nth-child(3) > td');
-    $itemInfo.css('line-height', '2em');
+    $itemInfo.css({
+        'line-height': '2em',
+        'padding': '3px 5px',
+    });
 
     let tmpHaloInfo = TmpLog.getValue(Const.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
@@ -1028,6 +1031,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             else return $.Deferred().resolve('error');
         }
 
+        let nextLevelText = getCurrentLevel(logList) + 1;
         let changeLevel = nextLevel > 0 ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : -1;
         let $levelPointListSelect = $('#pdLevelPointListSelect');
         if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');
@@ -1059,13 +1063,13 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     return 'success';
                 }
                 else {
-                    alert((changeLevel ? `第${changeLevel}层方案：` : '') + msg);
+                    alert(`第${nextLevelText}层方案：${msg}`);
                     return 'error';
                 }
             }, () => 'timeout');
         }
         else {
-            recordPointsLog();
+            if (nextLevelText === 1) recordPointsLog();
             return $.Deferred().resolve('success');
         }
     };
@@ -1894,41 +1898,84 @@ export const setHaloInfo = function (newHaloInfo) {
 };
 
 /**
- * 提升战力光环
+ * 获取战力光环页面信息
  * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
-export const promoteHalo = function (isInitLootPage = false) {
-    Script.runFunc('Loot.promoteHalo_before_');
-    console.log('提升战力光环Start');
-    let $wait = Msg.wait('<strong>正在提升战力光环，请稍候&hellip;</strong>');
+export const getPromoteHaloInfo = function (isInitLootPage = false) {
+    Script.runFunc('Loot.getPromoteHaloInfo_before_');
+    console.log('获取战力光环页面信息Start');
+    let $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
 
     $.ajax({
         type: 'GET',
         url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
         timeout: Const.defAjaxTimeout,
     }).done(function (html) {
-        let matches = /safeid=(\w+)"/.exec(html);
-        if (!matches) {
+        Msg.remove($wait);
+
+        let safeIdMatches = /safeid=(\w+)"/.exec(html);
+        if (!safeIdMatches) {
             let nextTime = Util.getDate('+1h');
             Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
-            Msg.remove($wait);
+            if (isInitLootPage) init();
             return;
         }
-        let safeId = matches[1];
-        let promoteHaloCostType = Config.promoteHaloCostType;
+        let safeId = safeIdMatches[1];
 
-        $.get(`kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${new Date().getTime()}`, function (html) {
+        let surplusMatches = /下次随机还需\[(\d+)]分钟/.exec(html);
+        if (surplusMatches) {
+            let promoteHaloInterval = Config.promoteHaloAutoIntervalEnabled ? Const.minPromoteHaloInterval : Config.promoteHaloInterval * 60;
+            let nextTime = Util.getDate(`+${promoteHaloInterval - (Const.minPromoteHaloInterval - parseInt(surplusMatches[1]))}m`);
+            Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
+            if (isInitLootPage) init();
+            return;
+        }
+
+        let totalCount = 1;
+        let countMatches = /当前光环随机可用\[(\d+)]次/.exec(html);
+        if (Config.promoteHaloAutoIntervalEnabled && countMatches) totalCount = parseInt(countMatches[1]);
+
+        promoteHalo(totalCount, Config.promoteHaloCostType, safeId, isInitLootPage);
+    }).fail(function () {
+        Msg.remove($wait);
+        setTimeout(getPromoteHaloInfo, Const.defAjaxInterval);
+    });
+};
+
+/**
+ * 提升战力光环
+ * @param {number} totalCount 总次数
+ * @param {number} promoteHaloCostType 自动提升战力光环的花费类型，参见{@link Config.promoteHaloCostType}
+ * @param {string} safeId SafeID
+ * @param {boolean} isInitLootPage 是否初始化争夺首页
+ */
+export const promoteHalo = function (totalCount, promoteHaloCostType, safeId, isInitLootPage = false) {
+    console.log('提升战力光环Start');
+    let $wait = Msg.wait(
+        `<strong>正在提升战力光环&hellip;</strong><i>剩余：<em class="pd_countdown">${totalCount}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
+    );
+    TmpLog.deleteValue(Const.haloInfoTmpLogName);
+    let isStop = false;
+    let index = 0;
+    let nextTime = Util.getDate('+10m').getTime();
+
+    /**
+     * 提升
+     */
+    const promote = function () {
+        $.ajax({
+            type: 'GET',
+            url: `kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${new Date().getTime()}`,
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
             Public.showFormatLog('提升战力光环', html);
             let {msg} = Util.getResponseMsg(html);
-            Msg.remove($wait);
 
-            let nextTime = Util.getDate('+15m');
             let matches = /(新数值为|随机值为)\[(\d+(?:\.\d+)?)%]/.exec(msg);
             if (matches) {
                 let isNew = matches[1] === '新数值为';
-                if (isNew) TmpLog.deleteValue(Const.haloInfoTmpLogName);
 
-                nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
+                nextTime = Config.promoteHaloAutoIntervalEnabled ? 0 : Util.getDate(`+${Config.promoteHaloInterval}h`).getTime();
                 let randomNum = parseFloat(matches[2]);
                 let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
                 Msg.show(
@@ -1946,30 +1993,45 @@ export const promoteHalo = function (isInitLootPage = false) {
                     isNew ? `恭喜你提升了光环的效果！新数值为【\`${randomNum}%\`】` : `你本次随机值为【\`${randomNum}%\`】，未超过光环效果`,
                     {pay}
                 );
+                index++;
             }
             else {
+                if (/两次操作间隔过短/.test(msg)) nextTime = Util.getDate('+10s').getTime();
+                else isStop = true;
+
                 matches = /你的(贡献点数|KFB)不足/.exec(msg);
                 if (matches) {
-                    nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`);
+                    nextTime = Util.getDate(`+${Config.promoteHaloInterval}h`).getTime();
                     Msg.show(`<strong>${matches[1]}不足，无法提升战力光环</strong><a href="kf_fw_ig_halo.php" target="_blank">手动选择</a>`, -1);
                 }
 
                 matches = /你还需要等待(\d+)分钟/.exec(msg);
                 if (matches) {
-                    nextTime = Util.getDate(`+${Config.promoteHaloInterval * 60 - (Const.minPromoteHaloInterval - parseInt(matches[1]))}m`);
+                    nextTime = Util.getDate(`+${Config.promoteHaloInterval * 60 - (Const.minPromoteHaloInterval - parseInt(matches[1]))}m`).getTime();
                 }
             }
-            Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
-            if (isInitLootPage) init();
-            Script.runFunc('Loot.promoteHalo_after_', msg);
-        }).fail(() => {
-            Msg.remove($wait);
-            if (isInitLootPage) init();
+        }).always(function () {
+            $wait.find('.pd_countdown').text(totalCount - index);
+            isStop = isStop || $wait.data('stop');
+            if (isStop || index === totalCount) {
+                Msg.remove($wait);
+                if (nextTime > 0 || isStop) {
+                    Util.setCookie(Const.promoteHaloCookieName, nextTime, new Date(nextTime));
+                }
+                else {
+                    Util.deleteCookie(Const.promoteHaloCookieName);
+                    getPromoteHaloInfo();
+                }
+                if (isInitLootPage) init();
+                Script.runFunc('Loot.promoteHalo_after_');
+            }
+            else {
+                setTimeout(promote, Const.promoteHaloActionInterval);
+            }
         });
-    }).fail(function () {
-        Msg.remove($wait);
-        setTimeout(promoteHalo, Const.defAjaxInterval);
-    });
+    };
+
+    promote();
 };
 
 /**

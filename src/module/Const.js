@@ -32,6 +32,8 @@ const Const = {
     getDailyBonusSpecialInterval: 30,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
+    // 进行批量提升战力光环操作的间隔时间（毫秒）
+    promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）
     tmpHaloInfoExpires: 240,
     // 争夺攻击进行中的有效期（分钟）
