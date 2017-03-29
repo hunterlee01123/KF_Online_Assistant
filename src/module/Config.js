@@ -41,6 +41,8 @@ export const Config = {
     attackTargetLevel: 0,
     // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
     autoSaveLootLogInSpecialCaseEnabled: false,
+    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00
+    checkLootAfterTime: '00:05:00',
     // 历史争夺记录保存天数
     lootLogSaveDays: 15,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}

@@ -15,8 +15,6 @@ const Const = {
     forumTimezoneOffset: -8,
     // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
     getDailyBonusAfterTime: '00:35:00',
-    // 在当天的指定时间之后检查争夺情况（北京时间），例：00:10:00
-    checkLootAfterTime: '00:10:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735

@@ -324,8 +324,7 @@ export const getNextTimingIntervalInfo = function () {
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
         if (value > 0) {
-            let date = Util.getTimezoneDateByTime(Const.checkLootAfterTime);
-            date.setDate(date.getDate() + 1);
+            let date = Util.getDateByTime(Config.checkLootAfterTime);
             let now = new Date();
             if (now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);

@@ -83,14 +83,14 @@ export const show = function () {
         <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间，最低值：8小时">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-disabled="[name=promoteHaloInterval]" data-mutex="true"> 自动判断
+        <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> 自动判断
         <span class="pd_cfg_tips" title="自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
       <legend>争夺相关</legend>
       <label>
-        <input name="autoLootEnabled" type="checkbox" data-disabled="[name=autoSaveLootLogInSpecialCaseEnabled]" data-mutex="true"> 自动争夺
+        <input name="autoLootEnabled" type="checkbox" data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> 自动争夺
         <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
@@ -102,6 +102,10 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在不使用助手争夺的情况下自动检查并保存争夺记录（使用助手进行争夺的用户请勿勾选此选项）">[?]</span>
       </label><br>
       <label>
+        在 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后争夺
+        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
         争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
         <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}">[?]</span>
       </label>
@@ -453,6 +457,14 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
+    let $txtCheckLootAfterTime = $dialog.find('[name="checkLootAfterTime"]');
+    let checkLootAfterTime = $.trim($txtCheckLootAfterTime.val());
+    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(checkLootAfterTime)) {
+        alert('在指定时间之后争夺格式不正确');
+        $txtCheckLootAfterTime.select().focus();
+        return false;
+    }
+
     let $txtCustomMySmColor = $dialog.find('[name="customMySmColor"]');
     let customMySmColor = $.trim($txtCustomMySmColor.val());
     if (customMySmColor && !/^#[0-9a-fA-F]{6}$/.test(customMySmColor)) {

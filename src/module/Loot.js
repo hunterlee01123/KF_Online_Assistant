@@ -1713,7 +1713,7 @@ const getAutoLootCookieDate = function () {
     let now = new Date();
     let date = Util.getTimezoneDateByTime('02:30:00');
     if (now > date) {
-        date = Util.getTimezoneDateByTime('00:01:00');
+        date = Util.getTimezoneDateByTime('00:00:30');
         date.setDate(date.getDate() + 1);
     }
     if (now > date) date.setDate(date.getDate() + 1);
@@ -1724,6 +1724,8 @@ const getAutoLootCookieDate = function () {
  * 检查争夺情况
  */
 export const checkLoot = function () {
+    if (new Date() < Util.getDateByTime(Config.checkLootAfterTime)) return;
+
     console.log('检查争夺情况Start');
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
     $.ajax({
@@ -1767,7 +1769,7 @@ export const checkLoot = function () {
  * 自动争夺
  */
 const autoLoot = function () {
-    if (/你被击败了/.test(log)) return;
+    if (/你被击败了/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) return;
     let safeId = Public.getSafeId();
     let currentLevel = getCurrentLevel(logList);
     if (!safeId || Config.attackTargetLevel > 0 && Config.attackTargetLevel <= currentLevel) {

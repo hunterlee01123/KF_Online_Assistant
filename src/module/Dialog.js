@@ -40,7 +40,6 @@ export const create = function (id, title, content, style = '') {
     }).end().find('input[data-disabled]').click(function () {
         let $this = $(this);
         let checked = $this.prop('checked');
-        if ($this.data('mutex')) checked = !checked;
         $($this.data('disabled')).each(function () {
             let $this = $(this);
             if ($this.is('a')) {
@@ -49,6 +48,19 @@ export const create = function (id, title, content, style = '') {
             }
             else {
                 $this.prop('disabled', !checked);
+            }
+        });
+    }).end().find('input[data-mutex]').click(function () {
+        let $this = $(this);
+        let checked = $this.prop('checked');
+        $($this.data('mutex')).each(function () {
+            let $this = $(this);
+            if ($this.is('a')) {
+                if (checked) $this.addClass('pd_disabled_link');
+                else $this.removeClass('pd_disabled_link');
+            }
+            else {
+                $this.prop('disabled', checked);
             }
         });
     });
@@ -67,7 +79,7 @@ export const show = function (id) {
     if (!$dialog.length) return;
     $dialog.find('legend [type="checkbox"]').each(function () {
         $(this).triggerHandler('click');
-    }).end().find('input[data-disabled]').each(function () {
+    }).end().find('input[data-disabled], input[data-mutex]').each(function () {
         $(this).triggerHandler('click');
     });
     $dialog.fadeIn('fast');
