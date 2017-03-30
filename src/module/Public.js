@@ -330,8 +330,11 @@ export const getNextTimingIntervalInfo = function () {
             checkLootInterval = Math.floor((date - now) / 1000);
         }
         else if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
-        else if (Util.getCookie(Const.lootAttackingCookieName)) checkLootInterval = Const.lootAttackingExpires * 60;
-        else checkLootInterval = 0;
+        else {
+            let value = parseInt(Util.getCookie(Const.lootAttackingCookieName));
+            if (value > 0) checkLootInterval = Math.floor((value - new Date().getTime()) / 1000);
+            else checkLootInterval = 0;
+        }
     }
 
     let getDailyBonusInterval = -1;

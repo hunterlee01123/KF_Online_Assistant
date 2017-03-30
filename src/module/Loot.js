@@ -37,6 +37,8 @@ let propertyList = {};
 let haloInfo = {};
 // 道具使用情况列表
 let itemUsedNumList = new Map();
+// 修改点数可用次数
+let changePointsCount = 0;
 // 点数分配记录列表
 let pointsLogList = [];
 
@@ -162,6 +164,13 @@ const handlePointsArea = function () {
         .prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point')
         .after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
+    let $changeCount = $points.find('[name="rvrc1"]').contents().eq(-3);
+    let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.get(0).textContent);
+    if (changeCountMatches) {
+        changePointsCount = parseInt(changeCountMatches[1]);
+        $changeCount.wrap('<span id="pdChangeCount"></span>');
+        $points.find('#pdChangeCount').css('margin-left', '5px');
+    }
 
     /**
      * 显示剩余属性点
@@ -1057,13 +1066,20 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 let {msg} = Util.getResponseMsg(html);
                 if (/已经重新配置加点！/.test(msg)) {
                     recordPointsLog(true);
+                    changePointsCount = changePointsCount > 0 ? changePointsCount - 1 : 0;
+                    $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsCount}]次)`);
                     $points.find('.pd_point').each(function () {
                         this.defaultValue = $(this).val();
                     });
                     return 'success';
                 }
                 else {
-                    alert(`第${nextLevelText}层方案：${msg}`);
+                    let matches = /你还需要等待(\d+)分钟/.exec(msg);
+                    if (matches) {
+                        let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
+                        Util.setCookie(Const.lootAttackingCookieName, nextTime.getTime(), nextTime);
+                    }
+                    Msg.show((`<strong>第<em>${nextLevelText}</em>层方案：${msg}</strong>`), -1);
                     return 'error';
                 }
             }, () => 'timeout');
@@ -1101,7 +1117,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             data: {'safeid': safeId},
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
-            if (Config.autoLootEnabled) Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
+            if (Config.autoLootEnabled) {
+                let nextTime = Util.getDate(`+${Const.lootAttackingExpires}m`);
+                Util.setCookie(Const.lootAttackingCookieName, nextTime.getTime(), nextTime);
+            }
             if (!/你\(\d+\)遭遇了/.test(html)) {
                 setTimeout(check, Const.defAjaxInterval);
                 return;
@@ -1208,6 +1227,7 @@ export const getLootInfo = function () {
         haloInfo,
         propertyList,
         itemUsedNumList,
+        changePointsCount,
         log,
         logList,
         enemyList,
@@ -1776,7 +1796,8 @@ const autoLoot = function () {
         Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
         return;
     }
-    Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
+    let nextTime = Util.getDate(`+${Const.lootAttackingExpires}m`);
+    Util.setCookie(Const.lootAttackingCookieName, nextTime.getTime(), nextTime);
     Util.deleteCookie(Const.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
     lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId});
