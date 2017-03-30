@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        自定义争夺点数分配方案参考范例
-// @version     1.3
+// @version     1.4
 // @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13270735
@@ -20,6 +20,7 @@ const Const = require('./Const').default;
  * @param {{}} data.propertyList 当前争夺属性列表
  * @param {{}} data.haloInfo 光环信息
  * @param {Map} data.itemUsedNumList 道具使用情况列表
+ * @param {number} data.changePointsCount 修改点数可用次数
  * @param {string} data.log 当前争夺记录
  * @param {string[]} data.logList 当前各层争夺记录列表
  * @param {string[]} data.enemyList 当前各层遭遇NPC列表
