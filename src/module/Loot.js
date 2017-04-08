@@ -686,7 +686,10 @@ const showLevelPointListConfigDialog = function (callback) {
   <td><input class="pd_point" name="d2" type="number" value="${points['灵活']}" min="1" style="width: 50px;" required></td>
   <td><input class="pd_point" name="i1" type="number" value="${points['智力']}" min="1" style="width: 50px;" required></td>
   <td><input class="pd_point" name="i2" type="number" value="${points['意志']}" min="1" style="width: 50px;" required></td>
-  <td style="text-align: left;"><a class="pd_btn_link" data-name="delete" href="#">删除</a></td>
+  <td style="text-align: left;">
+    <a class="pd_btn_link" data-name="fill" href="#">填充</a>
+    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">删除</a>
+  </td>
 </tr>
 <tr>
   <td></td>
@@ -781,7 +784,17 @@ const showLevelPointListConfigDialog = function (callback) {
     }).end().find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]')))
         .end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')));
 
-    $levelPointList.on('click', '[data-name="delete"]', function (e) {
+    $levelPointList.on('click', '[data-name="fill"]', function (e) {
+        e.preventDefault();
+        let $line = $(this).closest('tr');
+        let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        if (!value) return;
+        let points = value.split(' ');
+        $line.find('.pd_point').each(function (index) {
+            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');
+            else return false;
+        });
+    }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
         $line.next('tr').addBack().remove();

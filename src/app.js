@@ -229,6 +229,7 @@ const init = function () {
         }
     }
 
+    if (!Config.getBonusAfterLootCompleteEnabled) isAutoLootStarted = false;
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
 
     if (Config.autoSaveCurrentDepositEnabled && Info.isInHomePage) Public.autoSaveCurrentDeposit();
