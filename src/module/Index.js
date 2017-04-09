@@ -6,6 +6,7 @@ import * as Msg from './Msg';
 import Const from './Const';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
+import * as Loot from './Loot';
 
 /**
  * 处理首页有人@你的消息框
@@ -234,6 +235,28 @@ export const addPromoteHaloInterval = function () {
         let minutes = Math.ceil(interval / 60 / 1000);
         let hours = Math.floor(minutes / 60);
         minutes -= hours * 60;
-        $('a[href="kf_fw_ig_index.php"]').text(`争夺奖励 (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)`);
+        $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdHaloInterval"> (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
+    }
+};
+
+/**
+ * 添加改点倒计时
+ */
+export const addChangePointsCountDown = function () {
+    let nextTime = parseInt(Util.getCookie(Const.changePointsCountDownCookieName));
+    if (nextTime === 0) return;
+    if (isNaN(nextTime)) {
+        Loot.getChangePointsCountDown()
+            .done(addChangePointsCountDown)
+            .fail(() => setTimeout(addChangePointsCountDown, Const.defAjaxInterval));
+        return;
+    }
+
+    let interval = nextTime - new Date().getTime();
+    if (interval > 0) {
+        let minutes = Math.ceil(interval / 60 / 1000);
+        let hours = Math.floor(minutes / 60);
+        minutes -= hours * 60;
+        $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdChangePointsCountDown"> (改点：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
     }
 };

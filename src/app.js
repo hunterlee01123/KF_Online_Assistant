@@ -91,6 +91,7 @@ const init = function () {
         if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2)
             $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
         Index.addPromoteHaloInterval();
+        if (Config.showChangePointsCountDownEnabled) Index.addChangePointsCountDown();
     }
     else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
@@ -218,7 +219,7 @@ const init = function () {
     let isAutoLootStarted = false;
     if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (!Util.getCookie(Const.lootAttackingCookieName) && !isAutoPromoteHaloStarted) {
+            if (!Util.getCookie(Const.lootAttackingCookieName) && !parseInt(Util.getCookie(Const.changePointsCountDownCookieName)) && !isAutoPromoteHaloStarted) {
                 isAutoLootStarted = true;
                 Loot.checkLoot();
             }

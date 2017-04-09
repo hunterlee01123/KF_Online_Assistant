@@ -330,8 +330,9 @@ export const getNextTimingIntervalInfo = function () {
             checkLootInterval = Math.floor((date - now) / 1000);
         }
         else if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
+        else if (Util.getCookie(Const.lootAttackingCookieName)) checkLootInterval = Const.lootAttackingExpires * 60;
         else {
-            let value = parseInt(Util.getCookie(Const.lootAttackingCookieName));
+            let value = parseInt(Util.getCookie(Const.changePointsCountDownCookieName));
             if (value > 0) checkLootInterval = Math.floor((value - new Date().getTime()) / 1000);
             else checkLootInterval = 0;
         }
@@ -468,7 +469,8 @@ export const startTimingMode = function () {
 
         if (!Util.getCookie(Const.lootCompleteCookieName)) {
             if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
-                if (!Util.getCookie(Const.lootAttackingCookieName)) Loot.checkLoot();
+                if (!Util.getCookie(Const.lootAttackingCookieName) && !parseInt(Util.getCookie(Const.changePointsCountDownCookieName)))
+                    Loot.checkLoot();
             }
             else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 Loot.autoSaveLootLog();

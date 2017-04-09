@@ -108,6 +108,10 @@ export const show = function () {
       <label class="pd_cfg_ml">
         争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
         <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}">[?]</span>
+      </label><br>
+      <label>
+        <input name="showChangePointsCountDownEnabled" type="checkbox"> 在首页显示改点倒计时
+        <span class="pd_cfg_tips" title="在首页显示改点倒计时">[?]</span>
       </label>
     </fieldset>
     <fieldset>

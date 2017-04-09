@@ -33,12 +33,14 @@ let logList = [];
 let levelInfoList = [];
 // 当前争夺属性
 let propertyList = {};
+// 额外点数列表
+let extraPointsList = {};
 // 光环信息
 let haloInfo = {};
 // 道具使用情况列表
 let itemUsedNumList = new Map();
 // 修改点数可用次数
-let changePointsCount = 0;
+let changePointsAvailableCount = 0;
 // 点数分配记录列表
 let pointsLogList = [];
 
@@ -93,7 +95,7 @@ export const enhanceLootIndexPage = function () {
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !Util.getCookie(Const.lootAttackingCookieName)) {
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !parseInt(Util.getCookie(Const.changePointsCountDownCookieName))) {
         $(document).ready(setTimeout(autoLoot, 500));
     }
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
@@ -164,13 +166,26 @@ const handlePointsArea = function () {
         .prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point')
         .after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
+
     let $changeCount = $points.find('[name="rvrc1"]').contents().eq(-3);
     let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.get(0).textContent);
     if (changeCountMatches) {
-        changePointsCount = parseInt(changeCountMatches[1]);
+        changePointsAvailableCount = parseInt(changeCountMatches[1]);
         $changeCount.wrap('<span id="pdChangeCount"></span>');
         $points.find('#pdChangeCount').css('margin-left', '5px');
     }
+
+    let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($points.text());
+    if (countDownMatches) {
+        let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
+        Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+    }
+    else Util.setCookie(Const.changePointsCountDownCookieName, 0, Util.getDate(`+${Const.changePointsCountDownExpires}m`));
+
+    extraPointsList = {
+        '耐力': parseInt($points.find('[name="p"]').next('span').text()),
+        '幸运': parseInt($points.find('[name="l"]').next('span').text()),
+    };
 
     /**
      * 显示剩余属性点
@@ -248,8 +263,9 @@ const checkPoints = function ($points) {
         return false;
     }
     else if (surplusPoint > 0) {
-        return confirm('可分配属性点尚未用完，是否继续？');
+        if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
     }
+    Util.deleteCookie(Const.changePointsCountDownCookieName);
     return true;
 };
 
@@ -1078,21 +1094,24 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }).then(function (html) {
                 let {msg} = Util.getResponseMsg(html);
                 if (/已经重新配置加点！/.test(msg)) {
+                    Util.deleteCookie(Const.changePointsCountDownCookieName);
                     recordPointsLog(true);
-                    changePointsCount = changePointsCount > 0 ? changePointsCount - 1 : 0;
-                    $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsCount}]次)`);
+                    changePointsAvailableCount = changePointsAvailableCount > 0 ? changePointsAvailableCount - 1 : 0;
+                    $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
                     $points.find('.pd_point').each(function () {
                         this.defaultValue = $(this).val();
                     });
+                    Script.runFunc('Loot.lootAttack_changePoints_success_', msg);
                     return 'success';
                 }
                 else {
                     let matches = /你还需要等待(\d+)分钟/.exec(msg);
                     if (matches) {
                         let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
-                        Util.setCookie(Const.lootAttackingCookieName, nextTime.getTime(), nextTime);
+                        Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
                     }
                     Msg.show((`<strong>第<em>${nextLevelText}</em>层方案：${msg}</strong>`), -1);
+                    Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
                     return 'error';
                 }
             }, () => 'timeout');
@@ -1130,16 +1149,14 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             data: {'safeid': safeId},
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
-            if (Config.autoLootEnabled) {
-                let nextTime = Util.getDate(`+${Const.lootAttackingExpires}m`);
-                Util.setCookie(Const.lootAttackingCookieName, nextTime.getTime(), nextTime);
-            }
+            if (Config.autoLootEnabled) Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
             if (!/你\(\d+\)遭遇了/.test(html)) {
                 setTimeout(check, Const.defAjaxInterval);
                 return;
             }
             log = html + log;
             after();
+            Script.runFunc('Loot.lootAttack_attack_after_', html);
         }).fail(function () {
             console.log('【争夺攻击】超时重试...');
             setTimeout(check, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
@@ -1200,19 +1217,29 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             type: 'GET',
             url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
             timeout: Const.defAjaxTimeout,
-            success (html) {
-                let $log = $('#pk_text', html);
-                if (!$log.length) {
-                    Msg.remove($wait);
-                    return;
-                }
-                log = $log.html();
-                after(true);
-            },
-            error () {
-                setTimeout(check, Const.defAjaxInterval);
+        }).done(function (html) {
+            let $log = $('#pk_text', html);
+            if (!$log.length) {
+                Msg.remove($wait);
+                return;
             }
-        });
+            log = $log.html();
+
+            let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
+            if (countDownMatches) {
+                changePointsAvailableCount = 0;
+                let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
+                Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+            }
+            let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
+            if (changeCountMatches) {
+                changePointsAvailableCount = parseInt(changeCountMatches[1]);
+                Util.setCookie(Const.changePointsCountDownCookieName, 0, Util.getDate(`+${Const.changePointsCountDownExpires}m`));
+            }
+            $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
+            after(true);
+            Script.runFunc('Loot.lootAttack_check_after_', html);
+        }).fail(() => setTimeout(check, Const.defAjaxInterval));
     };
 
     ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
@@ -1238,9 +1265,10 @@ export const getLootInfo = function () {
         levelPointList: Config.levelPointList,
         availablePoint: propertyList['可分配属性点'],
         haloInfo,
+        extraPointsList,
         propertyList,
         itemUsedNumList,
-        changePointsCount,
+        changePointsAvailableCount,
         log,
         logList,
         enemyList,
@@ -1809,8 +1837,7 @@ const autoLoot = function () {
         Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
         return;
     }
-    let nextTime = Util.getDate(`+${Const.lootAttackingExpires}m`);
-    Util.setCookie(Const.lootAttackingCookieName, nextTime.getTime(), nextTime);
+    Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
     Util.deleteCookie(Const.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
     lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId});
@@ -1852,6 +1879,30 @@ export const autoSaveLootLog = function () {
             setTimeout(autoSaveLootLog, Const.defAjaxInterval);
         }
     });
+};
+
+/**
+ * 获取改点倒计时
+ * @returns {Deferred} Deferred对象
+ */
+export const getChangePointsCountDown = function () {
+    console.log('获取改点倒计时Start');
+    return $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        timeout: Const.defAjaxTimeout,
+    }).then(function (html) {
+        let matches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
+        if (matches) {
+            let nextTime = Util.getDate(`+${matches[1]}m`);
+            Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+            return nextTime.getTime();
+        }
+        else {
+            Util.setCookie(Const.changePointsCountDownCookieName, 0, Util.getDate(`+${Const.changePointsCountDownExpires}m`));
+            return 0;
+        }
+    }, () => 'timeout');
 };
 
 /**
