@@ -66,8 +66,8 @@ const Const = {
     },
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval () {
-        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 4000; // 慢速情况
-        else return Math.floor(Math.random() * 200) + 200; // 正常情况
+        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 5000; // 慢速情况
+        else return Math.floor(Math.random() * 200) + 500; // 正常情况
     },
     // 银行相关操作的时间间隔（毫秒）
     bankActionInterval: 5000,
@@ -91,7 +91,7 @@ const Const = {
     multiQuoteStorageName: storagePrefix + 'multiQuote',
     // 保存发帖内容的SessionStorage名称
     postContentStorageName: storagePrefix + 'postContent',
-    // 存储临时点数分配记录列表的SessionStorage名称
+    // 存储临时点数分配记录列表的LocalStorage名称
     tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
 
     // 神秘等级升级提醒的临时日志名称

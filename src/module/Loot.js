@@ -83,7 +83,8 @@ export const enhanceLootIndexPage = function () {
     log = $log.html();
     logList = getLogList(log);
     levelInfoList = getLevelInfoList(logList);
-    pointsLogList = getTempPointsLogList(logList);
+    if (/你被击败了/.test(log) || /本日无争夺记录/.test(log)) localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
+    else pointsLogList = getTempPointsLogList(logList);
 
     handlePropertiesArea();
     handlePointsArea();
@@ -127,7 +128,8 @@ const handlePropertiesArea = function () {
         .replace(
             '技能伤害：攻击+(体质*5)+(智力*5)',
             '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
-        );
+        )
+        .replace(/(可分配属性点：)(\d+)/, '$1<span id="pdDistributablePoint">$2</span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
 
     $properties.on('click', '[id^="pdPro_"]', function () {
@@ -248,7 +250,10 @@ const handlePointsArea = function () {
         if (isNaN(num) || num < 0) num = 0;
         num = num + surplusPoint;
         $point.val(num < 1 ? 1 : num).trigger('change');
-    }).find('form').submit(() => checkPoints($points)).find('.pd_point').trigger('change');
+    }).find('form').submit(() => {
+        Util.deleteCookie(Const.changePointsCountDownCookieName);
+        checkPoints($points);
+    }).find('.pd_point').trigger('change');
 };
 
 /**
@@ -265,7 +270,6 @@ const checkPoints = function ($points) {
     else if (surplusPoint > 0) {
         if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
     }
-    Util.deleteCookie(Const.changePointsCountDownCookieName);
     return true;
 };
 
@@ -1008,6 +1012,8 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         `<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${initCurrentLevel}</em></i>` +
         '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>'
     );
+    let index = 0;
+    let isStop = false;
 
     /**
      * 记录点数分配记录
@@ -1032,7 +1038,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         }
         propertiesText = propertiesText.replace(/，$/, '');
         pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
-        sessionStorage.setItem(Const.tempPointsLogListStorageName, JSON.stringify(pointsLogList));
+        localStorage.setItem(
+            Const.tempPointsLogListStorageName + '_' + Info.uid,
+            JSON.stringify({time: new Date().getTime(), pointsLogList})
+        );
         if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
     };
 
@@ -1131,7 +1140,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
             if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
         }).fail(function (result) {
-            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), Const.defAjaxInterval);
+            if (result === 'timeout') setTimeout(check, Const.defAjaxInterval);
         }).always(function (result) {
             if (result !== 'success' && result !== 'timeout') {
                 Msg.remove($wait);
@@ -1149,8 +1158,9 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             data: {'safeid': safeId},
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
+            index++;
             if (Config.autoLootEnabled) Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
-            if (!/你\(\d+\)遭遇了/.test(html)) {
+            if (!/你\(\d+\)遭遇了/.test(html) || index % 5 === 0) {
                 setTimeout(check, Const.defAjaxInterval);
                 return;
             }
@@ -1183,7 +1193,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         $properties.find('#pdCurrentLife').text(info ? info.life : 0);
 
         let isFail = /你被击败了/.test(log);
-        let isStop = isFail || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) || $countdown.closest('.pd_msg').data('stop');
+        isStop = isFail || isStop || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) || $countdown.closest('.pd_msg').data('stop');
         if (isStop) {
             if (Config.autoLootEnabled) {
                 Util.deleteCookie(Const.lootCheckingCookieName);
@@ -1237,6 +1247,20 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 Util.setCookie(Const.changePointsCountDownCookieName, 0, Util.getDate(`+${Const.changePointsCountDownExpires}m`));
             }
             $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
+
+            let distributablePointMatches = /可分配属性点：(\d+)/.exec(html);
+            if (distributablePointMatches) {
+                let distributablePoint = parseInt(distributablePointMatches[1]);
+                if (propertyList['可分配属性点'] !== distributablePoint) {
+                    propertyList['可分配属性点'] = distributablePoint;
+                    $properties.find('#pdDistributablePoint').text(distributablePoint);
+                    if (!/你被击败了/.test(log) && Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && !checkPoints($points)) {
+                        $points.find('.pd_point:first').trigger('change');
+                        isStop = true;
+                    }
+                }
+            }
+
             after(true);
             Script.runFunc('Loot.lootAttack_check_after_', html);
         }).fail(() => setTimeout(check, Const.defAjaxInterval));
@@ -1283,7 +1307,7 @@ export const getLootInfo = function () {
  */
 const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
-    sessionStorage.removeItem(Const.tempPointsLogListStorageName);
+    localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
 
     let allEnemyList = {};
     for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
@@ -1750,20 +1774,21 @@ const getCurrentLevel = logList => logList.length - 1 >= 1 ? logList.length - 1 
  * @returns {string[]} 点数分配记录列表
  */
 const getTempPointsLogList = function (logList) {
-    let pointsLogList = sessionStorage.getItem(Const.tempPointsLogListStorageName);
-    if (!pointsLogList) return [];
+    let options = localStorage.getItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
+    if (!options) return [];
     try {
-        pointsLogList = JSON.parse(pointsLogList);
+        options = JSON.parse(options);
     }
     catch (ex) {
         return [];
     }
-    if (!pointsLogList || !Array.isArray(pointsLogList)) return [];
-    if (pointsLogList.length > logList.length) {
-        sessionStorage.removeItem(Const.tempPointsLogListStorageName);
+    if (!options || $.type(options) !== 'object' || $.type(options.time) !== 'number' || !Array.isArray(options.pointsLogList)) return [];
+    let diff = new Date().getTime() - options.time;
+    if (options.pointsLogList.length > logList.length || diff >= 24 * 60 * 60 * 1000 || diff < 0) {
+        localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
         return [];
     }
-    return pointsLogList;
+    return options.pointsLogList;
 };
 
 /**

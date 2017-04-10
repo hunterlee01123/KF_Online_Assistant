@@ -479,7 +479,7 @@ export const showStatFloorDialog = function (floorList) {
         });
         if (!threadList.length) return;
         if (!confirm(
-                `你共选择了${threadList.length}个项目，总售价 ${totalSell.toLocaleString()} KFB，` +
+                `你共选择了 ${threadList.length} 个可购买项，总售价 ${totalSell.toLocaleString()} KFB，` +
                 `均价 ${Util.getFixedNumLocStr(totalSell / threadList.length, 2)} KFB，是否批量购买？`
             )
         ) return;
