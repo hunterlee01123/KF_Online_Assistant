@@ -240,23 +240,28 @@ export const addPromoteHaloInterval = function () {
 };
 
 /**
- * 添加改点倒计时
+ * 添加改点剩余次数信息提示
  */
-export const addChangePointsCountDown = function () {
-    let nextTime = parseInt(Util.getCookie(Const.changePointsCountDownCookieName));
-    if (nextTime === 0) return;
-    if (isNaN(nextTime)) {
+export const addChangePointsInfoTips = function () {
+    let value = Util.getCookie(Const.changePointsInfoCookieName);
+    if (!value) {
         Loot.getChangePointsCountDown()
-            .done(addChangePointsCountDown)
-            .fail(() => setTimeout(addChangePointsCountDown, Const.defAjaxInterval));
+            .done(addChangePointsInfoTips)
+            .fail(() => setTimeout(addChangePointsInfoTips, Const.defAjaxInterval));
         return;
     }
 
-    let interval = nextTime - new Date().getTime();
-    if (interval > 0) {
-        let minutes = Math.ceil(interval / 60 / 1000);
-        let hours = Math.floor(minutes / 60);
-        minutes -= hours * 60;
-        $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdChangePointsCountDown"> (改点：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
+    let tipsText = '';
+    if ($.isNumeric(value)) {
+        let nextTime = parseInt(value);
+        let interval = nextTime - new Date().getTime();
+        if (interval > 0) {
+            let minutes = Math.ceil(interval / 60 / 1000);
+            let hours = Math.floor(minutes / 60);
+            minutes -= hours * 60;
+            tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
+        }
     }
+    else tipsText = parseInt(value) + '次';
+    if (tipsText) $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };

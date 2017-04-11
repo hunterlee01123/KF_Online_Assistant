@@ -110,8 +110,8 @@ export const show = function () {
         <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}">[?]</span>
       </label><br>
       <label>
-        <input name="showChangePointsCountDownEnabled" type="checkbox"> 在首页显示改点倒计时
-        <span class="pd_cfg_tips" title="在首页显示改点倒计时">[?]</span>
+        <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
+        <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
       </label>
     </fieldset>
     <fieldset>

@@ -36,8 +36,8 @@ const Const = {
     tmpHaloInfoExpires: 90,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
-    // 在尚有可用改点次数情况下的存储改点倒计时的Cookie有效期（分钟）
-    changePointsCountDownExpires: 60,
+    // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
+    changePointsInfoExpires: 60,
     // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
     checkLootInterval: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
@@ -113,8 +113,8 @@ const Const = {
     lootCheckingCookieName: 'lootChecking',
     // 标记正在进行争夺攻击的Cookie名称
     lootAttackingCookieName: 'lootAttacking',
-    // 存储改点倒计时的Cookie名称
-    changePointsCountDownCookieName: 'changePointsCountDown',
+    // 存储改点剩余次数信息的Cookie名称
+    changePointsInfoCookieName: 'changePointsInfo',
     // 标记已完成自动争夺的Cookie名称
     lootCompleteCookieName: 'lootComplete',
     // 标记已去除首页已读at高亮提示的Cookie名称

@@ -96,7 +96,7 @@ export const enhanceLootIndexPage = function () {
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !parseInt(Util.getCookie(Const.changePointsCountDownCookieName))) {
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))) {
         $(document).ready(setTimeout(autoLoot, 500));
     }
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
@@ -180,9 +180,9 @@ const handlePointsArea = function () {
     let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($points.text());
     if (countDownMatches) {
         let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
-        Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+        Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
     }
-    else Util.setCookie(Const.changePointsCountDownCookieName, 0, Util.getDate(`+${Const.changePointsCountDownExpires}m`));
+    else Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
 
     extraPointsList = {
         '耐力': parseInt($points.find('[name="p"]').next('span').text()),
@@ -251,7 +251,7 @@ const handlePointsArea = function () {
         num = num + surplusPoint;
         $point.val(num < 1 ? 1 : num).trigger('change');
     }).find('form').submit(() => {
-        Util.deleteCookie(Const.changePointsCountDownCookieName);
+        Util.deleteCookie(Const.changePointsInfoCookieName);
         checkPoints($points);
     }).find('.pd_point').trigger('change');
 };
@@ -1103,7 +1103,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }).then(function (html) {
                 let {msg} = Util.getResponseMsg(html);
                 if (/已经重新配置加点！/.test(msg)) {
-                    Util.deleteCookie(Const.changePointsCountDownCookieName);
+                    Util.deleteCookie(Const.changePointsInfoCookieName);
                     recordPointsLog(true);
                     changePointsAvailableCount = changePointsAvailableCount > 0 ? changePointsAvailableCount - 1 : 0;
                     $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
@@ -1117,7 +1117,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     let matches = /你还需要等待(\d+)分钟/.exec(msg);
                     if (matches) {
                         let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
-                        Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+                        Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
                     }
                     Msg.show((`<strong>第<em>${nextLevelText}</em>层方案：${msg}</strong>`), -1);
                     Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
@@ -1140,7 +1140,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
             if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
         }).fail(function (result) {
-            if (result === 'timeout') setTimeout(check, Const.defAjaxInterval);
+            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), Const.defAjaxInterval);
         }).always(function (result) {
             if (result !== 'success' && result !== 'timeout') {
                 Msg.remove($wait);
@@ -1239,12 +1239,12 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             if (countDownMatches) {
                 changePointsAvailableCount = 0;
                 let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
-                Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+                Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
             }
             let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
             if (changeCountMatches) {
                 changePointsAvailableCount = parseInt(changeCountMatches[1]);
-                Util.setCookie(Const.changePointsCountDownCookieName, 0, Util.getDate(`+${Const.changePointsCountDownExpires}m`));
+                Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
             }
             $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
 
@@ -1920,13 +1920,17 @@ export const getChangePointsCountDown = function () {
         let matches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
         if (matches) {
             let nextTime = Util.getDate(`+${matches[1]}m`);
-            Util.setCookie(Const.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+            Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
             return nextTime.getTime();
         }
-        else {
-            Util.setCookie(Const.changePointsCountDownCookieName, 0, Util.getDate(`+${Const.changePointsCountDownExpires}m`));
-            return 0;
+
+        matches = /当前修改配点可用\[(\d+)]次/.exec(html);
+        if (matches) {
+            let count = parseInt(matches[1]);
+            Util.setCookie(Const.changePointsInfoCookieName, count + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
+            return count;
         }
+        return 'error';
     }, () => 'timeout');
 };
 
