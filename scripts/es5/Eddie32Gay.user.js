@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        eddie32基佬化
-// @version     1.0
-// @trigger     end
+// @version     1.1
+// @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=601954
 // @description 将eddie32的发言内容中的指定关键词替换为其它词语
@@ -16,7 +16,7 @@
     var replaceUserList = ['eddie32', '徳井青空'];
 
     // 替换关键词列表，支持正则表达式，例：[/妹子/g, '基佬'], [/关键词A/g, '关键词B']
-    var replaceList = [[/妹子|老婆/g, '基佬'], [/她/g, '他'], [/女(生|孩)/g, '男$1']];
+    var replaceList = [[/妹子|老婆/g, '基佬'], [/她/g, '他'], [/meizi/ig, 'jilao'], [/女(生|孩|人)/g, '男$1']];
 
     var replaceKeyword = function replaceKeyword($elem) {
         var html = $elem.html();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        eddie32基佬化
-// @version     1.0
-// @trigger     end
+// @version     1.1
+// @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=601954
 // @description 将eddie32的发言内容中的指定关键词替换为其它词语
@@ -18,7 +18,8 @@
     const replaceList = [
         [/妹子|老婆/g, '基佬'],
         [/她/g, '他'],
-        [/女(生|孩)/g, '男$1'],
+        [/meizi/ig, 'jilao'],
+        [/女(生|孩|人)/g, '男$1'],
     ];
 
     const replaceKeyword = function ($elem) {
