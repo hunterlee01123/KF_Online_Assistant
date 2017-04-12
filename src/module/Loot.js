@@ -182,7 +182,11 @@ const handlePointsArea = function () {
         let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
         Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
     }
-    else Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
+    else {
+        let count = parseInt(Util.getCookie(Const.changePointsInfoCookieName));
+        if (count !== changePointsAvailableCount)
+            Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
+    }
 
     extraPointsList = {
         '耐力': parseInt($points.find('[name="p"]').next('span').text()),
@@ -616,7 +620,7 @@ const addLevelPointListSelect = function () {
         e.preventDefault();
         let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.split(' ');
+        let points = value.replace(/\s+/g, ' ').split(' ');
         $points.find('.pd_point').each(function (index) {
             if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');
             else return false;
@@ -809,7 +813,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let $line = $(this).closest('tr');
         let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.split(' ');
+        let points = value.replace(/\s+/g, ' ').split(' ');
         $line.find('.pd_point').each(function (index) {
             if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');
             else return false;
@@ -1865,6 +1869,7 @@ const autoLoot = function () {
     Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
     Util.deleteCookie(Const.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
+    if (Config.unusedPointNumAlertEnabled && !autoChangePointsEnabled && !checkPoints($points)) return;
     lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId});
 };
 

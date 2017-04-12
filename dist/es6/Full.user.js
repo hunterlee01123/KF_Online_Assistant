@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.9
+// @version     9.9.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.9';
+const version = '9.9.1';
 
 /**
  * 导出模块
@@ -173,7 +173,7 @@ const init = function () {
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
         Index.addPromoteHaloInterval();
-        if (Config.showChangePointsCountDownEnabled) Index.addChangePointsCountDown();
+        if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         Read.fastGotoFloor();
@@ -278,7 +278,7 @@ const init = function () {
     let isAutoLootStarted = false;
     if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !parseInt(Util.getCookie(_Const2.default.changePointsCountDownCookieName)) && !isAutoPromoteHaloStarted) {
+            if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !isAutoPromoteHaloStarted) {
                 isAutoLootStarted = true;
                 Loot.checkLoot();
             }
@@ -959,8 +959,8 @@ const Config = exports.Config = {
     checkLootAfterTime: '00:05:00',
     // 历史争夺记录保存天数
     lootLogSaveDays: 15,
-    // 是否在首页显示改点倒计时，true：开启；false：关闭
-    showChangePointsCountDownEnabled: false,
+    // 是否在首页显示改点剩余次数信息（冷却时则显示倒计时），true：开启；false：关闭
+    showChangePointsInfoEnabled: false,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
     // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
@@ -1329,8 +1329,8 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="默认值：${_Config.Config.lootLogSaveDays}">[?]</span>
       </label><br>
       <label>
-        <input name="showChangePointsCountDownEnabled" type="checkbox"> 在首页显示改点倒计时
-        <span class="pd_cfg_tips" title="在首页显示改点倒计时">[?]</span>
+        <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
+        <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -2524,8 +2524,8 @@ const Const = {
     tmpHaloInfoExpires: 90,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
-    // 在尚有可用改点次数情况下的存储改点倒计时的Cookie有效期（分钟）
-    changePointsCountDownExpires: 60,
+    // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
+    changePointsInfoExpires: 30,
     // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
     checkLootInterval: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
@@ -2601,8 +2601,8 @@ const Const = {
     lootCheckingCookieName: 'lootChecking',
     // 标记正在进行争夺攻击的Cookie名称
     lootAttackingCookieName: 'lootAttacking',
-    // 存储改点倒计时的Cookie名称
-    changePointsCountDownCookieName: 'changePointsCountDown',
+    // 存储改点剩余次数信息的Cookie名称
+    changePointsInfoCookieName: 'changePointsInfo',
     // 标记已完成自动争夺的Cookie名称
     lootCompleteCookieName: 'lootComplete',
     // 标记已去除首页已读at高亮提示的Cookie名称
@@ -2758,7 +2758,7 @@ const close = exports.close = function (id) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addChangePointsCountDown = exports.addPromoteHaloInterval = exports.handleIndexPersonalInfo = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.handleIndexPersonalInfo = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
 
 var _Info = require('./Info');
 
@@ -2995,23 +2995,27 @@ const addPromoteHaloInterval = exports.addPromoteHaloInterval = function () {
 };
 
 /**
- * 添加改点倒计时
+ * 添加改点剩余次数信息提示
  */
-const addChangePointsCountDown = exports.addChangePointsCountDown = function () {
-    let nextTime = parseInt(Util.getCookie(_Const2.default.changePointsCountDownCookieName));
-    if (nextTime === 0) return;
-    if (isNaN(nextTime)) {
-        Loot.getChangePointsCountDown().done(addChangePointsCountDown).fail(() => setTimeout(addChangePointsCountDown, _Const2.default.defAjaxInterval));
+const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
+    let value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
+    if (!value) {
+        Loot.getChangePointsCountDown().done(addChangePointsInfoTips).fail(() => setTimeout(addChangePointsInfoTips, _Const2.default.defAjaxInterval));
         return;
     }
 
-    let interval = nextTime - new Date().getTime();
-    if (interval > 0) {
-        let minutes = Math.ceil(interval / 60 / 1000);
-        let hours = Math.floor(minutes / 60);
-        minutes -= hours * 60;
-        $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdChangePointsCountDown"> (改点：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
-    }
+    let tipsText = '';
+    if ($.isNumeric(value)) {
+        let nextTime = parseInt(value);
+        let interval = nextTime - new Date().getTime();
+        if (interval > 0) {
+            let minutes = Math.ceil(interval / 60 / 1000);
+            let hours = Math.floor(minutes / 60);
+            minutes -= hours * 60;
+            tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
+        }
+    } else tipsText = parseInt(value) + '次';
+    if (tipsText) $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };
 
 },{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
@@ -5187,7 +5191,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !parseInt(Util.getCookie(_Const2.default.changePointsCountDownCookieName))) {
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) {
         $(document).ready(setTimeout(autoLoot, 500));
     }
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
@@ -5240,8 +5244,11 @@ const handlePointsArea = function () {
     let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($points.text());
     if (countDownMatches) {
         let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
-        Util.setCookie(_Const2.default.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
-    } else Util.setCookie(_Const2.default.changePointsCountDownCookieName, 0, Util.getDate(`+${_Const2.default.changePointsCountDownExpires}m`));
+        Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+    } else {
+        let count = parseInt(Util.getCookie(_Const2.default.changePointsInfoCookieName));
+        if (count !== changePointsAvailableCount) Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${_Const2.default.changePointsInfoExpires}m`));
+    }
 
     extraPointsList = {
         '耐力': parseInt($points.find('[name="p"]').next('span').text()),
@@ -5302,7 +5309,7 @@ const handlePointsArea = function () {
         num = num + surplusPoint;
         $point.val(num < 1 ? 1 : num).trigger('change');
     }).find('form').submit(() => {
-        Util.deleteCookie(_Const2.default.changePointsCountDownCookieName);
+        Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
         checkPoints($points);
     }).find('.pd_point').trigger('change');
 };
@@ -5656,7 +5663,7 @@ const addLevelPointListSelect = function () {
         e.preventDefault();
         let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.split(' ');
+        let points = value.replace(/\s+/g, ' ').split(' ');
         $points.find('.pd_point').each(function (index) {
             if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');else return false;
         });
@@ -5842,7 +5849,7 @@ const showLevelPointListConfigDialog = function (callback) {
         let $line = $(this).closest('tr');
         let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.split(' ');
+        let points = value.replace(/\s+/g, ' ').split(' ');
         $line.find('.pd_point').each(function (index) {
             if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');else return false;
         });
@@ -6107,7 +6114,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             }).then(function (html) {
                 let { msg } = Util.getResponseMsg(html);
                 if (/已经重新配置加点！/.test(msg)) {
-                    Util.deleteCookie(_Const2.default.changePointsCountDownCookieName);
+                    Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
                     recordPointsLog(true);
                     changePointsAvailableCount = changePointsAvailableCount > 0 ? changePointsAvailableCount - 1 : 0;
                     $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
@@ -6120,7 +6127,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                     let matches = /你还需要等待(\d+)分钟/.exec(msg);
                     if (matches) {
                         let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
-                        Util.setCookie(_Const2.default.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+                        Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
                     }
                     Msg.show(`<strong>第<em>${nextLevelText}</em>层方案：${msg}</strong>`, -1);
                     Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
@@ -6142,7 +6149,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
             if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
         }).fail(function (result) {
-            if (result === 'timeout') setTimeout(check, _Const2.default.defAjaxInterval);
+            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), _Const2.default.defAjaxInterval);
         }).always(function (result) {
             if (result !== 'success' && result !== 'timeout') {
                 Msg.remove($wait);
@@ -6237,12 +6244,12 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             if (countDownMatches) {
                 changePointsAvailableCount = 0;
                 let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
-                Util.setCookie(_Const2.default.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+                Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
             }
             let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
             if (changeCountMatches) {
                 changePointsAvailableCount = parseInt(changeCountMatches[1]);
-                Util.setCookie(_Const2.default.changePointsCountDownCookieName, 0, Util.getDate(`+${_Const2.default.changePointsCountDownExpires}m`));
+                Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${_Const2.default.changePointsInfoExpires}m`));
             }
             $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
 
@@ -6836,6 +6843,7 @@ const autoLoot = function () {
     Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
     Util.deleteCookie(_Const2.default.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function';
+    if (Config.unusedPointNumAlertEnabled && !autoChangePointsEnabled && !checkPoints($points)) return;
     lootAttack({ type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId });
 };
 
@@ -6890,12 +6898,17 @@ const getChangePointsCountDown = exports.getChangePointsCountDown = function () 
         let matches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
         if (matches) {
             let nextTime = Util.getDate(`+${matches[1]}m`);
-            Util.setCookie(_Const2.default.changePointsCountDownCookieName, nextTime.getTime(), nextTime);
+            Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
             return nextTime.getTime();
-        } else {
-            Util.setCookie(_Const2.default.changePointsCountDownCookieName, 0, Util.getDate(`+${_Const2.default.changePointsCountDownExpires}m`));
-            return 0;
         }
+
+        matches = /当前修改配点可用\[(\d+)]次/.exec(html);
+        if (matches) {
+            let count = parseInt(matches[1]);
+            Util.setCookie(_Const2.default.changePointsInfoCookieName, count + 'c', Util.getDate(`+${_Const2.default.changePointsInfoExpires}m`));
+            return count;
+        }
+        return 'error';
     }, () => 'timeout');
 };
 
@@ -8515,7 +8528,8 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
             if (now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);
         } else if (value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
-            let value = parseInt(Util.getCookie(_Const2.default.changePointsCountDownCookieName));
+            let value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
+            value = $.isNumeric(value) ? parseInt(value) : 0;
             if (value > 0) checkLootInterval = Math.floor((value - new Date().getTime()) / 1000);else checkLootInterval = 0;
         }
     }
@@ -8644,7 +8658,7 @@ const startTimingMode = exports.startTimingMode = function () {
 
         if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
             if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
-                if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !parseInt(Util.getCookie(_Const2.default.changePointsCountDownCookieName))) Loot.checkLoot();
+                if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) Loot.checkLoot();
             } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 Loot.autoSaveLootLog();
             }
