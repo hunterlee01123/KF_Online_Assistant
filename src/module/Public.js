@@ -323,19 +323,20 @@ export const getNextTimingIntervalInfo = function () {
     let checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
-        if (value > 0) {
+        if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
+        else {
             let date = Util.getDateByTime(Config.checkLootAfterTime);
             let now = new Date();
-            if (now > date) date.setDate(date.getDate() + 1);
+            if (value > 0 && now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);
+            if (checkLootInterval < 0) checkLootInterval = 0;
         }
-        else if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
-        else if (Util.getCookie(Const.lootAttackingCookieName)) checkLootInterval = Const.lootAttackingExpires * 60;
+
+        if (Util.getCookie(Const.lootAttackingCookieName)) checkLootInterval = Const.lootAttackingExpires * 60;
         else {
-            let value = Util.getCookie(Const.changePointsInfoCookieName);
-            value = $.isNumeric(value) ? parseInt(value) : 0;
-            if (value > 0) checkLootInterval = Math.floor((value - new Date().getTime()) / 1000);
-            else checkLootInterval = 0;
+            let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
+            changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
+            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
         }
     }
 

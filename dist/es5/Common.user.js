@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.9.1
+// @version     9.9.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.9.1';
+var version = '9.9.2';
 
 /**
  * 导出模块
@@ -219,10 +219,11 @@ var init = function init() {
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
-        $('.kf_fw_ig1').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', function () {
+        $('.kf_fw_ig1:first').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', function () {
             if (!confirm('是否提升战力光环？')) return false;
             TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
         });
+        Loot.addUserLinkInHaloPage();
     } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
     } else if (/\/kf_fw_card_my\.php$/.test(location.href)) {
@@ -5564,7 +5565,7 @@ var showLogText = function showLogText(log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
+exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -7643,6 +7644,18 @@ var addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function addUser
 };
 
 /**
+ * 在战力光环排行上添加用户链接
+ */
+var addUserLinkInHaloPage = exports.addUserLinkInHaloPage = function addUserLinkInHaloPage() {
+    $('.kf_fw_ig1:eq(1) > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
+        var $this = $(this);
+        var userName = $this.text().trim();
+        $this.html('<a href="profile.php?action=show&username=' + userName + '" target="_blank">' + userName + '</a>');
+        if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
+    });
+};
+
+/**
  * 读取战力光环页面信息
  * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
@@ -9224,28 +9237,31 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
     var checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         var _value = parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName));
-        if (_value > 0) {
+        if (_value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else {
             var date = Util.getDateByTime(Config.checkLootAfterTime);
             var now = new Date();
-            if (now > date) date.setDate(date.getDate() + 1);
+            if (_value > 0 && now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);
-        } else if (_value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
-            var _value2 = Util.getCookie(_Const2.default.changePointsInfoCookieName);
-            _value2 = $.isNumeric(_value2) ? parseInt(_value2) : 0;
-            if (_value2 > 0) checkLootInterval = Math.floor((_value2 - new Date().getTime()) / 1000);else checkLootInterval = 0;
+            if (checkLootInterval < 0) checkLootInterval = 0;
+        }
+
+        if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
+            var changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
+            changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
+            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
         }
     }
 
     var getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
-        var _value3 = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
-        if (_value3 > 0) {
+        var _value2 = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
+        if (_value2 > 0) {
             var _date = Util.getTimezoneDateByTime(_Const2.default.getDailyBonusAfterTime);
             _date.setDate(_date.getDate() + 1);
             var _now = new Date();
             if (_now > _date) _date.setDate(_date.getDate() + 1);
             getDailyBonusInterval = Math.floor((_date - _now) / 1000);
-        } else if (_value3 < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
+        } else if (_value2 < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
     }
 
     var intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }];

@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.9.1
+// @version     9.9.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.9.1';
+const version = '9.9.2';
 
 /**
  * 导出模块
@@ -218,10 +218,11 @@ const init = function () {
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
-        $('.kf_fw_ig1').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', () => {
+        $('.kf_fw_ig1:first').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', () => {
             if (!confirm('是否提升战力光环？')) return false;
             TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
         });
+        Loot.addUserLinkInHaloPage();
     } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
     } else if (/\/kf_fw_card_my\.php$/.test(location.href)) {
@@ -5057,7 +5058,7 @@ const showLogText = function (log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
+exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
 
 var _Info = require('./Info');
 
@@ -6922,6 +6923,18 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
 };
 
 /**
+ * 在战力光环排行上添加用户链接
+ */
+const addUserLinkInHaloPage = exports.addUserLinkInHaloPage = function () {
+    $('.kf_fw_ig1:eq(1) > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
+        let $this = $(this);
+        let userName = $this.text().trim();
+        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
+    });
+};
+
+/**
  * 读取战力光环页面信息
  * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
@@ -8519,15 +8532,18 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
     let checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName));
-        if (value > 0) {
+        if (value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else {
             let date = Util.getDateByTime(Config.checkLootAfterTime);
             let now = new Date();
-            if (now > date) date.setDate(date.getDate() + 1);
+            if (value > 0 && now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);
-        } else if (value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
-            let value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
-            value = $.isNumeric(value) ? parseInt(value) : 0;
-            if (value > 0) checkLootInterval = Math.floor((value - new Date().getTime()) / 1000);else checkLootInterval = 0;
+            if (checkLootInterval < 0) checkLootInterval = 0;
+        }
+
+        if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
+            let changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
+            changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
+            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
         }
     }
 
