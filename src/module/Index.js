@@ -72,7 +72,7 @@ export const handleAtTips = function () {
  * 在神秘等级升级后进行提醒
  */
 export const smLevelUpAlert = function () {
-    let smLevel = parseInt($('a[href="kf_growup.php"]').data('smLevel'));
+    let smLevel = parseInt($('#pdSmLevel').data('smLevel'));
     if (!smLevel) return;
 
     /**
@@ -111,7 +111,7 @@ export const smLevelUpAlert = function () {
  * 在神秘系数排名发生变化时进行提醒
  */
 export const smRankChangeAlert = function () {
-    let smRank = $('a[href="kf_growup.php"]').data('smRank');
+    let smRank = $('#pdSmLevel').data('smRank');
     if (!smRank || smRank.endsWith('+')) return;
     smRank = parseInt(smRank);
 
@@ -169,7 +169,7 @@ export const showVipSurplusTime = function () {
      * @param {number} hours VIP剩余时间（小时）
      */
     const addVipHoursTips = function (hours) {
-        $('a[href="kf_growup.php"]').parent().after(
+        $('#pdSmLevel').parent().after(
             `<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` +
             `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`
         );
@@ -203,9 +203,9 @@ export const addSearchTypeSelectBox = function () {
 };
 
 /**
- * 处理首页个人信息
+ * 处理首页链接
  */
-export const handleIndexPersonalInfo = function () {
+export const handleIndexLink = function () {
     let $kfb = $('a[href="kf_givemekfb.php"]');
     let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
     if (matches) {
@@ -213,7 +213,8 @@ export const handleIndexPersonalInfo = function () {
         $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).data('kfb', kfb);
     }
 
-    let $smLevel = $('a[href="kf_growup.php"]');
+    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
+    $smLevel.attr('id', 'pdSmLevel');
     matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
     if (matches) {
         let smLevel = parseInt(matches[1]);
@@ -222,6 +223,8 @@ export const handleIndexPersonalInfo = function () {
             .data('smLevel', smLevel)
             .data('smRank', smRank);
     }
+
+    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
 };
 
 /**
@@ -235,7 +238,7 @@ export const addPromoteHaloInterval = function () {
         let minutes = Math.ceil(interval / 60 / 1000);
         let hours = Math.floor(minutes / 60);
         minutes -= hours * 60;
-        $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdHaloInterval"> (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
+        $('#pdLoot').append(`<span id="pdHaloInterval"> (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
     }
 };
 
@@ -263,5 +266,5 @@ export const addChangePointsInfoTips = function () {
         }
     }
     else tipsText = parseInt(value) + '次';
-    if (tipsText) $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
+    if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };

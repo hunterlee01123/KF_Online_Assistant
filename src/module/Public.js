@@ -19,9 +19,9 @@ import * as Loot from './Loot';
  * @returns {boolean} 是否获取成功
  */
 export const getUidAndUserName = function () {
-    let $user = $('.topright a[href^="profile.php?action=show&uid="]').eq(0);
+    let $user = $('.topmenuo1 > .topmenuo3 > a[href^="profile.php?action=show&uid="]').eq(0);
     if (!$user.length) return false;
-    Info.userName = $user.text();
+    Info.userName = $.trim($user.contents().get(0).textContent);
     if (!Info.userName) return false;
     let matches = /&uid=(\d+)/.exec($user.attr('href'));
     if (!matches) return false;
@@ -203,14 +203,16 @@ export const appendCss = function () {
  * 添加设置和日志对话框的链接
  */
 export const addConfigAndLogDialogLink = function () {
-    $('<a data-name="openConfigDialog" href="#">助手设置</a><span> | </span><a data-name="openLogDialog" href="#">助手日志</a><span> | </span>')
-        .insertBefore($('a[href^="login.php?action=quit"]:first'))
-        .filter('[data-name="openConfigDialog"]')
+    $(`
+<li><a data-name="openConfigDialog" href="#">助手设置</a></li>
+<li><a data-name="openLogDialog" href="#">助手日志</a></li>
+`).insertBefore(Info.$userMenu.find('> li:nth-last-child(1)'))
+        .find('[data-name="openConfigDialog"]')
         .click(function (e) {
             e.preventDefault();
             showConfigDialog();
         }).end()
-        .filter('[data-name="openLogDialog"]')
+        .find('[data-name="openLogDialog"]')
         .click(function (e) {
             e.preventDefault();
             showLogDialog();
@@ -1115,9 +1117,9 @@ export const makeSearchByBelowTwoKeyWordAvailable = function () {
  * 添加搜索对话框链接
  */
 export const addSearchDialogLink = function () {
-    $('<span> | </span><a href="#">搜索</a>')
-        .insertAfter('.topright > a[href="message.php"]')
-        .filter('a')
+    $('<li><a data-name="search" href="#">搜索</a></li>')
+        .insertBefore(Info.$userMenu.find('a[href="profile.php?action=modify"]').parent())
+        .find('[data-name="search"]')
         .click(function (e) {
             e.preventDefault();
             const dialogName = 'pdSearchDialog';

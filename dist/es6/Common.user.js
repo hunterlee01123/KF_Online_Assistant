@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.9.2
+// @version     9.9.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.9.2';
+const version = '9.9.3';
 
 /**
  * 导出模块
@@ -160,7 +160,8 @@ const init = function () {
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     if (_Info2.default.isInHomePage) {
-        Index.handleIndexPersonalInfo();
+        Index.handleIndexLink();
+        _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
         Index.handleAtTips();
         Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
@@ -168,7 +169,7 @@ const init = function () {
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
-        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
+        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
         Index.addPromoteHaloInterval();
         if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     } else if (location.pathname === '/read.php') {
@@ -263,7 +264,7 @@ const init = function () {
         if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
             Post.importKfSmileEnhanceExtension();
         }
-        $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
+        _Info2.default.$userMenu.find('> li:nth-last-child(1)').before('<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>');
     }
 
     let isAutoPromoteHaloStarted = false;
@@ -1487,7 +1488,7 @@ const show = exports.show = function () {
       </label><br>
       <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
-        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
+        <span class="pd_cfg_tips" title="在用户菜单上显示搜索对话框的链接">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果
@@ -2756,7 +2757,7 @@ const close = exports.close = function (id) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.handleIndexPersonalInfo = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.handleIndexLink = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
 
 var _Info = require('./Info');
 
@@ -2847,7 +2848,7 @@ const handleAtTips = exports.handleAtTips = function () {
  * 在神秘等级升级后进行提醒
  */
 const smLevelUpAlert = exports.smLevelUpAlert = function () {
-    let smLevel = parseInt($('a[href="kf_growup.php"]').data('smLevel'));
+    let smLevel = parseInt($('#pdSmLevel').data('smLevel'));
     if (!smLevel) return;
 
     /**
@@ -2880,7 +2881,7 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
  * 在神秘系数排名发生变化时进行提醒
  */
 const smRankChangeAlert = exports.smRankChangeAlert = function () {
-    let smRank = $('a[href="kf_growup.php"]').data('smRank');
+    let smRank = $('#pdSmLevel').data('smRank');
     if (!smRank || smRank.endsWith('+')) return;
     smRank = parseInt(smRank);
 
@@ -2928,7 +2929,7 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
      * @param {number} hours VIP剩余时间（小时）
      */
     const addVipHoursTips = function (hours) {
-        $('a[href="kf_growup.php"]').parent().after(`<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` + `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`);
+        $('#pdSmLevel').parent().after(`<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` + `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`);
     };
 
     let vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
@@ -2958,9 +2959,9 @@ const addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function () {
 };
 
 /**
- * 处理首页个人信息
+ * 处理首页链接
  */
-const handleIndexPersonalInfo = exports.handleIndexPersonalInfo = function () {
+const handleIndexLink = exports.handleIndexLink = function () {
     let $kfb = $('a[href="kf_givemekfb.php"]');
     let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
     if (matches) {
@@ -2968,13 +2969,16 @@ const handleIndexPersonalInfo = exports.handleIndexPersonalInfo = function () {
         $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).data('kfb', kfb);
     }
 
-    let $smLevel = $('a[href="kf_growup.php"]');
+    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
+    $smLevel.attr('id', 'pdSmLevel');
     matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
     if (matches) {
         let smLevel = parseInt(matches[1]);
         let smRank = matches[2];
         $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).data('smLevel', smLevel).data('smRank', smRank);
     }
+
+    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
 };
 
 /**
@@ -2988,7 +2992,7 @@ const addPromoteHaloInterval = exports.addPromoteHaloInterval = function () {
         let minutes = Math.ceil(interval / 60 / 1000);
         let hours = Math.floor(minutes / 60);
         minutes -= hours * 60;
-        $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdHaloInterval"> (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
+        $('#pdLoot').append(`<span id="pdHaloInterval"> (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
     }
 };
 
@@ -3013,7 +3017,7 @@ const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
             tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
         }
     } else tipsText = parseInt(value) + '次';
-    if (tipsText) $('a[href="kf_fw_ig_index.php"]').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
+    if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };
 
 },{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
@@ -3048,7 +3052,9 @@ const Info = {
    * ByUid：存储在油猴脚本的数据库中，设置和日志仅按uid区分;
    * Global：存储在油猴脚本的数据库中，各域名和各uid均使用全局设置，日志仅按uid区分；
    */
-  storageType: 'Default'
+  storageType: 'Default',
+  // 用户菜单区域
+  $userMenu: $('.topmenuo1 > .topmenuo3:last-child > .topmenuo2')
 };
 
 exports.default = Info;
@@ -8238,9 +8244,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @returns {boolean} 是否获取成功
  */
 const getUidAndUserName = exports.getUidAndUserName = function () {
-    let $user = $('.topright a[href^="profile.php?action=show&uid="]').eq(0);
+    let $user = $('.topmenuo1 > .topmenuo3 > a[href^="profile.php?action=show&uid="]').eq(0);
     if (!$user.length) return false;
-    _Info2.default.userName = $user.text();
+    _Info2.default.userName = $.trim($user.contents().get(0).textContent);
     if (!_Info2.default.userName) return false;
     let matches = /&uid=(\d+)/.exec($user.attr('href'));
     if (!matches) return false;
@@ -8421,10 +8427,13 @@ const appendCss = exports.appendCss = function () {
  * 添加设置和日志对话框的链接
  */
 const addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function () {
-    $('<a data-name="openConfigDialog" href="#">助手设置</a><span> | </span><a data-name="openLogDialog" href="#">助手日志</a><span> | </span>').insertBefore($('a[href^="login.php?action=quit"]:first')).filter('[data-name="openConfigDialog"]').click(function (e) {
+    $(`
+<li><a data-name="openConfigDialog" href="#">助手设置</a></li>
+<li><a data-name="openLogDialog" href="#">助手日志</a></li>
+`).insertBefore(_Info2.default.$userMenu.find('> li:nth-last-child(1)')).find('[data-name="openConfigDialog"]').click(function (e) {
         e.preventDefault();
         (0, _ConfigDialog.show)();
-    }).end().filter('[data-name="openLogDialog"]').click(function (e) {
+    }).end().find('[data-name="openLogDialog"]').click(function (e) {
         e.preventDefault();
         (0, _LogDialog.show)();
     });
@@ -9275,7 +9284,7 @@ const makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWord
  * 添加搜索对话框链接
  */
 const addSearchDialogLink = exports.addSearchDialogLink = function () {
-    $('<span> | </span><a href="#">搜索</a>').insertAfter('.topright > a[href="message.php"]').filter('a').click(function (e) {
+    $('<li><a data-name="search" href="#">搜索</a></li>').insertBefore(_Info2.default.$userMenu.find('a[href="profile.php?action=modify"]').parent()).find('[data-name="search"]').click(function (e) {
         e.preventDefault();
         const dialogName = 'pdSearchDialog';
         if ($('#' + dialogName).length > 0) return;

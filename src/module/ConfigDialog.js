@@ -270,7 +270,7 @@ export const show = function () {
       </label><br>
       <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
-        <span class="pd_cfg_tips" title="在页面上方显示搜索对话框的链接">[?]</span>
+        <span class="pd_cfg_tips" title="在用户菜单上显示搜索对话框的链接">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="animationEffectOffEnabled" type="checkbox"> 禁用动画效果

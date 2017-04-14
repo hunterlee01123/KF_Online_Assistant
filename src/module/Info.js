@@ -26,6 +26,8 @@ const Info = {
      * Global：存储在油猴脚本的数据库中，各域名和各uid均使用全局设置，日志仅按uid区分；
      */
     storageType: 'Default',
+    // 用户菜单区域
+    $userMenu: $('.topmenuo1 > .topmenuo3:last-child > .topmenuo2'),
 };
 
 export default Info;

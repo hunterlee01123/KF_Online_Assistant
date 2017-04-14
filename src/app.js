@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '9.9.2';
+const version = '9.9.3';
 
 /**
  * 导出模块
@@ -80,7 +80,8 @@ const init = function () {
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     if (Info.isInHomePage) {
-        Index.handleIndexPersonalInfo();
+        Index.handleIndexLink();
+        Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
         Index.handleAtTips();
         Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
@@ -89,7 +90,7 @@ const init = function () {
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2)
-            $('a.indbox5[href="kf_fw_ig_index.php"]').removeClass('indbox5').addClass('indbox6');
+            $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
         Index.addPromoteHaloInterval();
         if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     }
@@ -207,7 +208,7 @@ const init = function () {
         if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
             Post.importKfSmileEnhanceExtension();
         }
-        $('a[href^="login.php?action=quit"]:first').before('<a href="https://m.miaola.info/" target="_blank">移动版</a><span> | </span>');
+        Info.$userMenu.find('> li:nth-last-child(1)').before('<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>');
     }
 
     let isAutoPromoteHaloStarted = false;
