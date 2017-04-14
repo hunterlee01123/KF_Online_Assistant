@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        eddie32基佬化
-// @version     1.1
+// @version     1.3
 // @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=601954
@@ -16,10 +16,10 @@
 
     // 替换关键词列表，支持正则表达式，例：[/妹子/g, '基佬'], [/关键词A/g, '关键词B']
     const replaceList = [
-        [/妹子|老婆/g, '基佬'],
+        [/(妹|mei)(子|纸|zi)/ig, '基佬'],
         [/她/g, '他'],
-        [/meizi/ig, 'jilao'],
         [/女(生|孩|人)/g, '男$1'],
+        [/(妹|抱|亲|吻|脱|约|恋|kiss|\bmei\b)/ig, '$1♂'],
     ];
 
     const replaceKeyword = function ($elem) {
