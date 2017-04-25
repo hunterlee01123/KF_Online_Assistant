@@ -96,7 +96,9 @@ export const enhanceLootIndexPage = function () {
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))) {
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
+        && !Util.getCookie(Const.lootAttackingCookieName)
+    ) {
         $(document).ready(setTimeout(autoLoot, 500));
     }
     Script.runFunc('Loot.enhanceLootIndexPage_after_');

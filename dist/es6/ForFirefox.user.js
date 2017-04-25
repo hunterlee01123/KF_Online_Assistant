@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.9.3
+// @version     9.9.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.9.3';
+const version = '9.9.4';
 
 /**
  * 导出模块
@@ -961,7 +961,7 @@ const Config = exports.Config = {
     // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00
     checkLootAfterTime: '00:05:00',
     // 历史争夺记录保存天数
-    lootLogSaveDays: 15,
+    lootLogSaveDays: 7,
     // 是否在首页显示改点剩余次数信息（冷却时则显示倒计时），true：开启；false：关闭
     showChangePointsInfoEnabled: false,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
@@ -1192,6 +1192,7 @@ const normalize = exports.normalize = function (options) {
             settings[key] = value;
         }
     }
+    if (typeof settings.lootLogSaveDays !== 'undefined' && settings.lootLogSaveDays > 20) settings.lootLogSaveDays = 20;
     return settings;
 };
 
@@ -1328,8 +1329,8 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="默认值：${_Config.Config.lootLogSaveDays}">[?]</span>
+        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="20" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="默认值：${_Config.Config.lootLogSaveDays}，最大值：20">[?]</span>
       </label><br>
       <label>
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
@@ -1415,7 +1416,7 @@ const show = exports.show = function () {
       <legend>首页相关</legend>
       <label>
         @提醒
-        <select name="atTipsHandleType" style="width: 130px;">
+        <select name="atTipsHandleType" style="width: 140px;">
           <option value="no_highlight">取消已读提醒高亮</option>
           <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
           <option value="hide_box_1">不显示已读提醒的消息框</option>
@@ -1722,6 +1723,7 @@ const clearTmpData = function (type = 0) {
     if (type === 0 || type === 2) {
         TmpLog.clear();
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
+        localStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
     }
 };
 
@@ -5199,7 +5201,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) {
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
         $(document).ready(setTimeout(autoLoot, 500));
     }
     Script.runFunc('Loot.enhanceLootIndexPage_after_');

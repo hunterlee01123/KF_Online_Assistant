@@ -44,7 +44,7 @@ export const Config = {
     // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00
     checkLootAfterTime: '00:05:00',
     // 历史争夺记录保存天数
-    lootLogSaveDays: 15,
+    lootLogSaveDays: 7,
     // 是否在首页显示改点剩余次数信息（冷却时则显示倒计时），true：开启；false：关闭
     showChangePointsInfoEnabled: false,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
@@ -276,5 +276,6 @@ export const normalize = function (options) {
             settings[key] = value;
         }
     }
+    if (typeof settings.lootLogSaveDays !== 'undefined' && settings.lootLogSaveDays > 20) settings.lootLogSaveDays = 20;
     return settings;
 };

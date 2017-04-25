@@ -106,8 +106,8 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="90" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}">[?]</span>
+        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="20" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}，最大值：20">[?]</span>
       </label><br>
       <label>
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
@@ -193,7 +193,7 @@ export const show = function () {
       <legend>首页相关</legend>
       <label>
         @提醒
-        <select name="atTipsHandleType" style="width: 130px;">
+        <select name="atTipsHandleType" style="width: 140px;">
           <option value="no_highlight">取消已读提醒高亮</option>
           <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
           <option value="hide_box_1">不显示已读提醒的消息框</option>
@@ -512,6 +512,7 @@ const clearTmpData = function (type = 0) {
     if (type === 0 || type === 2) {
         TmpLog.clear();
         localStorage.removeItem(Const.multiQuoteStorageName);
+        localStorage.removeItem(Const.tempPointsLogListStorageName);
     }
 };
 
