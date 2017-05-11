@@ -79,9 +79,10 @@ const init = function () {
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
+    Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
+
     if (Info.isInHomePage) {
         Index.handleIndexLink();
-        Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
         Index.handleAtTips();
         Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();

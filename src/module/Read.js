@@ -45,7 +45,7 @@ export const addFastGotoFloorInput = function () {
   <span data-name="submit" style="cursor: pointer;">楼</span>
 </li>
 </form>
-`).prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul'))
+`).prependTo($('.readtext:first').prev('div').prev('.readlou').find('> div:first-child > ul'))
         .submit(function (e) {
             e.preventDefault();
             let floor = parseInt($(this).find('input').val());
@@ -54,9 +54,8 @@ export const addFastGotoFloorInput = function () {
         })
         .find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
-    })
-        .end().closest('div').next()
-        .css({'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'});
+    }).end().closest('div').next()
+        .css({'max-width': '385px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'});
 };
 
 /**
@@ -80,8 +79,9 @@ export const fastGotoFloor = function () {
 export const modifyFloorSmColor = function ($elem, color) {
     if ($elem.is('.readidmsbottom > a')) $elem.css('color', color);
     $elem.closest('.readtext').css('border-color', color)
+        .prev('div').css('border-color', color)
         .prev('.readlou').css('border-color', color)
-        .next().next('.readlou').css('border-color', color);
+        .next().next().next('.readlou').css('border-color', color);
 };
 
 /**
@@ -254,8 +254,8 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
                 $('.readtext', html).each(function () {
                     let data = {};
                     let $floor = $(this);
-                    let $floorHeader = $floor.prev('.readlou');
-                    let floor = parseInt($floor.prev('.readlou').find('> div:nth-child(2) > span:first-child').text());
+                    let $floorHeader = $floor.prev('div').prev('.readlou');
+                    let floor = parseInt($floorHeader.find('> div:nth-child(2) > span:first-child').text());
                     if (!floor) return;
                     if (floor < startFloor) return;
                     if (floor > endFloor) {
@@ -380,7 +380,7 @@ export const showStatFloorDialog = function (floorList) {
         }
         if (isRemoveTopFloor) {
             let $topFloor = $('.readtext:first');
-            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
+            if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
                 let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
             }
@@ -605,7 +605,7 @@ export const getMultiQuoteData = function () {
         let matches = /(\d+)楼/.exec($readLou.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
         let pid = $readLou.prev('a').attr('name');
-        let userName = $readLou.next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
+        let userName = $readLou.next('div').next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
         if (!userName) return;
         quoteList.push({floor: floor, pid: pid, userName: userName});
     });
@@ -826,7 +826,7 @@ export const showAttachImageOutsideSellBox = function () {
         let $this = $(this);
         let html = $this.html();
         if (/\[attachment=\d+\]/.test(html)) {
-            let pid = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
+            let pid = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
             let tid = Util.getUrlParam('tid');
             $this.html(
                 html.replace(

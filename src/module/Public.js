@@ -19,11 +19,12 @@ import * as Loot from './Loot';
  * @returns {boolean} 是否获取成功
  */
 export const getUidAndUserName = function () {
-    let $user = $('.topmenuo1 > .topmenuo3 > a[href^="profile.php?action=show&uid="]').eq(0);
-    if (!$user.length) return false;
-    Info.userName = $.trim($user.contents().get(0).textContent);
+    let $userName = $('.topmenuo1 > .topmenuo3:last-child > a[href="javascript:;"]').eq(0);
+    let $uid = $('.topmenuo1 > .topmenuo3:last-child a[href^="profile.php?action=show&uid="]').eq(0);
+    if (!$userName.length || !$uid.length) return false;
+    Info.userName = $.trim($userName.contents().get(0).textContent);
     if (!Info.userName) return false;
-    let matches = /&uid=(\d+)/.exec($user.attr('href'));
+    let matches = /&uid=(\d+)/.exec($uid.attr('href'));
     if (!matches) return false;
     Info.uid = parseInt(matches[1]);
     return true;
@@ -606,7 +607,7 @@ export const followUsers = function () {
         $('.readidmsbottom > a, .readidmleft > a').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
-                $this.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child')
+                $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child')
                     .find('a').addBack().addClass('pd_highlight');
             }
         });
@@ -678,7 +679,10 @@ export const blockUsers = function () {
                 else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
                 let $lou = $this.closest('.readtext');
-                $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
+                $lou.prev('div').prev('.readlou').remove();
+                $lou.prev('div').remove();
+                $lou.next('.readlou').remove();
+                $lou.remove();
             }
         });
         $('.readtext fieldset:has(legend:contains("Quote:"))').each(function () {
@@ -792,7 +796,7 @@ export const blockThread = function () {
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
-        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        if ($userName.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
@@ -800,7 +804,10 @@ export const blockThread = function () {
         if (isBlock(title, userName, fid)) {
             num++;
             let $lou = $userName.closest('.readtext');
-            $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
+            $lou.prev('div').prev('.readlou').remove();
+            $lou.prev('div').remove();
+            $lou.next('.readlou').remove();
+            $lou.remove();
         }
     }
     if (num > 0) console.log(`【屏蔽帖子】共有${num}个帖子被屏蔽`);

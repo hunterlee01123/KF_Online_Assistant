@@ -274,7 +274,7 @@ const checkPoints = function ($points) {
         return false;
     }
     else if (surplusPoint > 0) {
-        if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
+        if (!confirm('可分配属性点尚未用完，是否继续攻击？')) return false;
     }
     return true;
 };
@@ -1098,7 +1098,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         });
         if (isChange) {
             if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
-                if (confirm('可分配属性点尚未用完，是否继续？')) Info.w.unusedPointNumAlert = true;
+                if (confirm('可分配属性点尚未用完，是否继续攻击？')) Info.w.unusedPointNumAlert = true;
                 else return $.Deferred().resolve('error');
             }
             return $.ajax({
@@ -1166,7 +1166,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         }).done(function (html) {
             index++;
             if (Config.autoLootEnabled) Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
-            if (!/你\(\d+\)遭遇了/.test(html) || index % 5 === 0) {
+            if (!/你\(\d+\)遭遇了/.test(html) || index % Const.lootAttackPerCheckLevel === 0) {
                 setTimeout(check, Const.defAjaxInterval);
                 return;
             }
@@ -1212,10 +1212,13 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     recordLootInfo(logList, levelInfoList, pointsLogList);
                 }
                 else setTimeout(check, Const.defAjaxInterval);
+                Script.runFunc('Loot.lootAttack_complete_');
             }
             else {
+                if (!isChecked) setTimeout(() => check(false), Const.defAjaxInterval);
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
+                Script.runFunc('Loot.lootAttack_after_');
             }
         }
         else {
@@ -1226,8 +1229,9 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
 
     /**
      * 检查争夺记录
+     * @param {boolean} handleAfter 是否进行攻击后的处理
      */
-    const check = function () {
+    const check = function (handleAfter = true) {
         console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
@@ -1261,13 +1265,14 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     propertyList['可分配属性点'] = distributablePoint;
                     $properties.find('#pdDistributablePoint').text(distributablePoint);
                     if (!/你被击败了/.test(log) && Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && !checkPoints($points)) {
-                        $points.find('.pd_point:first').trigger('change');
                         isStop = true;
+                        $points.find('.pd_point:first').trigger('change');
+                        TmpLog.deleteValue(Const.haloInfoTmpLogName);
                     }
                 }
             }
 
-            after(true);
+            if (handleAfter) after(true);
             Script.runFunc('Loot.lootAttack_check_after_', html);
         }).fail(() => setTimeout(check, Const.defAjaxInterval));
     };

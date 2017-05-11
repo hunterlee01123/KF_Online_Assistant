@@ -180,13 +180,13 @@ export const showDialog = function (showIndex = null) {
      * @param {string} content 脚本内容
      */
     const addCustomScript = function ({
-        enabled = true,
-        name = defScriptName,
-        version = '',
-        homepage = '',
-        trigger = 'end',
-        content = '',
-    } = {}) {
+                                          enabled = true,
+                                          name = defScriptName,
+                                          version = '',
+                                          homepage = '',
+                                          trigger = 'end',
+                                          content = '',
+                                      } = {}) {
         $customScriptList.append(`
 <div class="pd_custom_script_header">
   <input type="checkbox" ${enabled ? 'checked' : ''} title="是否启用此脚本">
@@ -273,6 +273,7 @@ export const handleInstallScriptLink = function () {
         let index = Config.customScriptList.findIndex(script => script.name === meta.name && script.author === meta.author);
         let type = index > -1 ? 1 : 0;
         if (!confirm(`是否${type === 1 ? '更新' : '安装'}此脚本？`)) return;
+        Config.customScriptEnabled = true;
         let script = $.extend(meta, {enabled: true, content});
         if (type === 1) Config.customScriptList[index] = script;
         else Config.customScriptList.push(script);
