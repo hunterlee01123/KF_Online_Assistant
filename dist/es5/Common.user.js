@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     9.9.4
+// @version     10.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '9.9.4';
+var version = '10.0';
 
 /**
  * 导出模块
@@ -160,11 +160,12 @@ var init = function init() {
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
+    _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(function () {
+        return confirm('是否退出账号？');
+    });
+
     if (_Info2.default.isInHomePage) {
         Index.handleIndexLink();
-        _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(function () {
-            return confirm('是否退出账号？');
-        });
         Index.handleAtTips();
         Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
@@ -256,6 +257,10 @@ var init = function init() {
         Other.highlightRatingErrorSize();
     } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
         Other.showSelfRatingErrorSizeSubmitWarning();
+    } else if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+        Other.addUserNameLinkInWaitCheckExcellentPostPage();
+    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        Other.addForumLinkInCompleteExcellentPostPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
@@ -2441,6 +2446,8 @@ var Const = {
     getDailyBonusAfterTime: '00:35:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
+    // 争夺攻击时每隔指定层数进行一次检查
+    lootAttackPerCheckLevel: 5,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -5846,7 +5853,7 @@ var checkPoints = function checkPoints($points) {
         alert('剩余属性点为负，请重新填写');
         return false;
     } else if (surplusPoint > 0) {
-        if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
+        if (!confirm('可分配属性点尚未用完，是否继续攻击？')) return false;
     }
     return true;
 };
@@ -6666,7 +6673,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         });
         if (isChange) {
             if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
-                if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
+                if (confirm('可分配属性点尚未用完，是否继续攻击？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
             }
             return $.ajax({
                 type: 'POST',
@@ -6739,7 +6746,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         }).done(function (html) {
             index++;
             if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate('+' + _Const2.default.lootAttackingExpires + 'm'));
-            if (!/你\(\d+\)遭遇了/.test(html) || index % 5 === 0) {
+            if (!/你\(\d+\)遭遇了/.test(html) || index % _Const2.default.lootAttackPerCheckLevel === 0) {
                 setTimeout(check, _Const2.default.defAjaxInterval);
                 return;
             }
@@ -6786,9 +6793,14 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
                 } else setTimeout(check, _Const2.default.defAjaxInterval);
+                Script.runFunc('Loot.lootAttack_complete_');
             } else {
+                if (!isChecked) setTimeout(function () {
+                    return check(false);
+                }, _Const2.default.defAjaxInterval);
                 Msg.remove($wait);
                 Msg.show('<strong>\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC</strong>', -1);
+                Script.runFunc('Loot.lootAttack_after_');
             }
         } else {
             if (autoChangePointsEnabled) setTimeout(function () {
@@ -6799,8 +6811,11 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
 
     /**
      * 检查争夺记录
+     * @param {boolean} handleAfter 是否进行攻击后的处理
      */
     var check = function check() {
+        var handleAfter = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
         console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
@@ -6834,13 +6849,14 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                     propertyList['可分配属性点'] = distributablePoint;
                     $properties.find('#pdDistributablePoint').text(distributablePoint);
                     if (!/你被击败了/.test(log) && Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && !checkPoints($points)) {
-                        $points.find('.pd_point:first').trigger('change');
                         isStop = true;
+                        $points.find('.pd_point:first').trigger('change');
+                        TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
                     }
                 }
             }
 
-            after(true);
+            if (handleAfter) after(true);
             Script.runFunc('Loot.lootAttack_check_after_', html);
         }).fail(function () {
             return setTimeout(check, _Const2.default.defAjaxInterval);
@@ -8108,7 +8124,7 @@ var destroy = exports.destroy = function destroy() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addForumLinkInCompleteExcellentPostPage = exports.addUserNameLinkInWaitCheckExcellentPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -8631,6 +8647,28 @@ var showSelfRatingErrorSizeSubmitWarning = exports.showSelfRatingErrorSizeSubmit
 };
 
 /**
+ * 在待检查的优秀帖页面上添加用户链接
+ */
+var addUserNameLinkInWaitCheckExcellentPostPage = exports.addUserNameLinkInWaitCheckExcellentPostPage = function addUserNameLinkInWaitCheckExcellentPostPage() {
+    $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+        var $this = $(this);
+        var uid = parseInt($this.text());
+        $this.wrapInner('<a class="' + (uid === _Info2.default.uid ? 'pd_highlight' : '') + '" href="profile.php?action=show&uid=' + uid + '" target="_blank"></a>');
+    });
+};
+
+/**
+ * 在已完成的优秀帖记录页面上添加版块链接
+ */
+var addForumLinkInCompleteExcellentPostPage = exports.addForumLinkInCompleteExcellentPostPage = function addForumLinkInCompleteExcellentPostPage() {
+    $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+        var $this = $(this);
+        var matches = /\[(\d+)]板块/.exec($this.text());
+        if (matches) $this.wrapInner('<a href="thread.php?fid=' + matches[1] + '" target="_blank"></a>');
+    });
+};
+
+/**
  * 在论坛排行页面为用户名添加链接
  */
 var addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function addUserNameLinkInRankPage() {
@@ -9080,11 +9118,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @returns {boolean} 是否获取成功
  */
 var getUidAndUserName = exports.getUidAndUserName = function getUidAndUserName() {
-    var $user = $('.topmenuo1 > .topmenuo3 > a[href^="profile.php?action=show&uid="]').eq(0);
-    if (!$user.length) return false;
-    _Info2.default.userName = $.trim($user.contents().get(0).textContent);
+    var $userName = $('.topmenuo1 > .topmenuo3:last-child > a[href="javascript:;"]').eq(0);
+    var $uid = $('.topmenuo1 > .topmenuo3:last-child a[href^="profile.php?action=show&uid="]').eq(0);
+    if (!$userName.length || !$uid.length) return false;
+    _Info2.default.userName = $.trim($userName.contents().get(0).textContent);
     if (!_Info2.default.userName) return false;
-    var matches = /&uid=(\d+)/.exec($user.attr('href'));
+    var matches = /&uid=(\d+)/.exec($uid.attr('href'));
     if (!matches) return false;
     _Info2.default.uid = parseInt(matches[1]);
     return true;
@@ -9577,7 +9616,7 @@ var followUsers = exports.followUsers = function followUsers() {
         $('.readidmsbottom > a, .readidmleft > a').each(function () {
             var $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
-                $this.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').find('a').addBack().addClass('pd_highlight');
+                $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').find('a').addBack().addClass('pd_highlight');
             }
         });
     } else if (location.pathname === '/guanjianci.php' || location.pathname === '/kf_share.php') {
@@ -9641,7 +9680,10 @@ var blockUsers = exports.blockUsers = function blockUsers() {
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
                 var $lou = $this.closest('.readtext');
-                $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
+                $lou.prev('div').prev('.readlou').remove();
+                $lou.prev('div').remove();
+                $lou.next('.readlou').remove();
+                $lou.remove();
             }
         });
         $('.readtext fieldset:has(legend:contains("Quote:"))').each(function () {
@@ -9795,7 +9837,7 @@ var blockThread = exports.blockThread = function blockThread() {
         var title = Read.getThreadTitle();
         if (!title) return;
         var $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
-        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        if ($userName.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         var userName = $userName.text();
         if (!userName) return;
         var _fid2 = parseInt($('input[name="fid"]:first').val());
@@ -9803,7 +9845,10 @@ var blockThread = exports.blockThread = function blockThread() {
         if (isBlock(title, userName, _fid2)) {
             num++;
             var $lou = $userName.closest('.readtext');
-            $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
+            $lou.prev('div').prev('.readlou').remove();
+            $lou.prev('div').remove();
+            $lou.next('.readlou').remove();
+            $lou.remove();
         }
     }
     if (num > 0) console.log('\u3010\u5C4F\u853D\u5E16\u5B50\u3011\u5171\u6709' + num + '\u4E2A\u5E16\u5B50\u88AB\u5C4F\u853D');
@@ -10350,14 +10395,14 @@ var addFloorGotoLink = exports.addFloorGotoLink = function addFloorGotoLink() {
  * 添加快速跳转到指定楼层的输入框
  */
 var addFastGotoFloorInput = exports.addFastGotoFloorInput = function addFastGotoFloorInput() {
-    $('\n<form>\n<li class="pd_fast_goto_floor">\n  \u7535\u68AF\u76F4\u8FBE <input class="pd_input" style="width: 30px;" type="text" maxlength="8">\n  <span data-name="submit" style="cursor: pointer;">\u697C</span>\n</li>\n</form>\n').prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
+    $('\n<form>\n<li class="pd_fast_goto_floor">\n  \u7535\u68AF\u76F4\u8FBE <input class="pd_input" style="width: 30px;" type="text" maxlength="8">\n  <span data-name="submit" style="cursor: pointer;">\u697C</span>\n</li>\n</form>\n').prependTo($('.readtext:first').prev('div').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
         e.preventDefault();
         var floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
         location.href = 'read.php?tid=' + Util.getUrlParam('tid') + '&page=' + (parseInt(floor / Config.perPageFloorNum) + 1) + '&floor=' + floor;
     }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
-    }).end().closest('div').next().css({ 'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
+    }).end().closest('div').next().css({ 'max-width': '385px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
 };
 
 /**
@@ -10380,7 +10425,7 @@ var fastGotoFloor = exports.fastGotoFloor = function fastGotoFloor() {
  */
 var modifyFloorSmColor = exports.modifyFloorSmColor = function modifyFloorSmColor($elem, color) {
     if ($elem.is('.readidmsbottom > a')) $elem.css('color', color);
-    $elem.closest('.readtext').css('border-color', color).prev('.readlou').css('border-color', color).next().next('.readlou').css('border-color', color);
+    $elem.closest('.readtext').css('border-color', color).prev('div').css('border-color', color).prev('.readlou').css('border-color', color).next().next().next('.readlou').css('border-color', color);
 };
 
 /**
@@ -10556,8 +10601,8 @@ var statFloor = function statFloor(tid, startPage, endPage, startFloor, endFloor
                 $('.readtext', html).each(function () {
                     var data = {};
                     var $floor = $(this);
-                    var $floorHeader = $floor.prev('.readlou');
-                    var floor = parseInt($floor.prev('.readlou').find('> div:nth-child(2) > span:first-child').text());
+                    var $floorHeader = $floor.prev('div').prev('.readlou');
+                    var floor = parseInt($floorHeader.find('> div:nth-child(2) > span:first-child').text());
                     if (!floor) return;
                     if (floor < startFloor) return;
                     if (floor > endFloor) {
@@ -10644,7 +10689,7 @@ var showStatFloorDialog = exports.showStatFloorDialog = function showStatFloorDi
         }
         if (isRemoveTopFloor) {
             var $topFloor = $('.readtext:first');
-            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
+            if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
                 var topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(function (data) {
                     return data && data.userName !== topFloorUserName ? data : null;
@@ -10878,7 +10923,7 @@ var getMultiQuoteData = exports.getMultiQuoteData = function getMultiQuoteData()
         var matches = /(\d+)楼/.exec($readLou.find('.pd_goto_link').text());
         var floor = matches ? parseInt(matches[1]) : 0;
         var pid = $readLou.prev('a').attr('name');
-        var userName = $readLou.next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
+        var userName = $readLou.next('div').next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -11065,7 +11110,7 @@ var showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = func
         var $this = $(this);
         var html = $this.html();
         if (/\[attachment=\d+\]/.test(html)) {
-            var pid = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
+            var pid = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
             var tid = Util.getUrlParam('tid');
             $this.html(html.replace(/\[attachment=(\d+)\]/g, '<img src="job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1" alt="[\u9644\u4EF6\u56FE\u7247]" style="max-width:550px" ' + ('onclick="if(this.width>=550) window.open(\'job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1\');">')));
         }
@@ -11464,6 +11509,7 @@ var handleInstallScriptLink = exports.handleInstallScriptLink = function handleI
         });
         var type = index > -1 ? 1 : 0;
         if (!confirm('\u662F\u5426' + (type === 1 ? '更新' : '安装') + '\u6B64\u811A\u672C\uFF1F')) return;
+        Config.customScriptEnabled = true;
         var script = $.extend(meta, { enabled: true, content: content });
         if (type === 1) Config.customScriptList[index] = script;else Config.customScriptList.push(script);
         (0, _Config.write)();

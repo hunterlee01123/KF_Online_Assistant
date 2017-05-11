@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '9.9.4';
+const version = '10.0';
 
 /**
  * 导出模块
@@ -141,9 +141,10 @@ const init = function () {
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
+    _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
+
     if (_Info2.default.isInHomePage) {
         Index.handleIndexLink();
-        _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
         Index.handleAtTips();
         Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
@@ -235,6 +236,10 @@ const init = function () {
         Other.highlightRatingErrorSize();
     } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
         Other.showSelfRatingErrorSizeSubmitWarning();
+    } else if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+        Other.addUserNameLinkInWaitCheckExcellentPostPage();
+    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        Other.addForumLinkInCompleteExcellentPostPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
@@ -2488,6 +2493,8 @@ const Const = {
     getDailyBonusAfterTime: '00:35:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
+    // 争夺攻击时每隔指定层数进行一次检查
+    lootAttackPerCheckLevel: 5,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -5313,7 +5320,7 @@ const checkPoints = function ($points) {
         alert('剩余属性点为负，请重新填写');
         return false;
     } else if (surplusPoint > 0) {
-        if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
+        if (!confirm('可分配属性点尚未用完，是否继续攻击？')) return false;
     }
     return true;
 };
@@ -6092,7 +6099,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         });
         if (isChange) {
             if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
-                if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
+                if (confirm('可分配属性点尚未用完，是否继续攻击？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
             }
             return $.ajax({
                 type: 'POST',
@@ -6157,7 +6164,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         }).done(function (html) {
             index++;
             if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
-            if (!/你\(\d+\)遭遇了/.test(html) || index % 5 === 0) {
+            if (!/你\(\d+\)遭遇了/.test(html) || index % _Const2.default.lootAttackPerCheckLevel === 0) {
                 setTimeout(check, _Const2.default.defAjaxInterval);
                 return;
             }
@@ -6202,9 +6209,12 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
                 } else setTimeout(check, _Const2.default.defAjaxInterval);
+                Script.runFunc('Loot.lootAttack_complete_');
             } else {
+                if (!isChecked) setTimeout(() => check(false), _Const2.default.defAjaxInterval);
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
+                Script.runFunc('Loot.lootAttack_after_');
             }
         } else {
             if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), _Const2.default.defAjaxInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
@@ -6213,8 +6223,9 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
 
     /**
      * 检查争夺记录
+     * @param {boolean} handleAfter 是否进行攻击后的处理
      */
-    const check = function () {
+    const check = function (handleAfter = true) {
         console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
@@ -6248,13 +6259,14 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                     propertyList['可分配属性点'] = distributablePoint;
                     $properties.find('#pdDistributablePoint').text(distributablePoint);
                     if (!/你被击败了/.test(log) && Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && !checkPoints($points)) {
-                        $points.find('.pd_point:first').trigger('change');
                         isStop = true;
+                        $points.find('.pd_point:first').trigger('change');
+                        TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
                     }
                 }
             }
 
-            after(true);
+            if (handleAfter) after(true);
             Script.runFunc('Loot.lootAttack_check_after_', html);
         }).fail(() => setTimeout(check, _Const2.default.defAjaxInterval));
     };
@@ -7349,7 +7361,7 @@ const destroy = exports.destroy = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addForumLinkInCompleteExcellentPostPage = exports.addUserNameLinkInWaitCheckExcellentPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _Info = require('./Info');
 
@@ -7814,6 +7826,28 @@ const showSelfRatingErrorSizeSubmitWarning = exports.showSelfRatingErrorSizeSubm
 };
 
 /**
+ * 在待检查的优秀帖页面上添加用户链接
+ */
+const addUserNameLinkInWaitCheckExcellentPostPage = exports.addUserNameLinkInWaitCheckExcellentPostPage = function () {
+    $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+        let $this = $(this);
+        let uid = parseInt($this.text());
+        $this.wrapInner(`<a class="${uid === _Info2.default.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
+    });
+};
+
+/**
+ * 在已完成的优秀帖记录页面上添加版块链接
+ */
+const addForumLinkInCompleteExcellentPostPage = exports.addForumLinkInCompleteExcellentPostPage = function () {
+    $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+        let $this = $(this);
+        let matches = /\[(\d+)]板块/.exec($this.text());
+        if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
+    });
+};
+
+/**
  * 在论坛排行页面为用户名添加链接
  */
 const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function () {
@@ -8228,11 +8262,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @returns {boolean} 是否获取成功
  */
 const getUidAndUserName = exports.getUidAndUserName = function () {
-    let $user = $('.topmenuo1 > .topmenuo3 > a[href^="profile.php?action=show&uid="]').eq(0);
-    if (!$user.length) return false;
-    _Info2.default.userName = $.trim($user.contents().get(0).textContent);
+    let $userName = $('.topmenuo1 > .topmenuo3:last-child > a[href="javascript:;"]').eq(0);
+    let $uid = $('.topmenuo1 > .topmenuo3:last-child a[href^="profile.php?action=show&uid="]').eq(0);
+    if (!$userName.length || !$uid.length) return false;
+    _Info2.default.userName = $.trim($userName.contents().get(0).textContent);
     if (!_Info2.default.userName) return false;
-    let matches = /&uid=(\d+)/.exec($user.attr('href'));
+    let matches = /&uid=(\d+)/.exec($uid.attr('href'));
     if (!matches) return false;
     _Info2.default.uid = parseInt(matches[1]);
     return true;
@@ -8791,7 +8826,7 @@ const followUsers = exports.followUsers = function () {
         $('.readidmsbottom > a, .readidmleft > a').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
-                $this.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').find('a').addBack().addClass('pd_highlight');
+                $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').find('a').addBack().addClass('pd_highlight');
             }
         });
     } else if (location.pathname === '/guanjianci.php' || location.pathname === '/kf_share.php') {
@@ -8855,7 +8890,10 @@ const blockUsers = exports.blockUsers = function () {
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
                 let $lou = $this.closest('.readtext');
-                $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
+                $lou.prev('div').prev('.readlou').remove();
+                $lou.prev('div').remove();
+                $lou.next('.readlou').remove();
+                $lou.remove();
             }
         });
         $('.readtext fieldset:has(legend:contains("Quote:"))').each(function () {
@@ -8960,7 +8998,7 @@ const blockThread = exports.blockThread = function () {
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
-        if ($userName.closest('.readtext').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        if ($userName.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
@@ -8968,7 +9006,10 @@ const blockThread = exports.blockThread = function () {
         if (isBlock(title, userName, fid)) {
             num++;
             let $lou = $userName.closest('.readtext');
-            $lou.prev('.readlou').remove().end().next('.readlou').remove().end().remove();
+            $lou.prev('div').prev('.readlou').remove();
+            $lou.prev('div').remove();
+            $lou.next('.readlou').remove();
+            $lou.remove();
         }
     }
     if (num > 0) console.log(`【屏蔽帖子】共有${num}个帖子被屏蔽`);
@@ -9517,14 +9558,14 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
   <span data-name="submit" style="cursor: pointer;">楼</span>
 </li>
 </form>
-`).prependTo($('.readtext:first').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
+`).prependTo($('.readtext:first').prev('div').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
         e.preventDefault();
         let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
         location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
     }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
-    }).end().closest('div').next().css({ 'max-width': '505px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
+    }).end().closest('div').next().css({ 'max-width': '385px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
 };
 
 /**
@@ -9547,7 +9588,7 @@ const fastGotoFloor = exports.fastGotoFloor = function () {
  */
 const modifyFloorSmColor = exports.modifyFloorSmColor = function ($elem, color) {
     if ($elem.is('.readidmsbottom > a')) $elem.css('color', color);
-    $elem.closest('.readtext').css('border-color', color).prev('.readlou').css('border-color', color).next().next('.readlou').css('border-color', color);
+    $elem.closest('.readtext').css('border-color', color).prev('div').css('border-color', color).prev('.readlou').css('border-color', color).next().next().next('.readlou').css('border-color', color);
 };
 
 /**
@@ -9712,8 +9753,8 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
                 $('.readtext', html).each(function () {
                     let data = {};
                     let $floor = $(this);
-                    let $floorHeader = $floor.prev('.readlou');
-                    let floor = parseInt($floor.prev('.readlou').find('> div:nth-child(2) > span:first-child').text());
+                    let $floorHeader = $floor.prev('div').prev('.readlou');
+                    let floor = parseInt($floorHeader.find('> div:nth-child(2) > span:first-child').text());
                     if (!floor) return;
                     if (floor < startFloor) return;
                     if (floor > endFloor) {
@@ -9835,7 +9876,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
         }
         if (isRemoveTopFloor) {
             let $topFloor = $('.readtext:first');
-            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
+            if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
                 let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
             }
@@ -10044,7 +10085,7 @@ const getMultiQuoteData = exports.getMultiQuoteData = function () {
         let matches = /(\d+)楼/.exec($readLou.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
         let pid = $readLou.prev('a').attr('name');
-        let userName = $readLou.next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
+        let userName = $readLou.next('div').next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -10232,7 +10273,7 @@ const showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = fu
         let $this = $(this);
         let html = $this.html();
         if (/\[attachment=\d+\]/.test(html)) {
-            let pid = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
+            let pid = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
             let tid = Util.getUrlParam('tid');
             $this.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`));
         }
@@ -10582,6 +10623,7 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
         let index = Config.customScriptList.findIndex(script => script.name === meta.name && script.author === meta.author);
         let type = index > -1 ? 1 : 0;
         if (!confirm(`是否${type === 1 ? '更新' : '安装'}此脚本？`)) return;
+        Config.customScriptEnabled = true;
         let script = $.extend(meta, { enabled: true, content });
         if (type === 1) Config.customScriptList[index] = script;else Config.customScriptList.push(script);
         (0, _Config.write)();

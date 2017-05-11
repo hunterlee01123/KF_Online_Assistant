@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '9.9.4';
+const version = '10.0';
 
 /**
  * 导出模块
@@ -197,6 +197,12 @@ const init = function () {
     }
     else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
         Other.showSelfRatingErrorSizeSubmitWarning();
+    }
+    else if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+        Other.addUserNameLinkInWaitCheckExcellentPostPage();
+    }
+    else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        Other.addForumLinkInCompleteExcellentPostPage();
     }
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();

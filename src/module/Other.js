@@ -478,6 +478,28 @@ export const showSelfRatingErrorSizeSubmitWarning = function () {
 };
 
 /**
+ * 在待检查的优秀帖页面上添加用户链接
+ */
+export const addUserNameLinkInWaitCheckExcellentPostPage = function () {
+    $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+        let $this = $(this);
+        let uid = parseInt($this.text());
+        $this.wrapInner(`<a class="${uid === Info.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
+    });
+};
+
+/**
+ * 在已完成的优秀帖记录页面上添加版块链接
+ */
+export const addForumLinkInCompleteExcellentPostPage = function () {
+    $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+        let $this = $(this);
+        let matches = /\[(\d+)]板块/.exec($this.text());
+        if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
+    });
+};
+
+/**
  * 在论坛排行页面为用户名添加链接
  */
 export const addUserNameLinkInRankPage = function () {
