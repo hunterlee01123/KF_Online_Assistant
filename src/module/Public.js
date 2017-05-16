@@ -845,42 +845,26 @@ export const modifySideBar = function () {
 };
 
 /**
- * 为侧边栏添加快捷导航的链接
+ * 为顶部导航栏添加快捷导航菜单
  */
-export const addFastNavForSideBar = function () {
-    let $menu = $('#r_menu');
-    if (!$menu.hasClass('r_cmenu')) {
-        if (!Config.modifySideBarEnabled) {
-            $menu.append('<a href="/">论坛首页</a><br>');
-        }
-        $menu.find('> a:last').before(`
-<span style="color: #ff9999;">快捷导航</span><br>
-<a href="guanjianci.php?gjc=${Info.userName}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br>
-<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_mybp.php">物品</a> | <a href="kf_fw_ig_shop.php">商店</a><br>
-<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br>
-${Const.customTileSideBarContent}
-`);
-    }
-    else {
-        $menu.find('> ul > li:last-child').before(`
-<li class="r_cmenuho">
-  <a href="javascript:;">快捷导航</a>
-  <ul class="r_cmenu2">
-    <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
-    <li><a href="personal.php?action=post">我的回复</a></li>
-    <li><a href="kf_growup.php">等级经验</a></li>
-    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
-    <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
-    <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
-    <li><a href="profile.php?action=modify">设置</a></li>
-    <li><a href="hack.php?H_name=bank">银行</a></li>
-    <li><a href="profile.php?action=favor">收藏</a></li>
-    ${Const.customSideBarContent}
-  </ul>
-</li>
-`);
-    }
+export const addFastNavMenu = function () {
+    let $menuBtn = $('.topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("本站主页")');
+    if (!$menuBtn.length) return;
+    let hpUrl = $menuBtn.attr('href');
+    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after(`
+<ul class="topmenuo2">
+  <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
+  <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
+  <li><a href="search.php?authorid=${Info.uid}">我的主题</a></li>
+  <li><a href="personal.php?action=post">我的回复</a></li>
+  <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
+  <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
+  <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
+  <li><a href="hack.php?H_name=bank">银行</a></li>
+  <li><a href="profile.php?action=favor">收藏</a></li>
+  ${Info.isInMiaolaDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
+  ${Const.customFastNavMenuContent}
+</ul>`);
 };
 
 /**

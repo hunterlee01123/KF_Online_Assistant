@@ -14,7 +14,7 @@ import * as Loot from './Loot';
 export const handleAtTips = function () {
     let type = Config.atTipsHandleType;
     if (type === 'default') return;
-    let $atTips = $('a[href^="guanjianci.php?gjc="]');
+    let $atTips = $('a.indbox5[href^="guanjianci.php?gjc="]');
     let noHighlight = () => $atTips.removeClass('indbox5').addClass('indbox6');
     let hideBox = () => $atTips.parent().next('div.line').addBack().remove();
     let handleBox = noHighlight;

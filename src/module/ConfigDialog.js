@@ -277,8 +277,8 @@ export const show = function () {
         <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
       </label><br>
       <label>
-        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
-        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
+        <input name="addFastNavMenuEnabled" type="checkbox"> 添加快捷导航菜单
+        <span class="pd_cfg_tips" title="为顶部导航栏添加快捷导航菜单">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式

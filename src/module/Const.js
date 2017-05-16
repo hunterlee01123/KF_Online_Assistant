@@ -80,12 +80,9 @@ const Const = {
     statFloorMaxPage: 300,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
-    // 自定义侧边栏导航内容
+    // 自定义快捷导航菜单内容
     // 格式：'<li><a href="导航链接">导航项名称</a></li>'
-    customSideBarContent: '',
-    // 自定义侧边栏导航内容（手机平铺样式）
-    // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br>'，换行：'<br>'
-    customTileSideBarContent: '',
+    customFastNavMenuContent: '',
 
     // 通用存储数据名称前缀
     storagePrefix: storagePrefix,

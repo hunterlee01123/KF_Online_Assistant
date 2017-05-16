@@ -77,8 +77,8 @@ const init = function () {
     if (Config.showSearchLinkEnabled) Public.addSearchDialogLink();
     Public.bindSearchTypeSelectMenuClick();
     Public.makeSearchByBelowTwoKeyWordAvailable();
+    if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
     if (Config.modifySideBarEnabled) Public.modifySideBar();
-    if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
     Public.changeNewRateTipsColor();
 
@@ -216,7 +216,6 @@ const init = function () {
         if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
             Post.importKfSmileEnhanceExtension();
         }
-        Info.$userMenu.find('> li:nth-last-child(1)').before('<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>');
     }
 
     let isAutoPromoteHaloStarted = false;
