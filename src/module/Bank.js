@@ -75,6 +75,12 @@ export const handleBankPage = function () {
             .replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${num}">${parseInt(num).toLocaleString()}</b>`)
     );
     addBatchTransferButton();
+
+    $(document).on('change', '[name="savemoney"], [name="drawmoney"], [name="to_money"], [name="to_money"], [name="transfer_money"]', function () {
+        let $this = $(this);
+        let value = $.trim($this.val());
+        if (value) $this.val(value.replace(/,/g, ''));
+    });
 };
 
 /**
@@ -217,7 +223,7 @@ const batchTransferVerify = function ($transfer) {
         $bankUsers.select().focus();
         return false;
     }
-    let $bankMoney = $transfer.find('[name="money"]');
+    let $bankMoney = $transfer.find('[name="transfer_money"]');
     let money = parseInt($bankMoney.val());
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
@@ -253,7 +259,7 @@ const addBatchTransferButton = function () {
     </div>
     <div style="display: inline-block; margin-left: 10px;">
       <label>通用转帐金额（如所有用户都已设定单独金额则可留空）：<br>
-        <input class="pd_input" name="money" type="number" min="20" style="width: 217px;">
+        <input class="pd_input" name="transfer_money" type="text" style="width: 217px;">
       </label><br>
       <label style="margin-top: 5px;">转帐附言（可留空）：<br>
         <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>
@@ -274,7 +280,7 @@ const addBatchTransferButton = function () {
         e.preventDefault();
         Msg.destroy();
         if (!batchTransferVerify($area)) return;
-        let commonMoney = parseInt($area.find('[name="money"]').val());
+        let commonMoney = parseInt($area.find('[name="transfer_money"]').val());
         if (!commonMoney) commonMoney = 0;
         let msg = $area.find('[name="msg"]').val();
         let users = [];
