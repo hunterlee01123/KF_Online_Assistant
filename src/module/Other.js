@@ -480,7 +480,7 @@ export const showSelfRatingErrorSizeSubmitWarning = function () {
 /**
  * 在待检查的优秀帖页面上添加用户链接
  */
-export const addUserNameLinkInWaitCheckExcellentPostPage = function () {
+export const addUserNameLinkInWaitCheckGoodPostPage = function () {
     $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
         let $this = $(this);
         let uid = parseInt($this.text());
@@ -491,7 +491,7 @@ export const addUserNameLinkInWaitCheckExcellentPostPage = function () {
 /**
  * 在已完成的优秀帖记录页面上添加版块链接
  */
-export const addForumLinkInCompleteExcellentPostPage = function () {
+export const addForumLinkInCompleteGoodPostPage = function () {
     $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
         let $this = $(this);
         let matches = /\[(\d+)]板块/.exec($this.text());

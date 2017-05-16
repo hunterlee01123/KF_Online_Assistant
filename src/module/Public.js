@@ -22,6 +22,7 @@ export const getUidAndUserName = function () {
     let $userName = $('.topmenuo1 > .topmenuo3:last-child > a[href="javascript:;"]').eq(0);
     let $uid = $('.topmenuo1 > .topmenuo3:last-child a[href^="profile.php?action=show&uid="]').eq(0);
     if (!$userName.length || !$uid.length) return false;
+    $userName.attr('id', 'pdUserName');
     Info.userName = $.trim($userName.contents().get(0).textContent);
     if (!Info.userName) return false;
     let matches = /&uid=(\d+)/.exec($uid.attr('href'));
@@ -1297,4 +1298,13 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
     Dialog.show(dialogName);
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
     if (typeof callback === 'function') callback($dialog);
+};
+
+/**
+ * 修改用户名旁有新的评分提醒的颜色
+ */
+export const changeNewRateTipsColor = function () {
+    if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
+        $('#pdUserName').find('span').css('color', '#5cb85c');
+    }
 };

@@ -80,6 +80,7 @@ const init = function () {
     if (Config.modifySideBarEnabled) Public.modifySideBar();
     if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
+    Public.changeNewRateTipsColor();
 
     if (Info.isInHomePage) {
         Index.handleIndexLink();
@@ -199,10 +200,10 @@ const init = function () {
         Other.showSelfRatingErrorSizeSubmitWarning();
     }
     else if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
-        Other.addUserNameLinkInWaitCheckExcellentPostPage();
+        Other.addUserNameLinkInWaitCheckGoodPostPage();
     }
     else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
-        Other.addForumLinkInCompleteExcellentPostPage();
+        Other.addForumLinkInCompleteGoodPostPage();
     }
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
