@@ -39,7 +39,7 @@
         },
     };
 
-    $('<select style="width: 110px; margin-left: 10px;"><option data-action="默认" selected>发帖常用文本</option>' + textList.join('') + '</select>')
+    $('<select style="width: 115px; margin-left: 10px;"><option data-action="默认" selected>发帖常用文本</option>' + textList.join('') + '</select>')
         .insertAfter(location.pathname === '/read.php' ? 'input[name="Submit"]' : '[name="diy_guanjianci"]')
         .change(function () {
             let $selectItem = $(this.selectedOptions[0]);
