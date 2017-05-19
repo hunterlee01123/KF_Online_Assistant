@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.0
+// @version     10.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.0';
+const version = '10.0.1';
 
 /**
  * 导出模块
@@ -157,9 +157,10 @@ const init = function () {
     if (Config.showSearchLinkEnabled) Public.addSearchDialogLink();
     Public.bindSearchTypeSelectMenuClick();
     Public.makeSearchByBelowTwoKeyWordAvailable();
+    if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
     if (Config.modifySideBarEnabled) Public.modifySideBar();
-    if (Config.addSideBarFastNavEnabled) Public.addFastNavForSideBar();
     _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
+    Public.changeNewRateTipsColor();
 
     if (_Info2.default.isInHomePage) {
         Index.handleIndexLink();
@@ -250,14 +251,13 @@ const init = function () {
         Post.modifyPostPreviewPage();
     } else if (location.pathname === '/search.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-    } else if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
-        Other.highlightRatingErrorSize();
-    } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
-        Other.showSelfRatingErrorSizeSubmitWarning();
-    } else if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
-        Other.addUserNameLinkInWaitCheckExcellentPostPage();
-    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
-        Other.addForumLinkInCompleteExcellentPostPage();
+    } else if (location.pathname === '/kf_fw_1wkfb.php') {
+        if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
+            Other.highlightRatingErrorSize();
+        } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
+            Other.showSelfRatingErrorSizeSubmitWarning();
+        }
+        Other.addLinksInGoodPostPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
@@ -269,7 +269,6 @@ const init = function () {
         if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
             Post.importKfSmileEnhanceExtension();
         }
-        _Info2.default.$userMenu.find('> li:nth-last-child(1)').before('<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>');
     }
 
     let isAutoPromoteHaloStarted = false;
@@ -402,6 +401,12 @@ const handleBankPage = exports.handleBankPage = function () {
     let $transferLimit = $('form[name="form3"] > span:first');
     $transferLimit.html($transferLimit.html().replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${num}">${parseInt(num).toLocaleString()}</b>`));
     addBatchTransferButton();
+
+    $(document).on('change', '[name="savemoney"], [name="drawmoney"], [name="to_money"], [name="to_money"], [name="transfer_money"]', function () {
+        let $this = $(this);
+        let value = $.trim($this.val());
+        if (value) $this.val(value.replace(/,/g, ''));
+    });
 };
 
 /**
@@ -531,7 +536,7 @@ const batchTransferVerify = function ($transfer) {
         $bankUsers.select().focus();
         return false;
     }
-    let $bankMoney = $transfer.find('[name="money"]');
+    let $bankMoney = $transfer.find('[name="transfer_money"]');
     let money = parseInt($bankMoney.val());
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
@@ -566,7 +571,7 @@ const addBatchTransferButton = function () {
     </div>
     <div style="display: inline-block; margin-left: 10px;">
       <label>通用转帐金额（如所有用户都已设定单独金额则可留空）：<br>
-        <input class="pd_input" name="money" type="number" min="20" style="width: 217px;">
+        <input class="pd_input" name="transfer_money" type="text" style="width: 217px;">
       </label><br>
       <label style="margin-top: 5px;">转帐附言（可留空）：<br>
         <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>
@@ -587,7 +592,7 @@ const addBatchTransferButton = function () {
         e.preventDefault();
         Msg.destroy();
         if (!batchTransferVerify($area)) return;
-        let commonMoney = parseInt($area.find('[name="money"]').val());
+        let commonMoney = parseInt($area.find('[name="transfer_money"]').val());
         if (!commonMoney) commonMoney = 0;
         let msg = $area.find('[name="msg"]').val();
         let users = [];
@@ -1040,8 +1045,8 @@ const Config = exports.Config = {
     animationEffectOffEnabled: false,
     // 在页面上方显示搜索对话框的链接，true：开启；false：关闭
     showSearchLinkEnabled: true,
-    // 是否为侧边栏添加快捷导航的链接，true：开启；false：关闭
-    addSideBarFastNavEnabled: true,
+    // 是否为顶部导航栏添加快捷导航菜单，true：开启；false：关闭
+    addFastNavMenuEnabled: true,
     // 是否将侧边栏修改为和手机相同的平铺样式，true：开启；false：关闭
     modifySideBarEnabled: false,
     // 是否为页面添加自定义的CSS内容，true：开启；false：关闭
@@ -1501,8 +1506,8 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="禁用jQuery的动画效果（推荐在配置较差的机器上使用）">[?]</span>
       </label><br>
       <label>
-        <input name="addSideBarFastNavEnabled" type="checkbox"> 为侧边栏添加快捷导航
-        <span class="pd_cfg_tips" title="为侧边栏添加快捷导航的链接">[?]</span>
+        <input name="addFastNavMenuEnabled" type="checkbox"> 添加快捷导航菜单
+        <span class="pd_cfg_tips" title="为顶部导航栏添加快捷导航菜单">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
@@ -2574,12 +2579,9 @@ const Const = {
     statFloorMaxPage: 300,
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
-    // 自定义侧边栏导航内容
+    // 自定义快捷导航菜单内容
     // 格式：'<li><a href="导航链接">导航项名称</a></li>'
-    customSideBarContent: '',
-    // 自定义侧边栏导航内容（手机平铺样式）
-    // 格式：'<a href="导航链接1">导航项名称1</a> | <a href="导航链接2">导航项名称2</a><br>'，换行：'<br>'
-    customTileSideBarContent: '',
+    customFastNavMenuContent: '',
 
     // 通用存储数据名称前缀
     storagePrefix: storagePrefix,
@@ -2806,7 +2808,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const handleAtTips = exports.handleAtTips = function () {
     let type = Config.atTipsHandleType;
     if (type === 'default') return;
-    let $atTips = $('a[href^="guanjianci.php?gjc="]');
+    let $atTips = $('a.indbox5[href^="guanjianci.php?gjc="]');
     let noHighlight = () => $atTips.removeClass('indbox5').addClass('indbox6');
     let hideBox = () => $atTips.parent().next('div.line').addBack().remove();
     let handleBox = noHighlight;
@@ -7379,7 +7381,7 @@ const destroy = exports.destroy = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addForumLinkInCompleteExcellentPostPage = exports.addUserNameLinkInWaitCheckExcellentPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addLinksInGoodPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _Info = require('./Info');
 
@@ -7844,25 +7846,22 @@ const showSelfRatingErrorSizeSubmitWarning = exports.showSelfRatingErrorSizeSubm
 };
 
 /**
- * 在待检查的优秀帖页面上添加用户链接
+ * 在优秀帖相关页面上添加链接
  */
-const addUserNameLinkInWaitCheckExcellentPostPage = exports.addUserNameLinkInWaitCheckExcellentPostPage = function () {
-    $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
-        let $this = $(this);
-        let uid = parseInt($this.text());
-        $this.wrapInner(`<a class="${uid === _Info2.default.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
-    });
-};
-
-/**
- * 在已完成的优秀帖记录页面上添加版块链接
- */
-const addForumLinkInCompleteExcellentPostPage = exports.addForumLinkInCompleteExcellentPostPage = function () {
-    $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
-        let $this = $(this);
-        let matches = /\[(\d+)]板块/.exec($this.text());
-        if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
-    });
+const addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function () {
+    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+            let $this = $(this);
+            let uid = parseInt($this.text());
+            $this.wrapInner(`<a class="${uid === _Info2.default.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
+        });
+    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+            let $this = $(this);
+            let matches = /\[(\d+)]板块/.exec($this.text());
+            if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
+        });
+    }
 };
 
 /**
@@ -8223,7 +8222,7 @@ const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function (
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavForSideBar = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -8283,6 +8282,7 @@ const getUidAndUserName = exports.getUidAndUserName = function () {
     let $userName = $('.topmenuo1 > .topmenuo3:last-child > a[href="javascript:;"]').eq(0);
     let $uid = $('.topmenuo1 > .topmenuo3:last-child a[href^="profile.php?action=show&uid="]').eq(0);
     if (!$userName.length || !$uid.length) return false;
+    $userName.attr('id', 'pdUserName');
     _Info2.default.userName = $.trim($userName.contents().get(0).textContent);
     if (!_Info2.default.userName) return false;
     let matches = /&uid=(\d+)/.exec($uid.attr('href'));
@@ -9064,41 +9064,26 @@ const modifySideBar = exports.modifySideBar = function () {
 };
 
 /**
- * 为侧边栏添加快捷导航的链接
+ * 为顶部导航栏添加快捷导航菜单
  */
-const addFastNavForSideBar = exports.addFastNavForSideBar = function () {
-    let $menu = $('#r_menu');
-    if (!$menu.hasClass('r_cmenu')) {
-        if (!Config.modifySideBarEnabled) {
-            $menu.append('<a href="/">论坛首页</a><br>');
-        }
-        $menu.find('> a:last').before(`
-<span style="color: #ff9999;">快捷导航</span><br>
-<a href="guanjianci.php?gjc=${_Info2.default.userName}">@提醒</a> | <a href="personal.php?action=post">回复</a> | <a href="kf_growup.php">等级</a><br>
-<a href="kf_fw_ig_index.php">争夺</a> | <a href="kf_fw_ig_mybp.php">物品</a> | <a href="kf_fw_ig_shop.php">商店</a><br>
-<a href="profile.php?action=modify">设置</a> | <a href="hack.php?H_name=bank">银行</a> | <a href="profile.php?action=favor">收藏</a><br>
-${_Const2.default.customTileSideBarContent}
-`);
-    } else {
-        $menu.find('> ul > li:last-child').before(`
-<li class="r_cmenuho">
-  <a href="javascript:;">快捷导航</a>
-  <ul class="r_cmenu2">
-    <li><a href="guanjianci.php?gjc=${_Info2.default.userName}">@提醒</a></li>
-    <li><a href="personal.php?action=post">我的回复</a></li>
-    <li><a href="kf_growup.php">等级经验</a></li>
-    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
-    <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
-    <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
-    <li><a href="profile.php?action=modify">设置</a></li>
-    <li><a href="hack.php?H_name=bank">银行</a></li>
-    <li><a href="profile.php?action=favor">收藏</a></li>
-    ${_Const2.default.customSideBarContent}
-  </ul>
-</li>
-`);
-    }
+const addFastNavMenu = exports.addFastNavMenu = function () {
+    let $menuBtn = $('.topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("本站主页")');
+    if (!$menuBtn.length) return;
+    let hpUrl = $menuBtn.attr('href');
+    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after(`
+<ul class="topmenuo2">
+  <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
+  <li><a href="guanjianci.php?gjc=${_Info2.default.userName}">@提醒</a></li>
+  <li><a href="search.php?authorid=${_Info2.default.uid}">我的主题</a></li>
+  <li><a href="personal.php?action=post">我的回复</a></li>
+  <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
+  <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
+  <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
+  <li><a href="hack.php?H_name=bank">银行</a></li>
+  <li><a href="profile.php?action=favor">收藏</a></li>
+  ${_Info2.default.isInMiaolaDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
+  ${_Const2.default.customFastNavMenuContent}
+</ul>`);
 };
 
 /**
@@ -9490,6 +9475,15 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
     Dialog.show(dialogName);
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
     if (typeof callback === 'function') callback($dialog);
+};
+
+/**
+ * 修改用户名旁有新的评分提醒的颜色
+ */
+const changeNewRateTipsColor = exports.changeNewRateTipsColor = function () {
+    if (_Info2.default.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
+        $('#pdUserName').find('span').css('color', '#5cb85c');
+    }
 };
 
 },{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){

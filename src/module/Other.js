@@ -478,25 +478,23 @@ export const showSelfRatingErrorSizeSubmitWarning = function () {
 };
 
 /**
- * 在待检查的优秀帖页面上添加用户链接
+ * 在优秀帖相关页面上添加链接
  */
-export const addUserNameLinkInWaitCheckGoodPostPage = function () {
-    $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
-        let $this = $(this);
-        let uid = parseInt($this.text());
-        $this.wrapInner(`<a class="${uid === Info.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
-    });
-};
-
-/**
- * 在已完成的优秀帖记录页面上添加版块链接
- */
-export const addForumLinkInCompleteGoodPostPage = function () {
-    $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
-        let $this = $(this);
-        let matches = /\[(\d+)]板块/.exec($this.text());
-        if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
-    });
+export const addLinksInGoodPostPage = function () {
+    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+            let $this = $(this);
+            let uid = parseInt($this.text());
+            $this.wrapInner(`<a class="${uid === Info.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
+        });
+    }
+    else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+            let $this = $(this);
+            let matches = /\[(\d+)]板块/.exec($this.text());
+            if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
+        });
+    }
 };
 
 /**
