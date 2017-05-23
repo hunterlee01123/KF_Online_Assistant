@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        自定义指定用户的头像
-// @version     1.1
+// @version     1.2
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=12418035
@@ -25,7 +25,7 @@
         let type = $this.is('.readidmleft > a') ? 2 : 1;
         let $img = null;
         if (type === 2) $img = $this.closest('.readidm');
-        else $img = $this.parent('.readidmsbottom').prev('.readidmstop').find('img.pic');
+        else $img = $this.parent('.readidmsbottom').prev('.readidmstop').find('img');
         if (avatar.oldUrlString) {
             let url = '';
             if (type === 2) url = $img.css('background-image');
