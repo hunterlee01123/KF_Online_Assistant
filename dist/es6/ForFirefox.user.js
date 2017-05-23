@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.0.1
+// @version     10.0.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.0.1';
+const version = '10.0.2';
 
 /**
  * 导出模块
@@ -8362,6 +8362,8 @@ const appendCss = exports.appendCss = function () {
     text-indent: 13px; cursor: pointer; z-index: 1003;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
+  ${_Info2.default.isMobile ? '.topmenu { position: static; }' : ''}
+  ${_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : ''}
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
@@ -9486,7 +9488,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
  */
 const changeNewRateTipsColor = exports.changeNewRateTipsColor = function () {
     if (_Info2.default.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
-        $('#pdUserName').find('span').css('color', '#5cb85c');
+        $('#pdUserName').find('span').attr('id', 'pdNewRateTips').css('color', '#5cb85c');
     }
 };
 

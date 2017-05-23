@@ -99,6 +99,8 @@ export const appendCss = function () {
     text-indent: 13px; cursor: pointer; z-index: 1003;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
+  ${Info.isMobile ? '.topmenu { position: static; }' : ''}
+  ${Info.isMobile ? '.r_cmenu { position: static !important; }' : ''}
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
@@ -1289,6 +1291,6 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
  */
 export const changeNewRateTipsColor = function () {
     if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
-        $('#pdUserName').find('span').css('color', '#5cb85c');
+        $('#pdUserName').find('span').attr('id', 'pdNewRateTips').css('color', '#5cb85c');
     }
 };
