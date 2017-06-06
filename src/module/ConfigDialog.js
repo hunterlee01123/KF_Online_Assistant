@@ -79,8 +79,13 @@ export const show = function () {
         <span class="pd_cfg_tips" title="提升战力光环的花费类型">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时
-        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间，最低值：8小时">[?]</span>
+         高于 <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>
+         <span data-id="promoteHaloLimitUnit">KFB</span>时
+         <span class="pd_cfg_tips" title="在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
+      </label><br>
+      <label>
+        每隔 <input name="promoteHaloInterval" type="number" min="1" style="width: 40px;" required> 小时
+        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> 自动判断
@@ -400,7 +405,10 @@ export const show = function () {
         else if (name === 'openFollowUserDialog') showFollowUserDialog();
         else if (name === 'openBlockUserDialog') showBlockUserDialog();
         else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
-    }).find('[data-name="customMySmColorSelect"]').change(function () {
+    }).find('[name="promoteHaloCostType"]').change(function () {
+        let typeId = parseInt($(this).val());
+        $dialog.find('[data-id="promoteHaloLimitUnit"]').text(typeId >= 11 ? '贡献' : 'KFB');
+    }).end().find('[data-name="customMySmColorSelect"]').change(function () {
         $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
     }).end().find('[name="customMySmColor"]').change(function () {
         let color = $.trim($(this).val());
@@ -425,6 +433,7 @@ const setMainConfigValue = function ($dialog) {
             else $this.val(Config[name]);
         }
     });
+    $dialog.find('[name="promoteHaloCostType"]').trigger('change');
     $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
     $dialog.find('[data-name="customMySmColorSelect"]').val(Config.customMySmColor);
 
@@ -446,7 +455,9 @@ const getMainConfigValue = function ($dialog) {
             if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean')
                 options[name] = Boolean($this.prop('checked'));
             else if (typeof Config[name] === 'number') {
-                options[name] = parseInt($this.val());
+                let value = $.trim($this.val());
+                if (/\d+\.\d+/.test(value)) options[name] = parseFloat(value);
+                else options[name] = parseInt(value);
                 if (name === 'threadContentFontSize' && isNaN(options[name])) options[name] = 0;
             }
             else options[name] = $.trim($this.val());

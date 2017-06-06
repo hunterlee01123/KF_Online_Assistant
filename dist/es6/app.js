@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.0.2';
+const version = '10.1';
 
 /**
  * 导出模块
@@ -933,12 +933,14 @@ const Config = exports.Config = {
 
     // 是否自动提升战力光环，true：开启；false：关闭
     autoPromoteHaloEnabled: false,
-    // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；3：花费0.2贡献；4：花费2贡献
+    // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；11：花费0.2贡献；12：花费2贡献
     promoteHaloCostType: 1,
-    // 自动提升战力光环的间隔时间（小时），最低值：8
+    // 自动提升战力光环的间隔时间（小时）
     promoteHaloInterval: 8,
     // 是否自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用），true：开启；false：关闭
     promoteHaloAutoIntervalEnabled: true,
+    // 在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
+    promoteHaloLimit: 0,
 
     // 是否自动争夺，true：开启；false：关闭
     autoLootEnabled: false,
@@ -1290,8 +1292,13 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="提升战力光环的花费类型">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时
-        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间，最低值：8小时">[?]</span>
+         高于 <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>
+         <span data-id="promoteHaloLimitUnit">KFB</span>时
+         <span class="pd_cfg_tips" title="在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
+      </label><br>
+      <label>
+        每隔 <input name="promoteHaloInterval" type="number" min="1" style="width: 40px;" required> 小时
+        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> 自动判断
@@ -1603,7 +1610,10 @@ const show = exports.show = function () {
         if (name === 'openRumCommandDialog') showRunCommandDialog();
         if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
         if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
-    }).find('[data-name="customMySmColorSelect"]').change(function () {
+    }).find('[name="promoteHaloCostType"]').change(function () {
+        let typeId = parseInt($(this).val());
+        $dialog.find('[data-id="promoteHaloLimitUnit"]').text(typeId >= 11 ? '贡献' : 'KFB');
+    }).end().find('[data-name="customMySmColorSelect"]').change(function () {
         $dialog.find('[name="customMySmColor"]').val($(this).val().toString().toLowerCase());
     }).end().find('[name="customMySmColor"]').change(function () {
         let color = $.trim($(this).val());
@@ -1627,6 +1637,7 @@ const setMainConfigValue = function ($dialog) {
             if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') $this.prop('checked', Config[name] === true);else $this.val(Config[name]);
         }
     });
+    $dialog.find('[name="promoteHaloCostType"]').trigger('change');
     $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
     $dialog.find('[data-name="customMySmColorSelect"]').val(Config.customMySmColor);
 
@@ -1646,7 +1657,8 @@ const getMainConfigValue = function ($dialog) {
         let name = $this.attr('name');
         if (name in Config) {
             if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') options[name] = Boolean($this.prop('checked'));else if (typeof Config[name] === 'number') {
-                options[name] = parseInt($this.val());
+                let value = $.trim($this.val());
+                if (/\d+\.\d+/.test(value)) options[name] = parseFloat(value);else options[name] = parseInt(value);
                 if (name === 'threadContentFontSize' && isNaN(options[name])) options[name] = 0;
             } else options[name] = $.trim($this.val());
         }
@@ -7008,45 +7020,82 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
     console.log('获取战力光环页面信息Start');
     let $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
 
-    $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
-        timeout: _Const2.default.defAjaxTimeout
-    }).done(function (html) {
-        Msg.remove($wait);
+    /**
+     * 写入Cookie
+     * @param {string} value 指定（相对）时间量
+     * @returns {boolean} 返回false
+     */
+    const setCookie = function (value) {
+        let nextTime = Util.getDate(value);
+        Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime.getTime(), nextTime);
+        if (isInitLootPage) init();
+        return false;
+    };
 
-        let safeIdMatches = /safeid=(\w+)"/.exec(html);
-        if (!safeIdMatches) {
-            let nextTime = Util.getDate('+1h');
-            Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime.getTime(), nextTime);
-            if (isInitLootPage) init();
-            return;
-        }
-        let safeId = safeIdMatches[1];
+    /**
+     * 获取个人信息
+     */
+    const getPersonalInfo = function () {
+        $.ajax({
+            type: 'GET',
+            url: `profile.php?action=show&uid=${_Info2.default.uid}&t=${new Date().getTime()}`,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+))/ : /论坛货币：(-?\d+)\s*KFB/;
+            let matches = regex.exec(html);
+            if (!matches) return setCookie('+1h');
+            let currency = parseFloat(matches[1]);
+            if (currency > Config.promoteHaloLimit) {
+                let { num } = getPromoteHaloCostByTypeId(Config.promoteHaloCostType);
+                let maxCount = Math.floor((currency - Config.promoteHaloLimit) / num);
+                if (maxCount > 0) getHaloInfo(maxCount);else return setCookie(`+${Config.promoteHaloInterval}h`);
+            } else return setCookie(`+${Config.promoteHaloInterval}h`);
+        }).fail(() => setTimeout(getPersonalInfo, _Const2.default.defAjaxInterval)).always(() => Msg.remove($wait));
+    };
 
-        let surplusMatches = /下次随机还需\[(\d+)]分钟/.exec(html);
-        if (surplusMatches) {
-            let promoteHaloInterval = Config.promoteHaloAutoIntervalEnabled ? _Const2.default.minPromoteHaloInterval : Config.promoteHaloInterval * 60;
-            let nextTime = Util.getDate(`+${promoteHaloInterval - (_Const2.default.minPromoteHaloInterval - parseInt(surplusMatches[1]))}m`);
-            Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime.getTime(), nextTime);
-            if (isInitLootPage) init();
-            return;
-        }
+    /**
+     * 获取光环信息
+     * @param {number} maxCount 最大提升战力光环次数（设为-1表示不限制）
+     */
+    const getHaloInfo = function (maxCount = -1) {
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            Msg.remove($wait);
 
-        let totalCount = 1;
-        let countMatches = /当前光环随机可用\[(\d+)]次/.exec(html);
-        if (Config.promoteHaloAutoIntervalEnabled && countMatches) totalCount = parseInt(countMatches[1]);
+            let safeIdMatches = /safeid=(\w+)"/.exec(html);
+            if (!safeIdMatches) return setCookie('+1h');
+            let safeId = safeIdMatches[1];
 
-        promoteHalo(totalCount, Config.promoteHaloCostType, safeId, isInitLootPage);
-    }).fail(function () {
-        Msg.remove($wait);
-        setTimeout(getPromoteHaloInfo, _Const2.default.defAjaxInterval);
-    });
+            let surplusMatches = /下次随机还需\[(\d+)]分钟/.exec(html);
+            if (surplusMatches) {
+                let promoteHaloInterval = Config.promoteHaloAutoIntervalEnabled ? _Const2.default.minPromoteHaloInterval : Config.promoteHaloInterval * 60;
+                promoteHaloInterval = promoteHaloInterval < _Const2.default.minPromoteHaloInterval ? _Const2.default.minPromoteHaloInterval : promoteHaloInterval;
+                return setCookie(`+${promoteHaloInterval - (_Const2.default.minPromoteHaloInterval - parseInt(surplusMatches[1]))}m`);
+            }
+
+            let totalCount = 1;
+            let countMatches = /当前光环随机可用\[(\d+)]次/.exec(html);
+            if (Config.promoteHaloAutoIntervalEnabled && countMatches) {
+                totalCount = parseInt(countMatches[1]);
+                if (maxCount > -1) totalCount = totalCount > maxCount ? maxCount : totalCount;
+            }
+
+            promoteHalo(totalCount, Config.promoteHaloCostType, safeId, isInitLootPage);
+        }).fail(function () {
+            Msg.remove($wait);
+            setTimeout(getPromoteHaloInfo, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    if (Config.promoteHaloLimit > 0) getPersonalInfo();else getHaloInfo();
 };
 
 /**
  * 提升战力光环
- * @param {number} totalCount 总次数
+ * @param {number} totalCount 提升战力光环总次数
  * @param {number} promoteHaloCostType 自动提升战力光环的花费类型，参见{@link Config.promoteHaloCostType}
  * @param {string} safeId SafeID
  * @param {boolean} isInitLootPage 是否初始化争夺首页
@@ -7095,6 +7144,8 @@ const promoteHalo = exports.promoteHalo = function (totalCount, promoteHaloCostT
 
                 matches = /你还需要等待(\d+)分钟/.exec(msg);
                 if (matches) {
+                    let promoteHaloInterval = Config.promoteHaloInterval * 60;
+                    promoteHaloInterval = promoteHaloInterval < _Const2.default.minPromoteHaloInterval ? _Const2.default.minPromoteHaloInterval : promoteHaloInterval;
                     nextTime = Util.getDate(`+${Config.promoteHaloInterval * 60 - (_Const2.default.minPromoteHaloInterval - parseInt(matches[1]))}m`).getTime();
                 }
             }
@@ -7863,7 +7914,7 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
  */
 const handleProfilePage = exports.handleProfilePage = function () {
     let $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
-    $area.html($area.html().replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
+    $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #888;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
         let now = new Date();
         let html = date;
         if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
@@ -8342,6 +8393,7 @@ const appendCss = exports.appendCss = function () {
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   ${_Info2.default.isMobile ? '.topmenu { position: static; }' : ''}
   ${_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : ''}
+  .topmenu { z-index: 1; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }

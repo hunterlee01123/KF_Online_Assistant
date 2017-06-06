@@ -28,12 +28,14 @@ export const Config = {
 
     // 是否自动提升战力光环，true：开启；false：关闭
     autoPromoteHaloEnabled: false,
-    // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；3：花费0.2贡献；4：花费2贡献
+    // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；11：花费0.2贡献；12：花费2贡献
     promoteHaloCostType: 1,
-    // 自动提升战力光环的间隔时间（小时），最低值：8
+    // 自动提升战力光环的间隔时间（小时）
     promoteHaloInterval: 8,
     // 是否自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用），true：开启；false：关闭
     promoteHaloAutoIntervalEnabled: true,
+    // 在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
+    promoteHaloLimit: 0,
 
     // 是否自动争夺，true：开启；false：关闭
     autoLootEnabled: false,

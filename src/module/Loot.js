@@ -2046,45 +2046,86 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
     console.log('获取战力光环页面信息Start');
     let $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
 
-    $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
-        timeout: Const.defAjaxTimeout,
-    }).done(function (html) {
-        Msg.remove($wait);
+    /**
+     * 写入Cookie
+     * @param {string} value 指定（相对）时间量
+     * @returns {boolean} 返回false
+     */
+    const setCookie = function (value) {
+        let nextTime = Util.getDate(value);
+        Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
+        if (isInitLootPage) init();
+        return false;
+    };
 
-        let safeIdMatches = /safeid=(\w+)"/.exec(html);
-        if (!safeIdMatches) {
-            let nextTime = Util.getDate('+1h');
-            Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
-            if (isInitLootPage) init();
-            return;
-        }
-        let safeId = safeIdMatches[1];
+    /**
+     * 获取个人信息
+     */
+    const getPersonalInfo = function () {
+        $.ajax({
+            type: 'GET',
+            url: `profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`,
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+))/ : /论坛货币：(-?\d+)\s*KFB/;
+            let matches = regex.exec(html);
+            if (!matches) return setCookie('+1h');
+            let currency = parseFloat(matches[1]);
+            if (currency > Config.promoteHaloLimit) {
+                let {num} = getPromoteHaloCostByTypeId(Config.promoteHaloCostType);
+                let maxCount = Math.floor((currency - Config.promoteHaloLimit) / num);
+                if (maxCount > 0) getHaloInfo(maxCount);
+                else return setCookie(`+${Config.promoteHaloInterval}h`);
+            }
+            else return setCookie(`+${Config.promoteHaloInterval}h`);
+        }).fail(() => setTimeout(getPersonalInfo, Const.defAjaxInterval))
+            .always(() => Msg.remove($wait));
+    };
 
-        let surplusMatches = /下次随机还需\[(\d+)]分钟/.exec(html);
-        if (surplusMatches) {
-            let promoteHaloInterval = Config.promoteHaloAutoIntervalEnabled ? Const.minPromoteHaloInterval : Config.promoteHaloInterval * 60;
-            let nextTime = Util.getDate(`+${promoteHaloInterval - (Const.minPromoteHaloInterval - parseInt(surplusMatches[1]))}m`);
-            Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
-            if (isInitLootPage) init();
-            return;
-        }
+    /**
+     * 获取光环信息
+     * @param {number} maxCount 最大提升战力光环次数（设为-1表示不限制）
+     */
+    const getHaloInfo = function (maxCount = -1) {
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            Msg.remove($wait);
 
-        let totalCount = 1;
-        let countMatches = /当前光环随机可用\[(\d+)]次/.exec(html);
-        if (Config.promoteHaloAutoIntervalEnabled && countMatches) totalCount = parseInt(countMatches[1]);
+            let safeIdMatches = /safeid=(\w+)"/.exec(html);
+            if (!safeIdMatches) return setCookie('+1h');
+            let safeId = safeIdMatches[1];
 
-        promoteHalo(totalCount, Config.promoteHaloCostType, safeId, isInitLootPage);
-    }).fail(function () {
-        Msg.remove($wait);
-        setTimeout(getPromoteHaloInfo, Const.defAjaxInterval);
-    });
+            let surplusMatches = /下次随机还需\[(\d+)]分钟/.exec(html);
+            if (surplusMatches) {
+                let promoteHaloInterval = Config.promoteHaloAutoIntervalEnabled ? Const.minPromoteHaloInterval : Config.promoteHaloInterval * 60;
+                promoteHaloInterval = promoteHaloInterval < Const.minPromoteHaloInterval ? Const.minPromoteHaloInterval : promoteHaloInterval;
+                return setCookie(`+${promoteHaloInterval - (Const.minPromoteHaloInterval - parseInt(surplusMatches[1]))}m`);
+            }
+
+            let totalCount = 1;
+            let countMatches = /当前光环随机可用\[(\d+)]次/.exec(html);
+            if (Config.promoteHaloAutoIntervalEnabled && countMatches) {
+                totalCount = parseInt(countMatches[1]);
+                if (maxCount > -1) totalCount = totalCount > maxCount ? maxCount : totalCount;
+            }
+
+            promoteHalo(totalCount, Config.promoteHaloCostType, safeId, isInitLootPage);
+        }).fail(function () {
+            Msg.remove($wait);
+            setTimeout(getPromoteHaloInfo, Const.defAjaxInterval);
+        });
+    };
+
+    if (Config.promoteHaloLimit > 0) getPersonalInfo();
+    else getHaloInfo();
 };
 
 /**
  * 提升战力光环
- * @param {number} totalCount 总次数
+ * @param {number} totalCount 提升战力光环总次数
  * @param {number} promoteHaloCostType 自动提升战力光环的花费类型，参见{@link Config.promoteHaloCostType}
  * @param {string} safeId SafeID
  * @param {boolean} isInitLootPage 是否初始化争夺首页
@@ -2147,6 +2188,8 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId, is
 
                 matches = /你还需要等待(\d+)分钟/.exec(msg);
                 if (matches) {
+                    let promoteHaloInterval = Config.promoteHaloInterval * 60;
+                    promoteHaloInterval = promoteHaloInterval < Const.minPromoteHaloInterval ? Const.minPromoteHaloInterval : promoteHaloInterval;
                     nextTime = Util.getDate(`+${Config.promoteHaloInterval * 60 - (Const.minPromoteHaloInterval - parseInt(matches[1]))}m`).getTime();
                 }
             }

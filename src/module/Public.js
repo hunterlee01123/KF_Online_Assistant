@@ -101,6 +101,7 @@ export const appendCss = function () {
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   ${Info.isMobile ? '.topmenu { position: static; }' : ''}
   ${Info.isMobile ? '.r_cmenu { position: static !important; }' : ''}
+  .topmenu { z-index: 1; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
