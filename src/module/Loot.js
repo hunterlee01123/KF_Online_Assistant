@@ -2067,19 +2067,22 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
             url: `profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`,
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
+            Msg.remove($wait);
             let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+))/ : /论坛货币：(-?\d+)\s*KFB/;
             let matches = regex.exec(html);
-            if (!matches) return setCookie('+1h');
+            if (!matches) return setCookie('+${Const.promoteHaloLimitNextActionInterval}m');
             let currency = parseFloat(matches[1]);
             if (currency > Config.promoteHaloLimit) {
                 let {num} = getPromoteHaloCostByTypeId(Config.promoteHaloCostType);
                 let maxCount = Math.floor((currency - Config.promoteHaloLimit) / num);
-                if (maxCount > 0) getHaloInfo(maxCount);
-                else return setCookie(`+${Config.promoteHaloInterval}h`);
+                if (maxCount > 0) {
+                    $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
+                    getHaloInfo(maxCount);
+                }
+                else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
             }
-            else return setCookie(`+${Config.promoteHaloInterval}h`);
-        }).fail(() => setTimeout(getPersonalInfo, Const.defAjaxInterval))
-            .always(() => Msg.remove($wait));
+            else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
+        }).fail(() => setTimeout(getPersonalInfo, Const.defAjaxInterval));
     };
 
     /**

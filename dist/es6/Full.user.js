@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.1
+// @version     10.1.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.1';
+const version = '10.1.1';
 
 /**
  * 导出模块
@@ -956,7 +956,7 @@ const Config = exports.Config = {
     autoPromoteHaloEnabled: false,
     // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；11：花费0.2贡献；12：花费2贡献
     promoteHaloCostType: 1,
-    // 自动提升战力光环的间隔时间（小时）
+    // 自动提升战力光环的间隔时间（小时），最低值：8
     promoteHaloInterval: 8,
     // 是否自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用），true：开启；false：关闭
     promoteHaloAutoIntervalEnabled: true,
@@ -1318,8 +1318,8 @@ const show = exports.show = function () {
          <span class="pd_cfg_tips" title="在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
       </label><br>
       <label>
-        每隔 <input name="promoteHaloInterval" type="number" min="1" style="width: 40px;" required> 小时
-        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间">[?]</span>
+        每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时
+        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间，最低值：8小时">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> 自动判断
@@ -2546,6 +2546,8 @@ const Const = {
     getDailyBonusSpecialInterval: 30,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
+    // 在检测到当前持有的KFB或贡献未高于指定值时的下一次自动提升战力光环的间隔时间（分钟）
+    promoteHaloLimitNextActionInterval: 480,
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）
@@ -7062,16 +7064,20 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
             url: `profile.php?action=show&uid=${_Info2.default.uid}&t=${new Date().getTime()}`,
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
+            Msg.remove($wait);
             let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+))/ : /论坛货币：(-?\d+)\s*KFB/;
             let matches = regex.exec(html);
-            if (!matches) return setCookie('+1h');
+            if (!matches) return setCookie('+${Const.promoteHaloLimitNextActionInterval}m');
             let currency = parseFloat(matches[1]);
             if (currency > Config.promoteHaloLimit) {
                 let { num } = getPromoteHaloCostByTypeId(Config.promoteHaloCostType);
                 let maxCount = Math.floor((currency - Config.promoteHaloLimit) / num);
-                if (maxCount > 0) getHaloInfo(maxCount);else return setCookie(`+${Config.promoteHaloInterval}h`);
-            } else return setCookie(`+${Config.promoteHaloInterval}h`);
-        }).fail(() => setTimeout(getPersonalInfo, _Const2.default.defAjaxInterval)).always(() => Msg.remove($wait));
+                if (maxCount > 0) {
+                    $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
+                    getHaloInfo(maxCount);
+                } else return setCookie(`+${_Const2.default.promoteHaloLimitNextActionInterval}m`);
+            } else return setCookie(`+${_Const2.default.promoteHaloLimitNextActionInterval}m`);
+        }).fail(() => setTimeout(getPersonalInfo, _Const2.default.defAjaxInterval));
     };
 
     /**
@@ -7935,12 +7941,12 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
  */
 const handleProfilePage = exports.handleProfilePage = function () {
     let $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
-    $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #888;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
+    $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
         let now = new Date();
         let html = date;
         if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
         return '注册时间：' + html;
-    }));
+    })).css('vertical-align', 'top');
 };
 
 },{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
@@ -8860,6 +8866,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
                     console.log('领取每日奖励，' + logStatText);
                     Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', { gain });
+                    if (gain['贡献'] > 0 && Config.promoteHaloLimit > 0) Util.deleteCookie(_Const2.default.promoteHaloCookieName);
                 }
                 Script.runFunc('Public.getDailyBonus_after_', msg);
             }).fail(() => Msg.remove($wait));

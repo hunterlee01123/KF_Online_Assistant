@@ -30,7 +30,7 @@ export const Config = {
     autoPromoteHaloEnabled: false,
     // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；11：花费0.2贡献；12：花费2贡献
     promoteHaloCostType: 1,
-    // 自动提升战力光环的间隔时间（小时）
+    // 自动提升战力光环的间隔时间（小时），最低值：8
     promoteHaloInterval: 8,
     // 是否自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用），true：开启；false：关闭
     promoteHaloAutoIntervalEnabled: true,

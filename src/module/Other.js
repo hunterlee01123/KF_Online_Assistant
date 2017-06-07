@@ -516,7 +516,7 @@ export const handleProfilePage = function () {
     let $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
     $area.html(
         $area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>')
-            .replace(/<b>离线<\/b>/, '<b style="color: #888;">离线</b>')
+            .replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>')
             .replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>')
             .replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
             .replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
@@ -528,5 +528,5 @@ export const handleProfilePage = function () {
                     html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
                 return '注册时间：' + html;
             })
-    );
+    ).css('vertical-align', 'top');
 };

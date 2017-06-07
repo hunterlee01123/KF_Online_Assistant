@@ -32,6 +32,8 @@ const Const = {
     getDailyBonusSpecialInterval: 30,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
+    // 在检测到当前持有的KFB或贡献未高于指定值时的下一次自动提升战力光环的间隔时间（分钟）
+    promoteHaloLimitNextActionInterval: 480,
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）

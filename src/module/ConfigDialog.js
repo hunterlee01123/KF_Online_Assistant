@@ -84,8 +84,8 @@ export const show = function () {
          <span class="pd_cfg_tips" title="在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
       </label><br>
       <label>
-        每隔 <input name="promoteHaloInterval" type="number" min="1" style="width: 40px;" required> 小时
-        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间">[?]</span>
+        每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时
+        <span class="pd_cfg_tips" title="自动提升战力光环的间隔时间，最低值：8小时">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> 自动判断
