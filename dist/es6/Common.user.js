@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.1.1
+// @version     10.1.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.1.1';
+const version = '10.1.2';
 
 /**
  * 导出模块
@@ -957,7 +957,7 @@ const Config = exports.Config = {
     promoteHaloInterval: 8,
     // 是否自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用），true：开启；false：关闭
     promoteHaloAutoIntervalEnabled: true,
-    // 在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
+    // 在操作后所剩余的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
     promoteHaloLimit: 0,
 
     // 是否自动争夺，true：开启；false：关闭
@@ -1312,7 +1312,7 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
          高于 <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>
          <span data-id="promoteHaloLimitUnit">KFB</span>时
-         <span class="pd_cfg_tips" title="在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
+         <span class="pd_cfg_tips" title="在操作后所剩余的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
       </label><br>
       <label>
         每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时

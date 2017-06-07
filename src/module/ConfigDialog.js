@@ -81,7 +81,7 @@ export const show = function () {
       <label class="pd_cfg_ml">
          高于 <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>
          <span data-id="promoteHaloLimitUnit">KFB</span>时
-         <span class="pd_cfg_tips" title="在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
+         <span class="pd_cfg_tips" title="在操作后所剩余的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制">[?]</span>
       </label><br>
       <label>
         每隔 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> 小时

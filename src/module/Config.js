@@ -34,7 +34,7 @@ export const Config = {
     promoteHaloInterval: 8,
     // 是否自动判断提升战力光环的间隔时间（在有剩余次数时尽可能使用），true：开启；false：关闭
     promoteHaloAutoIntervalEnabled: true,
-    // 在当前持有的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
+    // 在操作后所剩余的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
     promoteHaloLimit: 0,
 
     // 是否自动争夺，true：开启；false：关闭
