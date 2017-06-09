@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        在帖子页面添加自助评分链接
-// @version     1.1
+// @version     1.2
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13292185
@@ -11,7 +11,7 @@
 (function () {
     if (location.pathname !== '/read.php') return;
     // 可进行自助评分的版块ID列表
-    var selfRatingFidList = [41, 67, 92, 127, 68];
+    var selfRatingFidList = [41, 67, 92, 127, 68, 163];
     var Public = require('./Public');
 
     var fid = parseInt($('input[name="fid"]:first').val());
