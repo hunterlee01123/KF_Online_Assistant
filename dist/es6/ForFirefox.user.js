@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.1.2
+// @version     10.1.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.1.2';
+const version = '10.1.3';
 
 /**
  * 导出模块
@@ -7066,9 +7066,9 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             Msg.remove($wait);
-            let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+))/ : /论坛货币：(-?\d+)\s*KFB/;
+            let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+)?)/ : /论坛货币：(-?\d+)\s*KFB/;
             let matches = regex.exec(html);
-            if (!matches) return setCookie('+${Const.promoteHaloLimitNextActionInterval}m');
+            if (!matches) return setCookie(`+${_Const2.default.promoteHaloLimitNextActionInterval}m`);
             let currency = parseFloat(matches[1]);
             if (currency > Config.promoteHaloLimit) {
                 let { num } = getPromoteHaloCostByTypeId(Config.promoteHaloCostType);

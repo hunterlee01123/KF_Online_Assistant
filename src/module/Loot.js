@@ -2068,9 +2068,9 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
             Msg.remove($wait);
-            let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+))/ : /论坛货币：(-?\d+)\s*KFB/;
+            let regex = Config.promoteHaloCostType >= 11 ? /贡献数值：(\d+(?:\.\d+)?)/ : /论坛货币：(-?\d+)\s*KFB/;
             let matches = regex.exec(html);
-            if (!matches) return setCookie('+${Const.promoteHaloLimitNextActionInterval}m');
+            if (!matches) return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
             let currency = parseFloat(matches[1]);
             if (currency > Config.promoteHaloLimit) {
                 let {num} = getPromoteHaloCostByTypeId(Config.promoteHaloCostType);
