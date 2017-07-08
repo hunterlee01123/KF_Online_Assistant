@@ -1014,6 +1014,9 @@ export const enhanceMyItemsPage = function () {
     });
     bindItemActionLinksClick($myItems);
     showCurrentUsedItemNum();
+    $myItems.before(
+        '<div class="pd_highlight" style="margin-bottom: 5px;">此为旧版道具页面，在物品商店购买的新道具请到<a href="kf_fw_ig_mybp.php">角色/物品</a>页面查看！</div>'
+    );
 };
 
 /**
@@ -1376,7 +1379,7 @@ const addSimulateManualHandleItemChecked = function () {
  * 在物品装备页面上添加批量使用道具按钮
  */
 export const addBatchUseItemsButton = function () {
-    let $area = $('.kf_fw_ig1:first');
+    let $area = $('.kf_fw_ig1:eq(1)');
     $area.find('> tbody > tr:gt(1)').each(function () {
         let $this = $(this);
         let matches = /id=(\d+)/.exec($this.find('td:nth-child(3) > a').attr('href'));
@@ -1388,10 +1391,10 @@ export const addBatchUseItemsButton = function () {
 
     $(`
 <div class="pd_item_btns">
-  <button name="useItems" type="button" style="color: #00f;" title="批量使用指定道具">批量使用</button>
-  <button name="hideItemTypes" type="button" style="color: #f00;" title="隐藏指定种类的道具">隐藏道具</button>
-  <button name="selectAll" type="button">全选</button>
-  <button name="selectInverse" type="button">反选</button>
+  <button name="useItems" type="button" style="color: #00f;" title="批量使用指定道具" hidden>批量使用</button>
+  <button name="sellAllItems" type="button" style="color: #f00;" title="出售全部道具（包括未显示的道具）">出售全部道具</button>
+  <button name="selectAll" type="button" hidden>全选</button>
+  <button name="selectInverse" type="button" hidden>反选</button>
 </div>
 `).insertAfter($area).find('[name="useItems"]').click(function () {
         let $checked = $area.find('[type="checkbox"]:checked');
@@ -1423,21 +1426,8 @@ export const addBatchUseItemsButton = function () {
             });
         });
         $(document).dequeue('UseItemTypes');
-    }).end().find('[name="hideItemTypes"]').click(function () {
-        readConfig();
-        let value = prompt(
-            '请输入你要隐藏的道具种类：\n（多个种类请用英文逗号分隔，留空表示不隐藏，例：蕾米莉亚同人漫画,整形优惠卷）',
-            Config.hideItemTypeList.join(',')
-        );
-        if (value === null) return;
-        Config.hideItemTypeList = [];
-        for (let itemType of value.split(',')) {
-            itemType = itemType.trim();
-            if (!itemTypeList.includes(itemType)) continue;
-            Config.hideItemTypeList.push(itemType);
-        }
-        writeConfig();
-        alert('指定道具种类已被隐藏（需刷新页面后才可生效）');
+    }).end().find('[name="sellAllItems"]').click(function () {
+
     }).end().find('[name="selectAll"]').click(() => Util.selectAll($area.find('[type="checkbox"]')))
         .end().find('[name="selectInverse"]').click(() => Util.selectInverse($area.find('[type="checkbox"]')));
 

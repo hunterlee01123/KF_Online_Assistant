@@ -476,7 +476,7 @@ export const startTimingMode = function () {
             Loot.getPromoteHaloInfo();
         }
 
-        if (!Util.getCookie(Const.lootCompleteCookieName)) {
+        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
             if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
                 if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
                     Loot.checkLoot();
@@ -484,7 +484,7 @@ export const startTimingMode = function () {
             else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 Loot.autoSaveLootLog();
             }
-        }
+        }*/
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
 
@@ -567,7 +567,7 @@ export const getDailyBonus = function () {
                     console.log('领取每日奖励，' + logStatText);
                     Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', {gain});
-                    if (gain['贡献'] > 0 && Config.promoteHaloLimit > 0) Util.deleteCookie(Const.promoteHaloCookieName);
+                    if (Config.promoteHaloLimit > 0) Util.deleteCookie(Const.promoteHaloCookieName);
                 }
                 Script.runFunc('Public.getDailyBonus_after_', msg);
             }).fail(() => Msg.remove($wait));

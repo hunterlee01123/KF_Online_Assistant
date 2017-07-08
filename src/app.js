@@ -220,10 +220,10 @@ const init = function () {
         isAutoPromoteHaloStarted = true;
         Loot.getPromoteHaloInfo(location.pathname === '/kf_fw_ig_index.php');
     }
-    if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
+    //if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
 
     let isAutoLootStarted = false;
-    if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
+    /*if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
             if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)) && !isAutoPromoteHaloStarted) {
                 isAutoLootStarted = true;
@@ -234,7 +234,7 @@ const init = function () {
             isAutoLootStarted = true;
             Loot.autoSaveLootLog();
         }
-    }
+    }*/
 
     if (!Config.getBonusAfterLootCompleteEnabled) isAutoLootStarted = false;
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();

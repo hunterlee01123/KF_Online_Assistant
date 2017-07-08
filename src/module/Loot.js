@@ -1340,7 +1340,7 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
 
     let currentLevel = getCurrentLevel(logList);
     let {kfb, exp} = getTotalGain(levelInfoList);
-    if (kfb > 0 && exp > 0) {
+    if (kfb > 0 || exp > 0) {
         Log.push(
             '争夺攻击',
             `你成功击败了第\`${currentLevel - 1}\`层的NPC (全部：${allEnemyStat.trim()}；最近${Const.enemyStatLatestLevelNum}层：${latestEnemyStat.trim()})`,

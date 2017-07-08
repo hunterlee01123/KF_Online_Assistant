@@ -489,6 +489,12 @@ export const addLinksInGoodPostPage = function () {
         });
     }
     else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
+            let $this = $(this);
+            let userName = $this.text().trim();
+            if (userName === '0') return;
+            $this.wrapInner(`<a class="${userName === Info.userName ? 'pd_highlight' : ''}" href="profile.php?action=show&username=${userName}" target="_blank"></a>`);
+        });
         $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
             let $this = $(this);
             let matches = /\[(\d+)]板块/.exec($this.text());
