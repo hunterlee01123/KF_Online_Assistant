@@ -3,6 +3,7 @@
 import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
+import * as Dialog from './Dialog';
 import Const from './Const';
 import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
@@ -1115,9 +1116,9 @@ const showCurrentUsedItemNum = function (html = '') {
             $('.kf_fw_ig_title1:last').find('span:has(.pd_total_energy_num)').remove()
                 .end()
                 .append(
-                `<span class="pd_custom_tips" style="margin-left: 7px;" title="${introMatches ? introMatches[1] : ''}">` +
-                `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${energyNum}</b> 点)</span>`
-            );
+                    `<span class="pd_custom_tips" style="margin-left: 7px;" title="${introMatches ? introMatches[1] : ''}">` +
+                    `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${energyNum}</b> 点)</span>`
+                );
         }
 
         if ($('.pd_used_num').length > 0) {
@@ -1379,20 +1380,22 @@ const addSimulateManualHandleItemChecked = function () {
  * 在物品装备页面上添加批量使用道具按钮
  */
 export const addBatchUseItemsButton = function () {
+    let safeId = Public.getSafeId();
+    if (!safeId) return;
     let $area = $('.kf_fw_ig1:eq(1)');
-    $area.find('> tbody > tr:gt(1)').each(function () {
-        let $this = $(this);
-        let matches = /id=(\d+)/.exec($this.find('td:nth-child(3) > a').attr('href'));
-        if (!matches) return;
-        let id = parseInt(matches[1]);
-        let itemName = $this.find('td:nth-child(2)').text().trim();
-        $this.find('td:first-child').prepend(`<input class="pd_input" data-name="${itemName}" type="checkbox" value="${id}">`);
-    });
+    /*$area.find('> tbody > tr:gt(1)').each(function () {
+     let $this = $(this);
+     let matches = /id=(\d+)/.exec($this.find('td:nth-child(3) > a').attr('href'));
+     if (!matches) return;
+     let id = parseInt(matches[1]);
+     let itemName = $this.find('td:nth-child(2)').text().trim();
+     $this.find('td:first-child').prepend(`<input class="pd_input" data-name="${itemName}" type="checkbox" value="${id}">`);
+     });*/
 
     $(`
 <div class="pd_item_btns">
   <button name="useItems" type="button" style="color: #00f;" title="批量使用指定道具" hidden>批量使用</button>
-  <button name="sellAllItems" type="button" style="color: #f00;" title="出售全部道具（包括未显示的道具）">出售全部道具</button>
+  <button name="sellItems" type="button" style="color: #f00;" title="批量出售指定道具">批量出售</button>
   <button name="selectAll" type="button" hidden>全选</button>
   <button name="selectInverse" type="button" hidden>反选</button>
 </div>
@@ -1426,12 +1429,49 @@ export const addBatchUseItemsButton = function () {
             });
         });
         $(document).dequeue('UseItemTypes');
-    }).end().find('[name="sellAllItems"]').click(function () {
+    }).end().find('[name="sellItems"]').click(function () {
+        const dialogName = 'pdSellItemsDialog';
+        if ($('#' + dialogName).length > 0) return;
+        readConfig();
+        let html = `
+<div class="pd_cfg_main">
+  <div style="margin: 5px 0;">请选择想批量出售的道具种类（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</div>
+  <select name="sellItemTypes" size="6" style="width: 320px;" multiple>
+    <option>蕾米莉亚同人漫画</option><option>十六夜同人漫画</option><option>档案室钥匙</option>
+    <option>傲娇LOLI娇蛮音CD</option><option>整形优惠卷</option><option>消逝之药</option>
+  </select>
+</div>
+<div class="pd_cfg_btns">
+  <button name="sell" type="button" style="color: #f00;">出售</button>
+  <button data-action="close" type="button">关闭</button>
+</div>`;
+        let $dialog = Dialog.create(dialogName, '批量出售道具', html);
 
+        $dialog.find('[name="sellItemTypes"]').keydown(function (e) {
+            if (e.ctrlKey && e.keyCode === 65) {
+                e.preventDefault();
+                $(this).children().prop('selected', true);
+            }
+        }).end().find('[name="sell"]').click(function () {
+            let sellItemTypeList = $dialog.find('[name="sellItemTypes"]').val();
+            if (!Array.isArray(sellItemTypeList) || !confirm('是否出售所选道具种类？')) return;
+            readConfig();
+            Config.defSellItemTypeList = sellItemTypeList;
+            writeConfig();
+            Dialog.close(dialogName);
+            sellItems(sellItemTypeList, safeId);
+        });
+
+        $dialog.find('[name="sellItemTypes"] > option').each(function () {
+            let $this = $(this);
+            if (Config.defSellItemTypeList.includes($this.val())) $this.prop('selected', true);
+        });
+
+        Dialog.show(dialogName);
     }).end().find('[name="selectAll"]').click(() => Util.selectAll($area.find('[type="checkbox"]')))
         .end().find('[name="selectInverse"]').click(() => Util.selectInverse($area.find('[type="checkbox"]')));
 
-    addSimulateManualHandleItemChecked();
+    //addSimulateManualHandleItemChecked();
 };
 
 /**
@@ -1442,7 +1482,7 @@ export const addBatchUseItemsButton = function () {
  * @param {jQuery} $wait 等待消息框对象
  */
 const useItems = function ({itemLevel, itemName, itemIdList, $wait}) {
-    let $area = $('.kf_fw_ig1:first');
+    let $area = $('.kf_fw_ig1:eq(1)');
     $area.parent().append(`<ul class="pd_result"><li><strong>【Lv.${itemLevel}：${itemName}】使用结果：</strong></li></ul>`);
     let successNum = 0, failNum = 0;
     let isStop = false;
@@ -1532,19 +1572,142 @@ const useItems = function ({itemLevel, itemName, itemIdList, $wait}) {
     });
     $(document).dequeue('UseItems');
 };
-
 /**
- * 隐藏指定道具种类
+ * 出售道具
+ * @param {string[]} sellItemTypeList 想要出售的道具种类
+ * @param {string} safeId SafeID
  */
-export const hideItemTypes = function () {
-    let $area = $('.kf_fw_ig1:first');
-    let num = 0;
-    for (let itemType of Config.hideItemTypeList) {
-        let $item = $area.find(`> tbody > tr:gt(1):has(td:nth-child(2):contains("${itemType}"))`);
-        num += $item.length;
-        $item.remove();
-    }
-    if (num > 0) {
-        $area.find('> tbody').append(`<tr><td colspan="4" style="color: #666; text-align: center;">共有${num}个道具已被隐藏&hellip;</td></tr>`);
-    }
+const sellItems = function (sellItemTypeList, safeId) {
+    let $area = $('.kf_fw_ig1:eq(1)');
+    let successNum = 0, index = 0;
+    let sellInfo = {};
+
+    /**
+     * 出售
+     * @param {number} itemId 道具ID
+     * @param {string} itemName 道具名称
+     * @param {number} itemNum 本轮出售的道具数量
+     */
+    const sell = function (itemId, itemName, itemNum) {
+        index++;
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: `do=2&id=${itemId}&safeid=${safeId}`,
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            if (!html) return;
+            let msg = Util.removeHtmlTag(html);
+            console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
+            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
+            $area.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
+                $(this).remove();
+            });
+
+            let matches = /出售该物品获得了\[\s*(\d+)\s*]KFB/.exec(msg);
+            if (!matches) return;
+            successNum++;
+            if (!(itemName in sellInfo)) sellInfo[itemName] = {num: 0, sell: 0};
+            sellInfo[itemName].num++;
+            sellInfo[itemName].sell += parseInt(matches[1]);
+            $wait.find('.pd_countdown').text(successNum);
+        }).fail(function () {
+            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
+        }).always(function () {
+            if ($wait.data('stop')) complete();
+            else {
+                if (index === itemNum) setTimeout(getNextItems, Const.defAjaxInterval);
+                else setTimeout(() => $(document).dequeue('SellItems'), Const.sellItemInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取现在的道具
+     */
+    const getCurrentItems = function () {
+        let itemList = [];
+        $area.find('tr[id^="wp_"]').each(function () {
+            let $this = $(this);
+            let matches = /wp_(\d+)/.exec($this.attr('id'));
+            if (!matches) return;
+            let itemId = parseInt(matches[1]);
+            let itemName = $this.find('> td:nth-child(2)').text().trim();
+            if (sellItemTypeList.includes(itemName)) itemList.push({itemId, itemName});
+        });
+        if (!itemList.length) {
+            complete();
+            return;
+        }
+
+        index = 0;
+        $(document).clearQueue('SellItems');
+        $.each(itemList, function (i, {itemId, itemName}) {
+            $(document).queue('SellItems', () => sell(itemId, itemName, itemList.length));
+        });
+        $(document).dequeue('SellItems');
+    };
+
+    /**
+     * 获取下一批道具
+     */
+    const getNextItems = function () {
+        console.log('获取下一批道具Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            if (!matches) {
+                complete();
+                return;
+            }
+            $area.find('tr[id^="wp_"]').remove();
+            $area.find('> tbody > tr:last-child').before(matches[1]);
+            if ($wait.data('stop')) complete();
+            else setTimeout(getCurrentItems, Const.defAjaxInterval);
+        }).fail(() => setTimeout(getNextItems, Const.defAjaxInterval));
+    };
+
+    /**
+     * 操作完成
+     */
+    const complete = function () {
+        $(document).clearQueue('SellItems');
+        Msg.remove($wait);
+        if ($.isEmptyObject(sellInfo)) {
+            alert('没有道具被出售！');
+            return;
+        }
+
+        let itemTypeNum = 0, totalSell = 0;
+        let resultStat = '';
+        for (let itemName of Util.getSortedObjectKeyList(itemTypeList, sellInfo)) {
+            itemTypeNum++;
+            let info = sellInfo[itemName];
+            totalSell += info.sell;
+            resultStat += `<i>${itemName}<em>+${info.num}</em>(<em>+${info.sell.toLocaleString()}</em>)</i> `;
+        }
+        $('.pd_result:last').append(`
+<li class="pd_stat">
+  <b>统计结果（共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功）：</b><br>
+  <i>KFB<em>+${totalSell.toLocaleString()}</em></i> ${resultStat}
+</li>`);
+        console.log(`共有${itemTypeNum}个种类中的${successNum}个道具出售成功，KFB+${totalSell}`);
+        Msg.show(
+            `<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功</strong><i>KFB<em>+${totalSell.toLocaleString()}</em></i>`, -1
+        );
+        Log.push(
+            '出售道具',
+            `共有\`${itemTypeNum}\`个种类中的\`${successNum}\`个道具出售成功`,
+            {gain: {KFB: totalSell}, pay: {'道具': -successNum}}
+        );
+    };
+
+    $area.parent().append(`<ul class="pd_result"><li><strong>出售结果：</strong></li></ul>`);
+    let $wait = Msg.wait(
+        '<strong>正在出售道具中&hellip;</strong><i>已出售：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>'
+    );
+    getCurrentItems();
 };

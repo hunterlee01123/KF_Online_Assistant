@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '10.1.3';
+const version = '10.2';
 
 /**
  * 导出模块
@@ -142,7 +142,6 @@ const init = function () {
     }
     else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.addBatchUseItemsButton();
-        Item.hideItemTypes();
     }
     else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.addBatchBuyItemsLink();

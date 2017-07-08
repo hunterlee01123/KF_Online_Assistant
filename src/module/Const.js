@@ -68,6 +68,8 @@ const Const = {
     cycleUseItemsFirstAjaxInterval () {
         return Math.floor(Math.random() * 250) + 2000;
     },
+    // 批量出售道具的时间间隔（毫秒）
+    sellItemInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval () {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 5000; // 慢速情况

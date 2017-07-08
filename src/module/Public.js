@@ -328,7 +328,7 @@ export const getNextTimingIntervalInfo = function () {
     }
 
     let checkLootInterval = -1;
-    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
+    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
         if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
         else {
@@ -345,7 +345,7 @@ export const getNextTimingIntervalInfo = function () {
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
             if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
         }
-    }
+    }*/
 
     let getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
