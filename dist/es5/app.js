@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.3';
+var version = '10.4';
 
 /**
  * 导出模块
@@ -198,7 +198,7 @@ var init = function init() {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertOldItemTypesButton();
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
-        Item.addBatchUseItemsButton();
+        Item.addBatchUseAndSellItemsButton();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         //Item.addBatchBuyItemsLink(); // 临时禁用
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
@@ -1229,8 +1229,10 @@ var Config = exports.Config = {
     // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
     customAutoChangeIdColorList: [],
 
-    // 是否延长道具批量操作的时间间隔，以模拟手动使用和恢复道具，true：开启；false：关闭
+    // 是否延长道具批量操作的时间间隔，以模拟手动使用、购买道具，true：开启；false：关闭
     simulateManualHandleItemEnabled: false,
+    // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
+    defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defSellItemTypeList: []
 };
@@ -2480,10 +2482,10 @@ var Const = {
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
-    // 特殊情况下的ajax请求（如使用、恢复、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
+    // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function specialAjaxInterval() {
-        if (Config.simulateManualHandleItemEnabled) return Math.floor(Math.random() * 4000) + 2000; // 模拟手动时的情况
-        else return Math.floor(Math.random() * 150) + 200; // 正常情况
+        if (Config.simulateManualHandleItemEnabled) return Math.floor(Math.random() * 5000) + 3000; // 模拟手动时的情况
+        else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
 
     // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
@@ -2491,8 +2493,8 @@ var Const = {
         return Math.floor(Math.random() * 250) + 2000;
     },
 
-    // 批量出售道具的时间间隔（毫秒）
-    sellItemInterval: 1000,
+    // 操作道具的最小时间间隔（毫秒）
+    minItemActionInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval: function lootAttackInterval() {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 5000; // 慢速情况
@@ -3010,7 +3012,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchUseItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.itemTypeList = undefined;
+exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.itemTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -4339,7 +4341,7 @@ var showKfbInItemShop = function showKfbInItemShop() {
  * 添加模拟手动操作道具复选框
  */
 var addSimulateManualHandleItemChecked = function addSimulateManualHandleItemChecked() {
-    $('\n<label style="margin-right: 5px;">\n  <input name="simulateManualHandleItemEnabled" type="checkbox" ' + (Config.simulateManualHandleItemEnabled ? 'checked' : '') + '> \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\u9053\u5177\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u9053\u5177\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57282~6\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u3001\u6062\u590D\u548C\u8D2D\u4E70\u9053\u5177">[?]</span>\n</label>\n').prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
+    $('\n<label style="margin-right: 5px;">\n  <input name="simulateManualHandleItemEnabled" type="checkbox" ' + (Config.simulateManualHandleItemEnabled ? 'checked' : '') + '> \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\u9053\u5177\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u9053\u5177\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57282~6\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u3001\u8D2D\u4E70\u9053\u5177">[?]</span>\n</label>\n').prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
         var checked = $(this).prop('checked');
         if (Config.simulateManualHandleItemEnabled !== checked) {
             (0, _Config.read)();
@@ -4350,212 +4352,264 @@ var addSimulateManualHandleItemChecked = function addSimulateManualHandleItemChe
 };
 
 /**
- * 在物品装备页面上添加批量使用道具按钮
+ * 在物品装备页面上添加批量使用和出售道具按钮
  */
-var addBatchUseItemsButton = exports.addBatchUseItemsButton = function addBatchUseItemsButton() {
+var addBatchUseAndSellItemsButton = exports.addBatchUseAndSellItemsButton = function addBatchUseAndSellItemsButton() {
     var safeId = Public.getSafeId();
     if (!safeId) return;
     var $area = $('.kf_fw_ig1:eq(1)');
-    /*$area.find('> tbody > tr:gt(1)').each(function () {
-     let $this = $(this);
-     let matches = /id=(\d+)/.exec($this.find('td:nth-child(3) > a').attr('href'));
-     if (!matches) return;
-     let id = parseInt(matches[1]);
-     let itemName = $this.find('td:nth-child(2)').text().trim();
-     $this.find('td:first-child').prepend(`<input class="pd_input" data-name="${itemName}" type="checkbox" value="${id}">`);
-     });*/
 
-    $('\n<div class="pd_item_btns">\n  <button name="useItems" type="button" style="color: #00f;" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177" hidden>\u6279\u91CF\u4F7F\u7528</button>\n  <button name="sellItems" type="button" style="color: #f00;" title="\u6279\u91CF\u51FA\u552E\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u51FA\u552E</button>\n  <button name="selectAll" type="button" hidden>\u5168\u9009</button>\n  <button name="selectInverse" type="button" hidden>\u53CD\u9009</button>\n</div>\n').insertAfter($area).find('[name="useItems"]').click(function () {
-        var $checked = $area.find('[type="checkbox"]:checked');
-        if (!$checked.length) return;
-        var itemList = new Map();
-        $checked.each(function () {
-            var $this = $(this);
-            var itemId = parseInt($this.val());
-            var itemName = $this.data('name');
-            if (!itemTypeList.includes(itemName)) return;
-            if (!itemList.has(itemName)) itemList.set(itemName, []);
-            itemList.get(itemName).push(itemId);
-        });
-        if (!confirm('\u4F60\u5171\u9009\u62E9\u4E86' + itemList.size + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + $checked.length + '\u4E2A\u9053\u5177\uFF0C\u662F\u5426\u6279\u91CF\u4F7F\u7528\uFF1F')) return;
-        Msg.destroy();
-
-        $(document).clearQueue('UseItemTypes');
-        $.each([].concat(_toConsumableArray(itemList)), function (index, _ref) {
-            var _ref2 = _slicedToArray(_ref, 2),
-                itemName = _ref2[0],
-                itemIdList = _ref2[1];
-
-            $(document).queue('UseItemTypes', function () {
-                var $wait = Msg.wait('<strong>\u6B63\u5728\u4F7F\u7528\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-                var itemLevel = getLevelByName(itemName);
-                var interval = 0;
-                if (index > 0) interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
-                setTimeout(function () {
-                    return useItems({ itemLevel: itemLevel, itemName: itemName, itemIdList: itemIdList, $wait: $wait });
-                }, interval);
-            });
-        });
-        $(document).dequeue('UseItemTypes');
+    $('\n<div class="pd_item_btns">\n  <button name="useItems" type="button" style="color: #00f;" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u4F7F\u7528</button>\n  <button name="sellItems" type="button" style="color: #f00;" title="\u6279\u91CF\u51FA\u552E\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u51FA\u552E</button>\n</div>\n').insertAfter($area).find('[name="useItems"]').click(function () {
+        return showBatchUseAndSellItemsDialog(1, safeId);
     }).end().find('[name="sellItems"]').click(function () {
-        var dialogName = 'pdSellItemsDialog';
-        if ($('#' + dialogName).length > 0) return;
-        (0, _Config.read)();
-        var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u51FA\u552E\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n  <select name="sellItemTypes" size="6" style="width: 320px;" multiple>\n    <option>\u857E\u7C73\u8389\u4E9A\u540C\u4EBA\u6F2B\u753B</option><option>\u5341\u516D\u591C\u540C\u4EBA\u6F2B\u753B</option><option>\u6863\u6848\u5BA4\u94A5\u5319</option>\n    <option>\u50B2\u5A07LOLI\u5A07\u86EE\u97F3CD</option><option>\u6574\u5F62\u4F18\u60E0\u5377</option><option>\u6D88\u901D\u4E4B\u836F</option>\n  </select>\n</div>\n<div class="pd_cfg_btns">\n  <button name="sell" type="button" style="color: #f00;">\u51FA\u552E</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
-        var $dialog = Dialog.create(dialogName, '批量出售道具', html);
-
-        $dialog.find('[name="sellItemTypes"]').keydown(function (e) {
-            if (e.ctrlKey && e.keyCode === 65) {
-                e.preventDefault();
-                $(this).children().prop('selected', true);
-            }
-        }).end().find('[name="sell"]').click(function () {
-            var sellItemTypeList = $dialog.find('[name="sellItemTypes"]').val();
-            if (!Array.isArray(sellItemTypeList) || !confirm('是否出售所选道具种类？')) return;
-            (0, _Config.read)();
-            Config.defSellItemTypeList = sellItemTypeList;
-            (0, _Config.write)();
-            Dialog.close(dialogName);
-            sellItems(sellItemTypeList, safeId);
-        });
-
-        $dialog.find('[name="sellItemTypes"] > option').each(function () {
-            var $this = $(this);
-            if (Config.defSellItemTypeList.includes($this.val())) $this.prop('selected', true);
-        });
-
-        Dialog.show(dialogName);
-    }).end().find('[name="selectAll"]').click(function () {
-        return Util.selectAll($area.find('[type="checkbox"]'));
-    }).end().find('[name="selectInverse"]').click(function () {
-        return Util.selectInverse($area.find('[type="checkbox"]'));
+        return showBatchUseAndSellItemsDialog(2, safeId);
     });
 
-    //addSimulateManualHandleItemChecked();
+    addSimulateManualHandleItemChecked();
+};
+
+/**
+ * 显示批量使用和出售道具对话框
+ * @param {number} type 对话框类型，1：批量使用；2：批量出售
+ * @param {string} safeId SafeID
+ */
+var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(type, safeId) {
+    var dialogName = 'pdBatchUseAndSellItemsDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Msg.destroy();
+    var typeName = type === 1 ? '使用' : '出售';
+    (0, _Config.read)();
+
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\u8BF7\u9009\u62E9\u60F3\u6279\u91CF' + typeName + '\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n  <select name="itemTypes" size="6" style="width: 320px;" multiple>\n    <option>\u857E\u7C73\u8389\u4E9A\u540C\u4EBA\u6F2B\u753B</option><option>\u5341\u516D\u591C\u540C\u4EBA\u6F2B\u753B</option><option>\u6863\u6848\u5BA4\u94A5\u5319</option>\n    <option>\u50B2\u5A07LOLI\u5A07\u86EE\u97F3CD</option><option>\u6574\u5F62\u4F18\u60E0\u5377</option><option>\u6D88\u901D\u4E4B\u836F</option>\n  </select>\n</div>\n<div class="pd_cfg_btns">\n  <button name="sell" type="button">' + typeName + '</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '\u6279\u91CF' + typeName + '\u9053\u5177', html);
+
+    $dialog.find('[name="itemTypes"]').keydown(function (e) {
+        if (e.ctrlKey && e.keyCode === 65) {
+            e.preventDefault();
+            $(this).children().prop('selected', true);
+        }
+    }).end().find('[name="sell"]').click(function () {
+        var itemTypeList = $dialog.find('[name="itemTypes"]').val();
+        if (!Array.isArray(itemTypeList)) return;
+        (0, _Config.read)();
+        if (type === 1) Config.defUseItemTypeList = itemTypeList;else Config.defSellItemTypeList = itemTypeList;
+        (0, _Config.write)();
+        if (!confirm('\u662F\u5426' + typeName + '\u6240\u9009\u9053\u5177\u79CD\u7C7B\uFF1F')) return;
+        Dialog.close(dialogName);
+        if (type === 1) useItems(itemTypeList, safeId);else sellItems(itemTypeList, safeId);
+    });
+
+    $dialog.find('[name="itemTypes"] > option').each(function () {
+        var $this = $(this);
+        var itemTypeList = type === 1 ? Config.defUseItemTypeList : Config.defSellItemTypeList;
+        if (itemTypeList.includes($this.val())) $this.prop('selected', true);
+    });
+
+    Dialog.show(dialogName);
 };
 
 /**
  * 使用道具
- * @param {number} itemLevel 道具等级
- * @param {string} itemName 道具名称
- * @param {number[]} itemIdList 道具ID列表
- * @param {jQuery} $wait 等待消息框对象
- */
-var useItems = function useItems(_ref3) {
-    var itemLevel = _ref3.itemLevel,
-        itemName = _ref3.itemName,
-        itemIdList = _ref3.itemIdList,
-        $wait = _ref3.$wait;
-
-    var $area = $('.kf_fw_ig1:eq(1)');
-    $area.parent().append('<ul class="pd_result"><li><strong>\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011\u4F7F\u7528\u7ED3\u679C\uFF1A</strong></li></ul>');
-    var successNum = 0,
-        failNum = 0;
-    var isStop = false;
-    var stat = { '有效道具': 0, '无效道具': 0 };
-    $(document).clearQueue('UseItems');
-    $.each(itemIdList, function (index, itemId) {
-        $(document).queue('UseItems', function () {
-            $.ajax({
-                type: 'GET',
-                url: 'kf_fw_ig_mybp.php?do=1&id=' + itemId + '&t=' + new Date().getTime(),
-                timeout: _Const2.default.defAjaxTimeout,
-                success: function success(html) {
-                    Public.showFormatLog('使用道具', html);
-
-                    var _Util$getResponseMsg5 = Util.getResponseMsg(html),
-                        msg = _Util$getResponseMsg5.msg;
-
-                    if (/(成功|失败)！/.test(msg)) {
-                        successNum++;
-                        if (/成功！/.test(msg)) stat['有效道具']++;else stat['无效道具']++;
-                        $area.find('[type="checkbox"][value="' + itemId + '"]').closest('tr').fadeOut('normal', function () {
-                            $(this).remove();
-                        });
-                    } else {
-                        failNum++;
-                        if (/无法再使用/.test(msg)) {
-                            isStop = true;
-                            $(document).clearQueue('UseItems');
-                        }
-                    }
-                    $('.pd_result:last').append('<li><b>\u7B2C' + (index + 1) + '\u6B21\uFF1A</b>' + msg + '</li>');
-                },
-                error: function error() {
-                    failNum++;
-                },
-                complete: function complete() {
-                    var $countdown = $wait.find('.pd_countdown');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    var isAllStop = $wait.data('stop');
-                    if (isAllStop) {
-                        isStop = true;
-                        $(document).clearQueue('UseItems');
-                        $(document).clearQueue('UseItemTypes');
-                    }
-
-                    if (isStop || index === itemIdList.length - 1) {
-                        Msg.remove($wait);
-                        if (stat['有效道具'] === 0) delete stat['有效道具'];
-                        if (stat['无效道具'] === 0) delete stat['无效道具'];
-                        if (successNum > 0) {
-                            Log.push('使用道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u88AB\u4F7F\u7528', { gain: stat, pay: { '道具': -successNum } });
-                        }
-
-                        var logStat = '',
-                            msgStat = '',
-                            resultStat = '';
-                        var _iteratorNormalCompletion6 = true;
-                        var _didIteratorError6 = false;
-                        var _iteratorError6 = undefined;
-
-                        try {
-                            for (var _iterator6 = Util.entries(stat)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                                var _step6$value = _slicedToArray(_step6.value, 2),
-                                    key = _step6$value[0],
-                                    num = _step6$value[1];
-
-                                logStat += '\uFF0C' + key + '+' + num;
-                                msgStat += '<i>' + key + '<em>+' + num + '</em></i>';
-                                resultStat += '<i>' + key + '<em>+' + num + '</em></i> ';
-                            }
-                        } catch (err) {
-                            _didIteratorError6 = true;
-                            _iteratorError6 = err;
-                        } finally {
-                            try {
-                                if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                                    _iterator6.return();
-                                }
-                            } finally {
-                                if (_didIteratorError6) {
-                                    throw _iteratorError6;
-                                }
-                            }
-                        }
-
-                        console.log('\u5171\u6709' + successNum + '\u4E2A\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011\u9053\u5177\u88AB\u4F7F\u7528' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u9053\u5177\u672A\u80FD\u4F7F\u7528' : '') + logStat);
-                        Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011\u9053\u5177\u88AB\u4F7F\u7528' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u9053\u5177\u672A\u80FD\u4F7F\u7528' : '') + '</strong>' + msgStat), -1);
-                        if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
-                        $('.pd_result:last').append('<li class="pd_stat"><b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + successNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF09\uFF1A</b>' + resultStat + '</li>');
-                        $(document).dequeue('UseItemTypes');
-                    } else {
-                        setTimeout(function () {
-                            return $(document).dequeue('UseItems');
-                        }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('UseItems');
-};
-/**
- * 出售道具
- * @param {string[]} sellItemTypeList 想要出售的道具种类
+ * @param {string[]} itemTypeList 想要使用的道具种类
  * @param {string} safeId SafeID
  */
-var sellItems = function sellItems(sellItemTypeList, safeId) {
+var useItems = function useItems(itemTypeList, safeId) {
+    var $area = $('.kf_fw_ig1:eq(1)');
+    var totalSuccessNum = 0,
+        index = 0;
+    var useInfo = {};
+    var tmpItemTypeList = [].concat(_toConsumableArray(itemTypeList));
+
+    /**
+     * 使用
+     * @param {number} itemId 道具ID
+     * @param {string} itemName 道具名称
+     * @param {number} itemNum 本轮使用的道具数量
+     */
+    var use = function use(itemId, itemName, itemNum) {
+        index++;
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: 'do=1&id=' + itemId + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (!html) return;
+            var msg = Util.removeHtmlTag(html);
+            if (/(成功|失败)！/.test(msg)) {
+                totalSuccessNum++;
+                if (!(itemName in useInfo)) useInfo[itemName] = { '道具': 0, '有效道具': 0, '无效道具': 0 };
+                useInfo[itemName]['道具']++;
+                if (/成功！/.test(msg)) useInfo[itemName]['有效道具']++;else useInfo[itemName]['无效道具']++;
+                $wait.find('.pd_countdown').text(totalSuccessNum);
+                $area.find('[id="wp_' + itemId + '"]').fadeOut('normal', function () {
+                    $(this).remove();
+                });
+            } else if (/无法再使用/.test(msg)) {
+                index = itemNum;
+                var typeIndex = tmpItemTypeList.indexOf(itemName);
+                if (typeIndex > -1) tmpItemTypeList.splice(typeIndex, 1);
+            }
+
+            console.log('\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg);
+            $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg + '</li>');
+        }).fail(function () {
+            $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
+        }).always(function () {
+            if ($wait.data('stop')) complete();else {
+                if (index === itemNum) setTimeout(getNextItems, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);else setTimeout(function () {
+                    return $(document).dequeue('UseItems');
+                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取当前的道具
+     */
+    var getCurrentItems = function getCurrentItems() {
+        var itemList = [];
+        $area.find('tr[id^="wp_"]').each(function () {
+            var $this = $(this);
+            var matches = /wp_(\d+)/.exec($this.attr('id'));
+            if (!matches) return;
+            var itemId = parseInt(matches[1]);
+            var itemName = $this.find('> td:nth-child(2)').text().trim();
+            if (tmpItemTypeList.includes(itemName)) itemList.push({ itemId: itemId, itemName: itemName });
+        });
+        if (!itemList.length) {
+            complete();
+            return;
+        }
+
+        index = 0;
+        $(document).clearQueue('UseItems');
+        $.each(itemList, function (i, _ref) {
+            var itemId = _ref.itemId,
+                itemName = _ref.itemName;
+
+            $(document).queue('UseItems', function () {
+                return use(itemId, itemName, itemList.length);
+            });
+        });
+        $(document).dequeue('UseItems');
+    };
+
+    /**
+     * 获取下一批道具
+     */
+    var getNextItems = function getNextItems() {
+        console.log('获取下一批道具Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            var matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            if (!matches) {
+                complete();
+                return;
+            }
+            $area.find('tr[id^="wp_"]').remove();
+            $area.find('> tbody > tr:last-child').before(matches[1]);
+            if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
+        }).fail(function () {
+            return setTimeout(getNextItems, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    /**
+     * 操作完成
+     */
+    var complete = function complete() {
+        $(document).clearQueue('UseItems');
+        Msg.remove($wait);
+        if ($.isEmptyObject(useInfo)) {
+            alert('没有道具被使用！');
+            return;
+        }
+
+        var itemTypeNum = 0;
+        var resultStat = '';
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
+        var _iteratorError6 = undefined;
+
+        try {
+            for (var _iterator6 = Util.getSortedObjectKeyList(itemTypeList, useInfo)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                var itemName = _step6.value;
+
+                itemTypeNum++;
+                var itemLevel = getLevelByName(itemName);
+                var stat = useInfo[itemName];
+                var successNum = stat['道具'];
+                delete stat['道具'];
+                if (stat['有效道具'] === 0) delete stat['有效道具'];
+                if (stat['无效道具'] === 0) delete stat['无效道具'];
+                if (!$.isEmptyObject(stat)) {
+                    resultStat += '\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011 <i>\u9053\u5177<ins>-' + successNum + '</ins></i> ';
+                    var _iteratorNormalCompletion7 = true;
+                    var _didIteratorError7 = false;
+                    var _iteratorError7 = undefined;
+
+                    try {
+                        for (var _iterator7 = Util.entries(stat)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                            var _step7$value = _slicedToArray(_step7.value, 2),
+                                key = _step7$value[0],
+                                num = _step7$value[1];
+
+                            resultStat += '<i>' + key + '<em>+' + num + '</em></i> ';
+                        }
+                    } catch (err) {
+                        _didIteratorError7 = true;
+                        _iteratorError7 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                                _iterator7.return();
+                            }
+                        } finally {
+                            if (_didIteratorError7) {
+                                throw _iteratorError7;
+                            }
+                        }
+                    }
+
+                    resultStat += '<br>';
+                    Log.push('使用道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u88AB\u4F7F\u7528', { gain: stat, pay: { '道具': -successNum } });
+                }
+            }
+        } catch (err) {
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                    _iterator6.return();
+                }
+            } finally {
+                if (_didIteratorError6) {
+                    throw _iteratorError6;
+                }
+            }
+        }
+
+        $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF09\uFF1A</b><br>\n  ' + resultStat + '\n</li>');
+        console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + totalSuccessNum + '\u4E2A\u9053\u5177\u88AB\u4F7F\u7528');
+        Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528</strong>', -1);
+    };
+
+    $area.parent().append('<ul class="pd_result"><li><strong>\u4F7F\u7528\u7ED3\u679C\uFF1A</strong></li></ul>');
+    var $wait = Msg.wait('<strong>正在使用道具中&hellip;</strong><i>已使用：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
+    getCurrentItems();
+};
+
+/**
+ * 出售道具
+ * @param {string[]} itemTypeList 想要出售的道具种类
+ * @param {string} safeId SafeID
+ */
+var sellItems = function sellItems(itemTypeList, safeId) {
     var $area = $('.kf_fw_ig1:eq(1)');
     var successNum = 0,
         index = 0;
@@ -4596,13 +4650,13 @@ var sellItems = function sellItems(sellItemTypeList, safeId) {
             if ($wait.data('stop')) complete();else {
                 if (index === itemNum) setTimeout(getNextItems, _Const2.default.defAjaxInterval);else setTimeout(function () {
                     return $(document).dequeue('SellItems');
-                }, _Const2.default.sellItemInterval);
+                }, _Const2.default.minItemActionInterval);
             }
         });
     };
 
     /**
-     * 获取现在的道具
+     * 获取当前的道具
      */
     var getCurrentItems = function getCurrentItems() {
         var itemList = [];
@@ -4612,7 +4666,7 @@ var sellItems = function sellItems(sellItemTypeList, safeId) {
             if (!matches) return;
             var itemId = parseInt(matches[1]);
             var itemName = $this.find('> td:nth-child(2)').text().trim();
-            if (sellItemTypeList.includes(itemName)) itemList.push({ itemId: itemId, itemName: itemName });
+            if (itemTypeList.includes(itemName)) itemList.push({ itemId: itemId, itemName: itemName });
         });
         if (!itemList.length) {
             complete();
@@ -4621,9 +4675,9 @@ var sellItems = function sellItems(sellItemTypeList, safeId) {
 
         index = 0;
         $(document).clearQueue('SellItems');
-        $.each(itemList, function (i, _ref4) {
-            var itemId = _ref4.itemId,
-                itemName = _ref4.itemName;
+        $.each(itemList, function (i, _ref2) {
+            var itemId = _ref2.itemId,
+                itemName = _ref2.itemName;
 
             $(document).queue('SellItems', function () {
                 return sell(itemId, itemName, itemList.length);
@@ -4669,38 +4723,42 @@ var sellItems = function sellItems(sellItemTypeList, safeId) {
         var itemTypeNum = 0,
             totalSell = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion7 = true;
-        var _didIteratorError7 = false;
-        var _iteratorError7 = undefined;
+        var _iteratorNormalCompletion8 = true;
+        var _didIteratorError8 = false;
+        var _iteratorError8 = undefined;
 
         try {
-            for (var _iterator7 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                var itemName = _step7.value;
+            for (var _iterator8 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                var itemName = _step8.value;
 
                 itemTypeNum++;
-                var info = sellInfo[itemName];
-                totalSell += info.sell;
-                resultStat += '<i>' + itemName + '<em>+' + info.num + '</em>(<em>+' + info.sell.toLocaleString() + '</em>)</i> ';
+                var itemLevel = getLevelByName(itemName);
+                var _sellInfo$itemName = sellInfo[itemName],
+                    _sell = _sellInfo$itemName.sell,
+                    num = _sellInfo$itemName.num;
+
+                totalSell += _sell;
+                resultStat += '\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011 <i>\u9053\u5177<ins>-' + num + '</ins></i> <i>KFB<em>+' + _sell.toLocaleString() + '</em></i><br>';
+                Log.push('出售道具', '\u5171\u6709`' + num + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': _sell }, pay: { '道具': -num } });
             }
         } catch (err) {
-            _didIteratorError7 = true;
-            _iteratorError7 = err;
+            _didIteratorError8 = true;
+            _iteratorError8 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                    _iterator7.return();
+                if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                    _iterator8.return();
                 }
             } finally {
-                if (_didIteratorError7) {
-                    throw _iteratorError7;
+                if (_didIteratorError8) {
+                    throw _iteratorError8;
                 }
             }
         }
 
-        $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF09\uFF1A</b><br>\n  <i>KFB<em>+' + totalSell.toLocaleString() + '</em></i> ' + resultStat + '\n</li>');
+        $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF09\uFF1A</b> <i>KFB<em>+' + totalSell.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
         console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + successNum + '\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF0CKFB+' + totalSell);
         Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F</strong><i>KFB<em>+' + totalSell.toLocaleString() + '</em></i>', -1);
-        Log.push('出售道具', '\u5171\u6709`' + itemTypeNum + '`\u4E2A\u79CD\u7C7B\u4E2D\u7684`' + successNum + '`\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': totalSell }, pay: { '道具': -successNum } });
     };
 
     $area.parent().append('<ul class="pd_result"><li><strong>\u51FA\u552E\u7ED3\u679C\uFF1A</strong></li></ul>');
@@ -5284,7 +5342,14 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         profit = {};
     var lootCount = 0,
         lootLevelStat = { total: 0, min: 0, max: 0 },
-        lootBoxStat = { '总数': 0, '普通盒子': 0, '幸运盒子': 0, '稀有盒子': 0, '传奇盒子': 0, '神秘盒子': 0 };
+        lootBoxStat = {
+        '总数': 0,
+        '普通盒子': { total: 0, min: 0, max: 0 },
+        '幸运盒子': { total: 0, min: 0, max: 0 },
+        '稀有盒子': { total: 0, min: 0, max: 0 },
+        '传奇盒子': { total: 0, min: 0, max: 0 },
+        '神秘盒子': { total: 0, min: 0, max: 0 }
+    };
     var buyItemNum = 0,
         buyItemKfb = 0,
         buyItemStat = {};
@@ -5385,8 +5450,10 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                                         num = _step11$value[1];
 
                                     lootBoxStat['总数'] += num;
-                                    if (!(box in lootBoxStat)) lootBoxStat[box] = 0;
-                                    lootBoxStat[box] += num;
+                                    if (!(box in lootBoxStat)) lootBoxStat[box] = { total: 0, min: 0, max: 0 };
+                                    lootBoxStat[box].total += num;
+                                    if (lootBoxStat[box].max < num) lootBoxStat[box].max = num;
+                                    if (!lootBoxStat[box].min || lootBoxStat[box].min > num) lootBoxStat[box].min = num;
                                 }
                             } catch (err) {
                                 _didIteratorError11 = true;
@@ -5556,7 +5623,7 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
     if (lootCount > 0) {
         content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
-        content += '<i>\u76D2\u5B50<em>+' + lootBoxStat['总数'].toLocaleString() + '</em></i>( ';
+        content += '<i>\u76D2\u5B50\u603B\u6570<em>+' + lootBoxStat['总数'].toLocaleString() + '</em></i> ';
         var _iteratorNormalCompletion16 = true;
         var _didIteratorError16 = false;
         var _iteratorError16 = undefined;
@@ -5565,10 +5632,13 @@ var getLogStat = function getLogStat(log, date, logStatType) {
             for (var _iterator16 = Util.entries(lootBoxStat)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
                 var _step16$value = _slicedToArray(_step16.value, 2),
                     box = _step16$value[0],
-                    num = _step16$value[1];
+                    _step16$value$ = _step16$value[1],
+                    total = _step16$value$.total,
+                    min = _step16$value$.min,
+                    max = _step16$value$.max;
 
-                if (box === '总数' || !num) continue;
-                content += '<i>' + box.replace('盒子', '') + '<em>+' + num.toLocaleString() + '</em></i> ';
+                if (box === '总数' || !total) continue;
+                content += '<i>' + box + '<em>+' + total.toLocaleString() + '</em>' + ('<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (total / lootCount).toFixed(2) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + min + '</em>|<em title="\u6700\u5927\u503C">+' + max + '</em>)</span></i> ');
             }
         } catch (err) {
             _didIteratorError16 = true;
@@ -5584,8 +5654,6 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                 }
             }
         }
-
-        content += ')';
     }
 
     content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemNum.toLocaleString() + '</em></i> ' + ('<i>KFB<ins>-' + buyItemKfb.toLocaleString() + '</ins></i> ');
@@ -6670,7 +6738,7 @@ var addAttackBtns = function addAttackBtns() {
     if (!safeId) return;
     $logBox.off('click');
 
-    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + ' disabled>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label><br>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + ' disabled>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter($('#wdsx')).on('click', 'button[name$="Attack"]', function () {
+    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label hidden>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label hidden>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label hidden>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter($('#wdsx')).on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -9476,7 +9544,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1002; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1000;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1002; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1000;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');
