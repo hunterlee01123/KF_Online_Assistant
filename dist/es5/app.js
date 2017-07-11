@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.2';
+var version = '10.3';
 
 /**
  * 导出模块
@@ -200,7 +200,7 @@ var init = function init() {
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.addBatchUseItemsButton();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
-        Item.addBatchBuyItemsLink();
+        //Item.addBatchBuyItemsLink(); // 临时禁用
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
@@ -259,21 +259,20 @@ var init = function init() {
         isAutoPromoteHaloStarted = true;
         Loot.getPromoteHaloInfo(location.pathname === '/kf_fw_ig_index.php');
     }
-    //if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
+    if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
 
     var isAutoLootStarted = false;
-    /*if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
+    if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)) && !isAutoPromoteHaloStarted) {
+            if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !isAutoPromoteHaloStarted) {
                 isAutoLootStarted = true;
                 Loot.checkLoot();
             }
-        }
-        else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+        } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
             isAutoLootStarted = true;
             Loot.autoSaveLootLog();
         }
-    }*/
+    }
 
     if (!Config.getBonusAfterLootCompleteEnabled) isAutoLootStarted = false;
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
@@ -2451,7 +2450,7 @@ var Const = {
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
     showRefreshModeTipsInterval: 1,
     // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
-    getDailyBonusSpecialInterval: 30,
+    getDailyBonusSpecialInterval: 60,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
     // 在检测到当前持有的KFB或贡献未高于指定值时的下一次自动提升战力光环的间隔时间（分钟）
@@ -4701,7 +4700,7 @@ var sellItems = function sellItems(sellItemTypeList, safeId) {
         $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF09\uFF1A</b><br>\n  <i>KFB<em>+' + totalSell.toLocaleString() + '</em></i> ' + resultStat + '\n</li>');
         console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + successNum + '\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF0CKFB+' + totalSell);
         Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F</strong><i>KFB<em>+' + totalSell.toLocaleString() + '</em></i>', -1);
-        Log.push('出售道具', '\u5171\u6709`' + itemTypeNum + '`\u4E2A\u79CD\u7C7B\u4E2D\u7684`' + successNum + '`\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { KFB: totalSell }, pay: { '道具': -successNum } });
+        Log.push('出售道具', '\u5171\u6709`' + itemTypeNum + '`\u4E2A\u79CD\u7C7B\u4E2D\u7684`' + successNum + '`\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': totalSell }, pay: { '道具': -successNum } });
     };
 
     $area.parent().append('<ul class="pd_result"><li><strong>\u51FA\u552E\u7ED3\u679C\uFF1A</strong></li></ul>');
@@ -5104,6 +5103,33 @@ var getLogContent = function getLogContent(log, date, logSortType) {
                                     }
                                 }
                             }
+                        } else if (k === 'box') {
+                            var _iteratorNormalCompletion4 = true;
+                            var _didIteratorError4 = false;
+                            var _iteratorError4 = undefined;
+
+                            try {
+                                for (var _iterator4 = Util.entries(gain[k])[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                                    var _step4$value = _slicedToArray(_step4.value, 2),
+                                        box = _step4$value[0],
+                                        num = _step4$value[1];
+
+                                    stat += '<i>' + box + '<em>+' + num.toLocaleString() + '</em></i> ';
+                                }
+                            } catch (err) {
+                                _didIteratorError4 = true;
+                                _iteratorError4 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                                        _iterator4.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError4) {
+                                        throw _iteratorError4;
+                                    }
+                                }
+                            }
                         } else {
                             stat += '<i>' + k + '<em>+' + gain[k].toLocaleString() + '</em></i> ';
                         }
@@ -5125,36 +5151,36 @@ var getLogContent = function getLogContent(log, date, logSortType) {
             }
             if ($.type(pay) === 'object' && !$.isEmptyObject(pay)) {
                 if (!stat) stat += '，';
-                var _iteratorNormalCompletion4 = true;
-                var _didIteratorError4 = false;
-                var _iteratorError4 = undefined;
+                var _iteratorNormalCompletion5 = true;
+                var _didIteratorError5 = false;
+                var _iteratorError5 = undefined;
 
                 try {
-                    for (var _iterator4 = Object.keys(pay)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                        var _k = _step4.value;
+                    for (var _iterator5 = Object.keys(pay)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                        var _k = _step5.value;
 
                         if (_k === 'item') {
-                            var _iteratorNormalCompletion5 = true;
-                            var _didIteratorError5 = false;
-                            var _iteratorError5 = undefined;
+                            var _iteratorNormalCompletion6 = true;
+                            var _didIteratorError6 = false;
+                            var _iteratorError6 = undefined;
 
                             try {
-                                for (var _iterator5 = Object.keys(pay[_k])[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                                    var _itemName = _step5.value;
+                                for (var _iterator6 = Object.keys(pay[_k])[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                                    var _itemName = _step6.value;
 
                                     stat += '<i>' + _itemName + '<ins>' + pay[_k][_itemName].toLocaleString() + '</ins></i> ';
                                 }
                             } catch (err) {
-                                _didIteratorError5 = true;
-                                _iteratorError5 = err;
+                                _didIteratorError6 = true;
+                                _iteratorError6 = err;
                             } finally {
                                 try {
-                                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                                        _iterator5.return();
+                                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                                        _iterator6.return();
                                     }
                                 } finally {
-                                    if (_didIteratorError5) {
-                                        throw _iteratorError5;
+                                    if (_didIteratorError6) {
+                                        throw _iteratorError6;
                                     }
                                 }
                             }
@@ -5163,16 +5189,16 @@ var getLogContent = function getLogContent(log, date, logSortType) {
                         }
                     }
                 } catch (err) {
-                    _didIteratorError4 = true;
-                    _iteratorError4 = err;
+                    _didIteratorError5 = true;
+                    _iteratorError5 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                            _iterator4.return();
+                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                            _iterator5.return();
                         }
                     } finally {
-                        if (_didIteratorError4) {
-                            throw _iteratorError4;
+                        if (_didIteratorError5) {
+                            throw _iteratorError5;
                         }
                     }
                 }
@@ -5223,27 +5249,27 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         var minDate = new Date(date);
         minDate.setDate(minDate.getDate() - Config.logStatDays + 1);
         minDate = Util.getDateString(minDate);
-        var _iteratorNormalCompletion6 = true;
-        var _didIteratorError6 = false;
-        var _iteratorError6 = undefined;
+        var _iteratorNormalCompletion7 = true;
+        var _didIteratorError7 = false;
+        var _iteratorError7 = undefined;
 
         try {
-            for (var _iterator6 = Util.getObjectKeyList(log, 1)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                var d = _step6.value;
+            for (var _iterator7 = Util.getObjectKeyList(log, 1)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                var d = _step7.value;
 
                 if (d >= minDate && d <= date) rangeLog[d] = log[d];
             }
         } catch (err) {
-            _didIteratorError6 = true;
-            _iteratorError6 = err;
+            _didIteratorError7 = true;
+            _iteratorError7 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                    _iterator6.return();
+                if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                    _iterator7.return();
                 }
             } finally {
-                if (_didIteratorError6) {
-                    throw _iteratorError6;
+                if (_didIteratorError7) {
+                    throw _iteratorError7;
                 }
             }
         }
@@ -5258,8 +5284,7 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         profit = {};
     var lootCount = 0,
         lootLevelStat = { total: 0, min: 0, max: 0 },
-        lootExpStat = { total: 0, min: 0, max: 0 },
-        lootKfbStat = { total: 0, min: 0, max: 0 };
+        lootBoxStat = { '总数': 0, '普通盒子': 0, '幸运盒子': 0, '稀有盒子': 0, '传奇盒子': 0, '神秘盒子': 0 };
     var buyItemNum = 0,
         buyItemKfb = 0,
         buyItemStat = {};
@@ -5269,60 +5294,33 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         invalidItemNum = 0,
         highInvalidItemNum = 0,
         invalidItemStat = {};
-    var invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
+    var invalidKeyList = ['item', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (var _d in rangeLog) {
-        var _iteratorNormalCompletion7 = true;
-        var _didIteratorError7 = false;
-        var _iteratorError7 = undefined;
+        var _iteratorNormalCompletion8 = true;
+        var _didIteratorError8 = false;
+        var _iteratorError8 = undefined;
 
         try {
-            for (var _iterator7 = rangeLog[_d][Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                var _step7$value = _step7.value,
-                    type = _step7$value.type,
-                    action = _step7$value.action,
-                    gain = _step7$value.gain,
-                    pay = _step7$value.pay,
-                    notStat = _step7$value.notStat;
+            for (var _iterator8 = rangeLog[_d][Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                var _step8$value = _step8.value,
+                    type = _step8$value.type,
+                    action = _step8$value.action,
+                    gain = _step8$value.gain,
+                    pay = _step8$value.pay,
+                    notStat = _step8$value.notStat;
 
                 if (typeof type === 'undefined' || typeof notStat !== 'undefined') continue;
                 if ($.type(gain) === 'object') {
-                    var _iteratorNormalCompletion8 = true;
-                    var _didIteratorError8 = false;
-                    var _iteratorError8 = undefined;
-
-                    try {
-                        for (var _iterator8 = Object.keys(gain)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                            var k = _step8.value;
-
-                            if (invalidKeyList.includes(k)) continue;
-                            if (typeof income[k] === 'undefined') income[k] = gain[k];else income[k] += gain[k];
-                        }
-                    } catch (err) {
-                        _didIteratorError8 = true;
-                        _iteratorError8 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                                _iterator8.return();
-                            }
-                        } finally {
-                            if (_didIteratorError8) {
-                                throw _iteratorError8;
-                            }
-                        }
-                    }
-                }
-                if ($.type(pay) === 'object') {
                     var _iteratorNormalCompletion9 = true;
                     var _didIteratorError9 = false;
                     var _iteratorError9 = undefined;
 
                     try {
-                        for (var _iterator9 = Object.keys(pay)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                            var _k2 = _step9.value;
+                        for (var _iterator9 = Object.keys(gain)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                            var k = _step9.value;
 
-                            if (invalidKeyList.includes(_k2)) continue;
-                            if (typeof expense[_k2] === 'undefined') expense[_k2] = pay[_k2];else expense[_k2] += pay[_k2];
+                            if (invalidKeyList.includes(k)) continue;
+                            if (typeof income[k] === 'undefined') income[k] = gain[k];else income[k] += gain[k];
                         }
                     } catch (err) {
                         _didIteratorError9 = true;
@@ -5339,41 +5337,17 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                         }
                     }
                 }
-
-                if (type === '争夺攻击' && $.type(gain) === 'object') {
-                    var matches = /第`(\d+)`层/.exec(action);
-                    if (matches) {
-                        lootCount++;
-                        var level = parseInt(matches[1]);
-                        lootLevelStat.total += level;
-                        if (lootLevelStat.max < level) lootLevelStat.max = level;
-                        if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
-                        if (gain['KFB'] > 0) {
-                            lootKfbStat.total += gain['KFB'];
-                            if (lootKfbStat.max < gain['KFB']) lootKfbStat.max = gain['KFB'];
-                            if (!lootKfbStat.min || lootKfbStat.min > gain['KFB']) lootKfbStat.min = gain['KFB'];
-                        }
-                        if (gain['经验值'] > 0) {
-                            lootExpStat.total += gain['经验值'];
-                            if (lootExpStat.max < gain['经验值']) lootExpStat.max = gain['经验值'];
-                            if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
-                        }
-                    }
-                } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
-                    buyItemNum += gain['道具'];
-                    buyItemKfb += Math.abs(pay['KFB']);
+                if ($.type(pay) === 'object') {
                     var _iteratorNormalCompletion10 = true;
                     var _didIteratorError10 = false;
                     var _iteratorError10 = undefined;
 
                     try {
-                        for (var _iterator10 = Util.entries(gain['item'])[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                            var _step10$value = _slicedToArray(_step10.value, 2),
-                                itemName = _step10$value[0],
-                                num = _step10$value[1];
+                        for (var _iterator10 = Object.keys(pay)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                            var _k2 = _step10.value;
 
-                            if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
-                            buyItemStat[itemName] += num;
+                            if (invalidKeyList.includes(_k2)) continue;
+                            if (typeof expense[_k2] === 'undefined') expense[_k2] = pay[_k2];else expense[_k2] += pay[_k2];
                         }
                     } catch (err) {
                         _didIteratorError10 = true;
@@ -5386,6 +5360,77 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                         } finally {
                             if (_didIteratorError10) {
                                 throw _iteratorError10;
+                            }
+                        }
+                    }
+                }
+
+                if (type === '争夺攻击' && $.type(gain) === 'object') {
+                    var matches = /第`(\d+)`层/.exec(action);
+                    if (matches) {
+                        lootCount++;
+                        var level = parseInt(matches[1]);
+                        lootLevelStat.total += level;
+                        if (lootLevelStat.max < level) lootLevelStat.max = level;
+                        if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
+                        if ($.type(gain['box']) === 'object') {
+                            var _iteratorNormalCompletion11 = true;
+                            var _didIteratorError11 = false;
+                            var _iteratorError11 = undefined;
+
+                            try {
+                                for (var _iterator11 = Util.entries(gain['box'])[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                                    var _step11$value = _slicedToArray(_step11.value, 2),
+                                        box = _step11$value[0],
+                                        num = _step11$value[1];
+
+                                    lootBoxStat['总数'] += num;
+                                    if (!(box in lootBoxStat)) lootBoxStat[box] = 0;
+                                    lootBoxStat[box] += num;
+                                }
+                            } catch (err) {
+                                _didIteratorError11 = true;
+                                _iteratorError11 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                                        _iterator11.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError11) {
+                                        throw _iteratorError11;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
+                    buyItemNum += gain['道具'];
+                    buyItemKfb += Math.abs(pay['KFB']);
+                    var _iteratorNormalCompletion12 = true;
+                    var _didIteratorError12 = false;
+                    var _iteratorError12 = undefined;
+
+                    try {
+                        for (var _iterator12 = Util.entries(gain['item'])[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                            var _step12$value = _slicedToArray(_step12.value, 2),
+                                itemName = _step12$value[0],
+                                num = _step12$value[1];
+
+                            if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
+                            buyItemStat[itemName] += num;
+                        }
+                    } catch (err) {
+                        _didIteratorError12 = true;
+                        _iteratorError12 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                                _iterator12.return();
+                            }
+                        } finally {
+                            if (_didIteratorError12) {
+                                throw _iteratorError12;
                             }
                         }
                     }
@@ -5410,16 +5455,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                 }
             }
         } catch (err) {
-            _didIteratorError7 = true;
-            _iteratorError7 = err;
+            _didIteratorError8 = true;
+            _iteratorError8 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                    _iterator7.return();
+                if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                    _iterator8.return();
                 }
             } finally {
-                if (_didIteratorError7) {
-                    throw _iteratorError7;
+                if (_didIteratorError8) {
+                    throw _iteratorError8;
                 }
             }
         }
@@ -5428,69 +5473,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     var content = '';
     var sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '能量', '道具', '已使用道具', '卡片'];
     content += '<strong>收获：</strong>';
-    var _iteratorNormalCompletion11 = true;
-    var _didIteratorError11 = false;
-    var _iteratorError11 = undefined;
-
-    try {
-        for (var _iterator11 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var key = _step11.value;
-
-            profit[key] = income[key];
-            content += '<i>' + key + '<em>+' + income[key].toLocaleString() + '</em></i> ';
-        }
-    } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                _iterator11.return();
-            }
-        } finally {
-            if (_didIteratorError11) {
-                throw _iteratorError11;
-            }
-        }
-    }
-
-    content += '<br><strong>付出：</strong>';
-    var _iteratorNormalCompletion12 = true;
-    var _didIteratorError12 = false;
-    var _iteratorError12 = undefined;
-
-    try {
-        for (var _iterator12 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var _key = _step12.value;
-
-            if (typeof profit[_key] === 'undefined') profit[_key] = expense[_key];else profit[_key] += expense[_key];
-            content += '<i>' + _key + '<ins>' + expense[_key].toLocaleString() + '</ins></i> ';
-        }
-    } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion12 && _iterator12.return) {
-                _iterator12.return();
-            }
-        } finally {
-            if (_didIteratorError12) {
-                throw _iteratorError12;
-            }
-        }
-    }
-
-    content += '<br><strong>结余：</strong>';
     var _iteratorNormalCompletion13 = true;
     var _didIteratorError13 = false;
     var _iteratorError13 = undefined;
 
     try {
-        for (var _iterator13 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var _key2 = _step13.value;
+        for (var _iterator13 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var key = _step13.value;
 
-            content += '<i>' + _key2 + Util.getStatFormatNumber(profit[_key2]) + '</i> ';
+            profit[key] = income[key];
+            content += '<i>' + key + '<em>+' + income[key].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError13 = true;
@@ -5507,24 +5499,17 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
-    content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
-    if (lootCount > 0) {
-        content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
-        content += '<i>KFB<em>+' + lootKfbStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootKfbStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootKfbStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootKfbStat.max.toLocaleString() + '</em>)</span></i> ');
-        content += '<i>\u7ECF\u9A8C\u503C<em>+' + lootExpStat.total.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(lootExpStat.total / lootCount) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootExpStat.min.toLocaleString() + '</em>|<em title="\u6700\u5927\u503C">+' + lootExpStat.max.toLocaleString() + '</em>)</span></i> ');
-    }
-
-    content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemNum.toLocaleString() + '</em></i> ' + ('<i>KFB<ins>-' + buyItemKfb.toLocaleString() + '</ins></i> ');
+    content += '<br><strong>付出：</strong>';
     var _iteratorNormalCompletion14 = true;
     var _didIteratorError14 = false;
     var _iteratorError14 = undefined;
 
     try {
-        for (var _iterator14 = Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-            var _itemName2 = _step14.value;
+        for (var _iterator14 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+            var _key = _step14.value;
 
-            content += '<i>' + _itemName2 + '<em>+' + buyItemStat[_itemName2].toLocaleString() + '</em></i> ';
+            if (typeof profit[_key] === 'undefined') profit[_key] = expense[_key];else profit[_key] += expense[_key];
+            content += '<i>' + _key + '<ins>' + expense[_key].toLocaleString() + '</ins></i> ';
         }
     } catch (err) {
         _didIteratorError14 = true;
@@ -5541,16 +5526,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
+    content += '<br><strong>结余：</strong>';
     var _iteratorNormalCompletion15 = true;
     var _didIteratorError15 = false;
     var _iteratorError15 = undefined;
 
     try {
-        for (var _iterator15 = Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-            var _itemName3 = _step15.value;
+        for (var _iterator15 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+            var _key2 = _step15.value;
 
-            content += '<i>' + _itemName3 + '<em>+' + validItemStat[_itemName3].toLocaleString() + '</em></i> ';
+            content += '<i>' + _key2 + Util.getStatFormatNumber(profit[_key2]) + '</i> ';
         }
     } catch (err) {
         _didIteratorError15 = true;
@@ -5567,28 +5552,116 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
-    var _iteratorNormalCompletion16 = true;
-    var _didIteratorError16 = false;
-    var _iteratorError16 = undefined;
+    content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
+    content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
+    if (lootCount > 0) {
+        content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
+        content += '<i>\u76D2\u5B50<em>+' + lootBoxStat['总数'].toLocaleString() + '</em></i>( ';
+        var _iteratorNormalCompletion16 = true;
+        var _didIteratorError16 = false;
+        var _iteratorError16 = undefined;
+
+        try {
+            for (var _iterator16 = Util.entries(lootBoxStat)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+                var _step16$value = _slicedToArray(_step16.value, 2),
+                    box = _step16$value[0],
+                    num = _step16$value[1];
+
+                if (box === '总数' || !num) continue;
+                content += '<i>' + box.replace('盒子', '') + '<em>+' + num.toLocaleString() + '</em></i> ';
+            }
+        } catch (err) {
+            _didIteratorError16 = true;
+            _iteratorError16 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                    _iterator16.return();
+                }
+            } finally {
+                if (_didIteratorError16) {
+                    throw _iteratorError16;
+                }
+            }
+        }
+
+        content += ')';
+    }
+
+    content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemNum.toLocaleString() + '</em></i> ' + ('<i>KFB<ins>-' + buyItemKfb.toLocaleString() + '</ins></i> ');
+    var _iteratorNormalCompletion17 = true;
+    var _didIteratorError17 = false;
+    var _iteratorError17 = undefined;
 
     try {
-        for (var _iterator16 = Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-            var _itemName4 = _step16.value;
+        for (var _iterator17 = Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+            var _itemName2 = _step17.value;
+
+            content += '<i>' + _itemName2 + '<em>+' + buyItemStat[_itemName2].toLocaleString() + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                _iterator17.return();
+            }
+        } finally {
+            if (_didIteratorError17) {
+                throw _iteratorError17;
+            }
+        }
+    }
+
+    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
+    var _iteratorNormalCompletion18 = true;
+    var _didIteratorError18 = false;
+    var _iteratorError18 = undefined;
+
+    try {
+        for (var _iterator18 = Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+            var _itemName3 = _step18.value;
+
+            content += '<i>' + _itemName3 + '<em>+' + validItemStat[_itemName3].toLocaleString() + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError18 = true;
+        _iteratorError18 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion18 && _iterator18.return) {
+                _iterator18.return();
+            }
+        } finally {
+            if (_didIteratorError18) {
+                throw _iteratorError18;
+            }
+        }
+    }
+
+    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
+    var _iteratorNormalCompletion19 = true;
+    var _didIteratorError19 = false;
+    var _iteratorError19 = undefined;
+
+    try {
+        for (var _iterator19 = Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+            var _itemName4 = _step19.value;
 
             content += '<i>' + _itemName4 + '<em>+' + invalidItemStat[_itemName4].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError19 = true;
+        _iteratorError19 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                _iterator16.return();
+            if (!_iteratorNormalCompletion19 && _iterator19.return) {
+                _iterator19.return();
             }
         } finally {
-            if (_didIteratorError16) {
-                throw _iteratorError16;
+            if (_didIteratorError19) {
+                throw _iteratorError19;
             }
         }
     }
@@ -5652,13 +5725,13 @@ var showLogText = function showLogText(log, $dialog) {
     var isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     var content = '',
         lastDate = '';
-    var _iteratorNormalCompletion17 = true;
-    var _didIteratorError17 = false;
-    var _iteratorError17 = undefined;
+    var _iteratorNormalCompletion20 = true;
+    var _didIteratorError20 = false;
+    var _iteratorError20 = undefined;
 
     try {
-        for (var _iterator17 = Object.keys(log)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-            var date = _step17.value;
+        for (var _iterator20 = Object.keys(log)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+            var date = _step20.value;
 
             if (!Array.isArray(log[date])) continue;
             if (lastDate > date) lastDate = date;
@@ -5669,16 +5742,16 @@ var showLogText = function showLogText(log, $dialog) {
             content += '='.repeat(46) + '\n';
         }
     } catch (err) {
-        _didIteratorError17 = true;
-        _iteratorError17 = err;
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion17 && _iterator17.return) {
-                _iterator17.return();
+            if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                _iterator20.return();
             }
         } finally {
-            if (_didIteratorError17) {
-                throw _iteratorError17;
+            if (_didIteratorError20) {
+                throw _iteratorError20;
             }
         }
     }
@@ -5754,8 +5827,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-// 争夺首页区域
-var $lootArea = void 0;
 // 争夺属性区域
 var $properties = void 0;
 // 点数区域
@@ -5789,14 +5860,9 @@ var pointsLogList = [];
  * 初始化
  */
 var init = exports.init = function init() {
-    $lootArea = $('.kf_fw_ig1:first');
-    $properties = $lootArea.find('> tbody > tr:nth-child(2) > td:first-child');
-    $points = $lootArea.find('> tbody > tr:nth-child(2) > td:nth-child(2)');
-    $itemInfo = $lootArea.find('> tbody > tr:nth-child(3) > td');
-    $itemInfo.css({
-        'line-height': '2em',
-        'padding': '3px 5px'
-    });
+    $properties = $('.kf_fw_ig3:first');
+    $points = $('#wdsx .kf_fw_ig1:first');
+    //$itemInfo = $();
 
     var tmpHaloInfo = TmpLog.getValue(_Const2.default.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
@@ -5814,8 +5880,8 @@ var init = exports.init = function init() {
  */
 var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIndexPage() {
     Script.runFunc('Loot.enhanceLootIndexPage_before_');
-    propertyList = getLootPropertyList();
-    itemUsedNumList = Item.getItemUsedInfo($itemInfo.html());
+    //propertyList = getLootPropertyList(); // 临时禁用
+    //itemUsedNumList = Item.getItemUsedInfo($itemInfo.html()); // 临时禁用
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -5824,7 +5890,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     levelInfoList = getLevelInfoList(logList);
     if (/你被击败了/.test(log) || /本日无争夺记录/.test(log)) localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);else pointsLogList = getTempPointsLogList(logList);
 
-    handlePropertiesArea();
+    //handlePropertiesArea(); // 临时禁用
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
@@ -5875,15 +5941,14 @@ var handlePointsArea = function handlePointsArea() {
     $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
-    var $changeCount = $points.find('[name="rvrc1"]').contents().eq(-3);
-    var changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.get(0).textContent);
+    var $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
+    var changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.text());
     if (changeCountMatches) {
         changePointsAvailableCount = parseInt(changeCountMatches[1]);
-        $changeCount.wrap('<span id="pdChangeCount"></span>');
-        $points.find('#pdChangeCount').css('margin-left', '5px');
+        $changeCount.wrapInner('<span id="pdChangeCount"></span>');
     }
 
-    var countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($points.text());
+    var countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($changeCount.text());
     if (countDownMatches) {
         var nextTime = Util.getDate('+' + countDownMatches[1] + 'm');
         Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
@@ -5896,6 +5961,8 @@ var handlePointsArea = function handlePointsArea() {
         '耐力': parseInt($points.find('[name="p"]').next('span').text()),
         '幸运': parseInt($points.find('[name="l"]').next('span').text())
     };
+
+    return; // 临时禁用
 
     /**
      * 显示剩余属性点
@@ -5931,7 +5998,7 @@ var handlePointsArea = function handlePointsArea() {
      * 显示技能伤害数值
      */
     var showSkillAttack = function showSkillAttack() {
-        $('#pdSkillAttack').text(getSkillAttack(parseInt($lootArea.find('[name="s1"]').val()) + parseInt($lootArea.find('[name="s1"]').next('.pd_extra_point').text()), parseInt($lootArea.find('[name="s2"]').val()) + parseInt($lootArea.find('[name="s2"]').next('.pd_extra_point').text()), parseInt($lootArea.find('[name="i1"]').val()) + parseInt($lootArea.find('[name="i1"]').next('.pd_extra_point').text())));
+        $('#pdSkillAttack').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()) + parseInt($points.find('[name="s1"]').next('.pd_extra_point').text()), parseInt($points.find('[name="s2"]').val()) + parseInt($points.find('[name="s2"]').next('.pd_extra_point').text()), parseInt($points.find('[name="i1"]').val()) + parseInt($points.find('[name="i1"]').next('.pd_extra_point').text())));
     };
 
     $points.on('change', '.pd_point', function () {
@@ -6253,7 +6320,7 @@ var getRealProperty = exports.getRealProperty = function getRealProperty(pointNa
  * 添加各层点数分配方案选择框
  */
 var addLevelPointListSelect = function addLevelPointListSelect() {
-    $('\n<select id="pdLevelPointListSelect" style="margin: 5px 0;">\n  <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n  <option value="0">\u9ED8\u8BA4</option>\n</select>\n<a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a>\n<a class="pd_btn_link" data-name="edit" href="#" title="\u7F16\u8F91\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848">\u7F16\u8F91</a>\n<a class="pd_btn_link" data-name="fill" href="#" title="\u8F93\u5165\u4E00\u4E32\u6570\u5B57\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D">\u586B\u5145</a><br>\n').prependTo($points).filter('#pdLevelPointListSelect').change(function () {
+    $('\n<tr>\n  <td colspan="2">\n    <select id="pdLevelPointListSelect" style="margin: 5px 0;" hidden>\n      <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n      <option value="0">\u9ED8\u8BA4</option>\n    </select>\n    <a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848" hidden>\u4FDD\u5B58</a>\n    <a class="pd_btn_link" data-name="edit" href="#" title="\u7F16\u8F91\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848" hidden>\u7F16\u8F91</a>\n    <a class="pd_btn_link" data-name="fill" href="#" title="\u8F93\u5165\u4E00\u4E32\u6570\u5B57\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D">\u586B\u5145</a><br>\n  </td>\n</tr>').prependTo($points.find('> tbody')).find('#pdLevelPointListSelect').change(function () {
         var level = parseInt($(this).val());
         if (level > 0) {
             var points = Config.levelPointList[parseInt(level)];
@@ -6268,7 +6335,7 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         }
-    }).end().filter('[data-name="save"]').click(function (e) {
+    }).end().find('[data-name="save"]').click(function (e) {
         e.preventDefault();
         if (!checkPoints($points)) return;
         var $levelPointListSelect = $('#pdLevelPointListSelect');
@@ -6314,10 +6381,10 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         (0, _Config.write)();
         setLevelPointListSelect(Config.levelPointList);
         $levelPointListSelect.val(level);
-    }).end().filter('[data-name="edit"]').click(function (e) {
+    }).end().find('[data-name="edit"]').click(function (e) {
         e.preventDefault();
         showLevelPointListConfigDialog();
-    }).end().filter('[data-name="fill"]').click(function (e) {
+    }).end().find('[data-name="fill"]').click(function (e) {
         e.preventDefault();
         var value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
@@ -6603,7 +6670,7 @@ var addAttackBtns = function addAttackBtns() {
     if (!safeId) return;
     $logBox.off('click');
 
-    $('\n<div id="pdAttackBtns" style="line-height: 2.2em; margin-bottom: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label><br>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').appendTo($points).on('click', 'button[name$="Attack"]', function () {
+    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + ' disabled>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label><br>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + ' disabled>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter($('#wdsx')).on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -6630,7 +6697,8 @@ var addAttackBtns = function addAttackBtns() {
         Msg.destroy();
         $('#pdLootLogHeader').find('[data-name="end"]').click();
         var autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
-        if (!autoChangePointsEnabled && !checkPoints($points)) return;
+        //if (!autoChangePointsEnabled && !checkPoints($points)) return; // 临时禁用
+        autoChangePointsEnabled = false; // 临时修改
         lootAttack({ type: type, targetLevel: targetLevel, autoChangePointsEnabled: autoChangePointsEnabled, safeId: safeId });
     }).on('click', '.pd_cfg_tips', function () {
         return false;
@@ -6684,7 +6752,8 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             var pointName = getPointNameByFieldName($this.attr('name'));
             var point = parseInt($.trim($this.val()));
             var extraPoint = getExtraPoint(pointName, point);
-            pointsText += pointName + '\uFF1A' + point + '+' + extraPoint + '=' + (point + extraPoint) + '\uFF0C';
+            //pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
+            pointsText += pointName + '\uFF1A' + point + '\uFF0C'; // 临时修改
         });
         pointsText = pointsText.replace(/，$/, '');
         var _iteratorNormalCompletion5 = true;
@@ -6718,9 +6787,11 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         }
 
         propertiesText = propertiesText.replace(/，$/, '');
-        pointsLogList[getCurrentLevel(logList) + 1] = '\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09\n\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09';
+        //pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
+        pointsLogList[getCurrentLevel(logList) + 1] = '\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09'; // 临时修改
         localStorage.setItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid, JSON.stringify({ time: new Date().getTime(), pointsLogList: pointsLogList }));
-        if (isSubmit) console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09\uFF1B\u4E89\u593A\u5C5E\u6027\uFF08' + propertiesText + '\uFF09');
+        //if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
+        if (isSubmit) console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09'); // 临时修改
     };
 
     /**
@@ -6786,14 +6857,15 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             }
         });
         if (isChange) {
-            if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
-                if (confirm('可分配属性点尚未用完，是否继续攻击？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
-            }
+            /*if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
+             if (confirm('可分配属性点尚未用完，是否继续攻击？')) Info.w.unusedPointNumAlert = true;
+             else return $.Deferred().resolve('error');
+             }*/ // 临时禁用
             return $.ajax({
                 type: 'POST',
                 url: 'kf_fw_ig_enter.php',
                 timeout: _Const2.default.defAjaxTimeout,
-                data: $points.find('form').serialize()
+                data: $points.closest('form').serialize()
             }).then(function (html) {
                 var _Util$getResponseMsg = Util.getResponseMsg(html),
                     msg = _Util$getResponseMsg.msg;
@@ -7138,14 +7210,41 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
     var currentLevel = getCurrentLevel(logList);
 
     var _getTotalGain = getTotalGain(levelInfoList),
-        kfb = _getTotalGain.kfb,
-        exp = _getTotalGain.exp;
+        boxes = _getTotalGain.boxes;
 
-    if (kfb > 0 || exp > 0) {
-        Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (\u5168\u90E8\uFF1A' + allEnemyStat.trim() + '\uFF1B\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A' + latestEnemyStat.trim() + ')', { gain: { 'KFB': kfb, '经验值': exp } });
+    if (!$.isEmptyObject(boxes)) {
+        Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (' + allEnemyStat.trim() + ')', { gain: { 'box': boxes } });
         LootLog.record(logList, pointsLogList);
     }
-    Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>' + ('<i>KFB<em>+' + kfb.toLocaleString() + '</em></i><i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i>'), -1);
+    var boxesStat = '';
+    var _iteratorNormalCompletion11 = true;
+    var _didIteratorError11 = false;
+    var _iteratorError11 = undefined;
+
+    try {
+        for (var _iterator11 = Util.entries(boxes)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var _step11$value = _slicedToArray(_step11.value, 2),
+                box = _step11$value[0],
+                num = _step11$value[1];
+
+            boxesStat += '<i>' + box + '<em>+' + num.toLocaleString() + '</em></i>';
+        }
+    } catch (err) {
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                _iterator11.return();
+            }
+        } finally {
+            if (_didIteratorError11) {
+                throw _iteratorError11;
+            }
+        }
+    }
+
+    Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>' + (boxesStat.length > 75 ? '<br>' : '') + boxesStat, -1);
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
         Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
@@ -7303,51 +7402,20 @@ var handleLootLogNav = function handleLootLogNav() {
  */
 var showLogStat = function showLogStat(levelInfoList) {
     var _getTotalGain2 = getTotalGain(levelInfoList),
-        exp = _getTotalGain2.exp,
-        kfb = _getTotalGain2.kfb;
+        boxes = _getTotalGain2.boxes;
 
-    var allEnemyStatHtml = '';
-    var _iteratorNormalCompletion11 = true;
-    var _didIteratorError11 = false;
-    var _iteratorError11 = undefined;
-
-    try {
-        for (var _iterator11 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _step11$value = _slicedToArray(_step11.value, 2),
-                enemy = _step11$value[0],
-                num = _step11$value[1];
-
-            allEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
-        }
-    } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                _iterator11.return();
-            }
-        } finally {
-            if (_didIteratorError11) {
-                throw _iteratorError11;
-            }
-        }
-    }
-
-    var latestEnemyStatHtml = '';
+    var boxesStatHtml = '';
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
-            return level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum;
-        })))[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        for (var _iterator12 = Util.entries(boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
             var _step12$value = _slicedToArray(_step12.value, 2),
-                enemy = _step12$value[0],
+                box = _step12$value[0],
                 num = _step12$value[1];
 
-            latestEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
+            boxesStatHtml += '<i>' + box + '<em>+' + num.toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError12 = true;
@@ -7364,8 +7432,66 @@ var showLogStat = function showLogStat(levelInfoList) {
         }
     }
 
+    var allEnemyStatHtml = '';
+    var _iteratorNormalCompletion13 = true;
+    var _didIteratorError13 = false;
+    var _iteratorError13 = undefined;
+
+    try {
+        for (var _iterator13 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var _step13$value = _slicedToArray(_step13.value, 2),
+                enemy = _step13$value[0],
+                num = _step13$value[1];
+
+            allEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                _iterator13.return();
+            }
+        } finally {
+            if (_didIteratorError13) {
+                throw _iteratorError13;
+            }
+        }
+    }
+
+    var latestEnemyStatHtml = '';
+    var _iteratorNormalCompletion14 = true;
+    var _didIteratorError14 = false;
+    var _iteratorError14 = undefined;
+
+    try {
+        for (var _iterator14 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
+            return level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum;
+        })))[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+            var _step14$value = _slicedToArray(_step14.value, 2),
+                enemy = _step14$value[0],
+                num = _step14$value[1];
+
+            latestEnemyStatHtml += '<i>' + enemy + '<em>+' + num + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                _iterator14.return();
+            }
+        } finally {
+            if (_didIteratorError14) {
+                throw _iteratorError14;
+            }
+        }
+    }
+
     var $logStat = $('#pdLogStat');
-    $logStat.html('\n<li><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>KFB<em>+' + kfb.toLocaleString() + '</em></i> <i>\u7ECF\u9A8C\u503C<em>+' + exp.toLocaleString() + '</em></i></li>\n<li>\n  <b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + allEnemyStatHtml + '<br>\n  <b>\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A</b>' + latestEnemyStatHtml + '\n</li>\n');
+    $logStat.html('\n<li><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b>' + (boxesStatHtml ? boxesStatHtml : '无') + '</li>\n<li><b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + allEnemyStatHtml + '<br><b>\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A</b>' + latestEnemyStatHtml + '</li>\n');
 
     if (Config.showLevelEnemyStatEnabled) {
         var levelEnemyStatHtml = '';
@@ -7373,31 +7499,31 @@ var showLogStat = function showLogStat(levelInfoList) {
         var _loop = function _loop(i) {
             levelEnemyStatHtml += '&nbsp;&nbsp;<b>' + i + '-' + (i + 9 < levelInfoList.length ? i + 9 : levelInfoList.length - 1) + '\uFF1A</b>';
             var html = '';
-            var _iteratorNormalCompletion13 = true;
-            var _didIteratorError13 = false;
-            var _iteratorError13 = undefined;
+            var _iteratorNormalCompletion15 = true;
+            var _didIteratorError15 = false;
+            var _iteratorError15 = undefined;
 
             try {
-                for (var _iterator13 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
+                for (var _iterator15 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
                     return level >= i && level < i + 10;
-                })))[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-                    var _step13$value = _slicedToArray(_step13.value, 2),
-                        enemy = _step13$value[0],
-                        num = _step13$value[1];
+                })))[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+                    var _step15$value = _slicedToArray(_step15.value, 2),
+                        enemy = _step15$value[0],
+                        num = _step15$value[1];
 
                     html += '<i>' + enemy + '<em>+' + num + '</em></i> ';
                 }
             } catch (err) {
-                _didIteratorError13 = true;
-                _iteratorError13 = err;
+                _didIteratorError15 = true;
+                _iteratorError15 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion13 && _iterator13.return) {
-                        _iterator13.return();
+                    if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                        _iterator15.return();
                     }
                 } finally {
-                    if (_didIteratorError13) {
-                        throw _iteratorError13;
+                    if (_didIteratorError15) {
+                        throw _iteratorError15;
                     }
                 }
             }
@@ -7502,10 +7628,10 @@ var getLogList = exports.getLogList = function getLogList(log) {
 /**
  * 获取该层的战斗信息
  * @param {string} levelLog 该层的争夺记录
- * @returns {{enemy: string, life: number, initLife: number, kfb: number, exp: number}} enemy：遭遇敌人名称；life：该层剩余生命值；initLife：该层初始生命值；kfb：KFB；exp：经验
+ * @returns {{enemy: string, life: number, initLife: number, box: string}} enemy：遭遇敌人名称；life：该层剩余生命值；initLife：该层初始生命值；box：盒子名称
  */
 var getLevelInfo = exports.getLevelInfo = function getLevelInfo(levelLog) {
-    var info = { enemy: '', life: 0, initLife: 0, kfb: 0, exp: 0 };
+    var info = { enemy: '', life: 0, initLife: 0, box: '' };
     if (!levelLog) return info;
     levelLog = Util.removeHtmlTag(levelLog.replace(/<\/li>/g, '</li>\n'));
 
@@ -7519,11 +7645,8 @@ var getLevelInfo = exports.getLevelInfo = function getLevelInfo(levelLog) {
     matches = /生命值\[(\d+)\s*\/\s*\d+]/.exec(levelLog);
     if (matches) info.life = parseInt(matches[1]);
 
-    matches = /获得\s*\[\s*(\d+)\s*]\s*经验和\s*\[\s*(\d+)\s*]\s*KFB/.exec(levelLog);
-    if (matches) {
-        info.exp += parseInt(matches[1]);
-        info.kfb += parseInt(matches[2]);
-    }
+    matches = /敌人掉落了一个\s*\[\s*(\S+?盒子)\s*]/.exec(levelLog);
+    if (matches) info.box = matches[1];
 
     return info;
 };
@@ -7545,17 +7668,43 @@ var getLevelInfoList = exports.getLevelInfoList = function getLevelInfoList(logL
 /**
  * 获取当前的争夺总收获
  * @param {{}[]} levelInfoList 各层战斗信息列表
- * @returns {{kfb: number, exp: number}} kfb：KFB；exp：经验
+ * @returns {{boxes: {}}} boxes：盒子信息统计
  */
 var getTotalGain = function getTotalGain(levelInfoList) {
-    var totalKfb = 0,
-        totalExp = 0;
+    var boxes = { '普通盒子': 0, '幸运盒子': 0, '稀有盒子': 0, '传奇盒子': 0, '神秘盒子': 0 };
     $.each(levelInfoList, function (level, info) {
-        if (!info) return;
-        totalKfb += info.kfb;
-        totalExp += info.exp;
+        if (!info || !info.box) return;
+        if (!(info.box in boxes)) boxes[info.box] = 0;
+        boxes[info.box]++;
     });
-    return { kfb: totalKfb, exp: totalExp };
+    var _iteratorNormalCompletion16 = true;
+    var _didIteratorError16 = false;
+    var _iteratorError16 = undefined;
+
+    try {
+        for (var _iterator16 = Util.entries(boxes)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var _step16$value = _slicedToArray(_step16.value, 2),
+                box = _step16$value[0],
+                num = _step16$value[1];
+
+            if (!num) delete boxes[box];
+        }
+    } catch (err) {
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                _iterator16.return();
+            }
+        } finally {
+            if (_didIteratorError16) {
+                throw _iteratorError16;
+            }
+        }
+    }
+
+    return { boxes: boxes };
 };
 
 /**
@@ -7850,8 +7999,11 @@ var getHaloInfo = exports.getHaloInfo = function getHaloInfo() {
  */
 var setHaloInfo = exports.setHaloInfo = function setHaloInfo(newHaloInfo) {
     haloInfo = newHaloInfo;
-    if (!$lootArea.find('#pdHaloInfo').length) {
-        $('<span id="pdHaloInfo"></span> <a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取">重新读取</a><br>').appendTo($itemInfo).filter('[data-name="reloadHaloInfo"]').click(function (e) {
+    if (!$('#pdHaloInfo').length) {
+        var $node = $properties.find('input[value$="整形优惠卷"]').parent('td');
+        if (!$node.length || parseInt($node.attr('colspan')) !== 3) return;
+        $node.removeAttr('colspan');
+        $('\n<td colspan="2">\n  <input id="pdHaloInfo" type="text" size="26" readonly>\n  <a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="\u5982\u6218\u529B\u5149\u73AF\u4FE1\u606F\u4E0D\u6B63\u786E\u65F6\uFF0C\u8BF7\u70B9\u6B64\u91CD\u65B0\u8BFB\u53D6" hidden>\u91CD\u65B0\u8BFB\u53D6</a>\n</td>\n').insertAfter($node).find('[data-name="reloadHaloInfo"]').click(function (e) {
             e.preventDefault();
             if (confirm('是否重新读取战力光环信息？')) {
                 TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
@@ -7859,7 +8011,7 @@ var setHaloInfo = exports.setHaloInfo = function setHaloInfo(newHaloInfo) {
             }
         });
     }
-    $lootArea.find('#pdHaloInfo').text('\u6218\u529B\u5149\u73AF\uFF1A[\u5168\u5C5E\u6027+' + haloInfo['全属性'] * 1000 / 10 + '%][\u653B\u51FB\u529B+' + haloInfo['攻击力'] + '][\u751F\u547D\u503C+' + haloInfo['生命值'] + ']');
+    $('#pdHaloInfo').val('\u5168\u5C5E\u6027+' + haloInfo['全属性'] * 1000 / 10 + '% (+' + haloInfo['攻击力'] + '|+' + haloInfo['生命值'] + ')');
 };
 
 /**
@@ -9451,34 +9603,33 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
     }
 
     var checkLootInterval = -1;
-    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
-        let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
-        if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
-        else {
-            let date = Util.getDateByTime(Config.checkLootAfterTime);
-            let now = new Date();
-            if (value > 0 && now > date) date.setDate(date.getDate() + 1);
+    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
+        var _value = parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName));
+        if (_value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else {
+            var date = Util.getDateByTime(Config.checkLootAfterTime);
+            var now = new Date();
+            if (_value > 0 && now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);
             if (checkLootInterval < 0) checkLootInterval = 0;
         }
-          if (Util.getCookie(Const.lootAttackingCookieName)) checkLootInterval = Const.lootAttackingExpires * 60;
-        else {
-            let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
+
+        if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
+            var changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
             if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
         }
-    }*/
+    }
 
     var getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
-        var _value = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
-        if (_value > 0) {
-            var date = Util.getTimezoneDateByTime(_Const2.default.getDailyBonusAfterTime);
-            date.setDate(date.getDate() + 1);
-            var now = new Date();
-            if (now > date) date.setDate(date.getDate() + 1);
-            getDailyBonusInterval = Math.floor((date - now) / 1000);
-        } else if (_value < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
+        var _value2 = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
+        if (_value2 > 0) {
+            var _date = Util.getTimezoneDateByTime(_Const2.default.getDailyBonusAfterTime);
+            _date.setDate(_date.getDate() + 1);
+            var _now = new Date();
+            if (_now > _date) _date.setDate(_date.getDate() + 1);
+            getDailyBonusInterval = Math.floor((_date - _now) / 1000);
+        } else if (_value2 < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
     }
 
     var intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }];
@@ -9623,15 +9774,13 @@ var startTimingMode = exports.startTimingMode = function startTimingMode() {
             Loot.getPromoteHaloInfo();
         }
 
-        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
+        if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
             if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
-                if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
-                    Loot.checkLoot();
-            }
-            else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+                if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) Loot.checkLoot();
+            } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 Loot.autoSaveLootLog();
             }
-        }*/
+        }
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) getDailyBonus();
 
@@ -10039,7 +10188,7 @@ var addFastNavMenu = exports.addFastNavMenu = function addFastNavMenu() {
     var $menuBtn = $('.topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("本站主页")');
     if (!$menuBtn.length) return;
     var hpUrl = $menuBtn.attr('href');
-    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after('\n<ul class="topmenuo2">\n  <li><a href="' + hpUrl + '" target="_blank">\u672C\u7AD9\u4E3B\u9875</a></li>\n  <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n  <li><a href="search.php?authorid=' + _Info2.default.uid + '">\u6211\u7684\u4E3B\u9898</a></li>\n  <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n  <li><a href="kf_fw_ig_mybp.php">\u89D2\u8272/\u7269\u54C1</a></li>\n  <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n  <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n  <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n  <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n  ' + (_Info2.default.isInMiaolaDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : '') + '\n  ' + _Const2.default.customFastNavMenuContent + '\n</ul>');
+    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after('\n<ul class="topmenuo2">\n  <li><a href="' + hpUrl + '" target="_blank">\u672C\u7AD9\u4E3B\u9875</a></li>\n  <li><a href="guanjianci.php?gjc=' + _Info2.default.userName + '">@\u63D0\u9192</a></li>\n  <li><a href="search.php?authorid=' + _Info2.default.uid + '">\u6211\u7684\u4E3B\u9898</a></li>\n  <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n  <li><a href="kf_fw_ig_mybp.php">\u6211\u7684\u7269\u54C1</a></li>\n  <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n  <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n  <li><a href="hack.php?H_name=bank">\u94F6\u884C</a></li>\n  <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n  ' + (_Info2.default.isInMiaolaDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : '') + '\n  ' + _Const2.default.customFastNavMenuContent + '\n</ul>');
 };
 
 /**

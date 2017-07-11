@@ -207,6 +207,11 @@ const getLogContent = function (log, date, logSortType) {
                         stat += `<i>${itemName}<em>+${gain[k][itemName].toLocaleString()}</em></i> `;
                     }
                 }
+                else if (k === 'box') {
+                    for (let [box, num] of Util.entries(gain[k])) {
+                        stat += `<i>${box}<em>+${num.toLocaleString()}</em></i> `;
+                    }
+                }
                 else {
                     stat += `<i>${k}<em>+${gain[k].toLocaleString()}</em></i> `;
                 }
@@ -269,11 +274,11 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     let income = {}, expense = {}, profit = {};
-    let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootExpStat = {total: 0, min: 0, max: 0},
-        lootKfbStat = {total: 0, min: 0, max: 0};
+    let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0},
+        lootBoxStat = {'总数': 0, '普通盒子': 0, '幸运盒子': 0, '稀有盒子': 0, '传奇盒子': 0, '神秘盒子': 0};
     let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
     let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
-    let invalidKeyList = ['item', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
+    let invalidKeyList = ['item', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (let d in rangeLog) {
         for (let {type, action, gain, pay, notStat} of rangeLog[d]) {
             if (typeof type === 'undefined' || typeof notStat !== 'undefined') continue;
@@ -300,15 +305,12 @@ const getLogStat = function (log, date, logStatType) {
                     lootLevelStat.total += level;
                     if (lootLevelStat.max < level) lootLevelStat.max = level;
                     if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
-                    if (gain['KFB'] > 0) {
-                        lootKfbStat.total += gain['KFB'];
-                        if (lootKfbStat.max < gain['KFB']) lootKfbStat.max = gain['KFB'];
-                        if (!lootKfbStat.min || lootKfbStat.min > gain['KFB']) lootKfbStat.min = gain['KFB'];
-                    }
-                    if (gain['经验值'] > 0) {
-                        lootExpStat.total += gain['经验值'];
-                        if (lootExpStat.max < gain['经验值']) lootExpStat.max = gain['经验值'];
-                        if (!lootExpStat.min || lootExpStat.min > gain['经验值']) lootExpStat.min = gain['经验值'];
+                    if ($.type(gain['box']) === 'object') {
+                        for (let [box, num] of Util.entries(gain['box'])) {
+                            lootBoxStat['总数'] += num;
+                            if (!(box in lootBoxStat)) lootBoxStat[box] = 0;
+                            lootBoxStat[box] += num;
+                        }
                     }
                 }
             }
@@ -365,12 +367,12 @@ const getLogStat = function (log, date, logStatType) {
     if (lootCount > 0) {
         content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` +
             `<em title="最小值">+${lootLevelStat.min}</em>|<em title="最大值">+${lootLevelStat.max}</em>)</span></i> `;
-        content += `<i>KFB<em>+${lootKfbStat.total.toLocaleString()}</em><span class="pd_stat_extra">` +
-            `(<em title="平均值">+${Util.getFixedNumLocStr(lootKfbStat.total / lootCount)}</em>|` +
-            `<em title="最小值">+${lootKfbStat.min.toLocaleString()}</em>|<em title="最大值">+${lootKfbStat.max.toLocaleString()}</em>)</span></i> `;
-        content += `<i>经验值<em>+${lootExpStat.total.toLocaleString()}</em><span class="pd_stat_extra">` +
-            `(<em title="平均值">+${Util.getFixedNumLocStr(lootExpStat.total / lootCount)}</em>|` +
-            `<em title="最小值">+${lootExpStat.min.toLocaleString()}</em>|<em title="最大值">+${lootExpStat.max.toLocaleString()}</em>)</span></i> `;
+        content += `<i>盒子<em>+${lootBoxStat['总数'].toLocaleString()}</em></i>( `;
+        for (let [box, num] of Util.entries(lootBoxStat)) {
+            if (box === '总数' || !num) continue;
+            content += `<i>${box.replace('盒子', '')}<em>+${num.toLocaleString()}</em></i> `;
+        }
+        content += ')';
     }
 
     content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` +

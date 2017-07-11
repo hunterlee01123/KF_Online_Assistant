@@ -328,7 +328,7 @@ export const getNextTimingIntervalInfo = function () {
     }
 
     let checkLootInterval = -1;
-    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
+    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
         if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
         else {
@@ -345,7 +345,7 @@ export const getNextTimingIntervalInfo = function () {
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
             if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
         }
-    }*/
+    }
 
     let getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
@@ -476,7 +476,7 @@ export const startTimingMode = function () {
             Loot.getPromoteHaloInfo();
         }
 
-        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
+        if (!Util.getCookie(Const.lootCompleteCookieName)) {
             if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
                 if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
                     Loot.checkLoot();
@@ -484,7 +484,7 @@ export const startTimingMode = function () {
             else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 Loot.autoSaveLootLog();
             }
-        }*/
+        }
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
 
@@ -861,7 +861,7 @@ export const addFastNavMenu = function () {
   <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
   <li><a href="search.php?authorid=${Info.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
-  <li><a href="kf_fw_ig_mybp.php">角色/物品</a></li>
+  <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
   <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
   <li><a href="hack.php?H_name=bank">银行</a></li>

@@ -1701,7 +1701,7 @@ const sellItems = function (sellItemTypeList, safeId) {
         Log.push(
             '出售道具',
             `共有\`${itemTypeNum}\`个种类中的\`${successNum}\`个道具出售成功`,
-            {gain: {KFB: totalSell}, pay: {'道具': -successNum}}
+            {gain: {'KFB': totalSell}, pay: {'道具': -successNum}}
         );
     };
 
