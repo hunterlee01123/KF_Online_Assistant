@@ -926,18 +926,18 @@ const addAttackBtns = function () {
 
     $(`
 <div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">
-  <label>
-    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''} disabled>
+  <label hidden>
+    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''}>
     自动修改点数分配方案
     <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效）">[?]</span>
   </label>
-  <label>
+  <label hidden>
     <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${Config.customPointsScriptEnabled ? 'checked' : ''} 
 ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定义脚本
     <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效，需正确安装自定义脚本后此项才可勾选）">[?]</span>
-  </label><br>
-  <label>
-    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''} disabled>
+  </label>
+  <label hidden>
+    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
     有剩余属性点时提醒
     <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效）">[?]</span>
   </label>

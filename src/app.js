@@ -141,7 +141,7 @@ const init = function () {
         Item.addBatchUseAndConvertOldItemTypesButton();
     }
     else if (location.pathname === '/kf_fw_ig_mybp.php') {
-        Item.addBatchUseItemsButton();
+        Item.addBatchUseAndSellItemsButton();
     }
     else if (location.pathname === '/kf_fw_ig_shop.php') {
         //Item.addBatchBuyItemsLink(); // 临时禁用

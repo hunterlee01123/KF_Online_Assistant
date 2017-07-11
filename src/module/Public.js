@@ -107,8 +107,8 @@ export const appendCss = function () {
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
   .pd_msg_container { position: ${Info.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1002; }
   .pd_msg {
-    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 12px 40px; text-align: center;
-    font-size: 14px; position: absolute; display: none; color: #333; background: #f8fcfe; background-repeat: no-repeat;
+    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;
+    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;
     background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);

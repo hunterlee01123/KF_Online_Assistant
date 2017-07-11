@@ -59,17 +59,17 @@ const Const = {
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
-    // 特殊情况下的ajax请求（如使用、恢复、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
+    // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval () {
-        if (Config.simulateManualHandleItemEnabled) return Math.floor(Math.random() * 4000) + 2000; // 模拟手动时的情况
-        else return Math.floor(Math.random() * 150) + 200; // 正常情况
+        if (Config.simulateManualHandleItemEnabled) return Math.floor(Math.random() * 5000) + 3000; // 模拟手动时的情况
+        else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
     // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
     cycleUseItemsFirstAjaxInterval () {
         return Math.floor(Math.random() * 250) + 2000;
     },
-    // 批量出售道具的时间间隔（毫秒）
-    sellItemInterval: 1000,
+    // 操作道具的最小时间间隔（毫秒）
+    minItemActionInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval () {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 2000) + 5000; // 慢速情况
