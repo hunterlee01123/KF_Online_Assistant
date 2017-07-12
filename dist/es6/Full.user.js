@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.4.1
+// @version     10.4.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.4.1';
+const version = '10.4.2';
 
 /**
  * 导出模块
@@ -3097,7 +3097,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.itemTypeList = undefined;
+exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.boxTypeList = exports.itemTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3137,6 +3137,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * 道具种类列表
  */
 const itemTypeList = exports.itemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
+
+/**
+ * 盒子种类列表
+ */
+const boxTypeList = exports.boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
 
 /**
  * 获得转换指定等级道具可获得的能量点
@@ -5066,14 +5071,8 @@ const getLogStat = function (log, date, logStatType) {
         profit = {};
     let lootCount = 0,
         lootLevelStat = { total: 0, min: 0, max: 0 },
-        lootBoxStat = {
-        '总数': 0,
-        '普通盒子': { total: 0, min: 0, max: 0 },
-        '幸运盒子': { total: 0, min: 0, max: 0 },
-        '稀有盒子': { total: 0, min: 0, max: 0 },
-        '传奇盒子': { total: 0, min: 0, max: 0 },
-        '神秘盒子': { total: 0, min: 0, max: 0 }
-    };
+        lootBoxTotalNum = 0,
+        lootBoxStat = {};
     let buyItemNum = 0,
         buyItemKfb = 0,
         buyItemStat = {};
@@ -5109,12 +5108,15 @@ const getLogStat = function (log, date, logStatType) {
                     if (lootLevelStat.max < level) lootLevelStat.max = level;
                     if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
                     if ($.type(gain['box']) === 'object') {
-                        for (let [box, num] of Util.entries(gain['box'])) {
-                            lootBoxStat['总数'] += num;
-                            if (!(box in lootBoxStat)) lootBoxStat[box] = { total: 0, min: 0, max: 0 };
-                            lootBoxStat[box].total += num;
-                            if (lootBoxStat[box].max < num) lootBoxStat[box].max = num;
-                            if (!lootBoxStat[box].min || lootBoxStat[box].min > num) lootBoxStat[box].min = num;
+                        for (let [key, num] of Util.entries(gain['box'])) {
+                            lootBoxTotalNum += num;
+                            if (!(key in lootBoxStat)) lootBoxStat[key] = { total: 0, min: -1, max: -1 };
+                            lootBoxStat[key].total += num;
+                            if (lootBoxStat[key].max < num) lootBoxStat[key].max = num;
+                            if (lootBoxStat[key].min < 0 || lootBoxStat[key].min > num) lootBoxStat[key].min = num;
+                        }
+                        for (let key of Item.boxTypeList) {
+                            if (!(key in gain['box']) && key in lootBoxStat) lootBoxStat[key].min = 0;
                         }
                     }
                 }
@@ -5168,10 +5170,10 @@ const getLogStat = function (log, date, logStatType) {
     content += `\n<strong>争夺攻击统计：</strong><i>次数<em>+${lootCount}</em></i> `;
     if (lootCount > 0) {
         content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` + `<em title="最小值">+${lootLevelStat.min}</em>|<em title="最大值">+${lootLevelStat.max}</em>)</span></i> `;
-        content += `<i>盒子总数<em>+${lootBoxStat['总数'].toLocaleString()}</em></i> `;
-        for (let [box, { total, min, max }] of Util.entries(lootBoxStat)) {
-            if (box === '总数' || !total) continue;
-            content += `<i>${box}<em>+${total.toLocaleString()}</em>` + `<span class="pd_stat_extra">(<em title="平均值">+${(total / lootCount).toFixed(2)}</em>|` + `<em title="最小值">+${min}</em>|<em title="最大值">+${max}</em>)</span></i> `;
+        content += `<i>盒子总数<em>+${lootBoxTotalNum.toLocaleString()}</em></i> `;
+        for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, lootBoxStat)) {
+            if (!lootBoxStat[key].total) continue;
+            content += `<i>${key}<em>+${lootBoxStat[key].total.toLocaleString()}</em>` + `<span class="pd_stat_extra">(<em title="平均值">+${(lootBoxStat[key].total / lootCount).toFixed(2)}</em>|` + `<em title="最小值">+${lootBoxStat[key].min}</em>|<em title="最大值">+${lootBoxStat[key].max}</em>)</span></i> `;
         }
     }
 
@@ -6577,8 +6579,8 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
         LootLog.record(logList, pointsLogList);
     }
     let boxesStat = '';
-    for (let [box, num] of Util.entries(boxes)) {
-        boxesStat += `<i>${box}<em>+${num.toLocaleString()}</em></i>`;
+    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
+        boxesStat += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i>`;
     }
     Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, -1);
 
@@ -6770,8 +6772,8 @@ const handleLootLogNav = function () {
 const showLogStat = function (levelInfoList) {
     let { boxes } = getTotalGain(levelInfoList);
     let boxesStatHtml = '';
-    for (let [box, num] of Util.entries(boxes)) {
-        boxesStatHtml += `<i>${box}<em>+${num.toLocaleString()}</em></i> `;
+    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
+        boxesStatHtml += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i> `;
     }
     let allEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
@@ -6932,15 +6934,12 @@ const getLevelInfoList = exports.getLevelInfoList = function (logList) {
  * @returns {{boxes: {}}} boxes：盒子信息统计
  */
 const getTotalGain = function (levelInfoList) {
-    let boxes = { '普通盒子': 0, '幸运盒子': 0, '稀有盒子': 0, '传奇盒子': 0, '神秘盒子': 0 };
+    let boxes = {};
     $.each(levelInfoList, function (level, info) {
         if (!info || !info.box) return;
         if (!(info.box in boxes)) boxes[info.box] = 0;
         boxes[info.box]++;
     });
-    for (let [box, num] of Util.entries(boxes)) {
-        if (!num) delete boxes[box];
-    }
     return { boxes };
 };
 
@@ -11355,11 +11354,10 @@ const getObjectKeyList = exports.getObjectKeyList = function (obj, sortBy = 0) {
  * 获取经过排序的指定对象的关键字列表
  * @param {string[]} sortKeyList 用于排序的关键字列表
  * @param {Object} obj 指定对象
- * @param {number} sortBy 是否排序，0：不排序；1：升序；-1：降序
  * @returns {string[]} 关键字列表
  */
-const getSortedObjectKeyList = exports.getSortedObjectKeyList = function (sortKeyList, obj, sortBy = 0) {
-    let list = getObjectKeyList(obj, sortBy);
+const getSortedObjectKeyList = exports.getSortedObjectKeyList = function (sortKeyList, obj) {
+    let list = getObjectKeyList(obj);
     list.sort((a, b) => sortKeyList.indexOf(a) > sortKeyList.indexOf(b) ? 1 : -1);
     return list;
 };

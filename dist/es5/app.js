@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.4.1';
+var version = '10.4.2';
 
 /**
  * 导出模块
@@ -3012,7 +3012,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.itemTypeList = undefined;
+exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.boxTypeList = exports.itemTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3056,6 +3056,11 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
  * 道具种类列表
  */
 var itemTypeList = exports.itemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
+
+/**
+ * 盒子种类列表
+ */
+var boxTypeList = exports.boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
 
 /**
  * 获得转换指定等级道具可获得的能量点
@@ -5341,14 +5346,8 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         profit = {};
     var lootCount = 0,
         lootLevelStat = { total: 0, min: 0, max: 0 },
-        lootBoxStat = {
-        '总数': 0,
-        '普通盒子': { total: 0, min: 0, max: 0 },
-        '幸运盒子': { total: 0, min: 0, max: 0 },
-        '稀有盒子': { total: 0, min: 0, max: 0 },
-        '传奇盒子': { total: 0, min: 0, max: 0 },
-        '神秘盒子': { total: 0, min: 0, max: 0 }
-    };
+        lootBoxTotalNum = 0,
+        lootBoxStat = {};
     var buyItemNum = 0,
         buyItemKfb = 0,
         buyItemStat = {};
@@ -5445,14 +5444,14 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                             try {
                                 for (var _iterator11 = Util.entries(gain['box'])[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
                                     var _step11$value = _slicedToArray(_step11.value, 2),
-                                        box = _step11$value[0],
+                                        key = _step11$value[0],
                                         num = _step11$value[1];
 
-                                    lootBoxStat['总数'] += num;
-                                    if (!(box in lootBoxStat)) lootBoxStat[box] = { total: 0, min: 0, max: 0 };
-                                    lootBoxStat[box].total += num;
-                                    if (lootBoxStat[box].max < num) lootBoxStat[box].max = num;
-                                    if (!lootBoxStat[box].min || lootBoxStat[box].min > num) lootBoxStat[box].min = num;
+                                    lootBoxTotalNum += num;
+                                    if (!(key in lootBoxStat)) lootBoxStat[key] = { total: 0, min: -1, max: -1 };
+                                    lootBoxStat[key].total += num;
+                                    if (lootBoxStat[key].max < num) lootBoxStat[key].max = num;
+                                    if (lootBoxStat[key].min < 0 || lootBoxStat[key].min > num) lootBoxStat[key].min = num;
                                 }
                             } catch (err) {
                                 _didIteratorError11 = true;
@@ -5468,35 +5467,60 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                                     }
                                 }
                             }
+
+                            var _iteratorNormalCompletion12 = true;
+                            var _didIteratorError12 = false;
+                            var _iteratorError12 = undefined;
+
+                            try {
+                                for (var _iterator12 = Item.boxTypeList[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                                    var key = _step12.value;
+
+                                    if (!(key in gain['box']) && key in lootBoxStat) lootBoxStat[key].min = 0;
+                                }
+                            } catch (err) {
+                                _didIteratorError12 = true;
+                                _iteratorError12 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                                        _iterator12.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError12) {
+                                        throw _iteratorError12;
+                                    }
+                                }
+                            }
                         }
                     }
                 } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
                     buyItemNum += gain['道具'];
                     buyItemKfb += Math.abs(pay['KFB']);
-                    var _iteratorNormalCompletion12 = true;
-                    var _didIteratorError12 = false;
-                    var _iteratorError12 = undefined;
+                    var _iteratorNormalCompletion13 = true;
+                    var _didIteratorError13 = false;
+                    var _iteratorError13 = undefined;
 
                     try {
-                        for (var _iterator12 = Util.entries(gain['item'])[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-                            var _step12$value = _slicedToArray(_step12.value, 2),
-                                itemName = _step12$value[0],
-                                num = _step12$value[1];
+                        for (var _iterator13 = Util.entries(gain['item'])[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+                            var _step13$value = _slicedToArray(_step13.value, 2),
+                                itemName = _step13$value[0],
+                                num = _step13$value[1];
 
                             if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
                             buyItemStat[itemName] += num;
                         }
                     } catch (err) {
-                        _didIteratorError12 = true;
-                        _iteratorError12 = err;
+                        _didIteratorError13 = true;
+                        _iteratorError13 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion12 && _iterator12.return) {
-                                _iterator12.return();
+                            if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                                _iterator13.return();
                             }
                         } finally {
-                            if (_didIteratorError12) {
-                                throw _iteratorError12;
+                            if (_didIteratorError13) {
+                                throw _iteratorError13;
                             }
                         }
                     }
@@ -5539,43 +5563,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     var content = '';
     var sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '能量', '道具', '已使用道具', '卡片'];
     content += '<strong>收获：</strong>';
-    var _iteratorNormalCompletion13 = true;
-    var _didIteratorError13 = false;
-    var _iteratorError13 = undefined;
-
-    try {
-        for (var _iterator13 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var key = _step13.value;
-
-            profit[key] = income[key];
-            content += '<i>' + key + '<em>+' + income[key].toLocaleString() + '</em></i> ';
-        }
-    } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion13 && _iterator13.return) {
-                _iterator13.return();
-            }
-        } finally {
-            if (_didIteratorError13) {
-                throw _iteratorError13;
-            }
-        }
-    }
-
-    content += '<br><strong>付出：</strong>';
     var _iteratorNormalCompletion14 = true;
     var _didIteratorError14 = false;
     var _iteratorError14 = undefined;
 
     try {
-        for (var _iterator14 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-            var _key = _step14.value;
+        for (var _iterator14 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+            var _key2 = _step14.value;
 
-            if (typeof profit[_key] === 'undefined') profit[_key] = expense[_key];else profit[_key] += expense[_key];
-            content += '<i>' + _key + '<ins>' + expense[_key].toLocaleString() + '</ins></i> ';
+            profit[_key2] = income[_key2];
+            content += '<i>' + _key2 + '<em>+' + income[_key2].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError14 = true;
@@ -5592,16 +5589,17 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>结余：</strong>';
+    content += '<br><strong>付出：</strong>';
     var _iteratorNormalCompletion15 = true;
     var _didIteratorError15 = false;
     var _iteratorError15 = undefined;
 
     try {
-        for (var _iterator15 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-            var _key2 = _step15.value;
+        for (var _iterator15 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+            var _key3 = _step15.value;
 
-            content += '<i>' + _key2 + Util.getStatFormatNumber(profit[_key2]) + '</i> ';
+            if (typeof profit[_key3] === 'undefined') profit[_key3] = expense[_key3];else profit[_key3] += expense[_key3];
+            content += '<i>' + _key3 + '<ins>' + expense[_key3].toLocaleString() + '</ins></i> ';
         }
     } catch (err) {
         _didIteratorError15 = true;
@@ -5618,79 +5616,74 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
+    content += '<br><strong>结余：</strong>';
+    var _iteratorNormalCompletion16 = true;
+    var _didIteratorError16 = false;
+    var _iteratorError16 = undefined;
+
+    try {
+        for (var _iterator16 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var _key4 = _step16.value;
+
+            content += '<i>' + _key4 + Util.getStatFormatNumber(profit[_key4]) + '</i> ';
+        }
+    } catch (err) {
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                _iterator16.return();
+            }
+        } finally {
+            if (_didIteratorError16) {
+                throw _iteratorError16;
+            }
+        }
+    }
+
     content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
     content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
     if (lootCount > 0) {
         content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
-        content += '<i>\u76D2\u5B50\u603B\u6570<em>+' + lootBoxStat['总数'].toLocaleString() + '</em></i> ';
-        var _iteratorNormalCompletion16 = true;
-        var _didIteratorError16 = false;
-        var _iteratorError16 = undefined;
+        content += '<i>\u76D2\u5B50\u603B\u6570<em>+' + lootBoxTotalNum.toLocaleString() + '</em></i> ';
+        var _iteratorNormalCompletion17 = true;
+        var _didIteratorError17 = false;
+        var _iteratorError17 = undefined;
 
         try {
-            for (var _iterator16 = Util.entries(lootBoxStat)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-                var _step16$value = _slicedToArray(_step16.value, 2),
-                    box = _step16$value[0],
-                    _step16$value$ = _step16$value[1],
-                    total = _step16$value$.total,
-                    min = _step16$value$.min,
-                    max = _step16$value$.max;
+            for (var _iterator17 = Util.getSortedObjectKeyList(Item.boxTypeList, lootBoxStat)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+                var _key = _step17.value;
 
-                if (box === '总数' || !total) continue;
-                content += '<i>' + box + '<em>+' + total.toLocaleString() + '</em>' + ('<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (total / lootCount).toFixed(2) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + min + '</em>|<em title="\u6700\u5927\u503C">+' + max + '</em>)</span></i> ');
+                if (!lootBoxStat[_key].total) continue;
+                content += '<i>' + _key + '<em>+' + lootBoxStat[_key].total.toLocaleString() + '</em>' + ('<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootBoxStat[_key].total / lootCount).toFixed(2) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootBoxStat[_key].min + '</em>|<em title="\u6700\u5927\u503C">+' + lootBoxStat[_key].max + '</em>)</span></i> ');
             }
         } catch (err) {
-            _didIteratorError16 = true;
-            _iteratorError16 = err;
+            _didIteratorError17 = true;
+            _iteratorError17 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                    _iterator16.return();
+                if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                    _iterator17.return();
                 }
             } finally {
-                if (_didIteratorError16) {
-                    throw _iteratorError16;
+                if (_didIteratorError17) {
+                    throw _iteratorError17;
                 }
             }
         }
     }
 
     content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemNum.toLocaleString() + '</em></i> ' + ('<i>KFB<ins>-' + buyItemKfb.toLocaleString() + '</ins></i> ');
-    var _iteratorNormalCompletion17 = true;
-    var _didIteratorError17 = false;
-    var _iteratorError17 = undefined;
-
-    try {
-        for (var _iterator17 = Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-            var _itemName2 = _step17.value;
-
-            content += '<i>' + _itemName2 + '<em>+' + buyItemStat[_itemName2].toLocaleString() + '</em></i> ';
-        }
-    } catch (err) {
-        _didIteratorError17 = true;
-        _iteratorError17 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion17 && _iterator17.return) {
-                _iterator17.return();
-            }
-        } finally {
-            if (_didIteratorError17) {
-                throw _iteratorError17;
-            }
-        }
-    }
-
-    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
     var _iteratorNormalCompletion18 = true;
     var _didIteratorError18 = false;
     var _iteratorError18 = undefined;
 
     try {
-        for (var _iterator18 = Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-            var _itemName3 = _step18.value;
+        for (var _iterator18 = Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+            var _itemName2 = _step18.value;
 
-            content += '<i>' + _itemName3 + '<em>+' + validItemStat[_itemName3].toLocaleString() + '</em></i> ';
+            content += '<i>' + _itemName2 + '<em>+' + buyItemStat[_itemName2].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError18 = true;
@@ -5707,16 +5700,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
+    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
     var _iteratorNormalCompletion19 = true;
     var _didIteratorError19 = false;
     var _iteratorError19 = undefined;
 
     try {
-        for (var _iterator19 = Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-            var _itemName4 = _step19.value;
+        for (var _iterator19 = Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+            var _itemName3 = _step19.value;
 
-            content += '<i>' + _itemName4 + '<em>+' + invalidItemStat[_itemName4].toLocaleString() + '</em></i> ';
+            content += '<i>' + _itemName3 + '<em>+' + validItemStat[_itemName3].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError19 = true;
@@ -5729,6 +5722,32 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         } finally {
             if (_didIteratorError19) {
                 throw _iteratorError19;
+            }
+        }
+    }
+
+    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
+    var _iteratorNormalCompletion20 = true;
+    var _didIteratorError20 = false;
+    var _iteratorError20 = undefined;
+
+    try {
+        for (var _iterator20 = Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+            var _itemName4 = _step20.value;
+
+            content += '<i>' + _itemName4 + '<em>+' + invalidItemStat[_itemName4].toLocaleString() + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                _iterator20.return();
+            }
+        } finally {
+            if (_didIteratorError20) {
+                throw _iteratorError20;
             }
         }
     }
@@ -5792,13 +5811,13 @@ var showLogText = function showLogText(log, $dialog) {
     var isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     var content = '',
         lastDate = '';
-    var _iteratorNormalCompletion20 = true;
-    var _didIteratorError20 = false;
-    var _iteratorError20 = undefined;
+    var _iteratorNormalCompletion21 = true;
+    var _didIteratorError21 = false;
+    var _iteratorError21 = undefined;
 
     try {
-        for (var _iterator20 = Object.keys(log)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-            var date = _step20.value;
+        for (var _iterator21 = Object.keys(log)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+            var date = _step21.value;
 
             if (!Array.isArray(log[date])) continue;
             if (lastDate > date) lastDate = date;
@@ -5809,16 +5828,16 @@ var showLogText = function showLogText(log, $dialog) {
             content += '='.repeat(46) + '\n';
         }
     } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError21 = true;
+        _iteratorError21 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion20 && _iterator20.return) {
-                _iterator20.return();
+            if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                _iterator21.return();
             }
         } finally {
-            if (_didIteratorError20) {
-                throw _iteratorError20;
+            if (_didIteratorError21) {
+                throw _iteratorError21;
             }
         }
     }
@@ -7285,12 +7304,10 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
     var _iteratorError11 = undefined;
 
     try {
-        for (var _iterator11 = Util.entries(boxes)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _step11$value = _slicedToArray(_step11.value, 2),
-                box = _step11$value[0],
-                num = _step11$value[1];
+        for (var _iterator11 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var key = _step11.value;
 
-            boxesStat += '<i>' + box + '<em>+' + num.toLocaleString() + '</em></i>';
+            boxesStat += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i>';
         }
     } catch (err) {
         _didIteratorError11 = true;
@@ -7473,12 +7490,10 @@ var showLogStat = function showLogStat(levelInfoList) {
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.entries(boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var _step12$value = _slicedToArray(_step12.value, 2),
-                box = _step12$value[0],
-                num = _step12$value[1];
+        for (var _iterator12 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var key = _step12.value;
 
-            boxesStatHtml += '<i>' + box + '<em>+' + num.toLocaleString() + '</em></i> ';
+            boxesStatHtml += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
         _didIteratorError12 = true;
@@ -7734,39 +7749,12 @@ var getLevelInfoList = exports.getLevelInfoList = function getLevelInfoList(logL
  * @returns {{boxes: {}}} boxes：盒子信息统计
  */
 var getTotalGain = function getTotalGain(levelInfoList) {
-    var boxes = { '普通盒子': 0, '幸运盒子': 0, '稀有盒子': 0, '传奇盒子': 0, '神秘盒子': 0 };
+    var boxes = {};
     $.each(levelInfoList, function (level, info) {
         if (!info || !info.box) return;
         if (!(info.box in boxes)) boxes[info.box] = 0;
         boxes[info.box]++;
     });
-    var _iteratorNormalCompletion16 = true;
-    var _didIteratorError16 = false;
-    var _iteratorError16 = undefined;
-
-    try {
-        for (var _iterator16 = Util.entries(boxes)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-            var _step16$value = _slicedToArray(_step16.value, 2),
-                box = _step16$value[0],
-                num = _step16$value[1];
-
-            if (!num) delete boxes[box];
-        }
-    } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                _iterator16.return();
-            }
-        } finally {
-            if (_didIteratorError16) {
-                throw _iteratorError16;
-            }
-        }
-    }
-
     return { boxes: boxes };
 };
 
@@ -12397,13 +12385,10 @@ var getObjectKeyList = exports.getObjectKeyList = function getObjectKeyList(obj)
  * 获取经过排序的指定对象的关键字列表
  * @param {string[]} sortKeyList 用于排序的关键字列表
  * @param {Object} obj 指定对象
- * @param {number} sortBy 是否排序，0：不排序；1：升序；-1：降序
  * @returns {string[]} 关键字列表
  */
 var getSortedObjectKeyList = exports.getSortedObjectKeyList = function getSortedObjectKeyList(sortKeyList, obj) {
-    var sortBy = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-
-    var list = getObjectKeyList(obj, sortBy);
+    var list = getObjectKeyList(obj);
     list.sort(function (a, b) {
         return sortKeyList.indexOf(a) > sortKeyList.indexOf(b) ? 1 : -1;
     });

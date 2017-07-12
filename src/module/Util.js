@@ -330,11 +330,10 @@ export const getObjectKeyList = function (obj, sortBy = 0) {
  * 获取经过排序的指定对象的关键字列表
  * @param {string[]} sortKeyList 用于排序的关键字列表
  * @param {Object} obj 指定对象
- * @param {number} sortBy 是否排序，0：不排序；1：升序；-1：降序
  * @returns {string[]} 关键字列表
  */
-export const getSortedObjectKeyList = function (sortKeyList, obj, sortBy = 0) {
-    let list = getObjectKeyList(obj, sortBy);
+export const getSortedObjectKeyList = function (sortKeyList, obj) {
+    let list = getObjectKeyList(obj);
     list.sort((a, b) => sortKeyList.indexOf(a) > sortKeyList.indexOf(b) ? 1 : -1);
     return list;
 };

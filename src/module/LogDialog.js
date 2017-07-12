@@ -274,15 +274,7 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     let income = {}, expense = {}, profit = {};
-    let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0},
-        lootBoxStat = {
-            '总数': 0,
-            '普通盒子': {total: 0, min: 0, max: 0},
-            '幸运盒子': {total: 0, min: 0, max: 0},
-            '稀有盒子': {total: 0, min: 0, max: 0},
-            '传奇盒子': {total: 0, min: 0, max: 0},
-            '神秘盒子': {total: 0, min: 0, max: 0},
-        };
+    let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootBoxTotalNum = 0, lootBoxStat = {};
     let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
     let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
     let invalidKeyList = ['item', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
@@ -313,12 +305,15 @@ const getLogStat = function (log, date, logStatType) {
                     if (lootLevelStat.max < level) lootLevelStat.max = level;
                     if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
                     if ($.type(gain['box']) === 'object') {
-                        for (let [box, num] of Util.entries(gain['box'])) {
-                            lootBoxStat['总数'] += num;
-                            if (!(box in lootBoxStat)) lootBoxStat[box] = {total: 0, min: 0, max: 0};
-                            lootBoxStat[box].total += num;
-                            if (lootBoxStat[box].max < num) lootBoxStat[box].max = num;
-                            if (!lootBoxStat[box].min || lootBoxStat[box].min > num) lootBoxStat[box].min = num;
+                        for (let [key, num] of Util.entries(gain['box'])) {
+                            lootBoxTotalNum += num;
+                            if (!(key in lootBoxStat)) lootBoxStat[key] = {total: 0, min: -1, max: -1};
+                            lootBoxStat[key].total += num;
+                            if (lootBoxStat[key].max < num) lootBoxStat[key].max = num;
+                            if (lootBoxStat[key].min < 0 || lootBoxStat[key].min > num) lootBoxStat[key].min = num;
+                        }
+                        for (let key of Item.boxTypeList) {
+                            if (!(key in gain['box']) && (key in lootBoxStat)) lootBoxStat[key].min = 0;
                         }
                     }
                 }
@@ -376,12 +371,12 @@ const getLogStat = function (log, date, logStatType) {
     if (lootCount > 0) {
         content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` +
             `<em title="最小值">+${lootLevelStat.min}</em>|<em title="最大值">+${lootLevelStat.max}</em>)</span></i> `;
-        content += `<i>盒子总数<em>+${lootBoxStat['总数'].toLocaleString()}</em></i> `;
-        for (let [box, {total, min, max}] of Util.entries(lootBoxStat)) {
-            if (box === '总数' || !total) continue;
-            content += `<i>${box}<em>+${total.toLocaleString()}</em>` +
-                `<span class="pd_stat_extra">(<em title="平均值">+${(total / lootCount).toFixed(2)}</em>|` +
-                `<em title="最小值">+${min}</em>|<em title="最大值">+${max}</em>)</span></i> `;
+        content += `<i>盒子总数<em>+${lootBoxTotalNum.toLocaleString()}</em></i> `;
+        for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, lootBoxStat)) {
+            if (!lootBoxStat[key].total) continue;
+            content += `<i>${key}<em>+${lootBoxStat[key].total.toLocaleString()}</em>` +
+                `<span class="pd_stat_extra">(<em title="平均值">+${(lootBoxStat[key].total / lootCount).toFixed(2)}</em>|` +
+                `<em title="最小值">+${lootBoxStat[key].min}</em>|<em title="最大值">+${lootBoxStat[key].max}</em>)</span></i> `;
         }
     }
 

@@ -18,6 +18,11 @@ export const itemTypeList = [
 ];
 
 /**
+ * 盒子种类列表
+ */
+export const boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
+
+/**
  * 获得转换指定等级道具可获得的能量点
  * @param {number} itemLevel 道具等级
  * @returns {number} 能量点

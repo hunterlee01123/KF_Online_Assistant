@@ -1347,8 +1347,8 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
         LootLog.record(logList, pointsLogList);
     }
     let boxesStat = '';
-    for (let [box, num] of Util.entries(boxes)) {
-        boxesStat += `<i>${box}<em>+${num.toLocaleString()}</em></i>`;
+    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
+        boxesStat += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i>`;
     }
     Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, -1);
 
@@ -1552,8 +1552,8 @@ const handleLootLogNav = function () {
 const showLogStat = function (levelInfoList) {
     let {boxes} = getTotalGain(levelInfoList);
     let boxesStatHtml = '';
-    for (let [box, num] of Util.entries(boxes)) {
-        boxesStatHtml += `<i>${box}<em>+${num.toLocaleString()}</em></i> `;
+    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
+        boxesStatHtml += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i> `;
     }
     let allEnemyStatHtml = '';
     for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
@@ -1721,15 +1721,12 @@ export const getLevelInfoList = function (logList) {
  * @returns {{boxes: {}}} boxes：盒子信息统计
  */
 const getTotalGain = function (levelInfoList) {
-    let boxes = {'普通盒子': 0, '幸运盒子': 0, '稀有盒子': 0, '传奇盒子': 0, '神秘盒子': 0};
+    let boxes = {};
     $.each(levelInfoList, function (level, info) {
         if (!info || !info.box) return;
         if (!(info.box in boxes)) boxes[info.box] = 0;
         boxes[info.box]++;
     });
-    for (let [box, num] of Util.entries(boxes)) {
-        if (!num) delete boxes[box];
-    }
     return {boxes};
 };
 
