@@ -1192,11 +1192,10 @@ export const getItemUsedInfo = function (html) {
         ['消逝之药', 0],
         ['整形优惠卷', 0],
     ]);
-    let matches = /道具：\[(蕾米莉亚同人漫画)：(\d+)]\[(十六夜同人漫画)：(\d+)]\[(档案室钥匙)：(\d+)]\[(傲娇LOLI娇蛮音CD)：(\d+)]\[(消逝之药)：(\d+)]\[(整形优惠卷)：(\d+)]/.exec(html);
-    if (matches) {
-        for (let i = 1; i < matches.length; i += 2) {
-            itemUsedNumList.set(matches[i], parseInt(matches[i + 1]));
-        }
+    let matches = html.match(/value="\[\s*(\d+)\s*](\S+?)"/g);
+    for (let i in matches) {
+        let subMatches = /value="\[\s*(\d+)\s*](\S+?)"/.exec(matches[i]);
+        itemUsedNumList.set(subMatches[2], parseInt(subMatches[1]));
     }
     return itemUsedNumList;
 };
@@ -1364,7 +1363,7 @@ const addSimulateManualHandleItemChecked = function () {
     $(`
 <label style="margin-right: 5px;">
   <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}> 模拟手动操作道具
-  <span class="pd_cfg_tips" title="延长道具批量操作的时间间隔（在2~6秒之间），以模拟手动使用、购买道具">[?]</span>
+  <span class="pd_cfg_tips" title="延长道具批量操作的时间间隔（在3~7秒之间），以模拟手动使用、购买道具">[?]</span>
 </label>
 `).prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
         let checked = $(this).prop('checked');

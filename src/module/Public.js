@@ -159,6 +159,8 @@ export const appendCss = function () {
   .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }
   .pd_id_color_select > td { position: relative; cursor: pointer; }
   .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }
+  .pd_property_diff { position: absolute; top: 0px; right: 28px; }
+  .pd_property_diff em { font-style: normal; }
 
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }

@@ -17,8 +17,6 @@ import * as Item from './Item';
 let $properties;
 // 点数区域
 let $points;
-// 道具信息区域
-let $itemInfo;
 // 争夺记录区域容器
 let $logBox;
 // 争夺记录区域
@@ -48,7 +46,6 @@ let pointsLogList = [];
 export const init = function () {
     $properties = $('.kf_fw_ig3:first');
     $points = $('#wdsx .kf_fw_ig1:first');
-    //$itemInfo = $();
 
     let tmpHaloInfo = TmpLog.getValue(Const.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
@@ -68,8 +65,8 @@ export const init = function () {
  */
 export const enhanceLootIndexPage = function () {
     Script.runFunc('Loot.enhanceLootIndexPage_before_');
-    //propertyList = getLootPropertyList(); // 临时禁用
-    //itemUsedNumList = Item.getItemUsedInfo($itemInfo.html()); // 临时禁用
+    propertyList = getLootPropertyList();
+    itemUsedNumList = Item.getItemUsedInfo($properties.html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -79,7 +76,7 @@ export const enhanceLootIndexPage = function () {
     if (/你被击败了/.test(log) || /本日无争夺记录/.test(log)) localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
     else pointsLogList = getTempPointsLogList(logList);
 
-    //handlePropertiesArea(); // 临时禁用
+    handlePropertiesArea();
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
@@ -101,6 +98,10 @@ export const enhanceLootIndexPage = function () {
  * 处理争夺属性区域
  */
 const handlePropertiesArea = function () {
+    $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative')
+        .append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+
+    return; // 临时禁用
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
     let html = $properties.html()
         .replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>')
@@ -187,16 +188,13 @@ const handlePointsArea = function () {
         '幸运': parseInt($points.find('[name="l"]').next('span').text()),
     };
 
-    return; // 临时禁用
-
     /**
      * 显示剩余属性点
      */
     const showSurplusPoint = function () {
         let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        $('#pdSurplusPoint').text(surplusPoint)
-            .css('color', surplusPoint !== 0 ? '#f00' : '#000')
-            .css('font-weight', surplusPoint !== 0 ? 'bold' : 'normal');
+        $('#pdSurplusPoint').prop('hidden', surplusPoint === 0).css('color', surplusPoint !== 0 ? (surplusPoint > 0 ? '#f03' : '#393') : '#000')
+            .find('em').text((surplusPoint > 0 ? '+' : '') + surplusPoint);
     };
 
     /**
@@ -237,10 +235,10 @@ const handlePointsArea = function () {
     $points.on('change', '.pd_point', function () {
         let $this = $(this);
         showSurplusPoint();
-        showNewLootProperty($this);
-        showExtraPoint($this);
-        showSumOfPoint($this);
-        showSkillAttack();
+        /*showNewLootProperty($this);
+         showExtraPoint($this);
+         showSumOfPoint($this);
+         showSkillAttack();*/ // 临时禁用
     }).on('click', '.pd_sum_point', function () {
         let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
@@ -250,9 +248,9 @@ const handlePointsArea = function () {
         if (isNaN(num) || num < 0) num = 0;
         num = num + surplusPoint;
         $point.val(num < 1 ? 1 : num).trigger('change');
-    }).find('form').submit(() => {
+    }).closest('form').submit(() => {
         Util.deleteCookie(Const.changePointsInfoCookieName);
-        checkPoints($points);
+        return checkPoints($points);
     }).find('.pd_point').trigger('change');
 };
 
@@ -268,7 +266,7 @@ const checkPoints = function ($points) {
         return false;
     }
     else if (surplusPoint > 0) {
-        if (!confirm('可分配属性点尚未用完，是否继续攻击？')) return false;
+        if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
     }
     return true;
 };
@@ -289,25 +287,25 @@ const getLootPropertyList = function () {
         '防御': 0,
         '可分配属性点': 0,
     };
-    let content = $properties.text();
-    let matches = /攻击力：(\d+)/.exec(content);
+    let content = $properties.html();
+    let matches = /"(\d+)攻击力"/.exec(content);
     if (matches) propertyList['攻击力'] = parseInt(matches[1]);
-    matches = /生命值：(\d+)\s*\(最大(\d+)\)/.exec(content);
+    matches = /"(\d+)\/(\d+)生命值"/.exec(content);
     if (matches) {
         propertyList['生命值'] = parseInt(matches[1]);
         propertyList['最大生命值'] = parseInt(matches[2]);
     }
-    matches = /攻击速度：(\d+)/.exec(content);
+    matches = /"(\d+)攻击速度"/.exec(content);
     if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
-    matches = /暴击几率：(\d+)%/.exec(content);
-    if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
-    matches = /技能伤害：(\d+)/.exec(content);
-    if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
-    matches = /技能释放概率：(\d+)%/.exec(content);
-    if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);
-    matches = /防御：(\d+)%/.exec(content);
+    /*matches = /暴击几率：(\d+)%/.exec(content);
+     if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
+     matches = /技能伤害：(\d+)/.exec(content);
+     if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
+     matches = /技能释放概率：(\d+)%/.exec(content);
+     if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);*/ // 临时禁用
+    matches = /"(\d+)%减伤"/.exec(content);
     if (matches) propertyList['防御'] = parseInt(matches[1]);
-    matches = /可分配属性点：(\d+)/.exec(content);
+    matches = /"(\d+)\s*可分配属性"/.exec(content);
     if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
     return propertyList;
 };
@@ -564,12 +562,12 @@ const addLevelPointListSelect = function () {
     $(`
 <tr>
   <td colspan="2">
-    <select id="pdLevelPointListSelect" style="margin: 5px 0;" hidden>
+    <select id="pdLevelPointListSelect" style="margin: 5px 0;">
       <option>点数分配方案</option>
       <option value="0">默认</option>
     </select>
-    <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案" hidden>保存</a>
-    <a class="pd_btn_link" data-name="edit" href="#" title="编辑各层点数分配方案" hidden>编辑</a>
+    <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a>
+    <a class="pd_btn_link" data-name="edit" href="#" title="编辑各层点数分配方案">编辑</a>
     <a class="pd_btn_link" data-name="fill" href="#" title="输入一串数字按顺序填充到各个点数字段中">填充</a><br>
   </td>
 </tr>`).prependTo($points.find('> tbody')).find('#pdLevelPointListSelect').change(function () {
@@ -717,25 +715,25 @@ const showLevelPointListConfigDialog = function (callback) {
 <tr>
   <td></td>
   <td class="pd_custom_tips" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
-  <td title="攻击力">
+  <td title="攻击力" hidden> <!-- 临时禁用 -->
     攻：<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td title="最大生命值">
+  <td title="最大生命值" hidden>
     命：<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td title="攻击速度">
+  <td title="攻击速度" hidden>
     速：<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td title="暴击几率">
+  <td title="暴击几率" hidden>
     暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td title="技能释放概率">
+  <td title="技能释放概率" hidden>
     技：<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td title="防御减伤">
+  <td title="防御减伤" hidden>
     防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
   </td>
-  <td class="pd_custom_tips" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5">技伤：<span data-id="skillAttack">0</span></td>
+  <td class="pd_custom_tips" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5" hidden>技伤：<span data-id="skillAttack">0</span></td>
 </tr>
 `).appendTo($levelPointList).find('.pd_point').trigger('change');
     };
@@ -926,17 +924,17 @@ const addAttackBtns = function () {
 
     $(`
 <div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">
-  <label hidden>
+  <label>
     <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''}>
     自动修改点数分配方案
     <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效）">[?]</span>
   </label>
-  <label hidden>
+  <label>
     <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${Config.customPointsScriptEnabled ? 'checked' : ''} 
 ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定义脚本
     <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效，需正确安装自定义脚本后此项才可勾选）">[?]</span>
   </label>
-  <label hidden>
+  <label>
     <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
     有剩余属性点时提醒
     <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效）">[?]</span>
@@ -950,7 +948,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   <span style="color: #888;">|</span>
   <button name="manualAttack" type="button" title="手动攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
 </div>
-`).insertAfter($('#wdsx')).on('click', 'button[name$="Attack"]', function () {
+`).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -981,8 +979,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
         $('#pdLootLogHeader').find('[data-name="end"]').click();
         let autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled ||
             Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') && type === 'auto';
-        //if (!autoChangePointsEnabled && !checkPoints($points)) return; // 临时禁用
-        autoChangePointsEnabled = false; // 临时修改
+        if (!autoChangePointsEnabled && !checkPoints($points)) return;
         lootAttack({type, targetLevel, autoChangePointsEnabled, safeId});
     }).on('click', '.pd_cfg_tips', () => false)
         .on('click', '[type="checkbox"]', function () {
@@ -1098,10 +1095,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }
         });
         if (isChange) {
-            /*if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint').text()) > 0) {
-             if (confirm('可分配属性点尚未用完，是否继续攻击？')) Info.w.unusedPointNumAlert = true;
-             else return $.Deferred().resolve('error');
-             }*/ // 临时禁用
+            if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
+                if (confirm('可分配属性点尚未用完，是否继续攻击？')) Info.w.unusedPointNumAlert = true;
+                else return $.Deferred().resolve('error');
+            }
             return $.ajax({
                 type: 'POST',
                 url: 'kf_fw_ig_enter.php',
