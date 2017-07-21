@@ -62,8 +62,8 @@ export const handleMultiQuote = function (type = 1) {
                         let matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                         if (matches) {
                             content += Util.removeUnpairedBBCodeContent(
-                                    Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')
-                                ) + (index === list.length - 1 ? '' : '\n');
+                                Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')
+                            ) + (index === list.length - 1 ? '' : '\n');
                         }
                         let $countdown = $('.pd_countdown:last');
                         $countdown.text(parseInt($countdown.text()) - 1);
@@ -307,4 +307,16 @@ export const savePostContentWhenSubmit = function () {
             $(this).parent().remove();
         });
     }
+};
+
+/**
+ * 添加多余关键词警告
+ */
+export const addRedundantKeywordWarning = function () {
+    $('form[action="post.php?"]').submit(function () {
+        let keywords = $.trim($(this).find('[name="diy_guanjianci"]').val()).split(',').filter(str => str);
+        if (keywords.length > 5) {
+            return confirm('所填关键词已超过5个，多余的关键词将被忽略，是否继续提交？');
+        }
+    });
 };

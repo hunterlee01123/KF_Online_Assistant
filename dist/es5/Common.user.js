@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.4.2
+// @version     10.4.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.4.2';
+var version = '10.4.3';
 
 /**
  * 导出模块
@@ -199,6 +199,7 @@ var init = function init() {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
+        Post.addRedundantKeywordWarning();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -213,6 +214,7 @@ var init = function init() {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
+        Post.addRedundantKeywordWarning();
     } else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertOldItemTypesButton();
@@ -256,6 +258,9 @@ var init = function init() {
     } else if (location.pathname === '/kf_fw_1wkfb.php') {
         if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
             Other.highlightRatingErrorSize();
+            if (/\/kf_fw_1wkfb\.php\?ping=2/i.test(location.href)) {
+                Other.refreshWaitCheckRatingPage();
+            }
         } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
             Other.showSelfRatingErrorSizeSubmitWarning();
         }
@@ -8509,7 +8514,7 @@ var destroy = exports.destroy = function destroy() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addLinksInGoodPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.refreshWaitCheckRatingPage = exports.addLinksInGoodPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -9057,6 +9062,31 @@ var addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function addLinksI
 };
 
 /**
+ * 当检测到待检查的评分记录含有负数倒计时的情况下，自动刷新页面
+ */
+var refreshWaitCheckRatingPage = exports.refreshWaitCheckRatingPage = function refreshWaitCheckRatingPage() {
+    if (!/剩余-\d+分钟/.test($('.adp1:eq(1) > tbody > tr:last-child > td:first-child').text())) return;
+
+    /**
+     * 刷新
+     */
+    var refresh = function refresh() {
+        console.log('自动刷新Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + new Date().getTime(),
+            timeout: 10000
+        }).done(function (html) {
+            if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
+        }).fail(function () {
+            return setTimeout(refresh, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    refresh();
+};
+
+/**
  * 在论坛排行页面为用户名添加链接
  */
 var addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function addUserNameLinkInRankPage() {
@@ -9094,7 +9124,7 @@ var handleProfilePage = exports.handleProfilePage = function handleProfilePage()
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.addRedundantKeywordWarning = exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Info = require('./Info');
 
@@ -9438,6 +9468,20 @@ var savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function sav
             $(this).parent().remove();
         });
     }
+};
+
+/**
+ * 添加多余关键词警告
+ */
+var addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function addRedundantKeywordWarning() {
+    $('form[action="post.php?"]').submit(function () {
+        var keywords = $.trim($(this).find('[name="diy_guanjianci"]').val()).split(',').filter(function (str) {
+            return str;
+        });
+        if (keywords.length > 5) {
+            return confirm('所填关键词已超过5个，多余的关键词将被忽略，是否继续提交？');
+        }
+    });
 };
 
 },{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":22}],18:[function(require,module,exports){

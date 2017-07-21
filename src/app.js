@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '10.4.2';
+const version = '10.4.3';
 
 /**
  * 导出模块
@@ -118,6 +118,7 @@ const init = function () {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
+        Post.addRedundantKeywordWarning();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
@@ -135,6 +136,7 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
+        Post.addRedundantKeywordWarning();
     }
     else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {
         Item.enhanceMyItemsPage();
@@ -195,6 +197,9 @@ const init = function () {
     else if (location.pathname === '/kf_fw_1wkfb.php') {
         if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
             Other.highlightRatingErrorSize();
+            if (/\/kf_fw_1wkfb\.php\?ping=2/i.test(location.href)) {
+                Other.refreshWaitCheckRatingPage();
+            }
         }
         else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
             Other.showSelfRatingErrorSizeSubmitWarning();

@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.4.2
+// @version     10.4.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.4.2';
+const version = '10.4.3';
 
 /**
  * 导出模块
@@ -200,6 +200,7 @@ const init = function () {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
+        Post.addRedundantKeywordWarning();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -214,6 +215,7 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
+        Post.addRedundantKeywordWarning();
     } else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertOldItemTypesButton();
@@ -257,6 +259,9 @@ const init = function () {
     } else if (location.pathname === '/kf_fw_1wkfb.php') {
         if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
             Other.highlightRatingErrorSize();
+            if (/\/kf_fw_1wkfb\.php\?ping=2/i.test(location.href)) {
+                Other.refreshWaitCheckRatingPage();
+            }
         } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
             Other.showSelfRatingErrorSizeSubmitWarning();
         }
@@ -7653,7 +7658,7 @@ const destroy = exports.destroy = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addLinksInGoodPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.refreshWaitCheckRatingPage = exports.addLinksInGoodPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _Info = require('./Info');
 
@@ -8143,6 +8148,29 @@ const addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function () {
 };
 
 /**
+ * 当检测到待检查的评分记录含有负数倒计时的情况下，自动刷新页面
+ */
+const refreshWaitCheckRatingPage = exports.refreshWaitCheckRatingPage = function () {
+    if (!/剩余-\d+分钟/.test($('.adp1:eq(1) > tbody > tr:last-child > td:first-child').text())) return;
+
+    /**
+     * 刷新
+     */
+    const refresh = function () {
+        console.log('自动刷新Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + new Date().getTime(),
+            timeout: 10000
+        }).done(function (html) {
+            if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
+        }).fail(() => setTimeout(refresh, _Const2.default.defAjaxInterval));
+    };
+
+    refresh();
+};
+
+/**
  * 在论坛排行页面为用户名添加链接
  */
 const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function () {
@@ -8174,7 +8202,7 @@ const handleProfilePage = exports.handleProfilePage = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.addRedundantKeywordWarning = exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Info = require('./Info');
 
@@ -8491,6 +8519,18 @@ const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function (
             $(this).parent().remove();
         });
     }
+};
+
+/**
+ * 添加多余关键词警告
+ */
+const addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function () {
+    $('form[action="post.php?"]').submit(function () {
+        let keywords = $.trim($(this).find('[name="diy_guanjianci"]').val()).split(',').filter(str => str);
+        if (keywords.length > 5) {
+            return confirm('所填关键词已超过5个，多余的关键词将被忽略，是否继续提交？');
+        }
+    });
 };
 
 },{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":22}],18:[function(require,module,exports){

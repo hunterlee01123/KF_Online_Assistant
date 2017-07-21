@@ -504,6 +504,29 @@ export const addLinksInGoodPostPage = function () {
 };
 
 /**
+ * 当检测到待检查的评分记录含有负数倒计时的情况下，自动刷新页面
+ */
+export const refreshWaitCheckRatingPage = function () {
+    if (!/剩余-\d+分钟/.test($('.adp1:eq(1) > tbody > tr:last-child > td:first-child').text())) return;
+
+    /**
+     * 刷新
+     */
+    const refresh = function () {
+        console.log('自动刷新Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + new Date().getTime(),
+            timeout: 10000,
+        }).done(function (html) {
+            if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, Const.defAjaxInterval);
+        }).fail(() => setTimeout(refresh, Const.defAjaxInterval));
+    };
+
+    refresh();
+};
+
+/**
  * 在论坛排行页面为用户名添加链接
  */
 export const addUserNameLinkInRankPage = function () {
