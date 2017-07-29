@@ -8,6 +8,7 @@ import {
 } from './Config';
 import * as Log from './Log';
 import * as Item from './Item';
+import * as Box from './Box';
 import * as Script from './Script';
 
 /**
@@ -175,7 +176,7 @@ const getLogContent = function (log, date, logSortType) {
     let logList = log[date];
     if (logSortType === 'type') {
         const sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片',
-            '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖',
+            '打开盒子', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖',
             '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1);
     }
@@ -203,13 +204,18 @@ const getLogContent = function (log, date, logSortType) {
             stat += '，';
             for (let k of Object.keys(gain)) {
                 if (k === 'item') {
-                    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, gain[k])) {
-                        stat += `<i>${itemName}<em>+${gain[k][itemName].toLocaleString()}</em></i> `;
+                    for (let name of Util.getSortedObjectKeyList(Item.itemTypeList, gain[k])) {
+                        stat += `<i>${name}<em>+${gain[k][name].toLocaleString()}</em></i> `;
+                    }
+                }
+                else if (k === 'arm') {
+                    for (let name of Util.getSortedObjectKeyList(Item.armTypeList, gain[k])) {
+                        stat += `<i>${name}<em>+${gain[k][name].toLocaleString()}</em></i> `;
                     }
                 }
                 else if (k === 'box') {
-                    for (let [box, num] of Util.entries(gain[k])) {
-                        stat += `<i>${box}<em>+${num.toLocaleString()}</em></i> `;
+                    for (let name of Util.getSortedObjectKeyList(Box.boxTypeList, gain[k])) {
+                        stat += `<i>${name}<em>+${gain[k][name].toLocaleString()}</em></i> `;
                     }
                 }
                 else {
@@ -277,7 +283,9 @@ const getLogStat = function (log, date, logStatType) {
     let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootBoxTotalNum = 0, lootBoxStat = {};
     let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
     let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
-    let invalidKeyList = ['item', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
+    let invalidKeyList = [
+        'item', 'arm', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'
+    ];
     for (let d in rangeLog) {
         for (let {type, action, gain, pay, notStat} of rangeLog[d]) {
             if (typeof type === 'undefined' || typeof notStat !== 'undefined') continue;
@@ -312,7 +320,7 @@ const getLogStat = function (log, date, logStatType) {
                             if (lootBoxStat[key].max < num) lootBoxStat[key].max = num;
                             if (lootBoxStat[key].min < 0 || lootBoxStat[key].min > num) lootBoxStat[key].min = num;
                         }
-                        for (let key of Item.boxTypeList) {
+                        for (let key of Box.boxTypeList) {
                             if (!(key in gain['box']) && (key in lootBoxStat)) lootBoxStat[key].min = 0;
                         }
                     }
@@ -349,7 +357,7 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     let content = '';
-    let sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '能量', '道具', '已使用道具', '卡片'];
+    let sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '盒子', '道具', '已使用道具', '装备', '能量', '卡片'];
     content += '<strong>收获：</strong>';
     for (let key of Util.getSortedObjectKeyList(sortStatTypeList, income)) {
         profit[key] = income[key];
@@ -372,7 +380,7 @@ const getLogStat = function (log, date, logStatType) {
         content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` +
             `<em title="最小值">+${lootLevelStat.min}</em>|<em title="最大值">+${lootLevelStat.max}</em>)</span></i> `;
         content += `<i>盒子总数<em>+${lootBoxTotalNum.toLocaleString()}</em></i> `;
-        for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, lootBoxStat)) {
+        for (let key of Util.getSortedObjectKeyList(Box.boxTypeList, lootBoxStat)) {
             if (!lootBoxStat[key].total) continue;
             content += `<i>${key}<em>+${lootBoxStat[key].total.toLocaleString()}</em>` +
                 `<span class="pd_stat_extra">(<em title="平均值">+${(lootBoxStat[key].total / lootCount).toFixed(2)}</em>|` +

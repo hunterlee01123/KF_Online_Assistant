@@ -20,7 +20,7 @@ export const itemTypeList = [
 /**
  * 盒子种类列表
  */
-export const boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
+export const armTypeList = ['普通的装备', '幸运的装备', '稀有的装备', '传奇的装备', '神秘的装备'];
 
 /**
  * 获得转换指定等级道具可获得的能量点
@@ -238,7 +238,7 @@ const useOldItems = function (options, cycle) {
                 type: 'GET',
                 url: `kf_fw_ig_doit.php?id=${itemId}&t=${new Date().getTime()}`,
                 timeout: Const.defAjaxTimeout,
-                success (html) {
+                success(html) {
                     Public.showFormatLog('使用道具', html);
                     let {type, msg} = Util.getResponseMsg(html);
                     if (type === 1 && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(msg)) {
@@ -263,10 +263,10 @@ const useOldItems = function (options, cycle) {
                         $('.pd_result:last').append('<li><span class="pd_notice">（有效道具使用次数到达设定上限，循环操作中止）</span></li>');
                     }
                 },
-                error () {
+                error() {
                     failNum++;
                 },
-                complete () {
+                complete() {
                     let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     isStop = isStop || $countdown.closest('.pd_msg').data('stop');
@@ -389,7 +389,7 @@ const restoreItems = function (options, cycle) {
                 type: 'GET',
                 url: `kf_fw_ig_doit.php?renew=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
                 timeout: Const.defAjaxTimeout,
-                success (html) {
+                success(html) {
                     Public.showFormatLog('恢复道具', html);
                     let {type, msg} = Util.getResponseMsg(html);
                     if (type === 1) {
@@ -416,7 +416,7 @@ const restoreItems = function (options, cycle) {
                     }
                     $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
                 },
-                complete () {
+                complete() {
                     let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     isStop = isStop || $countdown.closest('.pd_msg').data('stop');
@@ -630,7 +630,7 @@ const convertItemsToEnergy = function (options) {
                 type: 'GET',
                 url: `kf_fw_ig_doit.php?tomp=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
                 timeout: Const.defAjaxTimeout,
-                success (html) {
+                success(html) {
                     Public.showFormatLog('将道具转换为能量', html);
                     let {msg} = Util.getResponseMsg(html);
                     if (/转换为了\s*\d+\s*点能量/.test(msg)) {
@@ -638,10 +638,10 @@ const convertItemsToEnergy = function (options) {
                     }
                     else failNum++;
                 },
-                error () {
+                error() {
                     failNum++;
                 },
-                complete () {
+                complete() {
                     let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
@@ -711,8 +711,8 @@ export const addBatchUseAndConvertOldItemTypesButton = function () {
                     if (isNaN(itemTypeId) || itemTypeId <= 0) return;
                     if (name === 'convertItemTypes' && itemTypeId === 1) return;
                     let itemListUrl = $itemLine.find('td:last-child')
-                            .find(name === 'useItemTypes' ? 'a:first-child' : 'a:last-child')
-                            .attr('href') + '&t=' + new Date().getTime();
+                        .find(name === 'useItemTypes' ? 'a:first-child' : 'a:last-child')
+                        .attr('href') + '&t=' + new Date().getTime();
                     itemTypeList.push({
                         itemTypeId: itemTypeId,
                         itemLevel: itemLevel,
@@ -735,7 +735,7 @@ export const addBatchUseAndConvertOldItemTypesButton = function () {
                             type: 'GET',
                             url: data.itemListUrl,
                             timeout: Const.defAjaxTimeout,
-                            success (html) {
+                            success(html) {
                                 Msg.remove($wait);
                                 let itemIdList = getItemIdList(html, num);
                                 if (!itemIdList.length) {
@@ -777,7 +777,7 @@ export const addBatchUseAndConvertOldItemTypesButton = function () {
                                     });
                                 }
                             },
-                            error () {
+                            error() {
                                 Msg.remove($wait);
                                 $(document).dequeue(queueName);
                             }
@@ -1255,7 +1255,7 @@ const buyItems = function (buyNum, type, kfb, url) {
             type: 'GET',
             url: url + '&t=' + new Date().getTime(),
             timeout: Const.defAjaxTimeout,
-            success (html) {
+            success(html) {
                 Public.showFormatLog('购买道具', html);
                 let {msg} = Util.getResponseMsg(html);
                 if (/购买成功，返回我的背包/.test(msg)) {
@@ -1268,7 +1268,7 @@ const buyItems = function (buyNum, type, kfb, url) {
                 }
                 setTimeout(getNewItemInfo, Const.defAjaxInterval);
             },
-            error () {
+            error() {
                 setTimeout(buy, Const.defAjaxInterval);
             }
         });
@@ -1283,7 +1283,7 @@ const buyItems = function (buyNum, type, kfb, url) {
             type: 'GET',
             url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
             timeout: Const.defAjaxTimeout,
-            success (html) {
+            success(html) {
                 let list = [];
                 $('.kf_fw_ig1 a[href^="kf_fw_ig_mybp.php?do=1&id="]', html).each(function () {
                     let $this = $(this);
@@ -1338,7 +1338,7 @@ const buyItems = function (buyNum, type, kfb, url) {
                     setTimeout(buy, isFirst ? Const.defAjaxInterval : interval);
                 }
             },
-            error () {
+            error() {
                 setTimeout(() => getNewItemInfo(isFirst), Const.defAjaxInterval);
             }
         });
@@ -1525,7 +1525,7 @@ const useItems = function (itemTypeList, safeId) {
             let matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
             let itemId = parseInt(matches[1]);
-            let itemName = $this.find('> td:nth-child(2)').text().trim();
+            let itemName = $this.find('> td:nth-child(3)').text().trim();
             if (tmpItemTypeList.includes(itemName)) itemList.push({itemId, itemName});
         });
         if (!itemList.length) {
@@ -1673,7 +1673,7 @@ const sellItems = function (itemTypeList, safeId) {
             let matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
             let itemId = parseInt(matches[1]);
-            let itemName = $this.find('> td:nth-child(2)').text().trim();
+            let itemName = $this.find('> td:nth-child(3)').text().trim();
             if (itemTypeList.includes(itemName)) itemList.push({itemId, itemName});
         });
         if (!itemList.length) {

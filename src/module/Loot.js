@@ -12,6 +12,7 @@ import * as LootLog from './LootLog';
 import * as Script from './Script';
 import * as Public from './Public';
 import * as Item from './Item';
+import * as Box from './Box';
 
 // 争夺属性区域
 let $properties;
@@ -513,13 +514,13 @@ export const getPointByProperty = function (pointName, num) {
         case '体质':
             value = Math.ceil(
                 (Math.ceil(((num - haloInfo['生命值']) - (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0)) / 20)
-                - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent
+                    - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent
             );
             break;
         case '敏捷':
             value = Math.ceil(
                 (Math.ceil((num - (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0)) / 2) - itemUsedNumList.get('十六夜同人漫画')
-                - elapsedMedicine) / haloPercent
+                    - elapsedMedicine) / haloPercent
             );
             break;
         case '灵活':
@@ -1337,17 +1338,17 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     }
 
     let currentLevel = getCurrentLevel(logList);
-    let {boxes} = getTotalGain(levelInfoList);
+    let {boxNum, boxes} = getTotalGain(levelInfoList);
     if (!$.isEmptyObject(boxes)) {
         Log.push(
             '争夺攻击',
             `你成功击败了第\`${currentLevel - 1}\`层的NPC (${allEnemyStat.trim()})`,
-            {gain: {'box': boxes}}
+            {gain: {'盒子': boxNum, 'box': boxes}}
         );
         LootLog.record(logList, pointsLogList);
     }
     let boxesStat = '';
-    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
+    for (let key of Util.getSortedObjectKeyList(Box.boxTypeList, boxes)) {
         boxesStat += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i>`;
     }
     Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, -1);
@@ -1550,9 +1551,9 @@ const handleLootLogNav = function () {
  * @param {{}[]} levelInfoList 各层战斗信息列表
  */
 const showLogStat = function (levelInfoList) {
-    let {boxes} = getTotalGain(levelInfoList);
+    let {boxNum, boxes} = getTotalGain(levelInfoList);
     let boxesStatHtml = '';
-    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
+    for (let key of Util.getSortedObjectKeyList(Box.boxTypeList, boxes)) {
         boxesStatHtml += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i> `;
     }
     let allEnemyStatHtml = '';
@@ -1565,7 +1566,7 @@ const showLogStat = function (levelInfoList) {
     }
     let $logStat = $('#pdLogStat');
     $logStat.html(`
-<li><b>收获统计：</b>${boxesStatHtml ? boxesStatHtml : '无'}</li>
+<li><b>收获统计：</b><i>盒子<em>+${boxNum}</em></i> ${boxesStatHtml ? boxesStatHtml : '无'}</li>
 <li><b>全部层数：</b>${allEnemyStatHtml}<br><b>最近${Const.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml}</li>
 `);
 
@@ -1721,13 +1722,14 @@ export const getLevelInfoList = function (logList) {
  * @returns {{boxes: {}}} boxes：盒子信息统计
  */
 const getTotalGain = function (levelInfoList) {
-    let boxes = {};
+    let boxNum = 0, boxes = {};
     $.each(levelInfoList, function (level, info) {
         if (!info || !info.box) return;
         if (!(info.box in boxes)) boxes[info.box] = 0;
         boxes[info.box]++;
+        boxNum++;
     });
-    return {boxes};
+    return {boxNum, boxes};
 };
 
 /**
@@ -1825,7 +1827,7 @@ export const checkLoot = function () {
         type: 'GET',
         url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
         timeout: Const.defAjaxTimeout,
-        success (html) {
+        success(html) {
             Msg.remove($wait);
             if (!/你被击败了/.test(html)) {
                 if (Util.getCookie(Const.lootCheckingCookieName)) return;
@@ -1851,7 +1853,7 @@ export const checkLoot = function () {
                 Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
             }
         },
-        error () {
+        error() {
             Msg.remove($wait);
             setTimeout(checkLoot, Const.defAjaxInterval);
         }
@@ -1886,7 +1888,7 @@ export const autoSaveLootLog = function () {
         type: 'GET',
         url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
         timeout: Const.defAjaxTimeout,
-        success (html) {
+        success(html) {
             Msg.remove($wait);
             if (Util.getCookie(Const.lootCompleteCookieName)) return;
             let $log = $('#pk_text', html);
@@ -1907,7 +1909,7 @@ export const autoSaveLootLog = function () {
                 Util.setCookie(Const.lootCompleteCookieName, -1, Util.getDate(`+${Const.checkLootInterval}m`));
             }
         },
-        error () {
+        error() {
             Msg.remove($wait);
             setTimeout(autoSaveLootLog, Const.defAjaxInterval);
         }

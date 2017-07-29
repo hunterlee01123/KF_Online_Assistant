@@ -33,7 +33,7 @@ export const read = function () {
 export const write = log => Util.writeData(name + '_' + Info.uid, JSON.stringify(log));
 
 /**
- * 清除临时日志
+ * 清除争夺记录
  */
 export const clear = () => Util.deleteData(name + '_' + Info.uid);
 

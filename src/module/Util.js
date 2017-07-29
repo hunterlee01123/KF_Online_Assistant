@@ -306,7 +306,7 @@ export const htmlDecode = function (str) {
  * @param html HTML代码
  * @returns {string} 去除HTML标签的文本
  */
-export const removeHtmlTag = html => html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '');
+export const removeHtmlTag = html => html ? html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '') : '';
 
 /**
  * 获取指定对象的关键字列表
@@ -516,7 +516,7 @@ export const getResponseMsg = function (html) {
  * 返回指定对象由可枚举属性名和对应属性值组成的的键值对
  * @param {Object} obj 指定对象
  */
-export const entries = function*(obj) {
+export const entries = function* (obj) {
     for (let key of Object.keys(obj)) {
         yield [key, obj[key]];
     }
