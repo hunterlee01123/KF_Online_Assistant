@@ -71,6 +71,10 @@ var _Item = require('./module/Item');
 
 var Item = _interopRequireWildcard(_Item);
 
+var _Box = require('./module/Box');
+
+var Box = _interopRequireWildcard(_Box);
+
 var _Loot = require('./module/Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
@@ -84,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.4.3';
+var version = '10.5';
 
 /**
  * 导出模块
@@ -177,14 +181,15 @@ var init = function init() {
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
+        Post.addRedundantKeywordWarning();
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        Post.addRedundantKeywordWarning();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
     } else if (location.pathname === '/post.php') {
+        Post.addRedundantKeywordWarning();
         if (/\bmultiquote=1/i.test(location.href)) {
             if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
         } else if (/\baction=quote/i.test(location.href)) {
@@ -195,11 +200,11 @@ var init = function init() {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
-        Post.addRedundantKeywordWarning();
     } else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {
         Item.enhanceMyItemsPage();
         Item.addBatchUseAndConvertOldItemTypesButton();
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
+        Box.init();
         Item.addBatchUseAndSellItemsButton();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         //Item.addBatchBuyItemsLink(); // 临时禁用
@@ -296,7 +301,7 @@ var init = function init() {
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/TmpLog":21,"./module/Util":22}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Box":3,"./module/Card":4,"./module/Config":5,"./module/ConfigDialog":6,"./module/Const":7,"./module/Dialog":8,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Log":12,"./module/Loot":14,"./module/LootLog":15,"./module/Msg":16,"./module/Other":17,"./module/Post":18,"./module/Public":19,"./module/Read":20,"./module/Script":21,"./module/TmpLog":22,"./module/Util":23}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -782,7 +787,358 @@ var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositD
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
+},{"./Const":7,"./Log":12,"./Msg":16,"./Public":19,"./TmpLog":22,"./Util":23}],3:[function(require,module,exports){
+/* 盒子模块 */
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.init = exports.boxTypeList = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _Util = require('./Util');
+
+var Util = _interopRequireWildcard(_Util);
+
+var _Msg = require('./Msg');
+
+var Msg = _interopRequireWildcard(_Msg);
+
+var _Const = require('./Const');
+
+var _Const2 = _interopRequireDefault(_Const);
+
+var _Log = require('./Log');
+
+var Log = _interopRequireWildcard(_Log);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
+
+var _Item = require('./Item');
+
+var Item = _interopRequireWildcard(_Item);
+
+var _Public = require('./Public');
+
+var Public = _interopRequireWildcard(_Public);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+/**
+ * 盒子种类列表
+ */
+var boxTypeList = exports.boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
+
+// 盒子区域
+var $area = void 0;
+// SafeID
+var safeId = void 0;
+
+/**
+ * 初始化
+ */
+var init = exports.init = function init() {
+    safeId = Public.getSafeId();
+    if (!safeId) return;
+    $area = $('.kf_fw_ig1:first');
+    addBatchOpenBoxesLink();
+    addOpenAllBoxesButton();
+};
+
+/**
+ * 添加批量打开盒子链接
+ */
+var addBatchOpenBoxesLink = function addBatchOpenBoxesLink() {
+    $area = $('.kf_fw_ig1:first');
+    $area.find('> tbody > tr:nth-child(3) > td > a[onclick^="dkhz"]').each(function () {
+        var $this = $(this);
+        var matches = /dkhz\('(\d+)'\)/.exec($this.attr('onclick'));
+        if (!matches) return;
+        $this.after('<a class="pd_highlight" href="#" data-name="openBoxes" data-id="' + matches[1] + '" style="margin-left: 10px;">\u6279\u91CF\u6253\u5F00</a>');
+    });
+
+    $area.on('click', 'a[data-name="openBoxes"]', function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var id = parseInt($this.data('id'));
+        var $info = $area.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ')');
+        var boxType = $info.find('span:first').text().trim() + '盒子';
+        if (!boxTypeList.includes(boxType)) return;
+        var currentNum = parseInt($info.find('span:last').text());
+        var num = parseInt(prompt('\u4F60\u8981\u6253\u5F00\u591A\u5C11\u4E2A\u3010' + boxType + '\u3011\uFF1F', currentNum));
+        if (!num || num < 0) return;
+        openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
+    });
+};
+
+/**
+ * 添加打开全部盒子按钮
+ */
+var addOpenAllBoxesButton = function addOpenAllBoxesButton() {
+    $('\n<div class="pd_item_btns">\n  <button name="openAllBoxes" type="button" style="color: #f00;" title="\u6253\u5F00\u5168\u90E8\u76D2\u5B50">\u4E00\u952E\u5F00\u76D2</button>\n</div>\n').insertAfter($area).find('[name="openAllBoxes"]').click(function () {
+        if (!confirm('是否打开全部盒子？')) return;
+        Msg.destroy();
+        $(document).clearQueue('OpenAllBoxes');
+        $area.find('> tbody > tr:nth-child(2) > td').each(function (index) {
+            var $this = $(this);
+            $(document).queue('OpenAllBoxes', function () {
+                var boxType = $this.find('span:first').text().trim() + '盒子';
+                if (!boxTypeList.includes(boxType)) return;
+                var num = parseInt($this.find('span:last').text());
+                if (!num || num < 0) return;
+                var id = parseInt($area.find('> tbody > tr:nth-child(3) > td:nth-child(' + (index + 1) + ') > a[data-name="openBoxes"]').data('id'));
+                if (!id) return;
+                openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
+            });
+        });
+        $(document).dequeue('OpenAllBoxes');
+    });
+
+    Public.addSimulateManualActionChecked($('.pd_item_btns:first'));
+};
+
+/**
+ * 打开盒子
+ * @param {number} id 盒子类型ID
+ * @param {string} boxType 盒子类型名称
+ * @param {number} num 打开盒子数量
+ * @param {string} safeId SafeID
+ */
+var openBoxes = function openBoxes(_ref) {
+    var id = _ref.id,
+        boxType = _ref.boxType,
+        num = _ref.num,
+        safeId = _ref.safeId;
+
+    var successNum = 0,
+        failNum = 0,
+        index = 0;
+    var isStop = false;
+    var stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
+    $area.parent().append('<ul class="pd_result" data-name="boxResult"><li><strong>\u3010' + boxType + '\u3011\u6253\u5F00\u7ED3\u679C\uFF1A</strong></li></ul>');
+    var $wait = Msg.wait('<strong>\u6B63\u5728\u6253\u5F00\u76D2\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+
+    /**
+     * 打开
+     */
+    var open = function open() {
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: 'do=3&id=' + id + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            index++;
+            var msg = Util.removeHtmlTag(html);
+            if (msg.includes('获得')) {
+                successNum++;
+                var matches = /获得\[(\d+)]KFB/.exec(msg);
+                if (matches) stat['KFB'] += parseInt(matches[1]);
+
+                matches = /获得\[(\d+)]经验值/.exec(msg);
+                if (matches) stat['经验值'] += parseInt(matches[1]);
+
+                matches = /打开盒子获得了道具\[\s*(.+?)\s*]/.exec(msg);
+                if (matches) {
+                    stat['道具']++;
+                    var itemName = matches[1];
+                    if (!(itemName in stat.item)) stat.item[itemName] = 0;
+                    stat.item[itemName]++;
+                }
+
+                matches = /获得一件\[(.+?)]的?装备/.exec(msg);
+                if (matches) {
+                    stat['装备']++;
+                    var armType = matches[1] + '装备';
+                    if (!(armType in stat.arm)) stat.arm[armType] = 0;
+                    stat.arm[armType]++;
+                }
+            } else if (msg.includes('操作过快')) {
+                $(document).queue('OpenBoxes', open);
+            } else if (msg.includes('盒子不足')) {
+                $(document).clearQueue('OpenBoxes');
+                isStop = true;
+            } else {
+                failNum++;
+            }
+
+            console.log('\u7B2C' + index + '\u6B21\uFF1A' + msg);
+            $('.pd_result[data-name="boxResult"]:last').append('<li><b>\u7B2C' + index + '\u6B21\uFF1A</b>' + msg + '</li>');
+        }).fail(function () {
+            failNum++;
+        }).always(function () {
+            var length = $(document).queue('OpenBoxes').length;
+            var $countdown = $('.pd_countdown:last');
+            $countdown.text(length);
+            var isPause = $countdown.closest('.pd_msg').data('stop');
+            isStop = isStop || isPause;
+            if (isPause) $(document).clearQueue('OpenAllBoxes');
+
+            if (isStop || !length) {
+                Msg.remove($wait);
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = Util.entries(stat)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var _step$value = _slicedToArray(_step.value, 2),
+                            key = _step$value[0],
+                            value = _step$value[1];
+
+                        if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) {
+                            delete stat[key];
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
+                    }
+                }
+
+                if (!$.isEmptyObject(stat)) {
+                    Log.push('打开盒子', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + boxType + '`\u3011\u6253\u5F00\u6210\u529F', {
+                        gain: stat,
+                        pay: { '盒子': -successNum }
+                    });
+                }
+
+                var $currentNum = $area.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ') > span:last');
+                var prevNum = parseInt($currentNum.text());
+                if (prevNum > 0) {
+                    $currentNum.text(prevNum - successNum);
+                }
+
+                var resultStatHtml = '';
+                var _iteratorNormalCompletion2 = true;
+                var _didIteratorError2 = false;
+                var _iteratorError2 = undefined;
+
+                try {
+                    for (var _iterator2 = Util.entries(stat)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                        var _step2$value = _slicedToArray(_step2.value, 2),
+                            key = _step2$value[0],
+                            value = _step2$value[1];
+
+                        if ($.type(value) === 'object') {
+                            var typeList = key === 'item' ? Item.itemTypeList : Item.armTypeList;
+                            if (resultStatHtml) {
+                                resultStatHtml += '<br>' + (key === 'item' ? '道具' : '装备') + '\uFF1A';
+                            }
+                            var _iteratorNormalCompletion3 = true;
+                            var _didIteratorError3 = false;
+                            var _iteratorError3 = undefined;
+
+                            try {
+                                for (var _iterator3 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                                    var name = _step3.value;
+
+                                    resultStatHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
+                                }
+                            } catch (err) {
+                                _didIteratorError3 = true;
+                                _iteratorError3 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                                        _iterator3.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError3) {
+                                        throw _iteratorError3;
+                                    }
+                                }
+                            }
+                        } else {
+                            resultStatHtml += '<i>' + key + '<em>+' + value.toLocaleString() + '</em></i> ';
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError2 = true;
+                    _iteratorError2 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                            _iterator2.return();
+                        }
+                    } finally {
+                        if (_didIteratorError2) {
+                            throw _iteratorError2;
+                        }
+                    }
+                }
+
+                $('.pd_result[data-name="boxResult"]:last').append('<li class="pd_stat"><b>\u7EDF\u8BA1\u7ED3\u679C\uFF1A</b><br>' + (resultStatHtml ? resultStatHtml : '无') + '</li>');
+                console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : ''));
+                Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>', -1);
+
+                Script.runFunc('Box.openBoxes_after_', stat);
+                setTimeout(getNextObjects, _Const2.default.defAjaxInterval);
+                setTimeout(function () {
+                    return $(document).dequeue('OpenAllBoxes');
+                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+            } else {
+                if (index % 10 === 0) {
+                    setTimeout(getNextObjects, _Const2.default.defAjaxInterval);
+                }
+                setTimeout(function () {
+                    return $(document).dequeue('OpenBoxes');
+                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取下一批物品
+     */
+    var getNextObjects = function getNextObjects() {
+        console.log('获取下一批物品Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            var matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            if (!matches) return;
+            var $myBag = $('.kf_fw_ig1:eq(1)');
+            var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+            var addHtml = '';
+            for (var i in trMatches) {
+                var idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
+                if (!idMatches) continue;
+                if (!$myBag.has('tr[id="wp_' + idMatches[1] + '"]').length) {
+                    addHtml += trMatches[i];
+                }
+            }
+            if (addHtml) {
+                $myBag.find('> tbody > tr:nth-child(2)').after(addHtml);
+            }
+        });
+    };
+
+    $(document).clearQueue('OpenBoxes');
+    $.each(new Array(num), function () {
+        $(document).queue('OpenBoxes', open);
+    });
+    $(document).dequeue('OpenBoxes');
+};
+
+},{"./Const":7,"./Item":11,"./Log":12,"./Msg":16,"./Public":19,"./Script":21,"./Util":23}],4:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -1005,7 +1361,7 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
+},{"./Const":7,"./Log":12,"./Msg":16,"./Public":19,"./Util":23}],5:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -1234,8 +1590,8 @@ var Config = exports.Config = {
     // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
     customAutoChangeIdColorList: [],
 
-    // 是否延长道具批量操作的时间间隔，以模拟手动使用、购买道具，true：开启；false：关闭
-    simulateManualHandleItemEnabled: false,
+    // 是否延长部分批量操作的时间间隔，以模拟手动使用道具、打开盒子等，true：开启；false：关闭
+    simulateManualActionEnabled: false,
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -1346,7 +1702,7 @@ var normalize = exports.normalize = function normalize(options) {
     return settings;
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
+},{"./Const":7,"./Info":10,"./Log":12,"./LootLog":15,"./TmpLog":22,"./Util":23}],6:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -2421,7 +2777,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
     Dialog.show(dialogName);
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+},{"./Config":5,"./Const":7,"./Dialog":8,"./Info":10,"./Public":19,"./Script":21,"./TmpLog":22,"./Util":23}],7:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2489,7 +2845,7 @@ var Const = {
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function specialAjaxInterval() {
-        if (Config.simulateManualHandleItemEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
+        if (Config.simulateManualActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
 
@@ -2527,6 +2883,8 @@ var Const = {
     postContentStorageName: storagePrefix + 'postContent',
     // 存储临时点数分配记录列表的LocalStorage名称
     tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
+    // 存储临时点数分配记录列表的LocalStorage名称
+    itemLogStorageName: storagePrefix + 'itemLog',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
@@ -2565,7 +2923,7 @@ var Const = {
 
 exports.default = Const;
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /* 对话框模块 */
 'use strict';
 
@@ -2699,7 +3057,7 @@ var close = exports.close = function close(id) {
     return false;
 };
 
-},{"./Info":9,"./Public":18,"./Util":22}],8:[function(require,module,exports){
+},{"./Info":10,"./Public":19,"./Util":23}],9:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
@@ -2971,7 +3329,7 @@ var addChangePointsInfoTips = exports.addChangePointsInfoTips = function addChan
     if (tipsText) $('#pdLoot').append('<span id="pdChangePointsTips"> (\u6539\u70B9\uFF1A' + tipsText + ')</span>');
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
+},{"./Const":7,"./Info":10,"./Log":12,"./Loot":14,"./Msg":16,"./TmpLog":22,"./Util":23}],10:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -3010,14 +3368,14 @@ var Info = {
 
 exports.default = Info;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /* 道具模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.boxTypeList = exports.itemTypeList = undefined;
+exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.armTypeList = exports.itemTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3047,6 +3405,10 @@ var _Log = require('./Log');
 
 var Log = _interopRequireWildcard(_Log);
 
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
+
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -3065,7 +3427,7 @@ var itemTypeList = exports.itemTypeList = ['零时迷子的碎片', '被遗弃�
 /**
  * 盒子种类列表
  */
-var boxTypeList = exports.boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
+var armTypeList = exports.armTypeList = ['普通的装备', '幸运的装备', '稀有的装备', '传奇的装备', '神秘的装备'];
 
 /**
  * 获得转换指定等级道具可获得的能量点
@@ -3795,7 +4157,7 @@ var addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOldIt
             Util.selectInverse($('.pd_item_type_chk'));
         }
     });
-    addSimulateManualHandleItemChecked();
+    Public.addSimulateManualActionChecked($('.pd_item_btns'));
 };
 
 /**
@@ -4176,7 +4538,7 @@ var addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function addBatchBuyIt
         return confirm('是否购买该物品？');
     });
     $area.after('<div class="pd_item_btns"></div>');
-    addSimulateManualHandleItemChecked();
+    Public.addSimulateManualActionChecked($('.pd_item_btns'));
     showKfbInItemShop();
 };
 
@@ -4347,20 +4709,6 @@ var showKfbInItemShop = function showKfbInItemShop() {
 };
 
 /**
- * 添加模拟手动操作道具复选框
- */
-var addSimulateManualHandleItemChecked = function addSimulateManualHandleItemChecked() {
-    $('\n<label style="margin-right: 5px;">\n  <input name="simulateManualHandleItemEnabled" type="checkbox" ' + (Config.simulateManualHandleItemEnabled ? 'checked' : '') + '> \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\u9053\u5177\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u9053\u5177\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~7\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u3001\u8D2D\u4E70\u9053\u5177">[?]</span>\n</label>\n').prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
-        var checked = $(this).prop('checked');
-        if (Config.simulateManualHandleItemEnabled !== checked) {
-            (0, _Config.read)();
-            Config.simulateManualHandleItemEnabled = checked;
-            (0, _Config.write)();
-        }
-    });
-};
-
-/**
  * 在物品装备页面上添加批量使用和出售道具按钮
  */
 var addBatchUseAndSellItemsButton = exports.addBatchUseAndSellItemsButton = function addBatchUseAndSellItemsButton() {
@@ -4374,7 +4722,7 @@ var addBatchUseAndSellItemsButton = exports.addBatchUseAndSellItemsButton = func
         return showBatchUseAndSellItemsDialog(2, safeId);
     });
 
-    addSimulateManualHandleItemChecked();
+    Public.addSimulateManualActionChecked($('.pd_item_btns:last'));
 };
 
 /**
@@ -4415,6 +4763,7 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
     });
 
     Dialog.show(dialogName);
+    Script.runFunc('Item.showBatchUseAndSellItemsDialog_after_', type);
 };
 
 /**
@@ -4462,6 +4811,7 @@ var useItems = function useItems(itemTypeList, safeId) {
 
             console.log('\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg);
             $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg + '</li>');
+            Script.runFunc('Item.useItems_after_');
         }).fail(function () {
             $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
         }).always(function () {
@@ -4483,7 +4833,7 @@ var useItems = function useItems(itemTypeList, safeId) {
             var matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
             var itemId = parseInt(matches[1]);
-            var itemName = $this.find('> td:nth-child(2)').text().trim();
+            var itemName = $this.find('> td:nth-child(3)').text().trim();
             if (tmpItemTypeList.includes(itemName)) itemList.push({ itemId: itemId, itemName: itemName });
         });
         if (!itemList.length) {
@@ -4606,6 +4956,7 @@ var useItems = function useItems(itemTypeList, safeId) {
         $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF09\uFF1A</b><br>\n  ' + resultStat + '\n</li>');
         console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + totalSuccessNum + '\u4E2A\u9053\u5177\u88AB\u4F7F\u7528');
         Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528</strong>', -1);
+        Script.runFunc('Item.useItems_complete_');
     };
 
     $area.parent().append('<ul class="pd_result"><li><strong>\u4F7F\u7528\u7ED3\u679C\uFF1A</strong></li></ul>');
@@ -4653,6 +5004,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
             sellInfo[itemName].num++;
             sellInfo[itemName].sell += parseInt(matches[1]);
             $wait.find('.pd_countdown').text(successNum);
+            Script.runFunc('Item.sellItems_after_');
         }).fail(function () {
             $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
         }).always(function () {
@@ -4674,7 +5026,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
             var matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
             var itemId = parseInt(matches[1]);
-            var itemName = $this.find('> td:nth-child(2)').text().trim();
+            var itemName = $this.find('> td:nth-child(3)').text().trim();
             if (itemTypeList.includes(itemName)) itemList.push({ itemId: itemId, itemName: itemName });
         });
         if (!itemList.length) {
@@ -4768,6 +5120,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
         $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF09\uFF1A</b> <i>KFB<em>+' + totalSell.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
         console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + successNum + '\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF0CKFB+' + totalSell);
         Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F</strong><i>KFB<em>+' + totalSell.toLocaleString() + '</em></i>', -1);
+        Script.runFunc('Item.sellItems_complete_');
     };
 
     $area.parent().append('<ul class="pd_result"><li><strong>\u51FA\u552E\u7ED3\u679C\uFF1A</strong></li></ul>');
@@ -4775,7 +5128,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
     getCurrentItems();
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Public":18,"./Util":22}],11:[function(require,module,exports){
+},{"./Config":5,"./Const":7,"./Dialog":8,"./Info":10,"./Log":12,"./Msg":16,"./Public":19,"./Script":21,"./Util":23}],12:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -4942,7 +5295,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],12:[function(require,module,exports){
+},{"./Const":7,"./Info":10,"./Util":23}],13:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -4970,6 +5323,10 @@ var Log = _interopRequireWildcard(_Log);
 var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
+
+var _Box = require('./Box');
+
+var Box = _interopRequireWildcard(_Box);
 
 var _Script = require('./Script');
 
@@ -5097,7 +5454,7 @@ var showLogContent = function showLogContent(log, date, $dialog) {
 var getLogContent = function getLogContent(log, date, logSortType) {
     var logList = log[date];
     if (logSortType === 'type') {
-        var sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+        var sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '打开盒子', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort(function (a, b) {
             return sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1;
         });
@@ -5152,9 +5509,9 @@ var getLogContent = function getLogContent(log, date, logSortType) {
 
                             try {
                                 for (var _iterator3 = Util.getSortedObjectKeyList(Item.itemTypeList, gain[k])[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                                    var itemName = _step3.value;
+                                    var name = _step3.value;
 
-                                    stat += '<i>' + itemName + '<em>+' + gain[k][itemName].toLocaleString() + '</em></i> ';
+                                    stat += '<i>' + name + '<em>+' + gain[k][name].toLocaleString() + '</em></i> ';
                                 }
                             } catch (err) {
                                 _didIteratorError3 = true;
@@ -5170,18 +5527,16 @@ var getLogContent = function getLogContent(log, date, logSortType) {
                                     }
                                 }
                             }
-                        } else if (k === 'box') {
+                        } else if (k === 'arm') {
                             var _iteratorNormalCompletion4 = true;
                             var _didIteratorError4 = false;
                             var _iteratorError4 = undefined;
 
                             try {
-                                for (var _iterator4 = Util.entries(gain[k])[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                                    var _step4$value = _slicedToArray(_step4.value, 2),
-                                        box = _step4$value[0],
-                                        num = _step4$value[1];
+                                for (var _iterator4 = Util.getSortedObjectKeyList(Item.armTypeList, gain[k])[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                                    var _name = _step4.value;
 
-                                    stat += '<i>' + box + '<em>+' + num.toLocaleString() + '</em></i> ';
+                                    stat += '<i>' + _name + '<em>+' + gain[k][_name].toLocaleString() + '</em></i> ';
                                 }
                             } catch (err) {
                                 _didIteratorError4 = true;
@@ -5194,6 +5549,31 @@ var getLogContent = function getLogContent(log, date, logSortType) {
                                 } finally {
                                     if (_didIteratorError4) {
                                         throw _iteratorError4;
+                                    }
+                                }
+                            }
+                        } else if (k === 'box') {
+                            var _iteratorNormalCompletion5 = true;
+                            var _didIteratorError5 = false;
+                            var _iteratorError5 = undefined;
+
+                            try {
+                                for (var _iterator5 = Util.getSortedObjectKeyList(Box.boxTypeList, gain[k])[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                                    var _name2 = _step5.value;
+
+                                    stat += '<i>' + _name2 + '<em>+' + gain[k][_name2].toLocaleString() + '</em></i> ';
+                                }
+                            } catch (err) {
+                                _didIteratorError5 = true;
+                                _iteratorError5 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                                        _iterator5.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError5) {
+                                        throw _iteratorError5;
                                     }
                                 }
                             }
@@ -5218,36 +5598,36 @@ var getLogContent = function getLogContent(log, date, logSortType) {
             }
             if ($.type(pay) === 'object' && !$.isEmptyObject(pay)) {
                 if (!stat) stat += '，';
-                var _iteratorNormalCompletion5 = true;
-                var _didIteratorError5 = false;
-                var _iteratorError5 = undefined;
+                var _iteratorNormalCompletion6 = true;
+                var _didIteratorError6 = false;
+                var _iteratorError6 = undefined;
 
                 try {
-                    for (var _iterator5 = Object.keys(pay)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                        var _k = _step5.value;
+                    for (var _iterator6 = Object.keys(pay)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                        var _k = _step6.value;
 
                         if (_k === 'item') {
-                            var _iteratorNormalCompletion6 = true;
-                            var _didIteratorError6 = false;
-                            var _iteratorError6 = undefined;
+                            var _iteratorNormalCompletion7 = true;
+                            var _didIteratorError7 = false;
+                            var _iteratorError7 = undefined;
 
                             try {
-                                for (var _iterator6 = Object.keys(pay[_k])[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                                    var _itemName = _step6.value;
+                                for (var _iterator7 = Object.keys(pay[_k])[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                                    var itemName = _step7.value;
 
-                                    stat += '<i>' + _itemName + '<ins>' + pay[_k][_itemName].toLocaleString() + '</ins></i> ';
+                                    stat += '<i>' + itemName + '<ins>' + pay[_k][itemName].toLocaleString() + '</ins></i> ';
                                 }
                             } catch (err) {
-                                _didIteratorError6 = true;
-                                _iteratorError6 = err;
+                                _didIteratorError7 = true;
+                                _iteratorError7 = err;
                             } finally {
                                 try {
-                                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                                        _iterator6.return();
+                                    if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                                        _iterator7.return();
                                     }
                                 } finally {
-                                    if (_didIteratorError6) {
-                                        throw _iteratorError6;
+                                    if (_didIteratorError7) {
+                                        throw _iteratorError7;
                                     }
                                 }
                             }
@@ -5256,16 +5636,16 @@ var getLogContent = function getLogContent(log, date, logSortType) {
                         }
                     }
                 } catch (err) {
-                    _didIteratorError5 = true;
-                    _iteratorError5 = err;
+                    _didIteratorError6 = true;
+                    _iteratorError6 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                            _iterator5.return();
+                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                            _iterator6.return();
                         }
                     } finally {
-                        if (_didIteratorError5) {
-                            throw _iteratorError5;
+                        if (_didIteratorError6) {
+                            throw _iteratorError6;
                         }
                     }
                 }
@@ -5316,27 +5696,27 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         var minDate = new Date(date);
         minDate.setDate(minDate.getDate() - Config.logStatDays + 1);
         minDate = Util.getDateString(minDate);
-        var _iteratorNormalCompletion7 = true;
-        var _didIteratorError7 = false;
-        var _iteratorError7 = undefined;
+        var _iteratorNormalCompletion8 = true;
+        var _didIteratorError8 = false;
+        var _iteratorError8 = undefined;
 
         try {
-            for (var _iterator7 = Util.getObjectKeyList(log, 1)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                var d = _step7.value;
+            for (var _iterator8 = Util.getObjectKeyList(log, 1)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                var d = _step8.value;
 
                 if (d >= minDate && d <= date) rangeLog[d] = log[d];
             }
         } catch (err) {
-            _didIteratorError7 = true;
-            _iteratorError7 = err;
+            _didIteratorError8 = true;
+            _iteratorError8 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                    _iterator7.return();
+                if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                    _iterator8.return();
                 }
             } finally {
-                if (_didIteratorError7) {
-                    throw _iteratorError7;
+                if (_didIteratorError8) {
+                    throw _iteratorError8;
                 }
             }
         }
@@ -5353,6 +5733,9 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         lootLevelStat = { total: 0, min: 0, max: 0 },
         lootBoxTotalNum = 0,
         lootBoxStat = {};
+    var boxTotalNum = 0,
+        boxStat = {},
+        boxGain = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
     var buyItemNum = 0,
         buyItemKfb = 0,
         buyItemStat = {};
@@ -5362,60 +5745,33 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         invalidItemNum = 0,
         highInvalidItemNum = 0,
         invalidItemStat = {};
-    var invalidKeyList = ['item', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
+    var invalidKeyList = ['item', 'arm', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (var _d in rangeLog) {
-        var _iteratorNormalCompletion8 = true;
-        var _didIteratorError8 = false;
-        var _iteratorError8 = undefined;
+        var _iteratorNormalCompletion9 = true;
+        var _didIteratorError9 = false;
+        var _iteratorError9 = undefined;
 
         try {
-            for (var _iterator8 = rangeLog[_d][Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                var _step8$value = _step8.value,
-                    type = _step8$value.type,
-                    action = _step8$value.action,
-                    gain = _step8$value.gain,
-                    pay = _step8$value.pay,
-                    notStat = _step8$value.notStat;
+            for (var _iterator9 = rangeLog[_d][Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                var _step9$value = _step9.value,
+                    type = _step9$value.type,
+                    action = _step9$value.action,
+                    gain = _step9$value.gain,
+                    pay = _step9$value.pay,
+                    notStat = _step9$value.notStat;
 
                 if (typeof type === 'undefined' || typeof notStat !== 'undefined') continue;
                 if ($.type(gain) === 'object') {
-                    var _iteratorNormalCompletion9 = true;
-                    var _didIteratorError9 = false;
-                    var _iteratorError9 = undefined;
-
-                    try {
-                        for (var _iterator9 = Object.keys(gain)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-                            var k = _step9.value;
-
-                            if (invalidKeyList.includes(k)) continue;
-                            if (typeof income[k] === 'undefined') income[k] = gain[k];else income[k] += gain[k];
-                        }
-                    } catch (err) {
-                        _didIteratorError9 = true;
-                        _iteratorError9 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                                _iterator9.return();
-                            }
-                        } finally {
-                            if (_didIteratorError9) {
-                                throw _iteratorError9;
-                            }
-                        }
-                    }
-                }
-                if ($.type(pay) === 'object') {
                     var _iteratorNormalCompletion10 = true;
                     var _didIteratorError10 = false;
                     var _iteratorError10 = undefined;
 
                     try {
-                        for (var _iterator10 = Object.keys(pay)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                            var _k2 = _step10.value;
+                        for (var _iterator10 = Object.keys(gain)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                            var k = _step10.value;
 
-                            if (invalidKeyList.includes(_k2)) continue;
-                            if (typeof expense[_k2] === 'undefined') expense[_k2] = pay[_k2];else expense[_k2] += pay[_k2];
+                            if (invalidKeyList.includes(k)) continue;
+                            if (typeof income[k] === 'undefined') income[k] = gain[k];else income[k] += gain[k];
                         }
                     } catch (err) {
                         _didIteratorError10 = true;
@@ -5432,6 +5788,33 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                         }
                     }
                 }
+                if ($.type(pay) === 'object') {
+                    var _iteratorNormalCompletion11 = true;
+                    var _didIteratorError11 = false;
+                    var _iteratorError11 = undefined;
+
+                    try {
+                        for (var _iterator11 = Object.keys(pay)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                            var _k2 = _step11.value;
+
+                            if (invalidKeyList.includes(_k2)) continue;
+                            if (typeof expense[_k2] === 'undefined') expense[_k2] = pay[_k2];else expense[_k2] += pay[_k2];
+                        }
+                    } catch (err) {
+                        _didIteratorError11 = true;
+                        _iteratorError11 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                                _iterator11.return();
+                            }
+                        } finally {
+                            if (_didIteratorError11) {
+                                throw _iteratorError11;
+                            }
+                        }
+                    }
+                }
 
                 if (type === '争夺攻击' && $.type(gain) === 'object') {
                     var matches = /第`(\d+)`层/.exec(action);
@@ -5442,46 +5825,21 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                         if (lootLevelStat.max < level) lootLevelStat.max = level;
                         if (!lootLevelStat.min || lootLevelStat.min > level) lootLevelStat.min = level;
                         if ($.type(gain['box']) === 'object') {
-                            var _iteratorNormalCompletion11 = true;
-                            var _didIteratorError11 = false;
-                            var _iteratorError11 = undefined;
+                            var _iteratorNormalCompletion12 = true;
+                            var _didIteratorError12 = false;
+                            var _iteratorError12 = undefined;
 
                             try {
-                                for (var _iterator11 = Util.entries(gain['box'])[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-                                    var _step11$value = _slicedToArray(_step11.value, 2),
-                                        key = _step11$value[0],
-                                        num = _step11$value[1];
+                                for (var _iterator12 = Util.entries(gain['box'])[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                                    var _step12$value = _slicedToArray(_step12.value, 2),
+                                        key = _step12$value[0],
+                                        num = _step12$value[1];
 
                                     lootBoxTotalNum += num;
                                     if (!(key in lootBoxStat)) lootBoxStat[key] = { total: 0, min: -1, max: -1 };
                                     lootBoxStat[key].total += num;
                                     if (lootBoxStat[key].max < num) lootBoxStat[key].max = num;
                                     if (lootBoxStat[key].min < 0 || lootBoxStat[key].min > num) lootBoxStat[key].min = num;
-                                }
-                            } catch (err) {
-                                _didIteratorError11 = true;
-                                _iteratorError11 = err;
-                            } finally {
-                                try {
-                                    if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                                        _iterator11.return();
-                                    }
-                                } finally {
-                                    if (_didIteratorError11) {
-                                        throw _iteratorError11;
-                                    }
-                                }
-                            }
-
-                            var _iteratorNormalCompletion12 = true;
-                            var _didIteratorError12 = false;
-                            var _iteratorError12 = undefined;
-
-                            try {
-                                for (var _iterator12 = Item.boxTypeList[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-                                    var key = _step12.value;
-
-                                    if (!(key in gain['box']) && key in lootBoxStat) lootBoxStat[key].min = 0;
                                 }
                             } catch (err) {
                                 _didIteratorError12 = true;
@@ -5497,43 +5855,133 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                                     }
                                 }
                             }
+
+                            var _iteratorNormalCompletion13 = true;
+                            var _didIteratorError13 = false;
+                            var _iteratorError13 = undefined;
+
+                            try {
+                                for (var _iterator13 = Box.boxTypeList[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+                                    var key = _step13.value;
+
+                                    if (!(key in gain['box']) && key in lootBoxStat) lootBoxStat[key].min = 0;
+                                }
+                            } catch (err) {
+                                _didIteratorError13 = true;
+                                _iteratorError13 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                                        _iterator13.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError13) {
+                                        throw _iteratorError13;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (type === '打开盒子' && $.type(gain) === 'object' && $.type(pay) === 'object') {
+                    var _matches = /【`(.+?)`】打开成功/.exec(action);
+                    if (!_matches) continue;
+                    var boxType = _matches[1];
+                    boxTotalNum += Math.abs(pay['盒子']);
+                    if (!(boxType in boxStat)) boxStat[boxType] = 0;
+                    boxStat[boxType] += Math.abs(pay['盒子']);
+
+                    var _iteratorNormalCompletion14 = true;
+                    var _didIteratorError14 = false;
+                    var _iteratorError14 = undefined;
+
+                    try {
+                        for (var _iterator14 = Util.entries(gain)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                            var _step14$value = _slicedToArray(_step14.value, 2),
+                                _key = _step14$value[0],
+                                value = _step14$value[1];
+
+                            if (!(_key in boxGain)) continue;
+                            if ($.type(value) === 'object') {
+                                var _iteratorNormalCompletion15 = true;
+                                var _didIteratorError15 = false;
+                                var _iteratorError15 = undefined;
+
+                                try {
+                                    for (var _iterator15 = Util.entries(value)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+                                        var _step15$value = _slicedToArray(_step15.value, 2),
+                                            name = _step15$value[0],
+                                            num = _step15$value[1];
+
+                                        if (!(name in boxGain[_key])) boxGain[_key][name] = 0;
+                                        boxGain[_key][name] += num;
+                                    }
+                                } catch (err) {
+                                    _didIteratorError15 = true;
+                                    _iteratorError15 = err;
+                                } finally {
+                                    try {
+                                        if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                                            _iterator15.return();
+                                        }
+                                    } finally {
+                                        if (_didIteratorError15) {
+                                            throw _iteratorError15;
+                                        }
+                                    }
+                                }
+                            } else {
+                                boxGain[_key] += value;
+                            }
+                        }
+                    } catch (err) {
+                        _didIteratorError14 = true;
+                        _iteratorError14 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                                _iterator14.return();
+                            }
+                        } finally {
+                            if (_didIteratorError14) {
+                                throw _iteratorError14;
+                            }
                         }
                     }
                 } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
                     buyItemNum += gain['道具'];
                     buyItemKfb += Math.abs(pay['KFB']);
-                    var _iteratorNormalCompletion13 = true;
-                    var _didIteratorError13 = false;
-                    var _iteratorError13 = undefined;
+                    var _iteratorNormalCompletion16 = true;
+                    var _didIteratorError16 = false;
+                    var _iteratorError16 = undefined;
 
                     try {
-                        for (var _iterator13 = Util.entries(gain['item'])[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-                            var _step13$value = _slicedToArray(_step13.value, 2),
-                                itemName = _step13$value[0],
-                                num = _step13$value[1];
+                        for (var _iterator16 = Util.entries(gain['item'])[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+                            var _step16$value = _slicedToArray(_step16.value, 2),
+                                itemName = _step16$value[0],
+                                num = _step16$value[1];
 
                             if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
                             buyItemStat[itemName] += num;
                         }
                     } catch (err) {
-                        _didIteratorError13 = true;
-                        _iteratorError13 = err;
+                        _didIteratorError16 = true;
+                        _iteratorError16 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion13 && _iterator13.return) {
-                                _iterator13.return();
+                            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                                _iterator16.return();
                             }
                         } finally {
-                            if (_didIteratorError13) {
-                                throw _iteratorError13;
+                            if (_didIteratorError16) {
+                                throw _iteratorError16;
                             }
                         }
                     }
                 } else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
-                    var _matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
-                    if (_matches) {
-                        var itemLevel = parseInt(_matches[1]);
-                        var itemName = _matches[2];
+                    var _matches2 = /【`Lv.(\d+)：(.+?)`】/.exec(action);
+                    if (_matches2) {
+                        var itemLevel = parseInt(_matches2[1]);
+                        var itemName = _matches2[2];
                         if (gain['有效道具'] > 0) {
                             validItemNum += gain['有效道具'];
                             if (itemLevel >= 3) highValidItemNum += gain['有效道具'];
@@ -5550,145 +5998,61 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                 }
             }
         } catch (err) {
-            _didIteratorError8 = true;
-            _iteratorError8 = err;
+            _didIteratorError9 = true;
+            _iteratorError9 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                    _iterator8.return();
+                if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                    _iterator9.return();
                 }
             } finally {
-                if (_didIteratorError8) {
-                    throw _iteratorError8;
+                if (_didIteratorError9) {
+                    throw _iteratorError9;
                 }
             }
         }
     }
 
     var content = '';
-    var sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '能量', '道具', '已使用道具', '卡片'];
+    var sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '盒子', '道具', '已使用道具', '装备', '能量', '卡片'];
     content += '<strong>收获：</strong>';
-    var _iteratorNormalCompletion14 = true;
-    var _didIteratorError14 = false;
-    var _iteratorError14 = undefined;
+    var _iteratorNormalCompletion17 = true;
+    var _didIteratorError17 = false;
+    var _iteratorError17 = undefined;
 
     try {
-        for (var _iterator14 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-            var _key2 = _step14.value;
+        for (var _iterator17 = Util.getSortedObjectKeyList(sortStatTypeList, income)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+            var _key4 = _step17.value;
 
-            profit[_key2] = income[_key2];
-            content += '<i>' + _key2 + '<em>+' + income[_key2].toLocaleString() + '</em></i> ';
+            profit[_key4] = income[_key4];
+            content += '<i>' + _key4 + '<em>+' + income[_key4].toLocaleString() + '</em></i> ';
         }
     } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                _iterator14.return();
+            if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                _iterator17.return();
             }
         } finally {
-            if (_didIteratorError14) {
-                throw _iteratorError14;
+            if (_didIteratorError17) {
+                throw _iteratorError17;
             }
         }
     }
 
     content += '<br><strong>付出：</strong>';
-    var _iteratorNormalCompletion15 = true;
-    var _didIteratorError15 = false;
-    var _iteratorError15 = undefined;
-
-    try {
-        for (var _iterator15 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-            var _key3 = _step15.value;
-
-            if (typeof profit[_key3] === 'undefined') profit[_key3] = expense[_key3];else profit[_key3] += expense[_key3];
-            content += '<i>' + _key3 + '<ins>' + expense[_key3].toLocaleString() + '</ins></i> ';
-        }
-    } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                _iterator15.return();
-            }
-        } finally {
-            if (_didIteratorError15) {
-                throw _iteratorError15;
-            }
-        }
-    }
-
-    content += '<br><strong>结余：</strong>';
-    var _iteratorNormalCompletion16 = true;
-    var _didIteratorError16 = false;
-    var _iteratorError16 = undefined;
-
-    try {
-        for (var _iterator16 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-            var _key4 = _step16.value;
-
-            content += '<i>' + _key4 + Util.getStatFormatNumber(profit[_key4]) + '</i> ';
-        }
-    } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                _iterator16.return();
-            }
-        } finally {
-            if (_didIteratorError16) {
-                throw _iteratorError16;
-            }
-        }
-    }
-
-    content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
-    content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
-    if (lootCount > 0) {
-        content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
-        content += '<i>\u76D2\u5B50\u603B\u6570<em>+' + lootBoxTotalNum.toLocaleString() + '</em></i> ';
-        var _iteratorNormalCompletion17 = true;
-        var _didIteratorError17 = false;
-        var _iteratorError17 = undefined;
-
-        try {
-            for (var _iterator17 = Util.getSortedObjectKeyList(Item.boxTypeList, lootBoxStat)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-                var _key = _step17.value;
-
-                if (!lootBoxStat[_key].total) continue;
-                content += '<i>' + _key + '<em>+' + lootBoxStat[_key].total.toLocaleString() + '</em>' + ('<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootBoxStat[_key].total / lootCount).toFixed(2) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootBoxStat[_key].min + '</em>|<em title="\u6700\u5927\u503C">+' + lootBoxStat[_key].max + '</em>)</span></i> ');
-            }
-        } catch (err) {
-            _didIteratorError17 = true;
-            _iteratorError17 = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion17 && _iterator17.return) {
-                    _iterator17.return();
-                }
-            } finally {
-                if (_didIteratorError17) {
-                    throw _iteratorError17;
-                }
-            }
-        }
-    }
-
-    content += '<br><strong>\u8D2D\u4E70\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u9053\u5177<em>+' + buyItemNum.toLocaleString() + '</em></i> ' + ('<i>KFB<ins>-' + buyItemKfb.toLocaleString() + '</ins></i> ');
     var _iteratorNormalCompletion18 = true;
     var _didIteratorError18 = false;
     var _iteratorError18 = undefined;
 
     try {
-        for (var _iterator18 = Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-            var _itemName2 = _step18.value;
+        for (var _iterator18 = Util.getSortedObjectKeyList(sortStatTypeList, expense)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+            var _key5 = _step18.value;
 
-            content += '<i>' + _itemName2 + '<em>+' + buyItemStat[_itemName2].toLocaleString() + '</em></i> ';
+            if (typeof profit[_key5] === 'undefined') profit[_key5] = expense[_key5];else profit[_key5] += expense[_key5];
+            content += '<i>' + _key5 + '<ins>' + expense[_key5].toLocaleString() + '</ins></i> ';
         }
     } catch (err) {
         _didIteratorError18 = true;
@@ -5705,16 +6069,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + validItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
+    content += '<br><strong>结余：</strong>';
     var _iteratorNormalCompletion19 = true;
     var _didIteratorError19 = false;
     var _iteratorError19 = undefined;
 
     try {
-        for (var _iterator19 = Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-            var _itemName3 = _step19.value;
+        for (var _iterator19 = Util.getSortedObjectKeyList(sortStatTypeList, profit)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+            var _key6 = _step19.value;
 
-            content += '<i>' + _itemName3 + '<em>+' + validItemStat[_itemName3].toLocaleString() + '</em></i> ';
+            content += '<i>' + _key6 + Util.getStatFormatNumber(profit[_key6]) + '</i> ';
         }
     } catch (err) {
         _didIteratorError19 = true;
@@ -5731,28 +6095,177 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         }
     }
 
-    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<span class="pd_stat_extra"><em>+' + invalidItemNum.toLocaleString() + '</em>' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
-    var _iteratorNormalCompletion20 = true;
-    var _didIteratorError20 = false;
-    var _iteratorError20 = undefined;
+    content += '<div style="margin: 5px 0; border-bottom: 1px dashed #ccccff;"></div>';
+    content += '\n<strong>\u4E89\u593A\u653B\u51FB\u7EDF\u8BA1\uFF1A</strong><i>\u6B21\u6570<em>+' + lootCount + '</em></i> ';
+    if (lootCount > 0) {
+        content += '<i>\u5C42\u6570<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootLevelStat.total / lootCount).toFixed(2) + '</em>|' + ('<em title="\u6700\u5C0F\u503C">+' + lootLevelStat.min + '</em>|<em title="\u6700\u5927\u503C">+' + lootLevelStat.max + '</em>)</span></i> ');
+        content += '<i>\u76D2\u5B50<em>+' + lootBoxTotalNum.toLocaleString() + '</em></i> ';
+        var _iteratorNormalCompletion20 = true;
+        var _didIteratorError20 = false;
+        var _iteratorError20 = undefined;
+
+        try {
+            for (var _iterator20 = Util.getSortedObjectKeyList(Box.boxTypeList, lootBoxStat)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+                var _key2 = _step20.value;
+
+                if (!lootBoxStat[_key2].total) continue;
+                content += '<i>' + _key2 + '<em>+' + lootBoxStat[_key2].total.toLocaleString() + '</em>' + ('<span class="pd_stat_extra">(<em title="\u5E73\u5747\u503C">+' + (lootBoxStat[_key2].total / lootCount).toFixed(2) + '</em>|') + ('<em title="\u6700\u5C0F\u503C">+' + lootBoxStat[_key2].min + '</em>|<em title="\u6700\u5927\u503C">+' + lootBoxStat[_key2].max + '</em>)</span></i> ');
+            }
+        } catch (err) {
+            _didIteratorError20 = true;
+            _iteratorError20 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                    _iterator20.return();
+                }
+            } finally {
+                if (_didIteratorError20) {
+                    throw _iteratorError20;
+                }
+            }
+        }
+    }
+
+    var boxStatContent = '';
+    var _iteratorNormalCompletion21 = true;
+    var _didIteratorError21 = false;
+    var _iteratorError21 = undefined;
 
     try {
-        for (var _iterator20 = Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-            var _itemName4 = _step20.value;
+        for (var _iterator21 = Util.getSortedObjectKeyList(Box.boxTypeList, boxStat)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+            var _boxType = _step21.value;
 
-            content += '<i>' + _itemName4 + '<em>+' + invalidItemStat[_itemName4].toLocaleString() + '</em></i> ';
+            if (boxStatContent) boxStatContent += '|';
+            boxStatContent += '<ins title="' + _boxType + '">-' + boxStat[_boxType].toLocaleString() + '</ins>';
         }
     } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError21 = true;
+        _iteratorError21 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion20 && _iterator20.return) {
-                _iterator20.return();
+            if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                _iterator21.return();
             }
         } finally {
-            if (_didIteratorError20) {
-                throw _iteratorError20;
+            if (_didIteratorError21) {
+                throw _iteratorError21;
+            }
+        }
+    }
+
+    content += '<br><strong>\u76D2\u5B50\u6536\u83B7\u7EDF\u8BA1\uFF1A</strong><i>\u76D2\u5B50<ins>-' + boxTotalNum + '</ins><span class="pd_stat_extra">(' + boxStatContent + ')</span></i> ';
+    if (boxTotalNum > 0) {
+        var _iteratorNormalCompletion22 = true;
+        var _didIteratorError22 = false;
+        var _iteratorError22 = undefined;
+
+        try {
+            for (var _iterator22 = Util.entries(boxGain)[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+                var _step22$value = _slicedToArray(_step22.value, 2),
+                    _key3 = _step22$value[0],
+                    value = _step22$value[1];
+
+                if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) continue;
+                if ($.type(value) === 'object') {
+                    var typeList = _key3 === 'item' ? Item.itemTypeList : Item.armTypeList;
+                    var _iteratorNormalCompletion23 = true;
+                    var _didIteratorError23 = false;
+                    var _iteratorError23 = undefined;
+
+                    try {
+                        for (var _iterator23 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+                            var name = _step23.value;
+
+                            content += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
+                        }
+                    } catch (err) {
+                        _didIteratorError23 = true;
+                        _iteratorError23 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion23 && _iterator23.return) {
+                                _iterator23.return();
+                            }
+                        } finally {
+                            if (_didIteratorError23) {
+                                throw _iteratorError23;
+                            }
+                        }
+                    }
+                } else {
+                    content += '<i>' + _key3 + '<span class="pd_stat_extra"><em>+' + value.toLocaleString() + '</em>' + ('(<em title="\u5E73\u5747\u503C">+' + Util.getFixedNumLocStr(value / boxTotalNum, 2).toLocaleString() + '</em>)</span></i> ');
+                }
+            }
+        } catch (err) {
+            _didIteratorError22 = true;
+            _iteratorError22 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion22 && _iterator22.return) {
+                    _iterator22.return();
+                }
+            } finally {
+                if (_didIteratorError22) {
+                    throw _iteratorError22;
+                }
+            }
+        }
+    }
+
+    /*content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` +
+        `<i>KFB<ins>-${buyItemKfb.toLocaleString()}</ins></i> `;
+    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
+        content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
+    }*/ // 临时禁用
+    content += '<br><strong>\u6709\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u6709\u6548\u9053\u5177<em>+' + validItemNum.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u6709\u6548\u9053\u5177">+' + highValidItemNum.toLocaleString() + '</em>)</span></i> ');
+    var _iteratorNormalCompletion24 = true;
+    var _didIteratorError24 = false;
+    var _iteratorError24 = undefined;
+
+    try {
+        for (var _iterator24 = Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+            var _itemName = _step24.value;
+
+            content += '<i>' + _itemName + '<em>+' + validItemStat[_itemName].toLocaleString() + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError24 = true;
+        _iteratorError24 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion24 && _iterator24.return) {
+                _iterator24.return();
+            }
+        } finally {
+            if (_didIteratorError24) {
+                throw _iteratorError24;
+            }
+        }
+    }
+
+    content += '<br><strong>\u65E0\u6548\u9053\u5177\u7EDF\u8BA1\uFF1A</strong><i>\u65E0\u6548\u9053\u5177<em>+' + invalidItemNum.toLocaleString() + '</em><span class="pd_stat_extra">' + ('(<em title="3\u7EA7\u4EE5\u4E0A\u65E0\u6548\u9053\u5177">+' + highInvalidItemNum.toLocaleString() + '</em>)</span></i> ');
+    var _iteratorNormalCompletion25 = true;
+    var _didIteratorError25 = false;
+    var _iteratorError25 = undefined;
+
+    try {
+        for (var _iterator25 = Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+            var _itemName2 = _step25.value;
+
+            content += '<i>' + _itemName2 + '<em>+' + invalidItemStat[_itemName2].toLocaleString() + '</em></i> ';
+        }
+    } catch (err) {
+        _didIteratorError25 = true;
+        _iteratorError25 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion25 && _iterator25.return) {
+                _iterator25.return();
+            }
+        } finally {
+            if (_didIteratorError25) {
+                throw _iteratorError25;
             }
         }
     }
@@ -5816,13 +6329,13 @@ var showLogText = function showLogText(log, $dialog) {
     var isShowStat = $dialog.find('[name="showStat"]').prop('checked');
     var content = '',
         lastDate = '';
-    var _iteratorNormalCompletion21 = true;
-    var _didIteratorError21 = false;
-    var _iteratorError21 = undefined;
+    var _iteratorNormalCompletion26 = true;
+    var _didIteratorError26 = false;
+    var _iteratorError26 = undefined;
 
     try {
-        for (var _iterator21 = Object.keys(log)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-            var date = _step21.value;
+        for (var _iterator26 = Object.keys(log)[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+            var date = _step26.value;
 
             if (!Array.isArray(log[date])) continue;
             if (lastDate > date) lastDate = date;
@@ -5833,16 +6346,16 @@ var showLogText = function showLogText(log, $dialog) {
             content += '='.repeat(46) + '\n';
         }
     } catch (err) {
-        _didIteratorError21 = true;
-        _iteratorError21 = err;
+        _didIteratorError26 = true;
+        _iteratorError26 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion21 && _iterator21.return) {
-                _iterator21.return();
+            if (!_iteratorNormalCompletion26 && _iterator26.return) {
+                _iterator26.return();
             }
         } finally {
-            if (_didIteratorError21) {
-                throw _iteratorError21;
+            if (_didIteratorError26) {
+                throw _iteratorError26;
             }
         }
     }
@@ -5853,7 +6366,7 @@ var showLogText = function showLogText(log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":22}],13:[function(require,module,exports){
+},{"./Box":3,"./Config":5,"./Dialog":8,"./Item":11,"./Log":12,"./Script":21,"./Util":23}],14:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -5911,6 +6424,10 @@ var Public = _interopRequireWildcard(_Public);
 var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
+
+var _Box = require('./Box');
+
+var Box = _interopRequireWildcard(_Box);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -7297,10 +7814,11 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
     var currentLevel = getCurrentLevel(logList);
 
     var _getTotalGain = getTotalGain(levelInfoList),
+        boxNum = _getTotalGain.boxNum,
         boxes = _getTotalGain.boxes;
 
     if (!$.isEmptyObject(boxes)) {
-        Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (' + allEnemyStat.trim() + ')', { gain: { 'box': boxes } });
+        Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (' + allEnemyStat.trim() + ')', { gain: { '盒子': boxNum, 'box': boxes } });
         LootLog.record(logList, pointsLogList);
     }
     var boxesStat = '';
@@ -7309,7 +7827,7 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
     var _iteratorError11 = undefined;
 
     try {
-        for (var _iterator11 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+        for (var _iterator11 = Util.getSortedObjectKeyList(Box.boxTypeList, boxes)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
             var key = _step11.value;
 
             boxesStat += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i>';
@@ -7487,6 +8005,7 @@ var handleLootLogNav = function handleLootLogNav() {
  */
 var showLogStat = function showLogStat(levelInfoList) {
     var _getTotalGain2 = getTotalGain(levelInfoList),
+        boxNum = _getTotalGain2.boxNum,
         boxes = _getTotalGain2.boxes;
 
     var boxesStatHtml = '';
@@ -7495,7 +8014,7 @@ var showLogStat = function showLogStat(levelInfoList) {
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        for (var _iterator12 = Util.getSortedObjectKeyList(Box.boxTypeList, boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
             var key = _step12.value;
 
             boxesStatHtml += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i> ';
@@ -7574,7 +8093,7 @@ var showLogStat = function showLogStat(levelInfoList) {
     }
 
     var $logStat = $('#pdLogStat');
-    $logStat.html('\n<li><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b>' + (boxesStatHtml ? boxesStatHtml : '无') + '</li>\n<li><b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + allEnemyStatHtml + '<br><b>\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A</b>' + latestEnemyStatHtml + '</li>\n');
+    $logStat.html('\n<li><b>\u6536\u83B7\u7EDF\u8BA1\uFF1A</b><i>\u76D2\u5B50<em>+' + boxNum + '</em></i> ' + (boxesStatHtml ? boxesStatHtml : '无') + '</li>\n<li><b>\u5168\u90E8\u5C42\u6570\uFF1A</b>' + allEnemyStatHtml + '<br><b>\u6700\u8FD1' + _Const2.default.enemyStatLatestLevelNum + '\u5C42\uFF1A</b>' + latestEnemyStatHtml + '</li>\n');
 
     if (Config.showLevelEnemyStatEnabled) {
         var levelEnemyStatHtml = '';
@@ -7754,13 +8273,15 @@ var getLevelInfoList = exports.getLevelInfoList = function getLevelInfoList(logL
  * @returns {{boxes: {}}} boxes：盒子信息统计
  */
 var getTotalGain = function getTotalGain(levelInfoList) {
-    var boxes = {};
+    var boxNum = 0,
+        boxes = {};
     $.each(levelInfoList, function (level, info) {
         if (!info || !info.box) return;
         if (!(info.box in boxes)) boxes[info.box] = 0;
         boxes[info.box]++;
+        boxNum++;
     });
-    return { boxes: boxes };
+    return { boxNum: boxNum, boxes: boxes };
 };
 
 /**
@@ -8266,7 +8787,7 @@ var getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function g
     }
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],14:[function(require,module,exports){
+},{"./Box":3,"./Config":5,"./Const":7,"./Dialog":8,"./Info":10,"./Item":11,"./Log":12,"./LootLog":15,"./Msg":16,"./Public":19,"./Script":21,"./TmpLog":22,"./Util":23}],15:[function(require,module,exports){
 /* 争夺记录模块 */
 'use strict';
 
@@ -8321,7 +8842,7 @@ var write = exports.write = function write(log) {
 };
 
 /**
- * 清除临时日志
+ * 清除争夺记录
  */
 var clear = exports.clear = function clear() {
     return Util.deleteData(name + '_' + _Info2.default.uid);
@@ -8358,7 +8879,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],15:[function(require,module,exports){
+},{"./Const":7,"./Info":10,"./Util":23}],16:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -8488,7 +9009,7 @@ var destroy = exports.destroy = function destroy() {
     $('.pd_mask').remove();
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /* 其它模块 */
 'use strict';
 
@@ -9098,7 +9619,7 @@ var handleProfilePage = exports.handleProfilePage = function handleProfilePage()
     })).css('vertical-align', 'top');
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":5,"./ConfigDialog":6,"./Const":7,"./Info":10,"./Msg":16,"./Public":19,"./TmpLog":22,"./Util":23}],18:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -9218,6 +9739,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
     }
     var keywords = new Set();
     var content = '';
+    var $keywords = $('input[name="diy_guanjianci"]');
     if (type === 2) {
         Msg.wait('<strong>\u6B63\u5728\u83B7\u53D6\u5F15\u7528\u5185\u5BB9\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + list.length + '</em></i>');
         $(document).clearQueue('MultiQuote');
@@ -9237,6 +9759,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
                     if (index === list.length - 1) {
                         Msg.destroy();
                         $('#textarea').val(content).focus();
+                        $keywords.trigger('change');
                     } else {
                         setTimeout(function () {
                             $(document).dequeue('MultiQuote');
@@ -9248,11 +9771,16 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
             content += '[quote]\u56DE ' + data.floor + '\u697C(' + data.userName + ') \u7684\u5E16\u5B50[/quote]\n';
         }
     });
-    $('input[name="diy_guanjianci"]').val([].concat(_toConsumableArray(keywords)).join(','));
+    $keywords.val([].concat(_toConsumableArray(keywords)).join(','));
     $('form[name="FORM"]').submit(function () {
         localStorage.removeItem(_Const2.default.multiQuoteStorageName);
     });
-    if (type === 2) $(document).dequeue('MultiQuote');else $('[name="atc_content"]').val(content).focus();
+    if (type === 2) {
+        $(document).dequeue('MultiQuote');
+    } else {
+        $('[name="atc_content"]').val(content).focus();
+        $keywords.trigger('change');
+    }
     Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
@@ -9455,24 +9983,26 @@ var savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function sav
  * 添加多余关键词警告
  */
 var addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function addRedundantKeywordWarning() {
-    $('form[action="post.php?"]').submit(function () {
-        var keywords = $.trim($(this).find('[name="diy_guanjianci"]').val()).split(',').filter(function (str) {
+    $('input[name="diy_guanjianci"]').change(function () {
+        var $this = $(this);
+        var keywords = $.trim($this.val()).split(',').filter(function (str) {
             return str;
         });
         if (keywords.length > 5) {
-            return confirm('所填关键词已超过5个，多余的关键词将被忽略，是否继续提交？');
+            alert('所填关键词已超过5个，多余的关键词将被忽略');
+            $this.select().focus();
         }
     });
 };
 
-},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":22}],18:[function(require,module,exports){
+},{"./Const":7,"./Info":10,"./Msg":16,"./Script":21,"./Util":23}],19:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -10733,7 +11263,23 @@ var changeNewRateTipsColor = exports.changeNewRateTipsColor = function changeNew
     }
 };
 
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+/**
+ * 添加模拟手动操作复选框
+ * @param {jQuery} $area 待添加区域
+ */
+var addSimulateManualActionChecked = exports.addSimulateManualActionChecked = function addSimulateManualActionChecked($area) {
+    $('\n<label style="margin-right: 5px;">\n  <input name="simulateManualActionEnabled" type="checkbox" ' + (Config.simulateManualActionEnabled ? 'checked' : '') + '> \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u90E8\u5206\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~7\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u9053\u5177\u3001\u6253\u5F00\u76D2\u5B50\u7B49">[?]</span>\n</label>\n').prependTo($area).find('input[name="simulateManualActionEnabled"]').click(function () {
+        var checked = $(this).prop('checked');
+        $('input[name="simulateManualActionEnabled"]').not(this).prop('checked', checked);
+        if (Config.simulateManualActionEnabled !== checked) {
+            (0, _Config.read)();
+            Config.simulateManualActionEnabled = checked;
+            (0, _Config.write)();
+        }
+    });
+};
+
+},{"./Config":5,"./ConfigDialog":6,"./Const":7,"./Dialog":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Loot":14,"./Msg":16,"./Read":20,"./Script":21,"./TmpLog":22,"./Util":23}],20:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
@@ -11544,7 +12090,7 @@ var getThreadTitle = exports.getThreadTitle = function getThreadTitle() {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
 
-},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":22}],20:[function(require,module,exports){
+},{"./Const":7,"./Dialog":8,"./Info":10,"./Log":12,"./Msg":16,"./Post":18,"./Public":19,"./Script":21,"./Util":23}],21:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
@@ -11937,7 +12483,7 @@ var handleInstallScriptLink = exports.handleInstallScriptLink = function handleI
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+},{"./Bank":2,"./Card":4,"./Config":5,"./ConfigDialog":6,"./Const":7,"./Dialog":8,"./Index":9,"./Info":10,"./Item":11,"./Log":12,"./Loot":14,"./LootLog":15,"./Msg":16,"./Other":17,"./Post":18,"./Public":19,"./Read":20,"./TmpLog":22,"./Util":23}],22:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -12060,7 +12606,7 @@ var deleteValue = exports.deleteValue = function deleteValue(key) {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],22:[function(require,module,exports){
+},{"./Const":7,"./Info":10,"./Util":23}],23:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 
@@ -12400,7 +12946,7 @@ var htmlDecode = exports.htmlDecode = function htmlDecode(str) {
  * @returns {string} 去除HTML标签的文本
  */
 var removeHtmlTag = exports.removeHtmlTag = function removeHtmlTag(html) {
-    return html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '');
+    return html ? html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '') : '';
 };
 
 /**
@@ -12764,4 +13310,4 @@ var deleteData = exports.deleteData = function deleteData(key) {
     if (storageType === 'ByUid' || storageType === 'Global') GM_deleteValue(key);else localStorage.removeItem(key);
 };
 
-},{"./Const":6,"./Info":9}]},{},[1]);
+},{"./Const":7,"./Info":10}]},{},[1]);
