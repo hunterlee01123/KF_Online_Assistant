@@ -144,7 +144,7 @@ const init = function () {
         Item.addBatchUseAndConvertOldItemTypesButton();
     }
     else if (location.pathname === '/kf_fw_ig_mybp.php') {
-        Box.addBatchOpenBoxesButton();
+        Box.init();
         Item.addBatchUseAndSellItemsButton();
     }
     else if (location.pathname === '/kf_fw_ig_shop.php') {

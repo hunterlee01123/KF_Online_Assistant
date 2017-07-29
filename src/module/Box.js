@@ -4,6 +4,7 @@ import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
 import * as Log from './Log';
+import * as Script from './Script';
 import * as Item from './Item';
 import * as Public from './Public';
 
@@ -14,13 +15,24 @@ export const boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传
 
 // 盒子区域
 let $area;
+// SafeID
+let safeId;
 
 /**
- * 添加批量打开盒子按钮
+ * 初始化
  */
-export const addBatchOpenBoxesButton = function () {
-    let safeId = Public.getSafeId();
+export const init = function () {
+    safeId = Public.getSafeId();
     if (!safeId) return;
+    $area = $('.kf_fw_ig1:first');
+    addBatchOpenBoxesLink();
+    addOpenAllBoxesButton();
+};
+
+/**
+ * 添加批量打开盒子链接
+ */
+const addBatchOpenBoxesLink = function () {
     $area = $('.kf_fw_ig1:first');
     $area.find('> tbody > tr:nth-child(3) > td > a[onclick^="dkhz"]').each(function () {
         let $this = $(this);
@@ -41,6 +53,36 @@ export const addBatchOpenBoxesButton = function () {
         if (!num || num < 0) return;
         openBoxes({id, boxType, num, safeId});
     });
+};
+
+/**
+ * 添加打开全部盒子按钮
+ */
+const addOpenAllBoxesButton = function () {
+    $(`
+<div class="pd_item_btns">
+  <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
+</div>
+`).insertAfter($area).find('[name="openAllBoxes"]').click(function () {
+        if (!confirm('是否打开全部盒子？')) return;
+        Msg.destroy();
+        $(document).clearQueue('OpenAllBoxes');
+        $area.find('> tbody > tr:nth-child(2) > td').each(function (index) {
+            let $this = $(this);
+            $(document).queue('OpenAllBoxes', function () {
+                let boxType = $this.find('span:first').text().trim() + '盒子';
+                if (!boxTypeList.includes(boxType)) return;
+                let num = parseInt($this.find('span:last').text());
+                if (!num || num < 0) return;
+                let id = parseInt($area.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
+                if (!id) return;
+                openBoxes({id, boxType, num, safeId});
+            });
+        });
+        $(document).dequeue('OpenAllBoxes');
+    });
+
+    Public.addSimulateManualActionChecked($('.pd_item_btns:first'));
 };
 
 /**
@@ -114,7 +156,9 @@ const openBoxes = function ({id, boxType, num, safeId}) {
             let length = $(document).queue('OpenBoxes').length;
             let $countdown = $('.pd_countdown:last');
             $countdown.text(length);
-            isStop = isStop || $countdown.closest('.pd_msg').data('stop');
+            let isPause = $countdown.closest('.pd_msg').data('stop');
+            isStop = isStop || isPause;
+            if (isPause) $(document).clearQueue('OpenAllBoxes');
 
             if (isStop || !length) {
                 Msg.remove($wait);
@@ -160,6 +204,12 @@ const openBoxes = function ({id, boxType, num, safeId}) {
                 Msg.show(
                     `<strong>共有<em>${successNum}</em>个【${boxType}】打开成功${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>`,
                     -1
+                );
+
+                Script.runFunc('Box.openBoxes_after_', stat);
+                setTimeout(
+                    () => $(document).dequeue('OpenAllBoxes'),
+                    typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval
                 );
             }
             else {

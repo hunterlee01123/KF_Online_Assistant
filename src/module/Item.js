@@ -7,6 +7,7 @@ import * as Dialog from './Dialog';
 import Const from './Const';
 import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
+import * as Script from './Script';
 import * as Public from './Public';
 
 /**
@@ -793,7 +794,7 @@ export const addBatchUseAndConvertOldItemTypesButton = function () {
                 Util.selectInverse($('.pd_item_type_chk'));
             }
         });
-    addSimulateManualHandleItemChecked();
+    Public.addSimulateManualActionChecked($('.pd_item_btns'));
 };
 
 /**
@@ -1230,7 +1231,7 @@ export const addBatchBuyItemsLink = function () {
         buyItems(num, type, kfb, url);
     }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买该物品？'));
     $area.after('<div class="pd_item_btns"></div>');
-    addSimulateManualHandleItemChecked();
+    Public.addSimulateManualActionChecked($('.pd_item_btns'));
     showKfbInItemShop();
 };
 
@@ -1362,25 +1363,6 @@ const showKfbInItemShop = function () {
 };
 
 /**
- * 添加模拟手动操作道具复选框
- */
-const addSimulateManualHandleItemChecked = function () {
-    $(`
-<label style="margin-right: 5px;">
-  <input name="simulateManualHandleItemEnabled" type="checkbox" ${Config.simulateManualHandleItemEnabled ? 'checked' : ''}> 模拟手动操作道具
-  <span class="pd_cfg_tips" title="延长道具批量操作的时间间隔（在3~7秒之间），以模拟手动使用、购买道具">[?]</span>
-</label>
-`).prependTo('.pd_item_btns').find('[name="simulateManualHandleItemEnabled"]').click(function () {
-        let checked = $(this).prop('checked');
-        if (Config.simulateManualHandleItemEnabled !== checked) {
-            readConfig();
-            Config.simulateManualHandleItemEnabled = checked;
-            writeConfig();
-        }
-    });
-};
-
-/**
  * 在物品装备页面上添加批量使用和出售道具按钮
  */
 export const addBatchUseAndSellItemsButton = function () {
@@ -1396,7 +1378,7 @@ export const addBatchUseAndSellItemsButton = function () {
 `).insertAfter($area).find('[name="useItems"]').click(() => showBatchUseAndSellItemsDialog(1, safeId))
         .end().find('[name="sellItems"]').click(() => showBatchUseAndSellItemsDialog(2, safeId));
 
-    addSimulateManualHandleItemChecked();
+    Public.addSimulateManualActionChecked($('.pd_item_btns:last'));
 };
 
 /**
@@ -1450,6 +1432,7 @@ const showBatchUseAndSellItemsDialog = function (type, safeId) {
     });
 
     Dialog.show(dialogName);
+    Script.runFunc('Item.showBatchUseAndSellItemsDialog_after_', type);
 };
 
 /**
@@ -1498,6 +1481,7 @@ const useItems = function (itemTypeList, safeId) {
 
             console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
             $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
+            Script.runFunc('Item.useItems_after_');
         }).fail(function () {
             $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
         }).always(function () {
@@ -1604,6 +1588,7 @@ const useItems = function (itemTypeList, safeId) {
 </li>`);
         console.log(`共有${itemTypeNum}个种类中的${totalSuccessNum}个道具被使用`);
         Msg.show(`<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用</strong>`, -1);
+        Script.runFunc('Item.useItems_complete_');
     };
 
     $area.parent().append(`<ul class="pd_result"><li><strong>使用结果：</strong></li></ul>`);
@@ -1652,6 +1637,7 @@ const sellItems = function (itemTypeList, safeId) {
             sellInfo[itemName].num++;
             sellInfo[itemName].sell += parseInt(matches[1]);
             $wait.find('.pd_countdown').text(successNum);
+            Script.runFunc('Item.sellItems_after_');
         }).fail(function () {
             $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
         }).always(function () {
@@ -1745,6 +1731,7 @@ const sellItems = function (itemTypeList, safeId) {
         Msg.show(
             `<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功</strong><i>KFB<em>+${totalSell.toLocaleString()}</em></i>`, -1
         );
+        Script.runFunc('Item.sellItems_complete_');
     };
 
     $area.parent().append(`<ul class="pd_result"><li><strong>出售结果：</strong></li></ul>`);

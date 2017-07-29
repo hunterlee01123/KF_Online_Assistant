@@ -432,17 +432,17 @@ export const startTimingMode = function () {
             type: 'GET',
             url: 'index.php?t=' + new Date().getTime(),
             timeout: Const.defAjaxTimeout,
-            success (html) {
+            success(html) {
                 if (!/"kf_fw_ig_index.php"/.test(html)) {
                     interval = 10;
                     errorText = '论坛维护或其它未知情况';
                 }
             },
-            error () {
+            error() {
                 interval = Const.errorRefreshInterval;
                 errorText = '连接超时';
             },
-            complete () {
+            complete() {
                 if (interval > 0) {
                     console.log(`定时操作失败（原因：${errorText}），将在${interval}分钟后重试...`);
                     Msg.remove($('.pd_refresh_notice').parent());
@@ -879,7 +879,7 @@ export const addFastNavMenu = function () {
  */
 export const autoSaveCurrentDeposit = function (isRead = false) {
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 &&
-        Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
+            Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
         return;
     }
     let $kfb = $('a[href="kf_givemekfb.php"]');
@@ -1297,4 +1297,25 @@ export const changeNewRateTipsColor = function () {
     if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
         $('#pdUserName').find('span').attr('id', 'pdNewRateTips').css('color', '#5cb85c');
     }
+};
+
+/**
+ * 添加模拟手动操作复选框
+ * @param {jQuery} $area 待添加区域
+ */
+export const addSimulateManualActionChecked = function ($area) {
+    $(`
+<label style="margin-right: 5px;">
+  <input name="simulateManualActionEnabled" type="checkbox" ${Config.simulateManualActionEnabled ? 'checked' : ''}> 模拟手动操作
+  <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），以模拟手动使用道具、打开盒子等">[?]</span>
+</label>
+`).prependTo($area).find('input[name="simulateManualActionEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        $('input[name="simulateManualActionEnabled"]').not(this).prop('checked', checked);
+        if (Config.simulateManualActionEnabled !== checked) {
+            readConfig();
+            Config.simulateManualActionEnabled = checked;
+            writeConfig();
+        }
+    });
 };
