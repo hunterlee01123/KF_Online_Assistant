@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.5
+// @version     10.5.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.5';
+const version = '10.5.1';
 
 /**
  * 导出模块
@@ -950,41 +950,13 @@ const openBoxes = function ({ id, boxType, num, safeId }) {
                 Msg.show(`<strong>共有<em>${successNum}</em>个【${boxType}】打开成功${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>`, -1);
 
                 Script.runFunc('Box.openBoxes_after_', stat);
-                setTimeout(getNextObjects, _Const2.default.defAjaxInterval);
+                setTimeout(Public.getNextObjects, _Const2.default.defAjaxInterval);
                 setTimeout(() => $(document).dequeue('OpenAllBoxes'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
             } else {
                 if (index % 10 === 0) {
-                    setTimeout(getNextObjects, _Const2.default.defAjaxInterval);
+                    setTimeout(Public.getNextObjects, _Const2.default.defAjaxInterval);
                 }
                 setTimeout(() => $(document).dequeue('OpenBoxes'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-            }
-        });
-    };
-
-    /**
-     * 获取下一批物品
-     */
-    const getNextObjects = function () {
-        console.log('获取下一批物品Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) return;
-            let $myBag = $('.kf_fw_ig1:eq(1)');
-            let trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
-            let addHtml = '';
-            for (let i in trMatches) {
-                let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
-                if (!idMatches) continue;
-                if (!$myBag.has(`tr[id="wp_${idMatches[1]}"]`).length) {
-                    addHtml += trMatches[i];
-                }
-            }
-            if (addHtml) {
-                $myBag.find('> tbody > tr:nth-child(2)').after(addHtml);
             }
         });
     };
@@ -4765,21 +4737,9 @@ const useItems = function (itemTypeList, safeId) {
      * 获取下一批道具
      */
     const getNextItems = function () {
-        console.log('获取下一批道具Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) {
-                complete();
-                return;
-            }
-            $area.find('tr[id^="wp_"]').remove();
-            $area.find('> tbody > tr:last-child').before(matches[1]);
+        Public.getNextObjects(() => {
             if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
-        }).fail(() => setTimeout(getNextItems, _Const2.default.defAjaxInterval));
+        });
     };
 
     /**
@@ -4907,21 +4867,9 @@ const sellItems = function (itemTypeList, safeId) {
      * 获取下一批道具
      */
     const getNextItems = function () {
-        console.log('获取下一批道具Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) {
-                complete();
-                return;
-            }
-            $area.find('tr[id^="wp_"]').remove();
-            $area.find('> tbody > tr:last-child').before(matches[1]);
+        Public.getNextObjects(() => {
             if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
-        }).fail(() => setTimeout(getNextItems, _Const2.default.defAjaxInterval));
+        });
     };
 
     /**
@@ -8877,7 +8825,7 @@ const addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.getNextObjects = exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -10165,6 +10113,38 @@ const addSimulateManualActionChecked = exports.addSimulateManualActionChecked = 
             Config.simulateManualActionEnabled = checked;
             (0, _Config.write)();
         }
+    });
+};
+
+/**
+ * 获取下一批物品
+ * @param {?function} callback
+ */
+const getNextObjects = exports.getNextObjects = function (callback) {
+    console.log('获取下一批物品Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).done(function (html) {
+        let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+        if (!matches) return;
+        let $myBag = $('.kf_fw_ig1:eq(1)');
+        let trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+        let addHtml = '';
+        for (let i in trMatches) {
+            let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
+            if (!idMatches) continue;
+            if (!$myBag.has(`tr[id="wp_${idMatches[1]}"]`).length) {
+                addHtml += trMatches[i];
+            }
+        }
+        if (addHtml) {
+            $myBag.find('> tbody > tr:nth-child(2)').after(addHtml);
+        }
+        if (typeof callback === 'function') callback();
+    }).fail(function () {
+        setTimeout(() => getNextObjects(callback), _Const2.default.defAjaxInterval);
     });
 };
 

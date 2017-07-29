@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.5
+// @version     10.5.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.5';
+var version = '10.5.1';
 
 /**
  * 导出模块
@@ -1110,45 +1110,17 @@ var openBoxes = function openBoxes(_ref) {
                 Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>', -1);
 
                 Script.runFunc('Box.openBoxes_after_', stat);
-                setTimeout(getNextObjects, _Const2.default.defAjaxInterval);
+                setTimeout(Public.getNextObjects, _Const2.default.defAjaxInterval);
                 setTimeout(function () {
                     return $(document).dequeue('OpenAllBoxes');
                 }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
             } else {
                 if (index % 10 === 0) {
-                    setTimeout(getNextObjects, _Const2.default.defAjaxInterval);
+                    setTimeout(Public.getNextObjects, _Const2.default.defAjaxInterval);
                 }
                 setTimeout(function () {
                     return $(document).dequeue('OpenBoxes');
                 }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-            }
-        });
-    };
-
-    /**
-     * 获取下一批物品
-     */
-    var getNextObjects = function getNextObjects() {
-        console.log('获取下一批物品Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            var matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) return;
-            var $myBag = $('.kf_fw_ig1:eq(1)');
-            var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
-            var addHtml = '';
-            for (var i in trMatches) {
-                var idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
-                if (!idMatches) continue;
-                if (!$myBag.has('tr[id="wp_' + idMatches[1] + '"]').length) {
-                    addHtml += trMatches[i];
-                }
-            }
-            if (addHtml) {
-                $myBag.find('> tbody > tr:nth-child(2)').after(addHtml);
             }
         });
     };
@@ -4880,22 +4852,8 @@ var useItems = function useItems(itemTypeList, safeId) {
      * 获取下一批道具
      */
     var getNextItems = function getNextItems() {
-        console.log('获取下一批道具Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            var matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) {
-                complete();
-                return;
-            }
-            $area.find('tr[id^="wp_"]').remove();
-            $area.find('> tbody > tr:last-child').before(matches[1]);
+        Public.getNextObjects(function () {
             if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
-        }).fail(function () {
-            return setTimeout(getNextItems, _Const2.default.defAjaxInterval);
         });
     };
 
@@ -5073,22 +5031,8 @@ var sellItems = function sellItems(itemTypeList, safeId) {
      * 获取下一批道具
      */
     var getNextItems = function getNextItems() {
-        console.log('获取下一批道具Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            var matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) {
-                complete();
-                return;
-            }
-            $area.find('tr[id^="wp_"]').remove();
-            $area.find('> tbody > tr:last-child').before(matches[1]);
+        Public.getNextObjects(function () {
             if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
-        }).fail(function () {
-            return setTimeout(getNextItems, _Const2.default.defAjaxInterval);
         });
     };
 
@@ -10024,7 +9968,7 @@ var addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function a
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.getNextObjects = exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -11298,6 +11242,40 @@ var addSimulateManualActionChecked = exports.addSimulateManualActionChecked = fu
             Config.simulateManualActionEnabled = checked;
             (0, _Config.write)();
         }
+    });
+};
+
+/**
+ * 获取下一批物品
+ * @param {?function} callback
+ */
+var getNextObjects = exports.getNextObjects = function getNextObjects(callback) {
+    console.log('获取下一批物品Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).done(function (html) {
+        var matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+        if (!matches) return;
+        var $myBag = $('.kf_fw_ig1:eq(1)');
+        var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+        var addHtml = '';
+        for (var i in trMatches) {
+            var idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
+            if (!idMatches) continue;
+            if (!$myBag.has('tr[id="wp_' + idMatches[1] + '"]').length) {
+                addHtml += trMatches[i];
+            }
+        }
+        if (addHtml) {
+            $myBag.find('> tbody > tr:nth-child(2)').after(addHtml);
+        }
+        if (typeof callback === 'function') callback();
+    }).fail(function () {
+        setTimeout(function () {
+            return getNextObjects(callback);
+        }, _Const2.default.defAjaxInterval);
     });
 };
 

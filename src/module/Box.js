@@ -209,7 +209,7 @@ const openBoxes = function ({id, boxType, num, safeId}) {
                 );
 
                 Script.runFunc('Box.openBoxes_after_', stat);
-                setTimeout(getNextObjects, Const.defAjaxInterval);
+                setTimeout(Public.getNextObjects, Const.defAjaxInterval);
                 setTimeout(
                     () => $(document).dequeue('OpenAllBoxes'),
                     typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval
@@ -217,40 +217,12 @@ const openBoxes = function ({id, boxType, num, safeId}) {
             }
             else {
                 if (index % 10 === 0) {
-                    setTimeout(getNextObjects, Const.defAjaxInterval);
+                    setTimeout(Public.getNextObjects, Const.defAjaxInterval);
                 }
                 setTimeout(
                     () => $(document).dequeue('OpenBoxes'),
                     typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval
                 );
-            }
-        });
-    };
-
-    /**
-     * 获取下一批物品
-     */
-    const getNextObjects = function () {
-        console.log('获取下一批物品Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-            timeout: Const.defAjaxTimeout,
-        }).done(function (html) {
-            let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) return;
-            let $myBag = $('.kf_fw_ig1:eq(1)');
-            let trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
-            let addHtml = '';
-            for (let i in trMatches) {
-                let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
-                if (!idMatches) continue;
-                if (!$myBag.has(`tr[id="wp_${idMatches[1]}"]`).length) {
-                    addHtml += trMatches[i];
-                }
-            }
-            if (addHtml) {
-                $myBag.find('> tbody > tr:nth-child(2)').after(addHtml);
             }
         });
     };

@@ -1529,22 +1529,10 @@ const useItems = function (itemTypeList, safeId) {
      * 获取下一批道具
      */
     const getNextItems = function () {
-        console.log('获取下一批道具Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
-            timeout: Const.defAjaxTimeout,
-        }).done(function (html) {
-            let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) {
-                complete();
-                return;
-            }
-            $area.find('tr[id^="wp_"]').remove();
-            $area.find('> tbody > tr:last-child').before(matches[1]);
+        Public.getNextObjects(() => {
             if ($wait.data('stop')) complete();
             else setTimeout(getCurrentItems, Const.defAjaxInterval);
-        }).fail(() => setTimeout(getNextItems, Const.defAjaxInterval));
+        });
     };
 
     /**
@@ -1679,22 +1667,10 @@ const sellItems = function (itemTypeList, safeId) {
      * 获取下一批道具
      */
     const getNextItems = function () {
-        console.log('获取下一批道具Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
-            timeout: Const.defAjaxTimeout,
-        }).done(function (html) {
-            let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (!matches) {
-                complete();
-                return;
-            }
-            $area.find('tr[id^="wp_"]').remove();
-            $area.find('> tbody > tr:last-child').before(matches[1]);
+        Public.getNextObjects(() => {
             if ($wait.data('stop')) complete();
             else setTimeout(getCurrentItems, Const.defAjaxInterval);
-        }).fail(() => setTimeout(getNextItems, Const.defAjaxInterval));
+        });
     };
 
     /**
