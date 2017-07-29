@@ -115,16 +115,17 @@ const init = function () {
         if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
+        Post.addRedundantKeywordWarning();
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        Post.addRedundantKeywordWarning();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
     }
     else if (location.pathname === '/post.php') {
+        Post.addRedundantKeywordWarning();
         if (/\bmultiquote=1/i.test(location.href)) {
             if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
         }
@@ -136,7 +137,6 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
-        Post.addRedundantKeywordWarning();
     }
     else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {
         Item.enhanceMyItemsPage();

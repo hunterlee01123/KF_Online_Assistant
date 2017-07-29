@@ -48,6 +48,7 @@ export const handleMultiQuote = function (type = 1) {
     }
     let keywords = new Set();
     let content = '';
+    let $keywords = $('input[name="diy_guanjianci"]');
     if (type === 2) {
         Msg.wait(`<strong>正在获取引用内容中&hellip;</strong><i>剩余：<em class="pd_countdown">${list.length}</em></i>`);
         $(document).clearQueue('MultiQuote');
@@ -70,6 +71,7 @@ export const handleMultiQuote = function (type = 1) {
                         if (index === list.length - 1) {
                             Msg.destroy();
                             $('#textarea').val(content).focus();
+                            $keywords.trigger('change');
                         }
                         else {
                             setTimeout(function () {
@@ -83,12 +85,17 @@ export const handleMultiQuote = function (type = 1) {
             content += `[quote]回 ${data.floor}楼(${data.userName}) 的帖子[/quote]\n`;
         }
     });
-    $('input[name="diy_guanjianci"]').val([...keywords].join(','));
+    $keywords.val([...keywords].join(','));
     $('form[name="FORM"]').submit(function () {
         localStorage.removeItem(Const.multiQuoteStorageName);
     });
-    if (type === 2) $(document).dequeue('MultiQuote');
-    else $('[name="atc_content"]').val(content).focus();
+    if (type === 2) {
+        $(document).dequeue('MultiQuote');
+    }
+    else {
+        $('[name="atc_content"]').val(content).focus();
+        $keywords.trigger('change');
+    }
     Script.runFunc('Post.handleMultiQuote_after_', type);
 };
 
@@ -313,10 +320,12 @@ export const savePostContentWhenSubmit = function () {
  * 添加多余关键词警告
  */
 export const addRedundantKeywordWarning = function () {
-    $('form[action="post.php?"]').submit(function () {
-        let keywords = $.trim($(this).find('[name="diy_guanjianci"]').val()).split(',').filter(str => str);
+    $('input[name="diy_guanjianci"]').change(function () {
+        let $this = $(this);
+        let keywords = $.trim($this.val()).split(',').filter(str => str);
         if (keywords.length > 5) {
-            return confirm('所填关键词已超过5个，多余的关键词将被忽略，是否继续提交？');
+            alert('所填关键词已超过5个，多余的关键词将被忽略');
+            $this.select().focus();
         }
     });
 };
