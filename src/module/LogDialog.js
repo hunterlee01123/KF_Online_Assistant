@@ -281,6 +281,7 @@ const getLogStat = function (log, date, logStatType) {
 
     let income = {}, expense = {}, profit = {};
     let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootBoxTotalNum = 0, lootBoxStat = {};
+    let boxTotalNum = 0, boxStat = {}, boxGain = {'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {}};
     let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
     let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
     let invalidKeyList = [
@@ -323,6 +324,27 @@ const getLogStat = function (log, date, logStatType) {
                         for (let key of Box.boxTypeList) {
                             if (!(key in gain['box']) && (key in lootBoxStat)) lootBoxStat[key].min = 0;
                         }
+                    }
+                }
+            }
+            else if (type === '打开盒子' && $.type(gain) === 'object' && $.type(pay) === 'object') {
+                let matches = /【`(.+?)`】打开成功/.exec(action);
+                if (!matches) continue;
+                let boxType = matches[1];
+                boxTotalNum += Math.abs(pay['盒子']);
+                if (!(boxType in boxStat)) boxStat[boxType] = 0;
+                boxStat[boxType] += Math.abs(pay['盒子']);
+
+                for (let [key, value] of Util.entries(gain)) {
+                    if (!(key in boxGain)) continue;
+                    if ($.type(value) === 'object') {
+                        for (let [name, num] of Util.entries(value)) {
+                            if (!(name in boxGain[key])) boxGain[key][name] = 0;
+                            boxGain[key][name] += num;
+                        }
+                    }
+                    else {
+                        boxGain[key] += value;
                     }
                 }
             }
@@ -379,7 +401,7 @@ const getLogStat = function (log, date, logStatType) {
     if (lootCount > 0) {
         content += `<i>层数<span class="pd_stat_extra">(<em title="平均值">+${(lootLevelStat.total / lootCount).toFixed(2)}</em>|` +
             `<em title="最小值">+${lootLevelStat.min}</em>|<em title="最大值">+${lootLevelStat.max}</em>)</span></i> `;
-        content += `<i>盒子总数<em>+${lootBoxTotalNum.toLocaleString()}</em></i> `;
+        content += `<i>盒子<em>+${lootBoxTotalNum.toLocaleString()}</em></i> `;
         for (let key of Util.getSortedObjectKeyList(Box.boxTypeList, lootBoxStat)) {
             if (!lootBoxStat[key].total) continue;
             content += `<i>${key}<em>+${lootBoxStat[key].total.toLocaleString()}</em>` +
@@ -388,17 +410,39 @@ const getLogStat = function (log, date, logStatType) {
         }
     }
 
-    content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` +
+    let boxStatContent = '';
+    for (let boxType of Util.getSortedObjectKeyList(Box.boxTypeList, boxStat)) {
+        if (boxStatContent) boxStatContent += '|';
+        boxStatContent += `<ins title="${boxType}">-${boxStat[boxType].toLocaleString()}</ins>`;
+    }
+    content += `<br><strong>盒子收获统计：</strong><i>盒子<ins>-${boxTotalNum}</ins><span class="pd_stat_extra">(${boxStatContent})</span></i> `;
+    if (boxTotalNum > 0) {
+        for (let [key, value] of Util.entries(boxGain)) {
+            if (!value || ($.type(value) === 'object' && $.isEmptyObject(value))) continue;
+            if ($.type(value) === 'object') {
+                let typeList = key === 'item' ? Item.itemTypeList : Item.armTypeList;
+                for (let name of Util.getSortedObjectKeyList(typeList, value)) {
+                    content += `<i>${name}<em>+${value[name].toLocaleString()}</em></i> `;
+                }
+            }
+            else {
+                content += `<i>${key}<span class="pd_stat_extra"><em>+${value.toLocaleString()}</em>` +
+                    `(<em title="平均值">+${Util.getFixedNumLocStr(value / boxTotalNum, 2).toLocaleString()}</em>)</span></i> `
+            }
+        }
+    }
+
+    /*content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` +
         `<i>KFB<ins>-${buyItemKfb.toLocaleString()}</ins></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
         content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
-    }
-    content += `<br><strong>有效道具统计：</strong><i>有效道具<span class="pd_stat_extra"><em>+${validItemNum.toLocaleString()}</em>` +
+    }*/ // 临时禁用
+    content += `<br><strong>有效道具统计：</strong><i>有效道具<em>+${validItemNum.toLocaleString()}</em><span class="pd_stat_extra">` +
         `(<em title="3级以上有效道具">+${highValidItemNum.toLocaleString()}</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
         content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;
     }
-    content += `<br><strong>无效道具统计：</strong><i>无效道具<span class="pd_stat_extra"><em>+${invalidItemNum.toLocaleString()}</em>` +
+    content += `<br><strong>无效道具统计：</strong><i>无效道具<em>+${invalidItemNum.toLocaleString()}</em><span class="pd_stat_extra">` +
         `(<em title="3级以上无效道具">+${highInvalidItemNum.toLocaleString()}</em>)</span></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)) {
         content += `<i>${itemName}<em>+${invalidItemStat[itemName].toLocaleString()}</em></i> `;
