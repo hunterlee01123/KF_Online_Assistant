@@ -69,15 +69,13 @@ const addOpenAllBoxesButton = function () {
         $(document).clearQueue('OpenAllBoxes');
         $area.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             let $this = $(this);
-            $(document).queue('OpenAllBoxes', function () {
-                let boxType = $this.find('span:first').text().trim() + '盒子';
-                if (!boxTypeList.includes(boxType)) return;
-                let num = parseInt($this.find('span:last').text());
-                if (!num || num < 0) return;
-                let id = parseInt($area.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
-                if (!id) return;
-                openBoxes({id, boxType, num, safeId});
-            });
+            let boxType = $this.find('span:first').text().trim() + '盒子';
+            if (!boxTypeList.includes(boxType)) return;
+            let num = parseInt($this.find('span:last').text());
+            if (!num || num < 0) return;
+            let id = parseInt($area.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
+            if (!id) return;
+            $(document).queue('OpenAllBoxes', () => openBoxes({id, boxType, num, safeId}));
         });
         $(document).dequeue('OpenAllBoxes');
     });

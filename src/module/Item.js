@@ -1462,6 +1462,7 @@ const useItems = function (itemTypeList, safeId) {
         }).done(function (html) {
             if (!html) return;
             let msg = Util.removeHtmlTag(html);
+            let isDelete = false;
             if (/(成功|失败)！/.test(msg)) {
                 totalSuccessNum++;
                 if (!(itemName in useInfo)) useInfo[itemName] = {'道具': 0, '有效道具': 0, '无效道具': 0};
@@ -1469,16 +1470,22 @@ const useItems = function (itemTypeList, safeId) {
                 if (/成功！/.test(msg)) useInfo[itemName]['有效道具']++;
                 else useInfo[itemName]['无效道具']++;
                 $wait.find('.pd_countdown').text(totalSuccessNum);
-                $area.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
-                    $(this).remove();
-                });
+                isDelete = true;
             }
             else if (/无法再使用/.test(msg)) {
                 index = itemNum;
                 let typeIndex = tmpItemTypeList.indexOf(itemName);
                 if (typeIndex > -1) tmpItemTypeList.splice(typeIndex, 1);
             }
+            else {
+                isDelete = true;
+            }
 
+            if (isDelete) {
+                $area.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
+                    $(this).remove();
+                });
+            }
             console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
             $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
             Script.runFunc('Item.useItems_after_');

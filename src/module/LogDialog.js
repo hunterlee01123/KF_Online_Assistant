@@ -415,7 +415,8 @@ const getLogStat = function (log, date, logStatType) {
         if (boxStatContent) boxStatContent += '|';
         boxStatContent += `<ins title="${boxType}">-${boxStat[boxType].toLocaleString()}</ins>`;
     }
-    content += `<br><strong>盒子收获统计：</strong><i>盒子<ins>-${boxTotalNum}</ins><span class="pd_stat_extra">(${boxStatContent})</span></i> `;
+    content += `<br><strong>盒子收获统计：</strong><i>盒子<ins>-${boxTotalNum}</ins>` +
+        `${boxStatContent ? `<span class="pd_stat_extra">(${boxStatContent})</span>` : ''}</i> `;
     if (boxTotalNum > 0) {
         for (let [key, value] of Util.entries(boxGain)) {
             if (!value || ($.type(value) === 'object' && $.isEmptyObject(value))) continue;
