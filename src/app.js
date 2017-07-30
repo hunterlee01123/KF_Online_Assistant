@@ -139,13 +139,9 @@ const init = function () {
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
-    else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {
-        Item.enhanceMyItemsPage();
-        Item.addBatchUseAndConvertOldItemTypesButton();
-    }
     else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Box.init();
-        Item.addBatchUseAndSellItemsButton();
+        Item.init();
     }
     else if (location.pathname === '/kf_fw_ig_shop.php') {
         //Item.addBatchBuyItemsLink(); // 临时禁用
@@ -211,6 +207,7 @@ const init = function () {
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
+
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
     if (Config.followUserEnabled) Public.followUsers();

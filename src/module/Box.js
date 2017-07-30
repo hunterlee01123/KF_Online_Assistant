@@ -60,7 +60,7 @@ const addBatchOpenBoxesLink = function () {
  */
 const addOpenAllBoxesButton = function () {
     $(`
-<div class="pd_item_btns">
+<div class="pd_item_btns" data-name="openBoxesBtns">
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
 `).insertAfter($area).find('[name="openAllBoxes"]').click(function () {
@@ -80,7 +80,7 @@ const addOpenAllBoxesButton = function () {
         $(document).dequeue('OpenAllBoxes');
     });
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns:first'));
+    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
 /**

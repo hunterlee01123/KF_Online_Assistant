@@ -283,7 +283,7 @@ const getLogStat = function (log, date, logStatType) {
     let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootBoxTotalNum = 0, lootBoxStat = {};
     let boxTotalNum = 0, boxStat = {}, boxGain = {'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {}};
     let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
-    let validItemNum = 0, highValidItemNum = 0, validItemStat = {}, invalidItemNum = 0, highInvalidItemNum = 0, invalidItemStat = {};
+    let validItemNum = 0, validItemStat = {}, invalidItemNum = 0, invalidItemStat = {};
     let invalidKeyList = [
         'item', 'arm', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'
     ];
@@ -360,16 +360,15 @@ const getLogStat = function (log, date, logStatType) {
                 let matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
                 if (matches) {
                     let itemLevel = parseInt(matches[1]);
+                    if (itemLevel < 3) continue;
                     let itemName = matches[2];
                     if (gain['有效道具'] > 0) {
                         validItemNum += gain['有效道具'];
-                        if (itemLevel >= 3) highValidItemNum += gain['有效道具'];
                         if (typeof validItemStat[itemName] === 'undefined') validItemStat[itemName] = 0;
                         validItemStat[itemName] += gain['有效道具'];
                     }
                     if (gain['无效道具'] > 0) {
                         invalidItemNum += gain['无效道具'];
-                        if (itemLevel >= 3) highInvalidItemNum += gain['无效道具'];
                         if (typeof invalidItemStat[itemName] === 'undefined') invalidItemStat[itemName] = 0;
                         invalidItemStat[itemName] += gain['无效道具'];
                     }
@@ -438,13 +437,11 @@ const getLogStat = function (log, date, logStatType) {
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
         content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
     }*/ // 临时禁用
-    content += `<br><strong>有效道具统计：</strong><i>有效道具<em>+${validItemNum.toLocaleString()}</em><span class="pd_stat_extra">` +
-        `(<em title="3级以上有效道具">+${highValidItemNum.toLocaleString()}</em>)</span></i> `;
+    content += `<br><strong>有效道具统计：</strong><i>有效道具<em>+${validItemNum.toLocaleString()}</em></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
         content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;
     }
-    content += `<br><strong>无效道具统计：</strong><i>无效道具<em>+${invalidItemNum.toLocaleString()}</em><span class="pd_stat_extra">` +
-        `(<em title="3级以上无效道具">+${highInvalidItemNum.toLocaleString()}</em>)</span></i> `;
+    content += `<br><strong>无效道具统计：</strong><i>无效道具<em>+${invalidItemNum.toLocaleString()}</em></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)) {
         content += `<i>${itemName}<em>+${invalidItemStat[itemName].toLocaleString()}</em></i> `;
     }
