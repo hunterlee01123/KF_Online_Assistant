@@ -3,6 +3,7 @@
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
+import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
 import * as Script from './Script';
 import * as Item from './Item';
@@ -61,6 +62,10 @@ const addBatchOpenBoxesLink = function () {
 const addOpenAllBoxesButton = function () {
     $(`
 <div class="pd_item_btns" data-name="openBoxesBtns">
+  <label style="margin-right: 5px;">
+    <input name="saveMyObjectsInfoEnabled" type="checkbox" ${Config.saveMyObjectsInfoEnabled ? 'checked' : ''}> 保存我的物品信息
+    <span class="pd_cfg_tips" title="在批量打开盒子时自动保存当前页面上的物品信息，以突破最多显示20项的限制（此功能仅在熔炼功能未上线时生效）">[?]</span>
+  </label>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
 `).insertAfter($area).find('[name="openAllBoxes"]').click(function () {
@@ -78,6 +83,13 @@ const addOpenAllBoxesButton = function () {
             $(document).queue('OpenAllBoxes', () => openBoxes({id, boxType, num, safeId}));
         });
         $(document).dequeue('OpenAllBoxes');
+    }).end().find('input[name="saveMyObjectsInfoEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config.saveMyObjectsInfoEnabled !== checked) {
+            readConfig();
+            Config.saveMyObjectsInfoEnabled = checked;
+            writeConfig();
+        }
     });
 
     Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
@@ -207,7 +219,7 @@ const openBoxes = function ({id, boxType, num, safeId}) {
                 );
 
                 Script.runFunc('Box.openBoxes_after_', stat);
-                setTimeout(Public.getNextObjects, Const.defAjaxInterval);
+                setTimeout(() => Item.getNextObjects(Config.saveMyObjectsInfoEnabled ? Item.writeMyObjectsInfo : null), Const.defAjaxInterval);
                 setTimeout(
                     () => $(document).dequeue('OpenAllBoxes'),
                     typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval
@@ -215,7 +227,7 @@ const openBoxes = function ({id, boxType, num, safeId}) {
             }
             else {
                 if (index % 10 === 0) {
-                    setTimeout(Public.getNextObjects, Const.defAjaxInterval);
+                    setTimeout(Item.getNextObjects, Const.defAjaxInterval);
                 }
                 setTimeout(
                     () => $(document).dequeue('OpenBoxes'),

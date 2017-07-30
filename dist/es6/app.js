@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.5.1';
+const version = '10.6';
 
 /**
  * 导出模块
@@ -198,12 +198,9 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
-    } else if (/\/kf_fw_ig_my\.php$/.test(location.href)) {
-        Item.enhanceMyItemsPage();
-        Item.addBatchUseAndConvertOldItemTypesButton();
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Box.init();
-        Item.addBatchUseAndSellItemsButton();
+        Item.init();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         //Item.addBatchBuyItemsLink(); // 临时禁用
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
@@ -252,6 +249,7 @@ const init = function () {
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
+
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
     if (Config.followUserEnabled) Public.followUsers();
@@ -721,6 +719,8 @@ var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
 
+var _Config = require('./Config');
+
 var _Log = require('./Log');
 
 var Log = _interopRequireWildcard(_Log);
@@ -793,7 +793,11 @@ const addBatchOpenBoxesLink = function () {
  */
 const addOpenAllBoxesButton = function () {
     $(`
-<div class="pd_item_btns">
+<div class="pd_item_btns" data-name="openBoxesBtns">
+  <label style="margin-right: 5px;">
+    <input name="saveMyObjectsInfoEnabled" type="checkbox" ${Config.saveMyObjectsInfoEnabled ? 'checked' : ''}> 保存我的物品信息
+    <span class="pd_cfg_tips" title="在批量打开盒子时自动保存当前页面上的物品信息，以突破最多显示20项的限制（此功能仅在熔炼功能未上线时生效）">[?]</span>
+  </label>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
 `).insertAfter($area).find('[name="openAllBoxes"]').click(function () {
@@ -802,20 +806,25 @@ const addOpenAllBoxesButton = function () {
         $(document).clearQueue('OpenAllBoxes');
         $area.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             let $this = $(this);
-            $(document).queue('OpenAllBoxes', function () {
-                let boxType = $this.find('span:first').text().trim() + '盒子';
-                if (!boxTypeList.includes(boxType)) return;
-                let num = parseInt($this.find('span:last').text());
-                if (!num || num < 0) return;
-                let id = parseInt($area.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
-                if (!id) return;
-                openBoxes({ id, boxType, num, safeId });
-            });
+            let boxType = $this.find('span:first').text().trim() + '盒子';
+            if (!boxTypeList.includes(boxType)) return;
+            let num = parseInt($this.find('span:last').text());
+            if (!num || num < 0) return;
+            let id = parseInt($area.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
+            if (!id) return;
+            $(document).queue('OpenAllBoxes', () => openBoxes({ id, boxType, num, safeId }));
         });
         $(document).dequeue('OpenAllBoxes');
+    }).end().find('input[name="saveMyObjectsInfoEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config.saveMyObjectsInfoEnabled !== checked) {
+            (0, _Config.read)();
+            Config.saveMyObjectsInfoEnabled = checked;
+            (0, _Config.write)();
+        }
     });
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns:first'));
+    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
 /**
@@ -929,11 +938,11 @@ const openBoxes = function ({ id, boxType, num, safeId }) {
                 Msg.show(`<strong>共有<em>${successNum}</em>个【${boxType}】打开成功${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>`, -1);
 
                 Script.runFunc('Box.openBoxes_after_', stat);
-                setTimeout(Public.getNextObjects, _Const2.default.defAjaxInterval);
+                setTimeout(() => Item.getNextObjects(Config.saveMyObjectsInfoEnabled ? Item.writeMyObjectsInfo : null), _Const2.default.defAjaxInterval);
                 setTimeout(() => $(document).dequeue('OpenAllBoxes'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
             } else {
                 if (index % 10 === 0) {
-                    setTimeout(Public.getNextObjects, _Const2.default.defAjaxInterval);
+                    setTimeout(Item.getNextObjects, _Const2.default.defAjaxInterval);
                 }
                 setTimeout(() => $(document).dequeue('OpenBoxes'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
             }
@@ -947,7 +956,7 @@ const openBoxes = function ({ id, boxType, num, safeId }) {
     $(document).dequeue('OpenBoxes');
 };
 
-},{"./Const":7,"./Item":11,"./Log":12,"./Msg":16,"./Public":19,"./Script":21,"./Util":23}],4:[function(require,module,exports){
+},{"./Config":5,"./Const":7,"./Item":11,"./Log":12,"./Msg":16,"./Public":19,"./Script":21,"./Util":23}],4:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -1358,6 +1367,8 @@ const Config = exports.Config = {
     // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
     customAutoChangeIdColorList: [],
 
+    // 是否在打开盒子时自动保存当前页面上的物品信息，以突破最多显示20项的限制，true：开启；false：关闭
+    saveMyObjectsInfoEnabled: false,
     // 是否延长部分批量操作的时间间隔，以模拟手动使用道具、打开盒子等，true：开启；false：关闭
     simulateManualActionEnabled: false,
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -2849,6 +2860,8 @@ const Const = {
     tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
     // 存储临时点数分配记录列表的LocalStorage名称
     itemLogStorageName: storagePrefix + 'itemLog',
+    // 存储我的物品信息的LocalStorage名称
+    myObjectsInfoStorageName: storagePrefix + 'myObjectsInfo',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
@@ -3335,7 +3348,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchUseAndSellItemsButton = exports.addBatchBuyItemsLink = exports.getItemUsedInfo = exports.enhanceMyItemsPage = exports.addBatchUseAndConvertOldItemTypesButton = exports.getLevelByName = exports.armTypeList = exports.itemTypeList = undefined;
+exports.addBatchBuyItemsLink = exports.writeMyObjectsInfo = exports.readMyObjectsInfo = exports.getNextObjects = exports.init = exports.getItemUsedInfo = exports.getLevelByName = exports.armTypeList = exports.itemTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3375,6 +3388,11 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// 物品区域
+let $area;
+// SafeID
+let safeId;
+
 /**
  * 道具种类列表
  */
@@ -3384,50 +3402,6 @@ const itemTypeList = exports.itemTypeList = ['零时迷子的碎片', '被遗弃
  * 盒子种类列表
  */
 const armTypeList = exports.armTypeList = ['普通的装备', '幸运的装备', '稀有的装备', '传奇的装备', '神秘的装备'];
-
-/**
- * 获得转换指定等级道具可获得的能量点
- * @param {number} itemLevel 道具等级
- * @returns {number} 能量点
- */
-const getGainEnergyNumByLevel = function (itemLevel) {
-    switch (itemLevel) {
-        case 1:
-            return 2;
-        case 2:
-            return 10;
-        case 3:
-            return 50;
-        case 4:
-            return 300;
-        case 5:
-            return 2000;
-        default:
-            return 0;
-    }
-};
-
-/**
- * 获得恢复指定等级道具所需的能量点
- * @param {number} itemLevel 道具等级
- * @returns {number} 能量点
- */
-const getRestoreEnergyNumByLevel = function (itemLevel) {
-    switch (itemLevel) {
-        case 1:
-            return 10;
-        case 2:
-            return 50;
-        case 3:
-            return 300;
-        case 4:
-            return 2000;
-        case 5:
-            return 10000;
-        default:
-            return 0;
-    }
-};
 
 /**
  * 获取指定名称的道具等级
@@ -3459,949 +3433,6 @@ const getLevelByName = exports.getLevelByName = function (itemName) {
 };
 
 /**
- * 获取指定名称的道具使用上限个数
- * @param {string} itemName 道具名称
- * @returns {number} 道具的使用上限个数
- */
-const getMaxUsedNumByName = function (itemName) {
-    switch (itemName) {
-        case '蕾米莉亚同人漫画':
-        case '十六夜同人漫画':
-            return 50;
-        case '档案室钥匙':
-        case '傲娇LOLI娇蛮音CD':
-            return 30;
-        case '整形优惠卷':
-        case '消逝之药':
-            return 10;
-        default:
-            return -1;
-    }
-};
-
-/**
- * 从使用道具的回应消息中获取积分数据
- * @param {string} response 使用道具的回应消息
- * @param {number} itemTypeId 道具种类ID
- * @returns {Object|number} 积分对象，-1表示使用失败
- */
-const getCreditsViaResponse = function (response, itemTypeId) {
-    if (/(错误的物品编号|无法再使用|该道具已经被使用)/.test(response)) {
-        return -1;
-    }
-    if (itemTypeId >= 7 && itemTypeId <= 12) {
-        if (/成功！/.test(response)) return { '有效道具': 1 };else return { '无效道具': 1 };
-    } else {
-        let matches = /恢复能量增加了\s*(\d+)\s*点/.exec(response);
-        if (matches) return { '能量': parseInt(matches[1]) };
-        matches = /(\d+)KFB/.exec(response);
-        if (matches) return { 'KFB': parseInt(matches[1]) };
-        matches = /(\d+)点?贡献/.exec(response);
-        if (matches) return { '贡献': parseInt(matches[1]) };
-        matches = /贡献\+(\d+)/.exec(response);
-        if (matches) return { '贡献': parseInt(matches[1]) };
-    }
-    return {};
-};
-
-/**
- * 获取本种类指定数量的道具ID列表
- * @param {string} html 道具列表页面的HTML代码
- * @param {number} num 指定道具数量（设为0表示获取当前所有道具）
- * @returns {number[]} 道具ID列表
- */
-const getItemIdList = function (html, num = 0) {
-    let itemIdList = [];
-    let matches = html.match(/kf_fw_ig_my\.php\?pro=\d+/g);
-    if (matches) {
-        for (let i = 0; i < matches.length; i++) {
-            if (num > 0 && i + 1 > num) break;
-            let itemIdMatches = /pro=(\d+)/i.exec(matches[i]);
-            if (itemIdMatches) itemIdList.push(parseInt(itemIdMatches[1]));
-        }
-    }
-    return itemIdList;
-};
-
-/**
- * 使用指定的一系列道具
- * @param {{}} options 设置项
- * @param {number} options.type 使用类型，1：使用本种类指定数量的道具；2：使用本种类指定ID的道具
- * @param {number[]} options.itemIdList 指定的道具ID列表
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {number} options.itemTypeId 道具种类ID
- * @param {string} options.itemName 道具名称
- * @param {jQuery} [options.$itemLine] 当前使用道具种类所在的表格行（用于使用类型1）
- * @param {boolean} [options.isTypeBatch=false] 是否批量使用不同种类的道具
- * @param {{}} [cycle] 循环使用道具的信息类
- * @param {number} cycle.itemNum 循环使用的道具数量
- * @param {number} cycle.round 当前循环的轮数
- * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
- * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
- * @param {{}} cycle.stat 循环使用道具的统计项
- * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
- * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
- */
-const useOldItems = function (options, cycle) {
-    let settings = {
-        type: 1,
-        itemIdList: [],
-        safeId: '',
-        itemLevel: 0,
-        itemTypeId: 0,
-        itemName: '',
-        $itemLine: null,
-        isTypeBatch: false
-    };
-    $.extend(settings, options);
-
-    if (cycle) {
-        if (cycle.round === 1) {
-            console.log(`循环使用道具Start，使用道具数量：${cycle.itemNum}，有效道具使用次数上限：${cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制'}，` + `恢复道具成功次数上限：${cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制'}`);
-            $('.kf_fw_ig1:last').parent().append(`
-<ul class="pd_result">
-  <li class="pd_stat">
-    <strong>
-    对<em>${cycle.itemNum}</em>个【Lv.${settings.itemLevel}：${settings.itemName}】道具的循环使用开始（当前道具恢复能量<em>${cycle.totalEnergyNum}</em>点）<br>
-    （有效道具使用次数上限：<em>${cycle.maxEffectiveItemCount ? cycle.maxEffectiveItemCount : '无限制'}</em>，
-    恢复道具成功次数上限：<em>${cycle.maxSuccessRestoreItemCount ? cycle.maxSuccessRestoreItemCount : '无限制'}</em>）
-    </strong>
-  </li>
-</ul>
-`);
-        } else {
-            $('.pd_result:last').append('<div class="pd_result_sep"></div>');
-        }
-        $('.pd_result:last').append(`<li class="pd_stat" style="color: #ff3399;"><strong>第${cycle.round}轮循环开始：</strong></li>`);
-    }
-    if (cycle) {
-        $('.pd_result:last').append('<li><strong>使用结果：</strong></li>');
-    } else {
-        $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】使用结果：</strong></li></ul>`);
-    }
-
-    let successNum = 0,
-        failNum = 0;
-    let stat = { '有效道具': 0, '无效道具': 0 };
-    let nextRoundItemIdList = [];
-    let isStop = false;
-    $(document).clearQueue('UseItems');
-    $.each(settings.itemIdList, function (index, itemId) {
-        $(document).queue('UseItems', function () {
-            $.ajax({
-                type: 'GET',
-                url: `kf_fw_ig_doit.php?id=${itemId}&t=${new Date().getTime()}`,
-                timeout: _Const2.default.defAjaxTimeout,
-                success(html) {
-                    Public.showFormatLog('使用道具', html);
-                    let { type, msg } = Util.getResponseMsg(html);
-                    if (type === 1 && !/(错误的物品编号|无法再使用|该道具已经被使用)/.test(msg)) {
-                        successNum++;
-                        nextRoundItemIdList.push(itemId);
-                        let credits = getCreditsViaResponse(msg, settings.itemTypeId);
-                        if (credits !== -1) {
-                            for (let key of Object.keys(credits)) {
-                                if (typeof stat[key] === 'undefined') stat[key] = credits[key];else stat[key] += credits[key];
-                            }
-                        }
-                    } else {
-                        failNum++;
-                        if (/无法再使用/.test(msg)) nextRoundItemIdList = [];
-                    }
-                    $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
-                    if (cycle && cycle.maxEffectiveItemCount && cycle.stat['有效道具'] + stat['有效道具'] >= cycle.maxEffectiveItemCount) {
-                        isStop = true;
-                        console.log('有效道具使用次数到达设定上限，循环使用操作停止');
-                        $('.pd_result:last').append('<li><span class="pd_notice">（有效道具使用次数到达设定上限，循环操作中止）</span></li>');
-                    }
-                },
-                error() {
-                    failNum++;
-                },
-                complete() {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) {
-                        $(document).clearQueue('UseItems');
-                        if (settings.isTypeBatch) $(document).clearQueue('UseItemTypes');
-                    }
-
-                    if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($countdown.closest('.pd_msg'));
-                        if (stat['有效道具'] === 0) delete stat['有效道具'];
-                        if (stat['无效道具'] === 0) delete stat['无效道具'];
-                        if (!cycle && successNum > 0) {
-                            Log.push('使用道具', `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具被使用`, {
-                                gain: $.extend({}, stat, { '已使用道具': successNum }),
-                                pay: { '道具': -successNum }
-                            });
-                        }
-                        let logStat = '',
-                            msgStat = '',
-                            resultStat = '';
-                        for (let type of Object.keys(stat)) {
-                            logStat += `，${type}+${stat[type]}`;
-                            msgStat += `<i>${type}<em>+${stat[type]}</em></i>`;
-                            resultStat += `<i>${type}<em>+${stat[type]}</em></i> `;
-                            if (cycle) {
-                                if (typeof cycle.stat[type] === 'undefined') cycle.stat[type] = stat[type];else cycle.stat[type] += stat[type];
-                            }
-                        }
-                        console.log(`共有${successNum}个道具被使用${failNum > 0 ? `，共有${failNum}个道具未能使用` : ''}${logStat}`);
-                        Msg.show(`<strong>共有<em>${successNum}</em>个道具被使用${failNum > 0 ? `，共有<em>${failNum}</em>个道具未能使用` : ''}</strong>${msgStat}`, -1);
-                        if (resultStat === '') resultStat = '<span class="pd_notice">无</span>';
-                        $('.pd_result:last').append(`<li class="pd_stat"><b>统计结果（共有<em>${successNum}</em>个道具被使用）：</b><br>${resultStat}</li>`);
-                        setCurrentItemUsableAndUsedNum(settings.$itemLine, successNum, -successNum);
-                        if (settings.itemName === '零时迷子的碎片') showCurrentUsedItemNum();
-
-                        if (cycle) {
-                            settings.itemIdList = nextRoundItemIdList;
-                            if (!settings.itemIdList.length) isStop = true;
-                            cycle.countStat['被使用次数'] += successNum;
-                            cycle.stat['道具'] -= successNum;
-                            cycle.stat['已使用道具'] += successNum;
-                            cycleUseItems(isStop ? 0 : 2, settings, cycle);
-                        } else if (settings.isTypeBatch) {
-                            $(document).dequeue('UseItemTypes');
-                        }
-                    } else {
-                        setTimeout(() => $(document).dequeue('UseItems'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('UseItems');
-};
-
-/**
- * 恢复指定的一系列道具
- * @param {{}} options 设置项
- * @param {number} options.type 恢复类型，1：恢复本种类指定数量的道具；2：恢复本种类指定ID的道具
- * @param {number[]} options.itemIdList 指定的道具ID列表
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {number} options.itemTypeId 道具种类ID
- * @param {string} options.itemName 道具名称
- * @param {jQuery} [options.$itemLine] 当前恢复道具种类所在的表格行（用于恢复类型1）
- * @param {{}} [cycle] 循环使用道具的信息类
- * @param {number} cycle.itemNum 循环使用的道具数量
- * @param {number} cycle.round 当前循环的轮数
- * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
- * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
- * @param {{}} cycle.stat 循环使用道具的统计项
- * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
- * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
- */
-const restoreItems = function (options, cycle) {
-    let settings = {
-        type: 1,
-        itemIdList: [],
-        safeId: '',
-        itemLevel: 0,
-        itemTypeId: 0,
-        itemName: '',
-        $itemLine: null
-    };
-    $.extend(settings, options);
-
-    if (cycle) {
-        $('.pd_result:last').append('<li class="pd_result_sep_inner"></li><li><strong>恢复结果：</strong></li>');
-    } else {
-        $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】恢复结果：</strong></li></ul>`);
-    }
-
-    let successNum = 0,
-        failNum = 0,
-        successEnergyNum = 0;
-    let perEnergyNum = getRestoreEnergyNumByLevel(settings.itemLevel);
-    let isStop = false;
-    let nextRoundItemIdList = [];
-    $(document).clearQueue('RestoreItems');
-    $.each(settings.itemIdList, function (index, itemId) {
-        $(document).queue('RestoreItems', function () {
-            $.ajax({
-                type: 'GET',
-                url: `kf_fw_ig_doit.php?renew=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
-                timeout: _Const2.default.defAjaxTimeout,
-                success(html) {
-                    Public.showFormatLog('恢复道具', html);
-                    let { type, msg } = Util.getResponseMsg(html);
-                    if (type === 1) {
-                        if (/该道具已经被恢复/.test(msg)) {
-                            msg = '该道具已经被恢复';
-                            successNum++;
-                            successEnergyNum += perEnergyNum;
-                            nextRoundItemIdList.push(itemId);
-                            if (cycle && cycle.maxSuccessRestoreItemCount && cycle.countStat['恢复成功次数'] + successNum >= cycle.maxSuccessRestoreItemCount) {
-                                isStop = true;
-                                msg += '<span class="pd_notice">（恢复道具成功次数已达到设定上限，恢复操作中止）</span>';
-                            }
-                        } else if (/恢复失败/.test(msg)) {
-                            msg = '该道具恢复失败';
-                            failNum++;
-                        } else if (/你的能量不足以恢复本道具/.test(msg)) {
-                            isStop = true;
-                            msg = '你的能量不足以恢复本道具<span class="pd_notice">（恢复操作中止）</span>';
-                        }
-                    }
-                    $('.pd_result:last').append(`<li><b>第${index + 1}次：</b>${msg}</li>`);
-                },
-                complete() {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('RestoreItems');
-
-                    if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($countdown.closest('.pd_msg'));
-                        if (!cycle && (successNum > 0 || failNum > 0)) {
-                            Log.push('恢复道具', `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具恢复成功，共有\`${failNum}\`个道具恢复失败`, {
-                                gain: { '道具': successNum },
-                                pay: { '已使用道具': -(successNum + failNum), '能量': -successEnergyNum }
-                            });
-                        }
-                        console.log(`共有${successNum}个道具恢复成功，共有${failNum}个道具恢复失败，能量-${successEnergyNum}`);
-                        Msg.show(`<strong>共有<em>${successNum}</em>个道具恢复成功，共有<em>${failNum}</em>个道具恢复失败</strong>` + `<i>能量<ins>-${successEnergyNum}</ins></i>`, -1);
-                        $('.pd_result:last').append(`<li class="pd_stat">共有<em>${successNum}</em>个道具恢复成功，共有<em>${failNum}</em>个道具恢复失败，` + `<i>能量<ins>-${successEnergyNum}</ins></i></li>`);
-                        setCurrentItemUsableAndUsedNum(settings.$itemLine, -(successNum + failNum), successNum, -successEnergyNum);
-
-                        if (cycle) {
-                            settings.itemIdList = nextRoundItemIdList;
-                            if (!settings.itemIdList.length) isStop = true;
-                            if (!isStop) cycle.round++;
-                            cycle.totalEnergyNum -= successEnergyNum;
-                            cycle.countStat['恢复成功次数'] += successNum;
-                            cycle.countStat['恢复失败次数'] += failNum;
-                            cycle.stat['能量'] -= successEnergyNum;
-                            cycle.stat['道具'] += successNum;
-                            cycle.stat['已使用道具'] -= successNum + failNum;
-                            cycleUseItems(isStop ? 0 : 1, settings, cycle);
-                        }
-                    } else {
-                        setTimeout(() => $(document).dequeue('RestoreItems'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('RestoreItems');
-};
-
-/**
- * 循环使用指定的一系列道具
- * @param {number} type 操作类型，1：批量使用道具；2：批量恢复道具；0：中止循环
- * @param {{}} options 设置项
- * @param {number} options.type 循环使用类型，1：循环使用本种类指定数量的道具；2：循环使用本种类指定ID的道具
- * @param {number[]} options.itemIdList 指定的道具ID列表
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {number} options.itemTypeId 道具种类ID
- * @param {string} options.itemName 道具名称
- * @param {jQuery} [options.$itemLine] 当前使用道具种类所在的表格行（用于循环使用类型1）
- * @param {{}} cycle 循环使用道具的信息类
- * @param {number} cycle.itemNum 循环使用的道具数量
- * @param {number} cycle.round 当前循环的轮数
- * @param {number} cycle.totalEnergyNum 当前的道具恢复能量
- * @param {{}} cycle.countStat 循环使用道具的操作次数统计项
- * @param {{}} cycle.stat 循环使用道具的统计项
- * @param {number} cycle.maxEffectiveItemCount 有效道具使用次数上限（0表示不限制）
- * @param {number} cycle.maxSuccessRestoreItemCount 恢复道具成功次数上限（0表示不限制）
- */
-const cycleUseItems = function (type, options, cycle) {
-    if (!cycle.countStat || $.isEmptyObject(cycle.countStat)) {
-        cycle.countStat = {
-            '被使用次数': 0,
-            '恢复成功次数': 0,
-            '恢复失败次数': 0
-        };
-    }
-    if (!cycle.stat || $.isEmptyObject(cycle.stat)) {
-        cycle.stat = {
-            '能量': 0,
-            '道具': 0,
-            '已使用道具': 0,
-            '有效道具': 0,
-            '无效道具': 0
-        };
-    }
-
-    if ($('.pd_msg').length >= 5) {
-        Msg.remove($('.pd_msg:first'));
-    }
-
-    const showResult = function (type, stat) {
-        let resultStat = '';
-        for (let key of Object.keys(stat)) {
-            if (type > 0 && (key === '道具' || key === '已使用道具')) continue;
-            resultStat += `<i>${key}${Util.getStatFormatNumber(cycle.stat[key])}</i> `;
-        }
-        $('.pd_result:last').append(`
-<li class="pd_result_sep${type > 0 ? '_inner' : ''}"></li>
-<li class="pd_stat">
-  <strong>
-    ${type > 0 ? '截至目前为止的统计' : `【Lv.${options.itemLevel}：${options.itemName}】循环使用最终统计`}（当前道具恢复能量<em>${cycle.totalEnergyNum}</em>点）：
-  </strong>
-</li>
-<li class="pd_stat">
-  ${type > 0 ? '' : `共进行了<em>${cycle.round}</em>轮循环：`}
-  <i>被使用次数<em>+${cycle.countStat['被使用次数']}</em></i>
-  <i>恢复成功次数<em>+${cycle.countStat['恢复成功次数']}</em></i>
-  <i>恢复失败次数<em>+${cycle.countStat['恢复失败次数']}</em></i>
-</li>
-<li class="pd_stat">${resultStat}</li>
-`);
-    };
-
-    if (type === 1) {
-        showResult(type, cycle.stat);
-        Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${options.itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        setTimeout(function () {
-            useOldItems(options, cycle);
-        }, cycle.round === 1 ? 500 : typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
-    } else if (type === 2) {
-        Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${options.itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        setTimeout(() => restoreItems(options, cycle), typeof _Const2.default.cycleUseItemsFirstAjaxInterval === 'function' ? _Const2.default.cycleUseItemsFirstAjaxInterval() : _Const2.default.cycleUseItemsFirstAjaxInterval);
-    } else {
-        if (cycle.stat['道具'] === 0) delete cycle.stat['道具'];
-        if (cycle.stat['已使用道具'] === 0) delete cycle.stat['已使用道具'];
-        if (cycle.stat['有效道具'] === 0) delete cycle.stat['有效道具'];
-        if (cycle.stat['无效道具'] === 0) delete cycle.stat['无效道具'];
-        let gain = {},
-            pay = {};
-        for (let key in cycle.stat) {
-            if (cycle.stat[key] > 0) gain[key] = cycle.stat[key];else pay[key] = cycle.stat[key];
-        }
-
-        if (cycle.countStat['被使用次数'] > 0) {
-            Log.push('循环使用道具', `对\`${cycle.itemNum}\`个【\`Lv.${options.itemLevel}：${options.itemName}\`】道具进行了\`${cycle.round}\`轮循环使用` + `(被使用次数\`+${cycle.countStat['被使用次数']}\`，恢复成功次数\`+${cycle.countStat['恢复成功次数']}\`，` + `恢复失败次数\`+${cycle.countStat['恢复失败次数']}\`)`, { gain: gain, pay: pay });
-        }
-
-        console.log(`共进行了${cycle.round}轮循环，被使用次数+${cycle.countStat['被使用次数']}，恢复成功次数+${cycle.countStat['恢复成功次数']}，` + `恢复失败次数+${cycle.countStat['恢复失败次数']}，能量${cycle.stat['能量']}`);
-        Msg.show(`<strong>共进行了<em>${cycle.round}</em>轮循环</strong><i>被使用次数<em>+${cycle.countStat['被使用次数']}</em></i>` + `<i>恢复成功次数<em>+${cycle.countStat['恢复成功次数']}</em></i><i>恢复失败次数<em>+${cycle.countStat['恢复失败次数']}</em></i>` + `<i>能量<ins>${cycle.stat['能量']}</ins></i><a href="#">清除消息框</a>`, -1).find('a').click(function (e) {
-            e.preventDefault();
-            Msg.destroy();
-        });
-        showResult(type, cycle.stat);
-    }
-};
-
-/**
- * 转换指定的一系列道具为能量
- * @param {{}} options 设置项
- * @param {number} options.type 转换类型，1：转换本种类指定数量的道具为能量；2：转换本种类指定ID的道具为能量
- * @param {number[]} options.itemIdList 指定的道具ID列表
- * @param {string} options.safeId 用户的SafeID
- * @param {number} options.itemLevel 道具等级
- * @param {string} options.itemName 道具名称
- * @param {jQuery} [options.$itemLine] 当前恢复道具种类所在的表格行（用于转换类型1）
- * @param {boolean} [options.isTypeBatch=false] 是否批量转换不同种类的道具
- */
-const convertItemsToEnergy = function (options) {
-    let settings = {
-        type: 1,
-        itemIdList: [],
-        safeId: '',
-        itemLevel: 0,
-        itemName: '',
-        $itemLine: null,
-        isTypeBatch: false
-    };
-    $.extend(settings, options);
-    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【Lv.${settings.itemLevel}：${settings.itemName}】转换结果：</strong></li></ul>`);
-
-    let successNum = 0,
-        failNum = 0;
-    let energyNum = getGainEnergyNumByLevel(settings.itemLevel);
-    $(document).clearQueue('ConvertItemsToEnergy');
-    $.each(settings.itemIdList, function (index, itemId) {
-        $(document).queue('ConvertItemsToEnergy', function () {
-            $.ajax({
-                type: 'GET',
-                url: `kf_fw_ig_doit.php?tomp=${settings.safeId}&id=${itemId}&t=${new Date().getTime()}`,
-                timeout: _Const2.default.defAjaxTimeout,
-                success(html) {
-                    Public.showFormatLog('将道具转换为能量', html);
-                    let { msg } = Util.getResponseMsg(html);
-                    if (/转换为了\s*\d+\s*点能量/.test(msg)) {
-                        successNum++;
-                    } else failNum++;
-                },
-                error() {
-                    failNum++;
-                },
-                complete() {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    let isStop = $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) {
-                        $(document).clearQueue('ConvertItemsToEnergy');
-                        if (settings.isTypeBatch) $(document).clearQueue('ConvertItemTypesToEnergy');
-                    }
-
-                    if (isStop || index === settings.itemIdList.length - 1) {
-                        Msg.remove($countdown.closest('.pd_msg'));
-                        let successEnergyNum = successNum * energyNum;
-                        if (successNum > 0) {
-                            Log.push('将道具转换为能量', `共有\`${successNum}\`个【\`Lv.${settings.itemLevel}：${settings.itemName}\`】道具成功转换为能量`, { gain: { '能量': successEnergyNum }, pay: { '已使用道具': -successNum } });
-                        }
-                        console.log(`共有${successNum}个道具成功转换为能量${failNum > 0 ? `，共有${failNum}个道具转换失败` : ''}，能量+${successEnergyNum}`);
-                        Msg.show(`<strong>共有<em>${successNum}</em>个道具成功转换为能量${failNum > 0 ? `，共有<em>${failNum}</em>个道具转换失败` : ''}</strong>` + `<i>能量<em>+${successEnergyNum}</em></i>`, -1);
-                        $('.pd_result:last').append(`<li class="pd_stat">共有<em>${successNum}</em>个道具成功转换为能量${failNum > 0 ? `，共有<em>${failNum}</em>个道具转换失败` : ''}，` + `<i>能量<em>+${successEnergyNum}</em></i></li>`);
-                        setCurrentItemUsableAndUsedNum(settings.$itemLine, -successNum, null, successEnergyNum);
-                        if (settings.isTypeBatch) $(document).dequeue('ConvertItemTypesToEnergy');
-                    } else {
-                        setTimeout(() => $(document).dequeue('ConvertItemsToEnergy'), _Const2.default.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('ConvertItemsToEnergy');
-};
-
-/**
- * 添加批量使用和转换指定种类的道具的按钮
- */
-const addBatchUseAndConvertOldItemTypesButton = exports.addBatchUseAndConvertOldItemTypesButton = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    $(`
-<div class="pd_item_btns">
-  <button name="useItemTypes" type="button" title="批量使用指定种类的道具">批量使用</button>
-  <button class="pd_highlight" name="convertItemTypes" type="button" title="批量将指定种类的道具转换为能量">批量转换</button>
-  <button name="selectAll" type="button">全选</button>
-  <button name="selectInverse" type="button">反选</button>
-</div>
-`).insertAfter('.pd_items').on('click', 'button', function () {
-        let name = $(this).attr('name');
-        if (name === 'useItemTypes' || name === 'convertItemTypes') {
-            let itemTypeList = [];
-            $('.pd_item_type_chk:checked').each(function () {
-                let $itemLine = $(this).closest('tr'),
-                    itemLevel = parseInt($itemLine.find('td:first-child').text()),
-                    itemTypeId = parseInt($itemLine.data('itemTypeId')),
-                    itemName = $itemLine.find('td:nth-child(2)').text().trim();
-                if (isNaN(itemTypeId) || itemTypeId <= 0) return;
-                if (name === 'convertItemTypes' && itemTypeId === 1) return;
-                let itemListUrl = $itemLine.find('td:last-child').find(name === 'useItemTypes' ? 'a:first-child' : 'a:last-child').attr('href') + '&t=' + new Date().getTime();
-                itemTypeList.push({
-                    itemTypeId: itemTypeId,
-                    itemLevel: itemLevel,
-                    itemName: itemName,
-                    $itemLine: $itemLine,
-                    itemListUrl: itemListUrl
-                });
-            });
-            if (!itemTypeList.length) return;
-            let num = parseInt(prompt(`在指定种类道具中你要${name === 'useItemTypes' ? '使用' : '转换'}多少个道具？（0表示不限制）`, 0));
-            if (isNaN(num) || num < 0) return;
-            Msg.destroy();
-
-            let queueName = name === 'useItemTypes' ? 'UseItemTypes' : 'ConvertItemTypesToEnergy';
-            $(document).clearQueue(queueName);
-            $.each(itemTypeList, function (index, data) {
-                $(document).queue(queueName, function () {
-                    let $wait = Msg.wait(`正在获取本种类${name === 'useItemTypes' ? '未' : '已'}使用道具列表，请稍后&hellip;`);
-                    $.ajax({
-                        type: 'GET',
-                        url: data.itemListUrl,
-                        timeout: _Const2.default.defAjaxTimeout,
-                        success(html) {
-                            Msg.remove($wait);
-                            let itemIdList = getItemIdList(html, num);
-                            if (!itemIdList.length) {
-                                $(document).dequeue(queueName);
-                                return;
-                            }
-
-                            if (name === 'useItemTypes') {
-                                console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                                useOldItems({
-                                    type: 1,
-                                    itemIdList: itemIdList,
-                                    safeId: safeId,
-                                    itemLevel: data.itemLevel,
-                                    itemTypeId: data.itemTypeId,
-                                    itemName: data.itemName,
-                                    $itemLine: data.$itemLine,
-                                    isTypeBatch: true
-                                });
-                            } else {
-                                console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                                convertItemsToEnergy({
-                                    type: 1,
-                                    itemIdList: itemIdList,
-                                    safeId: safeId,
-                                    itemLevel: data.itemLevel,
-                                    itemName: data.itemName,
-                                    $itemLine: data.$itemLine,
-                                    isTypeBatch: true
-                                });
-                            }
-                        },
-                        error() {
-                            Msg.remove($wait);
-                            $(document).dequeue(queueName);
-                        }
-                    });
-                });
-            });
-            $(document).dequeue(queueName);
-        } else if (name === 'selectAll') {
-            Util.selectAll($('.pd_item_type_chk'));
-        } else if (name === 'selectInverse') {
-            Util.selectInverse($('.pd_item_type_chk'));
-        }
-    });
-    Public.addSimulateManualActionChecked($('.pd_item_btns'));
-};
-
-/**
- * 为我的道具页面中的道具操作链接绑定点击事件
- * @param {jQuery} $element 要绑定的容器元素
- */
-const bindItemActionLinksClick = function ($element) {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    $element.on('click', 'a[href="#"]', function (e) {
-        e.preventDefault();
-        let $this = $(this);
-        if ($this.is('.pd_disabled_link')) return;
-        let $itemLine = $this.closest('tr'),
-            itemLevel = parseInt($itemLine.find('td:first-child').text()),
-            itemTypeId = parseInt($itemLine.data('itemTypeId')),
-            itemName = $itemLine.find('td:nth-child(2)').text().trim(),
-            itemUsableNum = parseInt($itemLine.find('td:nth-child(3) > .pd_usable_num').text()),
-            itemUsedNum = parseInt($itemLine.find('td:nth-child(3) > .pd_used_num').text()),
-            itemListUrl = '';
-        if (isNaN(itemTypeId) || itemTypeId <= 0) return;
-
-        if ($this.is('.pd_items_batch_use')) {
-            let num = parseInt(prompt(`你要使用多少个【Lv.${itemLevel}：${itemName}】道具？（0表示不限制）`, itemUsableNum ? itemUsableNum : 0));
-            if (isNaN(num) || num < 0) return;
-            Msg.destroy();
-
-            Msg.wait('正在获取本种类未使用道具列表，请稍后&hellip;');
-            itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
-            $.get(itemListUrl, function (html) {
-                Msg.destroy();
-                let itemIdList = getItemIdList(html, num);
-                if (!itemIdList.length) {
-                    alert('本种类没有未使用的道具');
-                    return;
-                }
-                console.log('批量使用道具Start，使用道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在使用道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                useOldItems({
-                    type: 1,
-                    itemIdList: itemIdList,
-                    safeId: safeId,
-                    itemLevel: itemLevel,
-                    itemTypeId: itemTypeId,
-                    itemName: itemName,
-                    $itemLine: $itemLine
-                });
-            });
-        } else if ($this.is('.pd_items_cycle_use')) {
-            let value = prompt(`你要循环使用多少个【Lv.${itemLevel}：${itemName}】道具？\n` + '（可直接填写道具数量，也可使用“道具数量|有效道具使用次数上限|恢复道具成功次数上限”的格式[设为0表示不限制]，例一：7；例二：5|3；例三：3|0|6）', itemUsableNum ? itemUsableNum : 0);
-            if (value === null) return;
-            value = $.trim(value);
-            if (!/\d+(\|\d+)?(\|\d+)?/.test(value)) {
-                alert('格式不正确');
-                return;
-            }
-            let arr = value.split('|');
-            let num = 0,
-                maxEffectiveItemCount = 0,
-                maxSuccessRestoreItemCount = 0;
-            num = parseInt(arr[0]);
-            if (isNaN(num) || num < 0) return;
-            if (typeof arr[1] !== 'undefined') maxEffectiveItemCount = parseInt(arr[1]);
-            if (typeof arr[2] !== 'undefined') maxSuccessRestoreItemCount = parseInt(arr[2]);
-            Msg.destroy();
-
-            Msg.wait('正在获取本种类未使用道具列表，请稍后&hellip;');
-            itemListUrl = $itemLine.find('td:last-child').find('a:first-child').attr('href') + '&t=' + new Date().getTime();
-            $.get(itemListUrl, function (html) {
-                Msg.destroy();
-                let itemIdList = getItemIdList(html, num);
-                if (!itemIdList.length) {
-                    alert('本种类没有未使用的道具');
-                    return;
-                }
-                Msg.wait('正在获取当前道具相关信息，请稍后&hellip;');
-                $.get('kf_fw_ig_my.php?t=' + new Date().getTime(), function (html) {
-                    showCurrentUsableItemNum(html);
-                    $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), function (html) {
-                        Msg.destroy();
-                        let totalEnergyNum = getCurrentEnergyNum(html);
-                        showCurrentUsedItemNum(html);
-                        cycleUseItems(1, {
-                            type: 1,
-                            itemIdList: itemIdList,
-                            safeId: safeId,
-                            itemLevel: itemLevel,
-                            itemTypeId: itemTypeId,
-                            itemName: itemName,
-                            $itemLine: $itemLine
-                        }, {
-                            itemNum: itemIdList.length,
-                            round: 1,
-                            totalEnergyNum: totalEnergyNum,
-                            countStat: {},
-                            stat: {},
-                            maxEffectiveItemCount: maxEffectiveItemCount,
-                            maxSuccessRestoreItemCount: maxSuccessRestoreItemCount
-                        });
-                    });
-                });
-            });
-        } else if ($this.is('.pd_items_batch_restore')) {
-            let num = parseInt(prompt(`你要恢复多少个【Lv.${itemLevel}：${itemName}】道具？（0表示不限制）`, itemUsedNum ? itemUsedNum : 0));
-            if (isNaN(num) || num < 0) return;
-            Msg.destroy();
-
-            itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href') + '&t=' + new Date().getTime();
-            Msg.wait('正在获取本种类已使用道具列表，请稍后&hellip;');
-            $.get(itemListUrl, function (html) {
-                Msg.destroy();
-                let itemIdList = getItemIdList(html, num);
-                if (!itemIdList.length) {
-                    alert('本种类没有已使用的道具');
-                    return;
-                }
-                console.log('批量恢复道具Start，恢复道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在恢复道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                restoreItems({
-                    type: 1,
-                    itemIdList: itemIdList,
-                    safeId: safeId,
-                    itemLevel: itemLevel,
-                    itemTypeId: itemTypeId,
-                    itemName: itemName,
-                    $itemLine: $itemLine
-                });
-            });
-        } else if ($this.is('.pd_items_batch_convert')) {
-            let num = parseInt(prompt(`你要将多少个【Lv.${itemLevel}：${itemName}】道具转换为能量？（0表示不限制）`, itemUsedNum ? itemUsedNum : 0));
-            if (isNaN(num) || num < 0) return;
-            Msg.destroy();
-
-            itemListUrl = $itemLine.find('td:last-child').find('a:last-child').attr('href') + '&t=' + new Date().getTime();
-            Msg.wait('正在获取本种类已使用道具列表，请稍后&hellip;');
-            $.get(itemListUrl, function (html) {
-                Msg.destroy();
-                let itemIdList = getItemIdList(html, num);
-                if (!itemIdList.length) {
-                    alert('本种类没有已使用的道具');
-                    return;
-                }
-                console.log('批量转换道具为能量Start，转换道具数量：' + itemIdList.length);
-                Msg.wait(`<strong>正在转换能量中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                convertItemsToEnergy({
-                    type: 1,
-                    itemIdList: itemIdList,
-                    safeId: safeId,
-                    itemLevel: itemLevel,
-                    itemName: itemName,
-                    $itemLine: $itemLine
-                });
-            });
-        }
-    });
-};
-
-/**
- * 增强我的道具页面
- */
-const enhanceMyItemsPage = exports.enhanceMyItemsPage = function () {
-    let $myItems = $('.kf_fw_ig1:last');
-    $myItems.addClass('pd_items').find('tbody > tr').each(function (index) {
-        let $this = $(this);
-        if (index === 0) {
-            $this.find('td').attr('colspan', 6);
-        } else if (index === 1) {
-            $this.find('td:first-child').css('width', '75px').end().find('td:nth-child(2)').css('width', '185px').end().find('td:nth-child(3)').css('width', '105px').html('<span class="pd_usable_num">可用数</span> / <span class="pd_used_num pd_custom_tips">已用数</span>').end().find('td:last-child').css('width', '165px').before('<td style="width: 135px;">使用道具</td><td style="width: 135px;">恢复道具 和 转换能量</td>');
-        } else {
-            $this.find('td:first-child').prepend('<input class="pd_input pd_item_type_chk" type="checkbox">');
-            let isDisabledLink = index === 2 ? 'pd_disabled_link' : '';
-            $this.find('td:nth-child(3)').wrapInner('<span class="pd_usable_num" style="margin-left: 5px;"></span>').append(' / <span class="pd_used_num pd_custom_tips">?</span>').after(`
-<td>
-  <a class="pd_items_batch_use" href="#" title="批量使用指定数量的道具">批量使用</a>
-  <a class="pd_items_cycle_use pd_highlight ${isDisabledLink}" href="#" title="循环使用和恢复指定数量的道具，直至停止操作或没有道具可以恢复">循环使用</a>
-</td>
-<td>
-  <a class="pd_items_batch_restore ${isDisabledLink}" href="#" title="批量恢复指定数量的道具">批量恢复</a>
-  <a class="pd_items_batch_convert pd_highlight ${isDisabledLink}" href="#" title="批量将指定数量的道具转换为能量">批量转换</a>
-</td>
-`);
-            let $listLinkColumn = $this.find('td:last-child');
-            let matches = /lv=(\d+)/i.exec($listLinkColumn.find('a').attr('href'));
-            if (matches) {
-                let itemTypeId = parseInt(matches[1]);
-                $this.data('itemTypeId', itemTypeId);
-                $listLinkColumn.find('a').text('未使用列表').after(`<a class="pd_highlight" href="kf_fw_ig_renew.php?lv=${itemTypeId}">已使用列表</a>`);
-            }
-        }
-    });
-    bindItemActionLinksClick($myItems);
-    showCurrentUsedItemNum();
-    $myItems.before('<div class="pd_highlight" style="margin-bottom: 5px;">此为旧版道具页面，在物品商店购买的新道具请到<a href="kf_fw_ig_mybp.php">角色/物品</a>页面查看！</div>');
-};
-
-/**
- * 设定当前指定种类道具的未使用和已使用数量以及道具恢复能量
- * @param {?jQuery} $itemLine 当前道具所在的表格行
- * @param {?number} usedChangeNum 已使用道具的变化数量
- * @param {?number} [usableChangeNum] 未使用道具的变化数量
- * @param {?number} [energyChangeNum] 道具恢复能量的变化数量
- */
-const setCurrentItemUsableAndUsedNum = function ($itemLine, usedChangeNum, usableChangeNum, energyChangeNum) {
-    let flag = false;
-    if ($itemLine) {
-        let $itemUsed = $itemLine.find('td:nth-child(3) > .pd_used_num');
-        let itemName = $itemLine.find('td:nth-child(2)').text().trim();
-        if ($itemUsed.length > 0 && itemName !== '零时迷子的碎片') {
-            let num = parseInt($itemUsed.text());
-            if (isNaN(num) || num + usedChangeNum < 0) {
-                flag = true;
-            } else {
-                $itemUsed.text(num + usedChangeNum);
-                showUsedItemEnergyTips();
-            }
-        }
-        if (usableChangeNum) {
-            let $itemUsable = $itemLine.find('td:nth-child(3) > .pd_usable_num');
-            if ($itemUsable.length > 0) {
-                let num = parseInt($itemUsable.text());
-                if (isNaN(num) || num + usableChangeNum < 0) flag = true;else $itemUsable.text(num + usableChangeNum);
-            }
-        }
-    }
-    if (energyChangeNum) {
-        let $totalEnergy = $('.pd_total_energy_num');
-        if ($totalEnergy.length > 0) {
-            let num = parseInt($totalEnergy.text());
-            if (isNaN(num) || num + energyChangeNum < 0) flag = true;else $totalEnergy.text(num + energyChangeNum);
-        } else {
-            flag = true;
-        }
-    }
-    if (flag) {
-        showCurrentUsedItemNum();
-        if (location.pathname === '/kf_fw_ig_my.php' && !Util.getUrlParam('lv')) showCurrentUsableItemNum();
-    }
-};
-
-/**
- * 获取当前道具恢复能量
- * @param {string} html 恢复道具页面的HTML代码
- */
-const getCurrentEnergyNum = function (html) {
-    let energyNum = 0;
-    let energyNumMatches = /道具恢复能量<br\s*\/?><span.+?>(\d+)<\/span><br\s*\/?>点/i.exec(html);
-    if (energyNumMatches) energyNum = parseInt(energyNumMatches[1]);
-    return energyNum;
-};
-
-/**
- * 显示已使用道具恢复所需和转换可得的能量的提示
- */
-const showUsedItemEnergyTips = function () {
-    let totalRestoreEnergy = 0,
-        totalConvertEnergy = 0;
-    $('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(3) > .pd_used_num').each(function () {
-        let $this = $(this);
-        let itemNum = parseInt($this.text());
-        if (isNaN(itemNum) || itemNum < 0) return;
-        let itemLevel = parseInt($this.closest('tr').find('td:first-child').text());
-        if (!itemLevel) return;
-        let perRestoreEnergy = getRestoreEnergyNumByLevel(itemLevel);
-        let perConvertEnergy = getGainEnergyNumByLevel(itemLevel);
-        totalRestoreEnergy += perRestoreEnergy * itemNum;
-        totalConvertEnergy += perConvertEnergy * itemNum;
-        $this.attr('title', `全部恢复需要${perRestoreEnergy * itemNum}点能量，全部转换可得${perConvertEnergy * itemNum}点能量`);
-    });
-    $('.kf_fw_ig1:last > tbody > tr:nth-child(2) > td:nth-child(3) > .pd_used_num').attr('title', `全部恢复需要${totalRestoreEnergy}点能量，全部转换可得${totalConvertEnergy}点能量`);
-};
-
-/**
- * 在我的道具页面中显示当前各种类已使用道具的数量
- * @param {string} html 恢复道具页面的HTML代码（留空表示自动获取HTML代码）
- */
-const showCurrentUsedItemNum = function (html = '') {
-    /**
-     * 显示数量
-     * @param {string} html 恢复道具页面的HTML代码
-     */
-    const show = function (html) {
-        let energyNum = getCurrentEnergyNum(html);
-        let introMatches = /(1级道具转换得.+?点能量)。<br/.exec(html);
-        if (location.pathname === '/kf_fw_ig_my.php') {
-            $('.kf_fw_ig_title1:last').find('span:has(.pd_total_energy_num)').remove().end().append(`<span class="pd_custom_tips" style="margin-left: 7px;" title="${introMatches ? introMatches[1] : ''}">` + `(道具恢复能量 <b class="pd_total_energy_num" style="font-size: 14px;">${energyNum}</b> 点)</span>`);
-        }
-
-        if ($('.pd_used_num').length > 0) {
-            let matches = html.match(/">\d+<\/td><td>全部转换本级已使用道具为能量<\/td>/g);
-            if (matches) {
-                let usedItemNumList = [];
-                for (let i in matches) {
-                    let usedItemNumMatches = /">(\d+)<\/td>/i.exec(matches[i]);
-                    if (usedItemNumMatches) usedItemNumList.push(usedItemNumMatches[1]);
-                }
-                let $usedNum = $('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(3) > .pd_used_num');
-                if ($usedNum.length === matches.length) {
-                    $usedNum.each(function (index) {
-                        $(this).text(usedItemNumList[index]);
-                    });
-                    showUsedItemEnergyTips();
-                }
-            }
-        }
-    };
-
-    if (html) {
-        show(html);
-    } else {
-        $.get('kf_fw_ig_renew.php?t=' + new Date().getTime(), html => show(html));
-    }
-};
-
-/**
- * 在我的道具页面中显示当前各种类可使用道具的数量
- * @param {string} html 我的道具页面的HTML代码（留空表示自动获取HTML代码）
- */
-const showCurrentUsableItemNum = function (html = '') {
-    /**
-     * 显示数量
-     * @param {string} html 我的道具页面的HTML代码
-     */
-    const show = function (html) {
-        let matches = html.match(/">\d+<\/td><td><a href="kf_fw_ig_my\.php\?lv=/ig);
-        if (!matches) return;
-        let usableItemNumList = [];
-        for (let i in matches) {
-            let usableItemNumMatches = /">(\d+)<\/td>/i.exec(matches[i]);
-            if (usableItemNumMatches) usableItemNumList.push(usableItemNumMatches[1]);
-        }
-        $('.kf_fw_ig1:last > tbody > tr:gt(1) > td:nth-child(3) > .pd_usable_num').each(function (index) {
-            $(this).text(usableItemNumList[index] ? usableItemNumList[index] : 0);
-        });
-    };
-
-    if (html) {
-        show(html);
-    } else {
-        $.get('kf_fw_ig_my.php?t=' + new Date().getTime(), html => show(html));
-    }
-};
-
-/**
  * 获取道具使用情况
  * @param html 争夺首页的HTML代码
  * @returns {Map} 道具使用情况列表
@@ -4414,6 +3445,419 @@ const getItemUsedInfo = exports.getItemUsedInfo = function (html) {
         itemUsedNumList.set(subMatches[2], parseInt(subMatches[1]));
     }
     return itemUsedNumList;
+};
+
+/**
+ * 初始化
+ */
+const init = exports.init = function () {
+    safeId = Public.getSafeId();
+    if (!safeId) return;
+    $area = $('.kf_fw_ig1:eq(1)');
+    addBatchUseAndSellItemsButton();
+    if ($area.find('a[href="javascript:;"]:contains("熔炼"):first').length > 0) {
+        Config.saveMyObjectsInfoEnabled = false;
+        $('input[name="saveMyObjectsInfoEnabled"]').parent().prop('hidden', true);
+    }
+    if (Config.saveMyObjectsInfoEnabled) {
+        readMyObjectsInfo();
+    }
+};
+
+/**
+ * 在物品装备页面上添加批量使用和出售道具按钮
+ */
+const addBatchUseAndSellItemsButton = function () {
+    $(`
+<div class="pd_item_btns" data-name="handleItemsBtns">
+  <button name="useItems" type="button" style="color: #00f;" title="批量使用指定道具">批量使用</button>
+  <button name="sellItems" type="button" style="color: #f00;" title="批量出售指定道具">批量出售</button>
+</div>
+`).insertAfter($area).find('[name="useItems"]').click(() => showBatchUseAndSellItemsDialog(1, safeId)).end().find('[name="sellItems"]').click(() => showBatchUseAndSellItemsDialog(2, safeId));
+
+    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="handleItemsBtns"]'));
+};
+
+/**
+ * 显示批量使用和出售道具对话框
+ * @param {number} type 对话框类型，1：批量使用；2：批量出售
+ * @param {string} safeId SafeID
+ */
+const showBatchUseAndSellItemsDialog = function (type, safeId) {
+    const dialogName = 'pdBatchUseAndSellItemsDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Msg.destroy();
+    let typeName = type === 1 ? '使用' : '出售';
+    (0, _Config.read)();
+
+    let html = `
+<div class="pd_cfg_main">
+  <div style="margin: 5px 0;">请选择想批量${typeName}的道具种类（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</div>
+  <select name="itemTypes" size="6" style="width: 320px;" multiple>
+    <option>蕾米莉亚同人漫画</option><option>十六夜同人漫画</option><option>档案室钥匙</option>
+    <option>傲娇LOLI娇蛮音CD</option><option>整形优惠卷</option><option>消逝之药</option>
+  </select>
+</div>
+<div class="pd_cfg_btns">
+  <button name="sell" type="button">${typeName}</button>
+  <button data-action="close" type="button">关闭</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, `批量${typeName}道具`, html);
+
+    $dialog.find('[name="itemTypes"]').keydown(function (e) {
+        if (e.ctrlKey && e.keyCode === 65) {
+            e.preventDefault();
+            $(this).children().prop('selected', true);
+        }
+    }).end().find('[name="sell"]').click(function () {
+        let itemTypeList = $dialog.find('[name="itemTypes"]').val();
+        if (!Array.isArray(itemTypeList)) return;
+        (0, _Config.read)();
+        if (type === 1) Config.defUseItemTypeList = itemTypeList;else Config.defSellItemTypeList = itemTypeList;
+        (0, _Config.write)();
+        if (!confirm(`是否${typeName}所选道具种类？`)) return;
+        Dialog.close(dialogName);
+        if (type === 1) useItems(itemTypeList, safeId);else sellItems(itemTypeList, safeId);
+    });
+
+    $dialog.find('[name="itemTypes"] > option').each(function () {
+        let $this = $(this);
+        let itemTypeList = type === 1 ? Config.defUseItemTypeList : Config.defSellItemTypeList;
+        if (itemTypeList.includes($this.val())) $this.prop('selected', true);
+    });
+
+    Dialog.show(dialogName);
+    Script.runFunc('Item.showBatchUseAndSellItemsDialog_after_', type);
+};
+
+/**
+ * 使用道具
+ * @param {string[]} itemTypeList 想要使用的道具种类
+ * @param {string} safeId SafeID
+ */
+const useItems = function (itemTypeList, safeId) {
+    let totalSuccessNum = 0,
+        index = 0;
+    let useInfo = {};
+    let tmpItemTypeList = [...itemTypeList];
+
+    /**
+     * 使用
+     * @param {number} itemId 道具ID
+     * @param {string} itemName 道具名称
+     * @param {number} itemNum 本轮使用的道具数量
+     */
+    const use = function (itemId, itemName, itemNum) {
+        index++;
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: `do=1&id=${itemId}&safeid=${safeId}`,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (!html) return;
+            let msg = Util.removeHtmlTag(html);
+            let isDelete = false;
+            if (/(成功|失败)！/.test(msg)) {
+                totalSuccessNum++;
+                if (!(itemName in useInfo)) useInfo[itemName] = { '道具': 0, '有效道具': 0, '无效道具': 0 };
+                useInfo[itemName]['道具']++;
+                if (/成功！/.test(msg)) useInfo[itemName]['有效道具']++;else useInfo[itemName]['无效道具']++;
+                $wait.find('.pd_countdown').text(totalSuccessNum);
+                isDelete = true;
+            } else if (/无法再使用/.test(msg)) {
+                index = itemNum;
+                let typeIndex = tmpItemTypeList.indexOf(itemName);
+                if (typeIndex > -1) tmpItemTypeList.splice(typeIndex, 1);
+            } else {
+                isDelete = true;
+            }
+
+            if (isDelete) {
+                $area.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
+                    $(this).remove();
+                });
+            }
+            console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
+            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
+            Script.runFunc('Item.useItems_after_');
+        }).fail(function () {
+            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
+        }).always(function () {
+            if ($wait.data('stop')) complete();else {
+                if (index === itemNum) setTimeout(getNextItems, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);else setTimeout(() => $(document).dequeue('UseItems'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取当前的道具
+     */
+    const getCurrentItems = function () {
+        let itemList = [];
+        $area.find('tr[id^="wp_"]').each(function () {
+            let $this = $(this);
+            let matches = /wp_(\d+)/.exec($this.attr('id'));
+            if (!matches) return;
+            let itemId = parseInt(matches[1]);
+            let itemName = $this.find('> td:nth-child(3)').text().trim();
+            if (tmpItemTypeList.includes(itemName)) itemList.push({ itemId, itemName });
+        });
+        if (!itemList.length) {
+            complete();
+            return;
+        }
+
+        index = 0;
+        $(document).clearQueue('UseItems');
+        $.each(itemList, function (i, { itemId, itemName }) {
+            $(document).queue('UseItems', () => use(itemId, itemName, itemList.length));
+        });
+        $(document).dequeue('UseItems');
+    };
+
+    /**
+     * 获取下一批道具
+     */
+    const getNextItems = function () {
+        getNextObjects(() => {
+            if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    /**
+     * 操作完成
+     */
+    const complete = function () {
+        $(document).clearQueue('UseItems');
+        Msg.remove($wait);
+        if ($.isEmptyObject(useInfo)) {
+            alert('没有道具被使用！');
+            return;
+        }
+        if (Config.saveMyObjectsInfoEnabled) {
+            getNextObjects(writeMyObjectsInfo);
+        }
+
+        let itemTypeNum = 0;
+        let resultStat = '';
+        for (let itemName of Util.getSortedObjectKeyList(itemTypeList, useInfo)) {
+            itemTypeNum++;
+            let itemLevel = getLevelByName(itemName);
+            let stat = useInfo[itemName];
+            let successNum = stat['道具'];
+            delete stat['道具'];
+            if (stat['有效道具'] === 0) delete stat['有效道具'];
+            if (stat['无效道具'] === 0) delete stat['无效道具'];
+            if (!$.isEmptyObject(stat)) {
+                resultStat += `【Lv.${itemLevel}：${itemName}】 <i>道具<ins>-${successNum}</ins></i> `;
+                for (let [key, num] of Util.entries(stat)) {
+                    resultStat += `<i>${key}<em>+${num}</em></i> `;
+                }
+                resultStat += '<br>';
+                Log.push('使用道具', `共有\`${successNum}\`个【\`Lv.${itemLevel}：${itemName}\`】道具被使用`, { gain: stat, pay: { '道具': -successNum } });
+            }
+        }
+        $('.pd_result:last').append(`
+<li class="pd_stat">
+  <b>统计结果（共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用）：</b><br>
+  ${resultStat}
+</li>`);
+        console.log(`共有${itemTypeNum}个种类中的${totalSuccessNum}个道具被使用`);
+        Msg.show(`<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用</strong>`, -1);
+        Script.runFunc('Item.useItems_complete_');
+    };
+
+    $area.parent().append(`<ul class="pd_result"><li><strong>使用结果：</strong></li></ul>`);
+    let $wait = Msg.wait('<strong>正在使用道具中&hellip;</strong><i>已使用：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
+    getCurrentItems();
+};
+
+/**
+ * 出售道具
+ * @param {string[]} itemTypeList 想要出售的道具种类
+ * @param {string} safeId SafeID
+ */
+const sellItems = function (itemTypeList, safeId) {
+    let successNum = 0,
+        index = 0;
+    let sellInfo = {};
+
+    /**
+     * 出售
+     * @param {number} itemId 道具ID
+     * @param {string} itemName 道具名称
+     * @param {number} itemNum 本轮出售的道具数量
+     */
+    const sell = function (itemId, itemName, itemNum) {
+        index++;
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: `do=2&id=${itemId}&safeid=${safeId}`,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (!html) return;
+            let msg = Util.removeHtmlTag(html);
+            console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
+            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
+            $area.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
+                $(this).remove();
+            });
+
+            let matches = /出售该物品获得了\[\s*(\d+)\s*]KFB/.exec(msg);
+            if (!matches) return;
+            successNum++;
+            if (!(itemName in sellInfo)) sellInfo[itemName] = { num: 0, sell: 0 };
+            sellInfo[itemName].num++;
+            sellInfo[itemName].sell += parseInt(matches[1]);
+            $wait.find('.pd_countdown').text(successNum);
+            Script.runFunc('Item.sellItems_after_');
+        }).fail(function () {
+            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
+        }).always(function () {
+            if ($wait.data('stop')) complete();else {
+                if (index === itemNum) setTimeout(getNextItems, _Const2.default.defAjaxInterval);else setTimeout(() => $(document).dequeue('SellItems'), _Const2.default.minItemActionInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取当前的道具
+     */
+    const getCurrentItems = function () {
+        let itemList = [];
+        $area.find('tr[id^="wp_"]').each(function () {
+            let $this = $(this);
+            let matches = /wp_(\d+)/.exec($this.attr('id'));
+            if (!matches) return;
+            let itemId = parseInt(matches[1]);
+            let itemName = $this.find('> td:nth-child(3)').text().trim();
+            if (itemTypeList.includes(itemName)) itemList.push({ itemId, itemName });
+        });
+        if (!itemList.length) {
+            complete();
+            return;
+        }
+
+        index = 0;
+        $(document).clearQueue('SellItems');
+        $.each(itemList, function (i, { itemId, itemName }) {
+            $(document).queue('SellItems', () => sell(itemId, itemName, itemList.length));
+        });
+        $(document).dequeue('SellItems');
+    };
+
+    /**
+     * 获取下一批道具
+     */
+    const getNextItems = function () {
+        getNextObjects(() => {
+            if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    /**
+     * 操作完成
+     */
+    const complete = function () {
+        $(document).clearQueue('SellItems');
+        Msg.remove($wait);
+        if ($.isEmptyObject(sellInfo)) {
+            alert('没有道具被出售！');
+            return;
+        }
+        if (Config.saveMyObjectsInfoEnabled) {
+            getNextObjects(writeMyObjectsInfo);
+        }
+
+        let itemTypeNum = 0,
+            totalSell = 0;
+        let resultStat = '';
+        for (let itemName of Util.getSortedObjectKeyList(itemTypeList, sellInfo)) {
+            itemTypeNum++;
+            let itemLevel = getLevelByName(itemName);
+            let { sell, num } = sellInfo[itemName];
+            totalSell += sell;
+            resultStat += `【Lv.${itemLevel}：${itemName}】 <i>道具<ins>-${num}</ins></i> <i>KFB<em>+${sell.toLocaleString()}</em></i><br>`;
+            Log.push('出售道具', `共有\`${num}\`个【\`Lv.${itemLevel}：${itemName}\`】道具出售成功`, { gain: { 'KFB': sell }, pay: { '道具': -num } });
+        }
+        $('.pd_result:last').append(`
+<li class="pd_stat">
+  <b>统计结果（共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功）：</b> <i>KFB<em>+${totalSell.toLocaleString()}</em></i><br>
+  ${resultStat}
+</li>`);
+        console.log(`共有${itemTypeNum}个种类中的${successNum}个道具出售成功，KFB+${totalSell}`);
+        Msg.show(`<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功</strong><i>KFB<em>+${totalSell.toLocaleString()}</em></i>`, -1);
+        Script.runFunc('Item.sellItems_complete_');
+    };
+
+    $area.parent().append(`<ul class="pd_result"><li><strong>出售结果：</strong></li></ul>`);
+    let $wait = Msg.wait('<strong>正在出售道具中&hellip;</strong><i>已出售：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
+    getCurrentItems();
+};
+
+/**
+ * 获取下一批物品
+ * @param {function} [callback] 回调函数
+ */
+const getNextObjects = exports.getNextObjects = function (callback) {
+    console.log('获取下一批物品Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).done(function (html) {
+        let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+        if (!matches) return;
+        let trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+        let addHtml = '';
+        for (let i in trMatches) {
+            let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
+            if (!idMatches) continue;
+            if (!$area.has(`tr[id="wp_${idMatches[1]}"]`).length) {
+                addHtml += trMatches[i];
+            }
+        }
+        if (addHtml) {
+            $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+        }
+        if (typeof callback === 'function') callback();
+    }).fail(function () {
+        setTimeout(() => getNextObjects(callback), _Const2.default.defAjaxInterval);
+    });
+};
+
+/**
+ * 读取我的物品信息
+ */
+const readMyObjectsInfo = exports.readMyObjectsInfo = function () {
+    let info = localStorage.getItem(_Const2.default.myObjectsInfoStorageName + '_' + _Info2.default.uid);
+    if (info) {
+        if (!/<tr id="wp_\d+">/.test(info)) return;
+        let trMatches = info.match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+        let addHtml = '';
+        for (let i in trMatches) {
+            let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
+            if (!idMatches) continue;
+            if (!$area.has(`tr[id="wp_${idMatches[1]}"]`).length) {
+                addHtml += trMatches[i];
+            }
+        }
+        if (addHtml) {
+            $area.find('> tbody > tr:last-child').before(addHtml);
+        }
+    }
+};
+
+/**
+ * 写入我的物品信息
+ */
+const writeMyObjectsInfo = exports.writeMyObjectsInfo = function () {
+    let info = $area.find('> tbody').html().replace(/<tr>.+?<\/tr>/, '').replace(/<tr><td colspan="4">.+?<\/tr>/, '').trim();
+    if (info) {
+        localStorage.setItem(_Const2.default.myObjectsInfoStorageName + '_' + _Info2.default.uid, info);
+    }
 };
 
 /**
@@ -4559,333 +4003,6 @@ const showKfbInItemShop = function () {
         let cash = parseInt(matches[1]);
         $('.kf_fw_ig_title1:last').find('span:last').remove().end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${cash.toLocaleString()}</b> KFB)</span>`);
     });
-};
-
-/**
- * 在物品装备页面上添加批量使用和出售道具按钮
- */
-const addBatchUseAndSellItemsButton = exports.addBatchUseAndSellItemsButton = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    let $area = $('.kf_fw_ig1:eq(1)');
-
-    $(`
-<div class="pd_item_btns">
-  <button name="useItems" type="button" style="color: #00f;" title="批量使用指定道具">批量使用</button>
-  <button name="sellItems" type="button" style="color: #f00;" title="批量出售指定道具">批量出售</button>
-</div>
-`).insertAfter($area).find('[name="useItems"]').click(() => showBatchUseAndSellItemsDialog(1, safeId)).end().find('[name="sellItems"]').click(() => showBatchUseAndSellItemsDialog(2, safeId));
-
-    Public.addSimulateManualActionChecked($('.pd_item_btns:last'));
-};
-
-/**
- * 显示批量使用和出售道具对话框
- * @param {number} type 对话框类型，1：批量使用；2：批量出售
- * @param {string} safeId SafeID
- */
-const showBatchUseAndSellItemsDialog = function (type, safeId) {
-    const dialogName = 'pdBatchUseAndSellItemsDialog';
-    if ($('#' + dialogName).length > 0) return;
-    Msg.destroy();
-    let typeName = type === 1 ? '使用' : '出售';
-    (0, _Config.read)();
-
-    let html = `
-<div class="pd_cfg_main">
-  <div style="margin: 5px 0;">请选择想批量${typeName}的道具种类（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</div>
-  <select name="itemTypes" size="6" style="width: 320px;" multiple>
-    <option>蕾米莉亚同人漫画</option><option>十六夜同人漫画</option><option>档案室钥匙</option>
-    <option>傲娇LOLI娇蛮音CD</option><option>整形优惠卷</option><option>消逝之药</option>
-  </select>
-</div>
-<div class="pd_cfg_btns">
-  <button name="sell" type="button">${typeName}</button>
-  <button data-action="close" type="button">关闭</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, `批量${typeName}道具`, html);
-
-    $dialog.find('[name="itemTypes"]').keydown(function (e) {
-        if (e.ctrlKey && e.keyCode === 65) {
-            e.preventDefault();
-            $(this).children().prop('selected', true);
-        }
-    }).end().find('[name="sell"]').click(function () {
-        let itemTypeList = $dialog.find('[name="itemTypes"]').val();
-        if (!Array.isArray(itemTypeList)) return;
-        (0, _Config.read)();
-        if (type === 1) Config.defUseItemTypeList = itemTypeList;else Config.defSellItemTypeList = itemTypeList;
-        (0, _Config.write)();
-        if (!confirm(`是否${typeName}所选道具种类？`)) return;
-        Dialog.close(dialogName);
-        if (type === 1) useItems(itemTypeList, safeId);else sellItems(itemTypeList, safeId);
-    });
-
-    $dialog.find('[name="itemTypes"] > option').each(function () {
-        let $this = $(this);
-        let itemTypeList = type === 1 ? Config.defUseItemTypeList : Config.defSellItemTypeList;
-        if (itemTypeList.includes($this.val())) $this.prop('selected', true);
-    });
-
-    Dialog.show(dialogName);
-    Script.runFunc('Item.showBatchUseAndSellItemsDialog_after_', type);
-};
-
-/**
- * 使用道具
- * @param {string[]} itemTypeList 想要使用的道具种类
- * @param {string} safeId SafeID
- */
-const useItems = function (itemTypeList, safeId) {
-    let $area = $('.kf_fw_ig1:eq(1)');
-    let totalSuccessNum = 0,
-        index = 0;
-    let useInfo = {};
-    let tmpItemTypeList = [...itemTypeList];
-
-    /**
-     * 使用
-     * @param {number} itemId 道具ID
-     * @param {string} itemName 道具名称
-     * @param {number} itemNum 本轮使用的道具数量
-     */
-    const use = function (itemId, itemName, itemNum) {
-        index++;
-        $.ajax({
-            type: 'POST',
-            url: 'kf_fw_ig_mybpdt.php',
-            data: `do=1&id=${itemId}&safeid=${safeId}`,
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            if (!html) return;
-            let msg = Util.removeHtmlTag(html);
-            if (/(成功|失败)！/.test(msg)) {
-                totalSuccessNum++;
-                if (!(itemName in useInfo)) useInfo[itemName] = { '道具': 0, '有效道具': 0, '无效道具': 0 };
-                useInfo[itemName]['道具']++;
-                if (/成功！/.test(msg)) useInfo[itemName]['有效道具']++;else useInfo[itemName]['无效道具']++;
-                $wait.find('.pd_countdown').text(totalSuccessNum);
-                $area.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
-                    $(this).remove();
-                });
-            } else if (/无法再使用/.test(msg)) {
-                index = itemNum;
-                let typeIndex = tmpItemTypeList.indexOf(itemName);
-                if (typeIndex > -1) tmpItemTypeList.splice(typeIndex, 1);
-            }
-
-            console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
-            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
-            Script.runFunc('Item.useItems_after_');
-        }).fail(function () {
-            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
-        }).always(function () {
-            if ($wait.data('stop')) complete();else {
-                if (index === itemNum) setTimeout(getNextItems, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);else setTimeout(() => $(document).dequeue('UseItems'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-            }
-        });
-    };
-
-    /**
-     * 获取当前的道具
-     */
-    const getCurrentItems = function () {
-        let itemList = [];
-        $area.find('tr[id^="wp_"]').each(function () {
-            let $this = $(this);
-            let matches = /wp_(\d+)/.exec($this.attr('id'));
-            if (!matches) return;
-            let itemId = parseInt(matches[1]);
-            let itemName = $this.find('> td:nth-child(3)').text().trim();
-            if (tmpItemTypeList.includes(itemName)) itemList.push({ itemId, itemName });
-        });
-        if (!itemList.length) {
-            complete();
-            return;
-        }
-
-        index = 0;
-        $(document).clearQueue('UseItems');
-        $.each(itemList, function (i, { itemId, itemName }) {
-            $(document).queue('UseItems', () => use(itemId, itemName, itemList.length));
-        });
-        $(document).dequeue('UseItems');
-    };
-
-    /**
-     * 获取下一批道具
-     */
-    const getNextItems = function () {
-        Public.getNextObjects(() => {
-            if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
-        });
-    };
-
-    /**
-     * 操作完成
-     */
-    const complete = function () {
-        $(document).clearQueue('UseItems');
-        Msg.remove($wait);
-        if ($.isEmptyObject(useInfo)) {
-            alert('没有道具被使用！');
-            return;
-        }
-
-        let itemTypeNum = 0;
-        let resultStat = '';
-        for (let itemName of Util.getSortedObjectKeyList(itemTypeList, useInfo)) {
-            itemTypeNum++;
-            let itemLevel = getLevelByName(itemName);
-            let stat = useInfo[itemName];
-            let successNum = stat['道具'];
-            delete stat['道具'];
-            if (stat['有效道具'] === 0) delete stat['有效道具'];
-            if (stat['无效道具'] === 0) delete stat['无效道具'];
-            if (!$.isEmptyObject(stat)) {
-                resultStat += `【Lv.${itemLevel}：${itemName}】 <i>道具<ins>-${successNum}</ins></i> `;
-                for (let [key, num] of Util.entries(stat)) {
-                    resultStat += `<i>${key}<em>+${num}</em></i> `;
-                }
-                resultStat += '<br>';
-                Log.push('使用道具', `共有\`${successNum}\`个【\`Lv.${itemLevel}：${itemName}\`】道具被使用`, { gain: stat, pay: { '道具': -successNum } });
-            }
-        }
-        $('.pd_result:last').append(`
-<li class="pd_stat">
-  <b>统计结果（共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用）：</b><br>
-  ${resultStat}
-</li>`);
-        console.log(`共有${itemTypeNum}个种类中的${totalSuccessNum}个道具被使用`);
-        Msg.show(`<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用</strong>`, -1);
-        Script.runFunc('Item.useItems_complete_');
-    };
-
-    $area.parent().append(`<ul class="pd_result"><li><strong>使用结果：</strong></li></ul>`);
-    let $wait = Msg.wait('<strong>正在使用道具中&hellip;</strong><i>已使用：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
-    getCurrentItems();
-};
-
-/**
- * 出售道具
- * @param {string[]} itemTypeList 想要出售的道具种类
- * @param {string} safeId SafeID
- */
-const sellItems = function (itemTypeList, safeId) {
-    let $area = $('.kf_fw_ig1:eq(1)');
-    let successNum = 0,
-        index = 0;
-    let sellInfo = {};
-
-    /**
-     * 出售
-     * @param {number} itemId 道具ID
-     * @param {string} itemName 道具名称
-     * @param {number} itemNum 本轮出售的道具数量
-     */
-    const sell = function (itemId, itemName, itemNum) {
-        index++;
-        $.ajax({
-            type: 'POST',
-            url: 'kf_fw_ig_mybpdt.php',
-            data: `do=2&id=${itemId}&safeid=${safeId}`,
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            if (!html) return;
-            let msg = Util.removeHtmlTag(html);
-            console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
-            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
-            $area.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
-                $(this).remove();
-            });
-
-            let matches = /出售该物品获得了\[\s*(\d+)\s*]KFB/.exec(msg);
-            if (!matches) return;
-            successNum++;
-            if (!(itemName in sellInfo)) sellInfo[itemName] = { num: 0, sell: 0 };
-            sellInfo[itemName].num++;
-            sellInfo[itemName].sell += parseInt(matches[1]);
-            $wait.find('.pd_countdown').text(successNum);
-            Script.runFunc('Item.sellItems_after_');
-        }).fail(function () {
-            $('.pd_result:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
-        }).always(function () {
-            if ($wait.data('stop')) complete();else {
-                if (index === itemNum) setTimeout(getNextItems, _Const2.default.defAjaxInterval);else setTimeout(() => $(document).dequeue('SellItems'), _Const2.default.minItemActionInterval);
-            }
-        });
-    };
-
-    /**
-     * 获取当前的道具
-     */
-    const getCurrentItems = function () {
-        let itemList = [];
-        $area.find('tr[id^="wp_"]').each(function () {
-            let $this = $(this);
-            let matches = /wp_(\d+)/.exec($this.attr('id'));
-            if (!matches) return;
-            let itemId = parseInt(matches[1]);
-            let itemName = $this.find('> td:nth-child(3)').text().trim();
-            if (itemTypeList.includes(itemName)) itemList.push({ itemId, itemName });
-        });
-        if (!itemList.length) {
-            complete();
-            return;
-        }
-
-        index = 0;
-        $(document).clearQueue('SellItems');
-        $.each(itemList, function (i, { itemId, itemName }) {
-            $(document).queue('SellItems', () => sell(itemId, itemName, itemList.length));
-        });
-        $(document).dequeue('SellItems');
-    };
-
-    /**
-     * 获取下一批道具
-     */
-    const getNextItems = function () {
-        Public.getNextObjects(() => {
-            if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
-        });
-    };
-
-    /**
-     * 操作完成
-     */
-    const complete = function () {
-        $(document).clearQueue('SellItems');
-        Msg.remove($wait);
-        if ($.isEmptyObject(sellInfo)) {
-            alert('没有道具被出售！');
-            return;
-        }
-
-        let itemTypeNum = 0,
-            totalSell = 0;
-        let resultStat = '';
-        for (let itemName of Util.getSortedObjectKeyList(itemTypeList, sellInfo)) {
-            itemTypeNum++;
-            let itemLevel = getLevelByName(itemName);
-            let { sell, num } = sellInfo[itemName];
-            totalSell += sell;
-            resultStat += `【Lv.${itemLevel}：${itemName}】 <i>道具<ins>-${num}</ins></i> <i>KFB<em>+${sell.toLocaleString()}</em></i><br>`;
-            Log.push('出售道具', `共有\`${num}\`个【\`Lv.${itemLevel}：${itemName}\`】道具出售成功`, { gain: { 'KFB': sell }, pay: { '道具': -num } });
-        }
-        $('.pd_result:last').append(`
-<li class="pd_stat">
-  <b>统计结果（共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功）：</b> <i>KFB<em>+${totalSell.toLocaleString()}</em></i><br>
-  ${resultStat}
-</li>`);
-        console.log(`共有${itemTypeNum}个种类中的${successNum}个道具出售成功，KFB+${totalSell}`);
-        Msg.show(`<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功</strong><i>KFB<em>+${totalSell.toLocaleString()}</em></i>`, -1);
-        Script.runFunc('Item.sellItems_complete_');
-    };
-
-    $area.parent().append(`<ul class="pd_result"><li><strong>出售结果：</strong></li></ul>`);
-    let $wait = Msg.wait('<strong>正在出售道具中&hellip;</strong><i>已出售：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
-    getCurrentItems();
 };
 
 },{"./Config":5,"./Const":7,"./Dialog":8,"./Info":10,"./Log":12,"./Msg":16,"./Public":19,"./Script":21,"./Util":23}],12:[function(require,module,exports){
@@ -5292,10 +4409,8 @@ const getLogStat = function (log, date, logStatType) {
         buyItemKfb = 0,
         buyItemStat = {};
     let validItemNum = 0,
-        highValidItemNum = 0,
         validItemStat = {},
         invalidItemNum = 0,
-        highInvalidItemNum = 0,
         invalidItemStat = {};
     let invalidKeyList = ['item', 'arm', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
     for (let d in rangeLog) {
@@ -5365,16 +4480,15 @@ const getLogStat = function (log, date, logStatType) {
                 let matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
                 if (matches) {
                     let itemLevel = parseInt(matches[1]);
+                    if (itemLevel < 3) continue;
                     let itemName = matches[2];
                     if (gain['有效道具'] > 0) {
                         validItemNum += gain['有效道具'];
-                        if (itemLevel >= 3) highValidItemNum += gain['有效道具'];
                         if (typeof validItemStat[itemName] === 'undefined') validItemStat[itemName] = 0;
                         validItemStat[itemName] += gain['有效道具'];
                     }
                     if (gain['无效道具'] > 0) {
                         invalidItemNum += gain['无效道具'];
-                        if (itemLevel >= 3) highInvalidItemNum += gain['无效道具'];
                         if (typeof invalidItemStat[itemName] === 'undefined') invalidItemStat[itemName] = 0;
                         invalidItemStat[itemName] += gain['无效道具'];
                     }
@@ -5416,7 +4530,7 @@ const getLogStat = function (log, date, logStatType) {
         if (boxStatContent) boxStatContent += '|';
         boxStatContent += `<ins title="${boxType}">-${boxStat[boxType].toLocaleString()}</ins>`;
     }
-    content += `<br><strong>盒子收获统计：</strong><i>盒子<ins>-${boxTotalNum}</ins><span class="pd_stat_extra">(${boxStatContent})</span></i> `;
+    content += `<br><strong>盒子收获统计：</strong><i>盒子<ins>-${boxTotalNum}</ins>` + `${boxStatContent ? `<span class="pd_stat_extra">(${boxStatContent})</span>` : ''}</i> `;
     if (boxTotalNum > 0) {
         for (let [key, value] of Util.entries(boxGain)) {
             if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) continue;
@@ -5436,11 +4550,11 @@ const getLogStat = function (log, date, logStatType) {
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
         content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
     }*/ // 临时禁用
-    content += `<br><strong>有效道具统计：</strong><i>有效道具<em>+${validItemNum.toLocaleString()}</em><span class="pd_stat_extra">` + `(<em title="3级以上有效道具">+${highValidItemNum.toLocaleString()}</em>)</span></i> `;
+    content += `<br><strong>有效道具统计：</strong><i>有效道具<em>+${validItemNum.toLocaleString()}</em></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
         content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;
     }
-    content += `<br><strong>无效道具统计：</strong><i>无效道具<em>+${invalidItemNum.toLocaleString()}</em><span class="pd_stat_extra">` + `(<em title="3级以上无效道具">+${highInvalidItemNum.toLocaleString()}</em>)</span></i> `;
+    content += `<br><strong>无效道具统计：</strong><i>无效道具<em>+${invalidItemNum.toLocaleString()}</em></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, invalidItemStat)) {
         content += `<i>${itemName}<em>+${invalidItemStat[itemName].toLocaleString()}</em></i> `;
     }
@@ -8804,7 +7918,7 @@ const addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getNextObjects = exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -10092,38 +9206,6 @@ const addSimulateManualActionChecked = exports.addSimulateManualActionChecked = 
             Config.simulateManualActionEnabled = checked;
             (0, _Config.write)();
         }
-    });
-};
-
-/**
- * 获取下一批物品
- * @param {?function} callback
- */
-const getNextObjects = exports.getNextObjects = function (callback) {
-    console.log('获取下一批物品Start');
-    $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout
-    }).done(function (html) {
-        let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-        if (!matches) return;
-        let $myBag = $('.kf_fw_ig1:eq(1)');
-        let trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
-        let addHtml = '';
-        for (let i in trMatches) {
-            let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
-            if (!idMatches) continue;
-            if (!$myBag.has(`tr[id="wp_${idMatches[1]}"]`).length) {
-                addHtml += trMatches[i];
-            }
-        }
-        if (addHtml) {
-            $myBag.find('> tbody > tr:nth-child(2)').after(addHtml);
-        }
-        if (typeof callback === 'function') callback();
-    }).fail(function () {
-        setTimeout(() => getNextObjects(callback), _Const2.default.defAjaxInterval);
     });
 };
 

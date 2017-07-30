@@ -87,6 +87,13 @@ export const init = function () {
     if (!safeId) return;
     $area = $('.kf_fw_ig1:eq(1)');
     addBatchUseAndSellItemsButton();
+    if ($area.find('a[href="javascript:;"]:contains("熔炼"):first').length > 0) {
+        Config.saveMyObjectsInfoEnabled = false;
+        $('input[name="saveMyObjectsInfoEnabled"]').parent().prop('hidden', true);
+    }
+    if (Config.saveMyObjectsInfoEnabled) {
+        readMyObjectsInfo();
+    }
 };
 
 /**
@@ -258,7 +265,7 @@ const useItems = function (itemTypeList, safeId) {
      * 获取下一批道具
      */
     const getNextItems = function () {
-        Public.getNextObjects(() => {
+        getNextObjects(() => {
             if ($wait.data('stop')) complete();
             else setTimeout(getCurrentItems, Const.defAjaxInterval);
         });
@@ -273,6 +280,9 @@ const useItems = function (itemTypeList, safeId) {
         if ($.isEmptyObject(useInfo)) {
             alert('没有道具被使用！');
             return;
+        }
+        if (Config.saveMyObjectsInfoEnabled) {
+            getNextObjects(writeMyObjectsInfo);
         }
 
         let itemTypeNum = 0;
@@ -395,7 +405,7 @@ const sellItems = function (itemTypeList, safeId) {
      * 获取下一批道具
      */
     const getNextItems = function () {
-        Public.getNextObjects(() => {
+        getNextObjects(() => {
             if ($wait.data('stop')) complete();
             else setTimeout(getCurrentItems, Const.defAjaxInterval);
         });
@@ -410,6 +420,9 @@ const sellItems = function (itemTypeList, safeId) {
         if ($.isEmptyObject(sellInfo)) {
             alert('没有道具被出售！');
             return;
+        }
+        if (Config.saveMyObjectsInfoEnabled) {
+            getNextObjects(writeMyObjectsInfo);
         }
 
         let itemTypeNum = 0, totalSell = 0;
@@ -443,6 +456,69 @@ const sellItems = function (itemTypeList, safeId) {
         '<strong>正在出售道具中&hellip;</strong><i>已出售：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>'
     );
     getCurrentItems();
+};
+
+/**
+ * 获取下一批物品
+ * @param {function} [callback] 回调函数
+ */
+export const getNextObjects = function (callback) {
+    console.log('获取下一批物品Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+        timeout: Const.defAjaxTimeout,
+    }).done(function (html) {
+        let matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+        if (!matches) return;
+        let trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+        let addHtml = '';
+        for (let i in trMatches) {
+            let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
+            if (!idMatches) continue;
+            if (!$area.has(`tr[id="wp_${idMatches[1]}"]`).length) {
+                addHtml += trMatches[i];
+            }
+        }
+        if (addHtml) {
+            $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+        }
+        if (typeof callback === 'function') callback();
+    }).fail(function () {
+        setTimeout(() => getNextObjects(callback), Const.defAjaxInterval);
+    });
+};
+
+/**
+ * 读取我的物品信息
+ */
+export const readMyObjectsInfo = function () {
+    let info = localStorage.getItem(Const.myObjectsInfoStorageName + '_' + Info.uid);
+    if (info) {
+        if (!/<tr id="wp_\d+">/.test(info)) return;
+        let trMatches = info.match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+        let addHtml = '';
+        for (let i in trMatches) {
+            let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
+            if (!idMatches) continue;
+            if (!$area.has(`tr[id="wp_${idMatches[1]}"]`).length) {
+                addHtml += trMatches[i];
+            }
+        }
+        if (addHtml) {
+            $area.find('> tbody > tr:last-child').before(addHtml);
+        }
+    }
+};
+
+/**
+ * 写入我的物品信息
+ */
+export const writeMyObjectsInfo = function () {
+    let info = $area.find('> tbody').html().replace(/<tr>.+?<\/tr>/, '').replace(/<tr><td colspan="4">.+?<\/tr>/, '').trim();
+    if (info) {
+        localStorage.setItem(Const.myObjectsInfoStorageName + '_' + Info.uid, info);
+    }
 };
 
 /**
