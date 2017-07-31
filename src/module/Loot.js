@@ -616,11 +616,12 @@ const addLevelPointListSelect = function () {
         showLevelPointListConfigDialog();
     }).end().find('[data-name="fill"]').click(function (e) {
         e.preventDefault();
-        let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.replace(/\s+/g, ' ').split(' ');
+        let matches = value.match(/\d+/g);
+        if (!matches) return;
         $points.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');
             else return false;
         });
     });
@@ -809,11 +810,12 @@ const showLevelPointListConfigDialog = function (callback) {
     $levelPointList.on('click', '[data-name="fill"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
-        let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.replace(/\s+/g, ' ').split(' ');
+        let matches = value.match(/\d+/g);
+        if (!matches) return;
         $line.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');
             else return false;
         });
     }).on('click', '[data-name="delete"]', function (e) {
