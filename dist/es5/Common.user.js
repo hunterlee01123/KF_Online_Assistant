@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.6
+// @version     10.6.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.6';
+var version = '10.6.1';
 
 /**
  * 导出模块
@@ -588,7 +588,7 @@ var batchTransferVerify = function batchTransferVerify($transfer) {
  * 添加批量转账的按钮
  */
 var addBatchTransferButton = function addBatchTransferButton() {
-    var $area = $('\n<tr id="pdBankTransferArea">\n  <td style="vertical-align: top;">\n    \u4F7F\u7528\u8BF4\u660E\uFF1A<br>\u6BCF\u884C\u4E00\u540D\u7528\u6237\uFF0C<br>\u5982\u9700\u5355\u72EC\u8BBE\u5B9A\u91D1\u989D\uFF0C<br>\u53EF\u5199\u4E3A\u201C\u7528\u6237\u540D:\u91D1\u989D\u201D<br>\uFF08\u6CE8\u610F\u662F<b>\u82F1\u6587\u5192\u53F7</b>\uFF09<br>\u4F8B\u5B50\uFF1A<br>\n    <pre style="border: 1px solid #9999ff; padding: 5px;">\u5F20\u4E09\n\u674E\u56DB:200\n\u738B\u4E94:500\n\u4FE1\u4EF0\u98CE</pre>\n  </td>\n  <td>\n  <form>\n    <div style="display: inline-block;">\n      <label>\u7528\u6237\u5217\u8868\uFF1A<br>\n        <textarea class="pd_textarea" name="users" style="width: 270px; height: 250px;"></textarea>\n      </label>\n    </div>\n    <div style="display: inline-block; margin-left: 10px;">\n      <label>\u901A\u7528\u8F6C\u5E10\u91D1\u989D\uFF08\u5982\u6240\u6709\u7528\u6237\u90FD\u5DF2\u8BBE\u5B9A\u5355\u72EC\u91D1\u989D\u5219\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <input class="pd_input" name="transfer_money" type="text" style="width: 217px;">\n      </label><br>\n      <label style="margin-top: 5px;">\u8F6C\u5E10\u9644\u8A00\uFF08\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>\n      </label>\n    </div>\n    <div>\n      <button type="submit">\u6279\u91CF\u8F6C\u8D26</button>\n      <button type="reset">\u91CD\u7F6E</button>\n      <button name="random" type="button" title="\u4E3A\u7528\u6237\u5217\u8868\u4E0A\u7684\u6BCF\u4E2A\u7528\u6237\u8BBE\u5B9A\u6307\u5B9A\u8303\u56F4\u5185\u7684\u968F\u673A\u91D1\u989D">\u968F\u673A\u91D1\u989D</button>\n      \uFF08\u6D3B\u671F\u5B58\u6B3E\u4E0D\u8DB3\u65F6\uFF0C\u5C06\u81EA\u52A8\u8FDB\u884C\u5B58\u6B3E\uFF1B\u6279\u91CF\u8F6C\u8D26\u91D1\u989D\u4E0D\u4F1A\u4ECE\u5B9A\u671F\u5B58\u6B3E\u4E2D\u6263\u9664\uFF09\n    </div>\n  </form>\n  </td>\n</tr>\n').appendTo('.bank1 > tbody');
+    var $area = $('\n<tr id="pdBankTransferArea">\n  <td style="vertical-align: top;">\n    \u4F7F\u7528\u8BF4\u660E\uFF1A<br>\u6BCF\u884C\u4E00\u540D\u7528\u6237\uFF0C<br>\u5982\u9700\u5355\u72EC\u8BBE\u5B9A\u91D1\u989D\uFF0C<br>\u53EF\u5199\u4E3A\u201C\u7528\u6237\u540D:\u91D1\u989D\u201D<br>\uFF08\u6CE8\u610F\u662F<b>\u82F1\u6587\u5192\u53F7</b>\uFF09<br>\u4F8B\u5B50\uFF1A<br>\n    <pre style="border: 1px solid #9999ff; padding: 5px;">\u5F20\u4E09\n\u674E\u56DB:200\n\u738B\u4E94:500\n\u4FE1\u4EF0\u98CE</pre>\n  </td>\n  <td>\n  <form>\n    <div style="display: inline-block;">\n      <label>\u7528\u6237\u5217\u8868\uFF1A<br>\n        <textarea class="pd_textarea" name="users" style="width: 270px; height: 250px;"></textarea>\n      </label>\n    </div>\n    <div style="display: inline-block; margin-left: 10px;">\n      <label>\u901A\u7528\u8F6C\u5E10\u91D1\u989D\uFF08\u5982\u6240\u6709\u7528\u6237\u90FD\u5DF2\u8BBE\u5B9A\u5355\u72EC\u91D1\u989D\u5219\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <input class="pd_input" name="transfer_money" type="text" style="width: 217px;">\n      </label><br>\n      <label style="margin-top: 5px;">\u8F6C\u5E10\u9644\u8A00\uFF08\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>\n      </label>\n    </div>\n    <div>\n      <button type="submit">\u6279\u91CF\u8F6C\u8D26</button>\n      <button type="reset">\u91CD\u7F6E</button>\n      <button name="random" type="button" title="\u4E3A\u7528\u6237\u5217\u8868\u4E0A\u7684\u6BCF\u4E2A\u7528\u6237\u8BBE\u5B9A\u6307\u5B9A\u8303\u56F4\u5185\u7684\u968F\u673A\u91D1\u989D">\u968F\u673A\u91D1\u989D</button>\n      \uFF08\u6D3B\u671F\u5B58\u6B3E\u4E0D\u8DB3\u65F6\uFF0C\u5C06\u81EA\u52A8\u8FDB\u884C\u5B58\u6B3E\uFF1B\u6279\u91CF\u8F6C\u8D26\u91D1\u989D\u4E0D\u4F1A\u4ECE\u5B9A\u671F\u5B58\u6B3E\u4E2D\u6263\u9664\uFF09\n      ' + (Util.isIE() || Util.isEdge() ? '<br><span class="pd_highlight">注：IE和Edge浏览器在批量转账给中文名用户时会出现乱码，请使用其它浏览器进行批量转账</span>' : '') + '\n    </div>\n  </form>\n  </td>\n</tr>\n').appendTo('.bank1 > tbody');
 
     $area.find('form').submit(function (e) {
         e.preventDefault();
@@ -892,6 +892,7 @@ var addBatchOpenBoxesLink = function addBatchOpenBoxesLink() {
         var currentNum = parseInt($info.find('span:last').text());
         var num = parseInt(prompt('\u4F60\u8981\u6253\u5F00\u591A\u5C11\u4E2A\u3010' + boxType + '\u3011\uFF1F', currentNum));
         if (!num || num < 0) return;
+        Msg.destroy();
         openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
     });
 };
@@ -926,7 +927,7 @@ var addOpenAllBoxesButton = function addOpenAllBoxesButton() {
         }
     });
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
 /**
@@ -945,6 +946,8 @@ var openBoxes = function openBoxes(_ref) {
     var successNum = 0,
         failNum = 0,
         index = 0;
+    var randomTotalNum = 0,
+        randomTotalCount = 0;
     var isStop = false;
     var stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
     $area.parent().append('<ul class="pd_result" data-name="boxResult"><li><strong>\u3010' + boxType + '\u3011\u6253\u5F00\u7ED3\u679C\uFF1A</strong></li></ul>');
@@ -985,6 +988,12 @@ var openBoxes = function openBoxes(_ref) {
                     if (!(armType in stat.arm)) stat.arm[armType] = 0;
                     stat.arm[armType]++;
                 }
+
+                matches = /随机值(\d+)/.exec(msg);
+                if (matches) {
+                    randomTotalCount++;
+                    randomTotalNum += parseInt(matches[1]);
+                }
             } else if (msg.includes('操作过快')) {
                 $(document).queue('OpenBoxes', open);
             } else if (msg.includes('盒子不足')) {
@@ -1008,6 +1017,7 @@ var openBoxes = function openBoxes(_ref) {
 
             if (isStop || !length) {
                 Msg.remove($wait);
+                var avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
                 var _iteratorError = undefined;
@@ -1038,7 +1048,7 @@ var openBoxes = function openBoxes(_ref) {
                 }
 
                 if (!$.isEmptyObject(stat)) {
-                    Log.push('打开盒子', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + boxType + '`\u3011\u6253\u5F00\u6210\u529F', {
+                    Log.push('打开盒子', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + boxType + '`\u3011\u6253\u5F00\u6210\u529F (\u5E73\u5747\u968F\u673A\u503C\u3010`' + avgRandomNum + '`\u3011)', {
                         gain: stat,
                         pay: { '盒子': -successNum }
                     });
@@ -1050,7 +1060,8 @@ var openBoxes = function openBoxes(_ref) {
                     $currentNum.text(prevNum - successNum);
                 }
 
-                var resultStatHtml = '';
+                var resultStatHtml = '',
+                    msgStatHtml = '';
                 var _iteratorNormalCompletion2 = true;
                 var _didIteratorError2 = false;
                 var _iteratorError2 = undefined;
@@ -1061,11 +1072,13 @@ var openBoxes = function openBoxes(_ref) {
                             key = _step2$value[0],
                             value = _step2$value[1];
 
+                        var tmpHtml = '';
                         if ($.type(value) === 'object') {
+                            resultStatHtml += resultStatHtml ? '<br>' : '';
+                            msgStatHtml += msgStatHtml ? '<br>' : '';
+                            resultStatHtml += (key === 'item' ? '道具' : '装备') + '\uFF1A';
+
                             var typeList = key === 'item' ? Item.itemTypeList : Item.armTypeList;
-                            if (resultStatHtml) {
-                                resultStatHtml += '<br>' + (key === 'item' ? '道具' : '装备') + '\uFF1A';
-                            }
                             var _iteratorNormalCompletion3 = true;
                             var _didIteratorError3 = false;
                             var _iteratorError3 = undefined;
@@ -1074,7 +1087,7 @@ var openBoxes = function openBoxes(_ref) {
                                 for (var _iterator3 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                                     var name = _step3.value;
 
-                                    resultStatHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
+                                    tmpHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
                                 }
                             } catch (err) {
                                 _didIteratorError3 = true;
@@ -1091,8 +1104,10 @@ var openBoxes = function openBoxes(_ref) {
                                 }
                             }
                         } else {
-                            resultStatHtml += '<i>' + key + '<em>+' + value.toLocaleString() + '</em></i> ';
+                            tmpHtml += '<i>' + key + '<em>+' + value.toLocaleString() + '</em></i> ';
                         }
+                        resultStatHtml += tmpHtml;
+                        msgStatHtml += tmpHtml.trim();
                     }
                 } catch (err) {
                     _didIteratorError2 = true;
@@ -1109,9 +1124,12 @@ var openBoxes = function openBoxes(_ref) {
                     }
                 }
 
-                $('.pd_result[data-name="boxResult"]:last').append('<li class="pd_stat"><b>\u7EDF\u8BA1\u7ED3\u679C\uFF1A</b><br>' + (resultStatHtml ? resultStatHtml : '无') + '</li>');
-                console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : ''));
-                Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F' + (failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>', -1);
+                if (msgStatHtml.length < 200) {
+                    msgStatHtml = msgStatHtml.replace(/(.*)<br>/, '$1');
+                }
+                $('.pd_result[data-name="boxResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09\uFF1A</b><br>\n  ' + (resultStatHtml ? resultStatHtml : '无') + '\n</li>\n');
+                console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010' + avgRandomNum + '\u3011\uFF09' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : ''));
+                Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>' + (msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml)), -1);
 
                 Script.runFunc('Box.openBoxes_after_', stat);
                 setTimeout(function () {
@@ -1592,8 +1610,8 @@ var Config = exports.Config = {
 
     // 是否在打开盒子时自动保存当前页面上的物品信息，以突破最多显示20项的限制，true：开启；false：关闭
     saveMyObjectsInfoEnabled: false,
-    // 是否延长部分批量操作的时间间隔，以模拟手动使用道具、打开盒子等，true：开启；false：关闭
-    simulateManualActionEnabled: false,
+    // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
+    slowActionEnabled: false,
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -2804,7 +2822,7 @@ var Const = {
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 争夺攻击时每隔指定层数进行一次检查
-    lootAttackPerCheckLevel: 5,
+    lootAttackPerCheckLevel: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -2847,7 +2865,7 @@ var Const = {
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function specialAjaxInterval() {
-        if (Config.simulateManualActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
+        if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
 
@@ -3509,7 +3527,7 @@ var addBatchUseAndSellItemsButton = function addBatchUseAndSellItemsButton() {
         return showBatchUseAndSellItemsDialog(2, safeId);
     });
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="handleItemsBtns"]'));
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="handleItemsBtns"]'));
 };
 
 /**
@@ -3986,7 +4004,7 @@ var addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function addBatchBuyIt
         return confirm('是否购买该物品？');
     });
     $area.after('<div class="pd_item_btns"></div>');
-    Public.addSimulateManualActionChecked($('.pd_item_btns'));
+    Public.addSlowActionChecked($('.pd_item_btns'));
     showKfbInItemShop();
 };
 
@@ -4763,7 +4781,9 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         lootBoxStat = {};
     var boxTotalNum = 0,
         boxStat = {},
-        boxGain = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
+        boxGain = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} },
+        boxRandomTotalNum = 0,
+        boxRandomTotalCount = 0;
     var buyItemNum = 0,
         buyItemKfb = 0,
         buyItemStat = {};
@@ -4912,9 +4932,16 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                     var _matches = /【`(.+?)`】打开成功/.exec(action);
                     if (!_matches) continue;
                     var boxType = _matches[1];
-                    boxTotalNum += Math.abs(pay['盒子']);
+                    var boxNum = Math.abs(pay['盒子']);
+                    boxTotalNum += boxNum;
                     if (!(boxType in boxStat)) boxStat[boxType] = 0;
                     boxStat[boxType] += Math.abs(pay['盒子']);
+
+                    var randomMatches = /平均随机值【`([\d\.]+)`】/.exec(action);
+                    if (randomMatches) {
+                        boxRandomTotalCount += boxNum;
+                        boxRandomTotalNum += parseFloat(randomMatches[1]) * boxNum;
+                    }
 
                     var _iteratorNormalCompletion14 = true;
                     var _didIteratorError14 = false;
@@ -5180,6 +5207,9 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     }
 
     content += '<br><strong>\u76D2\u5B50\u6536\u83B7\u7EDF\u8BA1\uFF1A</strong><i>\u76D2\u5B50<ins>-' + boxTotalNum + '</ins>' + ((boxStatContent ? '<span class="pd_stat_extra">(' + boxStatContent + ')</span>' : '') + '</i> ');
+    if (boxRandomTotalCount > 0) {
+        content += '<i>\u5E73\u5747\u968F\u673A\u503C<em>+' + Util.getFixedNumLocStr(boxRandomTotalNum / boxRandomTotalCount, 2) + '</em></i> ';
+    }
     if (boxTotalNum > 0) {
         var _iteratorNormalCompletion22 = true;
         var _didIteratorError22 = false;
@@ -6017,11 +6047,12 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         showLevelPointListConfigDialog();
     }).end().find('[data-name="fill"]').click(function (e) {
         e.preventDefault();
-        var value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        var points = value.replace(/\s+/g, ' ').split(' ');
+        var matches = value.match(/\d+/g);
+        if (!matches) return;
         $points.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');else return false;
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
         });
     });
     setLevelPointListSelect(Config.levelPointList);
@@ -6174,11 +6205,12 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     $levelPointList.on('click', '[data-name="fill"]', function (e) {
         e.preventDefault();
         var $line = $(this).closest('tr');
-        var value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        var points = value.replace(/\s+/g, ' ').split(' ');
+        var matches = value.match(/\d+/g);
+        if (!matches) return;
         $line.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');else return false;
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
         });
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
@@ -9027,7 +9059,7 @@ var addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function a
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -10289,16 +10321,16 @@ var changeNewRateTipsColor = exports.changeNewRateTipsColor = function changeNew
 };
 
 /**
- * 添加模拟手动操作复选框
+ * 添加慢速操作复选框
  * @param {jQuery} $area 待添加区域
  */
-var addSimulateManualActionChecked = exports.addSimulateManualActionChecked = function addSimulateManualActionChecked($area) {
-    $('\n<label style="margin-right: 5px;">\n  <input name="simulateManualActionEnabled" type="checkbox" ' + (Config.simulateManualActionEnabled ? 'checked' : '') + '> \u6A21\u62DF\u624B\u52A8\u64CD\u4F5C\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u90E8\u5206\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~7\u79D2\u4E4B\u95F4\uFF09\uFF0C\u4EE5\u6A21\u62DF\u624B\u52A8\u4F7F\u7528\u9053\u5177\u3001\u6253\u5F00\u76D2\u5B50\u7B49">[?]</span>\n</label>\n').prependTo($area).find('input[name="simulateManualActionEnabled"]').click(function () {
+var addSlowActionChecked = exports.addSlowActionChecked = function addSlowActionChecked($area) {
+    $('\n<label style="margin-right: 5px;">\n  <input name="slowActionEnabled" type="checkbox" ' + (Config.slowActionEnabled ? 'checked' : '') + '> \u6162\u901F\u64CD\u4F5C\n  <span class="pd_cfg_tips" title="\u5EF6\u957F\u90E8\u5206\u6279\u91CF\u64CD\u4F5C\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57283~7\u79D2\u4E4B\u95F4\uFF09\uFF0C\u5982\u4F7F\u7528\u9053\u5177\u3001\u6253\u5F00\u76D2\u5B50\u7B49">[?]</span>\n</label>\n').prependTo($area).find('input[name="slowActionEnabled"]').click(function () {
         var checked = $(this).prop('checked');
-        $('input[name="simulateManualActionEnabled"]').not(this).prop('checked', checked);
-        if (Config.simulateManualActionEnabled !== checked) {
+        $('input[name="slowActionEnabled"]').not(this).prop('checked', checked);
+        if (Config.slowActionEnabled !== checked) {
             (0, _Config.read)();
-            Config.simulateManualActionEnabled = checked;
+            Config.slowActionEnabled = checked;
             (0, _Config.write)();
         }
     });
@@ -11096,15 +11128,15 @@ var parseMediaTag = exports.parseMediaTag = function parseMediaTag() {
  * 显示在购买框之外的附件图片
  */
 var showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = function showAttachImageOutsideSellBox() {
-    $('.readtext > table > tbody > tr > td').each(function () {
-        var $this = $(this);
-        var html = $this.html();
-        if (/\[attachment=\d+\]/.test(html)) {
-            var pid = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
-            var tid = Util.getUrlParam('tid');
-            $this.html(html.replace(/\[attachment=(\d+)\]/g, '<img src="job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1" alt="[\u9644\u4EF6\u56FE\u7247]" style="max-width:550px" ' + ('onclick="if(this.width>=550) window.open(\'job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1\');">')));
-        }
-    });
+    if (Util.getCurrentThreadPage() !== 1) return;
+    var $area = $('.readtext:first > table > tbody > tr > td');
+    if (!$area.find('select[name="buyers"]').length) return;
+    var html = $area.html();
+    if (/\[attachment=\d+\]/.test(html)) {
+        var pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        var tid = Util.getUrlParam('tid');
+        $area.html(html.replace(/\[attachment=(\d+)\]/g, '<img src="job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1" alt="[\u9644\u4EF6\u56FE\u7247]" style="max-width:550px" ' + ('onclick="if(this.width>=550) window.open(\'job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1\');">')));
+    }
 };
 
 /**
@@ -11638,7 +11670,7 @@ var deleteValue = exports.deleteValue = function deleteValue(key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -11938,10 +11970,11 @@ var getUrlParam = exports.getUrlParam = function getUrlParam(name) {
  * @returns {string} 经过GBK编码后的字符串
  */
 var getGBKEncodeString = exports.getGBKEncodeString = function getGBKEncodeString(str) {
-    var img = $('<img>').appendTo('body').get(0);
+    var img = document.createElement('img');
     img.src = 'nothing?sp=' + str;
+    document.body.appendChild(img);
     var encodeStr = img.src.split('nothing?sp=').pop();
-    $(img).remove();
+    document.body.removeChild(img);
     return encodeStr;
 };
 
@@ -12025,6 +12058,14 @@ var getStatFormatNumber = exports.getStatFormatNumber = function getStatFormatNu
  */
 var isOpera = exports.isOpera = function isOpera() {
     return typeof _Info2.default.w.opera !== 'undefined';
+};
+
+/**
+ * 检测浏览器是否为IE
+ * @returns {boolean} 是否为IE
+ */
+var isIE = exports.isIE = function isIE() {
+    return typeof navigator.msMaxTouchPoints !== 'undefined';
 };
 
 /**

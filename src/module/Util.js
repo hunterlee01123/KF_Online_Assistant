@@ -262,10 +262,11 @@ export const getUrlParam = function (name) {
  * @returns {string} 经过GBK编码后的字符串
  */
 export const getGBKEncodeString = function (str) {
-    let img = $('<img>').appendTo('body').get(0);
+    let img = document.createElement('img');
     img.src = 'nothing?sp=' + str;
+    document.body.appendChild(img);
     let encodeStr = img.src.split('nothing?sp=').pop();
-    $(img).remove();
+    document.body.removeChild(img);
     return encodeStr;
 };
 
@@ -350,6 +351,12 @@ export const getStatFormatNumber = num => num >= 0 ? `<em>+${num.toLocaleString(
  * @returns {boolean} 是否为Opera
  */
 export const isOpera = () => typeof Info.w.opera !== 'undefined';
+
+/**
+ * 检测浏览器是否为IE
+ * @returns {boolean} 是否为IE
+ */
+export const isIE = () => typeof navigator.msMaxTouchPoints !== 'undefined';
 
 /**
  * 检测浏览器是否为Edge

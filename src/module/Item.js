@@ -108,7 +108,7 @@ const addBatchUseAndSellItemsButton = function () {
 `).insertAfter($area).find('[name="useItems"]').click(() => showBatchUseAndSellItemsDialog(1, safeId))
         .end().find('[name="sellItems"]').click(() => showBatchUseAndSellItemsDialog(2, safeId));
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="handleItemsBtns"]'));
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="handleItemsBtns"]'));
 };
 
 /**
@@ -546,7 +546,7 @@ export const addBatchBuyItemsLink = function () {
         buyItems(num, type, kfb, url);
     }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买该物品？'));
     $area.after('<div class="pd_item_btns"></div>');
-    Public.addSimulateManualActionChecked($('.pd_item_btns'));
+    Public.addSlowActionChecked($('.pd_item_btns'));
     showKfbInItemShop();
 };
 

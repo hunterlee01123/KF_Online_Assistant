@@ -18,7 +18,7 @@ const Const = {
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 争夺攻击时每隔指定层数进行一次检查
-    lootAttackPerCheckLevel: 5,
+    lootAttackPerCheckLevel: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -61,7 +61,7 @@ const Const = {
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval () {
-        if (Config.simulateManualActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
+        if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
     // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值

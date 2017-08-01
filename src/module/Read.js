@@ -250,7 +250,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
             type: 'GET',
             url: `read.php?tid=${tid}&page=${page}&t=${new Date().getTime()}`,
             timeout: Const.defAjaxTimeout,
-            success (html) {
+            success(html) {
                 $('.readtext', html).each(function () {
                     let data = {};
                     let $floor = $(this);
@@ -293,10 +293,10 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
                 $countdown.text(parseInt($countdown.text()) - 1);
                 isStop = isStop || $countdown.closest('.pd_msg').data('stop');
             },
-            error () {
+            error() {
                 setTimeout(() => stat(page), Const.defAjaxInterval);
             },
-            complete () {
+            complete() {
                 if (isStop || page >= endPage) {
                     Msg.destroy();
                     showStatFloorDialog(floorList);
@@ -512,7 +512,7 @@ export const buyThreads = function (threadList) {
                 type: 'GET',
                 url: url + '&t=' + new Date().getTime(),
                 timeout: Const.defAjaxTimeout,
-                success (html) {
+                success(html) {
                     Public.showFormatLog('购买帖子', html);
                     let {msg} = Util.getResponseMsg(html);
                     if (/操作完成/.test(msg)) {
@@ -521,10 +521,10 @@ export const buyThreads = function (threadList) {
                     }
                     else failNum++;
                 },
-                error () {
+                error() {
                     failNum++;
                 },
-                complete () {
+                complete() {
                     let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
@@ -822,21 +822,21 @@ export const parseMediaTag = function () {
  * 显示在购买框之外的附件图片
  */
 export const showAttachImageOutsideSellBox = function () {
-    $('.readtext > table > tbody > tr > td').each(function () {
-        let $this = $(this);
-        let html = $this.html();
-        if (/\[attachment=\d+\]/.test(html)) {
-            let pid = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
-            let tid = Util.getUrlParam('tid');
-            $this.html(
-                html.replace(
-                    /\[attachment=(\d+)\]/g,
-                    `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` +
-                    `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`
-                )
-            );
-        }
-    });
+    if (Util.getCurrentThreadPage() !== 1) return;
+    let $area = $('.readtext:first > table > tbody > tr > td');
+    if (!$area.find('select[name="buyers"]').length) return;
+    let html = $area.html();
+    if (/\[attachment=\d+\]/.test(html)) {
+        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        let tid = Util.getUrlParam('tid');
+        $area.html(
+            html.replace(
+                /\[attachment=(\d+)\]/g,
+                `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` +
+                `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`
+            )
+        );
+    }
 };
 
 /**

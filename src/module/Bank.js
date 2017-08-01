@@ -149,7 +149,7 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit, transfe
                 url: 'hack.php?H_name=bank',
                 timeout: Const.defAjaxTimeout,
                 data: `&action=virement&pwuser=${Util.getGBKEncodeString(userName)}&to_money=${money}&memo=${Util.getGBKEncodeString(msg)}`,
-                success (html) {
+                success(html) {
                     Public.showFormatLog('批量转账', html);
                     let {msg} = Util.getResponseMsg(html);
                     let msgHtml = `${userName} <em>+${money.toLocaleString()}</em>`;
@@ -164,7 +164,7 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit, transfe
                     }
                     $('.pd_result:last').append(`<li>${msgHtml}</li>`);
                 },
-                error () {
+                error() {
                     failNum++;
                     $('.pd_result:last').append(`
 <li>
@@ -173,7 +173,7 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit, transfe
 </li>
 `);
                 },
-                complete () {
+                complete() {
                     let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
@@ -270,6 +270,7 @@ const addBatchTransferButton = function () {
       <button type="reset">重置</button>
       <button name="random" type="button" title="为用户列表上的每个用户设定指定范围内的随机金额">随机金额</button>
       （活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）
+      ${Util.isIE() || Util.isEdge() ? '<br><span class="pd_highlight">注：IE和Edge浏览器在批量转账给中文名用户时会出现乱码，请使用其它浏览器进行批量转账</span>' : ''}
     </div>
   </form>
   </td>

@@ -52,6 +52,7 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
+        Msg.destroy();
         openBoxes({id, boxType, num, safeId});
     });
 };
@@ -92,7 +93,7 @@ const addOpenAllBoxesButton = function () {
         }
     });
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
 /**
@@ -104,6 +105,7 @@ const addOpenAllBoxesButton = function () {
  */
 const openBoxes = function ({id, boxType, num, safeId}) {
     let successNum = 0, failNum = 0, index = 0;
+    let randomTotalNum = 0, randomTotalCount = 0;
     let isStop = false;
     let stat = {'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {}};
     $area.parent().append(`<ul class="pd_result" data-name="boxResult"><li><strong>【${boxType}】打开结果：</strong></li></ul>`);
@@ -146,6 +148,12 @@ const openBoxes = function ({id, boxType, num, safeId}) {
                     if (!(armType in stat.arm)) stat.arm[armType] = 0;
                     stat.arm[armType]++;
                 }
+
+                matches = /随机值(\d+)/.exec(msg);
+                if (matches) {
+                    randomTotalCount++;
+                    randomTotalNum += parseInt(matches[1]);
+                }
             }
             else if (msg.includes('操作过快')) {
                 $(document).queue('OpenBoxes', open);
@@ -172,6 +180,7 @@ const openBoxes = function ({id, boxType, num, safeId}) {
 
             if (isStop || !length) {
                 Msg.remove($wait);
+                let avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
                 for (let [key, value] of Util.entries(stat)) {
                     if (!value || ($.type(value) === 'object' && $.isEmptyObject(value))) {
                         delete stat[key];
@@ -180,7 +189,7 @@ const openBoxes = function ({id, boxType, num, safeId}) {
                 if (!$.isEmptyObject(stat)) {
                     Log.push(
                         '打开盒子',
-                        `共有\`${successNum}\`个【\`${boxType}\`】打开成功`,
+                        `共有\`${successNum}\`个【\`${boxType}\`】打开成功 (平均随机值【\`${avgRandomNum}\`】)`,
                         {
                             gain: stat,
                             pay: {'盒子': -successNum}
@@ -194,27 +203,40 @@ const openBoxes = function ({id, boxType, num, safeId}) {
                     $currentNum.text(prevNum - successNum);
                 }
 
-                let resultStatHtml = '';
+                let resultStatHtml = '', msgStatHtml = '';
                 for (let [key, value] of Util.entries(stat)) {
+                    let tmpHtml = '';
                     if ($.type(value) === 'object') {
+                        resultStatHtml += resultStatHtml ? '<br>' : '';
+                        msgStatHtml += msgStatHtml ? '<br>' : '';
+                        resultStatHtml += `${key === 'item' ? '道具' : '装备'}：`;
+
                         let typeList = key === 'item' ? Item.itemTypeList : Item.armTypeList;
-                        if (resultStatHtml) {
-                            resultStatHtml += `<br>${key === 'item' ? '道具' : '装备'}：`;
-                        }
                         for (let name of Util.getSortedObjectKeyList(typeList, value)) {
-                            resultStatHtml += `<i>${name}<em>+${value[name].toLocaleString()}</em></i> `;
+                            tmpHtml += `<i>${name}<em>+${value[name].toLocaleString()}</em></i> `;
                         }
                     }
                     else {
-                        resultStatHtml += `<i>${key}<em>+${value.toLocaleString()}</em></i> `;
+                        tmpHtml += `<i>${key}<em>+${value.toLocaleString()}</em></i> `;
                     }
+                    resultStatHtml += tmpHtml;
+                    msgStatHtml += tmpHtml.trim();
                 }
-                $('.pd_result[data-name="boxResult"]:last').append(
-                    `<li class="pd_stat"><b>统计结果：</b><br>${resultStatHtml ? resultStatHtml : '无'}</li>`
+                if (msgStatHtml.length < 200) {
+                    msgStatHtml = msgStatHtml.replace(/(.*)<br>/, '$1');
+                }
+                $('.pd_result[data-name="boxResult"]:last').append(`
+<li class="pd_stat">
+  <b>统计结果（平均随机值【<em>${avgRandomNum}</em>】）：</b><br>
+  ${resultStatHtml ? resultStatHtml : '无'}
+</li>
+`);
+                console.log(
+                    `共有${successNum}个【${boxType}】打开成功（平均随机值【${avgRandomNum}】）${failNum > 0 ? `，共有${failNum}个盒子打开失败` : ''}`
                 );
-                console.log(`共有${successNum}个【${boxType}】打开成功${failNum > 0 ? `，共有${failNum}个盒子打开失败` : ''}`);
                 Msg.show(
-                    `<strong>共有<em>${successNum}</em>个【${boxType}】打开成功${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>`,
+                    `<strong>共有<em>${successNum}</em>个【${boxType}】打开成功（平均随机值【<em>${avgRandomNum}</em>】）` +
+                    `${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>${msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml}`,
                     -1
                 );
 

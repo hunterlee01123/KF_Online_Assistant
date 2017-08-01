@@ -281,7 +281,8 @@ const getLogStat = function (log, date, logStatType) {
 
     let income = {}, expense = {}, profit = {};
     let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootBoxTotalNum = 0, lootBoxStat = {};
-    let boxTotalNum = 0, boxStat = {}, boxGain = {'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {}};
+    let boxTotalNum = 0, boxStat = {}, boxGain = {'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {}},
+        boxRandomTotalNum = 0, boxRandomTotalCount = 0;
     let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
     let validItemNum = 0, validItemStat = {}, invalidItemNum = 0, invalidItemStat = {};
     let invalidKeyList = [
@@ -331,9 +332,16 @@ const getLogStat = function (log, date, logStatType) {
                 let matches = /【`(.+?)`】打开成功/.exec(action);
                 if (!matches) continue;
                 let boxType = matches[1];
-                boxTotalNum += Math.abs(pay['盒子']);
+                let boxNum = Math.abs(pay['盒子']);
+                boxTotalNum += boxNum;
                 if (!(boxType in boxStat)) boxStat[boxType] = 0;
                 boxStat[boxType] += Math.abs(pay['盒子']);
+
+                let randomMatches = /平均随机值【`([\d\.]+)`】/.exec(action);
+                if (randomMatches) {
+                    boxRandomTotalCount += boxNum;
+                    boxRandomTotalNum += parseFloat(randomMatches[1]) * boxNum;
+                }
 
                 for (let [key, value] of Util.entries(gain)) {
                     if (!(key in boxGain)) continue;
@@ -416,6 +424,9 @@ const getLogStat = function (log, date, logStatType) {
     }
     content += `<br><strong>盒子收获统计：</strong><i>盒子<ins>-${boxTotalNum}</ins>` +
         `${boxStatContent ? `<span class="pd_stat_extra">(${boxStatContent})</span>` : ''}</i> `;
+    if (boxRandomTotalCount > 0) {
+        content += `<i>平均随机值<em>+${Util.getFixedNumLocStr(boxRandomTotalNum / boxRandomTotalCount, 2)}</em></i> `;
+    }
     if (boxTotalNum > 0) {
         for (let [key, value] of Util.entries(boxGain)) {
             if (!value || ($.type(value) === 'object' && $.isEmptyObject(value))) continue;

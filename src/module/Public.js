@@ -1300,21 +1300,21 @@ export const changeNewRateTipsColor = function () {
 };
 
 /**
- * 添加模拟手动操作复选框
+ * 添加慢速操作复选框
  * @param {jQuery} $area 待添加区域
  */
-export const addSimulateManualActionChecked = function ($area) {
+export const addSlowActionChecked = function ($area) {
     $(`
 <label style="margin-right: 5px;">
-  <input name="simulateManualActionEnabled" type="checkbox" ${Config.simulateManualActionEnabled ? 'checked' : ''}> 模拟手动操作
-  <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），以模拟手动使用道具、打开盒子等">[?]</span>
+  <input name="slowActionEnabled" type="checkbox" ${Config.slowActionEnabled ? 'checked' : ''}> 慢速操作
+  <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），如使用道具、打开盒子等">[?]</span>
 </label>
-`).prependTo($area).find('input[name="simulateManualActionEnabled"]').click(function () {
+`).prependTo($area).find('input[name="slowActionEnabled"]').click(function () {
         let checked = $(this).prop('checked');
-        $('input[name="simulateManualActionEnabled"]').not(this).prop('checked', checked);
-        if (Config.simulateManualActionEnabled !== checked) {
+        $('input[name="slowActionEnabled"]').not(this).prop('checked', checked);
+        if (Config.slowActionEnabled !== checked) {
             readConfig();
-            Config.simulateManualActionEnabled = checked;
+            Config.slowActionEnabled = checked;
             writeConfig();
         }
     });

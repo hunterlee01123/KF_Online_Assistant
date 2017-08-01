@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.6
+// @version     10.6.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.6';
+const version = '10.6.1';
 
 /**
  * 导出模块
@@ -589,6 +589,7 @@ const addBatchTransferButton = function () {
       <button type="reset">重置</button>
       <button name="random" type="button" title="为用户列表上的每个用户设定指定范围内的随机金额">随机金额</button>
       （活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）
+      ${Util.isIE() || Util.isEdge() ? '<br><span class="pd_highlight">注：IE和Edge浏览器在批量转账给中文名用户时会出现乱码，请使用其它浏览器进行批量转账</span>' : ''}
     </div>
   </form>
   </td>
@@ -802,6 +803,7 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
+        Msg.destroy();
         openBoxes({ id, boxType, num, safeId });
     });
 };
@@ -842,7 +844,7 @@ const addOpenAllBoxesButton = function () {
         }
     });
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
 /**
@@ -856,6 +858,8 @@ const openBoxes = function ({ id, boxType, num, safeId }) {
     let successNum = 0,
         failNum = 0,
         index = 0;
+    let randomTotalNum = 0,
+        randomTotalCount = 0;
     let isStop = false;
     let stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
     $area.parent().append(`<ul class="pd_result" data-name="boxResult"><li><strong>【${boxType}】打开结果：</strong></li></ul>`);
@@ -896,6 +900,12 @@ const openBoxes = function ({ id, boxType, num, safeId }) {
                     if (!(armType in stat.arm)) stat.arm[armType] = 0;
                     stat.arm[armType]++;
                 }
+
+                matches = /随机值(\d+)/.exec(msg);
+                if (matches) {
+                    randomTotalCount++;
+                    randomTotalNum += parseInt(matches[1]);
+                }
             } else if (msg.includes('操作过快')) {
                 $(document).queue('OpenBoxes', open);
             } else if (msg.includes('盒子不足')) {
@@ -919,13 +929,14 @@ const openBoxes = function ({ id, boxType, num, safeId }) {
 
             if (isStop || !length) {
                 Msg.remove($wait);
+                let avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
                 for (let [key, value] of Util.entries(stat)) {
                     if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) {
                         delete stat[key];
                     }
                 }
                 if (!$.isEmptyObject(stat)) {
-                    Log.push('打开盒子', `共有\`${successNum}\`个【\`${boxType}\`】打开成功`, {
+                    Log.push('打开盒子', `共有\`${successNum}\`个【\`${boxType}\`】打开成功 (平均随机值【\`${avgRandomNum}\`】)`, {
                         gain: stat,
                         pay: { '盒子': -successNum }
                     });
@@ -937,23 +948,36 @@ const openBoxes = function ({ id, boxType, num, safeId }) {
                     $currentNum.text(prevNum - successNum);
                 }
 
-                let resultStatHtml = '';
+                let resultStatHtml = '',
+                    msgStatHtml = '';
                 for (let [key, value] of Util.entries(stat)) {
+                    let tmpHtml = '';
                     if ($.type(value) === 'object') {
+                        resultStatHtml += resultStatHtml ? '<br>' : '';
+                        msgStatHtml += msgStatHtml ? '<br>' : '';
+                        resultStatHtml += `${key === 'item' ? '道具' : '装备'}：`;
+
                         let typeList = key === 'item' ? Item.itemTypeList : Item.armTypeList;
-                        if (resultStatHtml) {
-                            resultStatHtml += `<br>${key === 'item' ? '道具' : '装备'}：`;
-                        }
                         for (let name of Util.getSortedObjectKeyList(typeList, value)) {
-                            resultStatHtml += `<i>${name}<em>+${value[name].toLocaleString()}</em></i> `;
+                            tmpHtml += `<i>${name}<em>+${value[name].toLocaleString()}</em></i> `;
                         }
                     } else {
-                        resultStatHtml += `<i>${key}<em>+${value.toLocaleString()}</em></i> `;
+                        tmpHtml += `<i>${key}<em>+${value.toLocaleString()}</em></i> `;
                     }
+                    resultStatHtml += tmpHtml;
+                    msgStatHtml += tmpHtml.trim();
                 }
-                $('.pd_result[data-name="boxResult"]:last').append(`<li class="pd_stat"><b>统计结果：</b><br>${resultStatHtml ? resultStatHtml : '无'}</li>`);
-                console.log(`共有${successNum}个【${boxType}】打开成功${failNum > 0 ? `，共有${failNum}个盒子打开失败` : ''}`);
-                Msg.show(`<strong>共有<em>${successNum}</em>个【${boxType}】打开成功${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>`, -1);
+                if (msgStatHtml.length < 200) {
+                    msgStatHtml = msgStatHtml.replace(/(.*)<br>/, '$1');
+                }
+                $('.pd_result[data-name="boxResult"]:last').append(`
+<li class="pd_stat">
+  <b>统计结果（平均随机值【<em>${avgRandomNum}</em>】）：</b><br>
+  ${resultStatHtml ? resultStatHtml : '无'}
+</li>
+`);
+                console.log(`共有${successNum}个【${boxType}】打开成功（平均随机值【${avgRandomNum}】）${failNum > 0 ? `，共有${failNum}个盒子打开失败` : ''}`);
+                Msg.show(`<strong>共有<em>${successNum}</em>个【${boxType}】打开成功（平均随机值【<em>${avgRandomNum}</em>】）` + `${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>${msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml}`, -1);
 
                 Script.runFunc('Box.openBoxes_after_', stat);
                 setTimeout(() => Item.getNextObjects(Config.saveMyObjectsInfoEnabled ? Item.writeMyObjectsInfo : null), _Const2.default.defAjaxInterval);
@@ -1387,8 +1411,8 @@ const Config = exports.Config = {
 
     // 是否在打开盒子时自动保存当前页面上的物品信息，以突破最多显示20项的限制，true：开启；false：关闭
     saveMyObjectsInfoEnabled: false,
-    // 是否延长部分批量操作的时间间隔，以模拟手动使用道具、打开盒子等，true：开启；false：关闭
-    simulateManualActionEnabled: false,
+    // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
+    slowActionEnabled: false,
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -2798,7 +2822,7 @@ const Const = {
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 争夺攻击时每隔指定层数进行一次检查
-    lootAttackPerCheckLevel: 5,
+    lootAttackPerCheckLevel: 10,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -2841,7 +2865,7 @@ const Const = {
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval() {
-        if (Config.simulateManualActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
+        if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
     // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
@@ -3493,7 +3517,7 @@ const addBatchUseAndSellItemsButton = function () {
 </div>
 `).insertAfter($area).find('[name="useItems"]').click(() => showBatchUseAndSellItemsDialog(1, safeId)).end().find('[name="sellItems"]').click(() => showBatchUseAndSellItemsDialog(2, safeId));
 
-    Public.addSimulateManualActionChecked($('.pd_item_btns[data-name="handleItemsBtns"]'));
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="handleItemsBtns"]'));
 };
 
 /**
@@ -3900,7 +3924,7 @@ const addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function () {
         buyItems(num, type, kfb, url);
     }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买该物品？'));
     $area.after('<div class="pd_item_btns"></div>');
-    Public.addSimulateManualActionChecked($('.pd_item_btns'));
+    Public.addSlowActionChecked($('.pd_item_btns'));
     showKfbInItemShop();
 };
 
@@ -4422,7 +4446,9 @@ const getLogStat = function (log, date, logStatType) {
         lootBoxStat = {};
     let boxTotalNum = 0,
         boxStat = {},
-        boxGain = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
+        boxGain = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} },
+        boxRandomTotalNum = 0,
+        boxRandomTotalCount = 0;
     let buyItemNum = 0,
         buyItemKfb = 0,
         buyItemStat = {};
@@ -4472,9 +4498,16 @@ const getLogStat = function (log, date, logStatType) {
                 let matches = /【`(.+?)`】打开成功/.exec(action);
                 if (!matches) continue;
                 let boxType = matches[1];
-                boxTotalNum += Math.abs(pay['盒子']);
+                let boxNum = Math.abs(pay['盒子']);
+                boxTotalNum += boxNum;
                 if (!(boxType in boxStat)) boxStat[boxType] = 0;
                 boxStat[boxType] += Math.abs(pay['盒子']);
+
+                let randomMatches = /平均随机值【`([\d\.]+)`】/.exec(action);
+                if (randomMatches) {
+                    boxRandomTotalCount += boxNum;
+                    boxRandomTotalNum += parseFloat(randomMatches[1]) * boxNum;
+                }
 
                 for (let [key, value] of Util.entries(gain)) {
                     if (!(key in boxGain)) continue;
@@ -4549,6 +4582,9 @@ const getLogStat = function (log, date, logStatType) {
         boxStatContent += `<ins title="${boxType}">-${boxStat[boxType].toLocaleString()}</ins>`;
     }
     content += `<br><strong>盒子收获统计：</strong><i>盒子<ins>-${boxTotalNum}</ins>` + `${boxStatContent ? `<span class="pd_stat_extra">(${boxStatContent})</span>` : ''}</i> `;
+    if (boxRandomTotalCount > 0) {
+        content += `<i>平均随机值<em>+${Util.getFixedNumLocStr(boxRandomTotalNum / boxRandomTotalCount, 2)}</em></i> `;
+    }
     if (boxTotalNum > 0) {
         for (let [key, value] of Util.entries(boxGain)) {
             if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) continue;
@@ -5283,11 +5319,12 @@ const addLevelPointListSelect = function () {
         showLevelPointListConfigDialog();
     }).end().find('[data-name="fill"]').click(function (e) {
         e.preventDefault();
-        let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.replace(/\s+/g, ' ').split(' ');
+        let matches = value.match(/\d+/g);
+        if (!matches) return;
         $points.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');else return false;
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
         });
     });
     setLevelPointListSelect(Config.levelPointList);
@@ -5469,11 +5506,12 @@ const showLevelPointListConfigDialog = function (callback) {
     $levelPointList.on('click', '[data-name="fill"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
-        let value = $.trim(prompt('请输入以空格分隔的一串数字，按顺序填充到各个点数字段中：'));
+        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
         if (!value) return;
-        let points = value.replace(/\s+/g, ' ').split(' ');
+        let matches = value.match(/\d+/g);
+        if (!matches) return;
         $line.find('.pd_point').each(function (index) {
-            if (index < points.length) $(this).val(parseInt(points[index])).trigger('change');else return false;
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
         });
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
@@ -7936,7 +7974,7 @@ const addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSimulateManualActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -9207,21 +9245,21 @@ const changeNewRateTipsColor = exports.changeNewRateTipsColor = function () {
 };
 
 /**
- * 添加模拟手动操作复选框
+ * 添加慢速操作复选框
  * @param {jQuery} $area 待添加区域
  */
-const addSimulateManualActionChecked = exports.addSimulateManualActionChecked = function ($area) {
+const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
     $(`
 <label style="margin-right: 5px;">
-  <input name="simulateManualActionEnabled" type="checkbox" ${Config.simulateManualActionEnabled ? 'checked' : ''}> 模拟手动操作
-  <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），以模拟手动使用道具、打开盒子等">[?]</span>
+  <input name="slowActionEnabled" type="checkbox" ${Config.slowActionEnabled ? 'checked' : ''}> 慢速操作
+  <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），如使用道具、打开盒子等">[?]</span>
 </label>
-`).prependTo($area).find('input[name="simulateManualActionEnabled"]').click(function () {
+`).prependTo($area).find('input[name="slowActionEnabled"]').click(function () {
         let checked = $(this).prop('checked');
-        $('input[name="simulateManualActionEnabled"]').not(this).prop('checked', checked);
-        if (Config.simulateManualActionEnabled !== checked) {
+        $('input[name="slowActionEnabled"]').not(this).prop('checked', checked);
+        if (Config.slowActionEnabled !== checked) {
             (0, _Config.read)();
-            Config.simulateManualActionEnabled = checked;
+            Config.slowActionEnabled = checked;
             (0, _Config.write)();
         }
     });
@@ -10022,15 +10060,15 @@ const parseMediaTag = exports.parseMediaTag = function () {
  * 显示在购买框之外的附件图片
  */
 const showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = function () {
-    $('.readtext > table > tbody > tr > td').each(function () {
-        let $this = $(this);
-        let html = $this.html();
-        if (/\[attachment=\d+\]/.test(html)) {
-            let pid = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
-            let tid = Util.getUrlParam('tid');
-            $this.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`));
-        }
-    });
+    if (Util.getCurrentThreadPage() !== 1) return;
+    let $area = $('.readtext:first > table > tbody > tr > td');
+    if (!$area.find('select[name="buyers"]').length) return;
+    let html = $area.html();
+    if (/\[attachment=\d+\]/.test(html)) {
+        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        let tid = Util.getUrlParam('tid');
+        $area.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`));
+    }
 };
 
 /**
@@ -10489,7 +10527,7 @@ const deleteValue = exports.deleteValue = function (key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -10756,10 +10794,11 @@ const getUrlParam = exports.getUrlParam = function (name) {
  * @returns {string} 经过GBK编码后的字符串
  */
 const getGBKEncodeString = exports.getGBKEncodeString = function (str) {
-    let img = $('<img>').appendTo('body').get(0);
+    let img = document.createElement('img');
     img.src = 'nothing?sp=' + str;
+    document.body.appendChild(img);
     let encodeStr = img.src.split('nothing?sp=').pop();
-    $(img).remove();
+    document.body.removeChild(img);
     return encodeStr;
 };
 
@@ -10832,6 +10871,12 @@ const getStatFormatNumber = exports.getStatFormatNumber = num => num >= 0 ? `<em
  * @returns {boolean} 是否为Opera
  */
 const isOpera = exports.isOpera = () => typeof _Info2.default.w.opera !== 'undefined';
+
+/**
+ * 检测浏览器是否为IE
+ * @returns {boolean} 是否为IE
+ */
+const isIE = exports.isIE = () => typeof navigator.msMaxTouchPoints !== 'undefined';
 
 /**
  * 检测浏览器是否为Edge
