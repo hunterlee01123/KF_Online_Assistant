@@ -197,10 +197,10 @@ export const Config = {
     // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
     customAutoChangeIdColorList: [],
 
-    // 是否在打开盒子时自动保存当前页面上的物品信息，以突破最多显示20项的限制，true：开启；false：关闭
-    saveMyObjectsInfoEnabled: false,
     // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
     slowActionEnabled: false,
+    // 默认的批量熔炼的装备种类列表，例：['普通的长剑', '幸运的长剑', '普通的短弓']
+    defSmeltArmTypeList: [],
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']

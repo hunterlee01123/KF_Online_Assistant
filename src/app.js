@@ -17,7 +17,6 @@ import * as Other from './module/Other';
 import * as Bank from './module/Bank';
 import * as Card from './module/Card';
 import * as Item from './module/Item';
-import * as Box from './module/Box';
 import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
@@ -140,7 +139,6 @@ const init = function () {
         if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
     }
     else if (location.pathname === '/kf_fw_ig_mybp.php') {
-        Box.init();
         Item.init();
     }
     else if (location.pathname === '/kf_fw_ig_shop.php') {

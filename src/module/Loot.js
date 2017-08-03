@@ -12,7 +12,6 @@ import * as LootLog from './LootLog';
 import * as Script from './Script';
 import * as Public from './Public';
 import * as Item from './Item';
-import * as Box from './Box';
 
 // 争夺属性区域
 let $properties;
@@ -1350,7 +1349,7 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
         LootLog.record(logList, pointsLogList);
     }
     let boxesStat = '';
-    for (let key of Util.getSortedObjectKeyList(Box.boxTypeList, boxes)) {
+    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
         boxesStat += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i>`;
     }
     Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, -1);
@@ -1555,7 +1554,7 @@ const handleLootLogNav = function () {
 const showLogStat = function (levelInfoList) {
     let {boxNum, boxes} = getTotalGain(levelInfoList);
     let boxesStatHtml = '';
-    for (let key of Util.getSortedObjectKeyList(Box.boxTypeList, boxes)) {
+    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
         boxesStatHtml += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i> `;
     }
     let allEnemyStatHtml = '';

@@ -64,11 +64,7 @@ const Const = {
         if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
-    // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
-    cycleUseItemsFirstAjaxInterval () {
-        return Math.floor(Math.random() * 250) + 2000;
-    },
-    // 操作道具的最小时间间隔（毫秒）
+    // 操作物品的最小时间间隔（毫秒）
     minItemActionInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval () {
