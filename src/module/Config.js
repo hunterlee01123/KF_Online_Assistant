@@ -59,6 +59,8 @@ export const Config = {
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
+    // 是否总是打开个人属性/装备界面，true：开启；false：关闭
+    alwaysOpenPointAreaEnabled: false,
     // 是否显示分层NPC统计，true：开启；false：关闭
     showLevelEnemyStatEnabled: false,
     // 是否显示精简争夺记录，true：开启；false：关闭

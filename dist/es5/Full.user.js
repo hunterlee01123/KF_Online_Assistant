@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.6.1
+// @version     10.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -93,10 +93,6 @@ var _Item = require('./module/Item');
 
 var Item = _interopRequireWildcard(_Item);
 
-var _Box = require('./module/Box');
-
-var Box = _interopRequireWildcard(_Box);
-
 var _Loot = require('./module/Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
@@ -110,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.6.1';
+var version = '10.7';
 
 /**
  * 导出模块
@@ -223,7 +219,6 @@ var init = function init() {
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
-        Box.init();
         Item.init();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         //Item.addBatchBuyItemsLink(); // 临时禁用
@@ -321,7 +316,7 @@ var init = function init() {
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
 
-},{"./module/Bank":2,"./module/Box":3,"./module/Card":4,"./module/Config":5,"./module/ConfigDialog":6,"./module/Const":7,"./module/Dialog":8,"./module/Index":9,"./module/Info":10,"./module/Item":11,"./module/Log":12,"./module/Loot":14,"./module/LootLog":15,"./module/Msg":16,"./module/Other":17,"./module/Post":18,"./module/Public":19,"./module/Read":20,"./module/Script":21,"./module/TmpLog":22,"./module/Util":23}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/TmpLog":21,"./module/Util":22}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -807,359 +802,7 @@ var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositD
     });
 };
 
-},{"./Const":7,"./Log":12,"./Msg":16,"./Public":19,"./TmpLog":22,"./Util":23}],3:[function(require,module,exports){
-/* 盒子模块 */
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.init = exports.boxTypeList = undefined;
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _Util = require('./Util');
-
-var Util = _interopRequireWildcard(_Util);
-
-var _Msg = require('./Msg');
-
-var Msg = _interopRequireWildcard(_Msg);
-
-var _Const = require('./Const');
-
-var _Const2 = _interopRequireDefault(_Const);
-
-var _Config = require('./Config');
-
-var _Log = require('./Log');
-
-var Log = _interopRequireWildcard(_Log);
-
-var _Script = require('./Script');
-
-var Script = _interopRequireWildcard(_Script);
-
-var _Item = require('./Item');
-
-var Item = _interopRequireWildcard(_Item);
-
-var _Public = require('./Public');
-
-var Public = _interopRequireWildcard(_Public);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-/**
- * 盒子种类列表
- */
-var boxTypeList = exports.boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
-
-// 盒子区域
-var $area = void 0;
-// SafeID
-var safeId = void 0;
-
-/**
- * 初始化
- */
-var init = exports.init = function init() {
-    safeId = Public.getSafeId();
-    if (!safeId) return;
-    $area = $('.kf_fw_ig1:first');
-    addBatchOpenBoxesLink();
-    addOpenAllBoxesButton();
-};
-
-/**
- * 添加批量打开盒子链接
- */
-var addBatchOpenBoxesLink = function addBatchOpenBoxesLink() {
-    $area = $('.kf_fw_ig1:first');
-    $area.find('> tbody > tr:nth-child(3) > td > a[onclick^="dkhz"]').each(function () {
-        var $this = $(this);
-        var matches = /dkhz\('(\d+)'\)/.exec($this.attr('onclick'));
-        if (!matches) return;
-        $this.after('<a class="pd_highlight" href="#" data-name="openBoxes" data-id="' + matches[1] + '" style="margin-left: 10px;">\u6279\u91CF\u6253\u5F00</a>');
-    });
-
-    $area.on('click', 'a[data-name="openBoxes"]', function (e) {
-        e.preventDefault();
-        var $this = $(this);
-        var id = parseInt($this.data('id'));
-        var $info = $area.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ')');
-        var boxType = $info.find('span:first').text().trim() + '盒子';
-        if (!boxTypeList.includes(boxType)) return;
-        var currentNum = parseInt($info.find('span:last').text());
-        var num = parseInt(prompt('\u4F60\u8981\u6253\u5F00\u591A\u5C11\u4E2A\u3010' + boxType + '\u3011\uFF1F', currentNum));
-        if (!num || num < 0) return;
-        Msg.destroy();
-        openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
-    });
-};
-
-/**
- * 添加打开全部盒子按钮
- */
-var addOpenAllBoxesButton = function addOpenAllBoxesButton() {
-    $('\n<div class="pd_item_btns" data-name="openBoxesBtns">\n  <label style="margin-right: 5px;">\n    <input name="saveMyObjectsInfoEnabled" type="checkbox" ' + (Config.saveMyObjectsInfoEnabled ? 'checked' : '') + '> \u4FDD\u5B58\u6211\u7684\u7269\u54C1\u4FE1\u606F\n    <span class="pd_cfg_tips" title="\u5728\u6279\u91CF\u6253\u5F00\u76D2\u5B50\u65F6\u81EA\u52A8\u4FDD\u5B58\u5F53\u524D\u9875\u9762\u4E0A\u7684\u7269\u54C1\u4FE1\u606F\uFF0C\u4EE5\u7A81\u7834\u6700\u591A\u663E\u793A20\u9879\u7684\u9650\u5236\uFF08\u6B64\u529F\u80FD\u4EC5\u5728\u7194\u70BC\u529F\u80FD\u672A\u4E0A\u7EBF\u65F6\u751F\u6548\uFF09">[?]</span>\n  </label>\n  <button name="openAllBoxes" type="button" style="color: #f00;" title="\u6253\u5F00\u5168\u90E8\u76D2\u5B50">\u4E00\u952E\u5F00\u76D2</button>\n</div>\n').insertAfter($area).find('[name="openAllBoxes"]').click(function () {
-        if (!confirm('是否打开全部盒子？')) return;
-        Msg.destroy();
-        $(document).clearQueue('OpenAllBoxes');
-        $area.find('> tbody > tr:nth-child(2) > td').each(function (index) {
-            var $this = $(this);
-            var boxType = $this.find('span:first').text().trim() + '盒子';
-            if (!boxTypeList.includes(boxType)) return;
-            var num = parseInt($this.find('span:last').text());
-            if (!num || num < 0) return;
-            var id = parseInt($area.find('> tbody > tr:nth-child(3) > td:nth-child(' + (index + 1) + ') > a[data-name="openBoxes"]').data('id'));
-            if (!id) return;
-            $(document).queue('OpenAllBoxes', function () {
-                return openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
-            });
-        });
-        $(document).dequeue('OpenAllBoxes');
-    }).end().find('input[name="saveMyObjectsInfoEnabled"]').click(function () {
-        var checked = $(this).prop('checked');
-        if (Config.saveMyObjectsInfoEnabled !== checked) {
-            (0, _Config.read)();
-            Config.saveMyObjectsInfoEnabled = checked;
-            (0, _Config.write)();
-        }
-    });
-
-    Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
-};
-
-/**
- * 打开盒子
- * @param {number} id 盒子类型ID
- * @param {string} boxType 盒子类型名称
- * @param {number} num 打开盒子数量
- * @param {string} safeId SafeID
- */
-var openBoxes = function openBoxes(_ref) {
-    var id = _ref.id,
-        boxType = _ref.boxType,
-        num = _ref.num,
-        safeId = _ref.safeId;
-
-    var successNum = 0,
-        failNum = 0,
-        index = 0;
-    var randomTotalNum = 0,
-        randomTotalCount = 0;
-    var isStop = false;
-    var stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
-    $area.parent().append('<ul class="pd_result" data-name="boxResult"><li><strong>\u3010' + boxType + '\u3011\u6253\u5F00\u7ED3\u679C\uFF1A</strong></li></ul>');
-    var $wait = Msg.wait('<strong>\u6B63\u5728\u6253\u5F00\u76D2\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-
-    /**
-     * 打开
-     */
-    var open = function open() {
-        $.ajax({
-            type: 'POST',
-            url: 'kf_fw_ig_mybpdt.php',
-            data: 'do=3&id=' + id + '&safeid=' + safeId,
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            index++;
-            var msg = Util.removeHtmlTag(html);
-            if (msg.includes('获得')) {
-                successNum++;
-                var matches = /获得\[(\d+)]KFB/.exec(msg);
-                if (matches) stat['KFB'] += parseInt(matches[1]);
-
-                matches = /获得\[(\d+)]经验值/.exec(msg);
-                if (matches) stat['经验值'] += parseInt(matches[1]);
-
-                matches = /打开盒子获得了道具\[\s*(.+?)\s*]/.exec(msg);
-                if (matches) {
-                    stat['道具']++;
-                    var itemName = matches[1];
-                    if (!(itemName in stat.item)) stat.item[itemName] = 0;
-                    stat.item[itemName]++;
-                }
-
-                matches = /获得一件\[(.+?)]的?装备/.exec(msg);
-                if (matches) {
-                    stat['装备']++;
-                    var armType = matches[1] + '装备';
-                    if (!(armType in stat.arm)) stat.arm[armType] = 0;
-                    stat.arm[armType]++;
-                }
-
-                matches = /随机值(\d+)/.exec(msg);
-                if (matches) {
-                    randomTotalCount++;
-                    randomTotalNum += parseInt(matches[1]);
-                }
-            } else if (msg.includes('操作过快')) {
-                $(document).queue('OpenBoxes', open);
-            } else if (msg.includes('盒子不足')) {
-                $(document).clearQueue('OpenBoxes');
-                isStop = true;
-            } else {
-                failNum++;
-            }
-
-            console.log('\u7B2C' + index + '\u6B21\uFF1A' + msg);
-            $('.pd_result[data-name="boxResult"]:last').append('<li><b>\u7B2C' + index + '\u6B21\uFF1A</b>' + msg + '</li>');
-        }).fail(function () {
-            failNum++;
-        }).always(function () {
-            var length = $(document).queue('OpenBoxes').length;
-            var $countdown = $('.pd_countdown:last');
-            $countdown.text(length);
-            var isPause = $countdown.closest('.pd_msg').data('stop');
-            isStop = isStop || isPause;
-            if (isPause) $(document).clearQueue('OpenAllBoxes');
-
-            if (isStop || !length) {
-                Msg.remove($wait);
-                var avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
-                var _iteratorNormalCompletion = true;
-                var _didIteratorError = false;
-                var _iteratorError = undefined;
-
-                try {
-                    for (var _iterator = Util.entries(stat)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var _step$value = _slicedToArray(_step.value, 2),
-                            key = _step$value[0],
-                            value = _step$value[1];
-
-                        if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) {
-                            delete stat[key];
-                        }
-                    }
-                } catch (err) {
-                    _didIteratorError = true;
-                    _iteratorError = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion && _iterator.return) {
-                            _iterator.return();
-                        }
-                    } finally {
-                        if (_didIteratorError) {
-                            throw _iteratorError;
-                        }
-                    }
-                }
-
-                if (!$.isEmptyObject(stat)) {
-                    Log.push('打开盒子', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + boxType + '`\u3011\u6253\u5F00\u6210\u529F (\u5E73\u5747\u968F\u673A\u503C\u3010`' + avgRandomNum + '`\u3011)', {
-                        gain: stat,
-                        pay: { '盒子': -successNum }
-                    });
-                }
-
-                var $currentNum = $area.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ') > span:last');
-                var prevNum = parseInt($currentNum.text());
-                if (prevNum > 0) {
-                    $currentNum.text(prevNum - successNum);
-                }
-
-                var resultStatHtml = '',
-                    msgStatHtml = '';
-                var _iteratorNormalCompletion2 = true;
-                var _didIteratorError2 = false;
-                var _iteratorError2 = undefined;
-
-                try {
-                    for (var _iterator2 = Util.entries(stat)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                        var _step2$value = _slicedToArray(_step2.value, 2),
-                            key = _step2$value[0],
-                            value = _step2$value[1];
-
-                        var tmpHtml = '';
-                        if ($.type(value) === 'object') {
-                            resultStatHtml += resultStatHtml ? '<br>' : '';
-                            msgStatHtml += msgStatHtml ? '<br>' : '';
-                            resultStatHtml += (key === 'item' ? '道具' : '装备') + '\uFF1A';
-
-                            var typeList = key === 'item' ? Item.itemTypeList : Item.armTypeList;
-                            var _iteratorNormalCompletion3 = true;
-                            var _didIteratorError3 = false;
-                            var _iteratorError3 = undefined;
-
-                            try {
-                                for (var _iterator3 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                                    var name = _step3.value;
-
-                                    tmpHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
-                                }
-                            } catch (err) {
-                                _didIteratorError3 = true;
-                                _iteratorError3 = err;
-                            } finally {
-                                try {
-                                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                                        _iterator3.return();
-                                    }
-                                } finally {
-                                    if (_didIteratorError3) {
-                                        throw _iteratorError3;
-                                    }
-                                }
-                            }
-                        } else {
-                            tmpHtml += '<i>' + key + '<em>+' + value.toLocaleString() + '</em></i> ';
-                        }
-                        resultStatHtml += tmpHtml;
-                        msgStatHtml += tmpHtml.trim();
-                    }
-                } catch (err) {
-                    _didIteratorError2 = true;
-                    _iteratorError2 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                            _iterator2.return();
-                        }
-                    } finally {
-                        if (_didIteratorError2) {
-                            throw _iteratorError2;
-                        }
-                    }
-                }
-
-                if (msgStatHtml.length < 200) {
-                    msgStatHtml = msgStatHtml.replace(/(.*)<br>/, '$1');
-                }
-                $('.pd_result[data-name="boxResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09\uFF1A</b><br>\n  ' + (resultStatHtml ? resultStatHtml : '无') + '\n</li>\n');
-                console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010' + avgRandomNum + '\u3011\uFF09' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : ''));
-                Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>' + (msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml)), -1);
-
-                Script.runFunc('Box.openBoxes_after_', stat);
-                setTimeout(function () {
-                    return Item.getNextObjects(Config.saveMyObjectsInfoEnabled ? Item.writeMyObjectsInfo : null);
-                }, _Const2.default.defAjaxInterval);
-                setTimeout(function () {
-                    return $(document).dequeue('OpenAllBoxes');
-                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-            } else {
-                if (index % 10 === 0) {
-                    setTimeout(Item.getNextObjects, _Const2.default.defAjaxInterval);
-                }
-                setTimeout(function () {
-                    return $(document).dequeue('OpenBoxes');
-                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-            }
-        });
-    };
-
-    $(document).clearQueue('OpenBoxes');
-    $.each(new Array(num), function () {
-        $(document).queue('OpenBoxes', open);
-    });
-    $(document).dequeue('OpenBoxes');
-};
-
-},{"./Config":5,"./Const":7,"./Item":11,"./Log":12,"./Msg":16,"./Public":19,"./Script":21,"./Util":23}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -1382,7 +1025,7 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
     });
 };
 
-},{"./Const":7,"./Log":12,"./Msg":16,"./Public":19,"./Util":23}],5:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -1473,6 +1116,8 @@ var Config = exports.Config = {
     unusedPointNumAlertEnabled: true,
     // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
     slowAttackEnabled: false,
+    // 是否总是打开个人属性/装备界面，true：开启；false：关闭
+    alwaysOpenPointAreaEnabled: false,
     // 是否显示分层NPC统计，true：开启；false：关闭
     showLevelEnemyStatEnabled: false,
     // 是否显示精简争夺记录，true：开启；false：关闭
@@ -1611,10 +1256,10 @@ var Config = exports.Config = {
     // 自定义自动更换ID颜色的颜色ID列表，例：[1,8,13,20]
     customAutoChangeIdColorList: [],
 
-    // 是否在打开盒子时自动保存当前页面上的物品信息，以突破最多显示20项的限制，true：开启；false：关闭
-    saveMyObjectsInfoEnabled: false,
     // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
     slowActionEnabled: false,
+    // 默认的批量熔炼的装备种类列表，例：['普通的长剑', '幸运的长剑', '普通的短弓']
+    defSmeltArmTypeList: [],
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -1725,7 +1370,7 @@ var normalize = exports.normalize = function normalize(options) {
     return settings;
 };
 
-},{"./Const":7,"./Info":10,"./Log":12,"./LootLog":15,"./TmpLog":22,"./Util":23}],6:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -2800,7 +2445,7 @@ var showBlockThreadDialog = function showBlockThreadDialog() {
     Dialog.show(dialogName);
 };
 
-},{"./Config":5,"./Const":7,"./Dialog":8,"./Info":10,"./Public":19,"./Script":21,"./TmpLog":22,"./Util":23}],7:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2866,18 +2511,13 @@ var Const = {
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
-    // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
+    // 特殊情况下的ajax请求（如使用道具、打开盒子等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function specialAjaxInterval() {
-        if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
+        if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 慢速情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
 
-    // 循环使用道具中每轮第一次ajax请求的时间间隔（毫秒），可设置为函数来返回值
-    cycleUseItemsFirstAjaxInterval: function cycleUseItemsFirstAjaxInterval() {
-        return Math.floor(Math.random() * 250) + 2000;
-    },
-
-    // 操作道具的最小时间间隔（毫秒）
+    // 操作物品的最小时间间隔（毫秒）
     minItemActionInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval: function lootAttackInterval() {
@@ -2948,7 +2588,7 @@ var Const = {
 
 exports.default = Const;
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /* 对话框模块 */
 'use strict';
 
@@ -3082,7 +2722,7 @@ var close = exports.close = function close(id) {
     return false;
 };
 
-},{"./Info":10,"./Public":19,"./Util":23}],9:[function(require,module,exports){
+},{"./Info":9,"./Public":18,"./Util":22}],8:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
@@ -3354,7 +2994,7 @@ var addChangePointsInfoTips = exports.addChangePointsInfoTips = function addChan
     if (tipsText) $('#pdLoot').append('<span id="pdChangePointsTips"> (\u6539\u70B9\uFF1A' + tipsText + ')</span>');
 };
 
-},{"./Const":7,"./Info":10,"./Log":12,"./Loot":14,"./Msg":16,"./TmpLog":22,"./Util":23}],10:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -3393,14 +3033,14 @@ var Info = {
 
 exports.default = Info;
 
-},{}],11:[function(require,module,exports){
-/* 道具模块 */
+},{}],10:[function(require,module,exports){
+/* 物品模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchBuyItemsLink = exports.writeMyObjectsInfo = exports.readMyObjectsInfo = exports.getNextObjects = exports.init = exports.getItemUsedInfo = exports.getLevelByName = exports.armTypeList = exports.itemTypeList = undefined;
+exports.addBatchBuyItemsLink = exports.getNextObjects = exports.getItemUsedInfo = exports.getLevelByName = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3444,20 +3084,40 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
+// 盒子区域
+var $boxArea = void 0;
+// 装备区域
+var $armArea = void 0;
 // 物品区域
-var $area = void 0;
+var $itemArea = void 0;
 // SafeID
 var safeId = void 0;
 
-/**
- * 道具种类列表
- */
+// 盒子种类列表
+var boxTypeList = exports.boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传奇盒子', '神秘盒子'];
+
+// 装备组别列表
+var armGroupList = exports.armGroupList = ['长剑', '短弓', '法杖'];
+// 装备种类列表
+var armTypeList = exports.armTypeList = ['普通的装备', '幸运的装备', '稀有的装备', '传奇的装备', '神秘的装备'];
+
+// 道具种类列表
 var itemTypeList = exports.itemTypeList = ['零时迷子的碎片', '被遗弃的告白信', '学校天台的钥匙', 'TMA最新作压缩包', 'LOLI的钱包', '棒棒糖', '蕾米莉亚同人漫画', '十六夜同人漫画', '档案室钥匙', '傲娇LOLI娇蛮音CD', '整形优惠卷', '消逝之药'];
 
 /**
- * 盒子种类列表
+ * 初始化
  */
-var armTypeList = exports.armTypeList = ['普通的装备', '幸运的装备', '稀有的装备', '传奇的装备', '神秘的装备'];
+var init = exports.init = function init() {
+    safeId = Public.getSafeId();
+    if (!safeId) return;
+    $boxArea = $('.kf_fw_ig1:eq(0)');
+    $armArea = $('.kf_fw_ig4:eq(0)');
+    $itemArea = $('.kf_fw_ig1:eq(1)');
+    addBatchOpenBoxesLink();
+    addOpenAllBoxesButton();
+    addBatchSmeltArmsButton();
+    addBatchUseAndSellItemsButton();
+};
 
 /**
  * 获取指定名称的道具等级
@@ -3504,27 +3164,10 @@ var getItemUsedInfo = exports.getItemUsedInfo = function getItemUsedInfo(html) {
 };
 
 /**
- * 初始化
- */
-var init = exports.init = function init() {
-    safeId = Public.getSafeId();
-    if (!safeId) return;
-    $area = $('.kf_fw_ig1:eq(1)');
-    addBatchUseAndSellItemsButton();
-    if ($area.find('a[href="javascript:;"]:contains("熔炼"):first').length > 0) {
-        Config.saveMyObjectsInfoEnabled = false;
-        $('input[name="saveMyObjectsInfoEnabled"]').parent().prop('hidden', true);
-    }
-    if (Config.saveMyObjectsInfoEnabled) {
-        readMyObjectsInfo();
-    }
-};
-
-/**
  * 在物品装备页面上添加批量使用和出售道具按钮
  */
 var addBatchUseAndSellItemsButton = function addBatchUseAndSellItemsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleItemsBtns">\n  <button name="useItems" type="button" style="color: #00f;" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u4F7F\u7528</button>\n  <button name="sellItems" type="button" style="color: #f00;" title="\u6279\u91CF\u51FA\u552E\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u51FA\u552E</button>\n</div>\n').insertAfter($area).find('[name="useItems"]').click(function () {
+    $('\n<div class="pd_item_btns" data-name="handleItemsBtns">\n  <button name="useItems" type="button" style="color: #00f;" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u4F7F\u7528</button>\n  <button name="sellItems" type="button" style="color: #f00;" title="\u6279\u91CF\u51FA\u552E\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u51FA\u552E</button>\n</div>\n').insertAfter($itemArea).find('[name="useItems"]').click(function () {
         return showBatchUseAndSellItemsDialog(1, safeId);
     }).end().find('[name="sellItems"]').click(function () {
         return showBatchUseAndSellItemsDialog(2, safeId);
@@ -3554,14 +3197,14 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
             $(this).children().prop('selected', true);
         }
     }).end().find('[name="sell"]').click(function () {
-        var itemTypeList = $dialog.find('[name="itemTypes"]').val();
-        if (!Array.isArray(itemTypeList)) return;
+        var typeList = $dialog.find('[name="itemTypes"]').val();
+        if (!Array.isArray(typeList)) return;
         (0, _Config.read)();
-        if (type === 1) Config.defUseItemTypeList = itemTypeList;else Config.defSellItemTypeList = itemTypeList;
+        if (type === 1) Config.defUseItemTypeList = typeList;else Config.defSellItemTypeList = typeList;
         (0, _Config.write)();
         if (!confirm('\u662F\u5426' + typeName + '\u6240\u9009\u9053\u5177\u79CD\u7C7B\uFF1F')) return;
         Dialog.close(dialogName);
-        if (type === 1) useItems(itemTypeList, safeId);else sellItems(itemTypeList, safeId);
+        if (type === 1) useItems(typeList, safeId);else sellItems(typeList, safeId);
     });
 
     $dialog.find('[name="itemTypes"] > option').each(function () {
@@ -3576,14 +3219,14 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
 
 /**
  * 使用道具
- * @param {string[]} itemTypeList 想要使用的道具种类
+ * @param {string[]} typeList 想要使用的道具种类
  * @param {string} safeId SafeID
  */
-var useItems = function useItems(itemTypeList, safeId) {
+var useItems = function useItems(typeList, safeId) {
     var totalSuccessNum = 0,
         index = 0;
     var useInfo = {};
-    var tmpItemTypeList = [].concat(_toConsumableArray(itemTypeList));
+    var tmpItemTypeList = [].concat(_toConsumableArray(typeList));
 
     /**
      * 使用
@@ -3618,15 +3261,15 @@ var useItems = function useItems(itemTypeList, safeId) {
             }
 
             if (isDelete) {
-                $area.find('[id="wp_' + itemId + '"]').fadeOut('normal', function () {
+                $itemArea.find('[id="wp_' + itemId + '"]').fadeOut('normal', function () {
                     $(this).remove();
                 });
             }
             console.log('\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg);
-            $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg + '</li>');
+            $('.pd_result[data-name="itemResult"]:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg + '</li>');
             Script.runFunc('Item.useItems_after_');
         }).fail(function () {
-            $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
+            $('.pd_result[data-name="itemResult"]:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
         }).always(function () {
             if ($wait.data('stop')) complete();else {
                 if (index === itemNum) setTimeout(getNextItems, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);else setTimeout(function () {
@@ -3641,7 +3284,7 @@ var useItems = function useItems(itemTypeList, safeId) {
      */
     var getCurrentItems = function getCurrentItems() {
         var itemList = [];
-        $area.find('tr[id^="wp_"]').each(function () {
+        $itemArea.find('tr[id^="wp_"]').each(function () {
             var $this = $(this);
             var matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
@@ -3671,7 +3314,7 @@ var useItems = function useItems(itemTypeList, safeId) {
      * 获取下一批道具
      */
     var getNextItems = function getNextItems() {
-        getNextObjects(function () {
+        getNextObjects(2, function () {
             if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
         });
     };
@@ -3686,9 +3329,6 @@ var useItems = function useItems(itemTypeList, safeId) {
             alert('没有道具被使用！');
             return;
         }
-        if (Config.saveMyObjectsInfoEnabled) {
-            getNextObjects(writeMyObjectsInfo);
-        }
 
         var itemTypeNum = 0;
         var resultStat = '';
@@ -3697,7 +3337,7 @@ var useItems = function useItems(itemTypeList, safeId) {
         var _iteratorError = undefined;
 
         try {
-            for (var _iterator = Util.getSortedObjectKeyList(itemTypeList, useInfo)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            for (var _iterator = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                 var itemName = _step.value;
 
                 itemTypeNum++;
@@ -3755,13 +3395,16 @@ var useItems = function useItems(itemTypeList, safeId) {
             }
         }
 
-        $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF09\uFF1A</b><br>\n  ' + resultStat + '\n</li>');
+        $('.pd_result[data-name="itemResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF09\uFF1A</b><br>\n  ' + resultStat + '\n</li>');
         console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + totalSuccessNum + '\u4E2A\u9053\u5177\u88AB\u4F7F\u7528');
         Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528</strong>', -1);
+        setTimeout(function () {
+            return getNextObjects(2);
+        }, _Const2.default.defAjaxInterval);
         Script.runFunc('Item.useItems_complete_');
     };
 
-    $area.parent().append('<ul class="pd_result"><li><strong>\u4F7F\u7528\u7ED3\u679C\uFF1A</strong></li></ul>');
+    $itemArea.parent().append('<ul class="pd_result" data-name="itemResult"><li><strong>使用结果：</strong></li></ul>');
     var $wait = Msg.wait('<strong>正在使用道具中&hellip;</strong><i>已使用：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
     getCurrentItems();
 };
@@ -3793,8 +3436,8 @@ var sellItems = function sellItems(itemTypeList, safeId) {
             if (!html) return;
             var msg = Util.removeHtmlTag(html);
             console.log('\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg);
-            $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg + '</li>');
-            $area.find('[id="wp_' + itemId + '"]').fadeOut('normal', function () {
+            $('.pd_result[data-name="itemResult"]:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 ' + msg + '</li>');
+            $itemArea.find('[id="wp_' + itemId + '"]').fadeOut('normal', function () {
                 $(this).remove();
             });
 
@@ -3807,10 +3450,12 @@ var sellItems = function sellItems(itemTypeList, safeId) {
             $wait.find('.pd_countdown').text(successNum);
             Script.runFunc('Item.sellItems_after_');
         }).fail(function () {
-            $('.pd_result:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
+            $('.pd_result[data-name="itemResult"]:last').append('<li>\u3010Lv.' + getLevelByName(itemName) + '\uFF1A' + itemName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
         }).always(function () {
-            if ($wait.data('stop')) complete();else {
-                if (index === itemNum) setTimeout(getNextItems, _Const2.default.defAjaxInterval);else setTimeout(function () {
+            if ($wait.data('stop')) {
+                complete();
+            } else {
+                if (index === itemNum) setTimeout(getNextItems, _Const2.default.minItemActionInterval);else setTimeout(function () {
                     return $(document).dequeue('SellItems');
                 }, _Const2.default.minItemActionInterval);
             }
@@ -3822,7 +3467,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
      */
     var getCurrentItems = function getCurrentItems() {
         var itemList = [];
-        $area.find('tr[id^="wp_"]').each(function () {
+        $itemArea.find('tr[id^="wp_"]').each(function () {
             var $this = $(this);
             var matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
@@ -3852,7 +3497,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
      * 获取下一批道具
      */
     var getNextItems = function getNextItems() {
-        getNextObjects(function () {
+        getNextObjects(2, function () {
             if ($wait.data('stop')) complete();else setTimeout(getCurrentItems, _Const2.default.defAjaxInterval);
         });
     };
@@ -3866,9 +3511,6 @@ var sellItems = function sellItems(itemTypeList, safeId) {
         if ($.isEmptyObject(sellInfo)) {
             alert('没有道具被出售！');
             return;
-        }
-        if (Config.saveMyObjectsInfoEnabled) {
-            getNextObjects(writeMyObjectsInfo);
         }
 
         var itemTypeNum = 0,
@@ -3907,80 +3549,66 @@ var sellItems = function sellItems(itemTypeList, safeId) {
             }
         }
 
-        $('.pd_result:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF09\uFF1A</b> <i>KFB<em>+' + totalSell.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
+        $('.pd_result[data-name="itemResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF09\uFF1A</b> <i>KFB<em>+' + totalSell.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
         console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + successNum + '\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F\uFF0CKFB+' + totalSell);
         Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u9053\u5177\u51FA\u552E\u6210\u529F</strong><i>KFB<em>+' + totalSell.toLocaleString() + '</em></i>', -1);
+        setTimeout(function () {
+            return getNextObjects(2);
+        }, _Const2.default.defAjaxInterval);
         Script.runFunc('Item.sellItems_complete_');
     };
 
-    $area.parent().append('<ul class="pd_result"><li><strong>\u51FA\u552E\u7ED3\u679C\uFF1A</strong></li></ul>');
+    $itemArea.parent().append('<ul class="pd_result" data-name="itemResult"><li><strong>\u51FA\u552E\u7ED3\u679C\uFF1A</strong></li></ul>');
     var $wait = Msg.wait('<strong>正在出售道具中&hellip;</strong><i>已出售：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
     getCurrentItems();
 };
 
 /**
  * 获取下一批物品
- * @param {function} [callback] 回调函数
+ * @param {number} sequence 下一批物品的插入顺序，1：向前插入；2：往后添加
+ * @param {function} callback 回调函数
  */
-var getNextObjects = exports.getNextObjects = function getNextObjects(callback) {
+var getNextObjects = exports.getNextObjects = function getNextObjects(sequence) {
+    var callback = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
     console.log('获取下一批物品Start');
     $.ajax({
         type: 'GET',
         url: 'kf_fw_ig_mybp.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).done(function (html) {
-        var matches = /(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-        if (!matches) return;
-        var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
-        var addHtml = '';
-        for (var i in trMatches) {
-            var idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
-            if (!idMatches) continue;
-            if (!$area.has('tr[id="wp_' + idMatches[1] + '"]').length) {
-                addHtml += trMatches[i];
+        for (var i = 1; i <= 2; i++) {
+            var matches = null;
+            if (i === 1) {
+                matches = /<tr><td width="\d+%">装备.+?\r\n(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            } else {
+                matches = /<tr><td width="\d+%">使用.+?\r\n(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             }
-        }
-        if (addHtml) {
-            $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+            if (!matches) continue;
+            var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+            var $area = i === 1 ? $armArea : $itemArea;
+            var addHtml = '';
+            for (var _i in trMatches) {
+                var idMatches = /"wp_(\d+)"/.exec(trMatches[_i]);
+                if (!idMatches) continue;
+                if (!$area.has('tr[id="wp_' + idMatches[1] + '"]').length) {
+                    addHtml += trMatches[_i];
+                }
+            }
+            if (addHtml) {
+                if (sequence === 2) {
+                    $area.find('> tbody > tr:last-child').before(addHtml);
+                } else {
+                    $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+                }
+            }
         }
         if (typeof callback === 'function') callback();
     }).fail(function () {
         setTimeout(function () {
-            return getNextObjects(callback);
+            return getNextObjects(sequence, callback);
         }, _Const2.default.defAjaxInterval);
     });
-};
-
-/**
- * 读取我的物品信息
- */
-var readMyObjectsInfo = exports.readMyObjectsInfo = function readMyObjectsInfo() {
-    var info = localStorage.getItem(_Const2.default.myObjectsInfoStorageName + '_' + _Info2.default.uid);
-    if (info) {
-        if (!/<tr id="wp_\d+">/.test(info)) return;
-        var trMatches = info.match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
-        var addHtml = '';
-        for (var i in trMatches) {
-            var idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
-            if (!idMatches) continue;
-            if (!$area.has('tr[id="wp_' + idMatches[1] + '"]').length) {
-                addHtml += trMatches[i];
-            }
-        }
-        if (addHtml) {
-            $area.find('> tbody > tr:last-child').before(addHtml);
-        }
-    }
-};
-
-/**
- * 写入我的物品信息
- */
-var writeMyObjectsInfo = exports.writeMyObjectsInfo = function writeMyObjectsInfo() {
-    var info = $area.find('> tbody').html().replace(/<tr>.+?<\/tr>/, '').replace(/<tr><td colspan="4">.+?<\/tr>/, '').trim();
-    if (info) {
-        localStorage.setItem(_Const2.default.myObjectsInfoStorageName + '_' + _Info2.default.uid, info);
-    }
 };
 
 /**
@@ -4177,7 +3805,550 @@ var showKfbInItemShop = function showKfbInItemShop() {
     });
 };
 
-},{"./Config":5,"./Const":7,"./Dialog":8,"./Info":10,"./Log":12,"./Msg":16,"./Public":19,"./Script":21,"./Util":23}],12:[function(require,module,exports){
+/**
+ * 添加批量打开盒子链接
+ */
+var addBatchOpenBoxesLink = function addBatchOpenBoxesLink() {
+    $boxArea = $('.kf_fw_ig1:first');
+    $boxArea.find('> tbody > tr:nth-child(3) > td > a[onclick^="dkhz"]').each(function () {
+        var $this = $(this);
+        var matches = /dkhz\('(\d+)'\)/.exec($this.attr('onclick'));
+        if (!matches) return;
+        $this.after('<a class="pd_highlight" href="#" data-name="openBoxes" data-id="' + matches[1] + '" style="margin-left: 10px;">\u6279\u91CF\u6253\u5F00</a>');
+    });
+
+    $boxArea.on('click', 'a[data-name="openBoxes"]', function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var id = parseInt($this.data('id'));
+        var $info = $boxArea.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ')');
+        var boxType = $info.find('span:first').text().trim() + '盒子';
+        if (!boxTypeList.includes(boxType)) return;
+        var currentNum = parseInt($info.find('span:last').text());
+        var num = parseInt(prompt('\u4F60\u8981\u6253\u5F00\u591A\u5C11\u4E2A\u3010' + boxType + '\u3011\uFF1F', currentNum));
+        if (!num || num < 0) return;
+        Msg.destroy();
+        openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
+    });
+};
+
+/**
+ * 添加打开全部盒子按钮
+ */
+var addOpenAllBoxesButton = function addOpenAllBoxesButton() {
+    $('\n<div class="pd_item_btns" data-name="openBoxesBtns">\n  <button name="openAllBoxes" type="button" style="color: #f00;" title="\u6253\u5F00\u5168\u90E8\u76D2\u5B50">\u4E00\u952E\u5F00\u76D2</button>\n</div>\n').insertAfter($boxArea).find('[name="openAllBoxes"]').click(function () {
+        if (!confirm('是否打开全部盒子？')) return;
+        Msg.destroy();
+        $(document).clearQueue('OpenAllBoxes');
+        $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
+            var $this = $(this);
+            var boxType = $this.find('span:first').text().trim() + '盒子';
+            if (!boxTypeList.includes(boxType)) return;
+            var num = parseInt($this.find('span:last').text());
+            if (!num || num < 0) return;
+            var id = parseInt($boxArea.find('> tbody > tr:nth-child(3) > td:nth-child(' + (index + 1) + ') > a[data-name="openBoxes"]').data('id'));
+            if (!id) return;
+            $(document).queue('OpenAllBoxes', function () {
+                return openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
+            });
+        });
+        $(document).dequeue('OpenAllBoxes');
+    });
+
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
+};
+
+/**
+ * 打开盒子
+ * @param {number} id 盒子类型ID
+ * @param {string} boxType 盒子类型名称
+ * @param {number} num 打开盒子数量
+ * @param {string} safeId SafeID
+ */
+var openBoxes = function openBoxes(_ref3) {
+    var id = _ref3.id,
+        boxType = _ref3.boxType,
+        num = _ref3.num,
+        safeId = _ref3.safeId;
+
+    var successNum = 0,
+        failNum = 0,
+        index = 0;
+    var randomTotalNum = 0,
+        randomTotalCount = 0;
+    var isStop = false;
+    var stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
+    $boxArea.parent().append('<ul class="pd_result" data-name="boxResult"><li><strong>\u3010' + boxType + '\u3011\u6253\u5F00\u7ED3\u679C\uFF1A</strong></li></ul>');
+    var $wait = Msg.wait('<strong>\u6B63\u5728\u6253\u5F00\u76D2\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+
+    /**
+     * 打开
+     */
+    var open = function open() {
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: 'do=3&id=' + id + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            index++;
+            var msg = Util.removeHtmlTag(html);
+            if (msg.includes('获得')) {
+                successNum++;
+                var matches = /获得\[(\d+)]KFB/.exec(msg);
+                if (matches) stat['KFB'] += parseInt(matches[1]);
+
+                matches = /获得\[(\d+)]经验值/.exec(msg);
+                if (matches) stat['经验值'] += parseInt(matches[1]);
+
+                matches = /打开盒子获得了道具\[\s*(.+?)\s*]/.exec(msg);
+                if (matches) {
+                    stat['道具']++;
+                    var itemName = matches[1];
+                    if (!(itemName in stat.item)) stat.item[itemName] = 0;
+                    stat.item[itemName]++;
+                }
+
+                matches = /获得一件\[(.+?)]的?装备/.exec(msg);
+                if (matches) {
+                    stat['装备']++;
+                    var armType = matches[1] + '装备';
+                    if (!(armType in stat.arm)) stat.arm[armType] = 0;
+                    stat.arm[armType]++;
+                }
+
+                matches = /随机值(\d+)/.exec(msg);
+                if (matches) {
+                    randomTotalCount++;
+                    randomTotalNum += parseInt(matches[1]);
+                }
+            } else if (msg.includes('操作过快')) {
+                $(document).queue('OpenBoxes', open);
+            } else if (msg.includes('盒子不足')) {
+                $(document).clearQueue('OpenBoxes');
+                isStop = true;
+            } else {
+                failNum++;
+            }
+
+            console.log('\u7B2C' + index + '\u6B21\uFF1A' + msg);
+            $('.pd_result[data-name="boxResult"]:last').append('<li><b>\u7B2C' + index + '\u6B21\uFF1A</b>' + msg + '</li>');
+        }).fail(function () {
+            failNum++;
+        }).always(function () {
+            var length = $(document).queue('OpenBoxes').length;
+            var $countdown = $('.pd_countdown:last');
+            $countdown.text(length);
+            var isPause = $countdown.closest('.pd_msg').data('stop');
+            isStop = isStop || isPause;
+            if (isPause) $(document).clearQueue('OpenAllBoxes');
+
+            if (isStop || !length) {
+                Msg.remove($wait);
+                var avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
+                var _iteratorNormalCompletion6 = true;
+                var _didIteratorError6 = false;
+                var _iteratorError6 = undefined;
+
+                try {
+                    for (var _iterator6 = Util.entries(stat)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                        var _step6$value = _slicedToArray(_step6.value, 2),
+                            key = _step6$value[0],
+                            value = _step6$value[1];
+
+                        if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) {
+                            delete stat[key];
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError6 = true;
+                    _iteratorError6 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                            _iterator6.return();
+                        }
+                    } finally {
+                        if (_didIteratorError6) {
+                            throw _iteratorError6;
+                        }
+                    }
+                }
+
+                if (!$.isEmptyObject(stat)) {
+                    Log.push('打开盒子', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + boxType + '`\u3011\u6253\u5F00\u6210\u529F (\u5E73\u5747\u968F\u673A\u503C\u3010`' + avgRandomNum + '`\u3011)', {
+                        gain: stat,
+                        pay: { '盒子': -successNum }
+                    });
+                }
+
+                var $currentNum = $boxArea.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ') > span:last');
+                var prevNum = parseInt($currentNum.text());
+                if (prevNum > 0) {
+                    $currentNum.text(prevNum - successNum);
+                }
+
+                var resultStatHtml = '',
+                    msgStatHtml = '';
+                var _iteratorNormalCompletion7 = true;
+                var _didIteratorError7 = false;
+                var _iteratorError7 = undefined;
+
+                try {
+                    for (var _iterator7 = Util.entries(stat)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                        var _step7$value = _slicedToArray(_step7.value, 2),
+                            key = _step7$value[0],
+                            value = _step7$value[1];
+
+                        var tmpHtml = '';
+                        if ($.type(value) === 'object') {
+                            resultStatHtml += resultStatHtml ? '<br>' : '';
+                            msgStatHtml += msgStatHtml ? '<br>' : '';
+                            resultStatHtml += (key === 'item' ? '道具' : '装备') + '\uFF1A';
+
+                            var typeList = key === 'item' ? itemTypeList : armTypeList;
+                            var _iteratorNormalCompletion8 = true;
+                            var _didIteratorError8 = false;
+                            var _iteratorError8 = undefined;
+
+                            try {
+                                for (var _iterator8 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                                    var name = _step8.value;
+
+                                    tmpHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
+                                }
+                            } catch (err) {
+                                _didIteratorError8 = true;
+                                _iteratorError8 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                                        _iterator8.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError8) {
+                                        throw _iteratorError8;
+                                    }
+                                }
+                            }
+                        } else {
+                            tmpHtml += '<i>' + key + '<em>+' + value.toLocaleString() + '</em></i> ';
+                        }
+                        resultStatHtml += tmpHtml;
+                        msgStatHtml += tmpHtml.trim();
+                    }
+                } catch (err) {
+                    _didIteratorError7 = true;
+                    _iteratorError7 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                            _iterator7.return();
+                        }
+                    } finally {
+                        if (_didIteratorError7) {
+                            throw _iteratorError7;
+                        }
+                    }
+                }
+
+                if (msgStatHtml.length < 200) {
+                    msgStatHtml = msgStatHtml.replace(/(.*)<br>/, '$1');
+                }
+                $('.pd_result[data-name="boxResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09\uFF1A</b><br>\n  ' + (resultStatHtml ? resultStatHtml : '无') + '\n</li>\n');
+                console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010' + avgRandomNum + '\u3011\uFF09' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : ''));
+                Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>' + (msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml)), -1);
+
+                Script.runFunc('Item.openBoxes_after_', stat);
+                setTimeout(function () {
+                    return getNextObjects(1);
+                }, _Const2.default.defAjaxInterval);
+                setTimeout(function () {
+                    return $(document).dequeue('OpenAllBoxes');
+                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+            } else {
+                if (index % 10 === 0) {
+                    setTimeout(function () {
+                        return getNextObjects(1);
+                    }, _Const2.default.defAjaxInterval);
+                }
+                setTimeout(function () {
+                    return $(document).dequeue('OpenBoxes');
+                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+            }
+        });
+    };
+
+    $(document).clearQueue('OpenBoxes');
+    $.each(new Array(num), function () {
+        $(document).queue('OpenBoxes', open);
+    });
+    $(document).dequeue('OpenBoxes');
+};
+
+/**
+ * 在物品装备页面上添加批量熔炼装备按钮
+ */
+var addBatchSmeltArmsButton = function addBatchSmeltArmsButton() {
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="smeltArms"]').click(function () {
+        return showBatchSmeltArmsDialog(safeId);
+    });
+};
+
+/**
+ * 显示批量熔炼装备对话框
+ * @param {string} safeId SafeID
+ */
+var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog(safeId) {
+    var dialogName = 'pdBatchSmeltArmsDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Msg.destroy();
+    (0, _Config.read)();
+
+    var armCheckedHtml = '';
+    var _iteratorNormalCompletion9 = true;
+    var _didIteratorError9 = false;
+    var _iteratorError9 = undefined;
+
+    try {
+        for (var _iterator9 = armGroupList[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var group = _step9.value;
+
+            armCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
+            var _iteratorNormalCompletion10 = true;
+            var _didIteratorError10 = false;
+            var _iteratorError10 = undefined;
+
+            try {
+                for (var _iterator10 = armTypeList[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                    var type = _step10.value;
+
+                    var prefix = type.split('的')[0];
+                    if (prefix === '神秘') continue;
+                    var name = prefix + '\u7684' + group;
+                    armCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
+                }
+            } catch (err) {
+                _didIteratorError10 = true;
+                _iteratorError10 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                        _iterator10.return();
+                    }
+                } finally {
+                    if (_didIteratorError10) {
+                        throw _iteratorError10;
+                    }
+                }
+            }
+
+            armCheckedHtml += '</li>';
+        }
+    } catch (err) {
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                _iterator9.return();
+            }
+        } finally {
+            if (_didIteratorError9) {
+                throw _iteratorError9;
+            }
+        }
+    }
+
+    var html = '\n<div class="pd_cfg_main">\n  <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u7194\u70BC\u7684\u88C5\u5907\u79CD\u7C7B\uFF1A</div>\n  <ul data-name="smeltArmTypeList">' + armCheckedHtml + '</ul>\n</div>\n<div class="pd_cfg_btns">\n  <button name="selectAll" type="button">\u5168\u9009</button>\n  <button name="selectInverse" type="button">\u53CD\u9009</button>\n  <button name="smelt" type="button" style="color: #f00;">\u7194\u70BC</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '批量熔炼装备', html);
+    var $smeltArmTypeList = $dialog.find('ul[data-name="smeltArmTypeList"]');
+
+    $dialog.find('[name="smelt"]').click(function () {
+        var typeList = [];
+        $smeltArmTypeList.find('input[name="smeltArmsType"]:checked').each(function () {
+            typeList.push($(this).val());
+        });
+        if (!typeList.length) return;
+        (0, _Config.read)();
+        Config.defSmeltArmTypeList = typeList;
+        (0, _Config.write)();
+        if (!confirm('是否熔炼所选装备种类？')) return;
+        Dialog.close(dialogName);
+        smeltArms(typeList, safeId);
+    }).end().find('[name="selectAll"]').click(function () {
+        return Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'));
+    }).end().find('[name="selectInverse"]').click(function () {
+        return Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]'));
+    });
+
+    Dialog.show(dialogName);
+    Script.runFunc('Item.showBatchSmeltArmsDialog_after_');
+};
+
+/**
+ * 熔炼装备
+ * @param {string[]} typeList 想要熔炼的装备种类
+ * @param {string} safeId SafeID
+ */
+var smeltArms = function smeltArms(typeList, safeId) {
+    var successNum = 0,
+        index = 0;
+    var smeltInfo = {};
+
+    /**
+     * 熔炼
+     * @param {number} armId 装备ID
+     * @param {string} armGroup 装备组别
+     * @param {string} armName 装备名称
+     * @param {number} armNum 本轮熔炼的装备数量
+     */
+    var smelt = function smelt(armId, armGroup, armName, armNum) {
+        index++;
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: 'do=5&id=' + armId + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (!html) return;
+            var msg = Util.removeHtmlTag(html);
+            console.log('\u3010' + armName + '\u3011 ' + msg);
+            $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 ' + msg + '</li>');
+            $armArea.find('[id="wp_' + armId + '"]').fadeOut('normal', function () {
+                $(this).remove();
+            });
+
+            var matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
+            if (!matches) return;
+            successNum++;
+            if (!(armGroup in smeltInfo)) smeltInfo[armGroup] = { num: 0, exp: 0 };
+            smeltInfo[armGroup].num++;
+            smeltInfo[armGroup].exp += parseInt(matches[1]);
+            $wait.find('.pd_countdown').text(successNum);
+            Script.runFunc('Item.smeltArms_after_');
+        }).fail(function () {
+            $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
+        }).always(function () {
+            if ($wait.data('stop')) complete();else {
+                if (index === armNum) setTimeout(getNextArms, _Const2.default.minItemActionInterval);else setTimeout(function () {
+                    return $(document).dequeue('SmeltArms');
+                }, _Const2.default.minItemActionInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取当前的装备
+     */
+    var getCurrentArms = function getCurrentArms() {
+        var armList = [];
+        $armArea.find('tr[id^="wp_"]').each(function () {
+            var $this = $(this);
+            var matches = /wp_(\d+)/.exec($this.attr('id'));
+            if (!matches) return;
+            var armId = parseInt(matches[1]);
+            var armName = $this.find('> td:nth-child(3) > span:first').text().trim();
+
+            var _armName$split = armName.split('的'),
+                _armName$split2 = _slicedToArray(_armName$split, 2),
+                armGroup = _armName$split2[1];
+
+            if (armName && armGroup && typeList.includes(armName)) {
+                armList.push({ armId: armId, armGroup: armGroup, armName: armName });
+            }
+        });
+        if (!armList.length) {
+            complete();
+            return;
+        }
+
+        index = 0;
+        $(document).clearQueue('SmeltArms');
+        $.each(armList, function (i, _ref4) {
+            var armId = _ref4.armId,
+                armGroup = _ref4.armGroup,
+                armName = _ref4.armName;
+
+            $(document).queue('SmeltArms', function () {
+                return smelt(armId, armGroup, armName, armList.length);
+            });
+        });
+        $(document).dequeue('SmeltArms');
+    };
+
+    /**
+     * 获取下一批装备
+     */
+    var getNextArms = function getNextArms() {
+        getNextObjects(2, function () {
+            if ($wait.data('stop')) complete();else setTimeout(getCurrentArms, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    /**
+     * 操作完成
+     */
+    var complete = function complete() {
+        $(document).clearQueue('SmeltArms');
+        Msg.remove($wait);
+        if ($.isEmptyObject(smeltInfo)) {
+            alert('没有装备被熔炼！');
+            return;
+        }
+
+        var armTypeNum = 0,
+            totalExp = 0;
+        var resultStat = '';
+        var _iteratorNormalCompletion11 = true;
+        var _didIteratorError11 = false;
+        var _iteratorError11 = undefined;
+
+        try {
+            for (var _iterator11 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                var armGroup = _step11.value;
+
+                armTypeNum++;
+                var _smeltInfo$armGroup = smeltInfo[armGroup],
+                    exp = _smeltInfo$armGroup.exp,
+                    num = _smeltInfo$armGroup.num;
+
+                totalExp += exp;
+                resultStat += '\u3010' + armGroup + '\u3011 <i>\u88C5\u5907<ins>-' + num + '</ins></i> <i>' + armGroup + '\u7ECF\u9A8C<em>+' + exp.toLocaleString() + '</em></i><br>';
+                var gain = {};
+                gain[armGroup + '经验'] = exp;
+                Log.push('熔炼装备', '\u5171\u6709`' + num + '`\u4E2A\u3010`' + armGroup + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: gain, pay: { '装备': -num } });
+            }
+        } catch (err) {
+            _didIteratorError11 = true;
+            _iteratorError11 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                    _iterator11.return();
+                }
+            } finally {
+                if (_didIteratorError11) {
+                    throw _iteratorError11;
+                }
+            }
+        }
+
+        $('.pd_result[data-name="armResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF09\uFF1A</b> <i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
+        console.log('\u5171\u6709' + armTypeNum + '\u4E2A\u7EC4\u522B\u4E2D\u7684' + successNum + '\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF0C\u88C5\u5907\u7ECF\u9A8C+' + totalExp);
+        Msg.show('<strong>\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F</strong><i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i>', -1);
+        setTimeout(function () {
+            return getNextObjects(2);
+        }, _Const2.default.defAjaxInterval);
+        Script.runFunc('Item.smeltArms_complete_');
+    };
+
+    $armArea.parent().append('<ul class="pd_result" data-name="armResult"><li><strong>熔炼结果：</strong></li></ul>');
+    var $wait = Msg.wait('<strong>正在熔炼装备中&hellip;</strong><i>已熔炼：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
+    getCurrentArms();
+};
+
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -4344,7 +4515,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":7,"./Info":10,"./Util":23}],13:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":22}],12:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -4372,10 +4543,6 @@ var Log = _interopRequireWildcard(_Log);
 var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
-
-var _Box = require('./Box');
-
-var Box = _interopRequireWildcard(_Box);
 
 var _Script = require('./Script');
 
@@ -4503,7 +4670,7 @@ var showLogContent = function showLogContent(log, date, $dialog) {
 var getLogContent = function getLogContent(log, date, logSortType) {
     var logList = log[date];
     if (logSortType === 'type') {
-        var sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '打开盒子', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+        var sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '打开盒子', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '熔炼装备', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort(function (a, b) {
             return sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1;
         });
@@ -4607,7 +4774,7 @@ var getLogContent = function getLogContent(log, date, logSortType) {
                             var _iteratorError5 = undefined;
 
                             try {
-                                for (var _iterator5 = Util.getSortedObjectKeyList(Box.boxTypeList, gain[k])[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                                for (var _iterator5 = Util.getSortedObjectKeyList(Item.boxTypeList, gain[k])[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                                     var _name2 = _step5.value;
 
                                     stat += '<i>' + _name2 + '<em>+' + gain[k][_name2].toLocaleString() + '</em></i> ';
@@ -4794,7 +4961,7 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         validItemStat = {},
         invalidItemNum = 0,
         invalidItemStat = {};
-    var invalidKeyList = ['item', 'arm', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具'];
+    var invalidKeyList = ['item', 'arm', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具', '长剑经验', '短弓经验', '法杖经验'];
     for (var _d in rangeLog) {
         var _iteratorNormalCompletion9 = true;
         var _didIteratorError9 = false;
@@ -4910,7 +5077,7 @@ var getLogStat = function getLogStat(log, date, logStatType) {
                             var _iteratorError13 = undefined;
 
                             try {
-                                for (var _iterator13 = Box.boxTypeList[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+                                for (var _iterator13 = Item.boxTypeList[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
                                     var key = _step13.value;
 
                                     if (!(key in gain['box']) && key in lootBoxStat) lootBoxStat[key].min = 0;
@@ -5160,7 +5327,7 @@ var getLogStat = function getLogStat(log, date, logStatType) {
         var _iteratorError20 = undefined;
 
         try {
-            for (var _iterator20 = Util.getSortedObjectKeyList(Box.boxTypeList, lootBoxStat)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+            for (var _iterator20 = Util.getSortedObjectKeyList(Item.boxTypeList, lootBoxStat)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
                 var _key2 = _step20.value;
 
                 if (!lootBoxStat[_key2].total) continue;
@@ -5188,7 +5355,7 @@ var getLogStat = function getLogStat(log, date, logStatType) {
     var _iteratorError21 = undefined;
 
     try {
-        for (var _iterator21 = Util.getSortedObjectKeyList(Box.boxTypeList, boxStat)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+        for (var _iterator21 = Util.getSortedObjectKeyList(Item.boxTypeList, boxStat)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
             var _boxType = _step21.value;
 
             if (boxStatContent) boxStatContent += '|';
@@ -5424,7 +5591,7 @@ var showLogText = function showLogText(log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Box":3,"./Config":5,"./Dialog":8,"./Item":11,"./Log":12,"./Script":21,"./Util":23}],14:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":22}],13:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -5482,10 +5649,6 @@ var Public = _interopRequireWildcard(_Public);
 var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
-
-var _Box = require('./Box');
-
-var Box = _interopRequireWildcard(_Box);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -5557,6 +5720,9 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
+    if (Config.alwaysOpenPointAreaEnabled) {
+        $('#wdsx').show();
+    }
 
     if (log.includes('本日无争夺记录')) $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     addLootLogHeader();
@@ -5984,7 +6150,7 @@ var getRealProperty = exports.getRealProperty = function getRealProperty(pointNa
  * 添加各层点数分配方案选择框
  */
 var addLevelPointListSelect = function addLevelPointListSelect() {
-    $('\n<tr>\n  <td colspan="2">\n    <select id="pdLevelPointListSelect" style="margin: 5px 0;">\n      <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n      <option value="0">\u9ED8\u8BA4</option>\n    </select>\n    <a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a>\n    <a class="pd_btn_link" data-name="edit" href="#" title="\u7F16\u8F91\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848">\u7F16\u8F91</a>\n    <a class="pd_btn_link" data-name="fill" href="#" title="\u8F93\u5165\u4E00\u4E32\u6570\u5B57\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D">\u586B\u5145</a><br>\n  </td>\n</tr>').prependTo($points.find('> tbody')).find('#pdLevelPointListSelect').change(function () {
+    $('\n<tr>\n  <td colspan="2">\n    <select id="pdLevelPointListSelect" style="margin: 5px 0;">\n      <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n      <option value="0">\u9ED8\u8BA4</option>\n    </select>\n    <a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a>\n    <a class="pd_btn_link" data-name="edit" href="#" title="\u7F16\u8F91\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848">\u7F16\u8F91</a>\n    <a class="pd_btn_link" data-name="fill" href="#" title="\u8F93\u5165\u4E00\u4E32\u6570\u5B57\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D">\u586B\u5145</a>\n  </td>\n</tr>').prependTo($points.find('> tbody')).find('#pdLevelPointListSelect').change(function () {
         var level = parseInt($(this).val());
         if (level > 0) {
             var points = Config.levelPointList[parseInt(level)];
@@ -6336,7 +6502,7 @@ var addAttackBtns = function addAttackBtns() {
     if (!safeId) return;
     $logBox.off('click');
 
-    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
+    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -6367,7 +6533,7 @@ var addAttackBtns = function addAttackBtns() {
         lootAttack({ type: type, targetLevel: targetLevel, autoChangePointsEnabled: autoChangePointsEnabled, safeId: safeId });
     }).on('click', '.pd_cfg_tips', function () {
         return false;
-    }).on('click', '[type="checkbox"]', function () {
+    }).on('click', 'input[type="checkbox"]', function () {
         var $this = $(this);
         var name = $this.attr('name');
         var checked = $this.prop('checked');
@@ -6887,7 +7053,7 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
     var _iteratorError11 = undefined;
 
     try {
-        for (var _iterator11 = Util.getSortedObjectKeyList(Box.boxTypeList, boxes)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+        for (var _iterator11 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
             var key = _step11.value;
 
             boxesStat += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i>';
@@ -7074,7 +7240,7 @@ var showLogStat = function showLogStat(levelInfoList) {
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.getSortedObjectKeyList(Box.boxTypeList, boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        for (var _iterator12 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
             var key = _step12.value;
 
             boxesStatHtml += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i> ';
@@ -7637,10 +7803,10 @@ var getHaloInfo = exports.getHaloInfo = function getHaloInfo() {
 var setHaloInfo = exports.setHaloInfo = function setHaloInfo(newHaloInfo) {
     haloInfo = newHaloInfo;
     if (!$('#pdHaloInfo').length) {
-        var $node = $properties.find('input[value$="整形优惠卷"]').parent('td');
-        if (!$node.length || parseInt($node.attr('colspan')) !== 3) return;
-        $node.removeAttr('colspan');
-        $('\n<td colspan="2">\n  <input id="pdHaloInfo" type="text" size="26" readonly>\n  <a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="\u5982\u6218\u529B\u5149\u73AF\u4FE1\u606F\u4E0D\u6B63\u786E\u65F6\uFF0C\u8BF7\u70B9\u6B64\u91CD\u65B0\u8BFB\u53D6" hidden>\u91CD\u65B0\u8BFB\u53D6</a>\n</td>\n').insertAfter($node).find('[data-name="reloadHaloInfo"]').click(function (e) {
+        var $node = $properties.find('input[type="text"]:eq(13)');
+        if (!$node.length || $.trim($node.val())) return;
+        $node.attr('id', 'pdHaloInfo');
+        $('<a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取" hidden>重新读取</a>').insertAfter($node).find('[data-name="reloadHaloInfo"]').click(function (e) {
             e.preventDefault();
             if (confirm('是否重新读取战力光环信息？')) {
                 TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
@@ -7847,7 +8013,7 @@ var getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function g
     }
 };
 
-},{"./Box":3,"./Config":5,"./Const":7,"./Dialog":8,"./Info":10,"./Item":11,"./Log":12,"./LootLog":15,"./Msg":16,"./Public":19,"./Script":21,"./TmpLog":22,"./Util":23}],15:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],14:[function(require,module,exports){
 /* 争夺记录模块 */
 'use strict';
 
@@ -7939,7 +8105,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":7,"./Info":10,"./Util":23}],16:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":22}],15:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -8069,7 +8235,7 @@ var destroy = exports.destroy = function destroy() {
     $('.pd_mask').remove();
 };
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 /* 其它模块 */
 'use strict';
 
@@ -8679,7 +8845,7 @@ var handleProfilePage = exports.handleProfilePage = function handleProfilePage()
     })).css('vertical-align', 'top');
 };
 
-},{"./Bank":2,"./Config":5,"./ConfigDialog":6,"./Const":7,"./Info":10,"./Msg":16,"./Public":19,"./TmpLog":22,"./Util":23}],18:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -9055,7 +9221,7 @@ var addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function a
     });
 };
 
-},{"./Const":7,"./Info":10,"./Msg":16,"./Script":21,"./Util":23}],19:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":22}],18:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
@@ -10339,7 +10505,7 @@ var addSlowActionChecked = exports.addSlowActionChecked = function addSlowAction
     });
 };
 
-},{"./Config":5,"./ConfigDialog":6,"./Const":7,"./Dialog":8,"./Info":10,"./Log":12,"./LogDialog":13,"./Loot":14,"./Msg":16,"./Read":20,"./Script":21,"./TmpLog":22,"./Util":23}],20:[function(require,module,exports){
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
@@ -11150,7 +11316,7 @@ var getThreadTitle = exports.getThreadTitle = function getThreadTitle() {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
 
-},{"./Const":7,"./Dialog":8,"./Info":10,"./Log":12,"./Msg":16,"./Post":18,"./Public":19,"./Script":21,"./Util":23}],21:[function(require,module,exports){
+},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":22}],20:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
@@ -11543,7 +11709,7 @@ var handleInstallScriptLink = exports.handleInstallScriptLink = function handleI
     });
 };
 
-},{"./Bank":2,"./Card":4,"./Config":5,"./ConfigDialog":6,"./Const":7,"./Dialog":8,"./Index":9,"./Info":10,"./Item":11,"./Log":12,"./Loot":14,"./LootLog":15,"./Msg":16,"./Other":17,"./Post":18,"./Public":19,"./Read":20,"./TmpLog":22,"./Util":23}],22:[function(require,module,exports){
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -11666,7 +11832,7 @@ var deleteValue = exports.deleteValue = function deleteValue(key) {
     }
 };
 
-},{"./Const":7,"./Info":10,"./Util":23}],23:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":22}],22:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 
@@ -12379,4 +12545,4 @@ var deleteData = exports.deleteData = function deleteData(key) {
     if (storageType === 'ByUid' || storageType === 'Global') GM_deleteValue(key);else localStorage.removeItem(key);
 };
 
-},{"./Const":7,"./Info":10}]},{},[1]);
+},{"./Const":6,"./Info":9}]},{},[1]);

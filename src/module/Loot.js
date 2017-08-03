@@ -80,6 +80,9 @@ export const enhanceLootIndexPage = function () {
     handlePointsArea();
     addLevelPointListSelect();
     addAttackBtns();
+    if (Config.alwaysOpenPointAreaEnabled) {
+        $('#wdsx').show();
+    }
 
     if (log.includes('本日无争夺记录'))
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
@@ -568,7 +571,7 @@ const addLevelPointListSelect = function () {
     </select>
     <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a>
     <a class="pd_btn_link" data-name="edit" href="#" title="编辑各层点数分配方案">编辑</a>
-    <a class="pd_btn_link" data-name="fill" href="#" title="输入一串数字按顺序填充到各个点数字段中">填充</a><br>
+    <a class="pd_btn_link" data-name="fill" href="#" title="输入一串数字按顺序填充到各个点数字段中">填充</a>
   </td>
 </tr>`).prependTo($points.find('> tbody')).find('#pdLevelPointListSelect').change(function () {
         let level = parseInt($(this).val());
@@ -944,6 +947,10 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
     <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在4~6秒之间）">[?]</span>
+  </label>
+  <label>
+    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ${Config.alwaysOpenPointAreaEnabled ? 'checked' : ''}> 总是打开属性界面
+    <span class="pd_cfg_tips" title="总是打开个人属性/装备界面">[?]</span>
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
@@ -984,7 +991,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
         if (!autoChangePointsEnabled && !checkPoints($points)) return;
         lootAttack({type, targetLevel, autoChangePointsEnabled, safeId});
     }).on('click', '.pd_cfg_tips', () => false)
-        .on('click', '[type="checkbox"]', function () {
+        .on('click', 'input[type="checkbox"]', function () {
             let $this = $(this);
             let name = $this.attr('name');
             let checked = $this.prop('checked');
@@ -2022,21 +2029,19 @@ export const getHaloInfo = function () {
 export const setHaloInfo = function (newHaloInfo) {
     haloInfo = newHaloInfo;
     if (!$('#pdHaloInfo').length) {
-        let $node = $properties.find('input[value$="整形优惠卷"]').parent('td');
-        if (!$node.length || parseInt($node.attr('colspan')) !== 3) return;
-        $node.removeAttr('colspan');
-        $(`
-<td colspan="2">
-  <input id="pdHaloInfo" type="text" size="26" readonly>
-  <a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取" hidden>重新读取</a>
-</td>
-`).insertAfter($node).find('[data-name="reloadHaloInfo"]').click(function (e) {
-            e.preventDefault();
-            if (confirm('是否重新读取战力光环信息？')) {
-                TmpLog.deleteValue(Const.haloInfoTmpLogName);
-                readHaloInfo();
-            }
-        });
+        let $node = $properties.find('input[type="text"]:eq(13)');
+        if (!$node.length || $.trim($node.val())) return;
+        $node.attr('id', 'pdHaloInfo');
+        $('<a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取" hidden>重新读取</a>')
+            .insertAfter($node)
+            .find('[data-name="reloadHaloInfo"]')
+            .click(function (e) {
+                e.preventDefault();
+                if (confirm('是否重新读取战力光环信息？')) {
+                    TmpLog.deleteValue(Const.haloInfoTmpLogName);
+                    readHaloInfo();
+                }
+            });
     }
     $('#pdHaloInfo').val(`全属性+${haloInfo['全属性'] * 1000 / 10}% (+${haloInfo['攻击力']}|+${haloInfo['生命值']})`);
 };

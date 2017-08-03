@@ -59,9 +59,9 @@ const Const = {
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
-    // 特殊情况下的ajax请求（如使用、购买道具等）的时间间隔（毫秒），可设置为函数来返回值
+    // 特殊情况下的ajax请求（如使用道具、打开盒子等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval () {
-        if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 模拟手动时的情况
+        if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 慢速情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
     // 操作物品的最小时间间隔（毫秒）
