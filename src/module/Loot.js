@@ -33,8 +33,12 @@ let propertyList = {};
 let extraPointsList = {};
 // 光环信息
 let haloInfo = {};
+// 当前装备情况
+let currentArmInfo = {};
 // 道具使用情况列表
 let itemUsedNumList = new Map();
+// 装备等级情况列表
+let armsLevelList = new Map();
 // 修改点数可用次数
 let changePointsAvailableCount = 0;
 // 点数分配记录列表
@@ -66,7 +70,10 @@ export const init = function () {
 export const enhanceLootIndexPage = function () {
     Script.runFunc('Loot.enhanceLootIndexPage_before_');
     propertyList = getLootPropertyList();
-    itemUsedNumList = Item.getItemUsedInfo($properties.html());
+    let propertiesHtml = $properties.html();
+    itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
+    armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
+    currentArmInfo = Item.getCurrentArmInfo($points.find('> tbody > tr:first-child > td').html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -1310,6 +1317,8 @@ export const getLootInfo = function () {
         extraPointsList,
         propertyList,
         itemUsedNumList,
+        armsLevelList,
+        currentArmInfo,
         changePointsAvailableCount,
         log,
         logList,

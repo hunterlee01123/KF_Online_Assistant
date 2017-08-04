@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.7
+// @version     10.8
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.7';
+var version = '10.8';
 
 /**
  * 导出模块
@@ -1255,6 +1255,12 @@ var Config = exports.Config = {
 
     // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
     slowActionEnabled: false,
+    // 是否在打开盒子后熔炼装备，true：开启；false：关闭
+    smeltArmsAfterOpenBoxesEnabled: false,
+    // 是否在打开盒子后使用道具，true：开启；false：关闭
+    useItemsAfterOpenBoxesEnabled: false,
+    // 是否在打开盒子后出售道具，true：开启；false：关闭
+    sellItemsAfterOpenBoxesEnabled: false,
     // 默认的批量熔炼的装备种类列表，例：['普通的长剑', '幸运的长剑', '普通的短弓']
     defSmeltArmTypeList: [],
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -3037,7 +3043,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchBuyItemsLink = exports.getNextObjects = exports.getItemUsedInfo = exports.getLevelByName = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
+exports.addBatchBuyItemsLink = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getCurrentArmInfo = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3117,6 +3123,846 @@ var init = exports.init = function init() {
 };
 
 /**
+ * 获取下一批物品
+ * @param {number} sequence 下一批物品的插入顺序，1：向前插入；2：往后添加
+ * @param {function} callback 回调函数
+ */
+var getNextObjects = exports.getNextObjects = function getNextObjects(sequence) {
+    var callback = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+    console.log('获取下一批物品Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).done(function (html) {
+        for (var i = 1; i <= 2; i++) {
+            var matches = null;
+            if (i === 1) {
+                matches = /<tr><td width="\d+%">装备.+?\r\n(<tr id="wp_\d+">.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            } else {
+                matches = /<tr><td width="\d+%">使用.+?\r\n(<tr id="wp_\d+">.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            }
+            if (!matches) continue;
+            var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+            var $area = i === 1 ? $armArea : $itemArea;
+            var addHtml = '';
+            for (var _i in trMatches) {
+                var idMatches = /"wp_(\d+)"/.exec(trMatches[_i]);
+                if (!idMatches) continue;
+                if (!$area.has('tr[id="wp_' + idMatches[1] + '"]').length) {
+                    addHtml += trMatches[_i];
+                }
+            }
+            if (addHtml) {
+                if (sequence === 2) {
+                    $area.find('> tbody > tr:last-child').before(addHtml);
+                } else {
+                    $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+                }
+            }
+        }
+        if (typeof callback === 'function') callback();
+    }).fail(function () {
+        setTimeout(function () {
+            return getNextObjects(sequence, callback);
+        }, _Const2.default.defAjaxInterval);
+    });
+};
+
+/**
+ * 添加批量打开盒子链接
+ */
+var addBatchOpenBoxesLink = function addBatchOpenBoxesLink() {
+    $boxArea = $('.kf_fw_ig1:first');
+    $boxArea.find('> tbody > tr:nth-child(3) > td > a[onclick^="dkhz"]').each(function () {
+        var $this = $(this);
+        var matches = /dkhz\('(\d+)'\)/.exec($this.attr('onclick'));
+        if (!matches) return;
+        $this.after('<a class="pd_highlight" href="#" data-name="openBoxes" data-id="' + matches[1] + '" style="margin-left: 10px;">\u6279\u91CF\u6253\u5F00</a>');
+    });
+
+    $boxArea.on('click', 'a[data-name="openBoxes"]', function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var id = parseInt($this.data('id'));
+        var $info = $boxArea.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ')');
+        var boxType = $info.find('span:first').text().trim() + '盒子';
+        if (!boxTypeList.includes(boxType)) return;
+        var currentNum = parseInt($info.find('span:last').text());
+        var num = parseInt(prompt('\u4F60\u8981\u6253\u5F00\u591A\u5C11\u4E2A\u3010' + boxType + '\u3011\uFF1F', currentNum));
+        if (!num || num < 0) return;
+        Msg.destroy();
+        openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
+    });
+};
+
+/**
+ * 添加一键开盒按钮
+ */
+var addOpenAllBoxesButton = function addOpenAllBoxesButton() {
+    $('\n<div class="pd_item_btns" data-name="openBoxesBtns">\n  <button name="openAllBoxes" type="button" style="color: #f00;" title="\u6253\u5F00\u5168\u90E8\u76D2\u5B50">\u4E00\u952E\u5F00\u76D2</button>\n</div>\n').insertAfter($boxArea).find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
+    Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
+};
+
+/**
+ * 显示一键开盒对话框
+ */
+var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
+    var dialogName = 'pdOpenAllBoxesDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Msg.destroy();
+    (0, _Config.read)();
+
+    var armTypesCheckedHtml = '';
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+
+    try {
+        for (var _iterator = armGroupList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var group = _step.value;
+
+            armTypesCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
+            var _iteratorError3 = undefined;
+
+            try {
+                for (var _iterator3 = armTypeList[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var type = _step3.value;
+
+                    var prefix = type.split('的')[0];
+                    if (prefix === '神秘') continue;
+                    var name = prefix + '\u7684' + group;
+                    armTypesCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
+                }
+            } catch (err) {
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                        _iterator3.return();
+                    }
+                } finally {
+                    if (_didIteratorError3) {
+                        throw _iteratorError3;
+                    }
+                }
+            }
+
+            armTypesCheckedHtml += '</li>';
+        }
+    } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+            }
+        } finally {
+            if (_didIteratorError) {
+                throw _iteratorError;
+            }
+        }
+    }
+
+    var itemTypesOptionHtml = '';
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+        for (var _iterator2 = itemTypeList.slice(6)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var itemName = _step2.value;
+
+            itemTypesOptionHtml += '<option>' + itemName + '</option>';
+        }
+    } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                _iterator2.return();
+            }
+        } finally {
+            if (_didIteratorError2) {
+                throw _iteratorError2;
+            }
+        }
+    }
+
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;"><b>\u8BF7\u9009\u62E9\u6279\u91CF\u6253\u5F00\u76D2\u5B50\u540E\u60F3\u8981\u8FDB\u884C\u7684\u64CD\u4F5C\uFF08\u5982\u65E0\u9700\u64CD\u4F5C\u53EF\u4E0D\u7528\u52FE\u9009\uFF09\uFF1A</b></div>\n  <fieldset>\n    <legend>\n      <label><input name="smeltArmsAfterOpenBoxesEnabled" type="checkbox"> \u7194\u70BC\u88C5\u5907</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u7194\u70BC\u7684\u88C5\u5907\u79CD\u7C7B\uFF1A</div>\n    <ul data-name="smeltArmTypeList">' + armTypesCheckedHtml + '</ul>\n    <div>\n      <a class="pd_btn_link" href="#" data-name="selectAll">\u5168\u9009</a>\n      <a class="pd_btn_link" href="#" data-name="selectInverse">\u53CD\u9009</a>\n    </div>\n  </fieldset>\n  <fieldset>\n    <legend>\n      <label><input name="useItemsAfterOpenBoxesEnabled" type="checkbox"> \u4F7F\u7528\u9053\u5177</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u4F7F\u7528\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n    <select name="useItemTypes" size="6" style="width: 320px;" multiple>' + itemTypesOptionHtml + '</select>\n  </fieldset>\n  <fieldset>\n    <legend>\n      <label><input name="sellItemsAfterOpenBoxesEnabled" type="checkbox"> \u51FA\u552E\u9053\u5177</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u51FA\u552E\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n    <select name="sellItemTypes" size="6" style="width: 320px;" multiple>' + itemTypesOptionHtml + '</select>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <button name="open" type="button" style="color: #f00;">\u4E00\u952E\u5F00\u76D2</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '一键开盒', html);
+    var $smeltArmTypeList = $dialog.find('ul[data-name="smeltArmTypeList"]');
+
+    $dialog.find('[name="open"]').click(function () {
+        (0, _Config.read)();
+        $dialog.find('legend [type="checkbox"]').each(function () {
+            var $this = $(this);
+            var name = $this.attr('name');
+            if (name in Config) {
+                Config[name] = Boolean($this.prop('checked'));
+            }
+        });
+        if (Config.smeltArmsAfterOpenBoxesEnabled) {
+            var typeList = [];
+            $smeltArmTypeList.find('input[name="smeltArmsType"]:checked').each(function () {
+                typeList.push($(this).val());
+            });
+            if (typeList.length > 0) Config.defSmeltArmTypeList = typeList;else Config.smeltArmsAfterOpenBoxesEnabled = false;
+        }
+        if (Config.useItemsAfterOpenBoxesEnabled) {
+            var _typeList = $dialog.find('select[name="useItemTypes"]').val();
+            if (Array.isArray(_typeList)) Config.defUseItemTypeList = _typeList;else Config.useItemsAfterOpenBoxesEnabled = false;
+        }
+        if (Config.sellItemsAfterOpenBoxesEnabled) {
+            var _typeList2 = $dialog.find('select[name="sellItemTypes"]').val();
+            if (Array.isArray(_typeList2)) Config.defSellItemTypeList = _typeList2;else Config.sellItemsAfterOpenBoxesEnabled = false;
+        }
+        (0, _Config.write)();
+        if (!confirm('是否一键开盒（并执行所选操作）？')) return;
+        Dialog.close(dialogName);
+
+        $(document).clearQueue('OpenAllBoxes');
+        $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
+            var $this = $(this);
+            var boxType = $this.find('span:first').text().trim() + '盒子';
+            if (!boxTypeList.includes(boxType)) return;
+            var num = parseInt($this.find('span:last').text());
+            if (!num || num < 0) return;
+            var id = parseInt($boxArea.find('> tbody > tr:nth-child(3) > td:nth-child(' + (index + 1) + ') > a[data-name="openBoxes"]').data('id'));
+            if (!id) return;
+            $(document).queue('OpenAllBoxes', function () {
+                return openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId, nextActionEnabled: true });
+            });
+        });
+        $(document).dequeue('OpenAllBoxes');
+    }).end().find('a[data-name="selectAll"]').click(function () {
+        return Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'));
+    }).end().find('a[data-name="selectInverse"]').click(function () {
+        return Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]'));
+    });
+
+    $dialog.on('keydown', 'select[name$="ItemTypes"]', function (e) {
+        if (e.ctrlKey && e.keyCode === 65) {
+            e.preventDefault();
+            $(this).children().prop('selected', true);
+        }
+    }).find('legend [type="checkbox"]').each(function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        if (name in Config) {
+            $this.prop('checked', Config[name] === true);
+        }
+    }).end().find('select[name$="ItemTypes"]').each(function (index) {
+        var $this = $(this);
+        var itemTypeList = index === 0 ? Config.defUseItemTypeList : Config.defSellItemTypeList;
+        $this.find('option').each(function () {
+            var $this = $(this);
+            if (itemTypeList.includes($this.val())) {
+                $this.prop('selected', true);
+            }
+        });
+    });
+
+    Dialog.show(dialogName);
+    Script.runFunc('Item.showOpenAllBoxes_after_');
+};
+
+/**
+ * 打开盒子
+ * @param {number} id 盒子类型ID
+ * @param {string} boxType 盒子类型名称
+ * @param {number} num 打开盒子数量
+ * @param {string} safeId SafeID
+ * @param {boolean} nextActionEnabled 是否执行后续操作
+ */
+var openBoxes = function openBoxes(_ref) {
+    var id = _ref.id,
+        boxType = _ref.boxType,
+        num = _ref.num,
+        safeId = _ref.safeId,
+        _ref$nextActionEnable = _ref.nextActionEnabled,
+        nextActionEnabled = _ref$nextActionEnable === undefined ? false : _ref$nextActionEnable;
+
+    var successNum = 0,
+        failNum = 0,
+        index = 0;
+    var randomTotalNum = 0,
+        randomTotalCount = 0;
+    var isStop = false;
+    var stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
+    $boxArea.parent().append('<ul class="pd_result" data-name="boxResult"><li><strong>\u3010' + boxType + '\u3011\u6253\u5F00\u7ED3\u679C\uFF1A</strong></li></ul>');
+    var $wait = Msg.wait('<strong>\u6B63\u5728\u6253\u5F00\u76D2\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+
+    /**
+     * 打开
+     */
+    var open = function open() {
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: 'do=3&id=' + id + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            index++;
+            var msg = Util.removeHtmlTag(html);
+            if (msg.includes('获得')) {
+                successNum++;
+                var matches = /获得\[(\d+)]KFB/.exec(msg);
+                if (matches) stat['KFB'] += parseInt(matches[1]);
+
+                matches = /获得\[(\d+)]经验值/.exec(msg);
+                if (matches) stat['经验值'] += parseInt(matches[1]);
+
+                matches = /打开盒子获得了道具\[\s*(.+?)\s*]/.exec(msg);
+                if (matches) {
+                    stat['道具']++;
+                    var itemName = matches[1];
+                    if (!(itemName in stat.item)) stat.item[itemName] = 0;
+                    stat.item[itemName]++;
+                }
+
+                matches = /获得一件\[(.+?)]的?装备/.exec(msg);
+                if (matches) {
+                    stat['装备']++;
+                    var armType = matches[1] + '装备';
+                    if (!(armType in stat.arm)) stat.arm[armType] = 0;
+                    stat.arm[armType]++;
+                }
+
+                matches = /随机值(\d+)/.exec(msg);
+                if (matches) {
+                    randomTotalCount++;
+                    randomTotalNum += parseInt(matches[1]);
+                }
+            } else if (msg.includes('操作过快')) {
+                $(document).queue('OpenBoxes', open);
+            } else if (msg.includes('盒子不足')) {
+                $(document).clearQueue('OpenBoxes');
+                isStop = true;
+            } else {
+                failNum++;
+            }
+
+            console.log('\u7B2C' + index + '\u6B21\uFF1A' + msg);
+            $('.pd_result[data-name="boxResult"]:last').append('<li><b>\u7B2C' + index + '\u6B21\uFF1A</b>' + msg + '</li>');
+        }).fail(function () {
+            failNum++;
+        }).always(function () {
+            var length = $(document).queue('OpenBoxes').length;
+            var $countdown = $('.pd_countdown:last');
+            $countdown.text(length);
+            var isPause = $countdown.closest('.pd_msg').data('stop');
+            isStop = isStop || isPause;
+            if (isPause) {
+                $(document).clearQueue('OpenAllBoxes');
+                nextActionEnabled = false;
+            }
+
+            if (isStop || !length) {
+                Msg.remove($wait);
+                var avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
+                var _iteratorNormalCompletion4 = true;
+                var _didIteratorError4 = false;
+                var _iteratorError4 = undefined;
+
+                try {
+                    for (var _iterator4 = Util.entries(stat)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                        var _step4$value = _slicedToArray(_step4.value, 2),
+                            key = _step4$value[0],
+                            value = _step4$value[1];
+
+                        if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) {
+                            delete stat[key];
+                        }
+                    }
+                } catch (err) {
+                    _didIteratorError4 = true;
+                    _iteratorError4 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                            _iterator4.return();
+                        }
+                    } finally {
+                        if (_didIteratorError4) {
+                            throw _iteratorError4;
+                        }
+                    }
+                }
+
+                if (!$.isEmptyObject(stat)) {
+                    Log.push('打开盒子', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + boxType + '`\u3011\u6253\u5F00\u6210\u529F (\u5E73\u5747\u968F\u673A\u503C\u3010`' + avgRandomNum + '`\u3011)', {
+                        gain: stat,
+                        pay: { '盒子': -successNum }
+                    });
+                }
+
+                var $currentNum = $boxArea.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ') > span:last');
+                var prevNum = parseInt($currentNum.text());
+                if (prevNum > 0) {
+                    $currentNum.text(prevNum - successNum);
+                }
+
+                var resultStatHtml = '',
+                    msgStatHtml = '';
+                var _iteratorNormalCompletion5 = true;
+                var _didIteratorError5 = false;
+                var _iteratorError5 = undefined;
+
+                try {
+                    for (var _iterator5 = Util.entries(stat)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                        var _step5$value = _slicedToArray(_step5.value, 2),
+                            key = _step5$value[0],
+                            value = _step5$value[1];
+
+                        var tmpHtml = '';
+                        if ($.type(value) === 'object') {
+                            resultStatHtml += resultStatHtml ? '<br>' : '';
+                            msgStatHtml += msgStatHtml ? '<br>' : '';
+                            resultStatHtml += (key === 'item' ? '道具' : '装备') + '\uFF1A';
+
+                            var typeList = key === 'item' ? itemTypeList : armTypeList;
+                            var _iteratorNormalCompletion6 = true;
+                            var _didIteratorError6 = false;
+                            var _iteratorError6 = undefined;
+
+                            try {
+                                for (var _iterator6 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                                    var name = _step6.value;
+
+                                    tmpHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
+                                }
+                            } catch (err) {
+                                _didIteratorError6 = true;
+                                _iteratorError6 = err;
+                            } finally {
+                                try {
+                                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                                        _iterator6.return();
+                                    }
+                                } finally {
+                                    if (_didIteratorError6) {
+                                        throw _iteratorError6;
+                                    }
+                                }
+                            }
+                        } else {
+                            tmpHtml += '<i>' + key + '<em>+' + value.toLocaleString() + '</em></i> ';
+                        }
+                        resultStatHtml += tmpHtml;
+                        msgStatHtml += tmpHtml.trim();
+                    }
+                } catch (err) {
+                    _didIteratorError5 = true;
+                    _iteratorError5 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                            _iterator5.return();
+                        }
+                    } finally {
+                        if (_didIteratorError5) {
+                            throw _iteratorError5;
+                        }
+                    }
+                }
+
+                if (msgStatHtml.length < 200) {
+                    msgStatHtml = msgStatHtml.replace(/(.*)<br>/, '$1');
+                }
+                $('.pd_result[data-name="boxResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09\uFF1A</b><br>\n  ' + (resultStatHtml ? resultStatHtml : '无') + '\n</li>\n');
+                console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010' + avgRandomNum + '\u3011\uFF09' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : ''));
+                Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>' + (msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml)), -1);
+
+                Script.runFunc('Item.openBoxes_after_', stat);
+                setTimeout(function () {
+                    return getNextObjects(1);
+                }, _Const2.default.defAjaxInterval);
+                if ($(document).queue('OpenAllBoxes').length > 0) {
+                    setTimeout(function () {
+                        return $(document).dequeue('OpenAllBoxes');
+                    }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+                } else if (nextActionEnabled) {
+                    var action = null;
+                    if (Config.smeltArmsAfterOpenBoxesEnabled) {
+                        action = function action() {
+                            return smeltArms(Config.defSmeltArmTypeList, safeId, nextActionEnabled);
+                        };
+                    } else if (Config.useItemsAfterOpenBoxesEnabled) {
+                        action = function action() {
+                            return useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+                        };
+                    } else if (Config.sellItemsAfterOpenBoxesEnabled) {
+                        action = function action() {
+                            return sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+                        };
+                    }
+                    if (action) {
+                        setTimeout(action, _Const2.default.minItemActionInterval);
+                    }
+                }
+            } else {
+                if (index % 10 === 0) {
+                    setTimeout(function () {
+                        return getNextObjects(1);
+                    }, _Const2.default.defAjaxInterval);
+                }
+                setTimeout(function () {
+                    return $(document).dequeue('OpenBoxes');
+                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
+            }
+        });
+    };
+
+    $(document).clearQueue('OpenBoxes');
+    $.each(new Array(num), function () {
+        $(document).queue('OpenBoxes', open);
+    });
+    $(document).dequeue('OpenBoxes');
+};
+
+/**
+ * 在物品装备页面上添加批量熔炼装备按钮
+ */
+var addBatchSmeltArmsButton = function addBatchSmeltArmsButton() {
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="smeltArms"]').click(function () {
+        return showBatchSmeltArmsDialog(safeId);
+    });
+};
+
+/**
+ * 显示批量熔炼装备对话框
+ */
+var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
+    var dialogName = 'pdBatchSmeltArmsDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Msg.destroy();
+    (0, _Config.read)();
+
+    var armTypeCheckedHtml = '';
+    var _iteratorNormalCompletion7 = true;
+    var _didIteratorError7 = false;
+    var _iteratorError7 = undefined;
+
+    try {
+        for (var _iterator7 = armGroupList[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var group = _step7.value;
+
+            armTypeCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
+            var _iteratorNormalCompletion8 = true;
+            var _didIteratorError8 = false;
+            var _iteratorError8 = undefined;
+
+            try {
+                for (var _iterator8 = armTypeList[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                    var type = _step8.value;
+
+                    var prefix = type.split('的')[0];
+                    if (prefix === '神秘') continue;
+                    var name = prefix + '\u7684' + group;
+                    armTypeCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
+                }
+            } catch (err) {
+                _didIteratorError8 = true;
+                _iteratorError8 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                        _iterator8.return();
+                    }
+                } finally {
+                    if (_didIteratorError8) {
+                        throw _iteratorError8;
+                    }
+                }
+            }
+
+            armTypeCheckedHtml += '</li>';
+        }
+    } catch (err) {
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
+            }
+        } finally {
+            if (_didIteratorError7) {
+                throw _iteratorError7;
+            }
+        }
+    }
+
+    var html = '\n<div class="pd_cfg_main">\n  <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u7194\u70BC\u7684\u88C5\u5907\u79CD\u7C7B\uFF1A</div>\n  <ul data-name="smeltArmTypeList">' + armTypeCheckedHtml + '</ul>\n</div>\n<div class="pd_cfg_btns">\n  <button name="selectAll" type="button">\u5168\u9009</button>\n  <button name="selectInverse" type="button">\u53CD\u9009</button>\n  <button name="smelt" type="button" style="color: #f00;">\u7194\u70BC</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '批量熔炼装备', html);
+    var $smeltArmTypeList = $dialog.find('ul[data-name="smeltArmTypeList"]');
+
+    $dialog.find('[name="smelt"]').click(function () {
+        var typeList = [];
+        $smeltArmTypeList.find('input[name="smeltArmsType"]:checked').each(function () {
+            typeList.push($(this).val());
+        });
+        if (!typeList.length) return;
+        (0, _Config.read)();
+        Config.defSmeltArmTypeList = typeList;
+        (0, _Config.write)();
+        if (!confirm('是否熔炼所选装备种类？')) return;
+        Dialog.close(dialogName);
+        smeltArms(typeList, safeId);
+    }).end().find('[name="selectAll"]').click(function () {
+        return Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'));
+    }).end().find('[name="selectInverse"]').click(function () {
+        return Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]'));
+    });
+
+    Dialog.show(dialogName);
+    Script.runFunc('Item.showBatchSmeltArmsDialog_after_');
+};
+
+/**
+ * 熔炼装备
+ * @param {string[]} typeList 想要熔炼的装备种类
+ * @param {string} safeId SafeID
+ * @param {boolean} nextActionEnabled 是否执行后续操作
+ */
+var smeltArms = function smeltArms(typeList, safeId) {
+    var nextActionEnabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+    var successNum = 0,
+        index = 0;
+    var smeltInfo = {};
+
+    /**
+     * 熔炼
+     * @param {number} armId 装备ID
+     * @param {string} armGroup 装备组别
+     * @param {string} armName 装备名称
+     * @param {number} armNum 本轮熔炼的装备数量
+     */
+    var smelt = function smelt(armId, armGroup, armName, armNum) {
+        index++;
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: 'do=5&id=' + armId + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (!html) return;
+            var msg = Util.removeHtmlTag(html);
+            console.log('\u3010' + armName + '\u3011 ' + msg);
+            $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 ' + msg + '</li>');
+            $armArea.find('[id="wp_' + armId + '"]').fadeOut('normal', function () {
+                $(this).remove();
+            });
+
+            var matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
+            if (!matches) return;
+            successNum++;
+            if (!(armGroup in smeltInfo)) smeltInfo[armGroup] = { num: 0, exp: 0 };
+            smeltInfo[armGroup].num++;
+            smeltInfo[armGroup].exp += parseInt(matches[1]);
+            $wait.find('.pd_countdown').text(successNum);
+            Script.runFunc('Item.smeltArms_after_');
+        }).fail(function () {
+            $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
+        }).always(function () {
+            if ($wait.data('stop')) complete();else {
+                if (index === armNum) setTimeout(getNextArms, _Const2.default.minItemActionInterval);else setTimeout(function () {
+                    return $(document).dequeue('SmeltArms');
+                }, _Const2.default.minItemActionInterval);
+            }
+        });
+    };
+
+    /**
+     * 获取当前的装备
+     */
+    var getCurrentArms = function getCurrentArms() {
+        var armList = [];
+        $armArea.find('tr[id^="wp_"]').each(function () {
+            var $this = $(this);
+            var matches = /wp_(\d+)/.exec($this.attr('id'));
+            if (!matches) return;
+            var armId = parseInt(matches[1]);
+            var armName = $this.find('> td:nth-child(3) > span:first').text().trim();
+
+            var _armName$split = armName.split('的'),
+                _armName$split2 = _slicedToArray(_armName$split, 2),
+                armGroup = _armName$split2[1];
+
+            if (armName && armGroup && typeList.includes(armName)) {
+                armList.push({ armId: armId, armGroup: armGroup, armName: armName });
+            }
+        });
+        if (!armList.length) {
+            complete();
+            return;
+        }
+
+        index = 0;
+        $(document).clearQueue('SmeltArms');
+        $.each(armList, function (i, _ref2) {
+            var armId = _ref2.armId,
+                armGroup = _ref2.armGroup,
+                armName = _ref2.armName;
+
+            $(document).queue('SmeltArms', function () {
+                return smelt(armId, armGroup, armName, armList.length);
+            });
+        });
+        $(document).dequeue('SmeltArms');
+    };
+
+    /**
+     * 获取下一批装备
+     */
+    var getNextArms = function getNextArms() {
+        getNextObjects(2, function () {
+            if ($wait.data('stop')) complete();else setTimeout(getCurrentArms, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    /**
+     * 执行后续操作
+     */
+    var nextAction = function nextAction() {
+        var action = null;
+        if (Config.useItemsAfterOpenBoxesEnabled) {
+            action = function action() {
+                return useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+            };
+        } else if (Config.sellItemsAfterOpenBoxesEnabled) {
+            action = function action() {
+                return sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+            };
+        }
+        if (action) {
+            setTimeout(action, _Const2.default.minItemActionInterval);
+        }
+    };
+
+    /**
+     * 操作完成
+     */
+    var complete = function complete() {
+        $(document).clearQueue('SmeltArms');
+        Msg.remove($wait);
+        if ($.isEmptyObject(smeltInfo)) {
+            console.log('没有装备被熔炼！');
+            if (nextActionEnabled) nextAction();
+            return;
+        }
+
+        var armTypeNum = 0,
+            totalExp = 0;
+        var resultStat = '';
+        var _iteratorNormalCompletion9 = true;
+        var _didIteratorError9 = false;
+        var _iteratorError9 = undefined;
+
+        try {
+            for (var _iterator9 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+                var armGroup = _step9.value;
+
+                armTypeNum++;
+                var _smeltInfo$armGroup = smeltInfo[armGroup],
+                    exp = _smeltInfo$armGroup.exp,
+                    num = _smeltInfo$armGroup.num;
+
+                totalExp += exp;
+                resultStat += '\u3010' + armGroup + '\u3011 <i>\u88C5\u5907<ins>-' + num + '</ins></i> <i>' + armGroup + '\u7ECF\u9A8C<em>+' + exp.toLocaleString() + '</em></i><br>';
+                var gain = {};
+                gain[armGroup + '经验'] = exp;
+                Log.push('熔炼装备', '\u5171\u6709`' + num + '`\u4E2A\u3010`' + armGroup + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: gain, pay: { '装备': -num } });
+            }
+        } catch (err) {
+            _didIteratorError9 = true;
+            _iteratorError9 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                    _iterator9.return();
+                }
+            } finally {
+                if (_didIteratorError9) {
+                    throw _iteratorError9;
+                }
+            }
+        }
+
+        $('.pd_result[data-name="armResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF09\uFF1A</b> <i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
+        console.log('\u5171\u6709' + armTypeNum + '\u4E2A\u7EC4\u522B\u4E2D\u7684' + successNum + '\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF0C\u88C5\u5907\u7ECF\u9A8C+' + totalExp);
+        Msg.show('<strong>\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F</strong><i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i>', -1);
+
+        setTimeout(function () {
+            return getNextObjects(2);
+        }, _Const2.default.defAjaxInterval);
+        if (nextActionEnabled) nextAction();
+        Script.runFunc('Item.smeltArms_complete_');
+    };
+
+    $armArea.parent().append('<ul class="pd_result" data-name="armResult"><li><strong>熔炼结果：</strong></li></ul>');
+    var $wait = Msg.wait('<strong>正在熔炼装备中&hellip;</strong><i>已熔炼：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
+    getCurrentArms();
+};
+
+/**
+ * 获取当前装备情况
+ * @param html 争夺首页的HTML代码
+ * @returns {{}} 当前装备情况
+ */
+var getCurrentArmInfo = exports.getCurrentArmInfo = function getCurrentArmInfo(html) {
+    var currentArmInfo = {
+        '名称': '',
+        '组别': '',
+        '描述': ''
+    };
+    var matches = /<span (?:[^<>]+)>([^<>]+)<\/span>/.exec(html);
+    if (matches) {
+        currentArmInfo['名称'] = matches[1];
+
+        var _matches$1$split = matches[1].split('的');
+
+        var _matches$1$split2 = _slicedToArray(_matches$1$split, 2);
+
+        var _matches$1$split2$ = _matches$1$split2[1];
+        currentArmInfo['组别'] = _matches$1$split2$ === undefined ? '' : _matches$1$split2$;
+
+        var _html$split = html.split('</span> - ', 2);
+
+        var _html$split2 = _slicedToArray(_html$split, 2);
+
+        var _html$split2$ = _html$split2[1];
+        currentArmInfo['描述'] = _html$split2$ === undefined ? '' : _html$split2$;
+
+        currentArmInfo['描述'] = Util.removeHtmlTag(currentArmInfo['描述']);
+    }
+    return currentArmInfo;
+};
+
+/**
+ * 获取装备等级情况
+ * @param html 争夺首页的HTML代码
+ * @returns {Map} 装备等级情况列表
+ */
+var getArmsLevelInfo = exports.getArmsLevelInfo = function getArmsLevelInfo(html) {
+    var armsLevelList = new Map([['武器', 0], ['护甲', 0], ['项链', 0]]);
+    var matches = html.match(/value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/g);
+    for (var i in matches) {
+        var subMatches = /value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/.exec(matches[i]);
+        armsLevelList.set(subMatches[1], parseInt(subMatches[2]));
+    }
+    return armsLevelList;
+};
+
+/**
  * 获取指定名称的道具等级
  * @param {string} itemName 道具名称
  * @returns {number} 道具等级
@@ -3150,7 +3996,7 @@ var getLevelByName = exports.getLevelByName = function getLevelByName(itemName) 
  * @param html 争夺首页的HTML代码
  * @returns {Map} 道具使用情况列表
  */
-var getItemUsedInfo = exports.getItemUsedInfo = function getItemUsedInfo(html) {
+var getItemsUsedNumInfo = exports.getItemsUsedNumInfo = function getItemsUsedNumInfo(html) {
     var itemUsedNumList = new Map([['蕾米莉亚同人漫画', 0], ['十六夜同人漫画', 0], ['档案室钥匙', 0], ['傲娇LOLI娇蛮音CD', 0], ['消逝之药', 0], ['整形优惠卷', 0]]);
     var matches = html.match(/value="\[\s*(\d+)\s*](\S+?)"/g);
     for (var i in matches) {
@@ -3176,16 +4022,41 @@ var addBatchUseAndSellItemsButton = function addBatchUseAndSellItemsButton() {
 /**
  * 显示批量使用和出售道具对话框
  * @param {number} type 对话框类型，1：批量使用；2：批量出售
- * @param {string} safeId SafeID
  */
-var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(type, safeId) {
+var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(type) {
     var dialogName = 'pdBatchUseAndSellItemsDialog';
     if ($('#' + dialogName).length > 0) return;
     Msg.destroy();
     var typeName = type === 1 ? '使用' : '出售';
     (0, _Config.read)();
 
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\u8BF7\u9009\u62E9\u60F3\u6279\u91CF' + typeName + '\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n  <select name="itemTypes" size="6" style="width: 320px;" multiple>\n    <option>\u857E\u7C73\u8389\u4E9A\u540C\u4EBA\u6F2B\u753B</option><option>\u5341\u516D\u591C\u540C\u4EBA\u6F2B\u753B</option><option>\u6863\u6848\u5BA4\u94A5\u5319</option>\n    <option>\u50B2\u5A07LOLI\u5A07\u86EE\u97F3CD</option><option>\u6574\u5F62\u4F18\u60E0\u5377</option><option>\u6D88\u901D\u4E4B\u836F</option>\n  </select>\n</div>\n<div class="pd_cfg_btns">\n  <button name="sell" type="button">' + typeName + '</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var itemTypesOptionHtml = '';
+    var _iteratorNormalCompletion10 = true;
+    var _didIteratorError10 = false;
+    var _iteratorError10 = undefined;
+
+    try {
+        for (var _iterator10 = itemTypeList.slice(6)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var itemName = _step10.value;
+
+            itemTypesOptionHtml += '<option>' + itemName + '</option>';
+        }
+    } catch (err) {
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                _iterator10.return();
+            }
+        } finally {
+            if (_didIteratorError10) {
+                throw _iteratorError10;
+            }
+        }
+    }
+
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0;">\u8BF7\u9009\u62E9\u60F3\u6279\u91CF' + typeName + '\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n  <select name="itemTypes" size="6" style="width: 320px;" multiple>' + itemTypesOptionHtml + '</select>\n</div>\n<div class="pd_cfg_btns">\n  <button name="sell" type="button">' + typeName + '</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '\u6279\u91CF' + typeName + '\u9053\u5177', html);
 
     $dialog.find('[name="itemTypes"]').keydown(function (e) {
@@ -3218,9 +4089,14 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
  * 使用道具
  * @param {string[]} typeList 想要使用的道具种类
  * @param {string} safeId SafeID
+ * @param {boolean} nextActionEnabled 是否执行后续操作
  */
 var useItems = function useItems(typeList, safeId) {
+    var nextActionEnabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
     var totalSuccessNum = 0,
+        totalValidNum = 0,
+        totalInvalidNum = 0,
         index = 0;
     var useInfo = {};
     var tmpItemTypeList = [].concat(_toConsumableArray(typeList));
@@ -3246,7 +4122,13 @@ var useItems = function useItems(typeList, safeId) {
                 totalSuccessNum++;
                 if (!(itemName in useInfo)) useInfo[itemName] = { '道具': 0, '有效道具': 0, '无效道具': 0 };
                 useInfo[itemName]['道具']++;
-                if (/成功！/.test(msg)) useInfo[itemName]['有效道具']++;else useInfo[itemName]['无效道具']++;
+                if (/成功！/.test(msg)) {
+                    useInfo[itemName]['有效道具']++;
+                    totalValidNum++;
+                } else {
+                    useInfo[itemName]['无效道具']++;
+                    totalInvalidNum++;
+                }
                 $wait.find('.pd_countdown').text(totalSuccessNum);
                 isDelete = true;
             } else if (/无法再使用/.test(msg)) {
@@ -3296,9 +4178,9 @@ var useItems = function useItems(typeList, safeId) {
 
         index = 0;
         $(document).clearQueue('UseItems');
-        $.each(itemList, function (i, _ref) {
-            var itemId = _ref.itemId,
-                itemName = _ref.itemName;
+        $.each(itemList, function (i, _ref3) {
+            var itemId = _ref3.itemId,
+                itemName = _ref3.itemName;
 
             $(document).queue('UseItems', function () {
                 return use(itemId, itemName, itemList.length);
@@ -3317,25 +4199,41 @@ var useItems = function useItems(typeList, safeId) {
     };
 
     /**
+     * 执行后续操作
+     */
+    var nextAction = function nextAction() {
+        var action = null;
+        if (Config.sellItemsAfterOpenBoxesEnabled) {
+            action = function action() {
+                return sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+            };
+        }
+        if (action) {
+            setTimeout(action, _Const2.default.minItemActionInterval);
+        }
+    };
+
+    /**
      * 操作完成
      */
     var complete = function complete() {
         $(document).clearQueue('UseItems');
         Msg.remove($wait);
         if ($.isEmptyObject(useInfo)) {
-            alert('没有道具被使用！');
+            console.log('没有道具被使用！');
+            if (nextActionEnabled) nextAction();
             return;
         }
 
         var itemTypeNum = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
+        var _iteratorNormalCompletion11 = true;
+        var _didIteratorError11 = false;
+        var _iteratorError11 = undefined;
 
         try {
-            for (var _iterator = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                var itemName = _step.value;
+            for (var _iterator11 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                var itemName = _step11.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -3346,29 +4244,29 @@ var useItems = function useItems(typeList, safeId) {
                 if (stat['无效道具'] === 0) delete stat['无效道具'];
                 if (!$.isEmptyObject(stat)) {
                     resultStat += '\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011 <i>\u9053\u5177<ins>-' + successNum + '</ins></i> ';
-                    var _iteratorNormalCompletion2 = true;
-                    var _didIteratorError2 = false;
-                    var _iteratorError2 = undefined;
+                    var _iteratorNormalCompletion12 = true;
+                    var _didIteratorError12 = false;
+                    var _iteratorError12 = undefined;
 
                     try {
-                        for (var _iterator2 = Util.entries(stat)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                            var _step2$value = _slicedToArray(_step2.value, 2),
-                                key = _step2$value[0],
-                                num = _step2$value[1];
+                        for (var _iterator12 = Util.entries(stat)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                            var _step12$value = _slicedToArray(_step12.value, 2),
+                                key = _step12$value[0],
+                                num = _step12$value[1];
 
                             resultStat += '<i>' + key + '<em>+' + num + '</em></i> ';
                         }
                     } catch (err) {
-                        _didIteratorError2 = true;
-                        _iteratorError2 = err;
+                        _didIteratorError12 = true;
+                        _iteratorError12 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                                _iterator2.return();
+                            if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                                _iterator12.return();
                             }
                         } finally {
-                            if (_didIteratorError2) {
-                                throw _iteratorError2;
+                            if (_didIteratorError12) {
+                                throw _iteratorError12;
                             }
                         }
                     }
@@ -3378,26 +4276,28 @@ var useItems = function useItems(typeList, safeId) {
                 }
             }
         } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
+            _didIteratorError11 = true;
+            _iteratorError11 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion && _iterator.return) {
-                    _iterator.return();
+                if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                    _iterator11.return();
                 }
             } finally {
-                if (_didIteratorError) {
-                    throw _iteratorError;
+                if (_didIteratorError11) {
+                    throw _iteratorError11;
                 }
             }
         }
 
-        $('.pd_result[data-name="itemResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF09\uFF1A</b><br>\n  ' + resultStat + '\n</li>');
-        console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + totalSuccessNum + '\u4E2A\u9053\u5177\u88AB\u4F7F\u7528');
-        Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528</strong>', -1);
+        $('.pd_result[data-name="itemResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF0C\n<i>\u6709\u6548\u9053\u5177<em>+' + totalValidNum + '</em></i><i>\u65E0\u6548\u9053\u5177<em>+' + totalInvalidNum + '</em></i>\uFF09\uFF1A</b><br>\n  ' + resultStat + '\n</li>');
+        console.log('\u5171\u6709' + itemTypeNum + '\u4E2A\u79CD\u7C7B\u4E2D\u7684' + totalSuccessNum + '\u4E2A\u9053\u5177\u88AB\u4F7F\u7528\uFF0C\u6709\u6548\u9053\u5177+' + totalValidNum + '\uFF0C\u65E0\u6548\u9053\u5177+' + totalInvalidNum);
+        Msg.show('<strong>\u5171\u6709<em>' + itemTypeNum + '</em>\u4E2A\u79CD\u7C7B\u4E2D\u7684<em>' + totalSuccessNum + '</em>\u4E2A\u9053\u5177\u88AB\u4F7F\u7528</strong>' + ('<i>\u6709\u6548\u9053\u5177<em>+' + totalValidNum + '</em></i><i>\u65E0\u6548\u9053\u5177<em>+' + totalInvalidNum + '</em></i>'), -1);
+
         setTimeout(function () {
             return getNextObjects(2);
         }, _Const2.default.defAjaxInterval);
+        if (nextActionEnabled) nextAction();
         Script.runFunc('Item.useItems_complete_');
     };
 
@@ -3410,8 +4310,11 @@ var useItems = function useItems(typeList, safeId) {
  * 出售道具
  * @param {string[]} itemTypeList 想要出售的道具种类
  * @param {string} safeId SafeID
+ * @param {boolean} nextActionEnabled 是否执行后续操作
  */
 var sellItems = function sellItems(itemTypeList, safeId) {
+    var nextActionEnabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
     var successNum = 0,
         index = 0;
     var sellInfo = {};
@@ -3479,9 +4382,9 @@ var sellItems = function sellItems(itemTypeList, safeId) {
 
         index = 0;
         $(document).clearQueue('SellItems');
-        $.each(itemList, function (i, _ref2) {
-            var itemId = _ref2.itemId,
-                itemName = _ref2.itemName;
+        $.each(itemList, function (i, _ref4) {
+            var itemId = _ref4.itemId,
+                itemName = _ref4.itemName;
 
             $(document).queue('SellItems', function () {
                 return sell(itemId, itemName, itemList.length);
@@ -3506,20 +4409,20 @@ var sellItems = function sellItems(itemTypeList, safeId) {
         $(document).clearQueue('SellItems');
         Msg.remove($wait);
         if ($.isEmptyObject(sellInfo)) {
-            alert('没有道具被出售！');
+            console.log('没有道具被出售！');
             return;
         }
 
         var itemTypeNum = 0,
             totalSell = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
+        var _iteratorNormalCompletion13 = true;
+        var _didIteratorError13 = false;
+        var _iteratorError13 = undefined;
 
         try {
-            for (var _iterator3 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                var itemName = _step3.value;
+            for (var _iterator13 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+                var itemName = _step13.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -3532,16 +4435,16 @@ var sellItems = function sellItems(itemTypeList, safeId) {
                 Log.push('出售道具', '\u5171\u6709`' + num + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': _sell }, pay: { '道具': -num } });
             }
         } catch (err) {
-            _didIteratorError3 = true;
-            _iteratorError3 = err;
+            _didIteratorError13 = true;
+            _iteratorError13 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                    _iterator3.return();
+                if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                    _iterator13.return();
                 }
             } finally {
-                if (_didIteratorError3) {
-                    throw _iteratorError3;
+                if (_didIteratorError13) {
+                    throw _iteratorError13;
                 }
             }
         }
@@ -3558,54 +4461,6 @@ var sellItems = function sellItems(itemTypeList, safeId) {
     $itemArea.parent().append('<ul class="pd_result" data-name="itemResult"><li><strong>\u51FA\u552E\u7ED3\u679C\uFF1A</strong></li></ul>');
     var $wait = Msg.wait('<strong>正在出售道具中&hellip;</strong><i>已出售：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
     getCurrentItems();
-};
-
-/**
- * 获取下一批物品
- * @param {number} sequence 下一批物品的插入顺序，1：向前插入；2：往后添加
- * @param {function} callback 回调函数
- */
-var getNextObjects = exports.getNextObjects = function getNextObjects(sequence) {
-    var callback = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-    console.log('获取下一批物品Start');
-    $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout
-    }).done(function (html) {
-        for (var i = 1; i <= 2; i++) {
-            var matches = null;
-            if (i === 1) {
-                matches = /<tr><td width="\d+%">装备.+?\r\n(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            } else {
-                matches = /<tr><td width="\d+%">使用.+?\r\n(<tr id="wp_\d+"><td>.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            }
-            if (!matches) continue;
-            var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
-            var $area = i === 1 ? $armArea : $itemArea;
-            var addHtml = '';
-            for (var _i in trMatches) {
-                var idMatches = /"wp_(\d+)"/.exec(trMatches[_i]);
-                if (!idMatches) continue;
-                if (!$area.has('tr[id="wp_' + idMatches[1] + '"]').length) {
-                    addHtml += trMatches[_i];
-                }
-            }
-            if (addHtml) {
-                if (sequence === 2) {
-                    $area.find('> tbody > tr:last-child').before(addHtml);
-                } else {
-                    $area.find('> tbody > tr:nth-child(2)').after(addHtml);
-                }
-            }
-        }
-        if (typeof callback === 'function') callback();
-    }).fail(function () {
-        setTimeout(function () {
-            return getNextObjects(sequence, callback);
-        }, _Const2.default.defAjaxInterval);
-    });
 };
 
 /**
@@ -3711,29 +4566,29 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                 isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                 if (isStop || successNum === buyNum) {
                     Msg.remove($countdown.closest('.pd_msg'));
-                    var _iteratorNormalCompletion4 = true;
-                    var _didIteratorError4 = false;
-                    var _iteratorError4 = undefined;
+                    var _iteratorNormalCompletion14 = true;
+                    var _didIteratorError14 = false;
+                    var _iteratorError14 = undefined;
 
                     try {
-                        for (var _iterator4 = Util.entries(itemList)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                            var _step4$value = _slicedToArray(_step4.value, 2),
-                                itemName = _step4$value[0],
-                                num = _step4$value[1];
+                        for (var _iterator14 = Util.entries(itemList)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                            var _step14$value = _slicedToArray(_step14.value, 2),
+                                itemName = _step14$value[0],
+                                num = _step14$value[1];
 
                             if (!num) delete itemList[itemName];
                         }
                     } catch (err) {
-                        _didIteratorError4 = true;
-                        _iteratorError4 = err;
+                        _didIteratorError14 = true;
+                        _iteratorError14 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                                _iterator4.return();
+                            if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                                _iterator14.return();
                             }
                         } finally {
-                            if (_didIteratorError4) {
-                                throw _iteratorError4;
+                            if (_didIteratorError14) {
+                                throw _iteratorError14;
                             }
                         }
                     }
@@ -3743,27 +4598,27 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                     }
 
                     var itemStatHtml = '';
-                    var _iteratorNormalCompletion5 = true;
-                    var _didIteratorError5 = false;
-                    var _iteratorError5 = undefined;
+                    var _iteratorNormalCompletion15 = true;
+                    var _didIteratorError15 = false;
+                    var _iteratorError15 = undefined;
 
                     try {
-                        for (var _iterator5 = Util.getSortedObjectKeyList(itemTypeList, itemList)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                            var itemName = _step5.value;
+                        for (var _iterator15 = Util.getSortedObjectKeyList(itemTypeList, itemList)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+                            var itemName = _step15.value;
 
                             itemStatHtml += '<i>' + itemName + '<em>+' + itemList[itemName] + '</em></i> ';
                         }
                     } catch (err) {
-                        _didIteratorError5 = true;
-                        _iteratorError5 = err;
+                        _didIteratorError15 = true;
+                        _iteratorError15 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                                _iterator5.return();
+                            if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                                _iterator15.return();
                             }
                         } finally {
-                            if (_didIteratorError5) {
-                                throw _iteratorError5;
+                            if (_didIteratorError15) {
+                                throw _iteratorError15;
                             }
                         }
                     }
@@ -3800,549 +4655,6 @@ var showKfbInItemShop = function showKfbInItemShop() {
         var cash = parseInt(matches[1]);
         $('.kf_fw_ig_title1:last').find('span:last').remove().end().append('<span style="margin-left: 7px;">(\u5F53\u524D\u6301\u6709 <b style="font-size: 14px;">' + cash.toLocaleString() + '</b> KFB)</span>');
     });
-};
-
-/**
- * 添加批量打开盒子链接
- */
-var addBatchOpenBoxesLink = function addBatchOpenBoxesLink() {
-    $boxArea = $('.kf_fw_ig1:first');
-    $boxArea.find('> tbody > tr:nth-child(3) > td > a[onclick^="dkhz"]').each(function () {
-        var $this = $(this);
-        var matches = /dkhz\('(\d+)'\)/.exec($this.attr('onclick'));
-        if (!matches) return;
-        $this.after('<a class="pd_highlight" href="#" data-name="openBoxes" data-id="' + matches[1] + '" style="margin-left: 10px;">\u6279\u91CF\u6253\u5F00</a>');
-    });
-
-    $boxArea.on('click', 'a[data-name="openBoxes"]', function (e) {
-        e.preventDefault();
-        var $this = $(this);
-        var id = parseInt($this.data('id'));
-        var $info = $boxArea.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ')');
-        var boxType = $info.find('span:first').text().trim() + '盒子';
-        if (!boxTypeList.includes(boxType)) return;
-        var currentNum = parseInt($info.find('span:last').text());
-        var num = parseInt(prompt('\u4F60\u8981\u6253\u5F00\u591A\u5C11\u4E2A\u3010' + boxType + '\u3011\uFF1F', currentNum));
-        if (!num || num < 0) return;
-        Msg.destroy();
-        openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
-    });
-};
-
-/**
- * 添加打开全部盒子按钮
- */
-var addOpenAllBoxesButton = function addOpenAllBoxesButton() {
-    $('\n<div class="pd_item_btns" data-name="openBoxesBtns">\n  <button name="openAllBoxes" type="button" style="color: #f00;" title="\u6253\u5F00\u5168\u90E8\u76D2\u5B50">\u4E00\u952E\u5F00\u76D2</button>\n</div>\n').insertAfter($boxArea).find('[name="openAllBoxes"]').click(function () {
-        if (!confirm('是否打开全部盒子？')) return;
-        Msg.destroy();
-        $(document).clearQueue('OpenAllBoxes');
-        $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
-            var $this = $(this);
-            var boxType = $this.find('span:first').text().trim() + '盒子';
-            if (!boxTypeList.includes(boxType)) return;
-            var num = parseInt($this.find('span:last').text());
-            if (!num || num < 0) return;
-            var id = parseInt($boxArea.find('> tbody > tr:nth-child(3) > td:nth-child(' + (index + 1) + ') > a[data-name="openBoxes"]').data('id'));
-            if (!id) return;
-            $(document).queue('OpenAllBoxes', function () {
-                return openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
-            });
-        });
-        $(document).dequeue('OpenAllBoxes');
-    });
-
-    Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
-};
-
-/**
- * 打开盒子
- * @param {number} id 盒子类型ID
- * @param {string} boxType 盒子类型名称
- * @param {number} num 打开盒子数量
- * @param {string} safeId SafeID
- */
-var openBoxes = function openBoxes(_ref3) {
-    var id = _ref3.id,
-        boxType = _ref3.boxType,
-        num = _ref3.num,
-        safeId = _ref3.safeId;
-
-    var successNum = 0,
-        failNum = 0,
-        index = 0;
-    var randomTotalNum = 0,
-        randomTotalCount = 0;
-    var isStop = false;
-    var stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
-    $boxArea.parent().append('<ul class="pd_result" data-name="boxResult"><li><strong>\u3010' + boxType + '\u3011\u6253\u5F00\u7ED3\u679C\uFF1A</strong></li></ul>');
-    var $wait = Msg.wait('<strong>\u6B63\u5728\u6253\u5F00\u76D2\u5B50\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-
-    /**
-     * 打开
-     */
-    var open = function open() {
-        $.ajax({
-            type: 'POST',
-            url: 'kf_fw_ig_mybpdt.php',
-            data: 'do=3&id=' + id + '&safeid=' + safeId,
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            index++;
-            var msg = Util.removeHtmlTag(html);
-            if (msg.includes('获得')) {
-                successNum++;
-                var matches = /获得\[(\d+)]KFB/.exec(msg);
-                if (matches) stat['KFB'] += parseInt(matches[1]);
-
-                matches = /获得\[(\d+)]经验值/.exec(msg);
-                if (matches) stat['经验值'] += parseInt(matches[1]);
-
-                matches = /打开盒子获得了道具\[\s*(.+?)\s*]/.exec(msg);
-                if (matches) {
-                    stat['道具']++;
-                    var itemName = matches[1];
-                    if (!(itemName in stat.item)) stat.item[itemName] = 0;
-                    stat.item[itemName]++;
-                }
-
-                matches = /获得一件\[(.+?)]的?装备/.exec(msg);
-                if (matches) {
-                    stat['装备']++;
-                    var armType = matches[1] + '装备';
-                    if (!(armType in stat.arm)) stat.arm[armType] = 0;
-                    stat.arm[armType]++;
-                }
-
-                matches = /随机值(\d+)/.exec(msg);
-                if (matches) {
-                    randomTotalCount++;
-                    randomTotalNum += parseInt(matches[1]);
-                }
-            } else if (msg.includes('操作过快')) {
-                $(document).queue('OpenBoxes', open);
-            } else if (msg.includes('盒子不足')) {
-                $(document).clearQueue('OpenBoxes');
-                isStop = true;
-            } else {
-                failNum++;
-            }
-
-            console.log('\u7B2C' + index + '\u6B21\uFF1A' + msg);
-            $('.pd_result[data-name="boxResult"]:last').append('<li><b>\u7B2C' + index + '\u6B21\uFF1A</b>' + msg + '</li>');
-        }).fail(function () {
-            failNum++;
-        }).always(function () {
-            var length = $(document).queue('OpenBoxes').length;
-            var $countdown = $('.pd_countdown:last');
-            $countdown.text(length);
-            var isPause = $countdown.closest('.pd_msg').data('stop');
-            isStop = isStop || isPause;
-            if (isPause) $(document).clearQueue('OpenAllBoxes');
-
-            if (isStop || !length) {
-                Msg.remove($wait);
-                var avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
-                var _iteratorNormalCompletion6 = true;
-                var _didIteratorError6 = false;
-                var _iteratorError6 = undefined;
-
-                try {
-                    for (var _iterator6 = Util.entries(stat)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                        var _step6$value = _slicedToArray(_step6.value, 2),
-                            key = _step6$value[0],
-                            value = _step6$value[1];
-
-                        if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) {
-                            delete stat[key];
-                        }
-                    }
-                } catch (err) {
-                    _didIteratorError6 = true;
-                    _iteratorError6 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                            _iterator6.return();
-                        }
-                    } finally {
-                        if (_didIteratorError6) {
-                            throw _iteratorError6;
-                        }
-                    }
-                }
-
-                if (!$.isEmptyObject(stat)) {
-                    Log.push('打开盒子', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + boxType + '`\u3011\u6253\u5F00\u6210\u529F (\u5E73\u5747\u968F\u673A\u503C\u3010`' + avgRandomNum + '`\u3011)', {
-                        gain: stat,
-                        pay: { '盒子': -successNum }
-                    });
-                }
-
-                var $currentNum = $boxArea.find('> tbody > tr:nth-child(2) > td:nth-child(' + id + ') > span:last');
-                var prevNum = parseInt($currentNum.text());
-                if (prevNum > 0) {
-                    $currentNum.text(prevNum - successNum);
-                }
-
-                var resultStatHtml = '',
-                    msgStatHtml = '';
-                var _iteratorNormalCompletion7 = true;
-                var _didIteratorError7 = false;
-                var _iteratorError7 = undefined;
-
-                try {
-                    for (var _iterator7 = Util.entries(stat)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                        var _step7$value = _slicedToArray(_step7.value, 2),
-                            key = _step7$value[0],
-                            value = _step7$value[1];
-
-                        var tmpHtml = '';
-                        if ($.type(value) === 'object') {
-                            resultStatHtml += resultStatHtml ? '<br>' : '';
-                            msgStatHtml += msgStatHtml ? '<br>' : '';
-                            resultStatHtml += (key === 'item' ? '道具' : '装备') + '\uFF1A';
-
-                            var typeList = key === 'item' ? itemTypeList : armTypeList;
-                            var _iteratorNormalCompletion8 = true;
-                            var _didIteratorError8 = false;
-                            var _iteratorError8 = undefined;
-
-                            try {
-                                for (var _iterator8 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                                    var name = _step8.value;
-
-                                    tmpHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
-                                }
-                            } catch (err) {
-                                _didIteratorError8 = true;
-                                _iteratorError8 = err;
-                            } finally {
-                                try {
-                                    if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                                        _iterator8.return();
-                                    }
-                                } finally {
-                                    if (_didIteratorError8) {
-                                        throw _iteratorError8;
-                                    }
-                                }
-                            }
-                        } else {
-                            tmpHtml += '<i>' + key + '<em>+' + value.toLocaleString() + '</em></i> ';
-                        }
-                        resultStatHtml += tmpHtml;
-                        msgStatHtml += tmpHtml.trim();
-                    }
-                } catch (err) {
-                    _didIteratorError7 = true;
-                    _iteratorError7 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                            _iterator7.return();
-                        }
-                    } finally {
-                        if (_didIteratorError7) {
-                            throw _iteratorError7;
-                        }
-                    }
-                }
-
-                if (msgStatHtml.length < 200) {
-                    msgStatHtml = msgStatHtml.replace(/(.*)<br>/, '$1');
-                }
-                $('.pd_result[data-name="boxResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09\uFF1A</b><br>\n  ' + (resultStatHtml ? resultStatHtml : '无') + '\n</li>\n');
-                console.log('\u5171\u6709' + successNum + '\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010' + avgRandomNum + '\u3011\uFF09' + (failNum > 0 ? '\uFF0C\u5171\u6709' + failNum + '\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : ''));
-                Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u4E2A\u3010' + boxType + '\u3011\u6253\u5F00\u6210\u529F\uFF08\u5E73\u5747\u968F\u673A\u503C\u3010<em>' + avgRandomNum + '</em>\u3011\uFF09' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u4E2A\u76D2\u5B50\u6253\u5F00\u5931\u8D25' : '') + '</strong>' + (msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml)), -1);
-
-                Script.runFunc('Item.openBoxes_after_', stat);
-                setTimeout(function () {
-                    return getNextObjects(1);
-                }, _Const2.default.defAjaxInterval);
-                setTimeout(function () {
-                    return $(document).dequeue('OpenAllBoxes');
-                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-            } else {
-                if (index % 10 === 0) {
-                    setTimeout(function () {
-                        return getNextObjects(1);
-                    }, _Const2.default.defAjaxInterval);
-                }
-                setTimeout(function () {
-                    return $(document).dequeue('OpenBoxes');
-                }, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
-            }
-        });
-    };
-
-    $(document).clearQueue('OpenBoxes');
-    $.each(new Array(num), function () {
-        $(document).queue('OpenBoxes', open);
-    });
-    $(document).dequeue('OpenBoxes');
-};
-
-/**
- * 在物品装备页面上添加批量熔炼装备按钮
- */
-var addBatchSmeltArmsButton = function addBatchSmeltArmsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="smeltArms"]').click(function () {
-        return showBatchSmeltArmsDialog(safeId);
-    });
-};
-
-/**
- * 显示批量熔炼装备对话框
- * @param {string} safeId SafeID
- */
-var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog(safeId) {
-    var dialogName = 'pdBatchSmeltArmsDialog';
-    if ($('#' + dialogName).length > 0) return;
-    Msg.destroy();
-    (0, _Config.read)();
-
-    var armCheckedHtml = '';
-    var _iteratorNormalCompletion9 = true;
-    var _didIteratorError9 = false;
-    var _iteratorError9 = undefined;
-
-    try {
-        for (var _iterator9 = armGroupList[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var group = _step9.value;
-
-            armCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
-            var _iteratorNormalCompletion10 = true;
-            var _didIteratorError10 = false;
-            var _iteratorError10 = undefined;
-
-            try {
-                for (var _iterator10 = armTypeList[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                    var type = _step10.value;
-
-                    var prefix = type.split('的')[0];
-                    if (prefix === '神秘') continue;
-                    var name = prefix + '\u7684' + group;
-                    armCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
-                }
-            } catch (err) {
-                _didIteratorError10 = true;
-                _iteratorError10 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                        _iterator10.return();
-                    }
-                } finally {
-                    if (_didIteratorError10) {
-                        throw _iteratorError10;
-                    }
-                }
-            }
-
-            armCheckedHtml += '</li>';
-        }
-    } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                _iterator9.return();
-            }
-        } finally {
-            if (_didIteratorError9) {
-                throw _iteratorError9;
-            }
-        }
-    }
-
-    var html = '\n<div class="pd_cfg_main">\n  <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u7194\u70BC\u7684\u88C5\u5907\u79CD\u7C7B\uFF1A</div>\n  <ul data-name="smeltArmTypeList">' + armCheckedHtml + '</ul>\n</div>\n<div class="pd_cfg_btns">\n  <button name="selectAll" type="button">\u5168\u9009</button>\n  <button name="selectInverse" type="button">\u53CD\u9009</button>\n  <button name="smelt" type="button" style="color: #f00;">\u7194\u70BC</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
-    var $dialog = Dialog.create(dialogName, '批量熔炼装备', html);
-    var $smeltArmTypeList = $dialog.find('ul[data-name="smeltArmTypeList"]');
-
-    $dialog.find('[name="smelt"]').click(function () {
-        var typeList = [];
-        $smeltArmTypeList.find('input[name="smeltArmsType"]:checked').each(function () {
-            typeList.push($(this).val());
-        });
-        if (!typeList.length) return;
-        (0, _Config.read)();
-        Config.defSmeltArmTypeList = typeList;
-        (0, _Config.write)();
-        if (!confirm('是否熔炼所选装备种类？')) return;
-        Dialog.close(dialogName);
-        smeltArms(typeList, safeId);
-    }).end().find('[name="selectAll"]').click(function () {
-        return Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'));
-    }).end().find('[name="selectInverse"]').click(function () {
-        return Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]'));
-    });
-
-    Dialog.show(dialogName);
-    Script.runFunc('Item.showBatchSmeltArmsDialog_after_');
-};
-
-/**
- * 熔炼装备
- * @param {string[]} typeList 想要熔炼的装备种类
- * @param {string} safeId SafeID
- */
-var smeltArms = function smeltArms(typeList, safeId) {
-    var successNum = 0,
-        index = 0;
-    var smeltInfo = {};
-
-    /**
-     * 熔炼
-     * @param {number} armId 装备ID
-     * @param {string} armGroup 装备组别
-     * @param {string} armName 装备名称
-     * @param {number} armNum 本轮熔炼的装备数量
-     */
-    var smelt = function smelt(armId, armGroup, armName, armNum) {
-        index++;
-        $.ajax({
-            type: 'POST',
-            url: 'kf_fw_ig_mybpdt.php',
-            data: 'do=5&id=' + armId + '&safeid=' + safeId,
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            if (!html) return;
-            var msg = Util.removeHtmlTag(html);
-            console.log('\u3010' + armName + '\u3011 ' + msg);
-            $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 ' + msg + '</li>');
-            $armArea.find('[id="wp_' + armId + '"]').fadeOut('normal', function () {
-                $(this).remove();
-            });
-
-            var matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
-            if (!matches) return;
-            successNum++;
-            if (!(armGroup in smeltInfo)) smeltInfo[armGroup] = { num: 0, exp: 0 };
-            smeltInfo[armGroup].num++;
-            smeltInfo[armGroup].exp += parseInt(matches[1]);
-            $wait.find('.pd_countdown').text(successNum);
-            Script.runFunc('Item.smeltArms_after_');
-        }).fail(function () {
-            $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
-        }).always(function () {
-            if ($wait.data('stop')) complete();else {
-                if (index === armNum) setTimeout(getNextArms, _Const2.default.minItemActionInterval);else setTimeout(function () {
-                    return $(document).dequeue('SmeltArms');
-                }, _Const2.default.minItemActionInterval);
-            }
-        });
-    };
-
-    /**
-     * 获取当前的装备
-     */
-    var getCurrentArms = function getCurrentArms() {
-        var armList = [];
-        $armArea.find('tr[id^="wp_"]').each(function () {
-            var $this = $(this);
-            var matches = /wp_(\d+)/.exec($this.attr('id'));
-            if (!matches) return;
-            var armId = parseInt(matches[1]);
-            var armName = $this.find('> td:nth-child(3) > span:first').text().trim();
-
-            var _armName$split = armName.split('的'),
-                _armName$split2 = _slicedToArray(_armName$split, 2),
-                armGroup = _armName$split2[1];
-
-            if (armName && armGroup && typeList.includes(armName)) {
-                armList.push({ armId: armId, armGroup: armGroup, armName: armName });
-            }
-        });
-        if (!armList.length) {
-            complete();
-            return;
-        }
-
-        index = 0;
-        $(document).clearQueue('SmeltArms');
-        $.each(armList, function (i, _ref4) {
-            var armId = _ref4.armId,
-                armGroup = _ref4.armGroup,
-                armName = _ref4.armName;
-
-            $(document).queue('SmeltArms', function () {
-                return smelt(armId, armGroup, armName, armList.length);
-            });
-        });
-        $(document).dequeue('SmeltArms');
-    };
-
-    /**
-     * 获取下一批装备
-     */
-    var getNextArms = function getNextArms() {
-        getNextObjects(2, function () {
-            if ($wait.data('stop')) complete();else setTimeout(getCurrentArms, _Const2.default.defAjaxInterval);
-        });
-    };
-
-    /**
-     * 操作完成
-     */
-    var complete = function complete() {
-        $(document).clearQueue('SmeltArms');
-        Msg.remove($wait);
-        if ($.isEmptyObject(smeltInfo)) {
-            alert('没有装备被熔炼！');
-            return;
-        }
-
-        var armTypeNum = 0,
-            totalExp = 0;
-        var resultStat = '';
-        var _iteratorNormalCompletion11 = true;
-        var _didIteratorError11 = false;
-        var _iteratorError11 = undefined;
-
-        try {
-            for (var _iterator11 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-                var armGroup = _step11.value;
-
-                armTypeNum++;
-                var _smeltInfo$armGroup = smeltInfo[armGroup],
-                    exp = _smeltInfo$armGroup.exp,
-                    num = _smeltInfo$armGroup.num;
-
-                totalExp += exp;
-                resultStat += '\u3010' + armGroup + '\u3011 <i>\u88C5\u5907<ins>-' + num + '</ins></i> <i>' + armGroup + '\u7ECF\u9A8C<em>+' + exp.toLocaleString() + '</em></i><br>';
-                var gain = {};
-                gain[armGroup + '经验'] = exp;
-                Log.push('熔炼装备', '\u5171\u6709`' + num + '`\u4E2A\u3010`' + armGroup + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: gain, pay: { '装备': -num } });
-            }
-        } catch (err) {
-            _didIteratorError11 = true;
-            _iteratorError11 = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                    _iterator11.return();
-                }
-            } finally {
-                if (_didIteratorError11) {
-                    throw _iteratorError11;
-                }
-            }
-        }
-
-        $('.pd_result[data-name="armResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF09\uFF1A</b> <i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
-        console.log('\u5171\u6709' + armTypeNum + '\u4E2A\u7EC4\u522B\u4E2D\u7684' + successNum + '\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF0C\u88C5\u5907\u7ECF\u9A8C+' + totalExp);
-        Msg.show('<strong>\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F</strong><i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i>', -1);
-        setTimeout(function () {
-            return getNextObjects(2);
-        }, _Const2.default.defAjaxInterval);
-        Script.runFunc('Item.smeltArms_complete_');
-    };
-
-    $armArea.parent().append('<ul class="pd_result" data-name="armResult"><li><strong>熔炼结果：</strong></li></ul>');
-    var $wait = Msg.wait('<strong>正在熔炼装备中&hellip;</strong><i>已熔炼：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
-    getCurrentArms();
 };
 
 },{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],11:[function(require,module,exports){
@@ -5673,8 +5985,12 @@ var propertyList = {};
 var extraPointsList = {};
 // 光环信息
 var haloInfo = {};
+// 当前装备情况
+var currentArmInfo = {};
 // 道具使用情况列表
 var itemUsedNumList = new Map();
+// 装备等级情况列表
+var armsLevelList = new Map();
 // 修改点数可用次数
 var changePointsAvailableCount = 0;
 // 点数分配记录列表
@@ -5704,7 +6020,10 @@ var init = exports.init = function init() {
 var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIndexPage() {
     Script.runFunc('Loot.enhanceLootIndexPage_before_');
     propertyList = getLootPropertyList();
-    itemUsedNumList = Item.getItemUsedInfo($properties.html());
+    var propertiesHtml = $properties.html();
+    itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
+    armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
+    currentArmInfo = Item.getCurrentArmInfo($points.find('> tbody > tr:first-child > td').html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -6903,6 +7222,8 @@ var getLootInfo = exports.getLootInfo = function getLootInfo() {
         extraPointsList: extraPointsList,
         propertyList: propertyList,
         itemUsedNumList: itemUsedNumList,
+        armsLevelList: armsLevelList,
+        currentArmInfo: currentArmInfo,
         changePointsAvailableCount: changePointsAvailableCount,
         log: log,
         logList: logList,
@@ -12170,7 +12491,7 @@ var htmlDecode = exports.htmlDecode = function htmlDecode(str) {
  * @returns {string} 去除HTML标签的文本
  */
 var removeHtmlTag = exports.removeHtmlTag = function removeHtmlTag(html) {
-    return html ? html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '') : '';
+    return html ? html.replace(/<br\s*\/?>/g, '\n').replace(/<[^>]+>/g, '') : '';
 };
 
 /**

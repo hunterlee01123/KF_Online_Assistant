@@ -307,7 +307,7 @@ export const htmlDecode = function (str) {
  * @param html HTML代码
  * @returns {string} 去除HTML标签的文本
  */
-export const removeHtmlTag = html => html ? html.replace(/<br.*\/?>/g, '\n').replace(/<[^>]+>/g, '') : '';
+export const removeHtmlTag = html => html ? html.replace(/<br\s*\/?>/g, '\n').replace(/<[^>]+>/g, '') : '';
 
 /**
  * 获取指定对象的关键字列表

@@ -244,7 +244,12 @@ const showOpenAllBoxesDialog = function () {
     }).end().find('a[data-name="selectAll"]').click(() => Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]')))
         .end().find('a[data-name="selectInverse"]').click(() => Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]')));
 
-    $dialog.find('legend [type="checkbox"]').each(function () {
+    $dialog.on('keydown', 'select[name$="ItemTypes"]', (function (e) {
+        if (e.ctrlKey && e.keyCode === 65) {
+            e.preventDefault();
+            $(this).children().prop('selected', true);
+        }
+    })).find('legend [type="checkbox"]').each(function () {
         let $this = $(this);
         let name = $this.attr('name');
         if (name in Config) {
@@ -681,6 +686,46 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
 };
 
 /**
+ * 获取当前装备情况
+ * @param html 争夺首页的HTML代码
+ * @returns {{}} 当前装备情况
+ */
+export const getCurrentArmInfo = function (html) {
+    let currentArmInfo = {
+        '名称': '',
+        '组别': '',
+        '描述': '',
+    };
+    let matches = /<span (?:[^<>]+)>([^<>]+)<\/span>/.exec(html);
+    if (matches) {
+        currentArmInfo['名称'] = matches[1];
+        [, currentArmInfo['组别'] = ''] = matches[1].split('的');
+        [, currentArmInfo['描述'] = ''] = html.split('</span> - ', 2);
+        currentArmInfo['描述'] = Util.removeHtmlTag(currentArmInfo['描述']);
+    }
+    return currentArmInfo;
+};
+
+/**
+ * 获取装备等级情况
+ * @param html 争夺首页的HTML代码
+ * @returns {Map} 装备等级情况列表
+ */
+export const getArmsLevelInfo = function (html) {
+    let armsLevelList = new Map([
+        ['武器', 0],
+        ['护甲', 0],
+        ['项链', 0],
+    ]);
+    let matches = html.match(/value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/g);
+    for (let i in matches) {
+        let subMatches = /value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/.exec(matches[i]);
+        armsLevelList.set(subMatches[1], parseInt(subMatches[2]));
+    }
+    return armsLevelList;
+};
+
+/**
  * 获取指定名称的道具等级
  * @param {string} itemName 道具名称
  * @returns {number} 道具等级
@@ -714,7 +759,7 @@ export const getLevelByName = function (itemName) {
  * @param html 争夺首页的HTML代码
  * @returns {Map} 道具使用情况列表
  */
-export const getItemUsedInfo = function (html) {
+export const getItemsUsedNumInfo = function (html) {
     let itemUsedNumList = new Map([
         ['蕾米莉亚同人漫画', 0],
         ['十六夜同人漫画', 0],
@@ -808,7 +853,7 @@ const showBatchUseAndSellItemsDialog = function (type) {
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
 const useItems = function (typeList, safeId, nextActionEnabled = false) {
-    let totalSuccessNum = 0, index = 0;
+    let totalSuccessNum = 0, totalValidNum = 0, totalInvalidNum = 0, index = 0;
     let useInfo = {};
     let tmpItemTypeList = [...typeList];
 
@@ -833,8 +878,14 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
                 totalSuccessNum++;
                 if (!(itemName in useInfo)) useInfo[itemName] = {'道具': 0, '有效道具': 0, '无效道具': 0};
                 useInfo[itemName]['道具']++;
-                if (/成功！/.test(msg)) useInfo[itemName]['有效道具']++;
-                else useInfo[itemName]['无效道具']++;
+                if (/成功！/.test(msg)) {
+                    useInfo[itemName]['有效道具']++;
+                    totalValidNum++;
+                }
+                else {
+                    useInfo[itemName]['无效道具']++;
+                    totalInvalidNum++;
+                }
                 $wait.find('.pd_countdown').text(totalSuccessNum);
                 isDelete = true;
             }
@@ -960,11 +1011,16 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
         }
         $('.pd_result[data-name="itemResult"]:last').append(`
 <li class="pd_stat">
-  <b>统计结果（共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用）：</b><br>
+  <b>统计结果（共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用，
+<i>有效道具<em>+${totalValidNum}</em></i><i>无效道具<em>+${totalInvalidNum}</em></i>）：</b><br>
   ${resultStat}
 </li>`);
-        console.log(`共有${itemTypeNum}个种类中的${totalSuccessNum}个道具被使用`);
-        Msg.show(`<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用</strong>`, -1);
+        console.log(`共有${itemTypeNum}个种类中的${totalSuccessNum}个道具被使用，有效道具+${totalValidNum}，无效道具+${totalInvalidNum}`);
+        Msg.show(
+            `<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${totalSuccessNum}</em>个道具被使用</strong>` +
+            `<i>有效道具<em>+${totalValidNum}</em></i><i>无效道具<em>+${totalInvalidNum}</em></i>`,
+            -1
+        );
 
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
         if (nextActionEnabled) nextAction();
