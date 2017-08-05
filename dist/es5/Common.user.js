@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.8
+// @version     10.8.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.8';
+var version = '10.8.1';
 
 /**
  * 导出模块
@@ -3139,18 +3139,18 @@ var getNextObjects = exports.getNextObjects = function getNextObjects(sequence) 
         for (var i = 1; i <= 2; i++) {
             var matches = null;
             if (i === 1) {
-                matches = /<tr><td width="\d+%">装备.+?\r\n(<tr id="wp_\d+">.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+                matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             } else {
-                matches = /<tr><td width="\d+%">使用.+?\r\n(<tr id="wp_\d+">.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+                matches = /<tr><td width="\d+%">使用.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             }
             if (!matches) continue;
-            var trMatches = matches[1].match(/<tr id="wp_\d+">(.+?)<\/tr>/g);
+            var trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
             var $area = i === 1 ? $armArea : $itemArea;
             var addHtml = '';
             for (var _i in trMatches) {
                 var idMatches = /"wp_(\d+)"/.exec(trMatches[_i]);
                 if (!idMatches) continue;
-                if (!$area.has('tr[id="wp_' + idMatches[1] + '"]').length) {
+                if (!$area.has('[id="wp_' + idMatches[1] + '"]').length) {
                     addHtml += trMatches[_i];
                 }
             }
@@ -3758,7 +3758,7 @@ var smeltArms = function smeltArms(typeList, safeId) {
             var msg = Util.removeHtmlTag(html);
             console.log('\u3010' + armName + '\u3011 ' + msg);
             $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 ' + msg + '</li>');
-            $armArea.find('[id="wp_' + armId + '"]').fadeOut('normal', function () {
+            $armArea.find('td[id="wp_' + armId + '"]').parent('tr').fadeOut('normal', function () {
                 $(this).remove();
             });
 
@@ -3786,12 +3786,12 @@ var smeltArms = function smeltArms(typeList, safeId) {
      */
     var getCurrentArms = function getCurrentArms() {
         var armList = [];
-        $armArea.find('tr[id^="wp_"]').each(function () {
+        $armArea.find('td[id^="wp_"]').each(function () {
             var $this = $(this);
             var matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
             var armId = parseInt(matches[1]);
-            var armName = $this.find('> td:nth-child(3) > span:first').text().trim();
+            var armName = $this.parent('tr').find('> td:nth-child(3) > span:first').text().trim();
 
             var _armName$split = armName.split('的'),
                 _armName$split2 = _slicedToArray(_armName$split, 2),
