@@ -490,6 +490,14 @@ const handleArmArea = function () {
             `<td id="${id}"><a data-name="equip" href="javascript:;">装备</a></td><td><a data-name="smelt" href="javascript:;">熔炼</a></td>`
         ).addClass('pd_arm_equipped');
     }
+
+    $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function () {
+        let $this = $(this);
+        let matches = /wp_(\d+)/.exec($this.attr('id'));
+        if (matches) {
+            $this.parent('tr').attr('data-id', matches[1]);
+        }
+    });
 };
 
 /**
@@ -498,9 +506,7 @@ const handleArmArea = function () {
 const bindArmLinkClickEvent = function () {
     $armArea.on('click', 'a[data-name="equip"]', function () {
         let $this = $(this);
-        let matches = /wp_(\d+)/.exec($this.parent('td').attr('id'));
-        if (!matches) return;
-        let id = parseInt(matches[1]);
+        let id = parseInt($this.closest('tr').data('id'));
         $.post('kf_fw_ig_mybpdt.php', `do=4&id=${id}&safeid=${safeId}`, function (html) {
             if (/装备完毕/.test(html)) {
                 $armArea.find('.pd_arm_equipped').removeClass('pd_arm_equipped');
@@ -513,9 +519,7 @@ const bindArmLinkClickEvent = function () {
     }).on('click', 'a[data-name="smelt"]', function () {
         if (!confirm('确定熔炼此装备吗？')) return;
         let $this = $(this);
-        let matches = /wp_(\d+)/.exec($this.parent('td').prev('td').attr('id'));
-        if (!matches) return;
-        let id = parseInt(matches[1]);
+        let id = parseInt($this.closest('tr').data('id'));
         $.post('kf_fw_ig_mybpdt.php', `do=5&id=${id}&safeid=${safeId}`, function (html) {
             let msg = Util.removeHtmlTag(html);
             if (/装备消失/.test(msg)) {
@@ -525,6 +529,25 @@ const bindArmLinkClickEvent = function () {
                 alert(msg);
             }
         });
+    }).on('mouseenter', 'tr', function () {
+        let $this = $(this);
+        if (!$this.has('td[id^="wp_"]').length) return;
+        let $td = $this.find('td:nth-child(3)');
+        $td.css('position', 'relative')
+            .append('<a data-name="copyArmId" href="#" style="position: absolute; top: 0; right: 5px;" title="复制装备ID">复制ID</a>');
+    }).on('mouseleave', 'tr', function () {
+        let $this = $(this);
+        if (!$this.has('td[id^="wp_"]').length) return;
+        let $td = $this.find('td:nth-child(3)');
+        $td.css('position', 'static').find('a[data-name="copyArmId"]').remove();
+    }).on('click', 'a[data-name="copyArmId"]', function (e) {
+        e.preventDefault();
+        let $tr = $(this).closest('tr');
+        let id = parseInt($tr.data('id'));
+        $tr.data('copy-text', id.toString());
+        if (!Util.copyText($tr, '装备ID已复制')) {
+            prompt('此装备ID（请按Ctrl+C复制）：', id);
+        }
     });
 };
 
@@ -546,9 +569,8 @@ const addArmsButton = function () {
             let armIdList = [];
             $armArea.find('td[id^="wp_"]').each(function () {
                 let $this = $(this);
-                let matches = /wp_(\d+)/.exec($this.attr('id'));
-                let id = parseInt(matches[1]);
-                if (matches) {
+                let id = parseInt($this.parent('tr').data('id'));
+                if (id) {
                     armIdList.push(id);
                 }
                 if ($this.parent('tr').hasClass('pd_arm_equipped')) {
@@ -767,11 +789,10 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
         let armList = [];
         $armArea.find('td[id^="wp_"]').each(function () {
             let $this = $(this);
-            let matches = /wp_(\d+)/.exec($this.attr('id'));
-            if (!matches) return;
-            if ($this.parent('tr').hasClass('pd_arm_equipped')) return;
-            let armId = parseInt(matches[1]);
-            let armName = $this.parent('tr').find('> td:nth-child(3) > span:first').text().trim();
+            let $tr = $(this).parent('tr');
+            if ($tr.hasClass('pd_arm_equipped')) return;
+            let armId = parseInt($tr.data('id'));
+            let armName = $tr.find('> td:nth-child(3) > span:first').text().trim();
             let [, armGroup] = armName.split('的');
             if (armName && armGroup && typeList.includes(armName)) {
                 armList.push({armId, armGroup, armName});
@@ -1433,7 +1454,7 @@ const buyItems = function (buyNum, type, kfb, url) {
                     let url = $this.attr('href');
                     list.push(url);
                     if (isFirst || myItemUrlList.includes(url)) return;
-                    let itemName = $this.closest('tr').find('td:nth-child(2)').text().trim();
+                    let itemName = $this.closest('tr').find('td:nth-child(3)').text().trim();
                     if (!itemTypeList.includes(itemName)) return;
                     if (!(itemName in itemList)) itemList[itemName] = 0;
                     itemList[itemName]++;

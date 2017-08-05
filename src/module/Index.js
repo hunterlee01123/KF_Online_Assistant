@@ -72,7 +72,7 @@ export const handleAtTips = function () {
  * 在神秘等级升级后进行提醒
  */
 export const smLevelUpAlert = function () {
-    let smLevel = parseInt($('#pdSmLevel').data('smLevel'));
+    let smLevel = parseInt($('#pdSmLevel').data('sm-level'));
     if (!smLevel) return;
 
     /**
@@ -111,7 +111,7 @@ export const smLevelUpAlert = function () {
  * 在神秘系数排名发生变化时进行提醒
  */
 export const smRankChangeAlert = function () {
-    let smRank = $('#pdSmLevel').data('smRank');
+    let smRank = $('#pdSmLevel').data('sm-rank');
     if (!smRank || smRank.endsWith('+')) return;
     smRank = parseInt(smRank);
 
@@ -210,7 +210,7 @@ export const handleIndexLink = function () {
     let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
     if (matches) {
         let kfb = parseInt(matches[1]);
-        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).data('kfb', kfb);
+        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).attr('data-kfb', kfb);
     }
 
     let $smLevel = $('a.indbox5[href="kf_growup.php"]');
@@ -220,8 +220,8 @@ export const handleIndexLink = function () {
         let smLevel = parseInt(matches[1]);
         let smRank = matches[2];
         $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`)
-            .data('smLevel', smLevel)
-            .data('smRank', smRank);
+            .attr('data-sm-level', smLevel)
+            .attr('data-sm-rank', smRank);
     }
 
     $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');

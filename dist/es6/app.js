@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.8.1';
+const version = '10.9';
 
 /**
  * 导出模块
@@ -2545,7 +2545,7 @@ const Const = {
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 90,
+    tmpHaloInfoExpires: 210,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
@@ -2872,7 +2872,7 @@ const handleAtTips = exports.handleAtTips = function () {
  * 在神秘等级升级后进行提醒
  */
 const smLevelUpAlert = exports.smLevelUpAlert = function () {
-    let smLevel = parseInt($('#pdSmLevel').data('smLevel'));
+    let smLevel = parseInt($('#pdSmLevel').data('sm-level'));
     if (!smLevel) return;
 
     /**
@@ -2905,7 +2905,7 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
  * 在神秘系数排名发生变化时进行提醒
  */
 const smRankChangeAlert = exports.smRankChangeAlert = function () {
-    let smRank = $('#pdSmLevel').data('smRank');
+    let smRank = $('#pdSmLevel').data('sm-rank');
     if (!smRank || smRank.endsWith('+')) return;
     smRank = parseInt(smRank);
 
@@ -2990,7 +2990,7 @@ const handleIndexLink = exports.handleIndexLink = function () {
     let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
     if (matches) {
         let kfb = parseInt(matches[1]);
-        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).data('kfb', kfb);
+        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).attr('data-kfb', kfb);
     }
 
     let $smLevel = $('a.indbox5[href="kf_growup.php"]');
@@ -2999,7 +2999,7 @@ const handleIndexLink = exports.handleIndexLink = function () {
     if (matches) {
         let smLevel = parseInt(matches[1]);
         let smRank = matches[2];
-        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).data('smLevel', smLevel).data('smRank', smRank);
+        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
     }
 
     $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
@@ -3159,10 +3159,19 @@ const init = exports.init = function () {
     $boxArea = $('.kf_fw_ig1:eq(0)');
     $armArea = $('.kf_fw_ig4:eq(0)');
     $itemArea = $('.kf_fw_ig1:eq(1)');
+
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
-    addBatchSmeltArmsButton();
+
+    handleArmArea();
+    bindArmLinkClickEvent();
+
+    addArmsButton();
     addBatchUseAndSellItemsButton();
+
+    if (localStorage.getItem(_Const2.default.storagePrefix + 'myObjectsInfo_' + _Info2.default.uid)) {
+        localStorage.removeItem(_Const2.default.storagePrefix + 'myObjectsInfo_' + _Info2.default.uid);
+    }
 };
 
 /**
@@ -3177,16 +3186,16 @@ const getNextObjects = exports.getNextObjects = function (sequence, callback = n
         url: 'kf_fw_ig_mybp.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).done(function (html) {
-        for (let i = 1; i <= 2; i++) {
+        for (let index = 1; index <= 2; index++) {
             let matches = null;
-            if (i === 1) {
+            if (index === 1) {
                 matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             } else {
                 matches = /<tr><td width="\d+%">使用.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             }
             if (!matches) continue;
             let trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
-            let $area = i === 1 ? $armArea : $itemArea;
+            let $area = index === 1 ? $armArea : $itemArea;
             let addHtml = '';
             for (let i in trMatches) {
                 let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
@@ -3200,6 +3209,9 @@ const getNextObjects = exports.getNextObjects = function (sequence, callback = n
                     $area.find('> tbody > tr:last-child').before(addHtml);
                 } else {
                     $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+                }
+                if (index === 1) {
+                    handleArmArea();
                 }
             }
         }
@@ -3551,14 +3563,192 @@ const openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = fals
 };
 
 /**
- * 在物品装备页面上添加批量熔炼装备按钮
+ * 处理装备区域
  */
-const addBatchSmeltArmsButton = function () {
+const handleArmArea = function () {
+    $armArea.find('a[onclick^="cdzb"]').removeAttr('onclick').attr('data-name', 'equip');
+    $armArea.find('a[onclick^="rlzb"]').removeAttr('onclick').attr('data-name', 'smelt');
+
+    let $equipped = $armArea.find('tr[id^="wp_"]');
+    if ($equipped.length > 0) {
+        let id = $equipped.attr('id');
+        let $td = $equipped.find('td');
+        $td.removeAttr('colspan').removeAttr('style').css({ 'text-align': 'left', 'padding-left': '5px' });
+        $td.html($td.html().replace('（装备中）', ''));
+        $equipped.removeAttr('id').prepend(`<td id="${id}"><a data-name="equip" href="javascript:;">装备</a></td><td><a data-name="smelt" href="javascript:;">熔炼</a></td>`).addClass('pd_arm_equipped');
+    }
+
+    $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function () {
+        let $this = $(this);
+        let matches = /wp_(\d+)/.exec($this.attr('id'));
+        if (matches) {
+            $this.parent('tr').attr('data-id', matches[1]);
+        }
+    });
+};
+
+/**
+ * 绑定装备点击事件
+ */
+const bindArmLinkClickEvent = function () {
+    $armArea.on('click', 'a[data-name="equip"]', function () {
+        let $this = $(this);
+        let id = parseInt($this.closest('tr').data('id'));
+        $.post('kf_fw_ig_mybpdt.php', `do=4&id=${id}&safeid=${safeId}`, function (html) {
+            if (/装备完毕/.test(html)) {
+                $armArea.find('.pd_arm_equipped').removeClass('pd_arm_equipped');
+                $this.closest('tr').addClass('pd_arm_equipped');
+            } else {
+                alert(Util.removeHtmlTag(html));
+            }
+        });
+    }).on('click', 'a[data-name="smelt"]', function () {
+        if (!confirm('确定熔炼此装备吗？')) return;
+        let $this = $(this);
+        let id = parseInt($this.closest('tr').data('id'));
+        $.post('kf_fw_ig_mybpdt.php', `do=5&id=${id}&safeid=${safeId}`, function (html) {
+            let msg = Util.removeHtmlTag(html);
+            if (/装备消失/.test(msg)) {
+                $this.closest('tr').html(`<td colspan="3">${msg}</td>`);
+            } else {
+                alert(msg);
+            }
+        });
+    }).on('mouseenter', 'tr', function () {
+        let $this = $(this);
+        if (!$this.has('td[id^="wp_"]').length) return;
+        let $td = $this.find('td:nth-child(3)');
+        $td.css('position', 'relative').append('<a data-name="copyArmId" href="#" style="position: absolute; top: 0; right: 5px;" title="复制装备ID">复制ID</a>');
+    }).on('mouseleave', 'tr', function () {
+        let $this = $(this);
+        if (!$this.has('td[id^="wp_"]').length) return;
+        let $td = $this.find('td:nth-child(3)');
+        $td.css('position', 'static').find('a[data-name="copyArmId"]').remove();
+    }).on('click', 'a[data-name="copyArmId"]', function (e) {
+        e.preventDefault();
+        let $tr = $(this).closest('tr');
+        let id = parseInt($tr.data('id'));
+        $tr.data('copy-text', id.toString());
+        if (!Util.copyText($tr, '装备ID已复制')) {
+            prompt('此装备ID（请按Ctrl+C复制）：', id);
+        }
+    });
+};
+
+/**
+ * 添加装备相关按钮
+ */
+const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
+  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
+`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId)).end().find('[name="showArmsFinalAddition"]').click(function () {
+        if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
+        Msg.destroy();
+        let oriEquippedArmId = 0;
+        let armIdList = [];
+        $armArea.find('td[id^="wp_"]').each(function () {
+            let $this = $(this);
+            let id = parseInt($this.parent('tr').data('id'));
+            if (id) {
+                armIdList.push(id);
+            }
+            if ($this.parent('tr').hasClass('pd_arm_equipped')) {
+                oriEquippedArmId = id;
+            }
+        });
+        if (armIdList.length > 0) {
+            showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
+        }
+    });
+};
+
+/**
+ * 显示装备最终加成信息
+ * @param {number[]} armIdList 装备ID列表
+ * @param {number} oriEquippedArmId 原先的装备ID
+ * @param {string} safeId SafeID
+ */
+const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
+    let index = 0;
+
+    /**
+     * 装备
+     * @param {number} armId 装备ID
+     * @param {boolean} isComplete 是否操作完成
+     */
+    const equip = function (armId, isComplete = false) {
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: `do=4&id=${armId}&safeid=${safeId}`,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            let msg = Util.removeHtmlTag(html);
+            console.log(`装备ID[${armId}]：${msg.replace('\n', ' ')}`);
+            if (isComplete) return;
+            if (!/装备完毕/.test(msg)) index++;
+            if (index >= armIdList.length) {
+                complete();
+                return;
+            }
+            if (!/装备完毕/.test(msg)) {
+                setTimeout(() => equip(armIdList[index]), _Const2.default.minItemActionInterval);
+            } else {
+                setTimeout(() => getFinalAddition(armId), _Const2.default.defAjaxInterval);
+            }
+        }).fail(() => setTimeout(() => equip(armId), _Const2.default.minItemActionInterval));
+    };
+
+    /**
+     * 获取当前装备的最终加成
+     */
+    const getFinalAddition = function (armId) {
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_index.php?t=' + $.now(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            $wait.find('.pd_countdown').text(armIdList.length - (index + 1));
+            if ($wait.data('stop')) {
+                complete();
+                return;
+            }
+
+            let matches = />(最终加成：[^<>]+)</.exec(html);
+            if (matches) {
+                let info = matches[1];
+                console.log(`装备ID[${armId}]：${info}`);
+                let $armInfo = $armArea.find(`td[id="wp_${armId}"]`).parent('tr').find('td:nth-child(3)');
+                $armInfo.find('.pd_final_addition_info').remove();
+                $armInfo.append(`<span class="pd_final_addition_info"><br>${info}</span>`);
+            }
+
+            index++;
+            if (index >= armIdList.length) {
+                complete();
+                return;
+            }
+            setTimeout(() => equip(armIdList[index]), _Const2.default.minItemActionInterval);
+            Script.runFunc('Item.showArmsFinalAddition_show_', armId);
+        }).fail(() => setTimeout(() => getFinalAddition(armId), _Const2.default.defAjaxInterval));
+    };
+
+    /**
+     * 操作完成
+     */
+    const complete = function () {
+        Msg.remove($wait);
+        if (oriEquippedArmId) {
+            setTimeout(() => equip(oriEquippedArmId, true), _Const2.default.minItemActionInterval);
+        }
+        Script.runFunc('Item.showArmsFinalAddition_complete_');
+    };
+
+    let $wait = Msg.wait(`<strong>正在获取装备最终加成信息&hellip;</strong><i>剩余：<em class="pd_countdown">${armIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+    equip(armIdList[0]);
 };
 
 /**
@@ -3675,10 +3865,10 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
         let armList = [];
         $armArea.find('td[id^="wp_"]').each(function () {
             let $this = $(this);
-            let matches = /wp_(\d+)/.exec($this.attr('id'));
-            if (!matches) return;
-            let armId = parseInt(matches[1]);
-            let armName = $this.parent('tr').find('> td:nth-child(3) > span:first').text().trim();
+            let $tr = $(this).parent('tr');
+            if ($tr.hasClass('pd_arm_equipped')) return;
+            let armId = parseInt($tr.data('id'));
+            let armName = $tr.find('> td:nth-child(3) > span:first').text().trim();
             let [, armGroup] = armName.split('的');
             if (armName && armGroup && typeList.includes(armName)) {
                 armList.push({ armId, armGroup, armName });
@@ -3733,25 +3923,23 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             return;
         }
 
-        let armTypeNum = 0,
+        let armGroupNum = 0,
             totalExp = 0;
         let resultStat = '';
         for (let armGroup of Util.getSortedObjectKeyList(armGroupList, smeltInfo)) {
-            armTypeNum++;
+            armGroupNum++;
             let { exp, num } = smeltInfo[armGroup];
             totalExp += exp;
-            resultStat += `【${armGroup}】 <i>装备<ins>-${num}</ins></i> <i>${armGroup}经验<em>+${exp.toLocaleString()}</em></i><br>`;
-            let gain = {};
-            gain[armGroup + '经验'] = exp;
-            Log.push('熔炼装备', `共有\`${num}\`个【\`${armGroup}\`】装备熔炼成功`, { gain, pay: { '装备': -num } });
+            resultStat += `【${armGroup}】 <i>装备<ins>-${num}</ins></i> <i>武器经验<em>+${exp.toLocaleString()}</em></i><br>`;
+            Log.push('熔炼装备', `共有\`${num}\`个【\`${armGroup}\`】装备熔炼成功`, { gain: { '武器经验': totalExp }, pay: { '装备': -num } });
         }
         $('.pd_result[data-name="armResult"]:last').append(`
 <li class="pd_stat">
-  <b>统计结果（共有<em>${armTypeNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功）：</b> <i>装备经验<em>+${totalExp.toLocaleString()}</em></i><br>
+  <b>统计结果（共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功）：</b> <i>武器经验<em>+${totalExp.toLocaleString()}</em></i><br>
   ${resultStat}
 </li>`);
-        console.log(`共有${armTypeNum}个组别中的${successNum}个装备熔炼成功，装备经验+${totalExp}`);
-        Msg.show(`<strong>共有<em>${armTypeNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong><i>装备经验<em>+${totalExp.toLocaleString()}</em></i>`, -1);
+        console.log(`共有${armGroupNum}个组别中的${successNum}个装备熔炼成功，武器经验+${totalExp}`);
+        Msg.show(`<strong>共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong><i>武器经验<em>+${totalExp.toLocaleString()}</em></i>`, -1);
 
         setTimeout(() => getNextObjects(2), _Const2.default.defAjaxInterval);
         if (nextActionEnabled) nextAction();
@@ -3844,7 +4032,7 @@ const getItemsUsedNumInfo = exports.getItemsUsedNumInfo = function (html) {
 };
 
 /**
- * 在物品装备页面上添加批量使用和出售道具按钮
+ * 添加批量使用和出售道具按钮
  */
 const addBatchUseAndSellItemsButton = function () {
     $(`
@@ -4284,7 +4472,7 @@ const buyItems = function (buyNum, type, kfb, url) {
                     let url = $this.attr('href');
                     list.push(url);
                     if (isFirst || myItemUrlList.includes(url)) return;
-                    let itemName = $this.closest('tr').find('td:nth-child(2)').text().trim();
+                    let itemName = $this.closest('tr').find('td:nth-child(3)').text().trim();
                     if (!itemTypeList.includes(itemName)) return;
                     if (!(itemName in itemList)) itemList[itemName] = 0;
                     itemList[itemName]++;
@@ -6968,7 +7156,7 @@ const setHaloInfo = exports.setHaloInfo = function (newHaloInfo) {
         let $node = $properties.find('input[type="text"]:eq(13)');
         if (!$node.length || $.trim($node.val())) return;
         $node.attr('id', 'pdHaloInfo');
-        $('<a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取" hidden>重新读取</a>').insertAfter($node).find('[data-name="reloadHaloInfo"]').click(function (e) {
+        $('<a data-name="reloadHaloInfo" href="#" style="margin-left: -20px;" title="如战力光环信息不正确时，请点此重新读取">读</a>').insertAfter($node).click(function (e) {
             e.preventDefault();
             if (confirm('是否重新读取战力光环信息？')) {
                 TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
@@ -8446,17 +8634,12 @@ const appendCss = exports.appendCss = function () {
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
   
-  /* 道具页面 */
+  /* 我的物品页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
-  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
-  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }
-  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }
-  .pd_usable_num { color: #669933; }
-  .pd_used_num { color: #ff0033; }
-  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }
-  .pd_item_type_chk { margin-right: 5px; }
+  .pd_arm_equipped { background-color:#EEEEFF; box-shadow: 0 0 7px #99f; }
+  .pd_arm_equipped > td:nth-child(3):before { content: "（装备中）"; font-weight: bold; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }

@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.8.1
+// @version     10.9
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '10.8.1';
+var version = '10.9';
 
 /**
  * 导出模块
@@ -2492,7 +2492,7 @@ var Const = {
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 90,
+    tmpHaloInfoExpires: 210,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
@@ -2821,7 +2821,7 @@ var handleAtTips = exports.handleAtTips = function handleAtTips() {
  * 在神秘等级升级后进行提醒
  */
 var smLevelUpAlert = exports.smLevelUpAlert = function smLevelUpAlert() {
-    var smLevel = parseInt($('#pdSmLevel').data('smLevel'));
+    var smLevel = parseInt($('#pdSmLevel').data('sm-level'));
     if (!smLevel) return;
 
     /**
@@ -2854,7 +2854,7 @@ var smLevelUpAlert = exports.smLevelUpAlert = function smLevelUpAlert() {
  * 在神秘系数排名发生变化时进行提醒
  */
 var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert() {
-    var smRank = $('#pdSmLevel').data('smRank');
+    var smRank = $('#pdSmLevel').data('sm-rank');
     if (!smRank || smRank.endsWith('+')) return;
     smRank = parseInt(smRank);
 
@@ -2941,7 +2941,7 @@ var handleIndexLink = exports.handleIndexLink = function handleIndexLink() {
     var matches = /拥有(-?\d+)KFB/.exec($kfb.text());
     if (matches) {
         var kfb = parseInt(matches[1]);
-        $kfb.html('\u62E5\u6709<b>' + kfb.toLocaleString() + '</b>KFB').data('kfb', kfb);
+        $kfb.html('\u62E5\u6709<b>' + kfb.toLocaleString() + '</b>KFB').attr('data-kfb', kfb);
     }
 
     var $smLevel = $('a.indbox5[href="kf_growup.php"]');
@@ -2950,7 +2950,7 @@ var handleIndexLink = exports.handleIndexLink = function handleIndexLink() {
     if (matches) {
         var smLevel = parseInt(matches[1]);
         var smRank = matches[2];
-        $smLevel.html('\u795E\u79D8<b>' + smLevel + '</b>\u7EA7 (\u7CFB\u6570\u6392\u540D\u7B2C<b style="color: #00f;">' + smRank + '</b>\u4F4D)').data('smLevel', smLevel).data('smRank', smRank);
+        $smLevel.html('\u795E\u79D8<b>' + smLevel + '</b>\u7EA7 (\u7CFB\u6570\u6392\u540D\u7B2C<b style="color: #00f;">' + smRank + '</b>\u4F4D)').attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
     }
 
     $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
@@ -3116,10 +3116,19 @@ var init = exports.init = function init() {
     $boxArea = $('.kf_fw_ig1:eq(0)');
     $armArea = $('.kf_fw_ig4:eq(0)');
     $itemArea = $('.kf_fw_ig1:eq(1)');
+
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
-    addBatchSmeltArmsButton();
+
+    handleArmArea();
+    bindArmLinkClickEvent();
+
+    addArmsButton();
     addBatchUseAndSellItemsButton();
+
+    if (localStorage.getItem(_Const2.default.storagePrefix + 'myObjectsInfo_' + _Info2.default.uid)) {
+        localStorage.removeItem(_Const2.default.storagePrefix + 'myObjectsInfo_' + _Info2.default.uid);
+    }
 };
 
 /**
@@ -3136,22 +3145,22 @@ var getNextObjects = exports.getNextObjects = function getNextObjects(sequence) 
         url: 'kf_fw_ig_mybp.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).done(function (html) {
-        for (var i = 1; i <= 2; i++) {
+        for (var index = 1; index <= 2; index++) {
             var matches = null;
-            if (i === 1) {
+            if (index === 1) {
                 matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             } else {
                 matches = /<tr><td width="\d+%">使用.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             }
             if (!matches) continue;
             var trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
-            var $area = i === 1 ? $armArea : $itemArea;
+            var $area = index === 1 ? $armArea : $itemArea;
             var addHtml = '';
-            for (var _i in trMatches) {
-                var idMatches = /"wp_(\d+)"/.exec(trMatches[_i]);
+            for (var i in trMatches) {
+                var idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
                 if (!idMatches) continue;
                 if (!$area.has('[id="wp_' + idMatches[1] + '"]').length) {
-                    addHtml += trMatches[_i];
+                    addHtml += trMatches[i];
                 }
             }
             if (addHtml) {
@@ -3159,6 +3168,9 @@ var getNextObjects = exports.getNextObjects = function getNextObjects(sequence) 
                     $area.find('> tbody > tr:last-child').before(addHtml);
                 } else {
                     $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+                }
+                if (index === 1) {
+                    handleArmArea();
                 }
             }
         }
@@ -3628,12 +3640,207 @@ var openBoxes = function openBoxes(_ref) {
 };
 
 /**
- * 在物品装备页面上添加批量熔炼装备按钮
+ * 处理装备区域
  */
-var addBatchSmeltArmsButton = function addBatchSmeltArmsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="smeltArms"]').click(function () {
-        return showBatchSmeltArmsDialog(safeId);
+var handleArmArea = function handleArmArea() {
+    $armArea.find('a[onclick^="cdzb"]').removeAttr('onclick').attr('data-name', 'equip');
+    $armArea.find('a[onclick^="rlzb"]').removeAttr('onclick').attr('data-name', 'smelt');
+
+    var $equipped = $armArea.find('tr[id^="wp_"]');
+    if ($equipped.length > 0) {
+        var id = $equipped.attr('id');
+        var $td = $equipped.find('td');
+        $td.removeAttr('colspan').removeAttr('style').css({ 'text-align': 'left', 'padding-left': '5px' });
+        $td.html($td.html().replace('（装备中）', ''));
+        $equipped.removeAttr('id').prepend('<td id="' + id + '"><a data-name="equip" href="javascript:;">\u88C5\u5907</a></td><td><a data-name="smelt" href="javascript:;">\u7194\u70BC</a></td>').addClass('pd_arm_equipped');
+    }
+
+    $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function () {
+        var $this = $(this);
+        var matches = /wp_(\d+)/.exec($this.attr('id'));
+        if (matches) {
+            $this.parent('tr').attr('data-id', matches[1]);
+        }
     });
+};
+
+/**
+ * 绑定装备点击事件
+ */
+var bindArmLinkClickEvent = function bindArmLinkClickEvent() {
+    $armArea.on('click', 'a[data-name="equip"]', function () {
+        var $this = $(this);
+        var id = parseInt($this.closest('tr').data('id'));
+        $.post('kf_fw_ig_mybpdt.php', 'do=4&id=' + id + '&safeid=' + safeId, function (html) {
+            if (/装备完毕/.test(html)) {
+                $armArea.find('.pd_arm_equipped').removeClass('pd_arm_equipped');
+                $this.closest('tr').addClass('pd_arm_equipped');
+            } else {
+                alert(Util.removeHtmlTag(html));
+            }
+        });
+    }).on('click', 'a[data-name="smelt"]', function () {
+        if (!confirm('确定熔炼此装备吗？')) return;
+        var $this = $(this);
+        var id = parseInt($this.closest('tr').data('id'));
+        $.post('kf_fw_ig_mybpdt.php', 'do=5&id=' + id + '&safeid=' + safeId, function (html) {
+            var msg = Util.removeHtmlTag(html);
+            if (/装备消失/.test(msg)) {
+                $this.closest('tr').html('<td colspan="3">' + msg + '</td>');
+            } else {
+                alert(msg);
+            }
+        });
+    }).on('mouseenter', 'tr', function () {
+        var $this = $(this);
+        if (!$this.has('td[id^="wp_"]').length) return;
+        var $td = $this.find('td:nth-child(3)');
+        $td.css('position', 'relative').append('<a data-name="copyArmId" href="#" style="position: absolute; top: 0; right: 5px;" title="复制装备ID">复制ID</a>');
+    }).on('mouseleave', 'tr', function () {
+        var $this = $(this);
+        if (!$this.has('td[id^="wp_"]').length) return;
+        var $td = $this.find('td:nth-child(3)');
+        $td.css('position', 'static').find('a[data-name="copyArmId"]').remove();
+    }).on('click', 'a[data-name="copyArmId"]', function (e) {
+        e.preventDefault();
+        var $tr = $(this).closest('tr');
+        var id = parseInt($tr.data('id'));
+        $tr.data('copy-text', id.toString());
+        if (!Util.copyText($tr, '装备ID已复制')) {
+            prompt('此装备ID（请按Ctrl+C复制）：', id);
+        }
+    });
+};
+
+/**
+ * 添加装备相关按钮
+ */
+var addArmsButton = function addArmsButton() {
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="smeltArms"]').click(function () {
+        return showBatchSmeltArmsDialog(safeId);
+    }).end().find('[name="showArmsFinalAddition"]').click(function () {
+        if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
+        Msg.destroy();
+        var oriEquippedArmId = 0;
+        var armIdList = [];
+        $armArea.find('td[id^="wp_"]').each(function () {
+            var $this = $(this);
+            var id = parseInt($this.parent('tr').data('id'));
+            if (id) {
+                armIdList.push(id);
+            }
+            if ($this.parent('tr').hasClass('pd_arm_equipped')) {
+                oriEquippedArmId = id;
+            }
+        });
+        if (armIdList.length > 0) {
+            showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
+        }
+    });
+};
+
+/**
+ * 显示装备最终加成信息
+ * @param {number[]} armIdList 装备ID列表
+ * @param {number} oriEquippedArmId 原先的装备ID
+ * @param {string} safeId SafeID
+ */
+var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippedArmId, safeId) {
+    var index = 0;
+
+    /**
+     * 装备
+     * @param {number} armId 装备ID
+     * @param {boolean} isComplete 是否操作完成
+     */
+    var equip = function equip(armId) {
+        var isComplete = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: 'do=4&id=' + armId + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            var msg = Util.removeHtmlTag(html);
+            console.log('\u88C5\u5907ID[' + armId + ']\uFF1A' + msg.replace('\n', ' '));
+            if (isComplete) return;
+            if (!/装备完毕/.test(msg)) index++;
+            if (index >= armIdList.length) {
+                complete();
+                return;
+            }
+            if (!/装备完毕/.test(msg)) {
+                setTimeout(function () {
+                    return equip(armIdList[index]);
+                }, _Const2.default.minItemActionInterval);
+            } else {
+                setTimeout(function () {
+                    return getFinalAddition(armId);
+                }, _Const2.default.defAjaxInterval);
+            }
+        }).fail(function () {
+            return setTimeout(function () {
+                return equip(armId);
+            }, _Const2.default.minItemActionInterval);
+        });
+    };
+
+    /**
+     * 获取当前装备的最终加成
+     */
+    var getFinalAddition = function getFinalAddition(armId) {
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_index.php?t=' + $.now(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            $wait.find('.pd_countdown').text(armIdList.length - (index + 1));
+            if ($wait.data('stop')) {
+                complete();
+                return;
+            }
+
+            var matches = />(最终加成：[^<>]+)</.exec(html);
+            if (matches) {
+                var info = matches[1];
+                console.log('\u88C5\u5907ID[' + armId + ']\uFF1A' + info);
+                var $armInfo = $armArea.find('td[id="wp_' + armId + '"]').parent('tr').find('td:nth-child(3)');
+                $armInfo.find('.pd_final_addition_info').remove();
+                $armInfo.append('<span class="pd_final_addition_info"><br>' + info + '</span>');
+            }
+
+            index++;
+            if (index >= armIdList.length) {
+                complete();
+                return;
+            }
+            setTimeout(function () {
+                return equip(armIdList[index]);
+            }, _Const2.default.minItemActionInterval);
+            Script.runFunc('Item.showArmsFinalAddition_show_', armId);
+        }).fail(function () {
+            return setTimeout(function () {
+                return getFinalAddition(armId);
+            }, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    /**
+     * 操作完成
+     */
+    var complete = function complete() {
+        Msg.remove($wait);
+        if (oriEquippedArmId) {
+            setTimeout(function () {
+                return equip(oriEquippedArmId, true);
+            }, _Const2.default.minItemActionInterval);
+        }
+        Script.runFunc('Item.showArmsFinalAddition_complete_');
+    };
+
+    var $wait = Msg.wait('<strong>\u6B63\u5728\u83B7\u53D6\u88C5\u5907\u6700\u7EC8\u52A0\u6210\u4FE1\u606F&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + armIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+    equip(armIdList[0]);
 };
 
 /**
@@ -3788,10 +3995,10 @@ var smeltArms = function smeltArms(typeList, safeId) {
         var armList = [];
         $armArea.find('td[id^="wp_"]').each(function () {
             var $this = $(this);
-            var matches = /wp_(\d+)/.exec($this.attr('id'));
-            if (!matches) return;
-            var armId = parseInt(matches[1]);
-            var armName = $this.parent('tr').find('> td:nth-child(3) > span:first').text().trim();
+            var $tr = $(this).parent('tr');
+            if ($tr.hasClass('pd_arm_equipped')) return;
+            var armId = parseInt($tr.data('id'));
+            var armName = $tr.find('> td:nth-child(3) > span:first').text().trim();
 
             var _armName$split = armName.split('的'),
                 _armName$split2 = _slicedToArray(_armName$split, 2),
@@ -3860,7 +4067,7 @@ var smeltArms = function smeltArms(typeList, safeId) {
             return;
         }
 
-        var armTypeNum = 0,
+        var armGroupNum = 0,
             totalExp = 0;
         var resultStat = '';
         var _iteratorNormalCompletion9 = true;
@@ -3871,16 +4078,14 @@ var smeltArms = function smeltArms(typeList, safeId) {
             for (var _iterator9 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
                 var armGroup = _step9.value;
 
-                armTypeNum++;
+                armGroupNum++;
                 var _smeltInfo$armGroup = smeltInfo[armGroup],
                     exp = _smeltInfo$armGroup.exp,
                     num = _smeltInfo$armGroup.num;
 
                 totalExp += exp;
-                resultStat += '\u3010' + armGroup + '\u3011 <i>\u88C5\u5907<ins>-' + num + '</ins></i> <i>' + armGroup + '\u7ECF\u9A8C<em>+' + exp.toLocaleString() + '</em></i><br>';
-                var gain = {};
-                gain[armGroup + '经验'] = exp;
-                Log.push('熔炼装备', '\u5171\u6709`' + num + '`\u4E2A\u3010`' + armGroup + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: gain, pay: { '装备': -num } });
+                resultStat += '\u3010' + armGroup + '\u3011 <i>\u88C5\u5907<ins>-' + num + '</ins></i> <i>\u6B66\u5668\u7ECF\u9A8C<em>+' + exp.toLocaleString() + '</em></i><br>';
+                Log.push('熔炼装备', '\u5171\u6709`' + num + '`\u4E2A\u3010`' + armGroup + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: { '武器经验': totalExp }, pay: { '装备': -num } });
             }
         } catch (err) {
             _didIteratorError9 = true;
@@ -3897,9 +4102,9 @@ var smeltArms = function smeltArms(typeList, safeId) {
             }
         }
 
-        $('.pd_result[data-name="armResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF09\uFF1A</b> <i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
-        console.log('\u5171\u6709' + armTypeNum + '\u4E2A\u7EC4\u522B\u4E2D\u7684' + successNum + '\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF0C\u88C5\u5907\u7ECF\u9A8C+' + totalExp);
-        Msg.show('<strong>\u5171\u6709<em>' + armTypeNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F</strong><i>\u88C5\u5907\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i>', -1);
+        $('.pd_result[data-name="armResult"]:last').append('\n<li class="pd_stat">\n  <b>\u7EDF\u8BA1\u7ED3\u679C\uFF08\u5171\u6709<em>' + armGroupNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF09\uFF1A</b> <i>\u6B66\u5668\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i><br>\n  ' + resultStat + '\n</li>');
+        console.log('\u5171\u6709' + armGroupNum + '\u4E2A\u7EC4\u522B\u4E2D\u7684' + successNum + '\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F\uFF0C\u6B66\u5668\u7ECF\u9A8C+' + totalExp);
+        Msg.show('<strong>\u5171\u6709<em>' + armGroupNum + '</em>\u4E2A\u7EC4\u522B\u4E2D\u7684<em>' + successNum + '</em>\u4E2A\u88C5\u5907\u7194\u70BC\u6210\u529F</strong><i>\u6B66\u5668\u7ECF\u9A8C<em>+' + totalExp.toLocaleString() + '</em></i>', -1);
 
         setTimeout(function () {
             return getNextObjects(2);
@@ -4007,7 +4212,7 @@ var getItemsUsedNumInfo = exports.getItemsUsedNumInfo = function getItemsUsedNum
 };
 
 /**
- * 在物品装备页面上添加批量使用和出售道具按钮
+ * 添加批量使用和出售道具按钮
  */
 var addBatchUseAndSellItemsButton = function addBatchUseAndSellItemsButton() {
     $('\n<div class="pd_item_btns" data-name="handleItemsBtns">\n  <button name="useItems" type="button" style="color: #00f;" title="\u6279\u91CF\u4F7F\u7528\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u4F7F\u7528</button>\n  <button name="sellItems" type="button" style="color: #f00;" title="\u6279\u91CF\u51FA\u552E\u6307\u5B9A\u9053\u5177">\u6279\u91CF\u51FA\u552E</button>\n</div>\n').insertAfter($itemArea).find('[name="useItems"]').click(function () {
@@ -4552,7 +4757,7 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                     var url = $this.attr('href');
                     list.push(url);
                     if (isFirst || myItemUrlList.includes(url)) return;
-                    var itemName = $this.closest('tr').find('td:nth-child(2)').text().trim();
+                    var itemName = $this.closest('tr').find('td:nth-child(3)').text().trim();
                     if (!itemTypeList.includes(itemName)) return;
                     if (!(itemName in itemList)) itemList[itemName] = 0;
                     itemList[itemName]++;
@@ -8124,7 +8329,7 @@ var setHaloInfo = exports.setHaloInfo = function setHaloInfo(newHaloInfo) {
         var $node = $properties.find('input[type="text"]:eq(13)');
         if (!$node.length || $.trim($node.val())) return;
         $node.attr('id', 'pdHaloInfo');
-        $('<a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取" hidden>重新读取</a>').insertAfter($node).find('[data-name="reloadHaloInfo"]').click(function (e) {
+        $('<a data-name="reloadHaloInfo" href="#" style="margin-left: -20px;" title="如战力光环信息不正确时，请点此重新读取">读</a>').insertAfter($node).click(function (e) {
             e.preventDefault();
             if (confirm('是否重新读取战力光环信息？')) {
                 TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
@@ -9645,7 +9850,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1002; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u9053\u5177\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }\n  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }\n  .pd_usable_num { color: #669933; }\n  .pd_used_num { color: #ff0033; }\n  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }\n  .pd_item_type_chk { margin-right: 5px; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 28px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1000;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1002; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#EEEEFF; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3):before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 28px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1000;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');
