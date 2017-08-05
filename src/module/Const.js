@@ -37,7 +37,7 @@ const Const = {
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 90,
+    tmpHaloInfoExpires: 210,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）

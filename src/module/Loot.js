@@ -2041,9 +2041,8 @@ export const setHaloInfo = function (newHaloInfo) {
         let $node = $properties.find('input[type="text"]:eq(13)');
         if (!$node.length || $.trim($node.val())) return;
         $node.attr('id', 'pdHaloInfo');
-        $('<a class="pd_btn_link" data-name="reloadHaloInfo" href="#" title="如战力光环信息不正确时，请点此重新读取" hidden>重新读取</a>')
+        $('<a data-name="reloadHaloInfo" href="#" style="margin-left: -20px;" title="如战力光环信息不正确时，请点此重新读取">读</a>')
             .insertAfter($node)
-            .find('[data-name="reloadHaloInfo"]')
             .click(function (e) {
                 e.preventDefault();
                 if (confirm('是否重新读取战力光环信息？')) {

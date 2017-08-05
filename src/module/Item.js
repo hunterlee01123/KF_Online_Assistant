@@ -49,7 +49,7 @@ export const init = function () {
     handleArmArea();
     bindArmLinkClickEvent();
 
-    addBatchSmeltArmsButton();
+    addArmsButton();
     addBatchUseAndSellItemsButton();
 
     if (localStorage.getItem(Const.storagePrefix + 'myObjectsInfo_' + Info.uid)) {
@@ -529,14 +529,126 @@ const bindArmLinkClickEvent = function () {
 };
 
 /**
- * 在物品装备页面上添加批量熔炼装备按钮
+ * 添加装备相关按钮
  */
-const addBatchSmeltArmsButton = function () {
+const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
+  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
+`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId))
+        .end().find('[name="showArmsFinalAddition"]')
+        .click(function () {
+            if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
+            Msg.destroy();
+            let oriEquippedArmId = 0;
+            let armIdList = [];
+            $armArea.find('td[id^="wp_"]').each(function () {
+                let $this = $(this);
+                let matches = /wp_(\d+)/.exec($this.attr('id'));
+                let id = parseInt(matches[1]);
+                if (matches) {
+                    armIdList.push(id);
+                }
+                if ($this.parent('tr').hasClass('pd_arm_equipped')) {
+                    oriEquippedArmId = id;
+                }
+            });
+            if (armIdList.length > 0) {
+                showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
+            }
+        });
+};
+
+/**
+ * 显示装备最终加成信息
+ * @param {number[]} armIdList 装备ID列表
+ * @param {number} oriEquippedArmId 原先的装备ID
+ * @param {string} safeId SafeID
+ */
+const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
+    let index = 0;
+
+    /**
+     * 装备
+     * @param {number} armId 装备ID
+     * @param {boolean} isComplete 是否操作完成
+     */
+    const equip = function (armId, isComplete = false) {
+        $.ajax({
+            type: 'POST',
+            url: 'kf_fw_ig_mybpdt.php',
+            data: `do=4&id=${armId}&safeid=${safeId}`,
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            let msg = Util.removeHtmlTag(html);
+            console.log(`装备ID[${armId}]：${msg.replace('\n', ' ')}`);
+            if (isComplete) return;
+            if (!/装备完毕/.test(msg)) index++;
+            if (index >= armIdList.length) {
+                complete();
+                return;
+            }
+            if (!/装备完毕/.test(msg)) {
+                setTimeout(() => equip(armIdList[index]), Const.minItemActionInterval);
+            }
+            else {
+                setTimeout(() => getFinalAddition(armId), Const.defAjaxInterval);
+            }
+        }).fail(() => setTimeout(() => equip(armId), Const.minItemActionInterval));
+    };
+
+    /**
+     * 获取当前装备的最终加成
+     */
+    const getFinalAddition = function (armId) {
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_index.php?t=' + $.now(),
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            $wait.find('.pd_countdown').text(armIdList.length - (index + 1));
+            if ($wait.data('stop')) {
+                complete();
+                return;
+            }
+
+            let matches = />(最终加成：[^<>]+)</.exec(html);
+            if (matches) {
+                let info = matches[1];
+                console.log(`装备ID[${armId}]：${info}`);
+                let $armInfo = $armArea.find(`td[id="wp_${armId}"]`).parent('tr').find('td:nth-child(3)');
+                $armInfo.find('.pd_final_addition_info').remove();
+                $armInfo.append(`<span class="pd_final_addition_info"><br>${info}</span>`);
+            }
+
+            index++;
+            if (index >= armIdList.length) {
+                complete();
+                return;
+            }
+            setTimeout(() => equip(armIdList[index]), Const.minItemActionInterval);
+            Script.runFunc('Item.showArmsFinalAddition_show_', armId);
+        }).fail(() => setTimeout(() => getFinalAddition(armId), Const.defAjaxInterval));
+    };
+
+    /**
+     * 操作完成
+     */
+    const complete = function () {
+        Msg.remove($wait);
+        if (oriEquippedArmId) {
+            setTimeout(() => equip(oriEquippedArmId, true), Const.minItemActionInterval);
+        }
+        Script.runFunc('Item.showArmsFinalAddition_complete_');
+    };
+
+    let $wait = Msg.wait(
+        `<strong>正在获取装备最终加成信息&hellip;</strong><i>剩余：<em class="pd_countdown">${armIdList.length}</em></i>` +
+        `<a class="pd_stop_action" href="#">停止操作</a>`
+    );
+    equip(armIdList[0]);
 };
 
 /**
@@ -843,7 +955,7 @@ export const getItemsUsedNumInfo = function (html) {
 };
 
 /**
- * 在物品装备页面上添加批量使用和出售道具按钮
+ * 添加批量使用和出售道具按钮
  */
 const addBatchUseAndSellItemsButton = function () {
     $(`
