@@ -132,17 +132,12 @@ export const appendCss = function () {
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
   
-  /* 道具页面 */
+  /* 我的物品页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
-  .pd_items > tbody > tr > td > a + a { margin-left: 15px; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
-  .pd_result_sep { border-bottom: 1px solid #999; margin: 7px 0; }
-  .pd_result_sep_inner { border-bottom: 1px dashed #999; margin: 5px 0; }
-  .pd_usable_num { color: #669933; }
-  .pd_used_num { color: #ff0033; }
-  .pd_used_item_info { color: #666; float: right; cursor: help; margin-right: 5px; }
-  .pd_item_type_chk { margin-right: 5px; }
+  .pd_arm_equipped { background-color:#EEEEFF; box-shadow: 0 0 7px #99f; }
+  .pd_arm_equipped > td:nth-child(3):before { content: "（装备中）"; font-weight: bold; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }

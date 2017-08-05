@@ -42,10 +42,19 @@ export const init = function () {
     $boxArea = $('.kf_fw_ig1:eq(0)');
     $armArea = $('.kf_fw_ig4:eq(0)');
     $itemArea = $('.kf_fw_ig1:eq(1)');
+
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
+
+    handleArmArea();
+    bindArmLinkClickEvent();
+
     addBatchSmeltArmsButton();
     addBatchUseAndSellItemsButton();
+
+    if (localStorage.getItem(Const.storagePrefix + 'myObjectsInfo_' + Info.uid)) {
+        localStorage.removeItem(Const.storagePrefix + 'myObjectsInfo_' + Info.uid);
+    }
 };
 
 /**
@@ -60,9 +69,9 @@ export const getNextObjects = function (sequence, callback = null) {
         url: 'kf_fw_ig_mybp.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
     }).done(function (html) {
-        for (let i = 1; i <= 2; i++) {
+        for (let index = 1; index <= 2; index++) {
             let matches = null;
-            if (i === 1) {
+            if (index === 1) {
                 matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
             }
             else {
@@ -70,7 +79,7 @@ export const getNextObjects = function (sequence, callback = null) {
             }
             if (!matches) continue;
             let trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
-            let $area = i === 1 ? $armArea : $itemArea;
+            let $area = index === 1 ? $armArea : $itemArea;
             let addHtml = '';
             for (let i in trMatches) {
                 let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
@@ -85,6 +94,9 @@ export const getNextObjects = function (sequence, callback = null) {
                 }
                 else {
                     $area.find('> tbody > tr:nth-child(2)').after(addHtml);
+                }
+                if (index === 1) {
+                    handleArmArea();
                 }
             }
         }
@@ -462,6 +474,61 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
 };
 
 /**
+ * 处理装备区域
+ */
+const handleArmArea = function () {
+    $armArea.find('a[onclick^="cdzb"]').removeAttr('onclick').attr('data-name', 'equip');
+    $armArea.find('a[onclick^="rlzb"]').removeAttr('onclick').attr('data-name', 'smelt');
+
+    let $equipped = $armArea.find('tr[id^="wp_"]');
+    if ($equipped.length > 0) {
+        let id = $equipped.attr('id');
+        let $td = $equipped.find('td');
+        $td.removeAttr('colspan').removeAttr('style').css({'text-align': 'left', 'padding-left': '5px'});
+        $td.html($td.html().replace('（装备中）', ''));
+        $equipped.removeAttr('id').prepend(
+            `<td id="${id}"><a data-name="equip" href="javascript:;">装备</a></td><td><a data-name="smelt" href="javascript:;">熔炼</a></td>`
+        ).addClass('pd_arm_equipped');
+    }
+};
+
+/**
+ * 绑定装备点击事件
+ */
+const bindArmLinkClickEvent = function () {
+    $armArea.on('click', 'a[data-name="equip"]', function () {
+        let $this = $(this);
+        let matches = /wp_(\d+)/.exec($this.parent('td').attr('id'));
+        if (!matches) return;
+        let id = parseInt(matches[1]);
+        $.post('kf_fw_ig_mybpdt.php', `do=4&id=${id}&safeid=${safeId}`, function (html) {
+            if (/装备完毕/.test(html)) {
+                $armArea.find('.pd_arm_equipped').removeClass('pd_arm_equipped');
+                $this.closest('tr').addClass('pd_arm_equipped');
+            }
+            else {
+                alert(Util.removeHtmlTag(html));
+            }
+        });
+    }).on('click', 'a[data-name="smelt"]', function () {
+        if (!confirm('确定熔炼此装备吗？')) return;
+        let $this = $(this);
+        let matches = /wp_(\d+)/.exec($this.parent('td').prev('td').attr('id'));
+        if (!matches) return;
+        let id = parseInt(matches[1]);
+        $.post('kf_fw_ig_mybpdt.php', `do=5&id=${id}&safeid=${safeId}`, function (html) {
+            let msg = Util.removeHtmlTag(html);
+            if (/装备消失/.test(msg)) {
+                $this.closest('tr').html(`<td colspan="3">${msg}</td>`);
+            }
+            else {
+                alert(msg);
+            }
+        });
+    });
+};
+
+/**
  * 在物品装备页面上添加批量熔炼装备按钮
  */
 const addBatchSmeltArmsButton = function () {
@@ -590,6 +657,7 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             let $this = $(this);
             let matches = /wp_(\d+)/.exec($this.attr('id'));
             if (!matches) return;
+            if ($this.parent('tr').hasClass('pd_arm_equipped')) return;
             let armId = parseInt(matches[1]);
             let armName = $this.parent('tr').find('> td:nth-child(3) > span:first').text().trim();
             let [, armGroup] = armName.split('的');
