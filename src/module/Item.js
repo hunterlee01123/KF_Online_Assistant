@@ -648,29 +648,27 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             return;
         }
 
-        let armTypeNum = 0, totalExp = 0;
+        let armGroupNum = 0, totalExp = 0;
         let resultStat = '';
         for (let armGroup of Util.getSortedObjectKeyList(armGroupList, smeltInfo)) {
-            armTypeNum++;
+            armGroupNum++;
             let {exp, num} = smeltInfo[armGroup];
             totalExp += exp;
-            resultStat += `【${armGroup}】 <i>装备<ins>-${num}</ins></i> <i>${armGroup}经验<em>+${exp.toLocaleString()}</em></i><br>`;
-            let gain = {};
-            gain[armGroup + '经验'] = exp;
+            resultStat += `【${armGroup}】 <i>装备<ins>-${num}</ins></i> <i>武器经验<em>+${exp.toLocaleString()}</em></i><br>`;
             Log.push(
                 '熔炼装备',
                 `共有\`${num}\`个【\`${armGroup}\`】装备熔炼成功`,
-                {gain, pay: {'装备': -num}}
+                {gain: {'武器经验': totalExp}, pay: {'装备': -num}}
             );
         }
         $('.pd_result[data-name="armResult"]:last').append(`
 <li class="pd_stat">
-  <b>统计结果（共有<em>${armTypeNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功）：</b> <i>装备经验<em>+${totalExp.toLocaleString()}</em></i><br>
+  <b>统计结果（共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功）：</b> <i>武器经验<em>+${totalExp.toLocaleString()}</em></i><br>
   ${resultStat}
 </li>`);
-        console.log(`共有${armTypeNum}个组别中的${successNum}个装备熔炼成功，装备经验+${totalExp}`);
+        console.log(`共有${armGroupNum}个组别中的${successNum}个装备熔炼成功，武器经验+${totalExp}`);
         Msg.show(
-            `<strong>共有<em>${armTypeNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong><i>装备经验<em>+${totalExp.toLocaleString()}</em></i>`, -1
+            `<strong>共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong><i>武器经验<em>+${totalExp.toLocaleString()}</em></i>`, -1
         );
 
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
