@@ -575,7 +575,7 @@ export const getPointByProperty = function (pointName, num) {
 export const getRealProperty = function (pointName, totalPoint, level, enemy) {
     const npcStepNum = 2; // NPC递增数值
     const antiCoefficient = 3; // 抵消系数
-    const coefficient = {'普通': 1, '强壮': 1, '快速': 1.5, '脆弱': 1, '缓慢': 1, 'BOSS': 1.2}; // NPC强化系数列表
+    const coefficient = {'普通': 1, '强壮': 1, '快速': 1.5, '睿智': 1, '坚强': 1, 'BOSS': 1.2}; // NPC强化系数列表
     const cardinalNum = pointName === '灵活' ? 100 : 90; // 基数
 
     let npcPoint = Math.round(level * npcStepNum * coefficient[enemy]);
@@ -1637,11 +1637,11 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
             case '普通':
                 color = '#09c';
                 break;
-            case '特别脆弱':
+            case '特别睿智':
                 color = '#c96';
                 break;
-            case '特别缓慢':
-                color = '#c69';
+            case '特别坚强':
+                color = '#cc587c';
                 break;
             case '特别强壮':
                 color = '#f93';
@@ -1777,8 +1777,8 @@ const getEnemyStatList = function (levelInfoList) {
         '普通': 0,
         '强壮': 0,
         '快速': 0,
-        '脆弱': 0,
-        '缓慢': 0,
+        '睿智': 0,
+        '坚强': 0,
         'BOSS': 0,
         '大魔王': 0,
     };

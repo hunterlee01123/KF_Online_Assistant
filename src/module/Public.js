@@ -141,8 +141,11 @@ export const appendCss = function () {
   .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
   .kf_fw_ig4 > tbody > tr > td:nth-child(3) { position: relative; }
   .kf_fw_ig4 > tbody > tr > td[data-memo]:nth-child(3)::after {
-    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; color: #777;
+    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);
   }
+  .kf_fw_ig4 > tbody > tr.pd_arm_equipped > td[data-memo]:nth-child(3)::after { background: rgba(238, 238, 255, .9); }
+  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
+  tr.pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }

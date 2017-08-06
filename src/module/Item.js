@@ -542,12 +542,12 @@ const bindArmLinkClickEvent = function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
         let $td = $this.find('> td:nth-child(3)');
-        $td.append('<a data-name="showArmInfo" href="#" style="position: absolute; top: 0; right: 5px;" title="显示装备信息">显示信息</a>');
+        $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="显示装备信息">显</a>');
     }).on('mouseleave', 'tr', function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
-        $this.find('> td:nth-child(3) a[data-name="showArmInfo"]').remove();
-    }).on('click', 'a[data-name="showArmInfo"]', function (e) {
+        $this.find('> td:nth-child(3) .show_arm_info').remove();
+    }).on('click', '.show_arm_info', function (e) {
         e.preventDefault();
         let $this = $(this);
         let $td = $(this).parent('td');

@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     10.9
+// @version     11.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '10.9';
+const version = '11.0';
 
 /**
  * 导出模块
@@ -1131,6 +1131,8 @@ const Config = exports.Config = {
 
     // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
     slowActionEnabled: false,
+    // 装备备注，格式：{装备ID:'备注信息'}，例：{123456:'备注信息'}
+    armsMemo: {},
     // 是否在打开盒子后熔炼装备，true：开启；false：关闭
     smeltArmsAfterOpenBoxesEnabled: false,
     // 是否在打开盒子后使用道具，true：开启；false：关闭
@@ -3112,7 +3114,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchBuyItemsLink = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getCurrentArmInfo = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
+exports.addBatchBuyItemsLink = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3603,8 +3605,12 @@ const handleArmArea = function () {
     $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function () {
         let $this = $(this);
         let matches = /wp_(\d+)/.exec($this.attr('id'));
-        if (matches) {
-            $this.parent('tr').attr('data-id', matches[1]);
+        if (!matches) return;
+        let id = parseInt(matches[1]);
+        let $tr = $this.parent('tr');
+        $tr.attr('data-id', id);
+        if (Config.armsMemo[id]) {
+            $tr.find('> td:nth-child(3)').attr('data-memo', Util.htmlEncode(Config.armsMemo[id]));
         }
     });
 };
@@ -3627,34 +3633,165 @@ const bindArmLinkClickEvent = function () {
     }).on('click', 'a[data-name="smelt"]', function () {
         if (!confirm('确定熔炼此装备吗？')) return;
         let $this = $(this);
-        let id = parseInt($this.closest('tr').data('id'));
-        $.post('kf_fw_ig_mybpdt.php', `do=5&id=${id}&safeid=${safeId}`, function (html) {
+        let armId = parseInt($this.closest('tr').data('id'));
+        $.post('kf_fw_ig_mybpdt.php', `do=5&id=${armId}&safeid=${safeId}`, function (html) {
             let msg = Util.removeHtmlTag(html);
             if (/装备消失/.test(msg)) {
                 $this.closest('tr').html(`<td colspan="3">${msg}</td>`);
+                if (armId in Config.armsMemo) {
+                    (0, _Config.read)();
+                    delete Config.armsMemo[armId];
+                    (0, _Config.write)();
+                }
             } else {
                 alert(msg);
             }
         });
     }).on('mouseenter', 'tr', function () {
         let $this = $(this);
-        if (!$this.has('td[id^="wp_"]').length) return;
-        let $td = $this.find('td:nth-child(3)');
-        $td.css('position', 'relative').append('<a data-name="copyArmId" href="#" style="position: absolute; top: 0; right: 5px;" title="复制装备ID">复制ID</a>');
+        if (!$this.has('> td[id^="wp_"]').length) return;
+        let $td = $this.find('> td:nth-child(3)');
+        $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="显示装备信息">显</a>');
     }).on('mouseleave', 'tr', function () {
         let $this = $(this);
-        if (!$this.has('td[id^="wp_"]').length) return;
-        let $td = $this.find('td:nth-child(3)');
-        $td.css('position', 'static').find('a[data-name="copyArmId"]').remove();
-    }).on('click', 'a[data-name="copyArmId"]', function (e) {
+        if (!$this.has('> td[id^="wp_"]').length) return;
+        $this.find('> td:nth-child(3) .show_arm_info').remove();
+    }).on('click', '.show_arm_info', function (e) {
         e.preventDefault();
-        let $tr = $(this).closest('tr');
+        let $this = $(this);
+        let $td = $(this).parent('td');
+        let $tr = $this.closest('tr');
         let id = parseInt($tr.data('id'));
-        $tr.data('copy-text', id.toString());
-        if (!Util.copyText($tr, '装备ID已复制')) {
-            prompt('此装备ID（请按Ctrl+C复制）：', id);
-        }
+        $this.remove();
+        let html = $td.html();
+        let armInfo = getArmInfo(html);
+        showArmInfoDialog(id, armInfo);
     });
+};
+
+/**
+ * 显示装备信息对话框
+ * @param {number} armId 装备ID
+ * @param {{}} armInfo 装备信息
+ */
+const showArmInfoDialog = function (armId, armInfo) {
+    const dialogName = 'pdArmInfoDialog';
+    if ($('#' + dialogName).length > 0) return;
+    Msg.destroy();
+
+    let html = `
+<div class="pd_cfg_main">
+  <div style="width: 550px; margin-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #99f;">
+    <span style="color: ${armInfo['颜色']}">${armInfo['名称']}</span> - ${armInfo['描述']}
+  </div>
+  <div style="margin-top: 5px;">
+    <label>装备ID：<input name="armId" type="text" value="${armId}" style="width: 100px;" readonly></label>
+    <a class="pd_btn_link" data-name="copy" data-target="[name=armId]" href="#">复制</a>
+  </div>
+  <div style="margin-top: 5px;">
+    <label>武器参数设置：</label>
+    <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">复制</a><br>
+    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly>${getWeaponParameterSetting(armInfo)}</textarea>
+  </div>
+  <div style="margin-top: 5px;">
+    <label>
+      装备备注：<input name="armMemo" type="text" maxlength="12" style="width: 160px;">
+    </label>
+  </div>
+</div>
+<div class="pd_cfg_btns">
+  <button name="saveMemo" type="button">保存备注</button>
+  <button data-action="close" type="button">关闭</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '装备信息', html);
+
+    $dialog.on('click', 'a[data-name="copy"]', function (e) {
+        e.preventDefault();
+        let $target = $dialog.find($(this).data('target'));
+        if (!Util.copyText($target)) {
+            $target.select().focus();
+        }
+    }).find('[name="saveMemo"]').click(function (e) {
+        e.preventDefault();
+        (0, _Config.read)();
+        let value = $.trim($dialog.find('input[name="armMemo"]').val());
+        let $node = $armArea.find(`tr[data-id="${armId}"] > td:nth-child(3)`);
+        if (value) {
+            Config.armsMemo[armId] = value;
+            $node.attr('data-memo', Util.htmlEncode(value));
+        } else {
+            delete Config.armsMemo[armId];
+            $node.removeAttr('data-memo');
+        }
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+    });
+
+    if (Config.armsMemo[armId]) {
+        $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
+    }
+    Dialog.show(dialogName);
+    Script.runFunc('Item.showArmInfoDialog_after_');
+};
+
+/**
+ * 获取计算器武器参数设置
+ * @param {{}} armInfo 装备信息
+ * @returns {string} 武器参数设置
+ */
+const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (armInfo) {
+    let info = {
+        '组别': '',
+        '神秘属性数量': 0,
+        '所有的神秘属性': '',
+        '主属性数量': 0,
+        '所有的主属性': '',
+        '从属性数量': 0,
+        '所有的从属性': ''
+    };
+
+    let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff']]);
+    info['组别'] = groupKeyList.get(armInfo['组别']);
+
+    let smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
+    for (let [key, value] of smKeyList) {
+        if (key in armInfo) {
+            info['神秘属性数量']++;
+            info['神秘属性数量'] += value + ' ';
+        }
+    }
+
+    let mainPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']]);
+    for (let value of armInfo['主属性']) {
+        let [property = ''] = value.split('(', 1);
+        property = property.trim();
+        if (property) {
+            info['主属性数量']++;
+            info['所有的主属性'] += mainPropertyKeyList.get(property) + ' ';
+        }
+    }
+
+    let subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
+    for (let value of armInfo['从属性']) {
+        value = $.trim(value);
+        if (!value) continue;
+        let matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(value);
+        if (matches) {
+            info['从属性数量']++;
+            info['所有的从属性'] += mainPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+        }
+    }
+
+    let content = `
+[组别]
+[神秘属性数量] [所有的神秘属性] 
+[主属性数量] [所有的主属性]
+[从属性数量] [所有的从属性]
+`.trim();
+    for (let [key, value] of Util.entries(info)) {
+        content = content.replace(`[${key}]`, $.trim(value));
+    }
+    return content;
 };
 
 /**
@@ -3663,10 +3800,16 @@ const bindArmLinkClickEvent = function () {
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
+  <button name="clearArmsMemo" type="button" title="清除所有装备的备注">清除备注</button>
+  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId)).end().find('[name="showArmsFinalAddition"]').click(function () {
+`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId)).end().find('[name="clearArmsMemo"]').click(function () {
+        if (!confirm('是否清除所有装备的备注？')) return;
+        (0, _Config.read)();
+        Config.armsMemo = {};
+        (0, _Config.write)();
+    }).end().find('[name="showArmsFinalAddition"]').click(function () {
         if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
         Msg.destroy();
         let oriEquippedArmId = 0;
@@ -3681,6 +3824,7 @@ const addArmsButton = function () {
                 oriEquippedArmId = id;
             }
         });
+        if (!oriEquippedArmId && !confirm('当前页面未发现有已装备的武器，显示最终加成信息后将用最后一件武器进行装备，是否继续？')) return;
         if (armIdList.length > 0) {
             showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
         }
@@ -3839,6 +3983,7 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
     let successNum = 0,
         index = 0;
     let smeltInfo = {};
+    let isDeleteMemo = false;
 
     /**
      * 熔炼
@@ -3866,6 +4011,10 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             let matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
             if (!matches) return;
             successNum++;
+            if (armId in Config.armsMemo) {
+                isDeleteMemo = true;
+                delete Config.armsMemo[armId];
+            }
             if (!(armGroup in smeltInfo)) smeltInfo[armGroup] = { num: 0, exp: 0 };
             smeltInfo[armGroup].num++;
             smeltInfo[armGroup].exp += parseInt(matches[1]);
@@ -3963,40 +4112,67 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
         console.log(`共有${armGroupNum}个组别中的${successNum}个装备熔炼成功，武器经验+${totalExp}`);
         Msg.show(`<strong>共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong><i>武器经验<em>+${totalExp.toLocaleString()}</em></i>`, -1);
 
+        if (isDeleteMemo) (0, _Config.write)();
         setTimeout(() => getNextObjects(2), _Const2.default.defAjaxInterval);
         if (nextActionEnabled) nextAction();
         Script.runFunc('Item.smeltArms_complete_');
     };
 
+    if (!$.isEmptyObject(Config.armsMemo)) (0, _Config.read)();
     $armArea.parent().append('<ul class="pd_result" data-name="armResult"><li><strong>熔炼结果：</strong></li></ul>');
     let $wait = Msg.wait('<strong>正在熔炼装备中&hellip;</strong><i>已熔炼：<em class="pd_countdown">0</em></i><a class="pd_stop_action" href="#">停止操作</a>');
     getCurrentArms();
 };
 
 /**
- * 获取当前装备情况
- * @param html 争夺首页的HTML代码
+ * 获取指定装备情况
+ * @param html 装备的HTML代码
  * @returns {{}} 当前装备情况
  */
-const getCurrentArmInfo = exports.getCurrentArmInfo = function (html) {
-    let currentArmInfo = {
+const getArmInfo = exports.getArmInfo = function (html) {
+    let armInfo = {
         '名称': '',
+        '颜色': '#000',
         '组别': '',
-        '描述': ''
+        '描述': '',
+        '作用': '',
+        '主属性': [],
+        '从属性': [],
+        '最终加成': []
     };
-    let matches = /<span (?:[^<>]+)>([^<>]+)<\/span>/.exec(html);
-    if (matches) {
-        currentArmInfo['名称'] = matches[1];
-        [, currentArmInfo['组别'] = ''] = matches[1].split('的');
-        [, currentArmInfo['描述'] = ''] = html.split('</span> - ', 2);
-        currentArmInfo['描述'] = Util.removeHtmlTag(currentArmInfo['描述']);
+    let matches = /<span style="color:([^<>]+);">([^<>]+)<\/span>/.exec(html);
+    if (!matches) return armInfo;
+
+    armInfo['颜色'] = matches[1];
+    armInfo['名称'] = matches[2];
+    [, armInfo['组别'] = ''] = matches[2].split('的');
+
+    [, armInfo['描述'] = ''] = html.split('</span> - ', 2);
+    let description = Util.removeHtmlTag(armInfo['描述']);
+    [armInfo['作用'] = ''] = description.split('\n', 1);
+
+    matches = /主属性：(.+?)\n/.exec(description);
+    if (matches) armInfo['主属性'] = matches[1].split('。');
+
+    matches = /从属性：(.+?)(\n|$)/.exec(description);
+    if (matches) armInfo['从属性'] = matches[1].split('。');
+
+    matches = /最终加成：(.+?)(\n|$)/.exec(description);
+    if (matches) armInfo['最终加成'] = matches[1].split(' | ');
+
+    let smMatches = description.match(/(.神秘)：(.+?)。/g);
+    for (let i in smMatches) {
+        let subMatches = /(.神秘)：(.+?)。/.exec(smMatches[i]);
+        if (smMatches) {
+            armInfo[subMatches[1]] = subMatches[2];
+        }
     }
-    return currentArmInfo;
+    return armInfo;
 };
 
 /**
  * 获取装备等级情况
- * @param html 争夺首页的HTML代码
+ * @param html 装备的HTML代码
  * @returns {Map} 装备等级情况列表
  */
 const getArmsLevelInfo = exports.getArmsLevelInfo = function (html) {
@@ -5055,7 +5231,7 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     let content = '';
-    let sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '盒子', '道具', '已使用道具', '装备', '能量', '卡片'];
+    let sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '盒子', '道具', '已使用道具', '装备', '武器经验', '能量', '卡片'];
     content += '<strong>收获：</strong>';
     for (let key of Util.getSortedObjectKeyList(sortStatTypeList, income)) {
         profit[key] = income[key];
@@ -5331,11 +5507,11 @@ const init = exports.init = function () {
  */
 const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     Script.runFunc('Loot.enhanceLootIndexPage_before_');
-    propertyList = getLootPropertyList();
     let propertiesHtml = $properties.html();
+    propertyList = getLootPropertyList(propertiesHtml);
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-    currentArmInfo = Item.getCurrentArmInfo($points.find('> tbody > tr:first-child > td').html());
+    currentArmInfo = Item.getArmInfo($points.find('> tbody > tr:first-child > td').html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -5367,6 +5543,20 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  */
 const handlePropertiesArea = function () {
     $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative').append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+
+    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        let coefficient = Math.floor((propertyList['可分配属性点'] - 50 - (itemUsedNumList.get('档案室钥匙') === 30 ? 30 : 0) - (itemUsedNumList.get('消逝之药') === 10 ? 120 : 0)) / 5);
+        let copyText = coefficient + ' ' + Math.floor(haloInfo['全属性'] * 1000) + '\n';
+        for (let value of itemUsedNumList.values()) {
+            copyText += value + ' ';
+        }
+        $this.data('copy-text', copyText.trim());
+        if (!Util.copyText($this, '计算器的部分参数设置已复制')) {
+            alert('你的浏览器不支持复制');
+        }
+    });
 
     return; // 临时禁用
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
@@ -5499,9 +5689,10 @@ const checkPoints = function ($points) {
 
 /**
  * 获取争夺属性列表
+ * @param {string} html 争夺属性区域的HTML代码
  * @returns {{}} 争夺属性
  */
-const getLootPropertyList = function () {
+const getLootPropertyList = function (html) {
     let propertyList = {
         '攻击力': 0,
         '生命值': 0,
@@ -5513,25 +5704,24 @@ const getLootPropertyList = function () {
         '防御': 0,
         '可分配属性点': 0
     };
-    let content = $properties.html();
-    let matches = /"(\d+)攻击力"/.exec(content);
+    let matches = /"(\d+)攻击力"/.exec(html);
     if (matches) propertyList['攻击力'] = parseInt(matches[1]);
-    matches = /"(\d+)\/(\d+)生命值"/.exec(content);
+    matches = /"(\d+)\/(\d+)生命值"/.exec(html);
     if (matches) {
         propertyList['生命值'] = parseInt(matches[1]);
         propertyList['最大生命值'] = parseInt(matches[2]);
     }
-    matches = /"(\d+)攻击速度"/.exec(content);
+    matches = /"(\d+)攻击速度"/.exec(html);
     if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
-    /*matches = /暴击几率：(\d+)%/.exec(content);
+    /*matches = /暴击几率：(\d+)%/.exec(html);
      if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
-     matches = /技能伤害：(\d+)/.exec(content);
+     matches = /技能伤害：(\d+)/.exec(html);
      if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
-     matches = /技能释放概率：(\d+)%/.exec(content);
+     matches = /技能释放概率：(\d+)%/.exec(html);
      if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);*/ // 临时禁用
-    matches = /"(\d+)%减伤"/.exec(content);
+    matches = /"(\d+)%减伤"/.exec(html);
     if (matches) propertyList['防御'] = parseInt(matches[1]);
-    matches = /"(\d+)\s*可分配属性"/.exec(content);
+    matches = /"(\d+)\s*可分配属性"/.exec(html);
     if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
     return propertyList;
 };
@@ -5764,7 +5954,7 @@ const getPointByProperty = exports.getPointByProperty = function (pointName, num
 const getRealProperty = exports.getRealProperty = function (pointName, totalPoint, level, enemy) {
     const npcStepNum = 2; // NPC递增数值
     const antiCoefficient = 3; // 抵消系数
-    const coefficient = { '普通': 1, '强壮': 1, '快速': 1.5, '脆弱': 1, '缓慢': 1, 'BOSS': 1.2 }; // NPC强化系数列表
+    const coefficient = { '普通': 1, '强壮': 1, '快速': 1.5, '睿智': 1, '坚强': 1, 'BOSS': 1.2 }; // NPC强化系数列表
     const cardinalNum = pointName === '灵活' ? 100 : 90; // 基数
 
     let npcPoint = Math.round(level * npcStepNum * coefficient[enemy]);
@@ -6217,7 +6407,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
      * @param {boolean} isSubmit 是否提交分配点数
      */
     const recordPointsLog = function (isSubmit = false) {
-        propertyList = getLootPropertyList();
+        propertyList = getLootPropertyList($properties.html());
         let pointsText = '',
             propertiesText = '';
         $points.find('.pd_point').each(function () {
@@ -6768,11 +6958,11 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
             case '普通':
                 color = '#09c';
                 break;
-            case '特别脆弱':
+            case '特别睿智':
                 color = '#c96';
                 break;
-            case '特别缓慢':
-                color = '#c69';
+            case '特别坚强':
+                color = '#cc587c';
                 break;
             case '特别强壮':
                 color = '#f93';
@@ -6902,8 +7092,8 @@ const getEnemyStatList = function (levelInfoList) {
         '普通': 0,
         '强壮': 0,
         '快速': 0,
-        '脆弱': 0,
-        '缓慢': 0,
+        '睿智': 0,
+        '坚强': 0,
         'BOSS': 0,
         '大魔王': 0
     };
@@ -8661,7 +8851,15 @@ const appendCss = exports.appendCss = function () {
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
   .pd_arm_equipped { background-color:#EEEEFF; box-shadow: 0 0 7px #99f; }
-  .pd_arm_equipped > td:nth-child(3):before { content: "（装备中）"; font-weight: bold; }
+  .pd_arm_equipped > td:nth-child(3)::before { content: "（装备中）"; font-weight: bold; }
+  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
+  .kf_fw_ig4 > tbody > tr > td:nth-child(3) { position: relative; }
+  .kf_fw_ig4 > tbody > tr > td[data-memo]:nth-child(3)::after {
+    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);
+  }
+  .kf_fw_ig4 > tbody > tr.pd_arm_equipped > td[data-memo]:nth-child(3)::after { background: rgba(238, 238, 255, .9); }
+  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
+  tr.pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
@@ -11502,10 +11700,16 @@ const copyText = exports.copyText = function ($target, msg = '', $excludeElem = 
         $target = $(`<span class="pd_hide">${copyText.replace(/\n/g, '<br>')}</span>`).insertAfter($target);
     }
     if ($excludeElem) $excludeElem.prop('hidden', true);
-    let s = window.getSelection();
-    s.selectAllChildren($target.get(0));
-    let result = document.execCommand('copy');
-    s.removeAllRanges();
+    let result = null;
+    if ($target.is('input, textarea')) {
+        $target.select();
+        result = document.execCommand('copy');
+    } else {
+        let s = window.getSelection();
+        s.selectAllChildren($target.get(0));
+        result = document.execCommand('copy');
+        s.removeAllRanges();
+    }
     if (copyText) $target.remove();
     if ($excludeElem) $excludeElem.removeProp('hidden');
     if (result) {
