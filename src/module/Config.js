@@ -209,6 +209,8 @@ export const Config = {
     useItemsAfterOpenBoxesEnabled: false,
     // 是否在打开盒子后出售道具，true：开启；false：关闭
     sellItemsAfterOpenBoxesEnabled: false,
+    // 默认的批量打开的盒子种类列表，例：['普通盒子', '幸运盒子', '稀有盒子']
+    defOpenBoxTypeList: [],
     // 默认的批量熔炼的装备种类列表，例：['普通的长剑', '幸运的长剑', '普通的短弓']
     defSmeltArmTypeList: [],
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']

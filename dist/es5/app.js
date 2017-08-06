@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.0';
+var version = '11.0.1';
 
 /**
  * 导出模块
@@ -1244,6 +1244,8 @@ var Config = exports.Config = {
     useItemsAfterOpenBoxesEnabled: false,
     // 是否在打开盒子后出售道具，true：开启；false：关闭
     sellItemsAfterOpenBoxesEnabled: false,
+    // 默认的批量打开的盒子种类列表，例：['普通盒子', '幸运盒子', '稀有盒子']
+    defOpenBoxTypeList: [],
     // 默认的批量熔炼的装备种类列表，例：['普通的长剑', '幸运的长剑', '普通的短弓']
     defSmeltArmTypeList: [],
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -3209,45 +3211,16 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
     Msg.destroy();
     (0, _Config.read)();
 
-    var armTypesCheckedHtml = '';
+    var boxTypesOptionHtml = '';
     var _iteratorNormalCompletion = true;
     var _didIteratorError = false;
     var _iteratorError = undefined;
 
     try {
-        for (var _iterator = armGroupList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var group = _step.value;
+        for (var _iterator = boxTypeList.slice(0, 4)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var boxName = _step.value;
 
-            armTypesCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
-            var _iteratorNormalCompletion3 = true;
-            var _didIteratorError3 = false;
-            var _iteratorError3 = undefined;
-
-            try {
-                for (var _iterator3 = armTypeList[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                    var type = _step3.value;
-
-                    var prefix = type.split('的')[0];
-                    if (prefix === '神秘') continue;
-                    var name = prefix + '\u7684' + group;
-                    armTypesCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
-                }
-            } catch (err) {
-                _didIteratorError3 = true;
-                _iteratorError3 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                        _iterator3.return();
-                    }
-                } finally {
-                    if (_didIteratorError3) {
-                        throw _iteratorError3;
-                    }
-                }
-            }
-
-            armTypesCheckedHtml += '</li>';
+            boxTypesOptionHtml += '<option>' + boxName + '</option>';
         }
     } catch (err) {
         _didIteratorError = true;
@@ -3264,16 +3237,45 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
         }
     }
 
-    var itemTypesOptionHtml = '';
+    var armTypesCheckedHtml = '';
     var _iteratorNormalCompletion2 = true;
     var _didIteratorError2 = false;
     var _iteratorError2 = undefined;
 
     try {
-        for (var _iterator2 = itemTypeList.slice(6)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var itemName = _step2.value;
+        for (var _iterator2 = armGroupList[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var group = _step2.value;
 
-            itemTypesOptionHtml += '<option>' + itemName + '</option>';
+            armTypesCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
+            var _iteratorNormalCompletion4 = true;
+            var _didIteratorError4 = false;
+            var _iteratorError4 = undefined;
+
+            try {
+                for (var _iterator4 = armTypeList[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    var type = _step4.value;
+
+                    var prefix = type.split('的')[0];
+                    if (prefix === '神秘') continue;
+                    var name = prefix + '\u7684' + group;
+                    armTypesCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
+                }
+            } catch (err) {
+                _didIteratorError4 = true;
+                _iteratorError4 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                        _iterator4.return();
+                    }
+                } finally {
+                    if (_didIteratorError4) {
+                        throw _iteratorError4;
+                    }
+                }
+            }
+
+            armTypesCheckedHtml += '</li>';
         }
     } catch (err) {
         _didIteratorError2 = true;
@@ -3290,12 +3292,42 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
         }
     }
 
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin-top: 5px;"><b>\u8BF7\u9009\u62E9\u6279\u91CF\u6253\u5F00\u76D2\u5B50\u540E\u60F3\u8981\u8FDB\u884C\u7684\u64CD\u4F5C\uFF08\u5982\u65E0\u9700\u64CD\u4F5C\u53EF\u4E0D\u7528\u52FE\u9009\uFF09\uFF1A</b></div>\n  <fieldset>\n    <legend>\n      <label><input name="smeltArmsAfterOpenBoxesEnabled" type="checkbox"> \u7194\u70BC\u88C5\u5907</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u7194\u70BC\u7684\u88C5\u5907\u79CD\u7C7B\uFF1A</div>\n    <ul data-name="smeltArmTypeList">' + armTypesCheckedHtml + '</ul>\n    <div>\n      <a class="pd_btn_link" href="#" data-name="selectAll">\u5168\u9009</a>\n      <a class="pd_btn_link" href="#" data-name="selectInverse">\u53CD\u9009</a>\n    </div>\n  </fieldset>\n  <fieldset>\n    <legend>\n      <label><input name="useItemsAfterOpenBoxesEnabled" type="checkbox"> \u4F7F\u7528\u9053\u5177</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u4F7F\u7528\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n    <select name="useItemTypes" size="6" style="width: 320px;" multiple>' + itemTypesOptionHtml + '</select>\n  </fieldset>\n  <fieldset>\n    <legend>\n      <label><input name="sellItemsAfterOpenBoxesEnabled" type="checkbox"> \u51FA\u552E\u9053\u5177</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u51FA\u552E\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n    <select name="sellItemTypes" size="6" style="width: 320px;" multiple>' + itemTypesOptionHtml + '</select>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <button name="open" type="button" style="color: #f00;">\u4E00\u952E\u5F00\u76D2</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var itemTypesOptionHtml = '';
+    var _iteratorNormalCompletion3 = true;
+    var _didIteratorError3 = false;
+    var _iteratorError3 = undefined;
+
+    try {
+        for (var _iterator3 = itemTypeList.slice(6)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var itemName = _step3.value;
+
+            itemTypesOptionHtml += '<option>' + itemName + '</option>';
+        }
+    } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                _iterator3.return();
+            }
+        } finally {
+            if (_didIteratorError3) {
+                throw _iteratorError3;
+            }
+        }
+    }
+
+    var html = '\n<div class="pd_cfg_main">\n  <fieldset style="margin-top: 5px;">\n    <legend>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u6253\u5F00\u7684\u76D2\u5B50\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</legend>\n    <select name="openBoxesTypes" size="4" style="width: 320px;" multiple>' + boxTypesOptionHtml + '</select>\n  </fieldset>\n  <div style="margin-top: 5px;"><b>\u8BF7\u9009\u62E9\u6279\u91CF\u6253\u5F00\u76D2\u5B50\u540E\u60F3\u8981\u8FDB\u884C\u7684\u64CD\u4F5C\uFF08\u5982\u65E0\u9700\u64CD\u4F5C\u53EF\u4E0D\u7528\u52FE\u9009\uFF09\uFF1A</b></div>\n  <fieldset>\n    <legend>\n      <label><input name="smeltArmsAfterOpenBoxesEnabled" type="checkbox"> \u7194\u70BC\u88C5\u5907</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u7194\u70BC\u7684\u88C5\u5907\u79CD\u7C7B\uFF1A</div>\n    <ul data-name="smeltArmTypeList">' + armTypesCheckedHtml + '</ul>\n    <div>\n      <a class="pd_btn_link" href="#" data-name="selectAll">\u5168\u9009</a>\n      <a class="pd_btn_link" href="#" data-name="selectInverse">\u53CD\u9009</a>\n    </div>\n  </fieldset>\n  <fieldset>\n    <legend>\n      <label><input name="useItemsAfterOpenBoxesEnabled" type="checkbox"> \u4F7F\u7528\u9053\u5177</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u4F7F\u7528\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n    <select name="useItemTypes" size="6" style="width: 320px;" multiple>' + itemTypesOptionHtml + '</select>\n  </fieldset>\n  <fieldset>\n    <legend>\n      <label><input name="sellItemsAfterOpenBoxesEnabled" type="checkbox"> \u51FA\u552E\u9053\u5177</label>\n    </legend>\n    <div>\u8BF7\u9009\u62E9\u60F3\u6279\u91CF\u51FA\u552E\u7684\u9053\u5177\u79CD\u7C7B\uFF08\u6309<b>Ctrl\u952E</b>\u6216<b>Shift\u952E</b>\u53EF\u591A\u9009\uFF09\uFF1A</div>\n    <select name="sellItemTypes" size="6" style="width: 320px;" multiple>' + itemTypesOptionHtml + '</select>\n  </fieldset>\n</div>\n<div class="pd_cfg_btns">\n  <button name="open" type="button" style="color: #f00;">\u4E00\u952E\u5F00\u76D2</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '一键开盒', html);
     var $smeltArmTypeList = $dialog.find('ul[data-name="smeltArmTypeList"]');
 
     $dialog.find('[name="open"]').click(function () {
         (0, _Config.read)();
+        var tmpBoxTypeList = $dialog.find('select[name="openBoxesTypes"]').val();
+        if (!Array.isArray(tmpBoxTypeList)) tmpBoxTypeList = [];
+        Config.defOpenBoxTypeList = tmpBoxTypeList;
+
         $dialog.find('legend [type="checkbox"]').each(function () {
             var $this = $(this);
             var name = $this.attr('name');
@@ -3303,6 +3335,7 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
                 Config[name] = Boolean($this.prop('checked'));
             }
         });
+
         if (Config.smeltArmsAfterOpenBoxesEnabled) {
             var typeList = [];
             $smeltArmTypeList.find('input[name="smeltArmsType"]:checked').each(function () {
@@ -3318,15 +3351,15 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
             var _typeList2 = $dialog.find('select[name="sellItemTypes"]').val();
             if (Array.isArray(_typeList2)) Config.defSellItemTypeList = _typeList2;else Config.sellItemsAfterOpenBoxesEnabled = false;
         }
-        (0, _Config.write)();
-        if (!confirm('是否一键开盒（并执行所选操作）？')) return;
-        Dialog.close(dialogName);
 
+        (0, _Config.write)();
+        if (!Config.defOpenBoxTypeList.length || !confirm('是否一键开盒（并执行所选操作）？')) return;
+        Dialog.close(dialogName);
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             var $this = $(this);
             var boxType = $this.find('span:first').text().trim() + '盒子';
-            if (!boxTypeList.includes(boxType)) return;
+            if (!Config.defOpenBoxTypeList.includes(boxType)) return;
             var num = parseInt($this.find('span:last').text());
             if (!num || num < 0) return;
             var id = parseInt($boxArea.find('> tbody > tr:nth-child(3) > td:nth-child(' + (index + 1) + ') > a[data-name="openBoxes"]').data('id'));
@@ -3342,7 +3375,7 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
         return Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]'));
     });
 
-    $dialog.on('keydown', 'select[name$="ItemTypes"]', function (e) {
+    $dialog.on('keydown', 'select[name$="Types"]', function (e) {
         if (e.ctrlKey && e.keyCode === 65) {
             e.preventDefault();
             $(this).children().prop('selected', true);
@@ -3353,12 +3386,15 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
         if (name in Config) {
             $this.prop('checked', Config[name] === true);
         }
-    }).end().find('select[name$="ItemTypes"]').each(function (index) {
+    });
+
+    $dialog.find('select[name$="Types"]').each(function (index) {
         var $this = $(this);
-        var itemTypeList = index === 0 ? Config.defUseItemTypeList : Config.defSellItemTypeList;
+        var typeList = Config.defOpenBoxTypeList;
+        if (index === 1) typeList = Config.defUseItemTypeList;else if (index === 2) typeList = Config.defSellItemTypeList;
         $this.find('option').each(function () {
             var $this = $(this);
-            if (itemTypeList.includes($this.val())) {
+            if (typeList.includes($this.val())) {
                 $this.prop('selected', true);
             }
         });
@@ -3462,31 +3498,31 @@ var openBoxes = function openBoxes(_ref) {
             if (isStop || !length) {
                 Msg.remove($wait);
                 var avgRandomNum = randomTotalCount > 0 ? Util.getFixedNumLocStr(randomTotalNum / randomTotalCount, 2) : 0;
-                var _iteratorNormalCompletion4 = true;
-                var _didIteratorError4 = false;
-                var _iteratorError4 = undefined;
+                var _iteratorNormalCompletion5 = true;
+                var _didIteratorError5 = false;
+                var _iteratorError5 = undefined;
 
                 try {
-                    for (var _iterator4 = Util.entries(stat)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                        var _step4$value = _slicedToArray(_step4.value, 2),
-                            key = _step4$value[0],
-                            value = _step4$value[1];
+                    for (var _iterator5 = Util.entries(stat)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                        var _step5$value = _slicedToArray(_step5.value, 2),
+                            key = _step5$value[0],
+                            value = _step5$value[1];
 
                         if (!value || $.type(value) === 'object' && $.isEmptyObject(value)) {
                             delete stat[key];
                         }
                     }
                 } catch (err) {
-                    _didIteratorError4 = true;
-                    _iteratorError4 = err;
+                    _didIteratorError5 = true;
+                    _iteratorError5 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                            _iterator4.return();
+                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                            _iterator5.return();
                         }
                     } finally {
-                        if (_didIteratorError4) {
-                            throw _iteratorError4;
+                        if (_didIteratorError5) {
+                            throw _iteratorError5;
                         }
                     }
                 }
@@ -3506,15 +3542,15 @@ var openBoxes = function openBoxes(_ref) {
 
                 var resultStatHtml = '',
                     msgStatHtml = '';
-                var _iteratorNormalCompletion5 = true;
-                var _didIteratorError5 = false;
-                var _iteratorError5 = undefined;
+                var _iteratorNormalCompletion6 = true;
+                var _didIteratorError6 = false;
+                var _iteratorError6 = undefined;
 
                 try {
-                    for (var _iterator5 = Util.entries(stat)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                        var _step5$value = _slicedToArray(_step5.value, 2),
-                            key = _step5$value[0],
-                            value = _step5$value[1];
+                    for (var _iterator6 = Util.entries(stat)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                        var _step6$value = _slicedToArray(_step6.value, 2),
+                            key = _step6$value[0],
+                            value = _step6$value[1];
 
                         var tmpHtml = '';
                         if ($.type(value) === 'object') {
@@ -3523,27 +3559,27 @@ var openBoxes = function openBoxes(_ref) {
                             resultStatHtml += (key === 'item' ? '道具' : '装备') + '\uFF1A';
 
                             var typeList = key === 'item' ? itemTypeList : armTypeList;
-                            var _iteratorNormalCompletion6 = true;
-                            var _didIteratorError6 = false;
-                            var _iteratorError6 = undefined;
+                            var _iteratorNormalCompletion7 = true;
+                            var _didIteratorError7 = false;
+                            var _iteratorError7 = undefined;
 
                             try {
-                                for (var _iterator6 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                                    var name = _step6.value;
+                                for (var _iterator7 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+                                    var name = _step7.value;
 
                                     tmpHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
                                 }
                             } catch (err) {
-                                _didIteratorError6 = true;
-                                _iteratorError6 = err;
+                                _didIteratorError7 = true;
+                                _iteratorError7 = err;
                             } finally {
                                 try {
-                                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                                        _iterator6.return();
+                                    if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                                        _iterator7.return();
                                     }
                                 } finally {
-                                    if (_didIteratorError6) {
-                                        throw _iteratorError6;
+                                    if (_didIteratorError7) {
+                                        throw _iteratorError7;
                                     }
                                 }
                             }
@@ -3554,16 +3590,16 @@ var openBoxes = function openBoxes(_ref) {
                         msgStatHtml += tmpHtml.trim();
                     }
                 } catch (err) {
-                    _didIteratorError5 = true;
-                    _iteratorError5 = err;
+                    _didIteratorError6 = true;
+                    _iteratorError6 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                            _iterator5.return();
+                        if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                            _iterator6.return();
                         }
                     } finally {
-                        if (_didIteratorError5) {
-                            throw _iteratorError5;
+                        if (_didIteratorError6) {
+                            throw _iteratorError6;
                         }
                     }
                 }
@@ -3724,6 +3760,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo) {
         if (!Util.copyText($target)) {
             $target.select().focus();
         }
+        Script.runFunc('Item.showArmInfoDialog_copy_');
     }).find('[name="saveMemo"]').click(function (e) {
         e.preventDefault();
         (0, _Config.read)();
@@ -3767,54 +3804,19 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
     info['组别'] = groupKeyList.get(armInfo['组别']);
 
     var smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
-    var _iteratorNormalCompletion7 = true;
-    var _didIteratorError7 = false;
-    var _iteratorError7 = undefined;
-
-    try {
-        for (var _iterator7 = smKeyList[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-            var _step7$value = _slicedToArray(_step7.value, 2),
-                key = _step7$value[0],
-                value = _step7$value[1];
-
-            if (key in armInfo) {
-                info['神秘属性数量']++;
-                info['神秘属性数量'] += value + ' ';
-            }
-        }
-    } catch (err) {
-        _didIteratorError7 = true;
-        _iteratorError7 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                _iterator7.return();
-            }
-        } finally {
-            if (_didIteratorError7) {
-                throw _iteratorError7;
-            }
-        }
-    }
-
-    var mainPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']]);
     var _iteratorNormalCompletion8 = true;
     var _didIteratorError8 = false;
     var _iteratorError8 = undefined;
 
     try {
-        for (var _iterator8 = armInfo['主属性'][Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var value = _step8.value;
+        for (var _iterator8 = smKeyList[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            var _step8$value = _slicedToArray(_step8.value, 2),
+                key = _step8$value[0],
+                value = _step8$value[1];
 
-            var _value$split = value.split('(', 1),
-                _value$split2 = _slicedToArray(_value$split, 1),
-                _value$split2$ = _value$split2[0],
-                property = _value$split2$ === undefined ? '' : _value$split2$;
-
-            property = property.trim();
-            if (property) {
-                info['主属性数量']++;
-                info['所有的主属性'] += mainPropertyKeyList.get(property) + ' ';
+            if (key in armInfo) {
+                info['神秘属性数量']++;
+                info['所有的神秘属性'] += value + ' ';
             }
         }
     } catch (err) {
@@ -3832,21 +3834,24 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
+    var mainPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']]);
     var _iteratorNormalCompletion9 = true;
     var _didIteratorError9 = false;
     var _iteratorError9 = undefined;
 
     try {
-        for (var _iterator9 = armInfo['从属性'][Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var _value = _step9.value;
+        for (var _iterator9 = armInfo['主属性'][Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var value = _step9.value;
 
-            _value = $.trim(_value);
-            if (!_value) continue;
-            var matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(_value);
-            if (matches) {
-                info['从属性数量']++;
-                info['所有的从属性'] += mainPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+            var _value$split = value.split('(', 1),
+                _value$split2 = _slicedToArray(_value$split, 1),
+                _value$split2$ = _value$split2[0],
+                property = _value$split2$ === undefined ? '' : _value$split2$;
+
+            property = property.trim();
+            if (property) {
+                info['主属性数量']++;
+                info['所有的主属性'] += mainPropertyKeyList.get(property) + ' ';
             }
         }
     } catch (err) {
@@ -3864,18 +3869,22 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var content = '\n[\u7EC4\u522B]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
+    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
     var _iteratorNormalCompletion10 = true;
     var _didIteratorError10 = false;
     var _iteratorError10 = undefined;
 
     try {
-        for (var _iterator10 = Util.entries(info)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-            var _step10$value = _slicedToArray(_step10.value, 2),
-                key = _step10$value[0],
-                _value2 = _step10$value[1];
+        for (var _iterator10 = armInfo['从属性'][Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var _value = _step10.value;
 
-            content = content.replace('[' + key + ']', $.trim(_value2));
+            _value = $.trim(_value);
+            if (!_value) continue;
+            var matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(_value);
+            if (matches) {
+                info['从属性数量']++;
+                info['所有的从属性'] += mainPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+            }
         }
     } catch (err) {
         _didIteratorError10 = true;
@@ -3888,6 +3897,34 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         } finally {
             if (_didIteratorError10) {
                 throw _iteratorError10;
+            }
+        }
+    }
+
+    var content = '\n[\u7EC4\u522B]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
+    var _iteratorNormalCompletion11 = true;
+    var _didIteratorError11 = false;
+    var _iteratorError11 = undefined;
+
+    try {
+        for (var _iterator11 = Util.entries(info)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var _step11$value = _slicedToArray(_step11.value, 2),
+                key = _step11$value[0],
+                _value2 = _step11$value[1];
+
+            content = content.replace('[' + key + ']', $.trim(_value2));
+        }
+    } catch (err) {
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                _iterator11.return();
+            }
+        } finally {
+            if (_didIteratorError11) {
+                throw _iteratorError11;
             }
         }
     }
@@ -4042,22 +4079,22 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
     (0, _Config.read)();
 
     var armTypeCheckedHtml = '';
-    var _iteratorNormalCompletion11 = true;
-    var _didIteratorError11 = false;
-    var _iteratorError11 = undefined;
+    var _iteratorNormalCompletion12 = true;
+    var _didIteratorError12 = false;
+    var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator11 = armGroupList[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var group = _step11.value;
+        for (var _iterator12 = armGroupList[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var group = _step12.value;
 
             armTypeCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
-            var _iteratorNormalCompletion12 = true;
-            var _didIteratorError12 = false;
-            var _iteratorError12 = undefined;
+            var _iteratorNormalCompletion13 = true;
+            var _didIteratorError13 = false;
+            var _iteratorError13 = undefined;
 
             try {
-                for (var _iterator12 = armTypeList[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-                    var type = _step12.value;
+                for (var _iterator13 = armTypeList[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+                    var type = _step13.value;
 
                     var prefix = type.split('的')[0];
                     if (prefix === '神秘') continue;
@@ -4065,16 +4102,16 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
                     armTypeCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
                 }
             } catch (err) {
-                _didIteratorError12 = true;
-                _iteratorError12 = err;
+                _didIteratorError13 = true;
+                _iteratorError13 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion12 && _iterator12.return) {
-                        _iterator12.return();
+                    if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                        _iterator13.return();
                     }
                 } finally {
-                    if (_didIteratorError12) {
-                        throw _iteratorError12;
+                    if (_didIteratorError13) {
+                        throw _iteratorError13;
                     }
                 }
             }
@@ -4082,16 +4119,16 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
             armTypeCheckedHtml += '</li>';
         }
     } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                _iterator11.return();
+            if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                _iterator12.return();
             }
         } finally {
-            if (_didIteratorError11) {
-                throw _iteratorError11;
+            if (_didIteratorError12) {
+                throw _iteratorError12;
             }
         }
     }
@@ -4264,13 +4301,13 @@ var smeltArms = function smeltArms(typeList, safeId) {
         var armGroupNum = 0,
             totalExp = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion13 = true;
-        var _didIteratorError13 = false;
-        var _iteratorError13 = undefined;
+        var _iteratorNormalCompletion14 = true;
+        var _didIteratorError14 = false;
+        var _iteratorError14 = undefined;
 
         try {
-            for (var _iterator13 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-                var armGroup = _step13.value;
+            for (var _iterator14 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                var armGroup = _step14.value;
 
                 armGroupNum++;
                 var _smeltInfo$armGroup = smeltInfo[armGroup],
@@ -4282,16 +4319,16 @@ var smeltArms = function smeltArms(typeList, safeId) {
                 Log.push('熔炼装备', '\u5171\u6709`' + num + '`\u4E2A\u3010`' + armGroup + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: { '武器经验': totalExp }, pay: { '装备': -num } });
             }
         } catch (err) {
-            _didIteratorError13 = true;
-            _iteratorError13 = err;
+            _didIteratorError14 = true;
+            _iteratorError14 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion13 && _iterator13.return) {
-                    _iterator13.return();
+                if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                    _iterator14.return();
                 }
             } finally {
-                if (_didIteratorError13) {
-                    throw _iteratorError13;
+                if (_didIteratorError14) {
+                    throw _iteratorError14;
                 }
             }
         }
@@ -4463,27 +4500,27 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
     (0, _Config.read)();
 
     var itemTypesOptionHtml = '';
-    var _iteratorNormalCompletion14 = true;
-    var _didIteratorError14 = false;
-    var _iteratorError14 = undefined;
+    var _iteratorNormalCompletion15 = true;
+    var _didIteratorError15 = false;
+    var _iteratorError15 = undefined;
 
     try {
-        for (var _iterator14 = itemTypeList.slice(6)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-            var itemName = _step14.value;
+        for (var _iterator15 = itemTypeList.slice(6)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+            var itemName = _step15.value;
 
             itemTypesOptionHtml += '<option>' + itemName + '</option>';
         }
     } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError15 = true;
+        _iteratorError15 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                _iterator14.return();
+            if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                _iterator15.return();
             }
         } finally {
-            if (_didIteratorError14) {
-                throw _iteratorError14;
+            if (_didIteratorError15) {
+                throw _iteratorError15;
             }
         }
     }
@@ -4659,13 +4696,13 @@ var useItems = function useItems(typeList, safeId) {
 
         var itemTypeNum = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion15 = true;
-        var _didIteratorError15 = false;
-        var _iteratorError15 = undefined;
+        var _iteratorNormalCompletion16 = true;
+        var _didIteratorError16 = false;
+        var _iteratorError16 = undefined;
 
         try {
-            for (var _iterator15 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-                var itemName = _step15.value;
+            for (var _iterator16 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+                var itemName = _step16.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -4676,29 +4713,29 @@ var useItems = function useItems(typeList, safeId) {
                 if (stat['无效道具'] === 0) delete stat['无效道具'];
                 if (!$.isEmptyObject(stat)) {
                     resultStat += '\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011 <i>\u9053\u5177<ins>-' + successNum + '</ins></i> ';
-                    var _iteratorNormalCompletion16 = true;
-                    var _didIteratorError16 = false;
-                    var _iteratorError16 = undefined;
+                    var _iteratorNormalCompletion17 = true;
+                    var _didIteratorError17 = false;
+                    var _iteratorError17 = undefined;
 
                     try {
-                        for (var _iterator16 = Util.entries(stat)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-                            var _step16$value = _slicedToArray(_step16.value, 2),
-                                key = _step16$value[0],
-                                num = _step16$value[1];
+                        for (var _iterator17 = Util.entries(stat)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+                            var _step17$value = _slicedToArray(_step17.value, 2),
+                                key = _step17$value[0],
+                                num = _step17$value[1];
 
                             resultStat += '<i>' + key + '<em>+' + num + '</em></i> ';
                         }
                     } catch (err) {
-                        _didIteratorError16 = true;
-                        _iteratorError16 = err;
+                        _didIteratorError17 = true;
+                        _iteratorError17 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                                _iterator16.return();
+                            if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                                _iterator17.return();
                             }
                         } finally {
-                            if (_didIteratorError16) {
-                                throw _iteratorError16;
+                            if (_didIteratorError17) {
+                                throw _iteratorError17;
                             }
                         }
                     }
@@ -4708,16 +4745,16 @@ var useItems = function useItems(typeList, safeId) {
                 }
             }
         } catch (err) {
-            _didIteratorError15 = true;
-            _iteratorError15 = err;
+            _didIteratorError16 = true;
+            _iteratorError16 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                    _iterator15.return();
+                if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                    _iterator16.return();
                 }
             } finally {
-                if (_didIteratorError15) {
-                    throw _iteratorError15;
+                if (_didIteratorError16) {
+                    throw _iteratorError16;
                 }
             }
         }
@@ -4848,13 +4885,13 @@ var sellItems = function sellItems(itemTypeList, safeId) {
         var itemTypeNum = 0,
             totalSell = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion17 = true;
-        var _didIteratorError17 = false;
-        var _iteratorError17 = undefined;
+        var _iteratorNormalCompletion18 = true;
+        var _didIteratorError18 = false;
+        var _iteratorError18 = undefined;
 
         try {
-            for (var _iterator17 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-                var itemName = _step17.value;
+            for (var _iterator18 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+                var itemName = _step18.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -4867,16 +4904,16 @@ var sellItems = function sellItems(itemTypeList, safeId) {
                 Log.push('出售道具', '\u5171\u6709`' + num + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': _sell }, pay: { '道具': -num } });
             }
         } catch (err) {
-            _didIteratorError17 = true;
-            _iteratorError17 = err;
+            _didIteratorError18 = true;
+            _iteratorError18 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion17 && _iterator17.return) {
-                    _iterator17.return();
+                if (!_iteratorNormalCompletion18 && _iterator18.return) {
+                    _iterator18.return();
                 }
             } finally {
-                if (_didIteratorError17) {
-                    throw _iteratorError17;
+                if (_didIteratorError18) {
+                    throw _iteratorError18;
                 }
             }
         }
@@ -4998,47 +5035,17 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                 isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                 if (isStop || successNum === buyNum) {
                     Msg.remove($countdown.closest('.pd_msg'));
-                    var _iteratorNormalCompletion18 = true;
-                    var _didIteratorError18 = false;
-                    var _iteratorError18 = undefined;
-
-                    try {
-                        for (var _iterator18 = Util.entries(itemList)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-                            var _step18$value = _slicedToArray(_step18.value, 2),
-                                itemName = _step18$value[0],
-                                num = _step18$value[1];
-
-                            if (!num) delete itemList[itemName];
-                        }
-                    } catch (err) {
-                        _didIteratorError18 = true;
-                        _iteratorError18 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion18 && _iterator18.return) {
-                                _iterator18.return();
-                            }
-                        } finally {
-                            if (_didIteratorError18) {
-                                throw _iteratorError18;
-                            }
-                        }
-                    }
-
-                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
-                        Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + type + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
-                    }
-
-                    var itemStatHtml = '';
                     var _iteratorNormalCompletion19 = true;
                     var _didIteratorError19 = false;
                     var _iteratorError19 = undefined;
 
                     try {
-                        for (var _iterator19 = Util.getSortedObjectKeyList(itemTypeList, itemList)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-                            var itemName = _step19.value;
+                        for (var _iterator19 = Util.entries(itemList)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+                            var _step19$value = _slicedToArray(_step19.value, 2),
+                                itemName = _step19$value[0],
+                                num = _step19$value[1];
 
-                            itemStatHtml += '<i>' + itemName + '<em>+' + itemList[itemName] + '</em></i> ';
+                            if (!num) delete itemList[itemName];
                         }
                     } catch (err) {
                         _didIteratorError19 = true;
@@ -5051,6 +5058,36 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                         } finally {
                             if (_didIteratorError19) {
                                 throw _iteratorError19;
+                            }
+                        }
+                    }
+
+                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
+                        Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + type + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
+                    }
+
+                    var itemStatHtml = '';
+                    var _iteratorNormalCompletion20 = true;
+                    var _didIteratorError20 = false;
+                    var _iteratorError20 = undefined;
+
+                    try {
+                        for (var _iterator20 = Util.getSortedObjectKeyList(itemTypeList, itemList)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+                            var itemName = _step20.value;
+
+                            itemStatHtml += '<i>' + itemName + '<em>+' + itemList[itemName] + '</em></i> ';
+                        }
+                    } catch (err) {
+                        _didIteratorError20 = true;
+                        _iteratorError20 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                                _iterator20.return();
+                            }
+                        } finally {
+                            if (_didIteratorError20) {
+                                throw _iteratorError20;
                             }
                         }
                     }

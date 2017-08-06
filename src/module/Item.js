@@ -154,6 +154,11 @@ const showOpenAllBoxesDialog = function () {
     Msg.destroy();
     readConfig();
 
+    let boxTypesOptionHtml = '';
+    for (let boxName of boxTypeList.slice(0, 4)) {
+        boxTypesOptionHtml += `<option>${boxName}</option>`;
+    }
+
     let armTypesCheckedHtml = '';
     for (let group of armGroupList) {
         armTypesCheckedHtml += `<li><b>${group}：</b>`;
@@ -176,6 +181,10 @@ const showOpenAllBoxesDialog = function () {
 
     let html = `
 <div class="pd_cfg_main">
+  <fieldset style="margin-top: 5px;">
+    <legend>请选择想批量打开的盒子种类（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
+    <select name="openBoxesTypes" size="4" style="width: 320px;" multiple>${boxTypesOptionHtml}</select>
+  </fieldset>
   <div style="margin-top: 5px;"><b>请选择批量打开盒子后想要进行的操作（如无需操作可不用勾选）：</b></div>
   <fieldset>
     <legend>
@@ -212,6 +221,10 @@ const showOpenAllBoxesDialog = function () {
 
     $dialog.find('[name="open"]').click(function () {
         readConfig();
+        let tmpBoxTypeList = $dialog.find('select[name="openBoxesTypes"]').val();
+        if (!Array.isArray(tmpBoxTypeList)) tmpBoxTypeList = [];
+        Config.defOpenBoxTypeList = tmpBoxTypeList;
+
         $dialog.find('legend [type="checkbox"]').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
@@ -219,6 +232,7 @@ const showOpenAllBoxesDialog = function () {
                 Config[name] = Boolean($this.prop('checked'));
             }
         });
+
         if (Config.smeltArmsAfterOpenBoxesEnabled) {
             let typeList = [];
             $smeltArmTypeList.find('input[name="smeltArmsType"]:checked').each(function () {
@@ -237,15 +251,15 @@ const showOpenAllBoxesDialog = function () {
             if (Array.isArray(typeList)) Config.defSellItemTypeList = typeList;
             else Config.sellItemsAfterOpenBoxesEnabled = false;
         }
-        writeConfig();
-        if (!confirm('是否一键开盒（并执行所选操作）？')) return;
-        Dialog.close(dialogName);
 
+        writeConfig();
+        if (!Config.defOpenBoxTypeList.length || !confirm('是否一键开盒（并执行所选操作）？')) return;
+        Dialog.close(dialogName);
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             let $this = $(this);
             let boxType = $this.find('span:first').text().trim() + '盒子';
-            if (!boxTypeList.includes(boxType)) return;
+            if (!Config.defOpenBoxTypeList.includes(boxType)) return;
             let num = parseInt($this.find('span:last').text());
             if (!num || num < 0) return;
             let id = parseInt($boxArea.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
@@ -256,7 +270,7 @@ const showOpenAllBoxesDialog = function () {
     }).end().find('a[data-name="selectAll"]').click(() => Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]')))
         .end().find('a[data-name="selectInverse"]').click(() => Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]')));
 
-    $dialog.on('keydown', 'select[name$="ItemTypes"]', (function (e) {
+    $dialog.on('keydown', 'select[name$="Types"]', (function (e) {
         if (e.ctrlKey && e.keyCode === 65) {
             e.preventDefault();
             $(this).children().prop('selected', true);
@@ -267,12 +281,16 @@ const showOpenAllBoxesDialog = function () {
         if (name in Config) {
             $this.prop('checked', Config[name] === true);
         }
-    }).end().find('select[name$="ItemTypes"]').each(function (index) {
+    });
+
+    $dialog.find('select[name$="Types"]').each(function (index) {
         let $this = $(this);
-        let itemTypeList = index === 0 ? Config.defUseItemTypeList : Config.defSellItemTypeList;
+        let typeList = Config.defOpenBoxTypeList;
+        if (index === 1) typeList = Config.defUseItemTypeList;
+        else if (index === 2) typeList = Config.defSellItemTypeList;
         $this.find('option').each(function () {
             let $this = $(this);
-            if (itemTypeList.includes($this.val())) {
+            if (typeList.includes($this.val())) {
                 $this.prop('selected', true);
             }
         });
@@ -602,6 +620,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         if (!Util.copyText($target)) {
             $target.select().focus();
         }
+        Script.runFunc('Item.showArmInfoDialog_copy_');
     }).find('[name="saveMemo"]').click(function (e) {
         e.preventDefault();
         readConfig();
@@ -649,7 +668,7 @@ export const getWeaponParameterSetting = function (armInfo) {
     for (let [key, value] of smKeyList) {
         if (key in armInfo) {
             info['神秘属性数量']++;
-            info['神秘属性数量'] += value + ' ';
+            info['所有的神秘属性'] += value + ' ';
         }
     }
 

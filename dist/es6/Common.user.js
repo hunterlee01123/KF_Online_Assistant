@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.0
+// @version     11.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.0';
+const version = '11.0.1';
 
 /**
  * 导出模块
@@ -1135,6 +1135,8 @@ const Config = exports.Config = {
     useItemsAfterOpenBoxesEnabled: false,
     // 是否在打开盒子后出售道具，true：开启；false：关闭
     sellItemsAfterOpenBoxesEnabled: false,
+    // 默认的批量打开的盒子种类列表，例：['普通盒子', '幸运盒子', '稀有盒子']
+    defOpenBoxTypeList: [],
     // 默认的批量熔炼的装备种类列表，例：['普通的长剑', '幸运的长剑', '普通的短弓']
     defSmeltArmTypeList: [],
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
@@ -3289,6 +3291,11 @@ const showOpenAllBoxesDialog = function () {
     Msg.destroy();
     (0, _Config.read)();
 
+    let boxTypesOptionHtml = '';
+    for (let boxName of boxTypeList.slice(0, 4)) {
+        boxTypesOptionHtml += `<option>${boxName}</option>`;
+    }
+
     let armTypesCheckedHtml = '';
     for (let group of armGroupList) {
         armTypesCheckedHtml += `<li><b>${group}：</b>`;
@@ -3311,6 +3318,10 @@ const showOpenAllBoxesDialog = function () {
 
     let html = `
 <div class="pd_cfg_main">
+  <fieldset style="margin-top: 5px;">
+    <legend>请选择想批量打开的盒子种类（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
+    <select name="openBoxesTypes" size="4" style="width: 320px;" multiple>${boxTypesOptionHtml}</select>
+  </fieldset>
   <div style="margin-top: 5px;"><b>请选择批量打开盒子后想要进行的操作（如无需操作可不用勾选）：</b></div>
   <fieldset>
     <legend>
@@ -3347,6 +3358,10 @@ const showOpenAllBoxesDialog = function () {
 
     $dialog.find('[name="open"]').click(function () {
         (0, _Config.read)();
+        let tmpBoxTypeList = $dialog.find('select[name="openBoxesTypes"]').val();
+        if (!Array.isArray(tmpBoxTypeList)) tmpBoxTypeList = [];
+        Config.defOpenBoxTypeList = tmpBoxTypeList;
+
         $dialog.find('legend [type="checkbox"]').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
@@ -3354,6 +3369,7 @@ const showOpenAllBoxesDialog = function () {
                 Config[name] = Boolean($this.prop('checked'));
             }
         });
+
         if (Config.smeltArmsAfterOpenBoxesEnabled) {
             let typeList = [];
             $smeltArmTypeList.find('input[name="smeltArmsType"]:checked').each(function () {
@@ -3369,15 +3385,15 @@ const showOpenAllBoxesDialog = function () {
             let typeList = $dialog.find('select[name="sellItemTypes"]').val();
             if (Array.isArray(typeList)) Config.defSellItemTypeList = typeList;else Config.sellItemsAfterOpenBoxesEnabled = false;
         }
-        (0, _Config.write)();
-        if (!confirm('是否一键开盒（并执行所选操作）？')) return;
-        Dialog.close(dialogName);
 
+        (0, _Config.write)();
+        if (!Config.defOpenBoxTypeList.length || !confirm('是否一键开盒（并执行所选操作）？')) return;
+        Dialog.close(dialogName);
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             let $this = $(this);
             let boxType = $this.find('span:first').text().trim() + '盒子';
-            if (!boxTypeList.includes(boxType)) return;
+            if (!Config.defOpenBoxTypeList.includes(boxType)) return;
             let num = parseInt($this.find('span:last').text());
             if (!num || num < 0) return;
             let id = parseInt($boxArea.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
@@ -3387,7 +3403,7 @@ const showOpenAllBoxesDialog = function () {
         $(document).dequeue('OpenAllBoxes');
     }).end().find('a[data-name="selectAll"]').click(() => Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'))).end().find('a[data-name="selectInverse"]').click(() => Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]')));
 
-    $dialog.on('keydown', 'select[name$="ItemTypes"]', function (e) {
+    $dialog.on('keydown', 'select[name$="Types"]', function (e) {
         if (e.ctrlKey && e.keyCode === 65) {
             e.preventDefault();
             $(this).children().prop('selected', true);
@@ -3398,12 +3414,15 @@ const showOpenAllBoxesDialog = function () {
         if (name in Config) {
             $this.prop('checked', Config[name] === true);
         }
-    }).end().find('select[name$="ItemTypes"]').each(function (index) {
+    });
+
+    $dialog.find('select[name$="Types"]').each(function (index) {
         let $this = $(this);
-        let itemTypeList = index === 0 ? Config.defUseItemTypeList : Config.defSellItemTypeList;
+        let typeList = Config.defOpenBoxTypeList;
+        if (index === 1) typeList = Config.defUseItemTypeList;else if (index === 2) typeList = Config.defSellItemTypeList;
         $this.find('option').each(function () {
             let $this = $(this);
-            if (itemTypeList.includes($this.val())) {
+            if (typeList.includes($this.val())) {
                 $this.prop('selected', true);
             }
         });
@@ -3707,6 +3726,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         if (!Util.copyText($target)) {
             $target.select().focus();
         }
+        Script.runFunc('Item.showArmInfoDialog_copy_');
     }).find('[name="saveMemo"]').click(function (e) {
         e.preventDefault();
         (0, _Config.read)();
@@ -3753,7 +3773,7 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
     for (let [key, value] of smKeyList) {
         if (key in armInfo) {
             info['神秘属性数量']++;
-            info['神秘属性数量'] += value + ' ';
+            info['所有的神秘属性'] += value + ' ';
         }
     }
 
