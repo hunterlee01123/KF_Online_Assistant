@@ -69,11 +69,11 @@ export const init = function () {
  */
 export const enhanceLootIndexPage = function () {
     Script.runFunc('Loot.enhanceLootIndexPage_before_');
-    propertyList = getLootPropertyList();
     let propertiesHtml = $properties.html();
+    propertyList = getLootPropertyList(propertiesHtml);
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-    currentArmInfo = Item.getCurrentArmInfo($points.find('> tbody > tr:first-child > td').html());
+    currentArmInfo = Item.getArmInfo($points.find('> tbody > tr:first-child > td').html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -110,6 +110,24 @@ export const enhanceLootIndexPage = function () {
 const handlePropertiesArea = function () {
     $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative')
         .append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+
+    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括系数、光环和道具数量）">复</a>')
+        .insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]'))
+        .click(function (e) {
+            e.preventDefault();
+            let $this = $(this);
+            let coefficient = Math.floor(
+                (propertyList['可分配属性点'] - 50 - (itemUsedNumList.get('档案室钥匙') === 30 ? 30 : 0) - (itemUsedNumList.get('消逝之药') === 10 ? 120 : 0)) / 5
+            );
+            let copyText = coefficient + ' ' + Math.floor(haloInfo['全属性'] * 1000) + '\n';
+            for (let value of itemUsedNumList.values()) {
+                copyText += value + ' ';
+            }
+            $this.data('copy-text', copyText.trim());
+            if (!Util.copyText($this, '计算器的部分参数设置已复制')) {
+                alert('你的浏览器不支持复制');
+            }
+        });
 
     return; // 临时禁用
     let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
@@ -283,9 +301,10 @@ const checkPoints = function ($points) {
 
 /**
  * 获取争夺属性列表
+ * @param {string} html 争夺属性区域的HTML代码
  * @returns {{}} 争夺属性
  */
-const getLootPropertyList = function () {
+const getLootPropertyList = function (html) {
     let propertyList = {
         '攻击力': 0,
         '生命值': 0,
@@ -297,25 +316,24 @@ const getLootPropertyList = function () {
         '防御': 0,
         '可分配属性点': 0,
     };
-    let content = $properties.html();
-    let matches = /"(\d+)攻击力"/.exec(content);
+    let matches = /"(\d+)攻击力"/.exec(html);
     if (matches) propertyList['攻击力'] = parseInt(matches[1]);
-    matches = /"(\d+)\/(\d+)生命值"/.exec(content);
+    matches = /"(\d+)\/(\d+)生命值"/.exec(html);
     if (matches) {
         propertyList['生命值'] = parseInt(matches[1]);
         propertyList['最大生命值'] = parseInt(matches[2]);
     }
-    matches = /"(\d+)攻击速度"/.exec(content);
+    matches = /"(\d+)攻击速度"/.exec(html);
     if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
-    /*matches = /暴击几率：(\d+)%/.exec(content);
+    /*matches = /暴击几率：(\d+)%/.exec(html);
      if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
-     matches = /技能伤害：(\d+)/.exec(content);
+     matches = /技能伤害：(\d+)/.exec(html);
      if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
-     matches = /技能释放概率：(\d+)%/.exec(content);
+     matches = /技能释放概率：(\d+)%/.exec(html);
      if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);*/ // 临时禁用
-    matches = /"(\d+)%减伤"/.exec(content);
+    matches = /"(\d+)%减伤"/.exec(html);
     if (matches) propertyList['防御'] = parseInt(matches[1]);
-    matches = /"(\d+)\s*可分配属性"/.exec(content);
+    matches = /"(\d+)\s*可分配属性"/.exec(html);
     if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
     return propertyList;
 };
@@ -1037,7 +1055,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
      * @param {boolean} isSubmit 是否提交分配点数
      */
     const recordPointsLog = function (isSubmit = false) {
-        propertyList = getLootPropertyList();
+        propertyList = getLootPropertyList($properties.html());
         let pointsText = '', propertiesText = '';
         $points.find('.pd_point').each(function () {
             let $this = $(this);
