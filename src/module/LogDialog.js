@@ -386,7 +386,7 @@ const getLogStat = function (log, date, logStatType) {
     }
 
     let content = '';
-    let sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '盒子', '道具', '已使用道具', '装备', '能量', '卡片'];
+    let sortStatTypeList = ['KFB', '经验值', '贡献', '转账额度', '盒子', '道具', '已使用道具', '装备', '武器经验', '能量', '卡片'];
     content += '<strong>收获：</strong>';
     for (let key of Util.getSortedObjectKeyList(sortStatTypeList, income)) {
         profit[key] = income[key];

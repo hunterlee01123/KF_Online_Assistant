@@ -137,7 +137,12 @@ export const appendCss = function () {
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
   .pd_arm_equipped { background-color:#EEEEFF; box-shadow: 0 0 7px #99f; }
-  .pd_arm_equipped > td:nth-child(3):before { content: "（装备中）"; font-weight: bold; }
+  .pd_arm_equipped > td:nth-child(3)::before { content: "（装备中）"; font-weight: bold; }
+  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
+  .kf_fw_ig4 > tbody > tr > td:nth-child(3) { position: relative; }
+  .kf_fw_ig4 > tbody > tr > td[data-memo]:nth-child(3)::after {
+    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; color: #777;
+  }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }

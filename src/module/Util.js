@@ -483,10 +483,17 @@ export const copyText = function ($target, msg = '', $excludeElem = null) {
         $target = $(`<span class="pd_hide">${copyText.replace(/\n/g, '<br>')}</span>`).insertAfter($target);
     }
     if ($excludeElem) $excludeElem.prop('hidden', true);
-    let s = window.getSelection();
-    s.selectAllChildren($target.get(0));
-    let result = document.execCommand('copy');
-    s.removeAllRanges();
+    let result = null;
+    if ($target.is('input, textarea')) {
+        $target.select();
+        result = document.execCommand('copy');
+    }
+    else {
+        let s = window.getSelection();
+        s.selectAllChildren($target.get(0));
+        result = document.execCommand('copy');
+        s.removeAllRanges();
+    }
     if (copyText) $target.remove();
     if ($excludeElem) $excludeElem.removeProp('hidden');
     if (result) {

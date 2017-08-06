@@ -201,6 +201,8 @@ export const Config = {
 
     // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
     slowActionEnabled: false,
+    // 装备备注，格式：{装备ID:'备注信息'}，例：{123456:'备注信息'}
+    armsMemo: {},
     // 是否在打开盒子后熔炼装备，true：开启；false：关闭
     smeltArmsAfterOpenBoxesEnabled: false,
     // 是否在打开盒子后使用道具，true：开启；false：关闭
