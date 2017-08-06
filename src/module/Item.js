@@ -253,7 +253,11 @@ const showOpenAllBoxesDialog = function () {
         }
 
         writeConfig();
-        if (!Config.defOpenBoxTypeList.length || !confirm('是否一键开盒（并执行所选操作）？')) return;
+        if (!Config.defOpenBoxTypeList.length) {
+            alert('未选择盒子种类');
+            return;
+        }
+        if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
@@ -1616,7 +1620,7 @@ const buyItems = function (buyNum, type, kfb, url) {
     const buy = function () {
         $.ajax({
             type: 'GET',
-            url: url + '&t=' + new Date().getTime(),
+            url: url + '&t=' + $.now(),
             timeout: Const.defAjaxTimeout,
             success(html) {
                 Public.showFormatLog('购买道具', html);
@@ -1644,7 +1648,7 @@ const buyItems = function (buyNum, type, kfb, url) {
     const getNewItemInfo = function (isFirst = false) {
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
             timeout: Const.defAjaxTimeout,
             success(html) {
                 let list = [];
@@ -1715,7 +1719,7 @@ const buyItems = function (buyNum, type, kfb, url) {
  * 在道具商店显示当前持有的KFB
  */
 const showKfbInItemShop = function () {
-    $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
+    $.get(`profile.php?action=show&uid=${Info.uid}&t=${$.now()}`, function (html) {
         let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
         if (!matches) return;
         let cash = parseInt(matches[1]);

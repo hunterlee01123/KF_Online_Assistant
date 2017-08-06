@@ -18,7 +18,7 @@ const convertCardsToVipTime = function (cardList, safeId) {
         $(document).queue('ConvertCardsToVipTime', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_card_doit.php?do=recard&id=${cardId}&safeid=${safeId}&t=${new Date().getTime()}`,
+                url: `kf_fw_card_doit.php?do=recard&id=${cardId}&safeid=${safeId}&t=${$.now()}`,
                 timeout: Const.defAjaxTimeout,
                 success (html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);

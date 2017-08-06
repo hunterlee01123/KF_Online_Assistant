@@ -58,7 +58,7 @@ export const handleMultiQuote = function (type = 1) {
         keywords.add(data.userName);
         if (type === 2) {
             $(document).queue('MultiQuote', function () {
-                $.get(`post.php?action=quote&fid=${fid}&tid=${tid}&pid=${data.pid}&article=${data.floor}&t=${new Date().getTime()}`,
+                $.get(`post.php?action=quote&fid=${fid}&tid=${tid}&pid=${data.pid}&article=${data.floor}&t=${$.now()}`,
                     function (html) {
                         let matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                         if (matches) {
@@ -273,7 +273,7 @@ export const importKfSmileEnhanceExtension = function () {
  */
 export const preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
         let content = $textArea.val();
         if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !Info.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
@@ -291,7 +291,7 @@ export const preventCloseWindowWhenEditPost = function () {
  * 在提交时保存发帖内容
  */
 export const savePostContentWhenSubmit = function () {
-    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
+    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
     $('form[action="post.php?"]').submit(function () {
         let content = $textArea.val();
         if ($.trim(content).length > 0) sessionStorage.setItem(Const.postContentStorageName, content);

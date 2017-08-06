@@ -104,7 +104,7 @@ export const addFastDrawMoneyLink = function () {
                 e.preventDefault();
                 Msg.destroy();
                 Msg.wait('<strong>正在获取当前活期存款金额&hellip;</strong>');
-                $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+                $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
                     Msg.destroy();
                     let matches = /活期存款：(\d+)KFB<br/.exec(html);
                     if (!matches) {
@@ -516,7 +516,7 @@ export const refreshWaitCheckRatingPage = function () {
         console.log('自动刷新Start');
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_1wkfb.php?ping=2&t=' + new Date().getTime(),
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + $.now(),
             timeout: 10000,
         }).done(function (html) {
             if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, Const.defAjaxInterval);

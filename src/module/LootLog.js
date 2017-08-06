@@ -50,7 +50,7 @@ export const record = function (logList, pointsLogList) {
         if (isNaN(key) || key <= overdueDate) delete log[key];
         else return false;
     });
-    log[new Date().getTime()] = {log: logList, points: pointsLogList};
+    log[$.now()] = {log: logList, points: pointsLogList};
     write(log);
 };
 

@@ -248,7 +248,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
     const stat = function (page) {
         $.ajax({
             type: 'GET',
-            url: `read.php?tid=${tid}&page=${page}&t=${new Date().getTime()}`,
+            url: `read.php?tid=${tid}&page=${page}&t=${$.now()}`,
             timeout: Const.defAjaxTimeout,
             success(html) {
                 $('.readtext', html).each(function () {
@@ -510,7 +510,7 @@ export const buyThreads = function (threadList) {
         $(document).queue('BuyThread', function () {
             $.ajax({
                 type: 'GET',
-                url: url + '&t=' + new Date().getTime(),
+                url: url + '&t=' + $.now(),
                 timeout: Const.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('购买帖子', html);
@@ -573,7 +573,7 @@ export const handleBuyThreadBtn = function () {
             if (sell >= Const.minBuyThreadWarningSell && !confirm(`此贴售价 ${sell} KFB，是否购买？`)) return;
             if (Config.buyThreadNoJumpEnabled) {
                 let $wait = Msg.wait('正在购买帖子&hellip;');
-                $.get(url + '&t=' + new Date().getTime(), function (html) {
+                $.get(url + '&t=' + $.now(), function (html) {
                     Public.showFormatLog('购买帖子', html);
                     let {msg} = Util.getResponseMsg(html);
                     Msg.remove($wait);

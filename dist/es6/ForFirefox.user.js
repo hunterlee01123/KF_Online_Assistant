@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.0.1
+// @version     11.0.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.0.1';
+const version = '11.0.2';
 
 /**
  * 导出模块
@@ -371,7 +371,7 @@ const handleBankPage = exports.handleBankPage = function () {
     let fixedDeposit = parseInt($('#pdFixedDeposit').data('num'));
     if (fixedDeposit > 0 && interest === 0) {
         let time = parseInt(TmpLog.getValue(_Const2.default.fixedDepositDueTmpLogName));
-        if (!isNaN(time) && time > new Date().getTime()) {
+        if (!isNaN(time) && time > $.now()) {
             $('#pdExpireTime').text(`(到期时间：${Util.getDateString(new Date(time))} ${Util.getTimeString(new Date(time), ':', false)})`);
         }
 
@@ -626,7 +626,7 @@ const addBatchTransferButton = function () {
         if (!confirm(`共计 ${users.length} 名用户，总额 ${totalMoney.toLocaleString()} KFB，是否转账？`)) return;
 
         let $wait = Msg.wait('<strong>正在获取银行账户信息中&hellip;</strong>');
-        $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+        $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
             Msg.remove($wait);
             let cash = 0,
                 currentDeposit = 0,
@@ -702,7 +702,7 @@ const addBatchTransferButton = function () {
  */
 const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
     console.log('定期存款到期提醒Start');
-    $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+    $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
         Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
         let matches = /可获利息：(\d+)/.exec(html);
         if (!matches) return;
@@ -764,7 +764,7 @@ const convertCardsToVipTime = function (cardList, safeId) {
         $(document).queue('ConvertCardsToVipTime', function () {
             $.ajax({
                 type: 'GET',
-                url: `kf_fw_card_doit.php?do=recard&id=${cardId}&safeid=${safeId}&t=${new Date().getTime()}`,
+                url: `kf_fw_card_doit.php?do=recard&id=${cardId}&safeid=${safeId}&t=${$.now()}`,
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);
@@ -2906,14 +2906,14 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
      * @param {number} smLevel 神秘等级
      */
     const writeData = function (smLevel) {
-        TmpLog.setValue(_Const2.default.smLevelUpTmpLogName, { time: new Date().getTime(), smLevel });
+        TmpLog.setValue(_Const2.default.smLevelUpTmpLogName, { time: $.now(), smLevel });
     };
 
     let data = TmpLog.getValue(_Const2.default.smLevelUpTmpLogName);
     if (!data || $.type(data.time) !== 'number' || $.type(data.smLevel) !== 'number') {
         writeData(smLevel);
     } else if (smLevel > data.smLevel) {
-        let diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
+        let diff = Math.floor(($.now() - data.time) / 60 / 60 / 1000);
         if (diff >= _Const2.default.smLevelUpAlertInterval) {
             let date = new Date(data.time);
             writeData(smLevel);
@@ -2932,20 +2932,20 @@ const smLevelUpAlert = exports.smLevelUpAlert = function () {
  */
 const smRankChangeAlert = exports.smRankChangeAlert = function () {
     let smRank = $('#pdSmLevel').data('sm-rank');
-    if (!smRank || smRank.endsWith('+')) return;
+    if (!smRank || smRank.toString().endsWith('+')) return;
     smRank = parseInt(smRank);
 
     /**
      * 写入神秘系数排名数据
      * @param {number} smRank 神秘系数排名
      */
-    const writeData = smRank => TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: new Date().getTime(), smRank });
+    const writeData = smRank => TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: $.now(), smRank });
 
     let data = TmpLog.getValue(_Const2.default.smRankChangeTmpLogName);
     if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
         writeData(smRank);
     } else if (smRank !== data.smRank) {
-        let diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
+        let diff = Math.floor(($.now() - data.time) / 60 / 60 / 1000);
         if (diff >= _Const2.default.smRankChangeAlertInterval) {
             let date = new Date(data.time);
             let isUp = smRank < data.smRank;
@@ -2985,7 +2985,7 @@ const showVipSurplusTime = exports.showVipSurplusTime = function () {
     let vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
     if (isNaN(vipHours) || vipHours < 0) {
         console.log('检查VIP剩余时间Start');
-        $.get('kf_vmember.php?t=' + new Date().getTime(), function (html) {
+        $.get('kf_vmember.php?t=' + $.now(), function (html) {
             let hours = 0;
             let matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
             if (matches) hours = parseInt(matches[1]);
@@ -3037,7 +3037,7 @@ const handleIndexLink = exports.handleIndexLink = function () {
 const addPromoteHaloInterval = exports.addPromoteHaloInterval = function () {
     let nextTime = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
     if (!nextTime) return;
-    let interval = nextTime - new Date().getTime();
+    let interval = nextTime - $.now();
     if (interval > 0) {
         let minutes = Math.ceil(interval / 60 / 1000);
         let hours = Math.floor(minutes / 60);
@@ -3059,7 +3059,7 @@ const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
     let tipsText = '';
     if ($.isNumeric(value)) {
         let nextTime = parseInt(value);
-        let interval = nextTime - new Date().getTime();
+        let interval = nextTime - $.now();
         if (interval > 0) {
             let minutes = Math.ceil(interval / 60 / 1000);
             let hours = Math.floor(minutes / 60);
@@ -3391,7 +3391,11 @@ const showOpenAllBoxesDialog = function () {
         }
 
         (0, _Config.write)();
-        if (!Config.defOpenBoxTypeList.length || !confirm('是否一键开盒（并执行所选操作）？')) return;
+        if (!Config.defOpenBoxTypeList.length) {
+            alert('未选择盒子种类');
+            return;
+        }
+        if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
@@ -4654,7 +4658,7 @@ const buyItems = function (buyNum, type, kfb, url) {
     const buy = function () {
         $.ajax({
             type: 'GET',
-            url: url + '&t=' + new Date().getTime(),
+            url: url + '&t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success(html) {
                 Public.showFormatLog('购买道具', html);
@@ -4681,7 +4685,7 @@ const buyItems = function (buyNum, type, kfb, url) {
     const getNewItemInfo = function (isFirst = false) {
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success(html) {
                 let list = [];
@@ -4745,7 +4749,7 @@ const buyItems = function (buyNum, type, kfb, url) {
  * 在道具商店显示当前持有的KFB
  */
 const showKfbInItemShop = function () {
-    $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${new Date().getTime()}`, function (html) {
+    $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${$.now()}`, function (html) {
         let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
         if (!matches) return;
         let cash = parseInt(matches[1]);
@@ -5513,7 +5517,7 @@ const init = exports.init = function () {
 
     let tmpHaloInfo = TmpLog.getValue(_Const2.default.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
-        let diff = new Date().getTime() - tmpHaloInfo.time;
+        let diff = $.now() - tmpHaloInfo.time;
         if (diff >= 0 && diff < _Const2.default.tmpHaloInfoExpires * 60 * 1000) {
             delete tmpHaloInfo.time;
             setHaloInfo(tmpHaloInfo);
@@ -5564,7 +5568,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
 const handlePropertiesArea = function () {
     $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative').append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
 
-    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
+    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
         e.preventDefault();
         let $this = $(this);
         let coefficient = Math.floor((propertyList['可分配属性点'] - 50 - (itemUsedNumList.get('档案室钥匙') === 30 ? 30 : 0) - (itemUsedNumList.get('消逝之药') === 10 ? 120 : 0)) / 5);
@@ -6448,7 +6452,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         propertiesText = propertiesText.replace(/，$/, '');
         //pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
         pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）`; // 临时修改
-        localStorage.setItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid, JSON.stringify({ time: new Date().getTime(), pointsLogList }));
+        localStorage.setItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid, JSON.stringify({ time: $.now(), pointsLogList }));
         //if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
         if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）`); // 临时修改
     };
@@ -6623,7 +6627,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_index.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             let $log = $('#pk_text', html);
@@ -7161,7 +7165,7 @@ const getTempPointsLogList = function (logList) {
         return [];
     }
     if (!options || $.type(options) !== 'object' || $.type(options.time) !== 'number' || !Array.isArray(options.pointsLogList)) return [];
-    let diff = new Date().getTime() - options.time;
+    let diff = $.now() - options.time;
     if (options.pointsLogList.length > logList.length || diff >= 24 * 60 * 60 * 1000 || diff < 0) {
         localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
         return [];
@@ -7194,7 +7198,7 @@ const checkLoot = exports.checkLoot = function () {
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
     $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout,
         success(html) {
             Msg.remove($wait);
@@ -7254,7 +7258,7 @@ const autoSaveLootLog = exports.autoSaveLootLog = function () {
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
     $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout,
         success(html) {
             Msg.remove($wait);
@@ -7291,7 +7295,7 @@ const getChangePointsCountDown = exports.getChangePointsCountDown = function () 
     console.log('获取改点倒计时Start');
     return $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).then(function (html) {
         let matches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
@@ -7360,7 +7364,7 @@ const readHaloInfo = function (isInitLootPage = false) {
 const getHaloInfo = exports.getHaloInfo = function () {
     return $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_halo.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).then(function (html) {
         let haloInfo = { '全属性': 0, '攻击力': 0, '生命值': 0 };
@@ -7372,7 +7376,7 @@ const getHaloInfo = exports.getHaloInfo = function () {
                 haloInfo['攻击力'] = parseInt(extraMatches[1]);
                 haloInfo['生命值'] = parseInt(extraMatches[2]);
             }
-            TmpLog.setValue(_Const2.default.haloInfoTmpLogName, $.extend(haloInfo, { time: new Date().getTime() }));
+            TmpLog.setValue(_Const2.default.haloInfoTmpLogName, $.extend(haloInfo, { time: $.now() }));
             return haloInfo;
         } else return 'error';
     }, () => 'timeout');
@@ -7426,7 +7430,7 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
     const getPersonalInfo = function () {
         $.ajax({
             type: 'GET',
-            url: `profile.php?action=show&uid=${_Info2.default.uid}&t=${new Date().getTime()}`,
+            url: `profile.php?action=show&uid=${_Info2.default.uid}&t=${$.now()}`,
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             Msg.remove($wait);
@@ -7452,7 +7456,7 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
     const getHaloInfo = function (maxCount = -1) {
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_halo.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             Msg.remove($wait);
@@ -7506,7 +7510,7 @@ const promoteHalo = exports.promoteHalo = function (totalCount, promoteHaloCostT
     const promote = function () {
         $.ajax({
             type: 'GET',
-            url: `kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${new Date().getTime()}`,
+            url: `kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${$.now()}`,
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             Public.showFormatLog('提升战力光环', html);
@@ -7652,7 +7656,7 @@ const record = exports.record = function (logList, pointsLogList) {
         key = parseInt(key);
         if (isNaN(key) || key <= overdueDate) delete log[key];else return false;
     });
-    log[new Date().getTime()] = { log: logList, points: pointsLogList };
+    log[$.now()] = { log: logList, points: pointsLogList };
     write(log);
 };
 
@@ -7924,7 +7928,7 @@ const addFastDrawMoneyLink = exports.addFastDrawMoneyLink = function () {
             e.preventDefault();
             Msg.destroy();
             Msg.wait('<strong>正在获取当前活期存款金额&hellip;</strong>');
-            $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+            $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
                 Msg.destroy();
                 let matches = /活期存款：(\d+)KFB<br/.exec(html);
                 if (!matches) {
@@ -8308,7 +8312,7 @@ const refreshWaitCheckRatingPage = exports.refreshWaitCheckRatingPage = function
         console.log('自动刷新Start');
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_1wkfb.php?ping=2&t=' + new Date().getTime(),
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + $.now(),
             timeout: 10000
         }).done(function (html) {
             if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
@@ -8426,7 +8430,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
         keywords.add(data.userName);
         if (type === 2) {
             $(document).queue('MultiQuote', function () {
-                $.get(`post.php?action=quote&fid=${fid}&tid=${tid}&pid=${data.pid}&article=${data.floor}&t=${new Date().getTime()}`, function (html) {
+                $.get(`post.php?action=quote&fid=${fid}&tid=${tid}&pid=${data.pid}&article=${data.floor}&t=${$.now()}`, function (html) {
                     let matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                     if (matches) {
                         content += Util.removeUnpairedBBCodeContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
@@ -8633,7 +8637,7 @@ const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = fu
  */
 const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
         let content = $textArea.val();
         if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
@@ -8651,7 +8655,7 @@ const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = 
  * 在提交时保存发帖内容
  */
 const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function () {
-    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
+    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
     $('form[action="post.php?"]').submit(function () {
         let content = $textArea.val();
         if ($.trim(content).length > 0) sessionStorage.setItem(_Const2.default.postContentStorageName, content);
@@ -9055,7 +9059,7 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
     let promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         let value = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((value - new Date().getTime()) / 1000);else promoteHaloInterval = 0;
+        if (value > 0) promoteHaloInterval = Math.floor((value - $.now()) / 1000);else promoteHaloInterval = 0;
     }
 
     let checkLootInterval = -1;
@@ -9072,7 +9076,7 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
         if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
             let changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
-            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
+            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
         }
     }
 
@@ -9152,7 +9156,7 @@ const startTimingMode = exports.startTimingMode = function () {
             errorText = '';
         $.ajax({
             type: 'GET',
-            url: 'index.php?t=' + new Date().getTime(),
+            url: 'index.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success(html) {
                 if (!/"kf_fw_ig_index.php"/.test(html)) {
@@ -9248,7 +9252,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
 
     $.ajax({
         type: 'GET',
-        url: 'kf_growup.php?t=' + new Date().getTime(),
+        url: 'kf_growup.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).done(function (html) {
         let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+(?:\.\d+)?)贡献\s*\+\s*(\d+)转账额度/.exec(html);
@@ -9270,7 +9274,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
             if (parseFloat(matches[4]) > 0) gain['贡献'] = parseFloat(matches[4]);
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
-            $.get(`${url}&t=${new Date().getTime()}`, function (html) {
+            $.get(`${url}&t=${$.now()}`, function (html) {
                 Util.setCookie(_Const2.default.getDailyBonusCookieName, 1, getCookieDate());
                 showFormatLog('领取每日奖励', html);
                 let { msg } = Util.getResponseMsg(html);
@@ -9604,7 +9608,7 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
 
     if (isRead) {
         console.log('获取当前持有KFB Start');
-        $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${new Date().getTime()}`, function (html) {
+        $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${$.now()}`, function (html) {
             let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
@@ -9629,7 +9633,7 @@ const changeIdColor = exports.changeIdColor = function () {
     };
 
     console.log('自动更换ID颜色Start');
-    $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+    $.get('kf_growup.php?t=' + $.now(), function (html) {
         if (Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) return;
         let matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/g);
         if (matches) {
@@ -9681,7 +9685,7 @@ const changeIdColor = exports.changeIdColor = function () {
                 nextId = idList[Math.floor(Math.random() * idList.length)];
             }
 
-            $.get(`kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${new Date().getTime()}`, function (html) {
+            $.get(`kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${$.now()}`, function (html) {
                 setCookie();
                 showFormatLog('自动更换ID颜色', html);
                 let { msg } = Util.getResponseMsg(html);
@@ -9783,7 +9787,7 @@ const makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWord
         if (!$keyWord.length || !$method.length) return;
         let keyWord = $.trim($keyWord.val());
         if (!keyWord || Util.getStrByteLen(keyWord) > 2) return;
-        $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
+        $keyWord.val(keyWord + ' ' + Math.floor($.now() / 1000));
         $method.val('OR');
         setTimeout(() => {
             $keyWord.val(keyWord);
@@ -10264,7 +10268,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
     const stat = function (page) {
         $.ajax({
             type: 'GET',
-            url: `read.php?tid=${tid}&page=${page}&t=${new Date().getTime()}`,
+            url: `read.php?tid=${tid}&page=${page}&t=${$.now()}`,
             timeout: _Const2.default.defAjaxTimeout,
             success(html) {
                 $('.readtext', html).each(function () {
@@ -10516,7 +10520,7 @@ const buyThreads = exports.buyThreads = function (threadList) {
         $(document).queue('BuyThread', function () {
             $.ajax({
                 type: 'GET',
-                url: url + '&t=' + new Date().getTime(),
+                url: url + '&t=' + $.now(),
                 timeout: _Const2.default.defAjaxTimeout,
                 success(html) {
                     Public.showFormatLog('购买帖子', html);
@@ -10573,7 +10577,7 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
             if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价 ${sell} KFB，是否购买？`)) return;
             if (Config.buyThreadNoJumpEnabled) {
                 let $wait = Msg.wait('正在购买帖子&hellip;');
-                $.get(url + '&t=' + new Date().getTime(), function (html) {
+                $.get(url + '&t=' + $.now(), function (html) {
                     Public.showFormatLog('购买帖子', html);
                     let { msg } = Util.getResponseMsg(html);
                     Msg.remove($wait);
@@ -11425,7 +11429,7 @@ const getTimeString = exports.getTimeString = function (date = new Date(), separ
  * @returns {{hours: number, minutes: number, seconds: number}} 剩余时间的描述，hours：剩余的小时数；minutes：剩余的分钟数；seconds：剩余的秒数
  */
 const getTimeDiffInfo = exports.getTimeDiffInfo = function (timestamp) {
-    let diff = timestamp - new Date().getTime();
+    let diff = timestamp - $.now();
     if (diff > 0) {
         diff = Math.floor(diff / 1000);
         let hours = Math.floor(diff / 60 / 60);

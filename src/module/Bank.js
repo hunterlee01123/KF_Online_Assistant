@@ -35,7 +35,7 @@ export const handleBankPage = function () {
     let fixedDeposit = parseInt($('#pdFixedDeposit').data('num'));
     if (fixedDeposit > 0 && interest === 0) {
         let time = parseInt(TmpLog.getValue(Const.fixedDepositDueTmpLogName));
-        if (!isNaN(time) && time > new Date().getTime()) {
+        if (!isNaN(time) && time > $.now()) {
             $('#pdExpireTime').text(`(到期时间：${Util.getDateString(new Date(time))} ${Util.getTimeString(new Date(time), ':', false)})`);
         }
 
@@ -309,7 +309,7 @@ const addBatchTransferButton = function () {
         if (!confirm(`共计 ${users.length} 名用户，总额 ${totalMoney.toLocaleString()} KFB，是否转账？`)) return;
 
         let $wait = Msg.wait('<strong>正在获取银行账户信息中&hellip;</strong>');
-        $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+        $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
             Msg.remove($wait);
             let cash = 0, currentDeposit = 0, transferLimit = 0;
             let matches = /当前所持：(-?\d+)KFB/.exec(html);
@@ -385,7 +385,7 @@ const addBatchTransferButton = function () {
  */
 export const fixedDepositDueAlert = function () {
     console.log('定期存款到期提醒Start');
-    $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+    $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
         Util.setCookie(Const.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
         let matches = /可获利息：(\d+)/.exec(html);
         if (!matches) return;

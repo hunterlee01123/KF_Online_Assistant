@@ -328,7 +328,7 @@ export const getNextTimingIntervalInfo = function () {
     let promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         let value = parseInt(Util.getCookie(Const.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((value - new Date().getTime()) / 1000);
+        if (value > 0) promoteHaloInterval = Math.floor((value - $.now()) / 1000);
         else promoteHaloInterval = 0;
     }
 
@@ -348,7 +348,7 @@ export const getNextTimingIntervalInfo = function () {
         else {
             let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
-            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
+            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
         }
     }
 
@@ -433,7 +433,7 @@ export const startTimingMode = function () {
         let interval = 0, errorText = '';
         $.ajax({
             type: 'GET',
-            url: 'index.php?t=' + new Date().getTime(),
+            url: 'index.php?t=' + $.now(),
             timeout: Const.defAjaxTimeout,
             success(html) {
                 if (!/"kf_fw_ig_index.php"/.test(html)) {
@@ -535,7 +535,7 @@ export const getDailyBonus = function () {
 
     $.ajax({
         type: 'GET',
-        url: 'kf_growup.php?t=' + new Date().getTime(),
+        url: 'kf_growup.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
     }).done(function (html) {
         let matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+(?:\.\d+)?)贡献\s*\+\s*(\d+)转账额度/.exec(html);
@@ -557,7 +557,7 @@ export const getDailyBonus = function () {
             if (parseFloat(matches[4]) > 0) gain['贡献'] = parseFloat(matches[4]);
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
-            $.get(`${url}&t=${new Date().getTime()}`, function (html) {
+            $.get(`${url}&t=${$.now()}`, function (html) {
                 Util.setCookie(Const.getDailyBonusCookieName, 1, getCookieDate());
                 showFormatLog('领取每日奖励', html);
                 let {msg} = Util.getResponseMsg(html);
@@ -914,7 +914,7 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
 
     if (isRead) {
         console.log('获取当前持有KFB Start');
-        $.get(`profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`, function (html) {
+        $.get(`profile.php?action=show&uid=${Info.uid}&t=${$.now()}`, function (html) {
             let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
@@ -940,7 +940,7 @@ export const changeIdColor = function () {
     };
 
     console.log('自动更换ID颜色Start');
-    $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+    $.get('kf_growup.php?t=' + $.now(), function (html) {
         if (Util.getCookie(Const.autoChangeIdColorCookieName)) return;
         let matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/g);
         if (matches) {
@@ -993,7 +993,7 @@ export const changeIdColor = function () {
                 nextId = idList[Math.floor(Math.random() * idList.length)];
             }
 
-            $.get(`kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${new Date().getTime()}`, function (html) {
+            $.get(`kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${$.now()}`, function (html) {
                 setCookie();
                 showFormatLog('自动更换ID颜色', html);
                 let {msg} = Util.getResponseMsg(html);
@@ -1105,7 +1105,7 @@ export const makeSearchByBelowTwoKeyWordAvailable = function () {
         if (!$keyWord.length || !$method.length) return;
         let keyWord = $.trim($keyWord.val());
         if (!keyWord || Util.getStrByteLen(keyWord) > 2) return;
-        $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
+        $keyWord.val(keyWord + ' ' + Math.floor($.now() / 1000));
         $method.val('OR');
         setTimeout(() => {
             $keyWord.val(keyWord);

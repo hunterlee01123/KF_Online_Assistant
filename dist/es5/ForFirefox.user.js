@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.0.1
+// @version     11.0.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.0.1';
+var version = '11.0.2';
 
 /**
  * 导出模块
@@ -384,7 +384,7 @@ var handleBankPage = exports.handleBankPage = function handleBankPage() {
     var fixedDeposit = parseInt($('#pdFixedDeposit').data('num'));
     if (fixedDeposit > 0 && interest === 0) {
         var time = parseInt(TmpLog.getValue(_Const2.default.fixedDepositDueTmpLogName));
-        if (!isNaN(time) && time > new Date().getTime()) {
+        if (!isNaN(time) && time > $.now()) {
             $('#pdExpireTime').text('(\u5230\u671F\u65F6\u95F4\uFF1A' + Util.getDateString(new Date(time)) + ' ' + Util.getTimeString(new Date(time), ':', false) + ')');
         }
 
@@ -669,7 +669,7 @@ var addBatchTransferButton = function addBatchTransferButton() {
         if (!confirm('\u5171\u8BA1 ' + users.length + ' \u540D\u7528\u6237\uFF0C\u603B\u989D ' + totalMoney.toLocaleString() + ' KFB\uFF0C\u662F\u5426\u8F6C\u8D26\uFF1F')) return;
 
         var $wait = Msg.wait('<strong>正在获取银行账户信息中&hellip;</strong>');
-        $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+        $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
             Msg.remove($wait);
             var cash = 0,
                 currentDeposit = 0,
@@ -789,7 +789,7 @@ var addBatchTransferButton = function addBatchTransferButton() {
  */
 var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositDueAlert() {
     console.log('定期存款到期提醒Start');
-    $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+    $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
         Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
         var matches = /可获利息：(\d+)/.exec(html);
         if (!matches) return;
@@ -851,7 +851,7 @@ var convertCardsToVipTime = function convertCardsToVipTime(cardList, safeId) {
         $(document).queue('ConvertCardsToVipTime', function () {
             $.ajax({
                 type: 'GET',
-                url: 'kf_fw_card_doit.php?do=recard&id=' + cardId + '&safeid=' + safeId + '&t=' + new Date().getTime(),
+                url: 'kf_fw_card_doit.php?do=recard&id=' + cardId + '&safeid=' + safeId + '&t=' + $.now(),
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);
@@ -2837,14 +2837,14 @@ var smLevelUpAlert = exports.smLevelUpAlert = function smLevelUpAlert() {
      * @param {number} smLevel 神秘等级
      */
     var writeData = function writeData(smLevel) {
-        TmpLog.setValue(_Const2.default.smLevelUpTmpLogName, { time: new Date().getTime(), smLevel: smLevel });
+        TmpLog.setValue(_Const2.default.smLevelUpTmpLogName, { time: $.now(), smLevel: smLevel });
     };
 
     var data = TmpLog.getValue(_Const2.default.smLevelUpTmpLogName);
     if (!data || $.type(data.time) !== 'number' || $.type(data.smLevel) !== 'number') {
         writeData(smLevel);
     } else if (smLevel > data.smLevel) {
-        var diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
+        var diff = Math.floor(($.now() - data.time) / 60 / 60 / 1000);
         if (diff >= _Const2.default.smLevelUpAlertInterval) {
             var date = new Date(data.time);
             writeData(smLevel);
@@ -2863,7 +2863,7 @@ var smLevelUpAlert = exports.smLevelUpAlert = function smLevelUpAlert() {
  */
 var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert() {
     var smRank = $('#pdSmLevel').data('sm-rank');
-    if (!smRank || smRank.endsWith('+')) return;
+    if (!smRank || smRank.toString().endsWith('+')) return;
     smRank = parseInt(smRank);
 
     /**
@@ -2871,14 +2871,14 @@ var smRankChangeAlert = exports.smRankChangeAlert = function smRankChangeAlert()
      * @param {number} smRank 神秘系数排名
      */
     var writeData = function writeData(smRank) {
-        return TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: new Date().getTime(), smRank: smRank });
+        return TmpLog.setValue(_Const2.default.smRankChangeTmpLogName, { time: $.now(), smRank: smRank });
     };
 
     var data = TmpLog.getValue(_Const2.default.smRankChangeTmpLogName);
     if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
         writeData(smRank);
     } else if (smRank !== data.smRank) {
-        var diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
+        var diff = Math.floor(($.now() - data.time) / 60 / 60 / 1000);
         if (diff >= _Const2.default.smRankChangeAlertInterval) {
             var date = new Date(data.time);
             var isUp = smRank < data.smRank;
@@ -2918,7 +2918,7 @@ var showVipSurplusTime = exports.showVipSurplusTime = function showVipSurplusTim
     var vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
     if (isNaN(vipHours) || vipHours < 0) {
         console.log('检查VIP剩余时间Start');
-        $.get('kf_vmember.php?t=' + new Date().getTime(), function (html) {
+        $.get('kf_vmember.php?t=' + $.now(), function (html) {
             var hours = 0;
             var matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
             if (matches) hours = parseInt(matches[1]);
@@ -2970,7 +2970,7 @@ var handleIndexLink = exports.handleIndexLink = function handleIndexLink() {
 var addPromoteHaloInterval = exports.addPromoteHaloInterval = function addPromoteHaloInterval() {
     var nextTime = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
     if (!nextTime) return;
-    var interval = nextTime - new Date().getTime();
+    var interval = nextTime - $.now();
     if (interval > 0) {
         var minutes = Math.ceil(interval / 60 / 1000);
         var hours = Math.floor(minutes / 60);
@@ -2994,7 +2994,7 @@ var addChangePointsInfoTips = exports.addChangePointsInfoTips = function addChan
     var tipsText = '';
     if ($.isNumeric(value)) {
         var nextTime = parseInt(value);
-        var interval = nextTime - new Date().getTime();
+        var interval = nextTime - $.now();
         if (interval > 0) {
             var minutes = Math.ceil(interval / 60 / 1000);
             var hours = Math.floor(minutes / 60);
@@ -3376,7 +3376,11 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
         }
 
         (0, _Config.write)();
-        if (!Config.defOpenBoxTypeList.length || !confirm('是否一键开盒（并执行所选操作）？')) return;
+        if (!Config.defOpenBoxTypeList.length) {
+            alert('未选择盒子种类');
+            return;
+        }
+        if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
@@ -5003,7 +5007,7 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
     var buy = function buy() {
         $.ajax({
             type: 'GET',
-            url: url + '&t=' + new Date().getTime(),
+            url: url + '&t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success: function success(html) {
                 Public.showFormatLog('购买道具', html);
@@ -5035,7 +5039,7 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
 
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success: function success(html) {
                 var list = [];
@@ -5141,7 +5145,7 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
  * 在道具商店显示当前持有的KFB
  */
 var showKfbInItemShop = function showKfbInItemShop() {
-    $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + new Date().getTime(), function (html) {
+    $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + $.now(), function (html) {
         var matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
         if (!matches) return;
         var cash = parseInt(matches[1]);
@@ -6497,7 +6501,7 @@ var init = exports.init = function init() {
 
     var tmpHaloInfo = TmpLog.getValue(_Const2.default.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
-        var diff = new Date().getTime() - tmpHaloInfo.time;
+        var diff = $.now() - tmpHaloInfo.time;
         if (diff >= 0 && diff < _Const2.default.tmpHaloInfoExpires * 60 * 1000) {
             delete tmpHaloInfo.time;
             setHaloInfo(tmpHaloInfo);
@@ -6548,7 +6552,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
 var handlePropertiesArea = function handlePropertiesArea() {
     $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative').append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
 
-    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
+    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
         e.preventDefault();
         var $this = $(this);
         var coefficient = Math.floor((propertyList['可分配属性点'] - 50 - (itemUsedNumList.get('档案室钥匙') === 30 ? 30 : 0) - (itemUsedNumList.get('消逝之药') === 10 ? 120 : 0)) / 5);
@@ -7464,7 +7468,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         propertiesText = propertiesText.replace(/，$/, '');
         //pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
         pointsLogList[getCurrentLevel(logList) + 1] = '\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09'; // 临时修改
-        localStorage.setItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid, JSON.stringify({ time: new Date().getTime(), pointsLogList: pointsLogList }));
+        localStorage.setItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid, JSON.stringify({ time: $.now(), pointsLogList: pointsLogList }));
         //if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
         if (isSubmit) console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09'); // 临时修改
     };
@@ -7679,7 +7683,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_index.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             var $log = $('#pk_text', html);
@@ -8417,7 +8421,7 @@ var getTempPointsLogList = function getTempPointsLogList(logList) {
         return [];
     }
     if (!options || $.type(options) !== 'object' || $.type(options.time) !== 'number' || !Array.isArray(options.pointsLogList)) return [];
-    var diff = new Date().getTime() - options.time;
+    var diff = $.now() - options.time;
     if (options.pointsLogList.length > logList.length || diff >= 24 * 60 * 60 * 1000 || diff < 0) {
         localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
         return [];
@@ -8450,7 +8454,7 @@ var checkLoot = exports.checkLoot = function checkLoot() {
     var $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
     $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout,
         success: function success(html) {
             Msg.remove($wait);
@@ -8510,7 +8514,7 @@ var autoSaveLootLog = exports.autoSaveLootLog = function autoSaveLootLog() {
     var $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
     $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout,
         success: function success(html) {
             Msg.remove($wait);
@@ -8547,7 +8551,7 @@ var getChangePointsCountDown = exports.getChangePointsCountDown = function getCh
     console.log('获取改点倒计时Start');
     return $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).then(function (html) {
         var matches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
@@ -8622,7 +8626,7 @@ var readHaloInfo = function readHaloInfo() {
 var getHaloInfo = exports.getHaloInfo = function getHaloInfo() {
     return $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_halo.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).then(function (html) {
         var haloInfo = { '全属性': 0, '攻击力': 0, '生命值': 0 };
@@ -8634,7 +8638,7 @@ var getHaloInfo = exports.getHaloInfo = function getHaloInfo() {
                 haloInfo['攻击力'] = parseInt(extraMatches[1]);
                 haloInfo['生命值'] = parseInt(extraMatches[2]);
             }
-            TmpLog.setValue(_Const2.default.haloInfoTmpLogName, $.extend(haloInfo, { time: new Date().getTime() }));
+            TmpLog.setValue(_Const2.default.haloInfoTmpLogName, $.extend(haloInfo, { time: $.now() }));
             return haloInfo;
         } else return 'error';
     }, function () {
@@ -8692,7 +8696,7 @@ var getPromoteHaloInfo = exports.getPromoteHaloInfo = function getPromoteHaloInf
     var getPersonalInfo = function getPersonalInfo() {
         $.ajax({
             type: 'GET',
-            url: 'profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + new Date().getTime(),
+            url: 'profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             Msg.remove($wait);
@@ -8724,7 +8728,7 @@ var getPromoteHaloInfo = exports.getPromoteHaloInfo = function getPromoteHaloInf
 
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_halo.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             Msg.remove($wait);
@@ -8780,7 +8784,7 @@ var promoteHalo = exports.promoteHalo = function promoteHalo(totalCount, promote
     var promote = function promote() {
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_halo.php?do=buy&id=' + promoteHaloCostType + '&safeid=' + safeId + '&t=' + new Date().getTime(),
+            url: 'kf_fw_ig_halo.php?do=buy&id=' + promoteHaloCostType + '&safeid=' + safeId + '&t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             Public.showFormatLog('提升战力光环', html);
@@ -8932,7 +8936,7 @@ var record = exports.record = function record(logList, pointsLogList) {
         key = parseInt(key);
         if (isNaN(key) || key <= overdueDate) delete log[key];else return false;
     });
-    log[new Date().getTime()] = { log: logList, points: pointsLogList };
+    log[$.now()] = { log: logList, points: pointsLogList };
     write(log);
 };
 
@@ -9208,7 +9212,7 @@ var addFastDrawMoneyLink = exports.addFastDrawMoneyLink = function addFastDrawMo
             e.preventDefault();
             Msg.destroy();
             Msg.wait('<strong>正在获取当前活期存款金额&hellip;</strong>');
-            $.get('hack.php?H_name=bank&t=' + new Date().getTime(), function (html) {
+            $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
                 Msg.destroy();
                 var matches = /活期存款：(\d+)KFB<br/.exec(html);
                 if (!matches) {
@@ -9648,7 +9652,7 @@ var refreshWaitCheckRatingPage = exports.refreshWaitCheckRatingPage = function r
         console.log('自动刷新Start');
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_1wkfb.php?ping=2&t=' + new Date().getTime(),
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + $.now(),
             timeout: 10000
         }).done(function (html) {
             if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
@@ -9821,7 +9825,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
         keywords.add(data.userName);
         if (type === 2) {
             $(document).queue('MultiQuote', function () {
-                $.get('post.php?action=quote&fid=' + fid + '&tid=' + tid + '&pid=' + data.pid + '&article=' + data.floor + '&t=' + new Date().getTime(), function (html) {
+                $.get('post.php?action=quote&fid=' + fid + '&tid=' + tid + '&pid=' + data.pid + '&article=' + data.floor + '&t=' + $.now(), function (html) {
                     var matches = /<textarea id="textarea".*?>((.|\n)+?)<\/textarea>/i.exec(html);
                     if (matches) {
                         content += Util.removeUnpairedBBCodeContent(Util.htmlDecode(matches[1]).replace(/\n{2,}/g, '\n')) + (index === list.length - 1 ? '' : '\n');
@@ -10013,7 +10017,7 @@ var importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = func
  */
 var preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function preventCloseWindowWhenEditPost() {
     window.addEventListener('beforeunload', function (e) {
-        var $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
+        var $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
         var content = $textArea.val();
         if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
             var msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
@@ -10031,7 +10035,7 @@ var preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = fu
  * 在提交时保存发帖内容
  */
 var savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function savePostContentWhenSubmit() {
-    var $textArea = $(location.pathname === '/post.php' ? '#textarea' : '[name="atc_content"]');
+    var $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
     $('form[action="post.php?"]').submit(function () {
         var content = $textArea.val();
         if ($.trim(content).length > 0) sessionStorage.setItem(_Const2.default.postContentStorageName, content);
@@ -10296,7 +10300,7 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
     var promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         var value = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((value - new Date().getTime()) / 1000);else promoteHaloInterval = 0;
+        if (value > 0) promoteHaloInterval = Math.floor((value - $.now()) / 1000);else promoteHaloInterval = 0;
     }
 
     var checkLootInterval = -1;
@@ -10313,7 +10317,7 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
         if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
             var changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
-            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - new Date().getTime()) / 1000);
+            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
         }
     }
 
@@ -10425,7 +10429,7 @@ var startTimingMode = exports.startTimingMode = function startTimingMode() {
             errorText = '';
         $.ajax({
             type: 'GET',
-            url: 'index.php?t=' + new Date().getTime(),
+            url: 'index.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success: function success(html) {
                 if (!/"kf_fw_ig_index.php"/.test(html)) {
@@ -10524,7 +10528,7 @@ var getDailyBonus = exports.getDailyBonus = function getDailyBonus() {
 
     $.ajax({
         type: 'GET',
-        url: 'kf_growup.php?t=' + new Date().getTime(),
+        url: 'kf_growup.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout
     }).done(function (html) {
         var matches = /<a href="(kf_growup\.php\?ok=3&safeid=\w+)" target="_self">你可以领取\s*(\d+)KFB\s*\+\s*(\d+)经验\s*\+\s*(\d+(?:\.\d+)?)贡献\s*\+\s*(\d+)转账额度/.exec(html);
@@ -10546,7 +10550,7 @@ var getDailyBonus = exports.getDailyBonus = function getDailyBonus() {
             if (parseFloat(matches[4]) > 0) gain['贡献'] = parseFloat(matches[4]);
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
-            $.get(url + '&t=' + new Date().getTime(), function (html) {
+            $.get(url + '&t=' + $.now(), function (html) {
                 Util.setCookie(_Const2.default.getDailyBonusCookieName, 1, getCookieDate());
                 showFormatLog('领取每日奖励', html);
 
@@ -10927,7 +10931,7 @@ var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveC
 
     if (isRead) {
         console.log('获取当前持有KFB Start');
-        $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + new Date().getTime(), function (html) {
+        $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + $.now(), function (html) {
             var matches = /论坛货币：(\d+)\s*KFB/.exec(html);
             if (matches) saveCurrentDeposit(parseInt(matches[1]));
         });
@@ -10952,7 +10956,7 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
     };
 
     console.log('自动更换ID颜色Start');
-    $.get('kf_growup.php?t=' + new Date().getTime(), function (html) {
+    $.get('kf_growup.php?t=' + $.now(), function (html) {
         if (Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) return;
         var matches = html.match(/href="kf_growup\.php\?ok=2&safeid=\w+&color=\d+"/g);
         if (matches) {
@@ -11073,7 +11077,7 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
                 nextId = idList[Math.floor(Math.random() * idList.length)];
             }
 
-            $.get('kf_growup.php?ok=2&safeid=' + safeId + '&color=' + nextId + '&t=' + new Date().getTime(), function (html) {
+            $.get('kf_growup.php?ok=2&safeid=' + safeId + '&color=' + nextId + '&t=' + $.now(), function (html) {
                 setCookie();
                 showFormatLog('自动更换ID颜色', html);
 
@@ -11178,7 +11182,7 @@ var makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWordAv
         if (!$keyWord.length || !$method.length) return;
         var keyWord = $.trim($keyWord.val());
         if (!keyWord || Util.getStrByteLen(keyWord) > 2) return;
-        $keyWord.val(keyWord + ' ' + Math.floor(new Date().getTime() / 1000));
+        $keyWord.val(keyWord + ' ' + Math.floor($.now() / 1000));
         $method.val('OR');
         setTimeout(function () {
             $keyWord.val(keyWord);
@@ -11632,7 +11636,7 @@ var statFloor = function statFloor(tid, startPage, endPage, startFloor, endFloor
     var stat = function stat(page) {
         $.ajax({
             type: 'GET',
-            url: 'read.php?tid=' + tid + '&page=' + page + '&t=' + new Date().getTime(),
+            url: 'read.php?tid=' + tid + '&page=' + page + '&t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success: function success(html) {
                 $('.readtext', html).each(function () {
@@ -11866,7 +11870,7 @@ var buyThreads = exports.buyThreads = function buyThreads(threadList) {
         $(document).queue('BuyThread', function () {
             $.ajax({
                 type: 'GET',
-                url: url + '&t=' + new Date().getTime(),
+                url: url + '&t=' + $.now(),
                 timeout: _Const2.default.defAjaxTimeout,
                 success: function success(html) {
                     Public.showFormatLog('购买帖子', html);
@@ -11928,7 +11932,7 @@ var handleBuyThreadBtn = exports.handleBuyThreadBtn = function handleBuyThreadBt
             if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm('\u6B64\u8D34\u552E\u4EF7 ' + sell + ' KFB\uFF0C\u662F\u5426\u8D2D\u4E70\uFF1F')) return;
             if (Config.buyThreadNoJumpEnabled) {
                 var $wait = Msg.wait('正在购买帖子&hellip;');
-                $.get(url + '&t=' + new Date().getTime(), function (html) {
+                $.get(url + '&t=' + $.now(), function (html) {
                     Public.showFormatLog('购买帖子', html);
 
                     var _Util$getResponseMsg2 = Util.getResponseMsg(html),
@@ -12886,7 +12890,7 @@ var getTimeString = exports.getTimeString = function getTimeString() {
  * @returns {{hours: number, minutes: number, seconds: number}} 剩余时间的描述，hours：剩余的小时数；minutes：剩余的分钟数；seconds：剩余的秒数
  */
 var getTimeDiffInfo = exports.getTimeDiffInfo = function getTimeDiffInfo(timestamp) {
-    var diff = timestamp - new Date().getTime();
+    var diff = timestamp - $.now();
     if (diff > 0) {
         diff = Math.floor(diff / 1000);
         var hours = Math.floor(diff / 60 / 60);

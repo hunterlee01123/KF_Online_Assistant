@@ -80,7 +80,7 @@ export const smLevelUpAlert = function () {
      * @param {number} smLevel 神秘等级
      */
     const writeData = function (smLevel) {
-        TmpLog.setValue(Const.smLevelUpTmpLogName, {time: new Date().getTime(), smLevel});
+        TmpLog.setValue(Const.smLevelUpTmpLogName, {time: $.now(), smLevel});
     };
 
     let data = TmpLog.getValue(Const.smLevelUpTmpLogName);
@@ -88,7 +88,7 @@ export const smLevelUpAlert = function () {
         writeData(smLevel);
     }
     else if (smLevel > data.smLevel) {
-        let diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
+        let diff = Math.floor(($.now() - data.time) / 60 / 60 / 1000);
         if (diff >= Const.smLevelUpAlertInterval) {
             let date = new Date(data.time);
             writeData(smLevel);
@@ -112,21 +112,21 @@ export const smLevelUpAlert = function () {
  */
 export const smRankChangeAlert = function () {
     let smRank = $('#pdSmLevel').data('sm-rank');
-    if (!smRank || smRank.endsWith('+')) return;
+    if (!smRank || smRank.toString().endsWith('+')) return;
     smRank = parseInt(smRank);
 
     /**
      * 写入神秘系数排名数据
      * @param {number} smRank 神秘系数排名
      */
-    const writeData = smRank => TmpLog.setValue(Const.smRankChangeTmpLogName, {time: new Date().getTime(), smRank});
+    const writeData = smRank => TmpLog.setValue(Const.smRankChangeTmpLogName, {time: $.now(), smRank});
 
     let data = TmpLog.getValue(Const.smRankChangeTmpLogName);
     if (!data || $.type(data.time) !== 'number' || $.type(data.smRank) !== 'number') {
         writeData(smRank);
     }
     else if (smRank !== data.smRank) {
-        let diff = Math.floor((new Date().getTime() - data.time) / 60 / 60 / 1000);
+        let diff = Math.floor(($.now() - data.time) / 60 / 60 / 1000);
         if (diff >= Const.smRankChangeAlertInterval) {
             let date = new Date(data.time);
             let isUp = smRank < data.smRank;
@@ -178,7 +178,7 @@ export const showVipSurplusTime = function () {
     let vipHours = parseInt(Util.getCookie(Const.vipSurplusTimeCookieName));
     if (isNaN(vipHours) || vipHours < 0) {
         console.log('检查VIP剩余时间Start');
-        $.get('kf_vmember.php?t=' + new Date().getTime(), function (html) {
+        $.get('kf_vmember.php?t=' + $.now(), function (html) {
             let hours = 0;
             let matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
             if (matches) hours = parseInt(matches[1]);
@@ -233,7 +233,7 @@ export const handleIndexLink = function () {
 export const addPromoteHaloInterval = function () {
     let nextTime = parseInt(Util.getCookie(Const.promoteHaloCookieName));
     if (!nextTime) return;
-    let interval = nextTime - new Date().getTime();
+    let interval = nextTime - $.now();
     if (interval > 0) {
         let minutes = Math.ceil(interval / 60 / 1000);
         let hours = Math.floor(minutes / 60);
@@ -257,7 +257,7 @@ export const addChangePointsInfoTips = function () {
     let tipsText = '';
     if ($.isNumeric(value)) {
         let nextTime = parseInt(value);
-        let interval = nextTime - new Date().getTime();
+        let interval = nextTime - $.now();
         if (interval > 0) {
             let minutes = Math.ceil(interval / 60 / 1000);
             let hours = Math.floor(minutes / 60);

@@ -53,7 +53,7 @@ export const init = function () {
 
     let tmpHaloInfo = TmpLog.getValue(Const.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
-        let diff = new Date().getTime() - tmpHaloInfo.time;
+        let diff = $.now() - tmpHaloInfo.time;
         if (diff >= 0 && diff < Const.tmpHaloInfoExpires * 60 * 1000) {
             delete tmpHaloInfo.time;
             setHaloInfo(tmpHaloInfo);
@@ -111,7 +111,7 @@ const handlePropertiesArea = function () {
     $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative')
         .append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
 
-    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括系数、光环和道具数量）">复</a>')
+    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>')
         .insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]'))
         .click(function (e) {
             e.preventDefault();
@@ -1077,7 +1077,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）`; // 临时修改
         localStorage.setItem(
             Const.tempPointsLogListStorageName + '_' + Info.uid,
-            JSON.stringify({time: new Date().getTime(), pointsLogList})
+            JSON.stringify({time: $.now(), pointsLogList})
         );
         //if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
         if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）`); // 临时修改
@@ -1267,7 +1267,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         console.log('检查争夺记录Start');
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_index.php?t=' + $.now(),
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
             let $log = $('#pk_text', html);
@@ -1827,7 +1827,7 @@ const getTempPointsLogList = function (logList) {
         return [];
     }
     if (!options || $.type(options) !== 'object' || $.type(options.time) !== 'number' || !Array.isArray(options.pointsLogList)) return [];
-    let diff = new Date().getTime() - options.time;
+    let diff = $.now() - options.time;
     if (options.pointsLogList.length > logList.length || diff >= 24 * 60 * 60 * 1000 || diff < 0) {
         localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
         return [];
@@ -1860,7 +1860,7 @@ export const checkLoot = function () {
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
     $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
         success(html) {
             Msg.remove($wait);
@@ -1921,7 +1921,7 @@ export const autoSaveLootLog = function () {
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
     $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
         success(html) {
             Msg.remove($wait);
@@ -1959,7 +1959,7 @@ export const getChangePointsCountDown = function () {
     console.log('获取改点倒计时Start');
     return $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
     }).then(function (html) {
         let matches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
@@ -2030,7 +2030,7 @@ const readHaloInfo = function (isInitLootPage = false) {
 export const getHaloInfo = function () {
     return $.ajax({
         type: 'GET',
-        url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+        url: 'kf_fw_ig_halo.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
     }).then(function (html) {
         let haloInfo = {'全属性': 0, '攻击力': 0, '生命值': 0};
@@ -2042,7 +2042,7 @@ export const getHaloInfo = function () {
                 haloInfo['攻击力'] = parseInt(extraMatches[1]);
                 haloInfo['生命值'] = parseInt(extraMatches[2]);
             }
-            TmpLog.setValue(Const.haloInfoTmpLogName, $.extend(haloInfo, {time: new Date().getTime()}));
+            TmpLog.setValue(Const.haloInfoTmpLogName, $.extend(haloInfo, {time: $.now()}));
             return haloInfo;
         }
         else return 'error';
@@ -2099,7 +2099,7 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
     const getPersonalInfo = function () {
         $.ajax({
             type: 'GET',
-            url: `profile.php?action=show&uid=${Info.uid}&t=${new Date().getTime()}`,
+            url: `profile.php?action=show&uid=${Info.uid}&t=${$.now()}`,
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
             Msg.remove($wait);
@@ -2127,7 +2127,7 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
     const getHaloInfo = function (maxCount = -1) {
         $.ajax({
             type: 'GET',
-            url: 'kf_fw_ig_halo.php?t=' + new Date().getTime(),
+            url: 'kf_fw_ig_halo.php?t=' + $.now(),
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
             Msg.remove($wait);
@@ -2184,7 +2184,7 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId, is
     const promote = function () {
         $.ajax({
             type: 'GET',
-            url: `kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${new Date().getTime()}`,
+            url: `kf_fw_ig_halo.php?do=buy&id=${promoteHaloCostType}&safeid=${safeId}&t=${$.now()}`,
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
             Public.showFormatLog('提升战力光环', html);

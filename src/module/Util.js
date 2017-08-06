@@ -165,7 +165,7 @@ export const getTimeString = function (date = new Date(), separator = ':', isSho
  * @returns {{hours: number, minutes: number, seconds: number}} 剩余时间的描述，hours：剩余的小时数；minutes：剩余的分钟数；seconds：剩余的秒数
  */
 export const getTimeDiffInfo = function (timestamp) {
-    let diff = timestamp - new Date().getTime();
+    let diff = timestamp - $.now();
     if (diff > 0) {
         diff = Math.floor(diff / 1000);
         let hours = Math.floor(diff / 60 / 60);
