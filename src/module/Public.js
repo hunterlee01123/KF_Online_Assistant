@@ -111,7 +111,6 @@ export const appendCss = function () {
     font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;
     background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);
-    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
   }
@@ -136,16 +135,16 @@ export const appendCss = function () {
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
-  .pd_arm_equipped { background-color:#EEEEFF; box-shadow: 0 0 7px #99f; }
+  .pd_arm_equipped { background-color:#EEEEFF; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }
   .pd_arm_equipped > td:nth-child(3)::before { content: "（装备中）"; font-weight: bold; }
   .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
   .kf_fw_ig4 > tbody > tr > td:nth-child(3) { position: relative; }
-  .kf_fw_ig4 > tbody > tr > td[data-memo]:nth-child(3)::after {
+  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {
     content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);
   }
-  .kf_fw_ig4 > tbody > tr.pd_arm_equipped > td[data-memo]:nth-child(3)::after { background: rgba(238, 238, 255, .9); }
+  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
-  tr.pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
+  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
@@ -169,8 +168,7 @@ export const appendCss = function () {
   .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
     position: ${Info.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1000;
-    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
-    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
+    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
   .pd_cfg_box h1 {
     text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;

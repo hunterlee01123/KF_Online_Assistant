@@ -128,6 +128,7 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
+        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         Msg.destroy();
         openBoxes({id, boxType, num, safeId});
     });
@@ -139,9 +140,11 @@ const addBatchOpenBoxesLink = function () {
 const addOpenAllBoxesButton = function () {
     $(`
 <div class="pd_item_btns" data-name="openBoxesBtns">
+  <button name="clearMsg" type="button" title="清除页面上所有的消息框">清除消息框</button>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
-`).insertAfter($boxArea).find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
+`).insertAfter($boxArea).find('[name="clearMsg"]').click(Msg.destroy)
+        .end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
     Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
@@ -259,6 +262,7 @@ const showOpenAllBoxesDialog = function () {
         }
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
+        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             let $this = $(this);
@@ -317,10 +321,6 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
     let randomTotalNum = 0, randomTotalCount = 0;
     let isStop = false;
     let stat = {'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {}};
-    $boxArea.parent().append(`<ul class="pd_result" data-name="boxResult"><li><strong>【${boxType}】打开结果：</strong></li></ul>`);
-    let $wait = Msg.wait(
-        `<strong>正在打开盒子中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
-    );
 
     /**
      * 打开
@@ -488,6 +488,10 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
         });
     };
 
+    $boxArea.parent().append(`<ul class="pd_result" data-name="boxResult"><li><strong>【${boxType}】打开结果：</strong></li></ul>`);
+    let $wait = Msg.wait(
+        `<strong>正在打开盒子中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
+    );
     $(document).clearQueue('OpenBoxes');
     $.each(new Array(num), function () {
         $(document).queue('OpenBoxes', open);
@@ -521,7 +525,7 @@ const handleArmArea = function () {
         let $tr = $this.parent('tr');
         $tr.attr('data-id', id);
         if (Config.armsMemo[id]) {
-            $tr.find('> td:nth-child(3)').attr('data-memo', Util.htmlEncode(Config.armsMemo[id]));
+            $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
     });
 };
@@ -564,7 +568,7 @@ const bindArmLinkClickEvent = function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
         let $td = $this.find('> td:nth-child(3)');
-        $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="显示装备信息">显</a>');
+        $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="查看装备信息">查</a>');
     }).on('mouseleave', 'tr', function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
@@ -604,11 +608,11 @@ const showArmInfoDialog = function (armId, armInfo) {
   <div style="margin-top: 5px;">
     <label>武器参数设置：</label>
     <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">复制</a><br>
-    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly>${getWeaponParameterSetting(armInfo)}</textarea>
+    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>
   </div>
   <div style="margin-top: 5px;">
     <label>
-      装备备注：<input name="armMemo" type="text" maxlength="12" style="width: 160px;">
+      装备备注：<input name="armMemo" type="text" maxlength="20" style="width: 180px;">
     </label>
   </div>
 </div>
@@ -632,7 +636,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         let $node = $armArea.find(`tr[data-id="${armId}"] > td:nth-child(3)`);
         if (value) {
             Config.armsMemo[armId] = value;
-            $node.attr('data-memo', Util.htmlEncode(value));
+            $node.attr('data-memo', value.slice(0, 12).replace(/"/g, ''));
         }
         else {
             delete Config.armsMemo[armId];
@@ -642,6 +646,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         Dialog.close(dialogName);
     });
 
+    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo));
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }

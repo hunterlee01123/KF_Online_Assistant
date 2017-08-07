@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.0.2
+// @version     11.0.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.0.2';
+const version = '11.0.3';
 
 /**
  * 导出模块
@@ -3265,6 +3265,7 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
+        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         Msg.destroy();
         openBoxes({ id, boxType, num, safeId });
     });
@@ -3276,9 +3277,10 @@ const addBatchOpenBoxesLink = function () {
 const addOpenAllBoxesButton = function () {
     $(`
 <div class="pd_item_btns" data-name="openBoxesBtns">
+  <button name="clearMsg" type="button" title="清除页面上所有的消息框">清除消息框</button>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
-`).insertAfter($boxArea).find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
+`).insertAfter($boxArea).find('[name="clearMsg"]').click(Msg.destroy).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
     Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
@@ -3393,6 +3395,7 @@ const showOpenAllBoxesDialog = function () {
         }
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
+        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             let $this = $(this);
@@ -3452,8 +3455,6 @@ const openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = fals
         randomTotalCount = 0;
     let isStop = false;
     let stat = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} };
-    $boxArea.parent().append(`<ul class="pd_result" data-name="boxResult"><li><strong>【${boxType}】打开结果：</strong></li></ul>`);
-    let $wait = Msg.wait(`<strong>正在打开盒子中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
 
     /**
      * 打开
@@ -3598,6 +3599,8 @@ const openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = fals
         });
     };
 
+    $boxArea.parent().append(`<ul class="pd_result" data-name="boxResult"><li><strong>【${boxType}】打开结果：</strong></li></ul>`);
+    let $wait = Msg.wait(`<strong>正在打开盒子中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
     $(document).clearQueue('OpenBoxes');
     $.each(new Array(num), function () {
         $(document).queue('OpenBoxes', open);
@@ -3629,7 +3632,7 @@ const handleArmArea = function () {
         let $tr = $this.parent('tr');
         $tr.attr('data-id', id);
         if (Config.armsMemo[id]) {
-            $tr.find('> td:nth-child(3)').attr('data-memo', Util.htmlEncode(Config.armsMemo[id]));
+            $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
     });
 };
@@ -3670,7 +3673,7 @@ const bindArmLinkClickEvent = function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
         let $td = $this.find('> td:nth-child(3)');
-        $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="显示装备信息">显</a>');
+        $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="查看装备信息">查</a>');
     }).on('mouseleave', 'tr', function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
@@ -3710,11 +3713,11 @@ const showArmInfoDialog = function (armId, armInfo) {
   <div style="margin-top: 5px;">
     <label>武器参数设置：</label>
     <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">复制</a><br>
-    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly>${getWeaponParameterSetting(armInfo)}</textarea>
+    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>
   </div>
   <div style="margin-top: 5px;">
     <label>
-      装备备注：<input name="armMemo" type="text" maxlength="12" style="width: 160px;">
+      装备备注：<input name="armMemo" type="text" maxlength="20" style="width: 180px;">
     </label>
   </div>
 </div>
@@ -3738,7 +3741,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         let $node = $armArea.find(`tr[data-id="${armId}"] > td:nth-child(3)`);
         if (value) {
             Config.armsMemo[armId] = value;
-            $node.attr('data-memo', Util.htmlEncode(value));
+            $node.attr('data-memo', value.slice(0, 12).replace(/"/g, ''));
         } else {
             delete Config.armsMemo[armId];
             $node.removeAttr('data-memo');
@@ -3747,6 +3750,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         Dialog.close(dialogName);
     });
 
+    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo));
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -7366,7 +7370,7 @@ const getHaloInfo = exports.getHaloInfo = function () {
         let haloInfo = { '全属性': 0, '攻击力': 0, '生命值': 0 };
         let matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
         if (matches) {
-            haloInfo['全属性'] = parseFloat(matches[1]) * 10 / 1000;
+            haloInfo['全属性'] = Math.round(parseFloat(matches[1]) * 10) / 1000;
             let extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
             if (extraMatches) {
                 haloInfo['攻击力'] = parseInt(extraMatches[1]);
@@ -7396,7 +7400,7 @@ const setHaloInfo = exports.setHaloInfo = function (newHaloInfo) {
             }
         });
     }
-    $('#pdHaloInfo').val(`全属性+${haloInfo['全属性'] * 1000 / 10}% (+${haloInfo['攻击力']}|+${haloInfo['生命值']})`);
+    $('#pdHaloInfo').val(`全属性+${Math.round(haloInfo['全属性'] * 1000) / 10}% (+${haloInfo['攻击力']}|+${haloInfo['生命值']})`);
 };
 
 /**
@@ -8845,7 +8849,6 @@ const appendCss = exports.appendCss = function () {
     font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;
     background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);
-    background-image: -o-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
     background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);
   }
@@ -8870,16 +8873,16 @@ const appendCss = exports.appendCss = function () {
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
-  .pd_arm_equipped { background-color:#EEEEFF; box-shadow: 0 0 7px #99f; }
+  .pd_arm_equipped { background-color:#EEEEFF; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }
   .pd_arm_equipped > td:nth-child(3)::before { content: "（装备中）"; font-weight: bold; }
   .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
   .kf_fw_ig4 > tbody > tr > td:nth-child(3) { position: relative; }
-  .kf_fw_ig4 > tbody > tr > td[data-memo]:nth-child(3)::after {
+  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {
     content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);
   }
-  .kf_fw_ig4 > tbody > tr.pd_arm_equipped > td[data-memo]:nth-child(3)::after { background: rgba(238, 238, 255, .9); }
+  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
-  tr.pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
+  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
@@ -8903,8 +8906,7 @@ const appendCss = exports.appendCss = function () {
   .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
     position: ${_Info2.default.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1000;
-    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
-    -o-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
+    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
   .pd_cfg_box h1 {
     text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;

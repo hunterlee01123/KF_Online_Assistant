@@ -2036,7 +2036,7 @@ export const getHaloInfo = function () {
         let haloInfo = {'全属性': 0, '攻击力': 0, '生命值': 0};
         let matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
         if (matches) {
-            haloInfo['全属性'] = parseFloat(matches[1]) * 10 / 1000;
+            haloInfo['全属性'] = Math.round(parseFloat(matches[1]) * 10) / 1000;
             let extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
             if (extraMatches) {
                 haloInfo['攻击力'] = parseInt(extraMatches[1]);
@@ -2069,7 +2069,7 @@ export const setHaloInfo = function (newHaloInfo) {
                 }
             });
     }
-    $('#pdHaloInfo').val(`全属性+${haloInfo['全属性'] * 1000 / 10}% (+${haloInfo['攻击力']}|+${haloInfo['生命值']})`);
+    $('#pdHaloInfo').val(`全属性+${Math.round(haloInfo['全属性'] * 1000) / 10}% (+${haloInfo['攻击力']}|+${haloInfo['生命值']})`);
 };
 
 /**
