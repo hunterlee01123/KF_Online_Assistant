@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.0.3
+// @version     11.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.0.3';
+var version = '11.1';
 
 /**
  * 导出模块
@@ -3047,7 +3047,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchBuyItemsLink = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
+exports.addBatchBuyItemsLink = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3084,6 +3084,10 @@ var Script = _interopRequireWildcard(_Script);
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
+
+var _Loot = require('./Loot');
+
+var Loot = _interopRequireWildcard(_Loot);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -3124,8 +3128,8 @@ var init = exports.init = function init() {
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
 
-    handleArmArea();
-    bindArmLinkClickEvent();
+    handleArmArea($armArea);
+    bindArmLinkClickEvent($armArea, safeId);
 
     addArmsButton();
     addBatchUseAndSellItemsButton();
@@ -3174,7 +3178,7 @@ var getNextObjects = exports.getNextObjects = function getNextObjects(sequence) 
                     $area.find('> tbody > tr:nth-child(2)').after(addHtml);
                 }
                 if (index === 1) {
-                    handleArmArea();
+                    handleArmArea($armArea);
                 }
             }
         }
@@ -3685,8 +3689,12 @@ var openBoxes = function openBoxes(_ref) {
 
 /**
  * 处理装备区域
+ * @param {jQuery} $armArea 装备区域节点
+ * @param {number} type 页面类型，0：我的物品页面；1：争夺首页点数分配对话框
  */
-var handleArmArea = function handleArmArea() {
+var handleArmArea = exports.handleArmArea = function handleArmArea($armArea) {
+    var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
     $armArea.find('a[onclick^="cdzb"]').removeAttr('onclick').attr('data-name', 'equip');
     $armArea.find('a[onclick^="rlzb"]').removeAttr('onclick').attr('data-name', 'smelt');
 
@@ -3710,12 +3718,21 @@ var handleArmArea = function handleArmArea() {
             $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
     });
+
+    if (type === 1) {
+        $armArea.find('a[data-name="equip"]').attr('data-name', 'add').text('加入');
+    }
 };
 
 /**
  * 绑定装备点击事件
+ * @param {jQuery} $armArea 装备区域节点
+ * @param {string} safeId SafeID
+ * @param {number} type 页面类型，0：我的物品页面；1：争夺首页
  */
-var bindArmLinkClickEvent = function bindArmLinkClickEvent() {
+var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLinkClickEvent($armArea, safeId) {
+    var type = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+
     $armArea.on('click', 'a[data-name="equip"]', function () {
         var $this = $(this);
         var id = parseInt($this.closest('tr').data('id'));
@@ -3723,6 +3740,20 @@ var bindArmLinkClickEvent = function bindArmLinkClickEvent() {
             if (/装备完毕/.test(html)) {
                 $armArea.find('.pd_arm_equipped').removeClass('pd_arm_equipped');
                 $this.closest('tr').addClass('pd_arm_equipped');
+                if (type === 1) {
+                    var $wait = Msg.wait('<strong>正在获取争夺首页信息&hellip;</strong>');
+                    Loot.updateLootInfo(function () {
+                        Msg.remove($wait);
+                        $('#pdChangeArmDialog').parent().hide();
+                        var $armId = $('input[name="armId"]:first');
+                        var $armMemo = $('input[name="armMemo"]:first');
+                        $armId.val(id);
+                        $armMemo.val($('#pdArmArea > span:first').text().trim());
+                        $.each([$armId, $armMemo], function () {
+                            this.get(0).defaultValue = '';
+                        });
+                    });
+                }
             } else {
                 alert(Util.removeHtmlTag(html));
             }
@@ -3744,6 +3775,13 @@ var bindArmLinkClickEvent = function bindArmLinkClickEvent() {
                 alert(msg);
             }
         });
+    }).on('click', 'a[data-name="add"]', function () {
+        var $tr = $(this).closest('tr');
+        var id = parseInt($tr.data('id'));
+        var armInfo = getArmInfo($tr.find('> td:nth-child(3)').html());
+        $('#pdAddArmDialog').parent().hide();
+        $('#pdAddArmMemo').val(armInfo['名称']);
+        $('#pdAddArmId').val(id).focus();
     }).on('mouseenter', 'tr', function () {
         var $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
@@ -3777,7 +3815,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo) {
     Msg.destroy();
 
     var html = '\n<div class="pd_cfg_main">\n  <div style="width: 550px; margin-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #99f;">\n    <span style="color: ' + armInfo['颜色'] + '">' + armInfo['名称'] + '</span> - ' + armInfo['描述'] + '\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u88C5\u5907ID\uFF1A<input name="armId" type="text" value="' + armId + '" style="width: 100px;" readonly></label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armId]" href="#">\u590D\u5236</a>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E\uFF1A</label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">\u590D\u5236</a><br>\n    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\n      \u88C5\u5907\u5907\u6CE8\uFF1A<input name="armMemo" type="text" maxlength="20" style="width: 180px;">\n    </label>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="saveMemo" type="button">\u4FDD\u5B58\u5907\u6CE8</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
-    var $dialog = Dialog.create(dialogName, '装备信息', html);
+    var $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1001;');
 
     $dialog.on('click', 'a[data-name="copy"]', function (e) {
         e.preventDefault();
@@ -3802,7 +3840,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo));
+    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo) + '\n');
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -4496,7 +4534,9 @@ var getItemsUsedNumInfo = exports.getItemsUsedNumInfo = function getItemsUsedNum
     var matches = html.match(/value="\[\s*(\d+)\s*](\S+?)"/g);
     for (var i in matches) {
         var subMatches = /value="\[\s*(\d+)\s*](\S+?)"/.exec(matches[i]);
-        itemUsedNumList.set(subMatches[2], parseInt(subMatches[1]));
+        if (itemUsedNumList.has(subMatches[2])) {
+            itemUsedNumList.set(subMatches[2], parseInt(subMatches[1]));
+        }
     }
     return itemUsedNumList;
 };
@@ -5152,7 +5192,7 @@ var showKfbInItemShop = function showKfbInItemShop() {
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],11:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -6402,7 +6442,7 @@ var showLogText = function showLogText(log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
+exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.updateLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -6460,10 +6500,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
+// SafeID
+var safeId = void 0;
 // 争夺属性区域
 var $properties = void 0;
 // 点数区域
 var $points = void 0;
+// 装备区域
+var $armArea = void 0;
 // 争夺记录区域容器
 var $logBox = void 0;
 // 争夺记录区域
@@ -6495,8 +6539,13 @@ var pointsLogList = [];
  * 初始化
  */
 var init = exports.init = function init() {
+    safeId = Public.getSafeId();
+    if (!safeId) return;
+
     $properties = $('.kf_fw_ig3:first');
     $points = $('#wdsx .kf_fw_ig1:first');
+    $points.find('> tbody > tr:first-child > td').attr('id', 'pdArmArea');
+    $armArea = $points.find('#pdArmArea');
 
     var tmpHaloInfo = TmpLog.getValue(_Const2.default.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
@@ -6518,7 +6567,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     propertyList = getLootPropertyList(propertiesHtml);
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-    currentArmInfo = Item.getArmInfo($points.find('> tbody > tr:first-child > td').html());
+    currentArmInfo = Item.getArmInfo($armArea.html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -6681,10 +6730,10 @@ var handlePointsArea = function handlePointsArea() {
     $points.on('change', '.pd_point', function () {
         var $this = $(this);
         showSurplusPoint();
-        /*showNewLootProperty($this);
-         showExtraPoint($this);
-         showSumOfPoint($this);
-         showSkillAttack();*/ // 临时禁用
+        // showNewLootProperty($this); // 临时禁用
+        showExtraPoint($this);
+        showSumOfPoint($this);
+        // showSkillAttack(); // 临时禁用
     }).on('click', '.pd_sum_point', function () {
         var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
@@ -6698,6 +6747,11 @@ var handlePointsArea = function handlePointsArea() {
         Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
         return checkPoints($points);
     }).find('.pd_point').trigger('change');
+
+    $('\n<tr>\n  <td width="40%">\u88C5\u5907ID\u548C\u5907\u6CE8 (\u65E0\u9700\u66F4\u6362\u88C5\u5907\u65F6\u52FF\u586B)</td>\n  <td width="40%">\n    <input name="armId" type="text" value="" maxlength="15" title="\u88C5\u5907ID" placeholder="\u88C5\u5907ID" style="width: 70px;" readonly>\n    <input name="armMemo" type="text" value="" maxlength="15" title="\u88C5\u5907\u5907\u6CE8" placeholder="\u88C5\u5907\u5907\u6CE8" style="width: 100px;" readonly>\n    <a class="pd_btn_link" data-name="changeArm" href="#">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
+        e.preventDefault();
+        addOrChangeArm(0);
+    });
 };
 
 /**
@@ -6748,8 +6802,8 @@ var getLootPropertyList = function getLootPropertyList(html) {
      if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
      matches = /技能释放概率：(\d+)%/.exec(html);
      if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);*/ // 临时禁用
-    matches = /"(\d+)%减伤"/.exec(html);
-    if (matches) propertyList['防御'] = parseInt(matches[1]);
+    matches = /"(\d+(?:\.\d+)?)%减伤"/.exec(html);
+    if (matches) propertyList['防御'] = parseFloat(matches[1]);
     matches = /"(\d+)\s*可分配属性"/.exec(html);
     if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
     return propertyList;
@@ -6854,6 +6908,10 @@ var getPointNameByFieldName = exports.getPointNameByFieldName = function getPoin
             return '耐力';
         case 'l':
             return '幸运';
+        case 'armId':
+            return '装备ID';
+        case 'armMemo':
+            return '装备备注';
         default:
             return '';
     }
@@ -6882,6 +6940,10 @@ var getFieldNameByPointName = exports.getFieldNameByPointName = function getFiel
             return 'p';
         case '幸运':
             return 'l';
+        case '装备ID':
+            return 'armId';
+        case '装备备注':
+            return 'armMemo';
         default:
             return '';
     }
@@ -7002,13 +7064,13 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         if (level > 0) {
             var points = Config.levelPointList[parseInt(level)];
             if ((typeof points === 'undefined' ? 'undefined' : _typeof(points)) !== 'object') return;
-            $points.find('.pd_point').each(function () {
+            $points.find('.pd_point, input[name="armId"], input[name="armMemo"]').each(function () {
                 var $this = $(this);
                 var pointName = getPointNameByFieldName($this.attr('name'));
                 $this.val(points[pointName]);
             }).trigger('change');
         } else if (level === 0) {
-            $points.find('.pd_point').each(function () {
+            $points.find('.pd_point, input[name="armId"], input[name="armMemo"]').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         }
@@ -7030,14 +7092,26 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         var _iteratorError2 = undefined;
 
         try {
-            for (var _iterator2 = Array.from($points.find('.pd_point'))[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            for (var _iterator2 = Array.from($points.find('.pd_point, input[name="armId"], input[name="armMemo"]'))[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                 var elem = _step2.value;
 
                 var $elem = $(elem);
-                var point = parseInt($elem.val());
-                if (!point || point < 0) return;
-                var pointName = getPointNameByFieldName($elem.attr('name'));
-                points[pointName] = point;
+                var name = $elem.attr('name');
+                var value = $.trim($elem.val());
+                if ($elem.is('.pd_point')) {
+                    value = parseInt(value);
+                    if (!value || value < 0) return;
+                } else {
+                    if (!value) continue;
+                    if (name === 'armId') {
+                        value = parseInt(value);
+                        if (!value || value < 0) return;
+                    }
+                }
+                points[getPointNameByFieldName(name)] = value;
+                if (!points['装备ID'] && points['装备备注']) {
+                    delete points['装备备注'];
+                }
             }
         } catch (err) {
             _didIteratorError2 = true;
@@ -7085,11 +7159,13 @@ var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
     var _iteratorError3 = undefined;
 
     try {
-        for (var _iterator3 = Object.keys(levelPointList)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var level = _step3.value;
+        for (var _iterator3 = Util.entries(levelPointList)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var _step3$value = _slicedToArray(_step3.value, 2),
+                level = _step3$value[0],
+                points = _step3$value[1];
 
             if (!$.isNumeric(level)) continue;
-            pointListHtml += '<option value="' + level + '">\u7B2C' + level + '\u5C42</option>';
+            pointListHtml += '<option value="' + level + '">\u7B2C' + level + '\u5C42 ' + (points['装备ID'] ? '(装)' : '') + '</option>';
         }
     } catch (err) {
         _didIteratorError3 = true;
@@ -7110,243 +7186,9 @@ var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
 };
 
 /**
- * 显示各层点数分配方案对话框
- */
-var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(callback) {
-    var dialogName = 'pdLevelPointListConfigDialog';
-    if ($('#' + dialogName).length > 0) return;
-    (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr><th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th></th></tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
-    var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
-    var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
-
-    /**
-     * 添加各层点数分配的HTML
-     * @param {number} level 层数
-     * @param {{}} points 点数对象
-     */
-    var addLevelPointHtml = function addLevelPointHtml(level, points) {
-        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" value="' + points['力量'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" value="' + points['体质'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" value="' + points['敏捷'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" value="' + points['灵活'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" value="' + points['智力'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" value="' + points['意志'] + '" min="1" style="width: 50px;" required></td>\n  <td style="text-align: left;">\n    <a class="pd_btn_link" data-name="fill" href="#">\u586B\u5145</a>\n    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">\u5220\u9664</a>\n  </td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B" hidden> <!-- \u4E34\u65F6\u7981\u7528 -->\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C" hidden>\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6" hidden>\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387" hidden>\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387" hidden>\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24" hidden>\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="[\u98DE\u8EAB\u5288\u65A9]\u4F24\u5BB3\uFF1A\u653B\u51FB+\u4F53\u8D28\u503C*5+\u667A\u529B\u503C*5" hidden>\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
-    };
-
-    $dialog.submit(function (e) {
-        e.preventDefault();
-        (0, _Config.read)();
-        var levelPointList = {};
-        var prevPoints = {};
-        var isError = false,
-            isSurplus = false;
-        $levelPointList.find('tr:gt(0)').each(function () {
-            var $this = $(this);
-            if (!$this.find('.pd_point').length) return;
-            var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
-            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) {
-                isError = true;
-                return false;
-            }
-
-            var level = parseInt($this.find('[name="level"]').val());
-            if (!level || level < 0) return;
-            var points = {};
-            var _iteratorNormalCompletion4 = true;
-            var _didIteratorError4 = false;
-            var _iteratorError4 = undefined;
-
-            try {
-                for (var _iterator4 = Array.from($this.find('.pd_point'))[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var elem = _step4.value;
-
-                    var $elem = $(elem);
-                    var point = parseInt($elem.val());
-                    if (!point || point < 0) return;
-                    points[getPointNameByFieldName($elem.attr('name'))] = point;
-                }
-            } catch (err) {
-                _didIteratorError4 = true;
-                _iteratorError4 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                        _iterator4.return();
-                    }
-                } finally {
-                    if (_didIteratorError4) {
-                        throw _iteratorError4;
-                    }
-                }
-            }
-
-            if (Util.deepEqual(prevPoints, points)) return;
-            levelPointList[level] = points;
-            prevPoints = points;
-        });
-        if (isSurplus) {
-            if (!confirm('部分层数的可分配属性点尚未用完，是否提交？')) return;
-        }
-        if (isError) {
-            alert('部分层数的剩余属性点为负，请重新填写');
-            return;
-        }
-        Config.levelPointList = levelPointList;
-        (0, _Config.write)();
-        Dialog.close(dialogName);
-        setLevelPointListSelect(Config.levelPointList);
-    }).find('[data-name="add"]').click(function (e) {
-        e.preventDefault();
-        var points = { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 };
-        addLevelPointHtml(0, points);
-        $levelPointList.find('[name="level"]:last').focus();
-        Dialog.resize(dialogName);
-    }).end().find('[data-name="deleteSelect"]').click(function (e) {
-        e.preventDefault();
-        var $checked = $levelPointList.find('[type="checkbox"]:checked');
-        if (!$checked.length || !confirm('是否删除所选层数？')) return;
-        var $line = $checked.closest('tr');
-        $line.next('tr').addBack().remove();
-        Dialog.resize(dialogName);
-    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
-        e.preventDefault();
-        Public.showCommonImportOrExportConfigDialog('各层点数分配方案', 'levelPointList', null, function () {
-            $('#pdLevelPointListConfigDialog').remove();
-            showLevelPointListConfigDialog(function ($dialog) {
-                return $dialog.submit();
-            });
-        });
-    }).end().find('[data-name="selectAll"]').click(function () {
-        return Util.selectAll($levelPointList.find('[type="checkbox"]'));
-    }).end().find('[data-name="selectInverse"]').click(function () {
-        return Util.selectInverse($levelPointList.find('[type="checkbox"]'));
-    });
-
-    $levelPointList.on('click', '[data-name="fill"]', function (e) {
-        e.preventDefault();
-        var $line = $(this).closest('tr');
-        var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        var matches = value.match(/\d+/g);
-        if (!matches) return;
-        $line.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
-        });
-    }).on('click', '[data-name="delete"]', function (e) {
-        e.preventDefault();
-        var $line = $(this).closest('tr');
-        $line.next('tr').addBack().remove();
-        Dialog.resize(dialogName);
-    }).on('change', '.pd_point', function () {
-        var $this = $(this);
-        var name = $this.attr('name');
-        var point = parseInt($this.val());
-        if (!point || point < 0) return;
-
-        var $points = $this.closest('tr');
-        var $properties = $points.next('tr');
-        $properties.find('[data-id="pro_' + name + '"]').text(getPropertyByPoint(getPointNameByFieldName(name), point));
-        var power = parseInt($points.find('[name="s1"]').val());
-        var life = parseInt($points.find('[name="s2"]').val());
-        var intelligence = parseInt($points.find('[name="i1"]').val());
-        $properties.find('[data-id="skillAttack"]').text(getSkillAttack(power + getExtraPoint('力量', power), life + getExtraPoint('体质', life), intelligence + getExtraPoint('智力', intelligence)));
-
-        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
-    }).on('click', '[data-id^="pro_"]', function () {
-        var $this = $(this);
-        var name = $this.data('id').replace('pro_', '');
-        var num = parseInt(prompt('请输入数值：', $this.text()));
-        if (!num || num < 0) return;
-        $this.closest('tr').prev('tr').find('[name="' + name + '"]').val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
-    }).on('click', '[data-id^="opt_"]', function (e) {
-        e.preventDefault();
-        var $this = $(this);
-        var name = $this.data('id').replace('opt_', '');
-        var $points = $this.closest('tr').prev('tr');
-        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        if (!surplusPoint) return;
-        var $point = $points.find('[name="' + name + '"]');
-        if (!$point.length) return;
-        var num = parseInt($point.val());
-        if (isNaN(num) || num < 0) num = 0;
-        num = num + surplusPoint;
-        var min = parseInt($point.attr('min'));
-        $point.val(num < min ? min : num).trigger('change');
-    });
-
-    $dialog.find('[name="modify"]').click(function () {
-        var $checked = $levelPointList.find('[type="checkbox"]:checked');
-        if (!$checked.length) return;
-        var data = {};
-        $dialog.find('[data-id="modifyArea"] [type="text"]').each(function () {
-            var $this = $(this);
-            var name = $this.attr('name');
-            var value = $.trim($this.val());
-            if (!value) return;
-            var matches = /^(-|\+)?(\d+)$/.exec(value);
-            if (!matches) {
-                alert('格式不正确');
-                $this.select().focus();
-            }
-            data[name] = {};
-            if (typeof matches[1] !== 'undefined') data[name].action = matches[1] === '+' ? 'add' : 'minus';else data[name].action = 'equal';
-            data[name].value = parseInt(matches[2]);
-        });
-        $checked.each(function () {
-            var $points = $(this).closest('tr');
-            $points.find('.pd_point').each(function () {
-                var $this = $(this);
-                var name = $this.attr('name');
-                if (!(name in data)) return;
-                if (data[name].action !== 'equal') {
-                    var point = parseInt($this.val());
-                    if (!point || point < 0) point = 0;
-                    point += data[name].action === 'add' ? data[name].value : -data[name].value;
-                    $this.val(point > 1 ? point : 1);
-                } else $this.val(data[name].value);
-            }).trigger('change');
-        });
-        alert('点数已修改');
-    }).end().find('[data-name="clear"]').click(function (e) {
-        e.preventDefault();
-        $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
-    });
-
-    var _iteratorNormalCompletion5 = true;
-    var _didIteratorError5 = false;
-    var _iteratorError5 = undefined;
-
-    try {
-        for (var _iterator5 = Util.entries(Config.levelPointList)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var _step5$value = _slicedToArray(_step5.value, 2),
-                level = _step5$value[0],
-                points = _step5$value[1];
-
-            if (!$.isNumeric(level)) continue;
-            addLevelPointHtml(level, points);
-        }
-    } catch (err) {
-        _didIteratorError5 = true;
-        _iteratorError5 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                _iterator5.return();
-            }
-        } finally {
-            if (_didIteratorError5) {
-                throw _iteratorError5;
-            }
-        }
-    }
-
-    Dialog.show(dialogName);
-    if (typeof callback === 'function') callback($dialog);
-};
-
-/**
  * 添加攻击相关按钮
  */
 var addAttackBtns = function addAttackBtns() {
-    var safeId = Public.getSafeId();
-    if (!safeId) return;
     $logBox.off('click');
 
     $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~6\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
@@ -7423,26 +7265,34 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         var isSubmit = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
         propertyList = getLootPropertyList($properties.html());
-        var pointsText = '',
+        var armsText = '',
+            pointsText = '',
             propertiesText = '';
+
+        var armId = parseInt($points.find('input[name="armId"]').val());
+        var armMemo = $.trim($points.find('input[name="armMemo"]').val());
+        if (armId > 0) {
+            armsText = '\u88C5\u5907ID\uFF1A' + armId + (armMemo ? '，装备备注：' + armMemo : '');
+        }
+
         $points.find('.pd_point').each(function () {
             var $this = $(this);
             var pointName = getPointNameByFieldName($this.attr('name'));
-            var point = parseInt($.trim($this.val()));
+            var point = parseInt($this.val());
             var extraPoint = getExtraPoint(pointName, point);
-            //pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
-            pointsText += pointName + '\uFF1A' + point + '\uFF0C'; // 临时修改
+            pointsText += pointName + '\uFF1A' + point + '+' + extraPoint + '=' + (point + extraPoint) + '\uFF0C';
         });
+
         pointsText = pointsText.replace(/，$/, '');
-        var _iteratorNormalCompletion6 = true;
-        var _didIteratorError6 = false;
-        var _iteratorError6 = undefined;
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
 
         try {
-            for (var _iterator6 = Util.entries(propertyList)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                var _step6$value = _slicedToArray(_step6.value, 2),
-                    key = _step6$value[0],
-                    value = _step6$value[1];
+            for (var _iterator4 = Util.entries(propertyList)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                var _step4$value = _slicedToArray(_step4.value, 2),
+                    key = _step4$value[0],
+                    value = _step4$value[1];
 
                 if (key === '可分配属性点' || key === '生命值') continue;
                 var unit = '';
@@ -7450,26 +7300,31 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 propertiesText += key + '\uFF1A' + value + unit + '\uFF0C';
             }
         } catch (err) {
-            _didIteratorError6 = true;
-            _iteratorError6 = err;
+            _didIteratorError4 = true;
+            _iteratorError4 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                    _iterator6.return();
+                if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                    _iterator4.return();
                 }
             } finally {
-                if (_didIteratorError6) {
-                    throw _iteratorError6;
+                if (_didIteratorError4) {
+                    throw _iteratorError4;
                 }
             }
         }
 
         propertiesText = propertiesText.replace(/，$/, '');
         //pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
-        pointsLogList[getCurrentLevel(logList) + 1] = '\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09'; // 临时修改
+        pointsLogList[getCurrentLevel(logList) + 1] = (armsText ? '\u88C5\u5907\u4FE1\u606F\uFF08' + armsText + '\uFF09\n' : '') + '\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09'; // 临时修改
         localStorage.setItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid, JSON.stringify({ time: $.now(), pointsLogList: pointsLogList }));
         //if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
-        if (isSubmit) console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09'); // 临时修改
+        if (isSubmit) {
+            if (armsText) {
+                console.log('\u3010\u66F4\u6362\u6B66\u5668\u3011\u88C5\u5907\u4FE1\u606F\uFF08' + armsText + '\uFF09');
+            }
+            console.log('\u3010\u5206\u914D\u70B9\u6570\u3011\u70B9\u6570\u65B9\u6848\uFF08' + pointsText + '\uFF09');
+        } // 临时修改
     };
 
     /**
@@ -7486,27 +7341,29 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 console.log(ex);
             }
             if ($.type(points) === 'object') {
-                var _iteratorNormalCompletion7 = true;
-                var _didIteratorError7 = false;
-                var _iteratorError7 = undefined;
+                var _iteratorNormalCompletion5 = true;
+                var _didIteratorError5 = false;
+                var _iteratorError5 = undefined;
 
                 try {
-                    for (var _iterator7 = Object.keys(points)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                        var key = _step7.value;
+                    for (var _iterator5 = Util.entries(points)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                        var _step5$value = _slicedToArray(_step5.value, 2),
+                            key = _step5$value[0],
+                            value = _step5$value[1];
 
-                        $points.find('[name="' + getFieldNameByPointName(key) + '"]').val(points[key]).trigger('change');
+                        $points.find('input[name="' + getFieldNameByPointName(key) + '"]').val(value).trigger('change');
                     }
                 } catch (err) {
-                    _didIteratorError7 = true;
-                    _iteratorError7 = err;
+                    _didIteratorError5 = true;
+                    _iteratorError5 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                            _iterator7.return();
+                        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                            _iterator5.return();
                         }
                     } finally {
-                        if (_didIteratorError7) {
-                            throw _iteratorError7;
+                        if (_didIteratorError5) {
+                            throw _iteratorError5;
                         }
                     }
                 }
@@ -7517,7 +7374,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 nextLevel = nextLevel > 1 ? nextLevel : 1;
             } else if (points === false) {
                 recordPointsLog();
-                return $.Deferred().resolve('success');
+                return $.Deferred().resolve('ignore');
             } else return $.Deferred().resolve('error');
         }
 
@@ -7527,52 +7384,93 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         }))) : -1;
         var $levelPointListSelect = $('#pdLevelPointListSelect');
         if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
-        var isChange = false;
-        $points.find('.pd_point').each(function () {
-            if (this.defaultValue !== $(this).val()) {
-                isChange = true;
-                return false;
+        var isChangeArm = false,
+            isChangePoints = false;
+        $points.find('.pd_point, input[name="armId"]').each(function () {
+            var $this = $(this);
+            var name = $this.attr('name');
+            var value = $.trim($this.val());
+            if (value && this.defaultValue !== value) {
+                if (name === 'armId') isChangeArm = true;else isChangePoints = true;
             }
         });
-        if (isChange) {
+
+        if (isChangeArm || isChangePoints) {
+            var _$;
+
             if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
                 if (confirm('可分配属性点尚未用完，是否继续攻击？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
             }
-            return $.ajax({
-                type: 'POST',
-                url: 'kf_fw_ig_enter.php',
-                timeout: _Const2.default.defAjaxTimeout,
-                data: $points.closest('form').serialize()
-            }).then(function (html) {
-                var _Util$getResponseMsg = Util.getResponseMsg(html),
-                    msg = _Util$getResponseMsg.msg;
 
-                if (/已经重新配置加点！/.test(msg)) {
-                    Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
-                    recordPointsLog(true);
-                    changePointsAvailableCount = changePointsAvailableCount > 0 ? changePointsAvailableCount - 1 : 0;
-                    $points.find('#pdChangeCount').text('(\u5F53\u524D\u4FEE\u6539\u914D\u70B9\u53EF\u7528[' + changePointsAvailableCount + ']\u6B21)');
-                    $points.find('.pd_point').each(function () {
-                        this.defaultValue = $(this).val();
-                    });
-                    Script.runFunc('Loot.lootAttack_changePoints_success_', msg);
-                    return 'success';
-                } else {
-                    var matches = /你还需要等待(\d+)分钟/.exec(msg);
-                    if (matches) {
-                        var nextTime = Util.getDate('+' + parseInt(matches[1]) + 'm');
-                        Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+            var armId = parseInt($points.find('input[name="armId"]').val());
+            var ajaxList = [['ignore'], ['ignore']];
+            if (isChangeArm) {
+                ajaxList[0] = $.ajax({
+                    type: 'POST',
+                    url: 'kf_fw_ig_mybpdt.php',
+                    timeout: _Const2.default.defAjaxTimeout,
+                    data: 'do=4&id=' + armId + '&safeid=' + safeId
+                });
+            }
+            if (isChangePoints) {
+                ajaxList[1] = $.ajax({
+                    type: 'POST',
+                    url: 'kf_fw_ig_enter.php',
+                    timeout: _Const2.default.defAjaxTimeout,
+                    data: $points.closest('form').serialize()
+                });
+            }
+
+            return (_$ = $).when.apply(_$, ajaxList).then(function (_ref2, _ref3) {
+                var _ref5 = _slicedToArray(_ref2, 1),
+                    msg1 = _ref5[0];
+
+                var _ref4 = _slicedToArray(_ref3, 1),
+                    msg2 = _ref4[0];
+
+                if (msg1 !== 'ignore') {
+                    var msg = Util.removeHtmlTag(msg1);
+                    if (/装备完毕/.test(msg1)) {
+                        $points.find('input[name="armId"], input[name="armMemo"]').each(function () {
+                            this.defaultValue = $(this).val();
+                        });
+                    } else {
+                        Msg.show('<strong>\u66F4\u6362\u6B66\u5668\uFF1A' + msg + '</strong>', -1);
+                        Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
+                        return 'error';
                     }
-                    Msg.show('<strong>\u7B2C<em>' + nextLevelText + '</em>\u5C42\u65B9\u6848\uFF1A' + msg + '</strong>', -1);
-                    Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
-                    return 'error';
                 }
+
+                if (msg2 !== 'ignore') {
+                    var _Util$getResponseMsg = Util.getResponseMsg(msg2),
+                        _msg = _Util$getResponseMsg.msg;
+
+                    if (/已经重新配置加点！/.test(_msg)) {
+                        Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
+                        $points.find('.pd_point').each(function () {
+                            this.defaultValue = $(this).val();
+                        });
+                    } else {
+                        var matches = /你还需要等待(\d+)分钟/.exec(_msg);
+                        if (matches) {
+                            var nextTime = Util.getDate('+' + parseInt(matches[1]) + 'm');
+                            Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+                        }
+                        Msg.show('<strong>\u7B2C<em>' + nextLevelText + '</em>\u5C42\u65B9\u6848\uFF1A' + _msg + '</strong>', -1);
+                        Script.runFunc('Loot.lootAttack_changePoints_error_', _msg);
+                        return 'error';
+                    }
+                }
+
+                recordPointsLog(true);
+                Script.runFunc('Loot.lootAttack_changePoints_success_', [msg1, msg2]);
+                return 'success';
             }, function () {
                 return 'timeout';
             });
         } else {
             if (nextLevelText === 1) recordPointsLog();
-            return $.Deferred().resolve('success');
+            return $.Deferred().resolve('ignore');
         }
     };
 
@@ -7585,13 +7483,21 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Const2.default.lootAttackInterval;
 
         changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
-            if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+            if (result === 'ignore') {
+                setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+            } else if (result === 'success') {
+                setTimeout(function () {
+                    updateLootInfo(function () {
+                        setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+                    });
+                }, _Const2.default.defAjaxInterval);
+            }
         }).fail(function (result) {
             if (result === 'timeout') setTimeout(function () {
                 return ready(currentLevel, interval);
             }, _Const2.default.defAjaxInterval);
         }).always(function (result) {
-            if (result !== 'success' && result !== 'timeout') {
+            if (!['success', 'ignore', 'timeout'].includes(result)) {
                 Msg.remove($wait);
             }
         });
@@ -7610,15 +7516,19 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             index++;
             if (Config.autoLootEnabled) Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate('+' + _Const2.default.lootAttackingExpires + 'm'));
             if (!/你\(\d+\)遭遇了/.test(html) || index % _Const2.default.lootAttackPerCheckLevel === 0) {
-                setTimeout(check, _Const2.default.defAjaxInterval);
+                setTimeout(function () {
+                    return updateLootInfo(after);
+                }, _Const2.default.defAjaxInterval);
                 return;
             }
             log = html + log;
-            after();
+            after(false);
             Script.runFunc('Loot.lootAttack_attack_after_', html);
         }).fail(function () {
             console.log('【争夺攻击】超时重试...');
-            setTimeout(check, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+            setTimeout(function () {
+                return updateLootInfo(after);
+            }, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
         });
     };
 
@@ -7627,7 +7537,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
      * @param {boolean} isChecked 是否已检查过争夺记录
      */
     var after = function after() {
-        var isChecked = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+        var isChecked = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
 
         logList = getLogList(log);
         levelInfoList = getLevelInfoList(logList);
@@ -7655,11 +7565,13 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 if (isChecked) {
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
-                } else setTimeout(check, _Const2.default.defAjaxInterval);
+                } else setTimeout(function () {
+                    return updateLootInfo(after);
+                }, _Const2.default.defAjaxInterval);
                 Script.runFunc('Loot.lootAttack_complete_');
             } else {
                 if (!isChecked) setTimeout(function () {
-                    return check(false);
+                    return updateLootInfo;
                 }, _Const2.default.defAjaxInterval);
                 Msg.remove($wait);
                 Msg.show('<strong>\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC</strong>', -1);
@@ -7672,61 +7584,66 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         }
     };
 
-    /**
-     * 检查争夺记录
-     * @param {boolean} handleAfter 是否进行攻击后的处理
-     */
-    var check = function check() {
-        var handleAfter = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-        console.log('检查争夺记录Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_index.php?t=' + $.now(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            var $log = $('#pk_text', html);
-            if (!$log.length) {
-                Msg.remove($wait);
-                return;
-            }
-            log = $log.html();
-
-            var countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
-            if (countDownMatches) {
-                changePointsAvailableCount = 0;
-                var nextTime = Util.getDate('+' + countDownMatches[1] + 'm');
-                Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
-            }
-            var changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
-            if (changeCountMatches) {
-                changePointsAvailableCount = parseInt(changeCountMatches[1]);
-                Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate('+' + _Const2.default.changePointsInfoExpires + 'm'));
-            }
-            $points.find('#pdChangeCount').text('(\u5F53\u524D\u4FEE\u6539\u914D\u70B9\u53EF\u7528[' + changePointsAvailableCount + ']\u6B21)');
-
-            var distributablePointMatches = /可分配属性点：(\d+)/.exec(html);
-            if (distributablePointMatches) {
-                var distributablePoint = parseInt(distributablePointMatches[1]);
-                if (propertyList['可分配属性点'] !== distributablePoint) {
-                    propertyList['可分配属性点'] = distributablePoint;
-                    $properties.find('#pdDistributablePoint').text(distributablePoint);
-                    if (!/你被击败了/.test(log) && Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && !checkPoints($points)) {
-                        isStop = true;
-                        $points.find('.pd_point:first').trigger('change');
-                        TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
-                    }
-                }
-            }
-
-            if (handleAfter) after(true);
-            Script.runFunc('Loot.lootAttack_check_after_', html);
-        }).fail(function () {
-            return setTimeout(check, _Const2.default.defAjaxInterval);
-        });
-    };
-
     ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
+};
+
+/**
+ * 更新争夺信息
+ * @param {function} callback 回调函数
+ */
+var updateLootInfo = exports.updateLootInfo = function updateLootInfo() {
+    var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+    console.log('更新争夺信息Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).done(function (html) {
+        var $area = $('#wdsx', html).parent();
+        log = $area.find('#pk_text').html();
+        if (!log) {
+            Msg.remove($('.pd_countdown').closest('.pd_msg'));
+            return;
+        }
+
+        $area.find('.kf_fw_ig3:first input[type="text"]').each(function (index) {
+            var value = $.trim($(this).val());
+            if (!value) return;
+            $properties.find('input[type="text"]:eq(' + index + ')').val(value);
+        });
+
+        var countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
+        if (countDownMatches) {
+            changePointsAvailableCount = 0;
+            var nextTime = Util.getDate('+' + countDownMatches[1] + 'm');
+            Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+        }
+        var changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
+        if (changeCountMatches) {
+            changePointsAvailableCount = parseInt(changeCountMatches[1]);
+            Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate('+' + _Const2.default.changePointsInfoExpires + 'm'));
+        }
+        $points.find('#pdChangeCount').text('(\u5F53\u524D\u4FEE\u6539\u914D\u70B9\u53EF\u7528[' + changePointsAvailableCount + ']\u6B21)');
+
+        var armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
+        if (armHtml.includes('（装备中）')) {
+            $points.find('#pdArmArea').html(armHtml);
+        }
+
+        var propertiesHtml = $properties.html();
+        propertyList = getLootPropertyList(propertiesHtml);
+        itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
+        armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
+        currentArmInfo = Item.getArmInfo($armArea.html());
+
+        if (typeof callback === 'function') callback();
+        Script.runFunc('Loot.updateLootInfo_after_', html);
+    }).fail(function () {
+        setTimeout(function () {
+            return updateLootInfo(callback);
+        }, _Const2.default.defAjaxInterval);
+    });
 };
 
 /**
@@ -7773,17 +7690,75 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
     localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
 
     var allEnemyList = {};
+    var _iteratorNormalCompletion6 = true;
+    var _didIteratorError6 = false;
+    var _iteratorError6 = undefined;
+
+    try {
+        for (var _iterator6 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            var _step6$value = _slicedToArray(_step6.value, 2),
+                enemy = _step6$value[0],
+                num = _step6$value[1];
+
+            allEnemyList[enemy] = num;
+        }
+    } catch (err) {
+        _didIteratorError6 = true;
+        _iteratorError6 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
+            }
+        } finally {
+            if (_didIteratorError6) {
+                throw _iteratorError6;
+            }
+        }
+    }
+
+    var allEnemyStat = '';
+    var _iteratorNormalCompletion7 = true;
+    var _didIteratorError7 = false;
+    var _iteratorError7 = undefined;
+
+    try {
+        for (var _iterator7 = Util.entries(allEnemyList)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var _step7$value = _slicedToArray(_step7.value, 2),
+                enemy = _step7$value[0],
+                num = _step7$value[1];
+
+            allEnemyStat += enemy + '`+' + num + '` ';
+        }
+    } catch (err) {
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
+            }
+        } finally {
+            if (_didIteratorError7) {
+                throw _iteratorError7;
+            }
+        }
+    }
+
+    var latestEnemyList = {};
     var _iteratorNormalCompletion8 = true;
     var _didIteratorError8 = false;
     var _iteratorError8 = undefined;
 
     try {
-        for (var _iterator8 = Util.entries(getEnemyStatList(levelInfoList))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+        for (var _iterator8 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
+            return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
+        })))[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
             var _step8$value = _slicedToArray(_step8.value, 2),
                 enemy = _step8$value[0],
                 num = _step8$value[1];
 
-            allEnemyList[enemy] = num;
+            latestEnemyList[enemy] = num;
         }
     } catch (err) {
         _didIteratorError8 = true;
@@ -7800,18 +7775,18 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         }
     }
 
-    var allEnemyStat = '';
+    var latestEnemyStat = '';
     var _iteratorNormalCompletion9 = true;
     var _didIteratorError9 = false;
     var _iteratorError9 = undefined;
 
     try {
-        for (var _iterator9 = Util.entries(allEnemyList)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+        for (var _iterator9 = Util.entries(latestEnemyList)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
             var _step9$value = _slicedToArray(_step9.value, 2),
                 enemy = _step9$value[0],
                 num = _step9$value[1];
 
-            allEnemyStat += enemy + '`+' + num + '` ';
+            latestEnemyStat += enemy + '`+' + num + '` ';
         }
     } catch (err) {
         _didIteratorError9 = true;
@@ -7828,20 +7803,26 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         }
     }
 
-    var latestEnemyList = {};
+    var currentLevel = getCurrentLevel(logList);
+
+    var _getTotalGain = getTotalGain(levelInfoList),
+        boxNum = _getTotalGain.boxNum,
+        boxes = _getTotalGain.boxes;
+
+    if (!$.isEmptyObject(boxes)) {
+        Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (' + allEnemyStat.trim() + ')', { gain: { '盒子': boxNum, 'box': boxes } });
+        LootLog.record(logList, pointsLogList);
+    }
+    var boxesStat = '';
     var _iteratorNormalCompletion10 = true;
     var _didIteratorError10 = false;
     var _iteratorError10 = undefined;
 
     try {
-        for (var _iterator10 = Util.entries(getEnemyStatList(levelInfoList.filter(function (elem, level) {
-            return level >= logList.length - _Const2.default.enemyStatLatestLevelNum;
-        })))[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-            var _step10$value = _slicedToArray(_step10.value, 2),
-                enemy = _step10$value[0],
-                num = _step10$value[1];
+        for (var _iterator10 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var key = _step10.value;
 
-            latestEnemyList[enemy] = num;
+            boxesStat += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i>';
         }
     } catch (err) {
         _didIteratorError10 = true;
@@ -7858,54 +7839,248 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         }
     }
 
-    var latestEnemyStat = '';
-    var _iteratorNormalCompletion11 = true;
-    var _didIteratorError11 = false;
-    var _iteratorError11 = undefined;
+    Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>' + (boxesStat.length > 75 ? '<br>' : '') + boxesStat, -1);
 
-    try {
-        for (var _iterator11 = Util.entries(latestEnemyList)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _step11$value = _slicedToArray(_step11.value, 2),
-                enemy = _step11$value[0],
-                num = _step11$value[1];
-
-            latestEnemyStat += enemy + '`+' + num + '` ';
-        }
-    } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                _iterator11.return();
-            }
-        } finally {
-            if (_didIteratorError11) {
-                throw _iteratorError11;
-            }
-        }
+    if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
+        Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
+        Public.getDailyBonus();
     }
+    Script.runFunc('Loot.recordLootLog_after_');
+};
 
-    var currentLevel = getCurrentLevel(logList);
+/**
+ * 显示各层点数分配方案对话框
+ */
+var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(callback) {
+    var dialogName = 'pdLevelPointListConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
+    (0, _Config.read)();
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u88C5\u5907ID\u548C\u88C5\u5907\u5907\u6CE8\u4E3A\u53EF\u9009\u9879\uFF0C\u53EA\u5728\u9700\u8981\u66F4\u6362\u88C5\u5907\u65F6\u586B\u5199<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr>\n          <th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th>\u88C5\u5907ID</th><th>\u88C5\u5907\u5907\u6CE8</th><th></th>\n        </tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 840px;');
+    var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
 
-    var _getTotalGain = getTotalGain(levelInfoList),
-        boxNum = _getTotalGain.boxNum,
-        boxes = _getTotalGain.boxes;
+    /**
+     * 添加各层点数分配的HTML
+     * @param {number} level 层数
+     * @param {{}} points 点数对象
+     */
+    var addLevelPointHtml = function addLevelPointHtml(level, points) {
+        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" value="' + points['力量'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" value="' + points['体质'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" value="' + points['敏捷'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" value="' + points['灵活'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" value="' + points['智力'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" value="' + points['意志'] + '" min="1" style="width: 50px;" required></td>\n  <td><input name="armId" type="text" value="' + (points['装备ID'] ? points['装备ID'] : '') + '" maxlength="15" style="width: 65px;"></td>\n  <td><input name="armMemo" type="text" value="' + (points['装备备注'] ? points['装备备注'] : '') + '" maxlength="15" style="width: 80px;"></td>\n  <td style="text-align: left;">\n    <a class="pd_btn_link" data-name="fill" href="#">\u586B\u5145</a>\n    <a class="pd_btn_link" data-name="addArm" href="#">\u88C5\u5907</a>\n    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">\u5220\u9664</a>\n  </td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B" hidden> <!-- \u4E34\u65F6\u7981\u7528 -->\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C" hidden>\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6" hidden>\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387" hidden>\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387" hidden>\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24" hidden>\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="[\u98DE\u8EAB\u5288\u65A9]\u4F24\u5BB3\uFF1A\u653B\u51FB+\u4F53\u8D28\u503C*5+\u667A\u529B\u503C*5" hidden>\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n  <td hidden></td>\n  <td hidden></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
+    };
 
-    if (!$.isEmptyObject(boxes)) {
-        Log.push('争夺攻击', '\u4F60\u6210\u529F\u51FB\u8D25\u4E86\u7B2C`' + (currentLevel - 1) + '`\u5C42\u7684NPC (' + allEnemyStat.trim() + ')', { gain: { '盒子': boxNum, 'box': boxes } });
-        LootLog.record(logList, pointsLogList);
-    }
-    var boxesStat = '';
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        (0, _Config.read)();
+        var levelPointList = {};
+        var prevPoints = {};
+        var isError = false,
+            isSurplus = false;
+        $levelPointList.find('tr:gt(0)').each(function () {
+            var $this = $(this);
+            if (!$this.find('.pd_point').length) return;
+            var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
+            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) {
+                isError = true;
+                return false;
+            }
+
+            var level = parseInt($this.find('[name="level"]').val());
+            if (!level || level < 0) return;
+            var points = {};
+            var _iteratorNormalCompletion11 = true;
+            var _didIteratorError11 = false;
+            var _iteratorError11 = undefined;
+
+            try {
+                for (var _iterator11 = Array.from($this.find('.pd_point, [name="armId"], [name="armMemo"]'))[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                    var elem = _step11.value;
+
+                    var $elem = $(elem);
+                    var name = $elem.attr('name');
+                    var value = null;
+                    value = $.trim($elem.val());
+                    if ($elem.is('.pd_point')) {
+                        value = parseInt(value);
+                        if (!value || value < 0) return;
+                    } else {
+                        if (!value) continue;
+                        if (name === 'armId') {
+                            value = parseInt(value);
+                            if (!value || value < 0) return;
+                        }
+                    }
+                    points[getPointNameByFieldName(name)] = value;
+                }
+            } catch (err) {
+                _didIteratorError11 = true;
+                _iteratorError11 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                        _iterator11.return();
+                    }
+                } finally {
+                    if (_didIteratorError11) {
+                        throw _iteratorError11;
+                    }
+                }
+            }
+
+            if (!points['装备ID'] && points['装备备注']) {
+                delete points['装备备注'];
+            }
+            if (Util.deepEqual(prevPoints, points)) return;
+
+            levelPointList[level] = points;
+            prevPoints = points;
+        });
+        if (isSurplus) {
+            if (!confirm('部分层数的可分配属性点尚未用完，是否提交？')) return;
+        }
+        if (isError) {
+            alert('部分层数的剩余属性点为负，请重新填写');
+            return;
+        }
+        Config.levelPointList = levelPointList;
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+        setLevelPointListSelect(Config.levelPointList);
+    }).find('[data-name="add"]').click(function (e) {
+        e.preventDefault();
+        var points = { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 };
+        addLevelPointHtml(0, points);
+        $levelPointList.find('[name="level"]:last').focus();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="deleteSelect"]').click(function (e) {
+        e.preventDefault();
+        var $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length || !confirm('是否删除所选层数？')) return;
+        var $line = $checked.closest('tr');
+        $line.next('tr').addBack().remove();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('各层点数分配方案', 'levelPointList', null, function () {
+            $('#pdLevelPointListConfigDialog').remove();
+            showLevelPointListConfigDialog(function ($dialog) {
+                return $dialog.submit();
+            });
+        });
+    }).end().find('[data-name="selectAll"]').click(function () {
+        return Util.selectAll($levelPointList.find('[type="checkbox"]'));
+    }).end().find('[data-name="selectInverse"]').click(function () {
+        return Util.selectInverse($levelPointList.find('[type="checkbox"]'));
+    });
+
+    $levelPointList.on('click', '[data-name="fill"]', function (e) {
+        e.preventDefault();
+        var $line = $(this).closest('tr');
+        var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
+        if (!value) return;
+        var matches = value.match(/\d+/g);
+        if (!matches) return;
+        $line.find('.pd_point').each(function (index) {
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
+        });
+    }).on('click', '[data-name="delete"]', function (e) {
+        e.preventDefault();
+        var $line = $(this).closest('tr');
+        $line.next('tr').addBack().remove();
+        Dialog.resize(dialogName);
+    }).on('click', '[data-name="addArm"]', function (e) {
+        e.preventDefault();
+        $levelPointList.find('#pdAddArmId, #pdAddArmMemo').removeAttr('id');
+        var $tr = $(this).closest('tr');
+        $tr.find('[name="armId"]').attr('id', 'pdAddArmId').end().find('[name="armMemo"]').attr('id', 'pdAddArmMemo');
+        addOrChangeArm(1);
+    }).on('change', '.pd_point', function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        var point = parseInt($this.val());
+        if (!point || point < 0) return;
+
+        var $points = $this.closest('tr');
+        var $properties = $points.next('tr');
+        $properties.find('[data-id="pro_' + name + '"]').text(getPropertyByPoint(getPointNameByFieldName(name), point));
+        var power = parseInt($points.find('[name="s1"]').val());
+        var life = parseInt($points.find('[name="s2"]').val());
+        var intelligence = parseInt($points.find('[name="i1"]').val());
+        $properties.find('[data-id="skillAttack"]').text(getSkillAttack(power + getExtraPoint('力量', power), life + getExtraPoint('体质', life), intelligence + getExtraPoint('智力', intelligence)));
+
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
+    }).on('click', '[data-id^="pro_"]', function () {
+        var $this = $(this);
+        var name = $this.data('id').replace('pro_', '');
+        var num = parseInt(prompt('请输入数值：', $this.text()));
+        if (!num || num < 0) return;
+        $this.closest('tr').prev('tr').find('[name="' + name + '"]').val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+    }).on('click', '[data-id^="opt_"]', function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var name = $this.data('id').replace('opt_', '');
+        var $points = $this.closest('tr').prev('tr');
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        if (!surplusPoint) return;
+        var $point = $points.find('[name="' + name + '"]');
+        if (!$point.length) return;
+        var num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        num = num + surplusPoint;
+        var min = parseInt($point.attr('min'));
+        $point.val(num < min ? min : num).trigger('change');
+    });
+
+    $dialog.find('[name="modify"]').click(function () {
+        var $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length) return;
+        var data = {};
+        $dialog.find('[data-id="modifyArea"] [type="text"]').each(function () {
+            var $this = $(this);
+            var name = $this.attr('name');
+            var value = $.trim($this.val());
+            if (!value) return;
+            var matches = /^(-|\+)?(\d+)$/.exec(value);
+            if (!matches) {
+                alert('格式不正确');
+                $this.select().focus();
+            }
+            data[name] = {};
+            if (typeof matches[1] !== 'undefined') data[name].action = matches[1] === '+' ? 'add' : 'minus';else data[name].action = 'equal';
+            data[name].value = parseInt(matches[2]);
+        });
+        $checked.each(function () {
+            var $points = $(this).closest('tr');
+            $points.find('.pd_point').each(function () {
+                var $this = $(this);
+                var name = $this.attr('name');
+                if (!(name in data)) return;
+                if (data[name].action !== 'equal') {
+                    var point = parseInt($this.val());
+                    if (!point || point < 0) point = 0;
+                    point += data[name].action === 'add' ? data[name].value : -data[name].value;
+                    $this.val(point > 1 ? point : 1);
+                } else $this.val(data[name].value);
+            }).trigger('change');
+        });
+        alert('点数已修改');
+    }).end().find('[data-name="clear"]').click(function (e) {
+        e.preventDefault();
+        $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
+    });
+
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.getSortedObjectKeyList(Item.boxTypeList, boxes)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var key = _step12.value;
+        for (var _iterator12 = Util.entries(Config.levelPointList)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var _step12$value = _slicedToArray(_step12.value, 2),
+                level = _step12$value[0],
+                points = _step12$value[1];
 
-            boxesStat += '<i>' + key + '<em>+' + boxes[key].toLocaleString() + '</em></i>';
+            if (!$.isNumeric(level)) continue;
+            addLevelPointHtml(level, points);
         }
     } catch (err) {
         _didIteratorError12 = true;
@@ -7922,13 +8097,60 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         }
     }
 
-    Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>' + (boxesStat.length > 75 ? '<br>' : '') + boxesStat, -1);
+    Dialog.show(dialogName);
+    if (typeof callback === 'function') callback($dialog);
+};
 
-    if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-        Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
-        Public.getDailyBonus();
+/**
+ * 加入或更换装备
+ * @param {number} type 类型，0：更换装备；1：加入装备
+ */
+var addOrChangeArm = function addOrChangeArm(type) {
+    (0, _Config.read)();
+    var dialogName = 'pd' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog';
+    var $dialog = $('#' + dialogName);
+    if ($dialog.length > 0) {
+        $dialog.parent().fadeIn('fast');
+        Dialog.resize(dialogName);
+    } else {
+        var $wait = Msg.wait('<strong>正在获取装备信息&hellip;</strong>');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            Msg.remove($wait);
+            var matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            if (matches) {
+                showAddOrChangeArmDialog(type, matches[1]);
+            }
+        }).fail(function () {
+            return Msg.remove($wait);
+        });
     }
-    Script.runFunc('Loot.recordLootLog_after_');
+};
+
+/**
+ * 显示加入或更换装备对话框
+ * @param {number} type 类型，0：更换装备；1：加入装备
+ * @param {string} armHtml 装备的HTML代码
+ */
+var showAddOrChangeArmDialog = function showAddOrChangeArmDialog(type, armHtml) {
+    var dialogName = 'pd' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog';
+    if ($('#' + dialogName).length > 0) return;
+
+    var html = '\n<div class="pd_cfg_main" style="padding: 0;">\n  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">\n    <tbody>\n      <tr hidden><td colspan="3" class="kf_fw_ig_title1">\u6211\u7684\u88C5\u5907\u80CC\u5305</td></tr>\n      <tr><td width="10%">\u88C5\u5907</td><td width="10%">\u7194\u70BC</td><td width="80%">\u540D\u79F0</td></tr>\n      ' + armHtml + '\n      <tr><td colspan="3"><span style="color:#00f;">\u4E0D\u663E\u793A\u8D85\u8FC710\u4EF6\u4EE5\u4E0A\u7684\u7269\u54C1\uFF0C\u5982\u7269\u54C1\u8D85\u8FC710\u4EF6\uFF0C\u8BF7\u7194\u70BC\u6389\u591A\u4F59\u7684\u5373\u53EF\u5168\u90E8\u663E\u793A\u3002</span></td></tr>\n    </tbody>\n  </table>\n</div>';
+    var $dialog = Dialog.create(dialogName, (type === 1 ? '加入' : '更换') + '\u88C5\u5907', html, 'min-width: 820px; z-index: 1001;');
+    var $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
+
+    $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
+        $dialog.fadeOut('fast');
+    });
+    Item.handleArmArea($armArea, type);
+    Item.bindArmLinkClickEvent($armArea, safeId, 1);
+
+    Dialog.show(dialogName);
+    Script.runFunc('Item.show' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog_after_');
 };
 
 /**

@@ -13,6 +13,8 @@ import * as Script from './Script';
 import * as Public from './Public';
 import * as Item from './Item';
 
+// SafeID
+let safeId;
 // 争夺属性区域
 let $properties;
 // 点数区域
@@ -50,6 +52,9 @@ let pointsLogList = [];
  * 初始化
  */
 export const init = function () {
+    safeId = Public.getSafeId();
+    if (!safeId) return;
+
     $properties = $('.kf_fw_ig3:first');
     $points = $('#wdsx .kf_fw_ig1:first');
     $points.find('> tbody > tr:first-child > td').attr('id', 'pdArmArea');
@@ -196,15 +201,6 @@ const handlePointsArea = function () {
         .prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point')
         .after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
-    $armArea.parent().after(`
-<tr>
-  <td width="40%">装备ID和备注 (无需更换装备时勿填)</td>
-  <td width="40%">
-    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;">
-    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;">
-  </td>
-</tr>
-`);
 
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
     let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.text());
@@ -293,6 +289,21 @@ const handlePointsArea = function () {
         Util.deleteCookie(Const.changePointsInfoCookieName);
         return checkPoints($points);
     }).find('.pd_point').trigger('change');
+
+
+    $(`
+<tr>
+  <td width="40%">装备ID和备注 (无需更换装备时勿填)</td>
+  <td width="40%">
+    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;" readonly>
+    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;" readonly>
+    <a class="pd_btn_link" data-name="changeArm" href="#">更换装备</a>
+  </td>
+</tr>
+`).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
+        e.preventDefault();
+        addOrChangeArm(0);
+    });
 };
 
 /**
@@ -703,308 +714,9 @@ const setLevelPointListSelect = function (levelPointList) {
 };
 
 /**
- * 显示各层点数分配方案对话框
- */
-const showLevelPointListConfigDialog = function (callback) {
-    const dialogName = 'pdLevelPointListConfigDialog';
-    if ($('#' + dialogName).length > 0) return;
-    readConfig();
-    let html = `
-<div class="pd_cfg_main">
-  <div style="margin: 5px 0; line-height: 1.6em;">
-    请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
-    （例：11-19层点数相同的话，则只保留第11层）<br>
-    装备ID和装备备注为可选项，只在需要更换装备时填写<br>
-    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
-  </div>
-  <div style="overflow-y: auto; max-height: 400px;">
-    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
-      <tbody>
-        <tr>
-          <th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th><th>装备ID</th><th>装备备注</th><th></th>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <hr>
-  <div style="float: left; line-height: 27px;">
-    <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
-    <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
-    <a class="pd_btn_link pd_highlight" data-name="add" href="#">增加</a>
-    <a class="pd_btn_link" data-name="deleteSelect" href="#">删除</a>
-  </div>
-  <div data-id="modifyArea" style="float: right;">
-    <input name="s1" type="text" maxlength="5" title="力量" placeholder="力量" style="width: 35px;">
-    <input name="s2" type="text" maxlength="5" title="体质" placeholder="体质" style="width: 35px;">
-    <input name="d1" type="text" maxlength="5" title="敏捷" placeholder="敏捷" style="width: 35px;">
-    <input name="d2" type="text" maxlength="5" title="灵活" placeholder="灵活" style="width: 35px;">
-    <input name="i1" type="text" maxlength="5" title="智力" placeholder="智力" style="width: 35px;">
-    <input name="i2" type="text" maxlength="5" title="意志" placeholder="意志" style="width: 35px;">
-    <a class="pd_btn_link" data-name="clear" href="#" title="清空各修改字段">清空</a>
-    <button type="button" name="modify">修改</button>
-    <span class="pd_cfg_tips" title="可将所选择的层数的相应属性修改为指定的数值；数字前可设+/-号，表示增加/减少相应数量；例：100、+5或-2">[?]</span>
-  </div>
-</div>
-<div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配方案</a></span>
-  <button type="submit">保存</button>
-  <button data-action="close" type="button">取消</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 665px;');
-    let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
-
-    /**
-     * 添加各层点数分配的HTML
-     * @param {number} level 层数
-     * @param {{}} points 点数对象
-     */
-    const addLevelPointHtml = function (level, points) {
-        $(`
-<tr>
-  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
-  <td style="text-align: left;">
-    <label style="margin-right: 8px;">
-      第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层
-    </label>
-  </td>
-  <td><input class="pd_point" name="s1" type="number" value="${points['力量']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="s2" type="number" value="${points['体质']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d1" type="number" value="${points['敏捷']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d2" type="number" value="${points['灵活']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i1" type="number" value="${points['智力']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i2" type="number" value="${points['意志']}" min="1" style="width: 50px;" required></td>
-  <td><input name="armId" type="text" value="${points['装备ID'] ? points['装备ID'] : ''}" maxlength="15" style="width: 65px;"></td>
-  <td><input name="armMemo" type="text" value="${points['装备备注'] ? points['装备备注'] : ''}" maxlength="15" style="width: 80px;"></td>
-  <td style="text-align: left;">
-    <a class="pd_btn_link" data-name="fill" href="#">填充</a>
-    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">删除</a>
-  </td>
-</tr>
-<tr>
-  <td></td>
-  <td class="pd_custom_tips" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
-  <td title="攻击力" hidden> <!-- 临时禁用 -->
-    攻：<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="最大生命值" hidden>
-    命：<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="攻击速度" hidden>
-    速：<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="暴击几率" hidden>
-    暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="技能释放概率" hidden>
-    技：<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="防御减伤" hidden>
-    防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td class="pd_custom_tips" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5" hidden>技伤：<span data-id="skillAttack">0</span></td>
-</tr>
-`).appendTo($levelPointList).find('.pd_point').trigger('change');
-    };
-
-    $dialog.submit(function (e) {
-        e.preventDefault();
-        readConfig();
-        let levelPointList = {};
-        let prevPoints = {};
-        let isError = false, isSurplus = false;
-        $levelPointList.find('tr:gt(0)').each(function () {
-            let $this = $(this);
-            if (!$this.find('.pd_point').length) return;
-            let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
-            if (surplusPoint > 0) isSurplus = true;
-            else if (surplusPoint < 0) {
-                isError = true;
-                return false;
-            }
-
-            let level = parseInt($this.find('[name="level"]').val());
-            if (!level || level < 0) return;
-            let points = {};
-            for (let elem of Array.from($this.find('.pd_point, [name="armId"], [name="armMemo"]'))) {
-                let $elem = $(elem);
-                let name = $elem.attr('name');
-                let value = null;
-                value = $.trim($elem.val());
-                if ($elem.is('.pd_point')) {
-                    value = parseInt(value);
-                    if (!value || value < 0) return;
-                }
-                else {
-                    if (!value) continue;
-                    if (name === 'armId') {
-                        value = parseInt(value);
-                        if (!value || value < 0) return;
-                    }
-                }
-                points[getPointNameByFieldName(name)] = value;
-            }
-            if (!points['装备ID'] && points['装备备注']) {
-                delete points['装备备注'];
-            }
-            if (Util.deepEqual(prevPoints, points)) return;
-
-            levelPointList[level] = points;
-            prevPoints = points;
-        });
-        if (isSurplus) {
-            if (!confirm('部分层数的可分配属性点尚未用完，是否提交？')) return;
-        }
-        if (isError) {
-            alert('部分层数的剩余属性点为负，请重新填写');
-            return;
-        }
-        Config.levelPointList = levelPointList;
-        writeConfig();
-        Dialog.close(dialogName);
-        setLevelPointListSelect(Config.levelPointList);
-    }).find('[data-name="add"]').click(function (e) {
-        e.preventDefault();
-        let points = {'力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1};
-        addLevelPointHtml(0, points);
-        $levelPointList.find('[name="level"]:last').focus();
-        Dialog.resize(dialogName);
-    }).end().find('[data-name="deleteSelect"]').click(function (e) {
-        e.preventDefault();
-        let $checked = $levelPointList.find('[type="checkbox"]:checked');
-        if (!$checked.length || !confirm('是否删除所选层数？')) return;
-        let $line = $checked.closest('tr');
-        $line.next('tr').addBack().remove();
-        Dialog.resize(dialogName);
-    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
-        e.preventDefault();
-        Public.showCommonImportOrExportConfigDialog(
-            '各层点数分配方案',
-            'levelPointList',
-            null,
-            function () {
-                $('#pdLevelPointListConfigDialog').remove();
-                showLevelPointListConfigDialog($dialog => $dialog.submit());
-            }
-        );
-    }).end().find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]')))
-        .end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')));
-
-    $levelPointList.on('click', '[data-name="fill"]', function (e) {
-        e.preventDefault();
-        let $line = $(this).closest('tr');
-        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        let matches = value.match(/\d+/g);
-        if (!matches) return;
-        $line.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');
-            else return false;
-        });
-    }).on('click', '[data-name="delete"]', function (e) {
-        e.preventDefault();
-        let $line = $(this).closest('tr');
-        $line.next('tr').addBack().remove();
-        Dialog.resize(dialogName);
-    }).on('change', '.pd_point', function () {
-        let $this = $(this);
-        let name = $this.attr('name');
-        let point = parseInt($this.val());
-        if (!point || point < 0) return;
-
-        let $points = $this.closest('tr');
-        let $properties = $points.next('tr');
-        $properties.find(`[data-id="pro_${name}"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point));
-        let power = parseInt($points.find('[name="s1"]').val());
-        let life = parseInt($points.find('[name="s2"]').val());
-        let intelligence = parseInt($points.find('[name="i1"]').val());
-        $properties.find('[data-id="skillAttack"]').text(
-            getSkillAttack(
-                power + getExtraPoint('力量', power),
-                life + getExtraPoint('体质', life),
-                intelligence + getExtraPoint('智力', intelligence)
-            )
-        );
-
-
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
-    }).on('click', '[data-id^="pro_"]', function () {
-        let $this = $(this);
-        let name = $this.data('id').replace('pro_', '');
-        let num = parseInt(prompt('请输入数值：', $this.text()));
-        if (!num || num < 0) return;
-        $this.closest('tr').prev('tr').find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
-    }).on('click', '[data-id^="opt_"]', function (e) {
-        e.preventDefault();
-        let $this = $(this);
-        let name = $this.data('id').replace('opt_', '');
-        let $points = $this.closest('tr').prev('tr');
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        if (!surplusPoint) return;
-        let $point = $points.find(`[name="${name}"]`);
-        if (!$point.length) return;
-        let num = parseInt($point.val());
-        if (isNaN(num) || num < 0) num = 0;
-        num = num + surplusPoint;
-        let min = parseInt($point.attr('min'));
-        $point.val(num < min ? min : num).trigger('change');
-    });
-
-    $dialog.find('[name="modify"]').click(function () {
-        let $checked = $levelPointList.find('[type="checkbox"]:checked');
-        if (!$checked.length) return;
-        let data = {};
-        $dialog.find('[data-id="modifyArea"] [type="text"]').each(function () {
-            let $this = $(this);
-            let name = $this.attr('name');
-            let value = $.trim($this.val());
-            if (!value) return;
-            let matches = /^(-|\+)?(\d+)$/.exec(value);
-            if (!matches) {
-                alert('格式不正确');
-                $this.select().focus();
-            }
-            data[name] = {};
-            if (typeof matches[1] !== 'undefined') data[name].action = matches[1] === '+' ? 'add' : 'minus';
-            else data[name].action = 'equal';
-            data[name].value = parseInt(matches[2]);
-        });
-        $checked.each(function () {
-            let $points = $(this).closest('tr');
-            $points.find('.pd_point').each(function () {
-                let $this = $(this);
-                let name = $this.attr('name');
-                if (!(name in data)) return;
-                if (data[name].action !== 'equal') {
-                    let point = parseInt($this.val());
-                    if (!point || point < 0) point = 0;
-                    point += (data[name].action === 'add' ? data[name].value : -data[name].value);
-                    $this.val(point > 1 ? point : 1);
-                }
-                else $this.val(data[name].value);
-            }).trigger('change');
-        });
-        alert('点数已修改');
-    }).end().find('[data-name="clear"]').click(function (e) {
-        e.preventDefault();
-        $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
-    });
-
-    for (let [level, points] of Util.entries(Config.levelPointList)) {
-        if (!$.isNumeric(level)) continue;
-        addLevelPointHtml(level, points);
-    }
-
-    Dialog.show(dialogName);
-    if (typeof callback === 'function') callback($dialog);
-};
-
-/**
  * 添加攻击相关按钮
  */
 const addAttackBtns = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
     $logBox.off('click');
 
     $(`
@@ -1228,7 +940,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 if (msg1 !== 'ignore') {
                     let msg = Util.removeHtmlTag(msg1);
                     if (/装备完毕/.test(msg1)) {
-                        $points.find('input[name="armId"]').each(function () {
+                        $points.find('input[name="armId"], input[name="armMemo"]').each(function () {
                             this.defaultValue = $(this).val();
                         });
                     }
@@ -1384,9 +1096,7 @@ export const updateLootInfo = function (callback = null) {
         timeout: Const.defAjaxTimeout,
     }).done(function (html) {
         let $area = $('#wdsx', html).parent();
-        console.debug($area);
         log = $area.find('#pk_text').html();
-        console.debug(log);
         if (!log) {
             Msg.remove($('.pd_countdown').closest('.pd_msg'));
             return;
@@ -1421,10 +1131,6 @@ export const updateLootInfo = function (callback = null) {
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
         currentArmInfo = Item.getArmInfo($armArea.html());
-        console.debug(propertyList);
-        console.debug(itemUsedNumList);
-        console.debug(armsLevelList);
-        console.debug(currentArmInfo);
 
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);
@@ -1514,6 +1220,373 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
         Public.getDailyBonus();
     }
     Script.runFunc('Loot.recordLootLog_after_');
+};
+
+/**
+ * 显示各层点数分配方案对话框
+ */
+const showLevelPointListConfigDialog = function (callback) {
+    const dialogName = 'pdLevelPointListConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
+    readConfig();
+    let html = `
+<div class="pd_cfg_main">
+  <div style="margin: 5px 0; line-height: 1.6em;">
+    请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
+    （例：11-19层点数相同的话，则只保留第11层）<br>
+    装备ID和装备备注为可选项，只在需要更换装备时填写<br>
+    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
+  </div>
+  <div style="overflow-y: auto; max-height: 400px;">
+    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
+      <tbody>
+        <tr>
+          <th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th><th>装备ID</th><th>装备备注</th><th></th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <hr>
+  <div style="float: left; line-height: 27px;">
+    <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
+    <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
+    <a class="pd_btn_link pd_highlight" data-name="add" href="#">增加</a>
+    <a class="pd_btn_link" data-name="deleteSelect" href="#">删除</a>
+  </div>
+  <div data-id="modifyArea" style="float: right;">
+    <input name="s1" type="text" maxlength="5" title="力量" placeholder="力量" style="width: 35px;">
+    <input name="s2" type="text" maxlength="5" title="体质" placeholder="体质" style="width: 35px;">
+    <input name="d1" type="text" maxlength="5" title="敏捷" placeholder="敏捷" style="width: 35px;">
+    <input name="d2" type="text" maxlength="5" title="灵活" placeholder="灵活" style="width: 35px;">
+    <input name="i1" type="text" maxlength="5" title="智力" placeholder="智力" style="width: 35px;">
+    <input name="i2" type="text" maxlength="5" title="意志" placeholder="意志" style="width: 35px;">
+    <a class="pd_btn_link" data-name="clear" href="#" title="清空各修改字段">清空</a>
+    <button type="button" name="modify">修改</button>
+    <span class="pd_cfg_tips" title="可将所选择的层数的相应属性修改为指定的数值；数字前可设+/-号，表示增加/减少相应数量；例：100、+5或-2">[?]</span>
+  </div>
+</div>
+<div class="pd_cfg_btns">
+  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配方案</a></span>
+  <button type="submit">保存</button>
+  <button data-action="close" type="button">取消</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 840px;');
+    let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
+
+    /**
+     * 添加各层点数分配的HTML
+     * @param {number} level 层数
+     * @param {{}} points 点数对象
+     */
+    const addLevelPointHtml = function (level, points) {
+        $(`
+<tr>
+  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
+  <td style="text-align: left;">
+    <label style="margin-right: 8px;">
+      第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层
+    </label>
+  </td>
+  <td><input class="pd_point" name="s1" type="number" value="${points['力量']}" min="1" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="s2" type="number" value="${points['体质']}" min="1" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d1" type="number" value="${points['敏捷']}" min="1" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="d2" type="number" value="${points['灵活']}" min="1" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i1" type="number" value="${points['智力']}" min="1" style="width: 50px;" required></td>
+  <td><input class="pd_point" name="i2" type="number" value="${points['意志']}" min="1" style="width: 50px;" required></td>
+  <td><input name="armId" type="text" value="${points['装备ID'] ? points['装备ID'] : ''}" maxlength="15" style="width: 65px;"></td>
+  <td><input name="armMemo" type="text" value="${points['装备备注'] ? points['装备备注'] : ''}" maxlength="15" style="width: 80px;"></td>
+  <td style="text-align: left;">
+    <a class="pd_btn_link" data-name="fill" href="#">填充</a>
+    <a class="pd_btn_link" data-name="addArm" href="#">装备</a>
+    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">删除</a>
+  </td>
+</tr>
+<tr>
+  <td></td>
+  <td class="pd_custom_tips" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
+  <td title="攻击力" hidden> <!-- 临时禁用 -->
+    攻：<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="最大生命值" hidden>
+    命：<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="攻击速度" hidden>
+    速：<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="暴击几率" hidden>
+    暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="技能释放概率" hidden>
+    技：<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td title="防御减伤" hidden>
+    防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
+  </td>
+  <td class="pd_custom_tips" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5" hidden>技伤：<span data-id="skillAttack">0</span></td>
+  <td hidden></td>
+  <td hidden></td>
+</tr>
+`).appendTo($levelPointList).find('.pd_point').trigger('change');
+    };
+
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        readConfig();
+        let levelPointList = {};
+        let prevPoints = {};
+        let isError = false, isSurplus = false;
+        $levelPointList.find('tr:gt(0)').each(function () {
+            let $this = $(this);
+            if (!$this.find('.pd_point').length) return;
+            let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
+            if (surplusPoint > 0) isSurplus = true;
+            else if (surplusPoint < 0) {
+                isError = true;
+                return false;
+            }
+
+            let level = parseInt($this.find('[name="level"]').val());
+            if (!level || level < 0) return;
+            let points = {};
+            for (let elem of Array.from($this.find('.pd_point, [name="armId"], [name="armMemo"]'))) {
+                let $elem = $(elem);
+                let name = $elem.attr('name');
+                let value = null;
+                value = $.trim($elem.val());
+                if ($elem.is('.pd_point')) {
+                    value = parseInt(value);
+                    if (!value || value < 0) return;
+                }
+                else {
+                    if (!value) continue;
+                    if (name === 'armId') {
+                        value = parseInt(value);
+                        if (!value || value < 0) return;
+                    }
+                }
+                points[getPointNameByFieldName(name)] = value;
+            }
+            if (!points['装备ID'] && points['装备备注']) {
+                delete points['装备备注'];
+            }
+            if (Util.deepEqual(prevPoints, points)) return;
+
+            levelPointList[level] = points;
+            prevPoints = points;
+        });
+        if (isSurplus) {
+            if (!confirm('部分层数的可分配属性点尚未用完，是否提交？')) return;
+        }
+        if (isError) {
+            alert('部分层数的剩余属性点为负，请重新填写');
+            return;
+        }
+        Config.levelPointList = levelPointList;
+        writeConfig();
+        Dialog.close(dialogName);
+        setLevelPointListSelect(Config.levelPointList);
+    }).find('[data-name="add"]').click(function (e) {
+        e.preventDefault();
+        let points = {'力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1};
+        addLevelPointHtml(0, points);
+        $levelPointList.find('[name="level"]:last').focus();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="deleteSelect"]').click(function (e) {
+        e.preventDefault();
+        let $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length || !confirm('是否删除所选层数？')) return;
+        let $line = $checked.closest('tr');
+        $line.next('tr').addBack().remove();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog(
+            '各层点数分配方案',
+            'levelPointList',
+            null,
+            function () {
+                $('#pdLevelPointListConfigDialog').remove();
+                showLevelPointListConfigDialog($dialog => $dialog.submit());
+            }
+        );
+    }).end().find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]')))
+        .end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')));
+
+    $levelPointList.on('click', '[data-name="fill"]', function (e) {
+        e.preventDefault();
+        let $line = $(this).closest('tr');
+        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
+        if (!value) return;
+        let matches = value.match(/\d+/g);
+        if (!matches) return;
+        $line.find('.pd_point').each(function (index) {
+            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');
+            else return false;
+        });
+    }).on('click', '[data-name="delete"]', function (e) {
+        e.preventDefault();
+        let $line = $(this).closest('tr');
+        $line.next('tr').addBack().remove();
+        Dialog.resize(dialogName);
+    }).on('click', '[data-name="addArm"]', function (e) {
+        e.preventDefault();
+        $levelPointList.find('#pdAddArmId, #pdAddArmMemo').removeAttr('id');
+        let $tr = $(this).closest('tr');
+        $tr.find('[name="armId"]').attr('id', 'pdAddArmId').end().find('[name="armMemo"]').attr('id', 'pdAddArmMemo');
+        addOrChangeArm(1);
+    }).on('change', '.pd_point', function () {
+        let $this = $(this);
+        let name = $this.attr('name');
+        let point = parseInt($this.val());
+        if (!point || point < 0) return;
+
+        let $points = $this.closest('tr');
+        let $properties = $points.next('tr');
+        $properties.find(`[data-id="pro_${name}"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point));
+        let power = parseInt($points.find('[name="s1"]').val());
+        let life = parseInt($points.find('[name="s2"]').val());
+        let intelligence = parseInt($points.find('[name="i1"]').val());
+        $properties.find('[data-id="skillAttack"]').text(
+            getSkillAttack(
+                power + getExtraPoint('力量', power),
+                life + getExtraPoint('体质', life),
+                intelligence + getExtraPoint('智力', intelligence)
+            )
+        );
+
+
+        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
+    }).on('click', '[data-id^="pro_"]', function () {
+        let $this = $(this);
+        let name = $this.data('id').replace('pro_', '');
+        let num = parseInt(prompt('请输入数值：', $this.text()));
+        if (!num || num < 0) return;
+        $this.closest('tr').prev('tr').find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+    }).on('click', '[data-id^="opt_"]', function (e) {
+        e.preventDefault();
+        let $this = $(this);
+        let name = $this.data('id').replace('opt_', '');
+        let $points = $this.closest('tr').prev('tr');
+        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        if (!surplusPoint) return;
+        let $point = $points.find(`[name="${name}"]`);
+        if (!$point.length) return;
+        let num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        num = num + surplusPoint;
+        let min = parseInt($point.attr('min'));
+        $point.val(num < min ? min : num).trigger('change');
+    });
+
+    $dialog.find('[name="modify"]').click(function () {
+        let $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length) return;
+        let data = {};
+        $dialog.find('[data-id="modifyArea"] [type="text"]').each(function () {
+            let $this = $(this);
+            let name = $this.attr('name');
+            let value = $.trim($this.val());
+            if (!value) return;
+            let matches = /^(-|\+)?(\d+)$/.exec(value);
+            if (!matches) {
+                alert('格式不正确');
+                $this.select().focus();
+            }
+            data[name] = {};
+            if (typeof matches[1] !== 'undefined') data[name].action = matches[1] === '+' ? 'add' : 'minus';
+            else data[name].action = 'equal';
+            data[name].value = parseInt(matches[2]);
+        });
+        $checked.each(function () {
+            let $points = $(this).closest('tr');
+            $points.find('.pd_point').each(function () {
+                let $this = $(this);
+                let name = $this.attr('name');
+                if (!(name in data)) return;
+                if (data[name].action !== 'equal') {
+                    let point = parseInt($this.val());
+                    if (!point || point < 0) point = 0;
+                    point += (data[name].action === 'add' ? data[name].value : -data[name].value);
+                    $this.val(point > 1 ? point : 1);
+                }
+                else $this.val(data[name].value);
+            }).trigger('change');
+        });
+        alert('点数已修改');
+    }).end().find('[data-name="clear"]').click(function (e) {
+        e.preventDefault();
+        $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
+    });
+
+    for (let [level, points] of Util.entries(Config.levelPointList)) {
+        if (!$.isNumeric(level)) continue;
+        addLevelPointHtml(level, points);
+    }
+
+    Dialog.show(dialogName);
+    if (typeof callback === 'function') callback($dialog);
+};
+
+/**
+ * 加入或更换装备
+ * @param {number} type 类型，0：更换装备；1：加入装备
+ */
+const addOrChangeArm = function (type) {
+    readConfig();
+    const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
+    let $dialog = $('#' + dialogName);
+    if ($dialog.length > 0) {
+        $dialog.parent().fadeIn('fast');
+        Dialog.resize(dialogName);
+    }
+    else {
+        let $wait = Msg.wait('<strong>正在获取装备信息&hellip;</strong>');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            Msg.remove($wait);
+            let matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            if (matches) {
+                showAddOrChangeArmDialog(type, matches[1]);
+            }
+        }).fail(() => Msg.remove($wait));
+    }
+};
+
+/**
+ * 显示加入或更换装备对话框
+ * @param {number} type 类型，0：更换装备；1：加入装备
+ * @param {string} armHtml 装备的HTML代码
+ */
+const showAddOrChangeArmDialog = function (type, armHtml) {
+    const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
+    if ($('#' + dialogName).length > 0) return;
+
+    let html = `
+<div class="pd_cfg_main" style="padding: 0;">
+  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">
+    <tbody>
+      <tr hidden><td colspan="3" class="kf_fw_ig_title1">我的装备背包</td></tr>
+      <tr><td width="10%">装备</td><td width="10%">熔炼</td><td width="80%">名称</td></tr>
+      ${armHtml}
+      <tr><td colspan="3"><span style="color:#00f;">不显示超过10件以上的物品，如物品超过10件，请熔炼掉多余的即可全部显示。</span></td></tr>
+    </tbody>
+  </table>
+</div>`;
+    let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1001;');
+    let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
+
+    $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
+        $dialog.fadeOut('fast');
+    });
+    Item.handleArmArea($armArea, type);
+    Item.bindArmLinkClickEvent($armArea, safeId, 1);
+
+    Dialog.show(dialogName);
+    Script.runFunc(`Item.show${type === 1 ? 'Add' : 'Change'}ArmDialog_after_`);
 };
 
 /**

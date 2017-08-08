@@ -9,6 +9,7 @@ import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
 import * as Script from './Script';
 import * as Public from './Public';
+import * as Loot from './Loot';
 
 // 盒子区域
 let $boxArea;
@@ -46,8 +47,8 @@ export const init = function () {
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
 
-    handleArmArea();
-    bindArmLinkClickEvent();
+    handleArmArea($armArea);
+    bindArmLinkClickEvent($armArea, safeId);
 
     addArmsButton();
     addBatchUseAndSellItemsButton();
@@ -96,7 +97,7 @@ export const getNextObjects = function (sequence, callback = null) {
                     $area.find('> tbody > tr:nth-child(2)').after(addHtml);
                 }
                 if (index === 1) {
-                    handleArmArea();
+                    handleArmArea($armArea);
                 }
             }
         }
@@ -501,8 +502,10 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
 
 /**
  * 处理装备区域
+ * @param {jQuery} $armArea 装备区域节点
+ * @param {number} type 页面类型，0：我的物品页面；1：争夺首页点数分配对话框
  */
-const handleArmArea = function () {
+export const handleArmArea = function ($armArea, type = 0) {
     $armArea.find('a[onclick^="cdzb"]').removeAttr('onclick').attr('data-name', 'equip');
     $armArea.find('a[onclick^="rlzb"]').removeAttr('onclick').attr('data-name', 'smelt');
 
@@ -528,12 +531,19 @@ const handleArmArea = function () {
             $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
     });
+
+    if (type === 1) {
+        $armArea.find('a[data-name="equip"]').attr('data-name', 'add').text('加入');
+    }
 };
 
 /**
  * 绑定装备点击事件
+ * @param {jQuery} $armArea 装备区域节点
+ * @param {string} safeId SafeID
+ * @param {number} type 页面类型，0：我的物品页面；1：争夺首页
  */
-const bindArmLinkClickEvent = function () {
+export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
     $armArea.on('click', 'a[data-name="equip"]', function () {
         let $this = $(this);
         let id = parseInt($this.closest('tr').data('id'));
@@ -541,6 +551,20 @@ const bindArmLinkClickEvent = function () {
             if (/装备完毕/.test(html)) {
                 $armArea.find('.pd_arm_equipped').removeClass('pd_arm_equipped');
                 $this.closest('tr').addClass('pd_arm_equipped');
+                if (type === 1) {
+                    let $wait = Msg.wait('<strong>正在获取争夺首页信息&hellip;</strong>');
+                    Loot.updateLootInfo(function () {
+                        Msg.remove($wait);
+                        $('#pdChangeArmDialog').parent().hide();
+                        let $armId = $('input[name="armId"]:first');
+                        let $armMemo = $('input[name="armMemo"]:first');
+                        $armId.val(id);
+                        $armMemo.val($('#pdArmArea > span:first').text().trim());
+                        $.each([$armId, $armMemo], function () {
+                            this.get(0).defaultValue = '';
+                        });
+                    });
+                }
             }
             else {
                 alert(Util.removeHtmlTag(html));
@@ -564,6 +588,13 @@ const bindArmLinkClickEvent = function () {
                 alert(msg);
             }
         });
+    }).on('click', 'a[data-name="add"]', function () {
+        let $tr = $(this).closest('tr');
+        let id = parseInt($tr.data('id'));
+        let armInfo = getArmInfo($tr.find('> td:nth-child(3)').html());
+        $('#pdAddArmDialog').parent().hide();
+        $('#pdAddArmMemo').val(armInfo['名称']);
+        $('#pdAddArmId').val(id).focus();
     }).on('mouseenter', 'tr', function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
@@ -620,7 +651,7 @@ const showArmInfoDialog = function (armId, armInfo) {
   <button name="saveMemo" type="button">保存备注</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, '装备信息', html);
+    let $dialog = Dialog.create(dialogName, '装备信息', html ,'z-index: 1001;');
 
     $dialog.on('click', 'a[data-name="copy"]', function (e) {
         e.preventDefault();
