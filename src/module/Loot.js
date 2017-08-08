@@ -89,8 +89,12 @@ export const enhanceLootIndexPage = function () {
     log = $log.html();
     logList = getLogList(log);
     levelInfoList = getLevelInfoList(logList);
-    if (/你被击败了/.test(log) || /本日无争夺记录/.test(log)) localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
-    else pointsLogList = getTempPointsLogList(logList);
+    if (/你被击败了|本日无争夺记录|你已经复活/.test(log)) {
+        localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
+    }
+    else {
+        pointsLogList = getTempPointsLogList(logList);
+    }
 
     handlePropertiesArea();
     handlePointsArea();
@@ -100,8 +104,9 @@ export const enhanceLootIndexPage = function () {
         $('#wdsx').show();
     }
 
-    if (log.includes('本日无争夺记录'))
+    if (log.includes('本日无争夺记录') || log.includes('你已经复活')) {
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
+    }
     addLootLogHeader();
     showLogStat(levelInfoList);
 
@@ -202,6 +207,20 @@ const handlePointsArea = function () {
         .after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
+    $(`
+<tr>
+  <td width="40%">装备ID和备注 (无需更换装备时勿填)</td>
+  <td width="40%">
+    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;" readonly>
+    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;" readonly>
+    <a class="pd_btn_link" data-name="changeArm" href="#">更换装备</a>
+  </td>
+</tr>
+`).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
+        e.preventDefault();
+        addOrChangeArm(0);
+    });
+
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
     let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.text());
     if (changeCountMatches) {
@@ -289,21 +308,6 @@ const handlePointsArea = function () {
         Util.deleteCookie(Const.changePointsInfoCookieName);
         return checkPoints($points);
     }).find('.pd_point').trigger('change');
-
-
-    $(`
-<tr>
-  <td width="40%">装备ID和备注 (无需更换装备时勿填)</td>
-  <td width="40%">
-    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;" readonly>
-    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;" readonly>
-    <a class="pd_btn_link" data-name="changeArm" href="#">更换装备</a>
-  </td>
-</tr>
-`).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
-        e.preventDefault();
-        addOrChangeArm(0);
-    });
 };
 
 /**
@@ -738,7 +742,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   </label>
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
-    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在4~6秒之间）">[?]</span>
+    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在5~8秒之间）">[?]</span>
   </label>
   <label>
     <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ${Config.alwaysOpenPointAreaEnabled ? 'checked' : ''}> 总是打开属性界面
@@ -1047,7 +1051,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         let $countdown = $('.pd_countdown:last');
         $countdown.text(currentLevel);
         $points.find('.pd_point').each(function () {
-            showNewLootProperty($(this));
+            //showNewLootProperty($(this)); // 临时禁用
         });
         let info = levelInfoList[currentLevel];
         $properties.find('#pdCurrentLife').text(info ? info.life : 0);
@@ -1762,7 +1766,7 @@ const handleLootLogNav = function () {
         }
     });
 
-    if (!log.includes('本日无争夺记录')) {
+    if (!log.includes('本日无争夺记录') && !log.includes('你已经复活')) {
         let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
         let curLevelInfoList = getLevelInfoList(curLogList);
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;

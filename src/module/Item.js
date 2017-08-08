@@ -677,7 +677,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo) + '\n');
+    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo));
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
