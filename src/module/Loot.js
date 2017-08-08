@@ -17,6 +17,8 @@ import * as Item from './Item';
 let $properties;
 // 点数区域
 let $points;
+// 装备区域
+let $armArea;
 // 争夺记录区域容器
 let $logBox;
 // 争夺记录区域
@@ -50,6 +52,8 @@ let pointsLogList = [];
 export const init = function () {
     $properties = $('.kf_fw_ig3:first');
     $points = $('#wdsx .kf_fw_ig1:first');
+    $points.find('> tbody > tr:first-child > td').attr('id', 'pdArmArea');
+    $armArea = $points.find('#pdArmArea');
 
     let tmpHaloInfo = TmpLog.getValue(Const.haloInfoTmpLogName);
     if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
@@ -73,7 +77,7 @@ export const enhanceLootIndexPage = function () {
     propertyList = getLootPropertyList(propertiesHtml);
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-    currentArmInfo = Item.getArmInfo($points.find('> tbody > tr:first-child > td').html());
+    currentArmInfo = Item.getArmInfo($armArea.html());
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -192,6 +196,15 @@ const handlePointsArea = function () {
         .prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point')
         .after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
+    $armArea.parent().after(`
+<tr>
+  <td width="40%">装备ID和备注 (无需更换装备时勿填)</td>
+  <td width="40%">
+    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;">
+    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;">
+  </td>
+</tr>
+`);
 
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
     let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.text());
@@ -263,10 +276,10 @@ const handlePointsArea = function () {
     $points.on('change', '.pd_point', function () {
         let $this = $(this);
         showSurplusPoint();
-        /*showNewLootProperty($this);
-         showExtraPoint($this);
-         showSumOfPoint($this);
-         showSkillAttack();*/ // 临时禁用
+        // showNewLootProperty($this); // 临时禁用
+        showExtraPoint($this);
+        showSumOfPoint($this);
+        // showSkillAttack(); // 临时禁用
     }).on('click', '.pd_sum_point', function () {
         let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
         if (!surplusPoint) return;
@@ -331,8 +344,8 @@ const getLootPropertyList = function (html) {
      if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
      matches = /技能释放概率：(\d+)%/.exec(html);
      if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);*/ // 临时禁用
-    matches = /"(\d+)%减伤"/.exec(html);
-    if (matches) propertyList['防御'] = parseInt(matches[1]);
+    matches = /"(\d+(?:\.\d+)?)%减伤"/.exec(html);
+    if (matches) propertyList['防御'] = parseFloat(matches[1]);
     matches = /"(\d+)\s*可分配属性"/.exec(html);
     if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
     return propertyList;
@@ -438,6 +451,10 @@ export const getPointNameByFieldName = function (fieldName) {
             return '耐力';
         case 'l':
             return '幸运';
+        case 'armId':
+            return '装备ID';
+        case 'armMemo':
+            return '装备备注';
         default:
             return '';
     }
@@ -466,6 +483,10 @@ export const getFieldNameByPointName = function (pointName) {
             return 'p';
         case '幸运':
             return 'l';
+        case '装备ID':
+            return 'armId';
+        case '装备备注':
+            return 'armMemo';
         default:
             return '';
     }
@@ -603,14 +624,14 @@ const addLevelPointListSelect = function () {
         if (level > 0) {
             let points = Config.levelPointList[parseInt(level)];
             if (typeof points !== 'object') return;
-            $points.find('.pd_point').each(function () {
+            $points.find('.pd_point, input[name="armId"], input[name="armMemo"]').each(function () {
                 let $this = $(this);
                 let pointName = getPointNameByFieldName($this.attr('name'));
                 $this.val(points[pointName]);
             }).trigger('change');
         }
         else if (level === 0) {
-            $points.find('.pd_point').each(function () {
+            $points.find('.pd_point, input[name="armId"], input[name="armMemo"]').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         }
@@ -627,12 +648,25 @@ const addLevelPointListSelect = function () {
             if (!confirm('该层数已存在，是否覆盖？')) return;
         }
         let points = {};
-        for (let elem of Array.from($points.find('.pd_point'))) {
+        for (let elem of Array.from($points.find('.pd_point, input[name="armId"], input[name="armMemo"]'))) {
             let $elem = $(elem);
-            let point = parseInt($elem.val());
-            if (!point || point < 0) return;
-            let pointName = getPointNameByFieldName($elem.attr('name'));
-            points[pointName] = point;
+            let name = $elem.attr('name');
+            let value = $.trim($elem.val());
+            if ($elem.is('.pd_point')) {
+                value = parseInt(value);
+                if (!value || value < 0) return;
+            }
+            else {
+                if (!value) continue;
+                if (name === 'armId') {
+                    value = parseInt(value);
+                    if (!value || value < 0) return;
+                }
+            }
+            points[getPointNameByFieldName(name)] = value;
+            if (!points['装备ID'] && points['装备备注']) {
+                delete points['装备备注'];
+            }
         }
         Config.levelPointList[level] = points;
         writeConfig();
@@ -661,9 +695,9 @@ const addLevelPointListSelect = function () {
  */
 const setLevelPointListSelect = function (levelPointList) {
     let pointListHtml = '';
-    for (let level of Object.keys(levelPointList)) {
+    for (let [level, points] of Util.entries(levelPointList)) {
         if (!$.isNumeric(level)) continue;
-        pointListHtml += `<option value="${level}">第${level}层</option>`;
+        pointListHtml += `<option value="${level}">第${level}层 ${points['装备ID'] ? '(装)' : ''}</option>`;
     }
     $('#pdLevelPointListSelect').find('option:gt(1)').remove().end().append(pointListHtml);
 };
@@ -680,12 +714,15 @@ const showLevelPointListConfigDialog = function (callback) {
   <div style="margin: 5px 0; line-height: 1.6em;">
     请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
     （例：11-19层点数相同的话，则只保留第11层）<br>
+    装备ID和装备备注为可选项，只在需要更换装备时填写<br>
     自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
   </div>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
       <tbody>
-        <tr><th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th><th></th></tr>
+        <tr>
+          <th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th><th>装备ID</th><th>装备备注</th><th></th>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -736,6 +773,8 @@ const showLevelPointListConfigDialog = function (callback) {
   <td><input class="pd_point" name="d2" type="number" value="${points['灵活']}" min="1" style="width: 50px;" required></td>
   <td><input class="pd_point" name="i1" type="number" value="${points['智力']}" min="1" style="width: 50px;" required></td>
   <td><input class="pd_point" name="i2" type="number" value="${points['意志']}" min="1" style="width: 50px;" required></td>
+  <td><input name="armId" type="text" value="${points['装备ID'] ? points['装备ID'] : ''}" maxlength="15" style="width: 65px;"></td>
+  <td><input name="armMemo" type="text" value="${points['装备备注'] ? points['装备备注'] : ''}" maxlength="15" style="width: 80px;"></td>
   <td style="text-align: left;">
     <a class="pd_btn_link" data-name="fill" href="#">填充</a>
     <a class="pd_btn_link pd_highlight" data-name="delete" href="#">删除</a>
@@ -786,13 +825,29 @@ const showLevelPointListConfigDialog = function (callback) {
             let level = parseInt($this.find('[name="level"]').val());
             if (!level || level < 0) return;
             let points = {};
-            for (let elem of Array.from($this.find('.pd_point'))) {
+            for (let elem of Array.from($this.find('.pd_point, [name="armId"], [name="armMemo"]'))) {
                 let $elem = $(elem);
-                let point = parseInt($elem.val());
-                if (!point || point < 0) return;
-                points[getPointNameByFieldName($elem.attr('name'))] = point;
+                let name = $elem.attr('name');
+                let value = null;
+                value = $.trim($elem.val());
+                if ($elem.is('.pd_point')) {
+                    value = parseInt(value);
+                    if (!value || value < 0) return;
+                }
+                else {
+                    if (!value) continue;
+                    if (name === 'armId') {
+                        value = parseInt(value);
+                        if (!value || value < 0) return;
+                    }
+                }
+                points[getPointNameByFieldName(name)] = value;
+            }
+            if (!points['装备ID'] && points['装备备注']) {
+                delete points['装备备注'];
             }
             if (Util.deepEqual(prevPoints, points)) return;
+
             levelPointList[level] = points;
             prevPoints = points;
         });
@@ -1056,15 +1111,22 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
      */
     const recordPointsLog = function (isSubmit = false) {
         propertyList = getLootPropertyList($properties.html());
-        let pointsText = '', propertiesText = '';
+        let armsText = '', pointsText = '', propertiesText = '';
+
+        let armId = parseInt($points.find('input[name="armId"]').val());
+        let armMemo = $.trim($points.find('input[name="armMemo"]').val());
+        if (armId > 0) {
+            armsText = `装备ID：${armId}${armMemo ? '，装备备注：' + armMemo : ''}`;
+        }
+
         $points.find('.pd_point').each(function () {
             let $this = $(this);
             let pointName = getPointNameByFieldName($this.attr('name'));
-            let point = parseInt($.trim($this.val()));
+            let point = parseInt($this.val());
             let extraPoint = getExtraPoint(pointName, point);
-            //pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
-            pointsText += `${pointName}：${point}，`; // 临时修改
+            pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
         });
+
         pointsText = pointsText.replace(/，$/, '');
         for (let [key, value] of Util.entries(propertyList)) {
             if (key === '可分配属性点' || key === '生命值') continue;
@@ -1074,13 +1136,18 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         }
         propertiesText = propertiesText.replace(/，$/, '');
         //pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
-        pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）`; // 临时修改
+        pointsLogList[getCurrentLevel(logList) + 1] = `${armsText ? `装备信息（${armsText}）\n` : ''}点数方案（${pointsText}）`; // 临时修改
         localStorage.setItem(
             Const.tempPointsLogListStorageName + '_' + Info.uid,
             JSON.stringify({time: $.now(), pointsLogList})
         );
         //if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
-        if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）`); // 临时修改
+        if (isSubmit) {
+            if (armsText) {
+                console.log(`【更换武器】装备信息（${armsText}）`);
+            }
+            console.log(`【分配点数】点数方案（${pointsText}）`);
+        } // 临时修改
     };
 
     /**
@@ -1100,8 +1167,8 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 console.log(ex);
             }
             if ($.type(points) === 'object') {
-                for (let key of Object.keys(points)) {
-                    $points.find(`[name="${getFieldNameByPointName(key)}"]`).val(points[key]).trigger('change');
+                for (let [key, value] of Util.entries(points)) {
+                    $points.find(`input[name="${getFieldNameByPointName(key)}"]`).val(value).trigger('change');
                 }
                 nextLevel = -1;
             }
@@ -1111,7 +1178,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }
             else if (points === false) {
                 recordPointsLog();
-                return $.Deferred().resolve('success');
+                return $.Deferred().resolve('ignore');
             }
             else return $.Deferred().resolve('error');
         }
@@ -1121,51 +1188,85 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         let $levelPointListSelect = $('#pdLevelPointListSelect');
         if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');
         else $levelPointListSelect.get(0).selectedIndex = 0;
-        let isChange = false;
-        $points.find('.pd_point').each(function () {
-            if (this.defaultValue !== $(this).val()) {
-                isChange = true;
-                return false;
+        let isChangeArm = false, isChangePoints = false;
+        $points.find('.pd_point, input[name="armId"]').each(function () {
+            let $this = $(this);
+            let name = $this.attr('name');
+            let value = $.trim($this.val());
+            if (value && this.defaultValue !== value) {
+                if (name === 'armId') isChangeArm = true;
+                else isChangePoints = true;
             }
         });
-        if (isChange) {
+
+        if (isChangeArm || isChangePoints) {
             if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
                 if (confirm('可分配属性点尚未用完，是否继续攻击？')) Info.w.unusedPointNumAlert = true;
                 else return $.Deferred().resolve('error');
             }
-            return $.ajax({
-                type: 'POST',
-                url: 'kf_fw_ig_enter.php',
-                timeout: Const.defAjaxTimeout,
-                data: $points.closest('form').serialize(),
-            }).then(function (html) {
-                let {msg} = Util.getResponseMsg(html);
-                if (/已经重新配置加点！/.test(msg)) {
-                    Util.deleteCookie(Const.changePointsInfoCookieName);
-                    recordPointsLog(true);
-                    changePointsAvailableCount = changePointsAvailableCount > 0 ? changePointsAvailableCount - 1 : 0;
-                    $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
-                    $points.find('.pd_point').each(function () {
-                        this.defaultValue = $(this).val();
-                    });
-                    Script.runFunc('Loot.lootAttack_changePoints_success_', msg);
-                    return 'success';
-                }
-                else {
-                    let matches = /你还需要等待(\d+)分钟/.exec(msg);
-                    if (matches) {
-                        let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
-                        Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+
+            let armId = parseInt($points.find('input[name="armId"]').val());
+            let ajaxList = [['ignore'], ['ignore']];
+            if (isChangeArm) {
+                ajaxList[0] = $.ajax({
+                    type: 'POST',
+                    url: 'kf_fw_ig_mybpdt.php',
+                    timeout: Const.defAjaxTimeout,
+                    data: `do=4&id=${armId}&safeid=${safeId}`,
+                });
+            }
+            if (isChangePoints) {
+                ajaxList[1] = $.ajax({
+                    type: 'POST',
+                    url: 'kf_fw_ig_enter.php',
+                    timeout: Const.defAjaxTimeout,
+                    data: $points.closest('form').serialize(),
+                });
+            }
+
+            return $.when(...ajaxList).then(function ([msg1], [msg2]) {
+                if (msg1 !== 'ignore') {
+                    let msg = Util.removeHtmlTag(msg1);
+                    if (/装备完毕/.test(msg1)) {
+                        $points.find('input[name="armId"]').each(function () {
+                            this.defaultValue = $(this).val();
+                        });
                     }
-                    Msg.show((`<strong>第<em>${nextLevelText}</em>层方案：${msg}</strong>`), -1);
-                    Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
-                    return 'error';
+                    else {
+                        Msg.show((`<strong>更换武器：${msg}</strong>`), -1);
+                        Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
+                        return 'error';
+                    }
                 }
+
+                if (msg2 !== 'ignore') {
+                    let {msg} = Util.getResponseMsg(msg2);
+                    if (/已经重新配置加点！/.test(msg)) {
+                        Util.deleteCookie(Const.changePointsInfoCookieName);
+                        $points.find('.pd_point').each(function () {
+                            this.defaultValue = $(this).val();
+                        });
+                    }
+                    else {
+                        let matches = /你还需要等待(\d+)分钟/.exec(msg);
+                        if (matches) {
+                            let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
+                            Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+                        }
+                        Msg.show((`<strong>第<em>${nextLevelText}</em>层方案：${msg}</strong>`), -1);
+                        Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
+                        return 'error';
+                    }
+                }
+
+                recordPointsLog(true);
+                Script.runFunc('Loot.lootAttack_changePoints_success_', [msg1, msg2]);
+                return 'success';
             }, () => 'timeout');
         }
         else {
             if (nextLevelText === 1) recordPointsLog();
-            return $.Deferred().resolve('success');
+            return $.Deferred().resolve('ignore');
         }
     };
 
@@ -1176,11 +1277,20 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
      */
     const ready = function (currentLevel, interval = Const.lootAttackInterval) {
         changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
-            if (result === 'success') setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+            if (result === 'ignore') {
+                setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+            }
+            else if (result === 'success') {
+                setTimeout(function () {
+                    updateLootInfo(function () {
+                        setTimeout(attack, typeof interval === 'function' ? interval() : interval)
+                    });
+                }, Const.defAjaxInterval);
+            }
         }).fail(function (result) {
             if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), Const.defAjaxInterval);
         }).always(function (result) {
-            if (result !== 'success' && result !== 'timeout') {
+            if (!['success', 'ignore', 'timeout'].includes(result)) {
                 Msg.remove($wait);
             }
         });
@@ -1199,15 +1309,15 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             index++;
             if (Config.autoLootEnabled) Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
             if (!/你\(\d+\)遭遇了/.test(html) || index % Const.lootAttackPerCheckLevel === 0) {
-                setTimeout(check, Const.defAjaxInterval);
+                setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
                 return;
             }
             log = html + log;
-            after();
+            after(false);
             Script.runFunc('Loot.lootAttack_attack_after_', html);
         }).fail(function () {
             console.log('【争夺攻击】超时重试...');
-            setTimeout(check, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
+            setTimeout(() => updateLootInfo(after), typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
         });
     };
 
@@ -1215,7 +1325,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
      * 攻击之后
      * @param {boolean} isChecked 是否已检查过争夺记录
      */
-    const after = function (isChecked = false) {
+    const after = function (isChecked = true) {
         logList = getLogList(log);
         levelInfoList = getLevelInfoList(logList);
         showEnhanceLog(logList, levelInfoList, pointsLogList);
@@ -1243,11 +1353,11 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
                 }
-                else setTimeout(check, Const.defAjaxInterval);
+                else setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
                 Script.runFunc('Loot.lootAttack_complete_');
             }
             else {
-                if (!isChecked) setTimeout(() => check(false), Const.defAjaxInterval);
+                if (!isChecked) setTimeout(() => updateLootInfo, Const.defAjaxInterval);
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
                 Script.runFunc('Loot.lootAttack_after_');
@@ -1259,57 +1369,68 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         }
     };
 
-    /**
-     * 检查争夺记录
-     * @param {boolean} handleAfter 是否进行攻击后的处理
-     */
-    const check = function (handleAfter = true) {
-        console.log('检查争夺记录Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_index.php?t=' + $.now(),
-            timeout: Const.defAjaxTimeout,
-        }).done(function (html) {
-            let $log = $('#pk_text', html);
-            if (!$log.length) {
-                Msg.remove($wait);
-                return;
-            }
-            log = $log.html();
-
-            let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
-            if (countDownMatches) {
-                changePointsAvailableCount = 0;
-                let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
-                Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
-            }
-            let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
-            if (changeCountMatches) {
-                changePointsAvailableCount = parseInt(changeCountMatches[1]);
-                Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
-            }
-            $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
-
-            let distributablePointMatches = /可分配属性点：(\d+)/.exec(html);
-            if (distributablePointMatches) {
-                let distributablePoint = parseInt(distributablePointMatches[1]);
-                if (propertyList['可分配属性点'] !== distributablePoint) {
-                    propertyList['可分配属性点'] = distributablePoint;
-                    $properties.find('#pdDistributablePoint').text(distributablePoint);
-                    if (!/你被击败了/.test(log) && Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && !checkPoints($points)) {
-                        isStop = true;
-                        $points.find('.pd_point:first').trigger('change');
-                        TmpLog.deleteValue(Const.haloInfoTmpLogName);
-                    }
-                }
-            }
-
-            if (handleAfter) after(true);
-            Script.runFunc('Loot.lootAttack_check_after_', html);
-        }).fail(() => setTimeout(check, Const.defAjaxInterval));
-    };
-
     ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
+};
+
+/**
+ * 更新争夺信息
+ * @param {function} callback 回调函数
+ */
+export const updateLootInfo = function (callback = null) {
+    console.log('更新争夺信息Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
+        timeout: Const.defAjaxTimeout,
+    }).done(function (html) {
+        let $area = $('#wdsx', html).parent();
+        console.debug($area);
+        log = $area.find('#pk_text').html();
+        console.debug(log);
+        if (!log) {
+            Msg.remove($('.pd_countdown').closest('.pd_msg'));
+            return;
+        }
+
+        $area.find('.kf_fw_ig3:first input[type="text"]').each(function (index) {
+            let value = $.trim($(this).val());
+            if (!value) return;
+            $properties.find(`input[type="text"]:eq(${index})`).val(value);
+        });
+
+        let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
+        if (countDownMatches) {
+            changePointsAvailableCount = 0;
+            let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
+            Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+        }
+        let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
+        if (changeCountMatches) {
+            changePointsAvailableCount = parseInt(changeCountMatches[1]);
+            Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
+        }
+        $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
+
+        let armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
+        if (armHtml.includes('（装备中）')) {
+            $points.find('#pdArmArea').html(armHtml);
+        }
+
+        let propertiesHtml = $properties.html();
+        propertyList = getLootPropertyList(propertiesHtml);
+        itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
+        armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
+        currentArmInfo = Item.getArmInfo($armArea.html());
+        console.debug(propertyList);
+        console.debug(itemUsedNumList);
+        console.debug(armsLevelList);
+        console.debug(currentArmInfo);
+
+        if (typeof callback === 'function') callback();
+        Script.runFunc('Loot.updateLootInfo_after_', html);
+    }).fail(function () {
+        setTimeout(() => updateLootInfo(callback), Const.defAjaxInterval);
+    });
 };
 
 /**

@@ -646,7 +646,7 @@ const showArmInfoDialog = function (armId, armInfo) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo));
+    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo) + '\n');
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -1178,7 +1178,9 @@ export const getItemsUsedNumInfo = function (html) {
     let matches = html.match(/value="\[\s*(\d+)\s*](\S+?)"/g);
     for (let i in matches) {
         let subMatches = /value="\[\s*(\d+)\s*](\S+?)"/.exec(matches[i]);
-        itemUsedNumList.set(subMatches[2], parseInt(subMatches[1]));
+        if (itemUsedNumList.has(subMatches[2])) {
+            itemUsedNumList.set(subMatches[2], parseInt(subMatches[1]));
+        }
     }
     return itemUsedNumList;
 };
