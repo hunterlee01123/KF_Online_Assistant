@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.1.1
+// @version     11.1.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.1.1';
+const version = '11.1.2';
 
 /**
  * 导出模块
@@ -2597,11 +2597,11 @@ const Const = {
         if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 慢速情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
-    // 操作物品的最小时间间隔（毫秒）
-    minItemActionInterval: 1000,
+    // 部分操作的最小时间间隔（毫秒）
+    minActionInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval() {
-        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 3000) + 5000; // 慢速情况
+        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 3000) + 4000; // 慢速情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
     // 银行相关操作的时间间隔（毫秒）
@@ -3594,7 +3594,7 @@ const openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = fals
                         action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
                     }
                     if (action) {
-                        setTimeout(action, _Const2.default.minItemActionInterval);
+                        setTimeout(action, _Const2.default.minActionInterval);
                     }
                 }
             } else {
@@ -3724,7 +3724,7 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
         $this.remove();
         let html = $td.html();
         let armInfo = getArmInfo(html);
-        showArmInfoDialog(id, armInfo);
+        showArmInfoDialog(id, armInfo, $armArea);
     });
 };
 
@@ -3732,8 +3732,9 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
  * 显示装备信息对话框
  * @param {number} armId 装备ID
  * @param {{}} armInfo 装备信息
+ * @param {jQuery} $armArea 装备区域节点
  */
-const showArmInfoDialog = function (armId, armInfo) {
+const showArmInfoDialog = function (armId, armInfo, $armArea) {
     const dialogName = 'pdArmInfoDialog';
     if ($('#' + dialogName).length > 0) return;
     Msg.destroy();
@@ -3922,11 +3923,11 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
                 return;
             }
             if (!/装备完毕/.test(msg)) {
-                setTimeout(() => equip(armIdList[index]), _Const2.default.minItemActionInterval);
+                setTimeout(() => equip(armIdList[index]), _Const2.default.minActionInterval);
             } else {
                 setTimeout(() => getFinalAddition(armId), _Const2.default.defAjaxInterval);
             }
-        }).fail(() => setTimeout(() => equip(armId), _Const2.default.minItemActionInterval));
+        }).fail(() => setTimeout(() => equip(armId), _Const2.default.minActionInterval));
     };
 
     /**
@@ -3958,7 +3959,7 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
                 complete();
                 return;
             }
-            setTimeout(() => equip(armIdList[index]), _Const2.default.minItemActionInterval);
+            setTimeout(() => equip(armIdList[index]), _Const2.default.minActionInterval);
             Script.runFunc('Item.showArmsFinalAddition_show_', armId);
         }).fail(() => setTimeout(() => getFinalAddition(armId), _Const2.default.defAjaxInterval));
     };
@@ -3969,7 +3970,7 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
     const complete = function () {
         Msg.remove($wait);
         if (oriEquippedArmId) {
-            setTimeout(() => equip(oriEquippedArmId, true), _Const2.default.minItemActionInterval);
+            setTimeout(() => equip(oriEquippedArmId, true), _Const2.default.minActionInterval);
         }
         Script.runFunc('Item.showArmsFinalAddition_complete_');
     };
@@ -4085,7 +4086,7 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             $('.pd_result[data-name="armResult"]:last').append(`<li>【${armName}】 <span class="pd_notice">连接超时</span></li>`);
         }).always(function () {
             if ($wait.data('stop')) complete();else {
-                if (index === armNum) setTimeout(getNextArms, _Const2.default.minItemActionInterval);else setTimeout(() => $(document).dequeue('SmeltArms'), _Const2.default.minItemActionInterval);
+                if (index === armNum) setTimeout(getNextArms, _Const2.default.minActionInterval);else setTimeout(() => $(document).dequeue('SmeltArms'), _Const2.default.minActionInterval);
             }
         });
     };
@@ -4139,7 +4140,7 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
         }
         if (action) {
-            setTimeout(action, _Const2.default.minItemActionInterval);
+            setTimeout(action, _Const2.default.minActionInterval);
         }
     };
 
@@ -4472,7 +4473,7 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
             action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
         }
         if (action) {
-            setTimeout(action, _Const2.default.minItemActionInterval);
+            setTimeout(action, _Const2.default.minActionInterval);
         }
     };
 
@@ -4573,7 +4574,7 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
             if ($wait.data('stop')) {
                 complete();
             } else {
-                if (index === itemNum) setTimeout(getNextItems, _Const2.default.minItemActionInterval);else setTimeout(() => $(document).dequeue('SellItems'), _Const2.default.minItemActionInterval);
+                if (index === itemNum) setTimeout(getNextItems, _Const2.default.minActionInterval);else setTimeout(() => $(document).dequeue('SellItems'), _Const2.default.minActionInterval);
             }
         });
     };
@@ -6182,7 +6183,7 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
   </label>
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
-    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在5~8秒之间）">[?]</span>
+    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在4~7秒之间）">[?]</span>
   </label>
   <label>
     <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ${Config.alwaysOpenPointAreaEnabled ? 'checked' : ''}> 总是打开属性界面
@@ -6422,7 +6423,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 }, _Const2.default.defAjaxInterval);
             }
         }).fail(function (result) {
-            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), _Const2.default.defAjaxInterval);
+            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), _Const2.default.minActionInterval);
         }).always(function (result) {
             if (!['success', 'ignore', 'timeout'].includes(result)) {
                 Msg.remove($wait);
@@ -6495,7 +6496,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 Script.runFunc('Loot.lootAttack_after_');
             }
         } else {
-            if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), _Const2.default.defAjaxInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+            if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), _Const2.default.minActionInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
         }
     };
 

@@ -473,7 +473,7 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
                         action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
                     }
                     if (action) {
-                        setTimeout(action, Const.minItemActionInterval);
+                        setTimeout(action, Const.minActionInterval);
                     }
                 }
             }
@@ -613,7 +613,7 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
         $this.remove();
         let html = $td.html();
         let armInfo = getArmInfo(html);
-        showArmInfoDialog(id, armInfo);
+        showArmInfoDialog(id, armInfo, $armArea);
     });
 };
 
@@ -621,8 +621,9 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
  * 显示装备信息对话框
  * @param {number} armId 装备ID
  * @param {{}} armInfo 装备信息
+ * @param {jQuery} $armArea 装备区域节点
  */
-const showArmInfoDialog = function (armId, armInfo) {
+const showArmInfoDialog = function (armId, armInfo, $armArea) {
     const dialogName = 'pdArmInfoDialog';
     if ($('#' + dialogName).length > 0) return;
     Msg.destroy();
@@ -651,7 +652,7 @@ const showArmInfoDialog = function (armId, armInfo) {
   <button name="saveMemo" type="button">保存备注</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, '装备信息', html ,'z-index: 1001;');
+    let $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1001;');
 
     $dialog.on('click', 'a[data-name="copy"]', function (e) {
         e.preventDefault();
@@ -820,12 +821,12 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
                 return;
             }
             if (!/装备完毕/.test(msg)) {
-                setTimeout(() => equip(armIdList[index]), Const.minItemActionInterval);
+                setTimeout(() => equip(armIdList[index]), Const.minActionInterval);
             }
             else {
                 setTimeout(() => getFinalAddition(armId), Const.defAjaxInterval);
             }
-        }).fail(() => setTimeout(() => equip(armId), Const.minItemActionInterval));
+        }).fail(() => setTimeout(() => equip(armId), Const.minActionInterval));
     };
 
     /**
@@ -857,7 +858,7 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
                 complete();
                 return;
             }
-            setTimeout(() => equip(armIdList[index]), Const.minItemActionInterval);
+            setTimeout(() => equip(armIdList[index]), Const.minActionInterval);
             Script.runFunc('Item.showArmsFinalAddition_show_', armId);
         }).fail(() => setTimeout(() => getFinalAddition(armId), Const.defAjaxInterval));
     };
@@ -868,7 +869,7 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
     const complete = function () {
         Msg.remove($wait);
         if (oriEquippedArmId) {
-            setTimeout(() => equip(oriEquippedArmId, true), Const.minItemActionInterval);
+            setTimeout(() => equip(oriEquippedArmId, true), Const.minActionInterval);
         }
         Script.runFunc('Item.showArmsFinalAddition_complete_');
     };
@@ -988,8 +989,8 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
         }).always(function () {
             if ($wait.data('stop')) complete();
             else {
-                if (index === armNum) setTimeout(getNextArms, Const.minItemActionInterval);
-                else setTimeout(() => $(document).dequeue('SmeltArms'), Const.minItemActionInterval);
+                if (index === armNum) setTimeout(getNextArms, Const.minActionInterval);
+                else setTimeout(() => $(document).dequeue('SmeltArms'), Const.minActionInterval);
             }
         });
     };
@@ -1045,7 +1046,7 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
         }
         if (action) {
-            setTimeout(action, Const.minItemActionInterval);
+            setTimeout(action, Const.minActionInterval);
         }
     };
 
@@ -1410,7 +1411,7 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
             action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
         }
         if (action) {
-            setTimeout(action, Const.minItemActionInterval);
+            setTimeout(action, Const.minActionInterval);
         }
     };
 
@@ -1523,8 +1524,8 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
                 complete();
             }
             else {
-                if (index === itemNum) setTimeout(getNextItems, Const.minItemActionInterval);
-                else setTimeout(() => $(document).dequeue('SellItems'), Const.minItemActionInterval);
+                if (index === itemNum) setTimeout(getNextItems, Const.minActionInterval);
+                else setTimeout(() => $(document).dequeue('SellItems'), Const.minActionInterval);
             }
         });
     };

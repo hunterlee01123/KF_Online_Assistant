@@ -742,7 +742,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   </label>
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
-    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在5~8秒之间）">[?]</span>
+    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在4~7秒之间）">[?]</span>
   </label>
   <label>
     <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ${Config.alwaysOpenPointAreaEnabled ? 'checked' : ''}> 总是打开属性界面
@@ -1004,7 +1004,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 }, Const.defAjaxInterval);
             }
         }).fail(function (result) {
-            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), Const.defAjaxInterval);
+            if (result === 'timeout') setTimeout(() => ready(currentLevel, interval), Const.minActionInterval);
         }).always(function (result) {
             if (!['success', 'ignore', 'timeout'].includes(result)) {
                 Msg.remove($wait);
@@ -1080,7 +1080,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }
         }
         else {
-            if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), Const.defAjaxInterval);
+            if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), Const.minActionInterval);
             else setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
         }
     };

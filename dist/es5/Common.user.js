@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.1.1
+// @version     11.1.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.1.1';
+var version = '11.1.2';
 
 /**
  * 导出模块
@@ -2524,11 +2524,11 @@ var Const = {
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
 
-    // 操作物品的最小时间间隔（毫秒）
-    minItemActionInterval: 1000,
+    // 部分操作的最小时间间隔（毫秒）
+    minActionInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
     lootAttackInterval: function lootAttackInterval() {
-        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 3000) + 5000; // 慢速情况
+        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 3000) + 4000; // 慢速情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
 
@@ -3662,7 +3662,7 @@ var openBoxes = function openBoxes(_ref) {
                         };
                     }
                     if (action) {
-                        setTimeout(action, _Const2.default.minItemActionInterval);
+                        setTimeout(action, _Const2.default.minActionInterval);
                     }
                 }
             } else {
@@ -3800,7 +3800,7 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
         $this.remove();
         var html = $td.html();
         var armInfo = getArmInfo(html);
-        showArmInfoDialog(id, armInfo);
+        showArmInfoDialog(id, armInfo, $armArea);
     });
 };
 
@@ -3808,8 +3808,9 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
  * 显示装备信息对话框
  * @param {number} armId 装备ID
  * @param {{}} armInfo 装备信息
+ * @param {jQuery} $armArea 装备区域节点
  */
-var showArmInfoDialog = function showArmInfoDialog(armId, armInfo) {
+var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
     var dialogName = 'pdArmInfoDialog';
     if ($('#' + dialogName).length > 0) return;
     Msg.destroy();
@@ -4063,7 +4064,7 @@ var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippe
             if (!/装备完毕/.test(msg)) {
                 setTimeout(function () {
                     return equip(armIdList[index]);
-                }, _Const2.default.minItemActionInterval);
+                }, _Const2.default.minActionInterval);
             } else {
                 setTimeout(function () {
                     return getFinalAddition(armId);
@@ -4072,7 +4073,7 @@ var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippe
         }).fail(function () {
             return setTimeout(function () {
                 return equip(armId);
-            }, _Const2.default.minItemActionInterval);
+            }, _Const2.default.minActionInterval);
         });
     };
 
@@ -4107,7 +4108,7 @@ var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippe
             }
             setTimeout(function () {
                 return equip(armIdList[index]);
-            }, _Const2.default.minItemActionInterval);
+            }, _Const2.default.minActionInterval);
             Script.runFunc('Item.showArmsFinalAddition_show_', armId);
         }).fail(function () {
             return setTimeout(function () {
@@ -4124,7 +4125,7 @@ var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippe
         if (oriEquippedArmId) {
             setTimeout(function () {
                 return equip(oriEquippedArmId, true);
-            }, _Const2.default.minItemActionInterval);
+            }, _Const2.default.minActionInterval);
         }
         Script.runFunc('Item.showArmsFinalAddition_complete_');
     };
@@ -4276,9 +4277,9 @@ var smeltArms = function smeltArms(typeList, safeId) {
             $('.pd_result[data-name="armResult"]:last').append('<li>\u3010' + armName + '\u3011 <span class="pd_notice">\u8FDE\u63A5\u8D85\u65F6</span></li>');
         }).always(function () {
             if ($wait.data('stop')) complete();else {
-                if (index === armNum) setTimeout(getNextArms, _Const2.default.minItemActionInterval);else setTimeout(function () {
+                if (index === armNum) setTimeout(getNextArms, _Const2.default.minActionInterval);else setTimeout(function () {
                     return $(document).dequeue('SmeltArms');
-                }, _Const2.default.minItemActionInterval);
+                }, _Const2.default.minActionInterval);
             }
         });
     };
@@ -4346,7 +4347,7 @@ var smeltArms = function smeltArms(typeList, safeId) {
             };
         }
         if (action) {
-            setTimeout(action, _Const2.default.minItemActionInterval);
+            setTimeout(action, _Const2.default.minActionInterval);
         }
     };
 
@@ -4744,7 +4745,7 @@ var useItems = function useItems(typeList, safeId) {
             };
         }
         if (action) {
-            setTimeout(action, _Const2.default.minItemActionInterval);
+            setTimeout(action, _Const2.default.minActionInterval);
         }
     };
 
@@ -4890,9 +4891,9 @@ var sellItems = function sellItems(itemTypeList, safeId) {
             if ($wait.data('stop')) {
                 complete();
             } else {
-                if (index === itemNum) setTimeout(getNextItems, _Const2.default.minItemActionInterval);else setTimeout(function () {
+                if (index === itemNum) setTimeout(getNextItems, _Const2.default.minActionInterval);else setTimeout(function () {
                     return $(document).dequeue('SellItems');
-                }, _Const2.default.minItemActionInterval);
+                }, _Const2.default.minActionInterval);
             }
         });
     };
@@ -7197,7 +7198,7 @@ var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
 var addAttackBtns = function addAttackBtns() {
     $logBox.off('click');
 
-    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57285~8\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
+    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~7\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -7501,7 +7502,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         }).fail(function (result) {
             if (result === 'timeout') setTimeout(function () {
                 return ready(currentLevel, interval);
-            }, _Const2.default.defAjaxInterval);
+            }, _Const2.default.minActionInterval);
         }).always(function (result) {
             if (!['success', 'ignore', 'timeout'].includes(result)) {
                 Msg.remove($wait);
@@ -7586,7 +7587,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         } else {
             if (autoChangePointsEnabled) setTimeout(function () {
                 return ready(currentLevel);
-            }, _Const2.default.defAjaxInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+            }, _Const2.default.minActionInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
         }
     };
 
