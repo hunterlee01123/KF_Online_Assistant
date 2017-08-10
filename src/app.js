@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '11.1.2';
+const version = '11.2';
 
 /**
  * 导出模块
@@ -142,7 +142,7 @@ const init = function () {
         Item.init();
     }
     else if (location.pathname === '/kf_fw_ig_shop.php') {
-        //Item.addBatchBuyItemsLink(); // 临时禁用
+        Item.showMyInfoInItemShop();
     }
     else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();

@@ -12,7 +12,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.1.2
+// @version     11.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.1.2';
+var version = '11.2';
 
 /**
  * 导出模块
@@ -222,7 +222,7 @@ var init = function init() {
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.init();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
-        //Item.addBatchBuyItemsLink(); // 临时禁用
+        Item.showMyInfoInItemShop();
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
@@ -3051,7 +3051,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchBuyItemsLink = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3281,9 +3281,9 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
 
             try {
                 for (var _iterator4 = armTypeList[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var type = _step4.value;
+                    var _type = _step4.value;
 
-                    var prefix = type.split('的')[0];
+                    var prefix = _type.split('的')[0];
                     if (prefix === '神秘') continue;
                     var name = prefix + '\u7684' + group;
                     armTypesCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
@@ -3721,6 +3721,9 @@ var handleArmArea = exports.handleArmArea = function handleArmArea($armArea) {
         if (Config.armsMemo[id]) {
             $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
+        if (type === 0) {
+            $this.prepend('<input name="armCheck" type="checkbox" value="' + id + '">');
+        }
     });
 
     if (type === 1) {
@@ -4005,8 +4008,49 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
  * 添加装备相关按钮
  */
 var addArmsButton = function addArmsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="clearArmsMemo" type="button" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="smeltArms"]').click(function () {
-        return showBatchSmeltArmsDialog(safeId);
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="selectInverse" type="button" title="\u5168\u9009\u6216\u53CD\u9009">\u9009\u62E9</button>\n  <button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n  <button name="clearArmsMemo" type="button" style="color: #f00;" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="selectInverse"]').click(function () {
+        return Util.selectInverse($armArea.find('input[name="armCheck"]'));
+    }).end().find('[name="copyWeaponParameterSetting"]').click(function () {
+        var $this = $(this);
+        var armInfoList = [];
+        $armArea.find('input[name="armCheck"]:checked').each(function () {
+            var $this = $(this);
+            var html = $this.closest('tr').find('> td:nth-child(3)').html();
+            if (!html) return;
+            armInfoList.push(getArmInfo(html));
+        });
+        if (!armInfoList.length) return;
+        var copyData = '';
+        var _iteratorNormalCompletion12 = true;
+        var _didIteratorError12 = false;
+        var _iteratorError12 = undefined;
+
+        try {
+            for (var _iterator12 = armInfoList[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                var info = _step12.value;
+
+                copyData += getWeaponParameterSetting(info) + '\n\n';
+            }
+        } catch (err) {
+            _didIteratorError12 = true;
+            _iteratorError12 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                    _iterator12.return();
+                }
+            } finally {
+                if (_didIteratorError12) {
+                    throw _iteratorError12;
+                }
+            }
+        }
+
+        $this.data('copy-text', copyData.trim());
+        console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
+        if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
+            alert('你的浏览器不支持复制，请打开Web控制台查看');
+        }
     }).end().find('[name="clearArmsMemo"]').click(function () {
         if (!confirm('是否清除所有装备的备注？')) return;
         (0, _Config.read)();
@@ -4031,6 +4075,8 @@ var addArmsButton = function addArmsButton() {
         if (armIdList.length > 0) {
             showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
         }
+    }).end().find('[name="smeltArms"]').click(function () {
+        return showBatchSmeltArmsDialog(safeId);
     });
 };
 
@@ -4148,39 +4194,39 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
     (0, _Config.read)();
 
     var armTypeCheckedHtml = '';
-    var _iteratorNormalCompletion12 = true;
-    var _didIteratorError12 = false;
-    var _iteratorError12 = undefined;
+    var _iteratorNormalCompletion13 = true;
+    var _didIteratorError13 = false;
+    var _iteratorError13 = undefined;
 
     try {
-        for (var _iterator12 = armGroupList[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var group = _step12.value;
+        for (var _iterator13 = armGroupList[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var group = _step13.value;
 
             armTypeCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
-            var _iteratorNormalCompletion13 = true;
-            var _didIteratorError13 = false;
-            var _iteratorError13 = undefined;
+            var _iteratorNormalCompletion14 = true;
+            var _didIteratorError14 = false;
+            var _iteratorError14 = undefined;
 
             try {
-                for (var _iterator13 = armTypeList[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-                    var type = _step13.value;
+                for (var _iterator14 = armTypeList[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                    var _type2 = _step14.value;
 
-                    var prefix = type.split('的')[0];
+                    var prefix = _type2.split('的')[0];
                     if (prefix === '神秘') continue;
                     var name = prefix + '\u7684' + group;
                     armTypeCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
                 }
             } catch (err) {
-                _didIteratorError13 = true;
-                _iteratorError13 = err;
+                _didIteratorError14 = true;
+                _iteratorError14 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion13 && _iterator13.return) {
-                        _iterator13.return();
+                    if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                        _iterator14.return();
                     }
                 } finally {
-                    if (_didIteratorError13) {
-                        throw _iteratorError13;
+                    if (_didIteratorError14) {
+                        throw _iteratorError14;
                     }
                 }
             }
@@ -4188,16 +4234,16 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
             armTypeCheckedHtml += '</li>';
         }
     } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion12 && _iterator12.return) {
-                _iterator12.return();
+            if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                _iterator13.return();
             }
         } finally {
-            if (_didIteratorError12) {
-                throw _iteratorError12;
+            if (_didIteratorError13) {
+                throw _iteratorError13;
             }
         }
     }
@@ -4370,13 +4416,13 @@ var smeltArms = function smeltArms(typeList, safeId) {
         var armGroupNum = 0,
             totalExp = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion14 = true;
-        var _didIteratorError14 = false;
-        var _iteratorError14 = undefined;
+        var _iteratorNormalCompletion15 = true;
+        var _didIteratorError15 = false;
+        var _iteratorError15 = undefined;
 
         try {
-            for (var _iterator14 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-                var armGroup = _step14.value;
+            for (var _iterator15 = Util.getSortedObjectKeyList(armGroupList, smeltInfo)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+                var armGroup = _step15.value;
 
                 armGroupNum++;
                 var _smeltInfo$armGroup = smeltInfo[armGroup],
@@ -4388,16 +4434,16 @@ var smeltArms = function smeltArms(typeList, safeId) {
                 Log.push('熔炼装备', '\u5171\u6709`' + num + '`\u4E2A\u3010`' + armGroup + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: { '武器经验': totalExp }, pay: { '装备': -num } });
             }
         } catch (err) {
-            _didIteratorError14 = true;
-            _iteratorError14 = err;
+            _didIteratorError15 = true;
+            _iteratorError15 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                    _iterator14.return();
+                if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                    _iterator15.return();
                 }
             } finally {
-                if (_didIteratorError14) {
-                    throw _iteratorError14;
+                if (_didIteratorError15) {
+                    throw _iteratorError15;
                 }
             }
         }
@@ -4571,27 +4617,27 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
     (0, _Config.read)();
 
     var itemTypesOptionHtml = '';
-    var _iteratorNormalCompletion15 = true;
-    var _didIteratorError15 = false;
-    var _iteratorError15 = undefined;
+    var _iteratorNormalCompletion16 = true;
+    var _didIteratorError16 = false;
+    var _iteratorError16 = undefined;
 
     try {
-        for (var _iterator15 = itemTypeList.slice(6)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-            var itemName = _step15.value;
+        for (var _iterator16 = itemTypeList.slice(6)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var itemName = _step16.value;
 
             itemTypesOptionHtml += '<option>' + itemName + '</option>';
         }
     } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                _iterator15.return();
+            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                _iterator16.return();
             }
         } finally {
-            if (_didIteratorError15) {
-                throw _iteratorError15;
+            if (_didIteratorError16) {
+                throw _iteratorError16;
             }
         }
     }
@@ -4767,13 +4813,13 @@ var useItems = function useItems(typeList, safeId) {
 
         var itemTypeNum = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion16 = true;
-        var _didIteratorError16 = false;
-        var _iteratorError16 = undefined;
+        var _iteratorNormalCompletion17 = true;
+        var _didIteratorError17 = false;
+        var _iteratorError17 = undefined;
 
         try {
-            for (var _iterator16 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-                var itemName = _step16.value;
+            for (var _iterator17 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+                var itemName = _step17.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -4784,29 +4830,29 @@ var useItems = function useItems(typeList, safeId) {
                 if (stat['无效道具'] === 0) delete stat['无效道具'];
                 if (!$.isEmptyObject(stat)) {
                     resultStat += '\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011 <i>\u9053\u5177<ins>-' + successNum + '</ins></i> ';
-                    var _iteratorNormalCompletion17 = true;
-                    var _didIteratorError17 = false;
-                    var _iteratorError17 = undefined;
+                    var _iteratorNormalCompletion18 = true;
+                    var _didIteratorError18 = false;
+                    var _iteratorError18 = undefined;
 
                     try {
-                        for (var _iterator17 = Util.entries(stat)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-                            var _step17$value = _slicedToArray(_step17.value, 2),
-                                key = _step17$value[0],
-                                num = _step17$value[1];
+                        for (var _iterator18 = Util.entries(stat)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+                            var _step18$value = _slicedToArray(_step18.value, 2),
+                                key = _step18$value[0],
+                                num = _step18$value[1];
 
                             resultStat += '<i>' + key + '<em>+' + num + '</em></i> ';
                         }
                     } catch (err) {
-                        _didIteratorError17 = true;
-                        _iteratorError17 = err;
+                        _didIteratorError18 = true;
+                        _iteratorError18 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion17 && _iterator17.return) {
-                                _iterator17.return();
+                            if (!_iteratorNormalCompletion18 && _iterator18.return) {
+                                _iterator18.return();
                             }
                         } finally {
-                            if (_didIteratorError17) {
-                                throw _iteratorError17;
+                            if (_didIteratorError18) {
+                                throw _iteratorError18;
                             }
                         }
                     }
@@ -4816,16 +4862,16 @@ var useItems = function useItems(typeList, safeId) {
                 }
             }
         } catch (err) {
-            _didIteratorError16 = true;
-            _iteratorError16 = err;
+            _didIteratorError17 = true;
+            _iteratorError17 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                    _iterator16.return();
+                if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                    _iterator17.return();
                 }
             } finally {
-                if (_didIteratorError16) {
-                    throw _iteratorError16;
+                if (_didIteratorError17) {
+                    throw _iteratorError17;
                 }
             }
         }
@@ -4956,13 +5002,13 @@ var sellItems = function sellItems(itemTypeList, safeId) {
         var itemTypeNum = 0,
             totalSell = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion18 = true;
-        var _didIteratorError18 = false;
-        var _iteratorError18 = undefined;
+        var _iteratorNormalCompletion19 = true;
+        var _didIteratorError19 = false;
+        var _iteratorError19 = undefined;
 
         try {
-            for (var _iterator18 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-                var itemName = _step18.value;
+            for (var _iterator19 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+                var itemName = _step19.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -4975,16 +5021,16 @@ var sellItems = function sellItems(itemTypeList, safeId) {
                 Log.push('出售道具', '\u5171\u6709`' + num + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': _sell }, pay: { '道具': -num } });
             }
         } catch (err) {
-            _didIteratorError18 = true;
-            _iteratorError18 = err;
+            _didIteratorError19 = true;
+            _iteratorError19 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion18 && _iterator18.return) {
-                    _iterator18.return();
+                if (!_iteratorNormalCompletion19 && _iterator19.return) {
+                    _iterator19.return();
                 }
             } finally {
-                if (_didIteratorError18) {
-                    throw _iteratorError18;
+                if (_didIteratorError19) {
+                    throw _iteratorError19;
                 }
             }
         }
@@ -5004,41 +5050,10 @@ var sellItems = function sellItems(itemTypeList, safeId) {
 };
 
 /**
- * 添加批量购买道具链接
+ * 购买物品
+ * @param {string[]} itemIdList 购买物品ID列表
  */
-var addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function addBatchBuyItemsLink() {
-    var $area = $('.kf_fw_ig1').addClass('pd_items');
-    $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px').next('td').next('td').css('width', '120px');
-    $area.find('a[href^="kf_fw_ig_shop.php?do=buy&id="]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
-    $area.on('click', '[data-name="batchBuyItem"]', function (e) {
-        e.preventDefault();
-        var $this = $(this);
-        var $line = $this.closest('tr');
-        var type = $line.find('td:first-child').text().trim();
-        var kfb = parseInt($line.find('td:nth-child(3)').text());
-        var url = $this.prev('a').attr('href');
-        if (!type.includes('道具') || !kfb || !url) return;
-        var num = parseInt(prompt('\u4F60\u8981\u8D2D\u4E70\u591A\u5C11\u4E2A\u3010' + type + '\u3011\uFF1F\uFF08\u5355\u4EF7\uFF1A' + kfb.toLocaleString() + ' KFB\uFF09', 0));
-        if (!num || num < 0) return;
-
-        Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u9053\u5177\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + num + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-        buyItems(num, type, kfb, url);
-    }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', function () {
-        return confirm('是否购买该物品？');
-    });
-    $area.after('<div class="pd_item_btns"></div>');
-    Public.addSlowActionChecked($('.pd_item_btns'));
-    showKfbInItemShop();
-};
-
-/**
- * 购买道具
- * @param {number} buyNum 购买数量
- * @param {string} type 购买项目
- * @param {number} kfb 道具单价
- * @param {string} url 购买URL
- */
-var buyItems = function buyItems(buyNum, type, kfb, url) {
+var buyItems = function buyItems(itemIdList) {
     var successNum = 0,
         totalKfb = 0;
     var myItemUrlList = [];
@@ -5106,47 +5121,17 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                 isStop = isStop || $countdown.closest('.pd_msg').data('stop');
                 if (isStop || successNum === buyNum) {
                     Msg.remove($countdown.closest('.pd_msg'));
-                    var _iteratorNormalCompletion19 = true;
-                    var _didIteratorError19 = false;
-                    var _iteratorError19 = undefined;
-
-                    try {
-                        for (var _iterator19 = Util.entries(itemList)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-                            var _step19$value = _slicedToArray(_step19.value, 2),
-                                itemName = _step19$value[0],
-                                num = _step19$value[1];
-
-                            if (!num) delete itemList[itemName];
-                        }
-                    } catch (err) {
-                        _didIteratorError19 = true;
-                        _iteratorError19 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion19 && _iterator19.return) {
-                                _iterator19.return();
-                            }
-                        } finally {
-                            if (_didIteratorError19) {
-                                throw _iteratorError19;
-                            }
-                        }
-                    }
-
-                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
-                        Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + type + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
-                    }
-
-                    var itemStatHtml = '';
                     var _iteratorNormalCompletion20 = true;
                     var _didIteratorError20 = false;
                     var _iteratorError20 = undefined;
 
                     try {
-                        for (var _iterator20 = Util.getSortedObjectKeyList(itemTypeList, itemList)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-                            var itemName = _step20.value;
+                        for (var _iterator20 = Util.entries(itemList)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+                            var _step20$value = _slicedToArray(_step20.value, 2),
+                                itemName = _step20$value[0],
+                                num = _step20$value[1];
 
-                            itemStatHtml += '<i>' + itemName + '<em>+' + itemList[itemName] + '</em></i> ';
+                            if (!num) delete itemList[itemName];
                         }
                     } catch (err) {
                         _didIteratorError20 = true;
@@ -5159,6 +5144,36 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
                         } finally {
                             if (_didIteratorError20) {
                                 throw _iteratorError20;
+                            }
+                        }
+                    }
+
+                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
+                        Log.push('购买道具', '\u5171\u6709`' + successNum + '`\u4E2A\u3010`' + type + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
+                    }
+
+                    var itemStatHtml = '';
+                    var _iteratorNormalCompletion21 = true;
+                    var _didIteratorError21 = false;
+                    var _iteratorError21 = undefined;
+
+                    try {
+                        for (var _iterator21 = Util.getSortedObjectKeyList(itemTypeList, itemList)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+                            var itemName = _step21.value;
+
+                            itemStatHtml += '<i>' + itemName + '<em>+' + itemList[itemName] + '</em></i> ';
+                        }
+                    } catch (err) {
+                        _didIteratorError21 = true;
+                        _iteratorError21 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                                _iterator21.return();
+                            }
+                        } finally {
+                            if (_didIteratorError21) {
+                                throw _iteratorError21;
                             }
                         }
                     }
@@ -5186,14 +5201,16 @@ var buyItems = function buyItems(buyNum, type, kfb, url) {
 };
 
 /**
- * 在道具商店显示当前持有的KFB
+ * 在物品商店显示当前持有的KFB和贡献
  */
-var showKfbInItemShop = function showKfbInItemShop() {
+var showMyInfoInItemShop = exports.showMyInfoInItemShop = function showMyInfoInItemShop() {
     $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + $.now(), function (html) {
-        var matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
-        if (!matches) return;
-        var cash = parseInt(matches[1]);
-        $('.kf_fw_ig_title1:last').find('span:last').remove().end().append('<span style="margin-left: 7px;">(\u5F53\u524D\u6301\u6709 <b style="font-size: 14px;">' + cash.toLocaleString() + '</b> KFB)</span>');
+        var kfbMatches = /论坛货币：(\d+)\s*KFB/.exec(html);
+        var gxMatches = /贡献数值：(\d+(?:\.\d+)?)/.exec(html);
+        if (!kfbMatches && !gxMatches) return;
+        var kfb = parseInt(kfbMatches[1]);
+        var gx = parseFloat(gxMatches[1]);
+        $('.kf_fw_ig_title1:eq(1)').append('\n<span style="margin-left: 7px;">(\u5F53\u524D\u6301\u6709 <b style="font-size: 14px;">' + kfb.toLocaleString() + '</b> KFB \u548C <b style="font-size: 14px;">' + gx + '</b> \u8D21\u732E)</span>\n');
     });
 };
 
@@ -6642,8 +6659,9 @@ var handlePropertiesArea = function handlePropertiesArea() {
         }
 
         $this.data('copy-text', copyText.trim());
-        if (!Util.copyText($this, '计算器的部分参数设置已复制')) {
-            alert('你的浏览器不支持复制');
+        console.log('KFOL计算器的部分参数设置：\n' + copyText.trim());
+        if (!Util.copyText($this, 'KFOL计算器的部分参数设置已复制')) {
+            alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
     });
 
@@ -6680,7 +6698,7 @@ var handlePointsArea = function handlePointsArea() {
     $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
-    $('\n<tr>\n  <td width="40%">\u88C5\u5907ID\u548C\u5907\u6CE8 (\u65E0\u9700\u66F4\u6362\u88C5\u5907\u65F6\u52FF\u586B)</td>\n  <td width="40%">\n    <input name="armId" type="text" value="" maxlength="15" title="\u88C5\u5907ID" placeholder="\u88C5\u5907ID" style="width: 70px;" readonly>\n    <input name="armMemo" type="text" value="" maxlength="15" title="\u88C5\u5907\u5907\u6CE8" placeholder="\u88C5\u5907\u5907\u6CE8" style="width: 100px;" readonly>\n    <a class="pd_btn_link" data-name="changeArm" href="#">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
+    $('\n<tr>\n  <td width="40%">\n    \u88C5\u5907ID\u548C\u5907\u6CE8\n    <span class="pd_cfg_tips" title="\u53EF\u70B9\u51FB\u53F3\u8FB9\u7684\u201C\u66F4\u6362\u88C5\u5907\u201D\u6309\u94AE\uFF0C\u4E5F\u53EF\u624B\u52A8\u586B\u5199\u88C5\u5907ID\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u66F4\u6362\u88C5\u5907\u3002\n\u5F53\u6587\u672C\u6846\u5185\u7684\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u65F6\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u5C06\u4F1A\u81EA\u52A8\u66F4\u6362\u88C5\u5907\uFF08\u70B9\u51FB\u201C\u4FEE\u6539\u70B9\u6570\u5206\u914D\u201D\u6309\u94AE\u53EA\u4F1A\u4FEE\u6539\u70B9\u6570\u800C\u4E0D\u4F1A\u66F4\u6362\u88C5\u5907\uFF09\u3002">[?]</span>\n  </td>\n  <td width="40%">\n    <input name="armId" type="text" value="" maxlength="15" title="\u88C5\u5907ID" placeholder="\u88C5\u5907ID" style="width: 70px;">\n    <input name="armMemo" type="text" value="" maxlength="15" title="\u88C5\u5907\u5907\u6CE8" placeholder="\u88C5\u5907\u5907\u6CE8" style="width: 100px;">\n    <a class="pd_btn_link" data-name="changeArm" href="#" title="\u66F4\u6362\u5F53\u524D\u88C5\u5907">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
         e.preventDefault();
         addOrChangeArm(0);
     });
@@ -7148,15 +7166,40 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         showLevelPointListConfigDialog();
     }).end().find('[data-name="fill"]').click(function (e) {
         e.preventDefault();
-        var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        var matches = value.match(/\d+/g);
-        if (!matches) return;
-        $points.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
-        });
+        fillPoints($points);
     });
     setLevelPointListSelect(Config.levelPointList);
+};
+
+/**
+ * 填充点数设置
+ * @param $points
+ */
+var fillPoints = function fillPoints($points) {
+    var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之后的字符串将被当作装备备注）'));
+    if (!value) return;
+    var pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+#?(\d{5,})(?:\s+(\S+))?/.exec(value);
+    if (pointsMatches) {
+        $points.find('.pd_point').each(function (index) {
+            if (index + 1 < pointsMatches.length) {
+                $(this).val(pointsMatches[index + 1]).trigger('change');
+            }
+        });
+        $points.find('input[name="armId"]').val(pointsMatches[7]);
+        if (pointsMatches[8]) {
+            $points.find('input[name="armMemo"]').val(pointsMatches[8]);
+        }
+    } else {
+        var numMatches = value.match(/\b\d{1,4}\b/g);
+        if (!numMatches) return;
+        $points.find('.pd_point').each(function (index) {
+            if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');else return false;
+        });
+        var armIdMatches = /\b(\d{5,})\b/.exec(value);
+        if (armIdMatches) {
+            $points.find('input[name="armId"]').val(armIdMatches[1]);
+        }
+    }
 };
 
 /**
@@ -7202,7 +7245,7 @@ var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
 var addAttackBtns = function addAttackBtns() {
     $logBox.off('click');
 
-    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~7\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u81EA\u52A8\u63D0\u4EA4\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E">\u624B\u52A8\u653B\u51FB</button>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
+    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~7\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u6309\u7167\u5F53\u524D\u9875\u9762\u4E0A\u53D1\u751F\u53D8\u5316\u4E86\u7684\u70B9\u6570\u8BBE\u7F6E\u548C\u88C5\u5907ID\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u4EE5\u53CA\u66F4\u6362\u88C5\u5907">\u624B\u52A8\u653B\u51FB</button>\n  <span class="pd_cfg_tips" title="\u5728\u4E0D\u52FE\u9009\u201C\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\u201D\u6216\u201C\u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\u201D\u7684\u60C5\u51B5\u4E0B\uFF0C\u70B9\u51FB\u6240\u6709\u7684\u653B\u51FB\u6309\u94AE\u5747\u4F1A\u6309\u7167\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E\u548C\u88C5\u5907ID\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u4EE5\u53CA\u66F4\u6362\u88C5\u5907\u3002\n\uFF08\u6CE8\uFF1A\u53EA\u6709\u5728\u5F53\u524D\u9875\u9762\u4E0A\u70B9\u6570\u8BBE\u7F6E\u6216\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u7684\u60C5\u51B5\u4E0B\u624D\u4F1A\u81EA\u52A8\u63D0\u4EA4\u76F8\u5E94\u8BBE\u7F6E\uFF09\u3002\n\u5728\u52FE\u9009\u4E0A\u8FF0\u4E24\u79CD\u9009\u9879\u7684\u60C5\u51B5\u4E0B\uFF0C\u70B9\u51FB\u81EA\u52A8\u653B\u51FB\uFF08\u4E00\u5C42\uFF09\u6309\u94AE\u4F1A\u81EA\u52A8\u6309\u7167\u9884\u8BBE\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\u6216\u811A\u672C\u8FD4\u56DE\u7684\u503C\u4FEE\u6539\u70B9\u6570\u53CA\u66F4\u6362\u88C5\u5907\u3002\u624B\u52A8\u653B\u51FB\u6309\u94AE\u5219\u65E0\u89C6\u8FD9\u4FE9\u9009\u9879\uFF0C\u4F9D\u7136\u6309\u7167\u524D\u4E00\u79CD\u60C5\u51B5\u8FDB\u884C\u64CD\u4F5C\u3002">[?]</span>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -7985,14 +8028,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
 
     $levelPointList.on('click', '[data-name="fill"]', function (e) {
         e.preventDefault();
-        var $line = $(this).closest('tr');
-        var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        var matches = value.match(/\d+/g);
-        if (!matches) return;
-        $line.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
-        });
+        fillPoints($(this).closest('tr'));
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         var $line = $(this).closest('tr');
@@ -8120,7 +8156,7 @@ var addOrChangeArm = function addOrChangeArm(type) {
     (0, _Config.read)();
     var dialogName = 'pd' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog';
     var $dialog = $('#' + dialogName);
-    if ($dialog.length > 0) {
+    if ($dialog.length > 0 && type === 1) {
         $dialog.parent().fadeIn('fast');
         Dialog.resize(dialogName);
     } else {
@@ -8154,9 +8190,11 @@ var showAddOrChangeArmDialog = function showAddOrChangeArmDialog(type, armHtml) 
     var $dialog = Dialog.create(dialogName, (type === 1 ? '加入' : '更换') + '\u88C5\u5907', html, 'min-width: 820px; z-index: 1001;');
     var $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
-    $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
-        $dialog.fadeOut('fast');
-    });
+    if (type === 1) {
+        $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
+            $dialog.fadeOut('fast');
+        });
+    }
     Item.handleArmArea($armArea, type);
     Item.bindArmLinkClickEvent($armArea, safeId, 1);
 
@@ -10409,7 +10447,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1002; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#EEEEFF; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td:nth-child(3) { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 28px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1000;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1003;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1002; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#EEEEFF; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 28px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1000;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');

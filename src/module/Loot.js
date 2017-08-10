@@ -138,8 +138,9 @@ const handlePropertiesArea = function () {
                 copyText += value + ' ';
             }
             $this.data('copy-text', copyText.trim());
-            if (!Util.copyText($this, '计算器的部分参数设置已复制')) {
-                alert('你的浏览器不支持复制');
+            console.log('KFOL计算器的部分参数设置：\n' + copyText.trim());
+            if (!Util.copyText($this, 'KFOL计算器的部分参数设置已复制')) {
+                alert('你的浏览器不支持复制，请打开Web控制台查看');
             }
         });
 
@@ -708,7 +709,7 @@ const addLevelPointListSelect = function () {
 const fillPoints = function ($points) {
     let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之后的字符串将被当作装备备注）'));
     if (!value) return;
-    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d{5,})(?:\s+(\S+))?/.exec(value);
+    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+#?(\d{5,})(?:\s+(\S+))?/.exec(value);
     if (pointsMatches) {
         $points.find('.pd_point').each(function (index) {
             if (index + 1 < pointsMatches.length) {

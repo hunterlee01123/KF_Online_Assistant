@@ -530,6 +530,9 @@ export const handleArmArea = function ($armArea, type = 0) {
         if (Config.armsMemo[id]) {
             $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
+        if (type === 0) {
+            $this.prepend(`<input name="armCheck" type="checkbox" value="${id}">`);
+        }
     });
 
     if (type === 1) {
@@ -756,12 +759,34 @@ export const getWeaponParameterSetting = function (armInfo) {
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="clearArmsMemo" type="button" title="清除所有装备的备注">清除备注</button>
-  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
+  <button name="selectInverse" type="button" title="全选或反选">选择</button>
+  <button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
+  <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
+  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId))
-        .end().find('[name="clearArmsMemo"]')
+`).insertAfter($armArea).find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
+        .end().find('[name="copyWeaponParameterSetting"]')
+        .click(function () {
+            let $this = $(this);
+            let armInfoList = [];
+            $armArea.find('input[name="armCheck"]:checked').each(function () {
+                let $this = $(this);
+                let html = $this.closest('tr').find('> td:nth-child(3)').html();
+                if (!html) return;
+                armInfoList.push(getArmInfo(html));
+            });
+            if (!armInfoList.length) return;
+            let copyData = '';
+            for (let info of armInfoList) {
+                copyData += getWeaponParameterSetting(info) + '\n\n';
+            }
+            $this.data('copy-text', copyData.trim());
+            console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
+            if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
+                alert('你的浏览器不支持复制，请打开Web控制台查看');
+            }
+        }).end().find('[name="clearArmsMemo"]')
         .click(function () {
             if (!confirm('是否清除所有装备的备注？')) return;
             readConfig();
@@ -788,7 +813,7 @@ const addArmsButton = function () {
             if (armIdList.length > 0) {
                 showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
             }
-        });
+        }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
 };
 
 /**
@@ -1612,42 +1637,10 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
 };
 
 /**
- * 添加批量购买道具链接
+ * 购买物品
+ * @param {string[]} itemIdList 购买物品ID列表
  */
-export const addBatchBuyItemsLink = function () {
-    let $area = $('.kf_fw_ig1').addClass('pd_items');
-    $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px')
-        .next('td').next('td').css('width', '120px');
-    $area.find('a[href^="kf_fw_ig_shop.php?do=buy&id="]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
-    $area.on('click', '[data-name="batchBuyItem"]', function (e) {
-        e.preventDefault();
-        let $this = $(this);
-        let $line = $this.closest('tr');
-        let type = $line.find('td:first-child').text().trim();
-        let kfb = parseInt($line.find('td:nth-child(3)').text());
-        let url = $this.prev('a').attr('href');
-        if (!type.includes('道具') || !kfb || !url) return;
-        let num = parseInt(prompt(`你要购买多少个【${type}】？（单价：${kfb.toLocaleString()} KFB）`, 0));
-        if (!num || num < 0) return;
-
-        Msg.wait(
-            `<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
-        );
-        buyItems(num, type, kfb, url);
-    }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买该物品？'));
-    $area.after('<div class="pd_item_btns"></div>');
-    Public.addSlowActionChecked($('.pd_item_btns'));
-    showKfbInItemShop();
-};
-
-/**
- * 购买道具
- * @param {number} buyNum 购买数量
- * @param {string} type 购买项目
- * @param {number} kfb 道具单价
- * @param {string} url 购买URL
- */
-const buyItems = function (buyNum, type, kfb, url) {
+const buyItems = function (itemIdList) {
     let successNum = 0, totalKfb = 0;
     let myItemUrlList = [];
     let itemList = {};
@@ -1755,14 +1748,17 @@ const buyItems = function (buyNum, type, kfb, url) {
 };
 
 /**
- * 在道具商店显示当前持有的KFB
+ * 在物品商店显示当前持有的KFB和贡献
  */
-const showKfbInItemShop = function () {
+export const showMyInfoInItemShop = function () {
     $.get(`profile.php?action=show&uid=${Info.uid}&t=${$.now()}`, function (html) {
-        let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
-        if (!matches) return;
-        let cash = parseInt(matches[1]);
-        $('.kf_fw_ig_title1:last').find('span:last').remove()
-            .end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${cash.toLocaleString()}</b> KFB)</span>`);
+        let kfbMatches = /论坛货币：(\d+)\s*KFB/.exec(html);
+        let gxMatches = /贡献数值：(\d+(?:\.\d+)?)/.exec(html);
+        if (!kfbMatches && !gxMatches) return;
+        let kfb = parseInt(kfbMatches[1]);
+        let gx = parseFloat(gxMatches[1]);
+        $('.kf_fw_ig_title1:eq(1)').append(`
+<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${kfb.toLocaleString()}</b> KFB 和 <b style="font-size: 14px;">${gx}</b> 贡献)</span>
+`);
     });
 };

@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.1.2
+// @version     11.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.1.2';
+const version = '11.2';
 
 /**
  * 导出模块
@@ -219,7 +219,7 @@ const init = function () {
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.init();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
-        //Item.addBatchBuyItemsLink(); // 临时禁用
+        Item.showMyInfoInItemShop();
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
@@ -3116,7 +3116,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addBatchBuyItemsLink = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3644,6 +3644,9 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
         if (Config.armsMemo[id]) {
             $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
+        if (type === 0) {
+            $this.prepend(`<input name="armCheck" type="checkbox" value="${id}">`);
+        }
     });
 
     if (type === 1) {
@@ -3863,11 +3866,32 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="clearArmsMemo" type="button" title="清除所有装备的备注">清除备注</button>
-  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
+  <button name="selectInverse" type="button" title="全选或反选">选择</button>
+  <button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
+  <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
+  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId)).end().find('[name="clearArmsMemo"]').click(function () {
+`).insertAfter($armArea).find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]'))).end().find('[name="copyWeaponParameterSetting"]').click(function () {
+        let $this = $(this);
+        let armInfoList = [];
+        $armArea.find('input[name="armCheck"]:checked').each(function () {
+            let $this = $(this);
+            let html = $this.closest('tr').find('> td:nth-child(3)').html();
+            if (!html) return;
+            armInfoList.push(getArmInfo(html));
+        });
+        if (!armInfoList.length) return;
+        let copyData = '';
+        for (let info of armInfoList) {
+            copyData += getWeaponParameterSetting(info) + '\n\n';
+        }
+        $this.data('copy-text', copyData.trim());
+        console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
+        if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
+            alert('你的浏览器不支持复制，请打开Web控制台查看');
+        }
+    }).end().find('[name="clearArmsMemo"]').click(function () {
         if (!confirm('是否清除所有装备的备注？')) return;
         (0, _Config.read)();
         Config.armsMemo = {};
@@ -3891,7 +3915,7 @@ const addArmsButton = function () {
         if (armIdList.length > 0) {
             showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
         }
-    });
+    }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
 };
 
 /**
@@ -4654,39 +4678,10 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
 };
 
 /**
- * 添加批量购买道具链接
+ * 购买物品
+ * @param {string[]} itemIdList 购买物品ID列表
  */
-const addBatchBuyItemsLink = exports.addBatchBuyItemsLink = function () {
-    let $area = $('.kf_fw_ig1').addClass('pd_items');
-    $area.find('> tbody > tr:first-child > td:nth-child(2)').css('width', '430px').next('td').next('td').css('width', '120px');
-    $area.find('a[href^="kf_fw_ig_shop.php?do=buy&id="]').after('<a data-name="batchBuyItem" href="#">批量购买</a>');
-    $area.on('click', '[data-name="batchBuyItem"]', function (e) {
-        e.preventDefault();
-        let $this = $(this);
-        let $line = $this.closest('tr');
-        let type = $line.find('td:first-child').text().trim();
-        let kfb = parseInt($line.find('td:nth-child(3)').text());
-        let url = $this.prev('a').attr('href');
-        if (!type.includes('道具') || !kfb || !url) return;
-        let num = parseInt(prompt(`你要购买多少个【${type}】？（单价：${kfb.toLocaleString()} KFB）`, 0));
-        if (!num || num < 0) return;
-
-        Msg.wait(`<strong>正在购买道具中&hellip;</strong><i>剩余：<em class="pd_countdown">${num}</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
-        buyItems(num, type, kfb, url);
-    }).on('click', 'a[href^="kf_fw_ig_shop.php?do=buy&id="]', () => confirm('是否购买该物品？'));
-    $area.after('<div class="pd_item_btns"></div>');
-    Public.addSlowActionChecked($('.pd_item_btns'));
-    showKfbInItemShop();
-};
-
-/**
- * 购买道具
- * @param {number} buyNum 购买数量
- * @param {string} type 购买项目
- * @param {number} kfb 道具单价
- * @param {string} url 购买URL
- */
-const buyItems = function (buyNum, type, kfb, url) {
+const buyItems = function (itemIdList) {
     let successNum = 0,
         totalKfb = 0;
     let myItemUrlList = [];
@@ -4787,14 +4782,18 @@ const buyItems = function (buyNum, type, kfb, url) {
 };
 
 /**
- * 在道具商店显示当前持有的KFB
+ * 在物品商店显示当前持有的KFB和贡献
  */
-const showKfbInItemShop = function () {
+const showMyInfoInItemShop = exports.showMyInfoInItemShop = function () {
     $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${$.now()}`, function (html) {
-        let matches = /论坛货币：(\d+)\s*KFB<br/i.exec(html);
-        if (!matches) return;
-        let cash = parseInt(matches[1]);
-        $('.kf_fw_ig_title1:last').find('span:last').remove().end().append(`<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${cash.toLocaleString()}</b> KFB)</span>`);
+        let kfbMatches = /论坛货币：(\d+)\s*KFB/.exec(html);
+        let gxMatches = /贡献数值：(\d+(?:\.\d+)?)/.exec(html);
+        if (!kfbMatches && !gxMatches) return;
+        let kfb = parseInt(kfbMatches[1]);
+        let gx = parseFloat(gxMatches[1]);
+        $('.kf_fw_ig_title1:eq(1)').append(`
+<span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${kfb.toLocaleString()}</b> KFB 和 <b style="font-size: 14px;">${gx}</b> 贡献)</span>
+`);
     });
 };
 
@@ -5633,8 +5632,9 @@ const handlePropertiesArea = function () {
             copyText += value + ' ';
         }
         $this.data('copy-text', copyText.trim());
-        if (!Util.copyText($this, '计算器的部分参数设置已复制')) {
-            alert('你的浏览器不支持复制');
+        console.log('KFOL计算器的部分参数设置：\n' + copyText.trim());
+        if (!Util.copyText($this, 'KFOL计算器的部分参数设置已复制')) {
+            alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
     });
 
@@ -5673,11 +5673,15 @@ const handlePointsArea = function () {
 
     $(`
 <tr>
-  <td width="40%">装备ID和备注 (无需更换装备时勿填)</td>
   <td width="40%">
-    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;" readonly>
-    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;" readonly>
-    <a class="pd_btn_link" data-name="changeArm" href="#">更换装备</a>
+    装备ID和备注
+    <span class="pd_cfg_tips" title="可点击右边的“更换装备”按钮，也可手动填写装备ID。留空表示不更换装备。
+当文本框内的装备ID发生变化时，点击攻击按钮将会自动更换装备（点击“修改点数分配”按钮只会修改点数而不会更换装备）。">[?]</span>
+  </td>
+  <td width="40%">
+    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;">
+    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;">
+    <a class="pd_btn_link" data-name="changeArm" href="#" title="更换当前装备">更换装备</a>
   </td>
 </tr>
 `).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
@@ -6135,15 +6139,40 @@ const addLevelPointListSelect = function () {
         showLevelPointListConfigDialog();
     }).end().find('[data-name="fill"]').click(function (e) {
         e.preventDefault();
-        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        let matches = value.match(/\d+/g);
-        if (!matches) return;
-        $points.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
-        });
+        fillPoints($points);
     });
     setLevelPointListSelect(Config.levelPointList);
+};
+
+/**
+ * 填充点数设置
+ * @param $points
+ */
+const fillPoints = function ($points) {
+    let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之后的字符串将被当作装备备注）'));
+    if (!value) return;
+    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+#?(\d{5,})(?:\s+(\S+))?/.exec(value);
+    if (pointsMatches) {
+        $points.find('.pd_point').each(function (index) {
+            if (index + 1 < pointsMatches.length) {
+                $(this).val(pointsMatches[index + 1]).trigger('change');
+            }
+        });
+        $points.find('input[name="armId"]').val(pointsMatches[7]);
+        if (pointsMatches[8]) {
+            $points.find('input[name="armMemo"]').val(pointsMatches[8]);
+        }
+    } else {
+        let numMatches = value.match(/\b\d{1,4}\b/g);
+        if (!numMatches) return;
+        $points.find('.pd_point').each(function (index) {
+            if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');else return false;
+        });
+        let armIdMatches = /\b(\d{5,})\b/.exec(value);
+        if (armIdMatches) {
+            $points.find('input[name="armId"]').val(armIdMatches[1]);
+        }
+    }
 };
 
 /**
@@ -6193,7 +6222,10 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
   <span style="color: #888;">|</span>
-  <button name="manualAttack" type="button" title="手动攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
+  <button name="manualAttack" type="button" title="手动攻击一层，会按照当前页面上发生变化了的点数设置和装备ID自动修改点数以及更换装备">手动攻击</button>
+  <span class="pd_cfg_tips" title="在不勾选“自动修改点数分配方案”或“使用自定义脚本”的情况下，点击所有的攻击按钮均会按照当前页面上的点数设置和装备ID自动修改点数以及更换装备。
+（注：只有在当前页面上点数设置或装备ID发生变化的情况下才会自动提交相应设置）。
+在勾选上述两种选项的情况下，点击自动攻击（一层）按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
 </div>
 `).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
@@ -6824,14 +6856,7 @@ const showLevelPointListConfigDialog = function (callback) {
 
     $levelPointList.on('click', '[data-name="fill"]', function (e) {
         e.preventDefault();
-        let $line = $(this).closest('tr');
-        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        let matches = value.match(/\d+/g);
-        if (!matches) return;
-        $line.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');else return false;
-        });
+        fillPoints($(this).closest('tr'));
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
@@ -6936,7 +6961,7 @@ const addOrChangeArm = function (type) {
     (0, _Config.read)();
     const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
     let $dialog = $('#' + dialogName);
-    if ($dialog.length > 0) {
+    if ($dialog.length > 0 && type === 1) {
         $dialog.parent().fadeIn('fast');
         Dialog.resize(dialogName);
     } else {
@@ -6978,9 +7003,11 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
     let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1001;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
-    $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
-        $dialog.fadeOut('fast');
-    });
+    if (type === 1) {
+        $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
+            $dialog.fadeOut('fast');
+        });
+    }
     Item.handleArmArea($armArea, type);
     Item.bindArmLinkClickEvent($armArea, safeId, 1);
 
@@ -9112,11 +9139,12 @@ const appendCss = exports.appendCss = function () {
   .pd_arm_equipped { background-color:#EEEEFF; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }
   .pd_arm_equipped > td:nth-child(3)::before { content: "（装备中）"; font-weight: bold; }
   .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
-  .kf_fw_ig4 > tbody > tr > td:nth-child(3) { position: relative; }
+  .kf_fw_ig4 > tbody > tr > td { position: relative; }
   .kf_fw_ig4 > tbody > tr > td[data-memo]::after {
     content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);
   }
   .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }
+  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   
