@@ -209,11 +209,15 @@ const handlePointsArea = function () {
 
     $(`
 <tr>
-  <td width="40%">装备ID和备注 (无需更换装备时勿填)</td>
   <td width="40%">
-    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;" readonly>
-    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;" readonly>
-    <a class="pd_btn_link" data-name="changeArm" href="#">更换装备</a>
+    装备ID和备注
+    <span class="pd_cfg_tips" title="可点击右边的“更换装备”按钮，也可手动填写装备ID。留空表示不更换装备。
+当文本框内的装备ID发生变化时，点击攻击按钮将会自动更换装备（点击“修改点数分配”按钮只会修改点数而不会更换装备）。">[?]</span>
+  </td>
+  <td width="40%">
+    <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;">
+    <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;">
+    <a class="pd_btn_link" data-name="changeArm" href="#" title="更换当前装备">更换装备</a>
   </td>
 </tr>
 `).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
@@ -692,16 +696,42 @@ const addLevelPointListSelect = function () {
         showLevelPointListConfigDialog();
     }).end().find('[data-name="fill"]').click(function (e) {
         e.preventDefault();
-        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        let matches = value.match(/\d+/g);
-        if (!matches) return;
-        $points.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');
-            else return false;
-        });
+        fillPoints($points);
     });
     setLevelPointListSelect(Config.levelPointList);
+};
+
+/**
+ * 填充点数设置
+ * @param $points
+ */
+const fillPoints = function ($points) {
+    let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之后的字符串将被当作装备备注）'));
+    if (!value) return;
+    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d{5,})(?:\s+(\S+))?/.exec(value);
+    if (pointsMatches) {
+        $points.find('.pd_point').each(function (index) {
+            if (index + 1 < pointsMatches.length) {
+                $(this).val(pointsMatches[index + 1]).trigger('change');
+            }
+        });
+        $points.find('input[name="armId"]').val(pointsMatches[7]);
+        if (pointsMatches[8]) {
+            $points.find('input[name="armMemo"]').val(pointsMatches[8]);
+        }
+    }
+    else {
+        let numMatches = value.match(/\b\d{1,4}\b/g);
+        if (!numMatches) return;
+        $points.find('.pd_point').each(function (index) {
+            if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');
+            else return false;
+        });
+        let armIdMatches = /\b(\d{5,})\b/.exec(value);
+        if (armIdMatches) {
+            $points.find('input[name="armId"]').val(armIdMatches[1]);
+        }
+    }
 };
 
 /**
@@ -751,7 +781,10 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
   <span style="color: #888;">|</span>
-  <button name="manualAttack" type="button" title="手动攻击一层，会自动提交当前页面上的点数设置">手动攻击</button>
+  <button name="manualAttack" type="button" title="手动攻击一层，会按照当前页面上发生变化了的点数设置和装备ID自动修改点数以及更换装备">手动攻击</button>
+  <span class="pd_cfg_tips" title="在不勾选“自动修改点数分配方案”或“使用自定义脚本”的情况下，点击所有的攻击按钮均会按照当前页面上的点数设置和装备ID自动修改点数以及更换装备。
+（注：只有在当前页面上点数设置或装备ID发生变化的情况下才会自动提交相应设置）。
+在勾选上述两种选项的情况下，点击自动攻击（一层）按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
 </div>
 `).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
@@ -1418,15 +1451,7 @@ const showLevelPointListConfigDialog = function (callback) {
 
     $levelPointList.on('click', '[data-name="fill"]', function (e) {
         e.preventDefault();
-        let $line = $(this).closest('tr');
-        let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：'));
-        if (!value) return;
-        let matches = value.match(/\d+/g);
-        if (!matches) return;
-        $line.find('.pd_point').each(function (index) {
-            if (index < matches.length) $(this).val(parseInt(matches[index])).trigger('change');
-            else return false;
-        });
+        fillPoints($(this).closest('tr'));
     }).on('click', '[data-name="delete"]', function (e) {
         e.preventDefault();
         let $line = $(this).closest('tr');
@@ -1540,7 +1565,7 @@ const addOrChangeArm = function (type) {
     readConfig();
     const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
     let $dialog = $('#' + dialogName);
-    if ($dialog.length > 0) {
+    if ($dialog.length > 0 && type === 1) {
         $dialog.parent().fadeIn('fast');
         Dialog.resize(dialogName);
     }
@@ -1583,9 +1608,11 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
     let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1001;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
-    $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
-        $dialog.fadeOut('fast');
-    });
+    if (type === 1) {
+        $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
+            $dialog.fadeOut('fast');
+        });
+    }
     Item.handleArmArea($armArea, type);
     Item.bindArmLinkClickEvent($armArea, safeId, 1);
 
