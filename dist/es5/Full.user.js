@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.2
+// @version     11.2.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.2';
+var version = '11.2.1';
 
 /**
  * 导出模块
@@ -3847,7 +3847,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo));
+    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -3857,12 +3857,14 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
 
 /**
  * 获取计算器武器参数设置
+ * @param {number} armInfo 装备ID
  * @param {{}} armInfo 装备信息
  * @returns {string} 武器参数设置
  */
-var getWeaponParameterSetting = exports.getWeaponParameterSetting = function getWeaponParameterSetting(armInfo) {
+var getWeaponParameterSetting = exports.getWeaponParameterSetting = function getWeaponParameterSetting(armId, armInfo) {
     var info = {
         '组别': '',
+        '装备ID': '',
         '神秘属性数量': 0,
         '所有的神秘属性': '',
         '主属性数量': 0,
@@ -3873,6 +3875,7 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
 
     var groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff']]);
     info['组别'] = groupKeyList.get(armInfo['组别']);
+    info['装备ID'] = '#' + armId;
 
     var smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
     var _iteratorNormalCompletion8 = true;
@@ -3972,7 +3975,7 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var content = '\n[\u7EC4\u522B]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
+    var content = '\n[\u7EC4\u522B] [\u88C5\u5907ID]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
     var _iteratorNormalCompletion11 = true;
     var _didIteratorError11 = false;
     var _iteratorError11 = undefined;
@@ -4014,9 +4017,10 @@ var addArmsButton = function addArmsButton() {
         var armInfoList = [];
         $armArea.find('input[name="armCheck"]:checked').each(function () {
             var $this = $(this);
+            var id = parseInt($this.val());
             var html = $this.closest('tr').find('> td:nth-child(3)').html();
             if (!html) return;
-            armInfoList.push(getArmInfo(html));
+            armInfoList.push({ id: id, info: getArmInfo(html) });
         });
         if (!armInfoList.length) return;
         var copyData = '';
@@ -4026,9 +4030,11 @@ var addArmsButton = function addArmsButton() {
 
         try {
             for (var _iterator12 = armInfoList[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-                var info = _step12.value;
+                var _step12$value = _step12.value,
+                    id = _step12$value.id,
+                    info = _step12$value.info;
 
-                copyData += getWeaponParameterSetting(info) + '\n\n';
+                copyData += getWeaponParameterSetting(id, info) + '\n\n';
             }
         } catch (err) {
             _didIteratorError12 = true;
@@ -7175,19 +7181,17 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
  * @param $points
  */
 var fillPoints = function fillPoints($points) {
-    var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之后的字符串将被当作装备备注）'));
+    var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之前的字符串将被当作装备备注）'));
     if (!value) return;
-    var pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+#?(\d{5,})(?:\s+(\S+))?/.exec(value);
+    var pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d{5,})/.exec(value);
     if (pointsMatches) {
         $points.find('.pd_point').each(function (index) {
             if (index + 1 < pointsMatches.length) {
                 $(this).val(pointsMatches[index + 1]).trigger('change');
             }
         });
-        $points.find('input[name="armId"]').val(pointsMatches[7]);
-        if (pointsMatches[8]) {
-            $points.find('input[name="armMemo"]').val(pointsMatches[8]);
-        }
+        $points.find('input[name="armMemo"]').val(pointsMatches[7]);
+        $points.find('input[name="armId"]').val(pointsMatches[8]);
     } else {
         var numMatches = value.match(/\b\d{1,4}\b/g);
         if (!numMatches) return;

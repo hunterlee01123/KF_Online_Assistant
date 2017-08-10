@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.2
+// @version     11.2.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.2';
+const version = '11.2.1';
 
 /**
  * 导出模块
@@ -3792,7 +3792,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armInfo));
+    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -3802,12 +3802,14 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
 
 /**
  * 获取计算器武器参数设置
+ * @param {number} armInfo 装备ID
  * @param {{}} armInfo 装备信息
  * @returns {string} 武器参数设置
  */
-const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (armInfo) {
+const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (armId, armInfo) {
     let info = {
         '组别': '',
+        '装备ID': '',
         '神秘属性数量': 0,
         '所有的神秘属性': '',
         '主属性数量': 0,
@@ -3818,6 +3820,7 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
 
     let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff']]);
     info['组别'] = groupKeyList.get(armInfo['组别']);
+    info['装备ID'] = '#' + armId;
 
     let smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
     for (let [key, value] of smKeyList) {
@@ -3849,7 +3852,7 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
     }
 
     let content = `
-[组别]
+[组别] [装备ID]
 [神秘属性数量] [所有的神秘属性] 
 [主属性数量] [所有的主属性]
 [从属性数量] [所有的从属性]
@@ -3877,14 +3880,15 @@ const addArmsButton = function () {
         let armInfoList = [];
         $armArea.find('input[name="armCheck"]:checked').each(function () {
             let $this = $(this);
+            let id = parseInt($this.val());
             let html = $this.closest('tr').find('> td:nth-child(3)').html();
             if (!html) return;
-            armInfoList.push(getArmInfo(html));
+            armInfoList.push({ id: id, info: getArmInfo(html) });
         });
         if (!armInfoList.length) return;
         let copyData = '';
-        for (let info of armInfoList) {
-            copyData += getWeaponParameterSetting(info) + '\n\n';
+        for (let { id, info } of armInfoList) {
+            copyData += getWeaponParameterSetting(id, info) + '\n\n';
         }
         $this.data('copy-text', copyData.trim());
         console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
@@ -6149,19 +6153,17 @@ const addLevelPointListSelect = function () {
  * @param $points
  */
 const fillPoints = function ($points) {
-    let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之后的字符串将被当作装备备注）'));
+    let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之前的字符串将被当作装备备注）'));
     if (!value) return;
-    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+#?(\d{5,})(?:\s+(\S+))?/.exec(value);
+    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d{5,})/.exec(value);
     if (pointsMatches) {
         $points.find('.pd_point').each(function (index) {
             if (index + 1 < pointsMatches.length) {
                 $(this).val(pointsMatches[index + 1]).trigger('change');
             }
         });
-        $points.find('input[name="armId"]').val(pointsMatches[7]);
-        if (pointsMatches[8]) {
-            $points.find('input[name="armMemo"]').val(pointsMatches[8]);
-        }
+        $points.find('input[name="armMemo"]').val(pointsMatches[7]);
+        $points.find('input[name="armId"]').val(pointsMatches[8]);
     } else {
         let numMatches = value.match(/\b\d{1,4}\b/g);
         if (!numMatches) return;
