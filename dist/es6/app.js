@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.2.1';
+const version = '11.3';
 
 /**
  * 导出模块
@@ -275,8 +275,14 @@ const init = function () {
         }
     }
 
-    if (!Config.getBonusAfterLootCompleteEnabled) isAutoLootStarted = false;
-    if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
+    if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
+        if (!Config.getBonusAfterLootCompleteEnabled || !isAutoLootStarted) Public.getDailyBonus();
+    }
+
+    if ((_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName) && !isAutoLootStarted) {
+        let safeId = Public.getSafeId();
+        if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+    }
 
     if (Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage) Public.autoSaveCurrentDeposit();
 
@@ -974,6 +980,13 @@ const Config = exports.Config = {
     // 是否显示精简争夺记录，true：开启；false：关闭
     showLiteLootLogEnabled: false,
 
+    // 是否自动购买物品，true：开启；false：关闭
+    autoBuyItemEnabled: false,
+    // 购买物品ID列表，例：['101','103|102']
+    buyItemIdList: [],
+    // 在当天的指定时间之后购买物品（本地时间），例：00:45:00
+    buyItemAfterTime: '00:45:00',
+
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',
@@ -1269,7 +1282,7 @@ const show = exports.show = function () {
       <legend>
         <label>
           <input name="timingModeEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励、自动提升战力光环、自动争夺，需开启相关功能）
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励、自动提升战力光环、自动争夺、自动购买物品，需开启相关功能）
 只在论坛首页和争夺首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
@@ -1349,6 +1362,19 @@ const show = exports.show = function () {
       <label>
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
         <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>
+        <label><input name="autoBuyItemEnabled" type="checkbox"> 自动购买物品</label>
+      </legend>
+      <label>
+        物品ID列表 <input name="buyItemIdList" type="text" maxlength="50" style="width: 150px;">
+      </label>
+      <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">详细说明&raquo;</a><br>
+      <label>
+        在 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后购买物品
+        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:45:00">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1626,9 +1652,7 @@ const show = exports.show = function () {
         let $this = $(this);
         if ($this.hasClass('pd_disabled_link')) return;
         let name = $this.data('name');
-        if (name === 'openRumCommandDialog') showRunCommandDialog();
-        if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
-        if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
+        if (name === 'openRumCommandDialog') showRunCommandDialog();else if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();else if (name === 'openBuyItemTipsDialog') showBuyItemTipsDialog();else if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
     }).find('[name="promoteHaloCostType"]').change(function () {
         let typeId = parseInt($(this).val());
         $dialog.find('[data-id="promoteHaloLimitUnit"]').text(typeId >= 11 ? '贡献' : 'KFB');
@@ -1657,6 +1681,7 @@ const setMainConfigValue = function ($dialog) {
         }
     });
     $dialog.find('[name="promoteHaloCostType"]').trigger('change');
+    $dialog.find('[name="buyItemIdList"]').val(Config.buyItemIdList.join(','));
     $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
     $dialog.find('[data-name="customMySmColorSelect"]').val(Config.customMySmColor);
 
@@ -1675,13 +1700,18 @@ const getMainConfigValue = function ($dialog) {
         let $this = $(this);
         let name = $this.attr('name');
         if (name in Config) {
-            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') options[name] = Boolean($this.prop('checked'));else if (typeof Config[name] === 'number') {
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') {
+                options[name] = Boolean($this.prop('checked'));
+            } else if (typeof Config[name] === 'number') {
                 let value = $.trim($this.val());
                 if (/\d+\.\d+/.test(value)) options[name] = parseFloat(value);else options[name] = parseInt(value);
                 if (name === 'threadContentFontSize' && isNaN(options[name])) options[name] = 0;
-            } else options[name] = $.trim($this.val());
+            } else {
+                options[name] = $.trim($this.val());
+            }
         }
     });
+    if (options.buyItemIdList) options.buyItemIdList = options.buyItemIdList.split(',');else options.buyItemIdList = [];
     return options;
 };
 
@@ -1696,6 +1726,28 @@ const verifyMainConfig = function ($dialog) {
     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(checkLootAfterTime)) {
         alert('在指定时间之后争夺格式不正确');
         $txtCheckLootAfterTime.select().focus();
+        return false;
+    }
+
+    let $txtBuyItemIdList = $dialog.find('[name="buyItemIdList"]');
+    let buyItemIdList = $.trim($txtBuyItemIdList.val());
+    if ($dialog.find('[name="autoBuyItemEnabled"]').prop('checked')) {
+        if (!/^(\d+)(\|\d+)*(,(\d+)(\|\d+)*)?$/.test(buyItemIdList)) {
+            alert('购买物品ID列表格式不正确');
+            $txtBuyItemIdList.select().focus();
+            return false;
+        } else if (buyItemIdList.includes('901')) {
+            alert('不支持自动购买重生之药');
+            $txtBuyItemIdList.select().focus();
+            return false;
+        }
+    }
+
+    let $txtBuyItemAfterTime = $dialog.find('[name="buyItemAfterTime"]');
+    let buyItemAfterTime = $.trim($txtBuyItemAfterTime.val());
+    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(buyItemAfterTime)) {
+        alert('在指定时间之后购买物品格式不正确');
+        $txtBuyItemAfterTime.select().focus();
         return false;
     }
 
@@ -2505,6 +2557,32 @@ const showBlockThreadDialog = function () {
     Dialog.show(dialogName);
 };
 
+/**
+ * 显示自动购买物品详细说明对话框
+ */
+const showBuyItemTipsDialog = function () {
+    const dialogName = 'pdBuyItemTipsDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let html = `
+<div class="pd_cfg_main">
+  <div style="margin: 5px 0;">
+    <strong>设置说明：</strong><br>
+    在物品ID列表填入相应的物品ID，可自动购买所需的物品，每天最多可购买两次。<br>
+    （即：只购买1种物品的话最多可购买2次；购买2种物品的话每种物品只能购买1次，合计2次）<br>
+    <strong>各物品ID：</strong><br>
+    等级经验药丸：101、等级经验药丸（蛋）：102、修炼手册（武器）：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
+    <strong>格式：</strong><br>
+    两次购买之间的物品ID请用<b>英文逗号</b>分隔；同一次购买的物品ID如用<b>竖线</b>分隔，表示前一种物品如费用不足，可自动更换为购买另一种物品。<br>
+    <strong>例子：</strong><br>
+    <b>102</b>：表示只购买一次[102]物品。<br>
+    <b>102,101</b>：表示第1次购买[102]物品，第2次购买[101]物品。<br>
+    <b>102|101,103|102|101</b>：表示第1次先尝试购买[102]物品，如费用不足则购买[101]物品；第2次先尝试购买[103]物品，如费用不足则购买[102]物品，依然不足则购买[101]物品。<br>
+  </div>
+</div>`;
+    Dialog.create(dialogName, '自动购买物品详细说明', html, 'max-width: 600px;');
+    Dialog.show(dialogName);
+};
+
 },{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
@@ -2632,6 +2710,10 @@ const Const = {
     changePointsInfoCookieName: 'changePointsInfo',
     // 标记已完成自动争夺的Cookie名称
     lootCompleteCookieName: 'lootComplete',
+    // 标记准备购买物品的Cookie名称
+    buyItemReadyCookieName: 'buyItemReady',
+    // 标记已购买物品的Cookie名称
+    buyItemCookieName: 'buyItem',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
@@ -3094,7 +3176,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -4661,106 +4743,157 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
 
 /**
  * 购买物品
- * @param {string[]} itemIdList 购买物品ID列表
+ * @param {string[]} buyItemIdList 购买物品ID列表
+ * @param {string} safeId SafeID
  */
-const buyItems = function (itemIdList) {
-    let successNum = 0,
-        totalKfb = 0;
-    let myItemUrlList = [];
-    let itemList = {};
+const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
+    if (Util.getCookie(_Const2.default.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) return;
+    let index = 0,
+        subIndex = 0;
     let isStop = false;
+    let itemIdList = [];
+
+    /**
+     * 通过物品ID获取物品名称
+     * @param {number} itemId 物品ID
+     * @returns {string} 物品名称
+     */
+    const getItemNameById = function (itemId) {
+        switch (parseInt(itemId)) {
+            case 101:
+                return '等级经验药丸';
+            case 102:
+                return '等级经验药丸（蛋）';
+            case 103:
+                return '修炼手册（武器）';
+            default:
+                return '未知';
+        }
+    };
+
+    /**
+     * 通过物品ID获取购买物品的代价
+     * @param {number} itemId 物品ID
+     * @returns {?{}} 购买物品的代价
+     */
+    const getItemPayById = function (itemId) {
+        switch (parseInt(itemId)) {
+            case 101:
+                return { 'KFB': -5000 };
+            case 102:
+                return { 'KFB': -10000 };
+            case 103:
+                return { '普通盒子': -100 };
+            default:
+                return null;
+        }
+    };
+
+    /**
+     * 获取自动购买物品的Cookies有效期
+     * @returns {Date} Cookies有效期的Date对象
+     */
+    const getCookieDate = function () {
+        let now = new Date();
+        let date = Util.getTimezoneDateByTime('00:40:00');
+        if (now > date) date.setDate(date.getDate() + 1);
+        return date;
+    };
 
     /**
      * 购买
+     * @param {number} itemId 物品ID
      */
-    const buy = function () {
+    const buy = function (itemId) {
         $.ajax({
-            type: 'GET',
-            url: url + '&t=' + $.now(),
-            timeout: _Const2.default.defAjaxTimeout,
-            success(html) {
-                Public.showFormatLog('购买道具', html);
-                let { msg } = Util.getResponseMsg(html);
-                if (/购买成功，返回我的背包/.test(msg)) {
-                    successNum++;
-                    totalKfb += kfb;
-                } else {
+            type: 'POST',
+            url: 'kf_fw_ig_shop.php',
+            data: `buy=${itemId}&safeid=${safeId}`,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            let msg = Util.removeHtmlTag(html);
+            let itemName = getItemNameById(itemId);
+            console.log(`【购买物品】【${itemName}】：${msg}`);
+            let isShowMsg = false;
+
+            if (msg.includes('购买成功')) {
+                index++;
+                subIndex = 0;
+                let matches = /\+(\d+)(武器经验|经验)/.exec(msg);
+                if (matches) {
+                    let num = parseInt(matches[1]),
+                        key = matches[2];
+                    if (key === '经验') key = '经验值';
+
+                    let gain = {},
+                        pay = getItemPayById(itemId);
+                    gain[key] = num;
+                    if (pay) {
+                        Log.push('购买物品', `共有\`1\`个【\`${itemName}\`】购买成功`, { gain, pay });
+                    }
+
+                    let msgStat = '';
+                    for (let [key, value] of Util.entries(gain)) {
+                        msgStat += `<i>${key}<em>+${value.toLocaleString()}</em></i>`;
+                    }
+                    for (let [key, value] of Util.entries(pay)) {
+                        msgStat += `<i>${key}<ins>${value.toLocaleString()}</ins></i>`;
+                    }
+                    isShowMsg = true;
+                    Msg.show(`<strong>购买物品【${itemName}】${msgStat}`, -1);
+                    Script.runFunc('Item.buyItems_success_', msg);
+                }
+            } else if (msg.includes('不足')) {
+                subIndex++;
+                if (subIndex >= itemIdList[index].length) {
+                    index++;
+                    subIndex = 0;
+                }
+            } else {
+                if (!msg.includes('操作过快')) {
+                    index++;
+                    subIndex = 0;
+                }
+                if (msg.includes('本日购买次数已用完')) {
+                    if (index === 1) isShowMsg = true;
                     isStop = true;
-                    $('.pd_result:last').append(`<li>${msg}<span class="pd_notice">（购买中止）</span></li>`);
+                    Util.setCookie(_Const2.default.buyItemCookieName, 1, getCookieDate());
                 }
-                setTimeout(getNewItemInfo, _Const2.default.defAjaxInterval);
-            },
-            error() {
-                setTimeout(buy, _Const2.default.defAjaxInterval);
+            }
+            if (!isShowMsg) {
+                Msg.show(`<strong>购买物品【${itemName}】：${msg}</strong>`, -1);
+            }
+        }).fail(function () {
+            index++;
+            subIndex = 0;
+            Msg.show(`<strong>购买物品【${getItemNameById(itemId)}】：连接超时</strong>`, -1);
+        }).always(function () {
+            isStop = isStop || $wait.data('stop');
+            if (isStop || index >= itemIdList.length) {
+                Msg.remove($wait);
+                Util.deleteCookie(_Const2.default.buyItemReadyCookieName);
+                Util.setCookie(_Const2.default.buyItemCookieName, 1, getCookieDate());
+                Script.runFunc('Item.buyItems_complete_');
+            } else {
+                setTimeout(() => buy(parseInt(itemIdList[index][subIndex])), _Const2.default.minActionInterval);
             }
         });
     };
 
-    /**
-     * 获取新道具的信息
-     * @param {boolean} isFirst 购买前第一次获取信息
-     */
-    const getNewItemInfo = function (isFirst = false) {
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-            timeout: _Const2.default.defAjaxTimeout,
-            success(html) {
-                let list = [];
-                $('.kf_fw_ig1 a[href^="kf_fw_ig_mybp.php?do=1&id="]', html).each(function () {
-                    let $this = $(this);
-                    let url = $this.attr('href');
-                    list.push(url);
-                    if (isFirst || myItemUrlList.includes(url)) return;
-                    let itemName = $this.closest('tr').find('td:nth-child(3)').text().trim();
-                    if (!itemTypeList.includes(itemName)) return;
-                    if (!(itemName in itemList)) itemList[itemName] = 0;
-                    itemList[itemName]++;
-                    console.log(`获得了一个【Lv.${getLevelByName(itemName)}：${itemName}】道具`);
-                    $('.pd_result:last').append(`<li>获得了一个【<b class="pd_highlight">Lv.${getLevelByName(itemName)}：${itemName}</b>】道具</li>`);
-                });
-                myItemUrlList = list;
-
-                let $countdown = $('.pd_countdown:last');
-                $countdown.text(buyNum - successNum);
-                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                if (isStop || successNum === buyNum) {
-                    Msg.remove($countdown.closest('.pd_msg'));
-                    for (let [itemName, num] of Util.entries(itemList)) {
-                        if (!num) delete itemList[itemName];
-                    }
-                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
-                        Log.push('购买道具', `共有\`${successNum}\`个【\`${type}\`】购买成功`, { gain: { '道具': successNum, 'item': itemList }, pay: { 'KFB': -totalKfb } });
-                    }
-
-                    let itemStatHtml = '';
-                    for (let itemName of Util.getSortedObjectKeyList(itemTypeList, itemList)) {
-                        itemStatHtml += `<i>${itemName}<em>+${itemList[itemName]}</em></i> `;
-                    }
-                    $('.pd_result:last').append(`
-<li class="pd_stat">
-  <b>统计结果：</b><br>
-  共有<em>${successNum}</em>个道具购买成功，<i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i> ${itemStatHtml}<br>
-  <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php">角色/物品页面</a>查看)</span>
-</li>
-`);
-
-                    console.log(`共有${successNum}个【${type}】购买成功，KFB-${totalKfb}`);
-                    Msg.show(`<strong>共有<em>${successNum}</em>个【${type}】购买成功</strong><i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i>`, -1);
-                    showKfbInItemShop();
-                } else {
-                    let interval = typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval;
-                    setTimeout(buy, isFirst ? _Const2.default.defAjaxInterval : interval);
-                }
-            },
-            error() {
-                setTimeout(() => getNewItemInfo(isFirst), _Const2.default.defAjaxInterval);
-            }
-        });
-    };
-
-    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【${type}】购买结果：</strong></li></ul>`);
-    getNewItemInfo(true);
+    for (let value of buyItemIdList) {
+        if (!/^\d+(\|\d+)*$/.test(value)) continue;
+        let arr = value.split('|').filter(id => id && getItemNameById(parseInt(id)) !== '未知');
+        if (arr.length > 0) {
+            itemIdList.push(arr);
+        }
+    }
+    if (!itemIdList.length) {
+        Util.setCookie(_Const2.default.buyItemCookieName, 1, getCookieDate());
+        return;
+    }
+    Util.setCookie(_Const2.default.buyItemReadyCookieName, 1, Util.getDate('+5m'));
+    let $wait = Msg.wait(`<strong>正在购买物品中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
+    buy(parseInt(itemIdList[index][subIndex]));
 };
 
 /**
@@ -5070,7 +5203,7 @@ const showLogContent = function (log, date, $dialog) {
 const getLogContent = function (log, date, logSortType) {
     let logList = log[date];
     if (logSortType === 'type') {
-        const sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '打开盒子', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '熔炼装备', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
+        const sortTypeList = ['领取每日奖励', '提升战力光环', '争夺攻击', '捐款', '领取争夺奖励', '批量攻击', '试探攻击', '抽取神秘盒子', '抽取道具或卡片', '打开盒子', '购买物品', '使用道具', '恢复道具', '循环使用道具', '将道具转换为能量', '将卡片转换为VIP时间', '购买道具', '统计道具购买价格', '出售道具', '熔炼装备', '神秘抽奖', '统计神秘抽奖结果', '神秘等级升级', '神秘系数排名变化', '批量转账', '购买帖子', '自动存款'];
         logList.sort((a, b) => sortTypeList.indexOf(a.type) > sortTypeList.indexOf(b.type) ? 1 : -1);
     } else {
         logList.sort((a, b) => a.time > b.time ? 1 : -1);
@@ -6172,8 +6305,6 @@ const setLevelPointListSelect = function (levelPointList) {
  * 添加攻击相关按钮
  */
 const addAttackBtns = function () {
-    $logBox.off('click');
-
     $(`
 <div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">
   <label>
@@ -8992,6 +9123,10 @@ var _Loot = require('./Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
 
+var _Item = require('./Item');
+
+var Item = _interopRequireWildcard(_Item);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -9334,7 +9469,17 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
         } else if (value < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
     }
 
-    let intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }];
+    let buyItemInterval = -1;
+    if (Config.autoBuyItemEnabled) {
+        let date = Util.getDateByTime(Config.buyItemAfterTime);
+        let now = new Date();
+        if (Util.getCookie(_Const2.default.buyItemCookieName) || now < date) {
+            if (now > date) date.setDate(date.getDate() + 1);
+            buyItemInterval = Math.floor((date - now) / 1000);
+        } else buyItemInterval = 0;
+    }
+
+    let intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }, { action: '自动购买物品', interval: buyItemInterval }];
     let minAction = '',
         minInterval = -1;
     for (let { action, interval } of intervalList.filter(data => data.interval > -1)) {
@@ -9453,6 +9598,11 @@ const startTimingMode = exports.startTimingMode = function () {
         }
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) getDailyBonus();
+
+        if (Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName)) {
+            let safeId = getSafeId();
+            if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+        }
 
         let { action, interval } = getNextTimingIntervalInfo();
         if (interval > 0) errorNum = 0;
@@ -10237,7 +10387,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
     });
 };
 
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 

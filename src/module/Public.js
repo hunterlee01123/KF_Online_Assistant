@@ -13,6 +13,7 @@ import * as TmpLog from './TmpLog';
 import * as Script from './Script';
 import * as Read from './Read';
 import * as Loot from './Loot';
+import * as Item from './Item';
 
 /**
  * 获取Uid和用户名
@@ -365,10 +366,22 @@ export const getNextTimingIntervalInfo = function () {
         else getDailyBonusInterval = 0;
     }
 
+    let buyItemInterval = -1;
+    if (Config.autoBuyItemEnabled) {
+        let date = Util.getDateByTime(Config.buyItemAfterTime);
+        let now = new Date();
+        if (Util.getCookie(Const.buyItemCookieName) || now < date) {
+            if (now > date) date.setDate(date.getDate() + 1);
+            buyItemInterval = Math.floor((date - now) / 1000);
+        }
+        else buyItemInterval = 0;
+    }
+
     let intervalList = [
         {action: '提升战力光环', interval: promoteHaloInterval},
         {action: '检查争夺情况', interval: checkLootInterval},
         {action: '自动获取每日奖励', interval: getDailyBonusInterval},
+        {action: '自动购买物品', interval: buyItemInterval},
     ];
     let minAction = '', minInterval = -1;
     for (let {action, interval} of intervalList.filter(data => data.interval > -1)) {
@@ -491,6 +504,11 @@ export const startTimingMode = function () {
         }
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
+
+        if (Config.autoBuyItemEnabled && !Util.getCookie(Const.buyItemCookieName)) {
+            let safeId = getSafeId();
+            if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+        }
 
         let {action, interval} = getNextTimingIntervalInfo();
         if (interval > 0) errorNum = 0;

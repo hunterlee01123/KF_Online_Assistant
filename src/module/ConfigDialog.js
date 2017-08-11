@@ -37,7 +37,7 @@ export const show = function () {
       <legend>
         <label>
           <input name="timingModeEnabled" type="checkbox"> 定时模式
-          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励、自动提升战力光环、自动争夺，需开启相关功能）
+          <span class="pd_cfg_tips" title="可按时进行自动操作（包括自动领取每日奖励、自动提升战力光环、自动争夺、自动购买物品，需开启相关功能）
 只在论坛首页和争夺首页生效（不开启此模式的话只能在刷新页面后才会进行操作）">[?]</span>
         </label>
       </legend>
@@ -117,6 +117,19 @@ export const show = function () {
       <label>
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
         <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>
+        <label><input name="autoBuyItemEnabled" type="checkbox"> 自动购买物品</label>
+      </legend>
+      <label>
+        物品ID列表 <input name="buyItemIdList" type="text" maxlength="50" style="width: 150px;">
+      </label>
+      <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">详细说明&raquo;</a><br>
+      <label>
+        在 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后购买物品
+        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:45:00">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -397,8 +410,9 @@ export const show = function () {
         if ($this.hasClass('pd_disabled_link')) return;
         let name = $this.data('name');
         if (name === 'openRumCommandDialog') showRunCommandDialog();
-        if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
-        if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();
+        else if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
+        else if (name === 'openBuyItemTipsDialog') showBuyItemTipsDialog();
+        else if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();
         else if (name === 'openUserMemoDialog') showUserMemoDialog();
         else if (name === 'openCustomCssDialog') showCustomCssDialog();
         else if (name === 'openCustomScriptDialog') Script.showDialog();
@@ -434,6 +448,7 @@ const setMainConfigValue = function ($dialog) {
         }
     });
     $dialog.find('[name="promoteHaloCostType"]').trigger('change');
+    $dialog.find('[name="buyItemIdList"]').val(Config.buyItemIdList.join(','));
     $dialog.find('[name="threadContentFontSize"]').val(Config.threadContentFontSize > 0 ? Config.threadContentFontSize : '');
     $dialog.find('[data-name="customMySmColorSelect"]').val(Config.customMySmColor);
 
@@ -452,17 +467,22 @@ const getMainConfigValue = function ($dialog) {
         let $this = $(this);
         let name = $this.attr('name');
         if (name in Config) {
-            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean')
+            if ($this.is('[type="checkbox"]') && typeof Config[name] === 'boolean') {
                 options[name] = Boolean($this.prop('checked'));
+            }
             else if (typeof Config[name] === 'number') {
                 let value = $.trim($this.val());
                 if (/\d+\.\d+/.test(value)) options[name] = parseFloat(value);
                 else options[name] = parseInt(value);
                 if (name === 'threadContentFontSize' && isNaN(options[name])) options[name] = 0;
             }
-            else options[name] = $.trim($this.val());
+            else {
+                options[name] = $.trim($this.val());
+            }
         }
     });
+    if (options.buyItemIdList) options.buyItemIdList = options.buyItemIdList.split(',');
+    else options.buyItemIdList = [];
     return options;
 };
 
@@ -477,6 +497,29 @@ const verifyMainConfig = function ($dialog) {
     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(checkLootAfterTime)) {
         alert('在指定时间之后争夺格式不正确');
         $txtCheckLootAfterTime.select().focus();
+        return false;
+    }
+
+    let $txtBuyItemIdList = $dialog.find('[name="buyItemIdList"]');
+    let buyItemIdList = $.trim($txtBuyItemIdList.val());
+    if ($dialog.find('[name="autoBuyItemEnabled"]').prop('checked')) {
+        if (!/^(\d+)(\|\d+)*(,(\d+)(\|\d+)*)?$/.test(buyItemIdList)) {
+            alert('购买物品ID列表格式不正确');
+            $txtBuyItemIdList.select().focus();
+            return false;
+        }
+        else if (buyItemIdList.includes('901')) {
+            alert('不支持自动购买重生之药');
+            $txtBuyItemIdList.select().focus();
+            return false;
+        }
+    }
+
+    let $txtBuyItemAfterTime = $dialog.find('[name="buyItemAfterTime"]');
+    let buyItemAfterTime = $.trim($txtBuyItemAfterTime.val());
+    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(buyItemAfterTime)) {
+        alert('在指定时间之后购买物品格式不正确');
+        $txtBuyItemAfterTime.select().focus();
         return false;
     }
 
@@ -1304,5 +1347,31 @@ const showBlockThreadDialog = function () {
         }
         addBlockThread(keyWord, userType, userList, fidType, fidList);
     }
+    Dialog.show(dialogName);
+};
+
+/**
+ * 显示自动购买物品详细说明对话框
+ */
+const showBuyItemTipsDialog = function () {
+    const dialogName = 'pdBuyItemTipsDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let html = `
+<div class="pd_cfg_main">
+  <div style="margin: 5px 0;">
+    <strong>设置说明：</strong><br>
+    在物品ID列表填入相应的物品ID，可自动购买所需的物品，每天最多可购买两次。<br>
+    （即：只购买1种物品的话最多可购买2次；购买2种物品的话每种物品只能购买1次，合计2次）<br>
+    <strong>各物品ID：</strong><br>
+    等级经验药丸：101、等级经验药丸（蛋）：102、修炼手册（武器）：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
+    <strong>格式：</strong><br>
+    两次购买之间的物品ID请用<b>英文逗号</b>分隔；同一次购买的物品ID如用<b>竖线</b>分隔，表示前一种物品如费用不足，可自动更换为购买另一种物品。<br>
+    <strong>例子：</strong><br>
+    <b>102</b>：表示只购买一次[102]物品。<br>
+    <b>102,101</b>：表示第1次购买[102]物品，第2次购买[101]物品。<br>
+    <b>102|101,103|102|101</b>：表示第1次先尝试购买[102]物品，如费用不足则购买[101]物品；第2次先尝试购买[103]物品，如费用不足则购买[102]物品，依然不足则购买[101]物品。<br>
+  </div>
+</div>`;
+    Dialog.create(dialogName, '自动购买物品详细说明', html, 'max-width: 600px;');
     Dialog.show(dialogName);
 };

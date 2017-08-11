@@ -66,6 +66,13 @@ export const Config = {
     // 是否显示精简争夺记录，true：开启；false：关闭
     showLiteLootLogEnabled: false,
 
+    // 是否自动购买物品，true：开启；false：关闭
+    autoBuyItemEnabled: false,
+    // 购买物品ID列表，例：['101','103|102']
+    buyItemIdList: [],
+    // 在当天的指定时间之后购买物品（本地时间），例：00:45:00
+    buyItemAfterTime: '00:45:00',
+
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',

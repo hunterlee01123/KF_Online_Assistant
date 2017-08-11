@@ -120,6 +120,10 @@ const Const = {
     changePointsInfoCookieName: 'changePointsInfo',
     // 标记已完成自动争夺的Cookie名称
     lootCompleteCookieName: 'lootComplete',
+    // 标记准备购买物品的Cookie名称
+    buyItemReadyCookieName: 'buyItemReady',
+    // 标记已购买物品的Cookie名称
+    buyItemCookieName: 'buyItem',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称

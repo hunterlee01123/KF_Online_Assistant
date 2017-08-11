@@ -750,8 +750,6 @@ const setLevelPointListSelect = function (levelPointList) {
  * 添加攻击相关按钮
  */
 const addAttackBtns = function () {
-    $logBox.off('click');
-
     $(`
 <div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">
   <label>

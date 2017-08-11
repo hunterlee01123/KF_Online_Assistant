@@ -1642,113 +1642,160 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
 
 /**
  * 购买物品
- * @param {string[]} itemIdList 购买物品ID列表
+ * @param {string[]} buyItemIdList 购买物品ID列表
+ * @param {string} safeId SafeID
  */
-const buyItems = function (itemIdList) {
-    let successNum = 0, totalKfb = 0;
-    let myItemUrlList = [];
-    let itemList = {};
+export const buyItems = function (buyItemIdList, safeId) {
+    if (Util.getCookie(Const.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) return;
+    let index = 0, subIndex = 0;
     let isStop = false;
+    let itemIdList = [];
+
+    /**
+     * 通过物品ID获取物品名称
+     * @param {number} itemId 物品ID
+     * @returns {string} 物品名称
+     */
+    const getItemNameById = function (itemId) {
+        switch (parseInt(itemId)) {
+            case 101:
+                return '等级经验药丸';
+            case 102:
+                return '等级经验药丸（蛋）';
+            case 103:
+                return '修炼手册（武器）';
+            default:
+                return '未知';
+        }
+    };
+
+    /**
+     * 通过物品ID获取购买物品的代价
+     * @param {number} itemId 物品ID
+     * @returns {?{}} 购买物品的代价
+     */
+    const getItemPayById = function (itemId) {
+        switch (parseInt(itemId)) {
+            case 101:
+                return {'KFB': -5000};
+            case 102:
+                return {'KFB': -10000};
+            case 103:
+                return {'普通盒子': -100};
+            default:
+                return null;
+        }
+    };
+
+    /**
+     * 获取自动购买物品的Cookies有效期
+     * @returns {Date} Cookies有效期的Date对象
+     */
+    const getCookieDate = function () {
+        let now = new Date();
+        let date = Util.getTimezoneDateByTime('00:40:00');
+        if (now > date) date.setDate(date.getDate() + 1);
+        return date;
+    };
 
     /**
      * 购买
+     * @param {number} itemId 物品ID
      */
-    const buy = function () {
+    const buy = function (itemId) {
         $.ajax({
-            type: 'GET',
-            url: url + '&t=' + $.now(),
+            type: 'POST',
+            url: 'kf_fw_ig_shop.php',
+            data: `buy=${itemId}&safeid=${safeId}`,
             timeout: Const.defAjaxTimeout,
-            success(html) {
-                Public.showFormatLog('购买道具', html);
-                let {msg} = Util.getResponseMsg(html);
-                if (/购买成功，返回我的背包/.test(msg)) {
-                    successNum++;
-                    totalKfb += kfb;
+        }).done(function (html) {
+            let msg = Util.removeHtmlTag(html);
+            let itemName = getItemNameById(itemId);
+            console.log(`【购买物品】【${itemName}】：${msg}`);
+            let isShowMsg = false;
+
+            if (msg.includes('购买成功')) {
+                index++;
+                subIndex = 0;
+                let matches = /\+(\d+)(武器经验|经验)/.exec(msg);
+                if (matches) {
+                    let num = parseInt(matches[1]), key = matches[2];
+                    if (key === '经验') key = '经验值';
+
+                    let gain = {}, pay = getItemPayById(itemId);
+                    gain[key] = num;
+                    if (pay) {
+                        Log.push('购买物品', `共有\`1\`个【\`${itemName}\`】购买成功`, {gain, pay});
+                    }
+
+                    let msgStat = '';
+                    for (let [key, value] of Util.entries(gain)) {
+                        msgStat += `<i>${key}<em>+${value.toLocaleString()}</em></i>`;
+                    }
+                    for (let [key, value] of Util.entries(pay)) {
+                        msgStat += `<i>${key}<ins>${value.toLocaleString()}</ins></i>`;
+                    }
+                    isShowMsg = true;
+                    Msg.show(`<strong>购买物品【${itemName}】${msgStat}`, -1);
+                    Script.runFunc('Item.buyItems_success_', msg);
                 }
-                else {
+            }
+            else if (msg.includes('不足')) {
+                subIndex++;
+                if (subIndex >= itemIdList[index].length) {
+                    index++;
+                    subIndex = 0;
+                }
+            }
+            else {
+                if (!msg.includes('操作过快')) {
+                    index++;
+                    subIndex = 0;
+                }
+                if (msg.includes('本日购买次数已用完')) {
+                    if (index === 1) isShowMsg = true;
                     isStop = true;
-                    $('.pd_result:last').append(`<li>${msg}<span class="pd_notice">（购买中止）</span></li>`);
+                    Util.setCookie(Const.buyItemCookieName, 1, getCookieDate());
                 }
-                setTimeout(getNewItemInfo, Const.defAjaxInterval);
-            },
-            error() {
-                setTimeout(buy, Const.defAjaxInterval);
+            }
+            if (!isShowMsg) {
+                Msg.show(`<strong>购买物品【${itemName}】：${msg}</strong>`, -1);
+            }
+        }).fail(function () {
+            index++;
+            subIndex = 0;
+            Msg.show(`<strong>购买物品【${getItemNameById(itemId)}】：连接超时</strong>`, -1);
+        }).always(function () {
+            isStop = isStop || $wait.data('stop');
+            if (isStop || index >= itemIdList.length) {
+                Msg.remove($wait);
+                Util.deleteCookie(Const.buyItemReadyCookieName);
+                Util.setCookie(Const.buyItemCookieName, 1, getCookieDate());
+                Script.runFunc('Item.buyItems_complete_');
+            }
+            else {
+                setTimeout(() => buy(parseInt(itemIdList[index][subIndex])), Const.minActionInterval);
             }
         });
     };
 
-    /**
-     * 获取新道具的信息
-     * @param {boolean} isFirst 购买前第一次获取信息
-     */
-    const getNewItemInfo = function (isFirst = false) {
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-            timeout: Const.defAjaxTimeout,
-            success(html) {
-                let list = [];
-                $('.kf_fw_ig1 a[href^="kf_fw_ig_mybp.php?do=1&id="]', html).each(function () {
-                    let $this = $(this);
-                    let url = $this.attr('href');
-                    list.push(url);
-                    if (isFirst || myItemUrlList.includes(url)) return;
-                    let itemName = $this.closest('tr').find('td:nth-child(3)').text().trim();
-                    if (!itemTypeList.includes(itemName)) return;
-                    if (!(itemName in itemList)) itemList[itemName] = 0;
-                    itemList[itemName]++;
-                    console.log(`获得了一个【Lv.${getLevelByName(itemName)}：${itemName}】道具`);
-                    $('.pd_result:last').append(
-                        `<li>获得了一个【<b class="pd_highlight">Lv.${getLevelByName(itemName)}：${itemName}</b>】道具</li>`
-                    );
-                });
-                myItemUrlList = list;
 
-                let $countdown = $('.pd_countdown:last');
-                $countdown.text(buyNum - successNum);
-                isStop = isStop || $countdown.closest('.pd_msg').data('stop');
-                if (isStop || successNum === buyNum) {
-                    Msg.remove($countdown.closest('.pd_msg'));
-                    for (let [itemName, num] of Util.entries(itemList)) {
-                        if (!num) delete itemList[itemName];
-                    }
-                    if (successNum > 0 && !$.isEmptyObject(itemList)) {
-                        Log.push(
-                            '购买道具',
-                            `共有\`${successNum}\`个【\`${type}\`】购买成功`,
-                            {gain: {'道具': successNum, 'item': itemList}, pay: {'KFB': -totalKfb}}
-                        );
-                    }
-
-                    let itemStatHtml = '';
-                    for (let itemName of Util.getSortedObjectKeyList(itemTypeList, itemList)) {
-                        itemStatHtml += `<i>${itemName}<em>+${itemList[itemName]}</em></i> `;
-                    }
-                    $('.pd_result:last').append(`
-<li class="pd_stat">
-  <b>统计结果：</b><br>
-  共有<em>${successNum}</em>个道具购买成功，<i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i> ${itemStatHtml}<br>
-  <span style="color: #666;">(请到<a href="kf_fw_ig_mybp.php">角色/物品页面</a>查看)</span>
-</li>
-`);
-
-                    console.log(`共有${successNum}个【${type}】购买成功，KFB-${totalKfb}`);
-                    Msg.show(`<strong>共有<em>${successNum}</em>个【${type}】购买成功</strong><i>KFB<ins>-${totalKfb.toLocaleString()}</ins></i>`, -1);
-                    showKfbInItemShop();
-                }
-                else {
-                    let interval = typeof Const.specialAjaxInterval === 'function' ? Const.specialAjaxInterval() : Const.specialAjaxInterval;
-                    setTimeout(buy, isFirst ? Const.defAjaxInterval : interval);
-                }
-            },
-            error() {
-                setTimeout(() => getNewItemInfo(isFirst), Const.defAjaxInterval);
-            }
-        });
-    };
-
-    $('.kf_fw_ig1:last').parent().append(`<ul class="pd_result"><li><strong>【${type}】购买结果：</strong></li></ul>`);
-    getNewItemInfo(true);
+    for (let value of buyItemIdList) {
+        if (!/^\d+(\|\d+)*$/.test(value)) continue;
+        let arr = value.split('|').filter(id => id && getItemNameById(parseInt(id)) !== '未知');
+        if (arr.length > 0) {
+            itemIdList.push(arr);
+        }
+    }
+    if (!itemIdList.length) {
+        Util.setCookie(Const.buyItemCookieName, 1, getCookieDate());
+        return;
+    }
+    Util.setCookie(Const.buyItemReadyCookieName, 1, Util.getDate('+5m'));
+    let $wait = Msg.wait(
+        `<strong>正在购买物品中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
+    );
+    buy(parseInt(itemIdList[index][subIndex]));
 };
 
 /**

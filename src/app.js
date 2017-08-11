@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '11.2.1';
+const version = '11.3';
 
 /**
  * 导出模块
@@ -237,8 +237,16 @@ const init = function () {
         }
     }
 
-    if (!Config.getBonusAfterLootCompleteEnabled) isAutoLootStarted = false;
-    if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName) && !isAutoLootStarted) Public.getDailyBonus();
+    if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) {
+        if (!Config.getBonusAfterLootCompleteEnabled || !isAutoLootStarted) Public.getDailyBonus();
+    }
+
+    if ((Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled &&
+        !Util.getCookie(Const.buyItemCookieName) && !isAutoLootStarted
+    ) {
+        let safeId = Public.getSafeId();
+        if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+    }
 
     if (Config.autoSaveCurrentDepositEnabled && Info.isInHomePage) Public.autoSaveCurrentDeposit();
 
