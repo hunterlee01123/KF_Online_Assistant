@@ -210,12 +210,12 @@ const handlePointsArea = function () {
 
     $(`
 <tr>
-  <td width="40%">
+  <td>
     装备ID和备注
     <span class="pd_cfg_tips" title="可点击右边的“更换装备”按钮，也可手动填写装备ID。留空表示不更换装备。
 当文本框内的装备ID发生变化时，点击攻击按钮将会自动更换装备（点击“修改点数分配”按钮只会修改点数而不会更换装备）。">[?]</span>
   </td>
-  <td width="40%">
+  <td>
     <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;">
     <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;">
     <a class="pd_btn_link" data-name="changeArm" href="#" title="更换当前装备">更换装备</a>
@@ -224,6 +224,26 @@ const handlePointsArea = function () {
 `).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
         e.preventDefault();
         addOrChangeArm(0);
+    });
+
+    $(`
+<tr>
+  <td>
+    关键层列表
+    <span class="pd_cfg_tips" title="KFOL计算器的关键层列表（各关键层以空格分隔），用于“攻击到下一关键层前”按钮">[?]</span>
+  </td>
+  <td>
+    <input name="keyLevelList" type="text" value="${Config.keyLevelList.join(' ')}" maxlength="100" placeholder="关键层列表" style="width: 200px;">
+    <a class="pd_btn_link" data-name="saveKeyLevelList" href="#" title="保存关键层设置">保存</a>
+  </td>
+</tr>
+`).insertBefore($points.find('> tbody > tr:last-child')).find('[data-name="saveKeyLevelList"]').click(function (e) {
+        e.preventDefault();
+        readConfig();
+        let value = $.trim($points.find('input[name="keyLevelList"]').val());
+        Config.keyLevelList = value.split(' ').map(level => parseInt(level)).filter(level => level > 0);
+        writeConfig();
+        alert('设置已保存');
     });
 
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
@@ -777,11 +797,12 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
+  <button name="nextKeyLevelAttack" type="button" title="攻击到下一关键层之前">到下一关键层前</button>
   <span style="color: #888;">|</span>
   <button name="manualAttack" type="button" title="手动攻击一层，会按照当前页面上发生变化了的点数设置和装备ID自动修改点数以及更换装备">手动攻击</button>
   <span class="pd_cfg_tips" title="在不勾选“自动修改点数分配方案”或“使用自定义脚本”的情况下，点击所有的攻击按钮均会按照当前页面上的点数设置和装备ID自动修改点数以及更换装备。
 （注：只有在当前页面上点数设置或装备ID发生变化的情况下才会自动提交相应设置）。
-在勾选上述两种选项的情况下，点击自动攻击（一层）按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
+在勾选上述两种选项的情况下，点击自动攻击相关按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。而手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
 </div>
 `).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
@@ -791,9 +812,20 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
         if ($('.pd_mask').length > 0) return;
         let $this = $(this);
         let name = $this.attr('name');
-        let type = name === 'manualAttack' ? 'manual' : 'auto';
         let targetLevel = 0;
-        if (type === 'auto') {
+
+        let type = name === 'manualAttack' ? 'manual' : 'auto';
+        if (name === 'nextKeyLevelAttack') {
+            let value = $.trim($points.find('input[name="keyLevelList"]').val());
+            let keyLevelList = value.split(' ').map(level => parseInt(level)).filter(level => level > 0);
+            if (!keyLevelList.length) {
+                alert('没有设置关键层');
+                return;
+            }
+            let currentLevel = getCurrentLevel(logList);
+            targetLevel = Math.min(...keyLevelList.filter(level => level > currentLevel + 1)) - 1;
+        }
+        else if (type === 'auto') {
             let value = '+1';
             if (name === 'autoAttack') {
                 let prevTargetLevel = $this.data('prevTargetLevel');
@@ -810,6 +842,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
             if (isNaN(targetLevel) || targetLevel < 0) return;
             if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
+
         Msg.destroy();
         $('#pdLootLogHeader').find('[data-name="end"]').click();
         let autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled ||
