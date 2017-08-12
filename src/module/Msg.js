@@ -76,6 +76,7 @@ export const show = function (options, duration) {
     else {
         $container.stop(false, true).animate({'top': '-=' + popTipsHeight / 1.75});
     }
+    $(':focus').blur();
     let $prev = $msg.prev('.pd_msg');
     $msg.css({
         'top': $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0,

@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.3
+// @version     11.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.3';
+const version = '11.4';
 
 /**
  * 导出模块
@@ -986,6 +986,8 @@ const Config = exports.Config = {
     showChangePointsInfoEnabled: false,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
+    // 关键层列表，用于“攻击到下一关键层前”按钮，例：[1,11,15,20]
+    keyLevelList: [],
     // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
     autoChangeLevelPointsEnabled: false,
     // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
@@ -3669,11 +3671,11 @@ const openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = fals
                 } else if (nextActionEnabled) {
                     let action = null;
                     if (Config.smeltArmsAfterOpenBoxesEnabled) {
-                        action = () => smeltArms(Config.defSmeltArmTypeList, safeId, nextActionEnabled);
+                        action = () => smeltArms({ typeList: Config.defSmeltArmTypeList, safeId, nextActionEnabled });
                     } else if (Config.useItemsAfterOpenBoxesEnabled) {
-                        action = () => useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+                        action = () => useItems({ typeList: Config.defUseItemTypeList, safeId, nextActionEnabled });
                     } else if (Config.sellItemsAfterOpenBoxesEnabled) {
-                        action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+                        action = () => sellItems({ typeList: Config.defSellItemTypeList, safeId, nextActionEnabled });
                     }
                     if (action) {
                         setTimeout(action, _Const2.default.minActionInterval);
@@ -3845,7 +3847,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <button name="saveMemo" type="button">保存备注</button>
+  <button name="saveMemo" type="submit">保存备注</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1001;');
@@ -3857,7 +3859,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
             $target.select().focus();
         }
         Script.runFunc('Item.showArmInfoDialog_copy_');
-    }).find('[name="saveMemo"]').click(function (e) {
+    }).submit(function (e) {
         e.preventDefault();
         (0, _Config.read)();
         let value = $.trim($dialog.find('input[name="armMemo"]').val());
@@ -3950,13 +3952,15 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="selectInverse" type="button" title="全选或反选">选择</button>
+  <button name="selectAll" type="button" title="全选">全选</button>
+  <button name="selectInverse" type="button" title="反选">反选</button>
   <button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
   <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
-  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
-  <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定装备">批量熔炼</button>
+  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
+  <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
+  <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]'))).end().find('[name="copyWeaponParameterSetting"]').click(function () {
+`).insertAfter($armArea).find('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]'))).end().find('[name="copyWeaponParameterSetting"]').click(function () {
         let $this = $(this);
         let armInfoList = [];
         $armArea.find('input[name="armCheck"]:checked').each(function () {
@@ -4000,6 +4004,13 @@ const addArmsButton = function () {
         if (armIdList.length > 0) {
             showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
         }
+    }).end().find('[name="smeltSelectArms"]').click(function () {
+        let idList = [];
+        $armArea.find('input[name="armCheck"]:checked').each(function () {
+            idList.push(parseInt($(this).val()));
+        });
+        if (!idList.length || !confirm(`是否熔炼所选的${idList.length}件装备？`)) return;
+        smeltArms({ idList, safeId });
     }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
 };
 
@@ -4138,7 +4149,7 @@ const showBatchSmeltArmsDialog = function () {
         (0, _Config.write)();
         if (!confirm('是否熔炼所选装备种类？')) return;
         Dialog.close(dialogName);
-        smeltArms(typeList, safeId);
+        smeltArms({ typeList, safeId });
     }).end().find('[name="selectAll"]').click(() => Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]')));
 
     Dialog.show(dialogName);
@@ -4147,11 +4158,12 @@ const showBatchSmeltArmsDialog = function () {
 
 /**
  * 熔炼装备
- * @param {string[]} typeList 想要熔炼的装备种类
+ * @param {string[]} typeList 想要熔炼的装备种类列表
+ * @param {number[]} idList 想要熔炼的装备ID列表（用于熔炼所选，不要与typeList一起使用）
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
+const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnabled = false }) {
     let successNum = 0,
         index = 0;
     let smeltInfo = {};
@@ -4213,8 +4225,12 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             let armId = parseInt($tr.data('id'));
             let armName = $tr.find('> td:nth-child(3) > span:first').text().trim();
             let [, armGroup] = armName.split('的');
-            if (armName && armGroup && typeList.includes(armName)) {
-                armList.push({ armId, armGroup, armName });
+            if (armName && armGroup) {
+                if (typeList.length > 0 && typeList.includes(armName)) {
+                    armList.push({ armId, armGroup, armName });
+                } else if (idList.length > 0 && idList.includes(armId)) {
+                    armList.push({ armId, armGroup, armName });
+                }
             }
         });
         if (!armList.length) {
@@ -4245,9 +4261,9 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
     const nextAction = function () {
         let action = null;
         if (Config.useItemsAfterOpenBoxesEnabled) {
-            action = () => useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+            action = () => useItems({ typeList: Config.defUseItemTypeList, safeId, nextActionEnabled });
         } else if (Config.sellItemsAfterOpenBoxesEnabled) {
-            action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+            action = () => sellItems({ typeList: Config.defSellItemTypeList, safeId, nextActionEnabled });
         }
         if (action) {
             setTimeout(action, _Const2.default.minActionInterval);
@@ -4457,7 +4473,7 @@ const showBatchUseAndSellItemsDialog = function (type) {
         (0, _Config.write)();
         if (!confirm(`是否${typeName}所选道具种类？`)) return;
         Dialog.close(dialogName);
-        if (type === 1) useItems(typeList, safeId);else sellItems(typeList, safeId);
+        if (type === 1) useItems({ typeList, safeId });else sellItems({ typeList, safeId });
     });
 
     $dialog.find('[name="itemTypes"] > option').each(function () {
@@ -4472,11 +4488,11 @@ const showBatchUseAndSellItemsDialog = function (type) {
 
 /**
  * 使用道具
- * @param {string[]} typeList 想要使用的道具种类
+ * @param {string[]} typeList 想要使用的道具种类列表
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const useItems = function (typeList, safeId, nextActionEnabled = false) {
+const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
     let totalSuccessNum = 0,
         totalValidNum = 0,
         totalInvalidNum = 0,
@@ -4580,7 +4596,7 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
     const nextAction = function () {
         let action = null;
         if (Config.sellItemsAfterOpenBoxesEnabled) {
-            action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+            action = () => sellItems({ typeList: Config.defSellItemTypeList, safeId, nextActionEnabled });
         }
         if (action) {
             setTimeout(action, _Const2.default.minActionInterval);
@@ -4639,11 +4655,11 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
 
 /**
  * 出售道具
- * @param {string[]} itemTypeList 想要出售的道具种类
+ * @param {string[]} typeList 想要出售的道具种类列表
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
+const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
     let successNum = 0,
         index = 0;
     let sellInfo = {};
@@ -4700,7 +4716,7 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
             if (!matches) return;
             let itemId = parseInt(matches[1]);
             let itemName = $this.find('> td:nth-child(3)').text().trim();
-            if (itemTypeList.includes(itemName)) itemList.push({ itemId, itemName });
+            if (typeList.includes(itemName)) itemList.push({ itemId, itemName });
         });
         if (!itemList.length) {
             complete();
@@ -4738,7 +4754,7 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
         let itemTypeNum = 0,
             totalSell = 0;
         let resultStat = '';
-        for (let itemName of Util.getSortedObjectKeyList(itemTypeList, sellInfo)) {
+        for (let itemName of Util.getSortedObjectKeyList(typeList, sellInfo)) {
             itemTypeNum++;
             let itemLevel = getLevelByName(itemName);
             let { sell, num } = sellInfo[itemName];
@@ -4816,7 +4832,7 @@ const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
      */
     const getCookieDate = function () {
         let now = new Date();
-        let date = Util.getTimezoneDateByTime('00:40:00');
+        let date = Util.getTimezoneDateByTime('00:30:00');
         if (now > date) date.setDate(date.getDate() + 1);
         return date;
     };
@@ -4861,7 +4877,7 @@ const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
                         msgStat += `<i>${key}<ins>${value.toLocaleString()}</ins></i>`;
                     }
                     isShowMsg = true;
-                    Msg.show(`<strong>购买物品【${itemName}】${msgStat}`, -1);
+                    Msg.show(`<strong>购买物品【${itemName}】${msgStat}`);
                     Script.runFunc('Item.buyItems_success_', msg);
                 }
             } else if (msg.includes('不足')) {
@@ -4882,12 +4898,12 @@ const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
                 }
             }
             if (!isShowMsg) {
-                Msg.show(`<strong>购买物品【${itemName}】：${msg}</strong>`, -1);
+                Msg.show(`<strong>购买物品【${itemName}】：${msg}</strong>`);
             }
         }).fail(function () {
             index++;
             subIndex = 0;
-            Msg.show(`<strong>购买物品【${getItemNameById(itemId)}】：连接超时</strong>`, -1);
+            Msg.show(`<strong>购买物品【${getItemNameById(itemId)}】：连接超时</strong>`);
         }).always(function () {
             isStop = isStop || $wait.data('stop');
             if (isStop || index >= itemIdList.length) {
@@ -5809,12 +5825,12 @@ const handlePointsArea = function () {
 
     $(`
 <tr>
-  <td width="40%">
+  <td>
     装备ID和备注
     <span class="pd_cfg_tips" title="可点击右边的“更换装备”按钮，也可手动填写装备ID。留空表示不更换装备。
 当文本框内的装备ID发生变化时，点击攻击按钮将会自动更换装备（点击“修改点数分配”按钮只会修改点数而不会更换装备）。">[?]</span>
   </td>
-  <td width="40%">
+  <td>
     <input name="armId" type="text" value="" maxlength="15" title="装备ID" placeholder="装备ID" style="width: 70px;">
     <input name="armMemo" type="text" value="" maxlength="15" title="装备备注" placeholder="装备备注" style="width: 100px;">
     <a class="pd_btn_link" data-name="changeArm" href="#" title="更换当前装备">更换装备</a>
@@ -5823,6 +5839,26 @@ const handlePointsArea = function () {
 `).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
         e.preventDefault();
         addOrChangeArm(0);
+    });
+
+    $(`
+<tr>
+  <td>
+    关键层列表
+    <span class="pd_cfg_tips" title="KFOL计算器的关键层列表（各关键层以空格分隔），用于“攻击到下一关键层前”按钮">[?]</span>
+  </td>
+  <td>
+    <input name="keyLevelList" type="text" value="${Config.keyLevelList.join(' ')}" maxlength="100" placeholder="关键层列表" style="width: 200px;">
+    <a class="pd_btn_link" data-name="saveKeyLevelList" href="#" title="保存关键层设置">保存</a>
+  </td>
+</tr>
+`).insertBefore($points.find('> tbody > tr:last-child')).find('[data-name="saveKeyLevelList"]').click(function (e) {
+        e.preventDefault();
+        (0, _Config.read)();
+        let value = $.trim($points.find('input[name="keyLevelList"]').val());
+        Config.keyLevelList = value.split(' ').map(level => parseInt(level)).filter(level => level > 0);
+        (0, _Config.write)();
+        alert('设置已保存');
     });
 
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
@@ -6353,11 +6389,12 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
+  <button name="nextKeyLevelAttack" type="button" title="攻击到下一关键层之前">到下一关键层前</button>
   <span style="color: #888;">|</span>
   <button name="manualAttack" type="button" title="手动攻击一层，会按照当前页面上发生变化了的点数设置和装备ID自动修改点数以及更换装备">手动攻击</button>
   <span class="pd_cfg_tips" title="在不勾选“自动修改点数分配方案”或“使用自定义脚本”的情况下，点击所有的攻击按钮均会按照当前页面上的点数设置和装备ID自动修改点数以及更换装备。
 （注：只有在当前页面上点数设置或装备ID发生变化的情况下才会自动提交相应设置）。
-在勾选上述两种选项的情况下，点击自动攻击（一层）按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
+在勾选上述两种选项的情况下，点击自动攻击相关按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。而手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
 </div>
 `).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
@@ -6367,9 +6404,19 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
         if ($('.pd_mask').length > 0) return;
         let $this = $(this);
         let name = $this.attr('name');
-        let type = name === 'manualAttack' ? 'manual' : 'auto';
         let targetLevel = 0;
-        if (type === 'auto') {
+
+        let type = name === 'manualAttack' ? 'manual' : 'auto';
+        if (name === 'nextKeyLevelAttack') {
+            let value = $.trim($points.find('input[name="keyLevelList"]').val());
+            let keyLevelList = value.split(' ').map(level => parseInt(level)).filter(level => level > 0);
+            if (!keyLevelList.length) {
+                alert('没有设置关键层');
+                return;
+            }
+            let currentLevel = getCurrentLevel(logList);
+            targetLevel = Math.min(...keyLevelList.filter(level => level > currentLevel + 1)) - 1;
+        } else if (type === 'auto') {
             let value = '+1';
             if (name === 'autoAttack') {
                 let prevTargetLevel = $this.data('prevTargetLevel');
@@ -6383,6 +6430,7 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
             if (isNaN(targetLevel) || targetLevel < 0) return;
             if (name === 'autoAttack') $this.data('prevTargetLevel', value);
         }
+
         Msg.destroy();
         $('#pdLootLogHeader').find('[data-name="end"]').click();
         let autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
@@ -6794,7 +6842,7 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
         boxesStat += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i>`;
     }
-    Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, -1);
+    Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, Config.autoSaveLootLogInSpecialCaseEnabled ? Config.defShowMsgDuration : -1);
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
         Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
@@ -7748,7 +7796,11 @@ const readHaloInfo = function (isInitLootPage = false) {
         }
     }).always(function (result) {
         Msg.remove($wait);
-        if (result === 'timeout') setTimeout(() => readHaloInfo(isInitLootPage), _Const2.default.defAjaxInterval);else if (result === 'error') Msg.show('<strong>战力光环信息获取失败！</strong>');
+        if (result === 'timeout') {
+            setTimeout(() => readHaloInfo(isInitLootPage), _Const2.default.defAjaxInterval);
+        } else if (result === 'error') {
+            Msg.show('<strong>战力光环信息获取失败！</strong>', -1);
+        }
     });
 };
 
@@ -7918,7 +7970,7 @@ const promoteHalo = exports.promoteHalo = function (totalCount, promoteHaloCostT
                 nextTime = Config.promoteHaloAutoIntervalEnabled ? 0 : Util.getDate(`+${Config.promoteHaloInterval}h`).getTime();
                 let randomNum = parseFloat(matches[2]);
                 let costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
-                Msg.show('<strong>' + (isNew ? `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) + `</strong><i>${costResult.type}<ins>${(-costResult.num).toLocaleString()}</ins></i>`, -1);
+                Msg.show('<strong>' + (isNew ? `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) + `</strong><i>${costResult.type}<ins>${(-costResult.num).toLocaleString()}</ins></i>`);
 
                 let pay = {};
                 pay[costResult.type] = -costResult.num;
@@ -8152,6 +8204,7 @@ const show = exports.show = function (options, duration) {
     } else {
         $container.stop(false, true).animate({ 'top': '-=' + popTipsHeight / 1.75 });
     }
+    $(':focus').blur();
     let $prev = $msg.prev('.pd_msg');
     $msg.css({
         'top': $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0,
@@ -9701,7 +9754,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
                         msgStatText += `<i>${key}<em>+${num.toLocaleString()}</em></i>`;
                     }
                     console.log('领取每日奖励，' + logStatText);
-                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
+                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', { gain });
                     if (Config.promoteHaloLimit > 0) Util.deleteCookie(_Const2.default.promoteHaloCookieName);
                 }

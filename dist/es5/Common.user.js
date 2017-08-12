@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.3
+// @version     11.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.3';
+var version = '11.4';
 
 /**
  * 导出模块
@@ -1111,6 +1111,8 @@ var Config = exports.Config = {
     showChangePointsInfoEnabled: false,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
     levelPointList: {},
+    // 关键层列表，用于“攻击到下一关键层前”按钮，例：[1,11,15,20]
+    keyLevelList: [],
     // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
     autoChangeLevelPointsEnabled: false,
     // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
@@ -3704,15 +3706,15 @@ var openBoxes = function openBoxes(_ref) {
                     var action = null;
                     if (Config.smeltArmsAfterOpenBoxesEnabled) {
                         action = function action() {
-                            return smeltArms(Config.defSmeltArmTypeList, safeId, nextActionEnabled);
+                            return smeltArms({ typeList: Config.defSmeltArmTypeList, safeId: safeId, nextActionEnabled: nextActionEnabled });
                         };
                     } else if (Config.useItemsAfterOpenBoxesEnabled) {
                         action = function action() {
-                            return useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+                            return useItems({ typeList: Config.defUseItemTypeList, safeId: safeId, nextActionEnabled: nextActionEnabled });
                         };
                     } else if (Config.sellItemsAfterOpenBoxesEnabled) {
                         action = function action() {
-                            return sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+                            return sellItems({ typeList: Config.defSellItemTypeList, safeId: safeId, nextActionEnabled: nextActionEnabled });
                         };
                     }
                     if (action) {
@@ -3872,7 +3874,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
     if ($('#' + dialogName).length > 0) return;
     Msg.destroy();
 
-    var html = '\n<div class="pd_cfg_main">\n  <div style="width: 550px; margin-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #99f;">\n    <span style="color: ' + armInfo['颜色'] + '">' + armInfo['名称'] + '</span> - ' + armInfo['描述'] + '\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u88C5\u5907ID\uFF1A<input name="armId" type="text" value="' + armId + '" style="width: 100px;" readonly></label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armId]" href="#">\u590D\u5236</a>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E\uFF1A</label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">\u590D\u5236</a><br>\n    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\n      \u88C5\u5907\u5907\u6CE8\uFF1A<input name="armMemo" type="text" maxlength="20" style="width: 180px;">\n    </label>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="saveMemo" type="button">\u4FDD\u5B58\u5907\u6CE8</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="width: 550px; margin-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #99f;">\n    <span style="color: ' + armInfo['颜色'] + '">' + armInfo['名称'] + '</span> - ' + armInfo['描述'] + '\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u88C5\u5907ID\uFF1A<input name="armId" type="text" value="' + armId + '" style="width: 100px;" readonly></label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armId]" href="#">\u590D\u5236</a>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E\uFF1A</label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">\u590D\u5236</a><br>\n    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\n      \u88C5\u5907\u5907\u6CE8\uFF1A<input name="armMemo" type="text" maxlength="20" style="width: 180px;">\n    </label>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="saveMemo" type="submit">\u4FDD\u5B58\u5907\u6CE8</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1001;');
 
     $dialog.on('click', 'a[data-name="copy"]', function (e) {
@@ -3882,7 +3884,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
             $target.select().focus();
         }
         Script.runFunc('Item.showArmInfoDialog_copy_');
-    }).find('[name="saveMemo"]').click(function (e) {
+    }).submit(function (e) {
         e.preventDefault();
         (0, _Config.read)();
         var value = $.trim($dialog.find('input[name="armMemo"]').val());
@@ -4061,7 +4063,9 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
  * 添加装备相关按钮
  */
 var addArmsButton = function addArmsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="selectInverse" type="button" title="\u5168\u9009\u6216\u53CD\u9009">\u9009\u62E9</button>\n  <button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n  <button name="clearArmsMemo" type="button" style="color: #f00;" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="selectInverse"]').click(function () {
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="selectAll" type="button" title="\u5168\u9009">\u5168\u9009</button>\n  <button name="selectInverse" type="button" title="\u53CD\u9009">\u53CD\u9009</button>\n  <button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n  <button name="clearArmsMemo" type="button" style="color: #f00;" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltSelectArms" type="button" style="color: #00f;" title="\u6279\u91CF\u7194\u70BC\u5F53\u524D\u9875\u9762\u4E0A\u6240\u9009\u7684\u88C5\u5907">\u7194\u70BC\u6240\u9009</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u79CD\u7C7B\u7684\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="selectAll"]').click(function () {
+        return Util.selectAll($armArea.find('input[name="armCheck"]'));
+    }).end().find('[name="selectInverse"]').click(function () {
         return Util.selectInverse($armArea.find('input[name="armCheck"]'));
     }).end().find('[name="copyWeaponParameterSetting"]').click(function () {
         var $this = $(this);
@@ -4131,6 +4135,13 @@ var addArmsButton = function addArmsButton() {
         if (armIdList.length > 0) {
             showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
         }
+    }).end().find('[name="smeltSelectArms"]').click(function () {
+        var idList = [];
+        $armArea.find('input[name="armCheck"]:checked').each(function () {
+            idList.push(parseInt($(this).val()));
+        });
+        if (!idList.length || !confirm('\u662F\u5426\u7194\u70BC\u6240\u9009\u7684' + idList.length + '\u4EF6\u88C5\u5907\uFF1F')) return;
+        smeltArms({ idList: idList, safeId: safeId });
     }).end().find('[name="smeltArms"]').click(function () {
         return showBatchSmeltArmsDialog(safeId);
     });
@@ -4319,7 +4330,7 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
         (0, _Config.write)();
         if (!confirm('是否熔炼所选装备种类？')) return;
         Dialog.close(dialogName);
-        smeltArms(typeList, safeId);
+        smeltArms({ typeList: typeList, safeId: safeId });
     }).end().find('[name="selectAll"]').click(function () {
         return Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'));
     }).end().find('[name="selectInverse"]').click(function () {
@@ -4332,12 +4343,19 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
 
 /**
  * 熔炼装备
- * @param {string[]} typeList 想要熔炼的装备种类
+ * @param {string[]} typeList 想要熔炼的装备种类列表
+ * @param {number[]} idList 想要熔炼的装备ID列表（用于熔炼所选，不要与typeList一起使用）
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-var smeltArms = function smeltArms(typeList, safeId) {
-    var nextActionEnabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+var smeltArms = function smeltArms(_ref2) {
+    var _ref2$typeList = _ref2.typeList,
+        typeList = _ref2$typeList === undefined ? [] : _ref2$typeList,
+        _ref2$idList = _ref2.idList,
+        idList = _ref2$idList === undefined ? [] : _ref2$idList,
+        safeId = _ref2.safeId,
+        _ref2$nextActionEnabl = _ref2.nextActionEnabled,
+        nextActionEnabled = _ref2$nextActionEnabl === undefined ? false : _ref2$nextActionEnabl;
 
     var successNum = 0,
         index = 0;
@@ -4406,8 +4424,12 @@ var smeltArms = function smeltArms(typeList, safeId) {
                 _armName$split2 = _slicedToArray(_armName$split, 2),
                 armGroup = _armName$split2[1];
 
-            if (armName && armGroup && typeList.includes(armName)) {
-                armList.push({ armId: armId, armGroup: armGroup, armName: armName });
+            if (armName && armGroup) {
+                if (typeList.length > 0 && typeList.includes(armName)) {
+                    armList.push({ armId: armId, armGroup: armGroup, armName: armName });
+                } else if (idList.length > 0 && idList.includes(armId)) {
+                    armList.push({ armId: armId, armGroup: armGroup, armName: armName });
+                }
             }
         });
         if (!armList.length) {
@@ -4417,10 +4439,10 @@ var smeltArms = function smeltArms(typeList, safeId) {
 
         index = 0;
         $(document).clearQueue('SmeltArms');
-        $.each(armList, function (i, _ref2) {
-            var armId = _ref2.armId,
-                armGroup = _ref2.armGroup,
-                armName = _ref2.armName;
+        $.each(armList, function (i, _ref3) {
+            var armId = _ref3.armId,
+                armGroup = _ref3.armGroup,
+                armName = _ref3.armName;
 
             $(document).queue('SmeltArms', function () {
                 return smelt(armId, armGroup, armName, armList.length);
@@ -4445,11 +4467,11 @@ var smeltArms = function smeltArms(typeList, safeId) {
         var action = null;
         if (Config.useItemsAfterOpenBoxesEnabled) {
             action = function action() {
-                return useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+                return useItems({ typeList: Config.defUseItemTypeList, safeId: safeId, nextActionEnabled: nextActionEnabled });
             };
         } else if (Config.sellItemsAfterOpenBoxesEnabled) {
             action = function action() {
-                return sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+                return sellItems({ typeList: Config.defSellItemTypeList, safeId: safeId, nextActionEnabled: nextActionEnabled });
             };
         }
         if (action) {
@@ -4714,7 +4736,7 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
         (0, _Config.write)();
         if (!confirm('\u662F\u5426' + typeName + '\u6240\u9009\u9053\u5177\u79CD\u7C7B\uFF1F')) return;
         Dialog.close(dialogName);
-        if (type === 1) useItems(typeList, safeId);else sellItems(typeList, safeId);
+        if (type === 1) useItems({ typeList: typeList, safeId: safeId });else sellItems({ typeList: typeList, safeId: safeId });
     });
 
     $dialog.find('[name="itemTypes"] > option').each(function () {
@@ -4729,12 +4751,15 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
 
 /**
  * 使用道具
- * @param {string[]} typeList 想要使用的道具种类
+ * @param {string[]} typeList 想要使用的道具种类列表
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-var useItems = function useItems(typeList, safeId) {
-    var nextActionEnabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+var useItems = function useItems(_ref4) {
+    var typeList = _ref4.typeList,
+        safeId = _ref4.safeId,
+        _ref4$nextActionEnabl = _ref4.nextActionEnabled,
+        nextActionEnabled = _ref4$nextActionEnabl === undefined ? false : _ref4$nextActionEnabl;
 
     var totalSuccessNum = 0,
         totalValidNum = 0,
@@ -4820,9 +4845,9 @@ var useItems = function useItems(typeList, safeId) {
 
         index = 0;
         $(document).clearQueue('UseItems');
-        $.each(itemList, function (i, _ref3) {
-            var itemId = _ref3.itemId,
-                itemName = _ref3.itemName;
+        $.each(itemList, function (i, _ref5) {
+            var itemId = _ref5.itemId,
+                itemName = _ref5.itemName;
 
             $(document).queue('UseItems', function () {
                 return use(itemId, itemName, itemList.length);
@@ -4847,7 +4872,7 @@ var useItems = function useItems(typeList, safeId) {
         var action = null;
         if (Config.sellItemsAfterOpenBoxesEnabled) {
             action = function action() {
-                return sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+                return sellItems({ typeList: Config.defSellItemTypeList, safeId: safeId, nextActionEnabled: nextActionEnabled });
             };
         }
         if (action) {
@@ -4950,12 +4975,15 @@ var useItems = function useItems(typeList, safeId) {
 
 /**
  * 出售道具
- * @param {string[]} itemTypeList 想要出售的道具种类
+ * @param {string[]} typeList 想要出售的道具种类列表
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-var sellItems = function sellItems(itemTypeList, safeId) {
-    var nextActionEnabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+var sellItems = function sellItems(_ref6) {
+    var typeList = _ref6.typeList,
+        safeId = _ref6.safeId,
+        _ref6$nextActionEnabl = _ref6.nextActionEnabled,
+        nextActionEnabled = _ref6$nextActionEnabl === undefined ? false : _ref6$nextActionEnabl;
 
     var successNum = 0,
         index = 0;
@@ -5015,7 +5043,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
             if (!matches) return;
             var itemId = parseInt(matches[1]);
             var itemName = $this.find('> td:nth-child(3)').text().trim();
-            if (itemTypeList.includes(itemName)) itemList.push({ itemId: itemId, itemName: itemName });
+            if (typeList.includes(itemName)) itemList.push({ itemId: itemId, itemName: itemName });
         });
         if (!itemList.length) {
             complete();
@@ -5024,9 +5052,9 @@ var sellItems = function sellItems(itemTypeList, safeId) {
 
         index = 0;
         $(document).clearQueue('SellItems');
-        $.each(itemList, function (i, _ref4) {
-            var itemId = _ref4.itemId,
-                itemName = _ref4.itemName;
+        $.each(itemList, function (i, _ref7) {
+            var itemId = _ref7.itemId,
+                itemName = _ref7.itemName;
 
             $(document).queue('SellItems', function () {
                 return sell(itemId, itemName, itemList.length);
@@ -5063,7 +5091,7 @@ var sellItems = function sellItems(itemTypeList, safeId) {
         var _iteratorError19 = undefined;
 
         try {
-            for (var _iterator19 = Util.getSortedObjectKeyList(itemTypeList, sellInfo)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+            for (var _iterator19 = Util.getSortedObjectKeyList(typeList, sellInfo)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
                 var itemName = _step19.value;
 
                 itemTypeNum++;
@@ -5159,7 +5187,7 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
      */
     var getCookieDate = function getCookieDate() {
         var now = new Date();
-        var date = Util.getTimezoneDateByTime('00:40:00');
+        var date = Util.getTimezoneDateByTime('00:30:00');
         if (now > date) date.setDate(date.getDate() + 1);
         return date;
     };
@@ -5252,7 +5280,7 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
                     }
 
                     isShowMsg = true;
-                    Msg.show('<strong>\u8D2D\u4E70\u7269\u54C1\u3010' + itemName + '\u3011' + msgStat, -1);
+                    Msg.show('<strong>\u8D2D\u4E70\u7269\u54C1\u3010' + itemName + '\u3011' + msgStat);
                     Script.runFunc('Item.buyItems_success_', msg);
                 }
             } else if (msg.includes('不足')) {
@@ -5273,12 +5301,12 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
                 }
             }
             if (!isShowMsg) {
-                Msg.show('<strong>\u8D2D\u4E70\u7269\u54C1\u3010' + itemName + '\u3011\uFF1A' + msg + '</strong>', -1);
+                Msg.show('<strong>\u8D2D\u4E70\u7269\u54C1\u3010' + itemName + '\u3011\uFF1A' + msg + '</strong>');
             }
         }).fail(function () {
             index++;
             subIndex = 0;
-            Msg.show('<strong>\u8D2D\u4E70\u7269\u54C1\u3010' + getItemNameById(itemId) + '\u3011\uFF1A\u8FDE\u63A5\u8D85\u65F6</strong>', -1);
+            Msg.show('<strong>\u8D2D\u4E70\u7269\u54C1\u3010' + getItemNameById(itemId) + '\u3011\uFF1A\u8FDE\u63A5\u8D85\u65F6</strong>');
         }).always(function () {
             isStop = isStop || $wait.data('stop');
             if (isStop || index >= itemIdList.length) {
@@ -6832,9 +6860,22 @@ var handlePointsArea = function handlePointsArea() {
     $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
-    $('\n<tr>\n  <td width="40%">\n    \u88C5\u5907ID\u548C\u5907\u6CE8\n    <span class="pd_cfg_tips" title="\u53EF\u70B9\u51FB\u53F3\u8FB9\u7684\u201C\u66F4\u6362\u88C5\u5907\u201D\u6309\u94AE\uFF0C\u4E5F\u53EF\u624B\u52A8\u586B\u5199\u88C5\u5907ID\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u66F4\u6362\u88C5\u5907\u3002\n\u5F53\u6587\u672C\u6846\u5185\u7684\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u65F6\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u5C06\u4F1A\u81EA\u52A8\u66F4\u6362\u88C5\u5907\uFF08\u70B9\u51FB\u201C\u4FEE\u6539\u70B9\u6570\u5206\u914D\u201D\u6309\u94AE\u53EA\u4F1A\u4FEE\u6539\u70B9\u6570\u800C\u4E0D\u4F1A\u66F4\u6362\u88C5\u5907\uFF09\u3002">[?]</span>\n  </td>\n  <td width="40%">\n    <input name="armId" type="text" value="" maxlength="15" title="\u88C5\u5907ID" placeholder="\u88C5\u5907ID" style="width: 70px;">\n    <input name="armMemo" type="text" value="" maxlength="15" title="\u88C5\u5907\u5907\u6CE8" placeholder="\u88C5\u5907\u5907\u6CE8" style="width: 100px;">\n    <a class="pd_btn_link" data-name="changeArm" href="#" title="\u66F4\u6362\u5F53\u524D\u88C5\u5907">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
+    $('\n<tr>\n  <td>\n    \u88C5\u5907ID\u548C\u5907\u6CE8\n    <span class="pd_cfg_tips" title="\u53EF\u70B9\u51FB\u53F3\u8FB9\u7684\u201C\u66F4\u6362\u88C5\u5907\u201D\u6309\u94AE\uFF0C\u4E5F\u53EF\u624B\u52A8\u586B\u5199\u88C5\u5907ID\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u66F4\u6362\u88C5\u5907\u3002\n\u5F53\u6587\u672C\u6846\u5185\u7684\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u65F6\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u5C06\u4F1A\u81EA\u52A8\u66F4\u6362\u88C5\u5907\uFF08\u70B9\u51FB\u201C\u4FEE\u6539\u70B9\u6570\u5206\u914D\u201D\u6309\u94AE\u53EA\u4F1A\u4FEE\u6539\u70B9\u6570\u800C\u4E0D\u4F1A\u66F4\u6362\u88C5\u5907\uFF09\u3002">[?]</span>\n  </td>\n  <td>\n    <input name="armId" type="text" value="" maxlength="15" title="\u88C5\u5907ID" placeholder="\u88C5\u5907ID" style="width: 70px;">\n    <input name="armMemo" type="text" value="" maxlength="15" title="\u88C5\u5907\u5907\u6CE8" placeholder="\u88C5\u5907\u5907\u6CE8" style="width: 100px;">\n    <a class="pd_btn_link" data-name="changeArm" href="#" title="\u66F4\u6362\u5F53\u524D\u88C5\u5907">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
         e.preventDefault();
         addOrChangeArm(0);
+    });
+
+    $('\n<tr>\n  <td>\n    \u5173\u952E\u5C42\u5217\u8868\n    <span class="pd_cfg_tips" title="KFOL\u8BA1\u7B97\u5668\u7684\u5173\u952E\u5C42\u5217\u8868\uFF08\u5404\u5173\u952E\u5C42\u4EE5\u7A7A\u683C\u5206\u9694\uFF09\uFF0C\u7528\u4E8E\u201C\u653B\u51FB\u5230\u4E0B\u4E00\u5173\u952E\u5C42\u524D\u201D\u6309\u94AE">[?]</span>\n  </td>\n  <td>\n    <input name="keyLevelList" type="text" value="' + Config.keyLevelList.join(' ') + '" maxlength="100" placeholder="\u5173\u952E\u5C42\u5217\u8868" style="width: 200px;">\n    <a class="pd_btn_link" data-name="saveKeyLevelList" href="#" title="\u4FDD\u5B58\u5173\u952E\u5C42\u8BBE\u7F6E">\u4FDD\u5B58</a>\n  </td>\n</tr>\n').insertBefore($points.find('> tbody > tr:last-child')).find('[data-name="saveKeyLevelList"]').click(function (e) {
+        e.preventDefault();
+        (0, _Config.read)();
+        var value = $.trim($points.find('input[name="keyLevelList"]').val());
+        Config.keyLevelList = value.split(' ').map(function (level) {
+            return parseInt(level);
+        }).filter(function (level) {
+            return level > 0;
+        });
+        (0, _Config.write)();
+        alert('设置已保存');
     });
 
     var $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
@@ -7375,7 +7416,7 @@ var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
  * 添加攻击相关按钮
  */
 var addAttackBtns = function addAttackBtns() {
-    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~7\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u6309\u7167\u5F53\u524D\u9875\u9762\u4E0A\u53D1\u751F\u53D8\u5316\u4E86\u7684\u70B9\u6570\u8BBE\u7F6E\u548C\u88C5\u5907ID\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u4EE5\u53CA\u66F4\u6362\u88C5\u5907">\u624B\u52A8\u653B\u51FB</button>\n  <span class="pd_cfg_tips" title="\u5728\u4E0D\u52FE\u9009\u201C\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\u201D\u6216\u201C\u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\u201D\u7684\u60C5\u51B5\u4E0B\uFF0C\u70B9\u51FB\u6240\u6709\u7684\u653B\u51FB\u6309\u94AE\u5747\u4F1A\u6309\u7167\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E\u548C\u88C5\u5907ID\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u4EE5\u53CA\u66F4\u6362\u88C5\u5907\u3002\n\uFF08\u6CE8\uFF1A\u53EA\u6709\u5728\u5F53\u524D\u9875\u9762\u4E0A\u70B9\u6570\u8BBE\u7F6E\u6216\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u7684\u60C5\u51B5\u4E0B\u624D\u4F1A\u81EA\u52A8\u63D0\u4EA4\u76F8\u5E94\u8BBE\u7F6E\uFF09\u3002\n\u5728\u52FE\u9009\u4E0A\u8FF0\u4E24\u79CD\u9009\u9879\u7684\u60C5\u51B5\u4E0B\uFF0C\u70B9\u51FB\u81EA\u52A8\u653B\u51FB\uFF08\u4E00\u5C42\uFF09\u6309\u94AE\u4F1A\u81EA\u52A8\u6309\u7167\u9884\u8BBE\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\u6216\u811A\u672C\u8FD4\u56DE\u7684\u503C\u4FEE\u6539\u70B9\u6570\u53CA\u66F4\u6362\u88C5\u5907\u3002\u624B\u52A8\u653B\u51FB\u6309\u94AE\u5219\u65E0\u89C6\u8FD9\u4FE9\u9009\u9879\uFF0C\u4F9D\u7136\u6309\u7167\u524D\u4E00\u79CD\u60C5\u51B5\u8FDB\u884C\u64CD\u4F5C\u3002">[?]</span>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
+    $('\n<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">\n  <label>\n    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ' + (Config.autoChangeLevelPointsEnabled ? 'checked' : '') + '>\n    \u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u53EF\u81EA\u52A8\u4FEE\u6539\u4E3A\u76F8\u5E94\u5C42\u6570\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ' + (Config.customPointsScriptEnabled ? 'checked' : '') + ' \n' + (typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : '') + '> \u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\n    <span class="pd_cfg_tips" title="\u4F7F\u7528\u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u811A\u672C\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF0C\u9700\u6B63\u786E\u5B89\u88C5\u81EA\u5B9A\u4E49\u811A\u672C\u540E\u6B64\u9879\u624D\u53EF\u52FE\u9009\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ' + (Config.unusedPointNumAlertEnabled ? 'checked' : '') + '>\n    \u6709\u5269\u4F59\u5C5E\u6027\u70B9\u65F6\u63D0\u9192\n    <span class="pd_cfg_tips" title="\u5728\u653B\u51FB\u65F6\u5982\u6709\u5269\u4F59\u5C5E\u6027\u70B9\u5219\u8FDB\u884C\u63D0\u9192\uFF08\u4EC5\u9650\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u6709\u6548\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ' + (Config.slowAttackEnabled ? 'checked' : '') + '> \u6162\u901F\n    <span class="pd_cfg_tips" title="\u5EF6\u957F\u6BCF\u6B21\u653B\u51FB\u7684\u65F6\u95F4\u95F4\u9694\uFF08\u57284~7\u79D2\u4E4B\u95F4\uFF09">[?]</span>\n  </label>\n  <label>\n    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ' + (Config.alwaysOpenPointAreaEnabled ? 'checked' : '') + '> \u603B\u662F\u6253\u5F00\u5C5E\u6027\u754C\u9762\n    <span class="pd_cfg_tips" title="\u603B\u662F\u6253\u5F00\u4E2A\u4EBA\u5C5E\u6027/\u88C5\u5907\u754C\u9762">[?]</span>\n  </label><br>\n  <button name="autoAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u5230\u6307\u5B9A\u5C42\u6570">\u81EA\u52A8\u653B\u51FB</button>\n  <button name="onceAttack" type="button" title="\u81EA\u52A8\u653B\u51FB\u4E00\u5C42">\u4E00\u5C42</button>\n  <button name="nextKeyLevelAttack" type="button" title="\u653B\u51FB\u5230\u4E0B\u4E00\u5173\u952E\u5C42\u4E4B\u524D">\u5230\u4E0B\u4E00\u5173\u952E\u5C42\u524D</button>\n  <span style="color: #888;">|</span>\n  <button name="manualAttack" type="button" title="\u624B\u52A8\u653B\u51FB\u4E00\u5C42\uFF0C\u4F1A\u6309\u7167\u5F53\u524D\u9875\u9762\u4E0A\u53D1\u751F\u53D8\u5316\u4E86\u7684\u70B9\u6570\u8BBE\u7F6E\u548C\u88C5\u5907ID\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u4EE5\u53CA\u66F4\u6362\u88C5\u5907">\u624B\u52A8\u653B\u51FB</button>\n  <span class="pd_cfg_tips" title="\u5728\u4E0D\u52FE\u9009\u201C\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u5206\u914D\u65B9\u6848\u201D\u6216\u201C\u4F7F\u7528\u81EA\u5B9A\u4E49\u811A\u672C\u201D\u7684\u60C5\u51B5\u4E0B\uFF0C\u70B9\u51FB\u6240\u6709\u7684\u653B\u51FB\u6309\u94AE\u5747\u4F1A\u6309\u7167\u5F53\u524D\u9875\u9762\u4E0A\u7684\u70B9\u6570\u8BBE\u7F6E\u548C\u88C5\u5907ID\u81EA\u52A8\u4FEE\u6539\u70B9\u6570\u4EE5\u53CA\u66F4\u6362\u88C5\u5907\u3002\n\uFF08\u6CE8\uFF1A\u53EA\u6709\u5728\u5F53\u524D\u9875\u9762\u4E0A\u70B9\u6570\u8BBE\u7F6E\u6216\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u7684\u60C5\u51B5\u4E0B\u624D\u4F1A\u81EA\u52A8\u63D0\u4EA4\u76F8\u5E94\u8BBE\u7F6E\uFF09\u3002\n\u5728\u52FE\u9009\u4E0A\u8FF0\u4E24\u79CD\u9009\u9879\u7684\u60C5\u51B5\u4E0B\uFF0C\u70B9\u51FB\u81EA\u52A8\u653B\u51FB\u76F8\u5173\u6309\u94AE\u4F1A\u81EA\u52A8\u6309\u7167\u9884\u8BBE\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\u6216\u811A\u672C\u8FD4\u56DE\u7684\u503C\u4FEE\u6539\u70B9\u6570\u53CA\u66F4\u6362\u88C5\u5907\u3002\u800C\u624B\u52A8\u653B\u51FB\u6309\u94AE\u5219\u65E0\u89C6\u8FD9\u4FE9\u9009\u9879\uFF0C\u4F9D\u7136\u6309\u7167\u524D\u4E00\u79CD\u60C5\u51B5\u8FDB\u884C\u64CD\u4F5C\u3002">[?]</span>\n</div>\n').insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
         if (/你被击败了/.test(log)) {
             alert('你已经被击败了');
             return;
@@ -7383,22 +7424,39 @@ var addAttackBtns = function addAttackBtns() {
         if ($('.pd_mask').length > 0) return;
         var $this = $(this);
         var name = $this.attr('name');
-        var type = name === 'manualAttack' ? 'manual' : 'auto';
         var targetLevel = 0;
-        if (type === 'auto') {
-            var value = '+1';
+
+        var type = name === 'manualAttack' ? 'manual' : 'auto';
+        if (name === 'nextKeyLevelAttack') {
+            var value = $.trim($points.find('input[name="keyLevelList"]').val());
+            var keyLevelList = value.split(' ').map(function (level) {
+                return parseInt(level);
+            }).filter(function (level) {
+                return level > 0;
+            });
+            if (!keyLevelList.length) {
+                alert('没有设置关键层');
+                return;
+            }
+            var currentLevel = getCurrentLevel(logList);
+            targetLevel = Math.min.apply(Math, _toConsumableArray(keyLevelList.filter(function (level) {
+                return level > currentLevel + 1;
+            }))) - 1;
+        } else if (type === 'auto') {
+            var _value = '+1';
             if (name === 'autoAttack') {
                 var prevTargetLevel = $this.data('prevTargetLevel');
-                value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : Config.attackTargetLevel));
+                _value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : Config.attackTargetLevel));
             }
-            if (!/\+?\d+/.test(value)) return;
-            if (value.startsWith('+')) {
-                var currentLevel = getCurrentLevel(logList);
-                targetLevel = currentLevel + parseInt(value);
-            } else targetLevel = parseInt(value);
+            if (!/\+?\d+/.test(_value)) return;
+            if (_value.startsWith('+')) {
+                var _currentLevel = getCurrentLevel(logList);
+                targetLevel = _currentLevel + parseInt(_value);
+            } else targetLevel = parseInt(_value);
             if (isNaN(targetLevel) || targetLevel < 0) return;
-            if (name === 'autoAttack') $this.data('prevTargetLevel', value);
+            if (name === 'autoAttack') $this.data('prevTargetLevel', _value);
         }
+
         Msg.destroy();
         $('#pdLootLogHeader').find('[data-name="end"]').click();
         var autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
@@ -8023,7 +8081,7 @@ var recordLootInfo = function recordLootInfo(logList, levelInfoList, pointsLogLi
         }
     }
 
-    Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>' + (boxesStat.length > 75 ? '<br>' : '') + boxesStat, -1);
+    Msg.show('<strong>\u4F60\u88AB\u7B2C<em>' + currentLevel + '</em>\u5C42\u7684NPC\u51FB\u8D25\u4E86</strong>' + (boxesStat.length > 75 ? '<br>' : '') + boxesStat, Config.autoSaveLootLogInSpecialCaseEnabled ? Config.defShowMsgDuration : -1);
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
         Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
@@ -9013,9 +9071,13 @@ var readHaloInfo = function readHaloInfo() {
         }
     }).always(function (result) {
         Msg.remove($wait);
-        if (result === 'timeout') setTimeout(function () {
-            return readHaloInfo(isInitLootPage);
-        }, _Const2.default.defAjaxInterval);else if (result === 'error') Msg.show('<strong>战力光环信息获取失败！</strong>');
+        if (result === 'timeout') {
+            setTimeout(function () {
+                return readHaloInfo(isInitLootPage);
+            }, _Const2.default.defAjaxInterval);
+        } else if (result === 'error') {
+            Msg.show('<strong>战力光环信息获取失败！</strong>', -1);
+        }
     });
 };
 
@@ -9199,7 +9261,7 @@ var promoteHalo = exports.promoteHalo = function promoteHalo(totalCount, promote
                 nextTime = Config.promoteHaloAutoIntervalEnabled ? 0 : Util.getDate('+' + Config.promoteHaloInterval + 'h').getTime();
                 var randomNum = parseFloat(matches[2]);
                 var costResult = getPromoteHaloCostByTypeId(promoteHaloCostType);
-                Msg.show('<strong>' + (isNew ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + ('</strong><i>' + costResult.type + '<ins>' + (-costResult.num).toLocaleString() + '</ins></i>'), -1);
+                Msg.show('<strong>' + (isNew ? '\u606D\u559C\u4F60\u63D0\u5347\u4E86\u5149\u73AF\u7684\u6548\u679C\uFF01\u65B0\u6570\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011' : '\u4F60\u672C\u6B21\u968F\u673A\u503C\u4E3A\u3010<em>' + randomNum + '%</em>\u3011\uFF0C\u672A\u8D85\u8FC7\u5149\u73AF\u6548\u679C') + ('</strong><i>' + costResult.type + '<ins>' + (-costResult.num).toLocaleString() + '</ins></i>'));
 
                 var pay = {};
                 pay[costResult.type] = -costResult.num;
@@ -9437,6 +9499,7 @@ var show = exports.show = function show(options, duration) {
     } else {
         $container.stop(false, true).animate({ 'top': '-=' + popTipsHeight / 1.75 });
     }
+    $(':focus').blur();
     var $prev = $msg.prev('.pd_msg');
     $msg.css({
         'top': $prev.length > 0 ? parseInt($prev.css('top')) + $prev.outerHeight() + 5 : 0,
@@ -11010,7 +11073,7 @@ var getDailyBonus = exports.getDailyBonus = function getDailyBonus() {
                     }
 
                     console.log('领取每日奖励，' + logStatText);
-                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
+                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', { gain: gain });
                     if (Config.promoteHaloLimit > 0) Util.deleteCookie(_Const2.default.promoteHaloCookieName);
                 }

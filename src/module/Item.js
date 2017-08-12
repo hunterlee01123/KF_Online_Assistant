@@ -464,13 +464,13 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
                 else if (nextActionEnabled) {
                     let action = null;
                     if (Config.smeltArmsAfterOpenBoxesEnabled) {
-                        action = () => smeltArms(Config.defSmeltArmTypeList, safeId, nextActionEnabled);
+                        action = () => smeltArms({typeList: Config.defSmeltArmTypeList, safeId, nextActionEnabled});
                     }
                     else if (Config.useItemsAfterOpenBoxesEnabled) {
-                        action = () => useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+                        action = () => useItems({typeList: Config.defUseItemTypeList, safeId, nextActionEnabled});
                     }
                     else if (Config.sellItemsAfterOpenBoxesEnabled) {
-                        action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+                        action = () => sellItems({typeList: Config.defSellItemTypeList, safeId, nextActionEnabled});
                     }
                     if (action) {
                         setTimeout(action, Const.minActionInterval);
@@ -652,7 +652,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
   </div>
 </div>
 <div class="pd_cfg_btns">
-  <button name="saveMemo" type="button">保存备注</button>
+  <button name="saveMemo" type="submit">保存备注</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1001;');
@@ -664,7 +664,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
             $target.select().focus();
         }
         Script.runFunc('Item.showArmInfoDialog_copy_');
-    }).find('[name="saveMemo"]').click(function (e) {
+    }).submit(function (e) {
         e.preventDefault();
         readConfig();
         let value = $.trim($dialog.find('input[name="armMemo"]').val());
@@ -762,13 +762,16 @@ export const getWeaponParameterSetting = function (armId, armInfo) {
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="selectInverse" type="button" title="全选或反选">选择</button>
+  <button name="selectAll" type="button" title="全选">全选</button>
+  <button name="selectInverse" type="button" title="反选">反选</button>
   <button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
   <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
-  <button name="showArmsFinalAddition" type="button" style="color: #00f;" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
-  <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定装备">批量熔炼</button>
+  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
+  <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
+  <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
+`).insertAfter($armArea).find('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
+        .end().find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
         .end().find('[name="copyWeaponParameterSetting"]')
         .click(function () {
             let $this = $(this);
@@ -817,6 +820,14 @@ const addArmsButton = function () {
             if (armIdList.length > 0) {
                 showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
             }
+        }).end().find('[name="smeltSelectArms"]')
+        .click(function () {
+            let idList = [];
+            $armArea.find('input[name="armCheck"]:checked').each(function () {
+                idList.push(parseInt($(this).val()));
+            });
+            if (!idList.length || !confirm(`是否熔炼所选的${idList.length}件装备？`)) return;
+            smeltArms({idList, safeId});
         }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
 };
 
@@ -959,7 +970,7 @@ const showBatchSmeltArmsDialog = function () {
         writeConfig();
         if (!confirm('是否熔炼所选装备种类？')) return;
         Dialog.close(dialogName);
-        smeltArms(typeList, safeId);
+        smeltArms({typeList, safeId});
     }).end().find('[name="selectAll"]').click(() => Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]')))
         .end().find('[name="selectInverse"]').click(() => Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]')));
 
@@ -969,11 +980,12 @@ const showBatchSmeltArmsDialog = function () {
 
 /**
  * 熔炼装备
- * @param {string[]} typeList 想要熔炼的装备种类
+ * @param {string[]} typeList 想要熔炼的装备种类列表
+ * @param {number[]} idList 想要熔炼的装备ID列表（用于熔炼所选，不要与typeList一起使用）
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
+const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabled = false}) {
     let successNum = 0, index = 0;
     let smeltInfo = {};
     let isDeleteMemo = false;
@@ -1036,8 +1048,13 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
             let armId = parseInt($tr.data('id'));
             let armName = $tr.find('> td:nth-child(3) > span:first').text().trim();
             let [, armGroup] = armName.split('的');
-            if (armName && armGroup && typeList.includes(armName)) {
-                armList.push({armId, armGroup, armName});
+            if (armName && armGroup) {
+                if (typeList.length > 0 && typeList.includes(armName)) {
+                    armList.push({armId, armGroup, armName});
+                }
+                else if (idList.length > 0 && idList.includes(armId)) {
+                    armList.push({armId, armGroup, armName});
+                }
             }
         });
         if (!armList.length) {
@@ -1069,10 +1086,10 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
     const nextAction = function () {
         let action = null;
         if (Config.useItemsAfterOpenBoxesEnabled) {
-            action = () => useItems(Config.defUseItemTypeList, safeId, nextActionEnabled);
+            action = () => useItems({typeList: Config.defUseItemTypeList, safeId, nextActionEnabled});
         }
         else if (Config.sellItemsAfterOpenBoxesEnabled) {
-            action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+            action = () => sellItems({typeList: Config.defSellItemTypeList, safeId, nextActionEnabled});
         }
         if (action) {
             setTimeout(action, Const.minActionInterval);
@@ -1303,8 +1320,8 @@ const showBatchUseAndSellItemsDialog = function (type) {
         writeConfig();
         if (!confirm(`是否${typeName}所选道具种类？`)) return;
         Dialog.close(dialogName);
-        if (type === 1) useItems(typeList, safeId);
-        else sellItems(typeList, safeId);
+        if (type === 1) useItems({typeList, safeId});
+        else sellItems({typeList, safeId});
     });
 
     $dialog.find('[name="itemTypes"] > option').each(function () {
@@ -1319,11 +1336,11 @@ const showBatchUseAndSellItemsDialog = function (type) {
 
 /**
  * 使用道具
- * @param {string[]} typeList 想要使用的道具种类
+ * @param {string[]} typeList 想要使用的道具种类列表
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const useItems = function (typeList, safeId, nextActionEnabled = false) {
+const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
     let totalSuccessNum = 0, totalValidNum = 0, totalInvalidNum = 0, index = 0;
     let useInfo = {};
     let tmpItemTypeList = [...typeList];
@@ -1438,7 +1455,7 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
     const nextAction = function () {
         let action = null;
         if (Config.sellItemsAfterOpenBoxesEnabled) {
-            action = () => sellItems(Config.defSellItemTypeList, safeId, nextActionEnabled);
+            action = () => sellItems({typeList: Config.defSellItemTypeList, safeId, nextActionEnabled});
         }
         if (action) {
             setTimeout(action, Const.minActionInterval);
@@ -1507,11 +1524,11 @@ const useItems = function (typeList, safeId, nextActionEnabled = false) {
 
 /**
  * 出售道具
- * @param {string[]} itemTypeList 想要出售的道具种类
+ * @param {string[]} typeList 想要出售的道具种类列表
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
+const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
     let successNum = 0, index = 0;
     let sellInfo = {};
 
@@ -1571,7 +1588,7 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
             if (!matches) return;
             let itemId = parseInt(matches[1]);
             let itemName = $this.find('> td:nth-child(3)').text().trim();
-            if (itemTypeList.includes(itemName)) itemList.push({itemId, itemName});
+            if (typeList.includes(itemName)) itemList.push({itemId, itemName});
         });
         if (!itemList.length) {
             complete();
@@ -1609,7 +1626,7 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
 
         let itemTypeNum = 0, totalSell = 0;
         let resultStat = '';
-        for (let itemName of Util.getSortedObjectKeyList(itemTypeList, sellInfo)) {
+        for (let itemName of Util.getSortedObjectKeyList(typeList, sellInfo)) {
             itemTypeNum++;
             let itemLevel = getLevelByName(itemName);
             let {sell, num} = sellInfo[itemName];
