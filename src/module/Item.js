@@ -1111,7 +1111,8 @@ const smeltArms = function (typeList, safeId, nextActionEnabled = false) {
 </li>`);
         console.log(`共有${armGroupNum}个组别中的${successNum}个装备熔炼成功，武器经验+${totalExp}`);
         Msg.show(
-            `<strong>共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong><i>武器经验<em>+${totalExp.toLocaleString()}</em></i>`, -1
+            `<strong>共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong><i>武器经验<em>+${totalExp.toLocaleString()}</em></i>`,
+            -1
         );
 
         if (isDeleteMemo) writeConfig();
@@ -1627,7 +1628,8 @@ const sellItems = function (itemTypeList, safeId, nextActionEnabled = false) {
 </li>`);
         console.log(`共有${itemTypeNum}个种类中的${successNum}个道具出售成功，KFB+${totalSell}`);
         Msg.show(
-            `<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功</strong><i>KFB<em>+${totalSell.toLocaleString()}</em></i>`, -1
+            `<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功</strong><i>KFB<em>+${totalSell.toLocaleString()}</em></i>`,
+            -1
         );
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
         Script.runFunc('Item.sellItems_complete_');
@@ -1693,7 +1695,7 @@ export const buyItems = function (buyItemIdList, safeId) {
      */
     const getCookieDate = function () {
         let now = new Date();
-        let date = Util.getTimezoneDateByTime('00:40:00');
+        let date = Util.getTimezoneDateByTime('00:30:00');
         if (now > date) date.setDate(date.getDate() + 1);
         return date;
     };
@@ -1736,7 +1738,7 @@ export const buyItems = function (buyItemIdList, safeId) {
                         msgStat += `<i>${key}<ins>${value.toLocaleString()}</ins></i>`;
                     }
                     isShowMsg = true;
-                    Msg.show(`<strong>购买物品【${itemName}】${msgStat}`, -1);
+                    Msg.show(`<strong>购买物品【${itemName}】${msgStat}`);
                     Script.runFunc('Item.buyItems_success_', msg);
                 }
             }
@@ -1759,12 +1761,12 @@ export const buyItems = function (buyItemIdList, safeId) {
                 }
             }
             if (!isShowMsg) {
-                Msg.show(`<strong>购买物品【${itemName}】：${msg}</strong>`, -1);
+                Msg.show(`<strong>购买物品【${itemName}】：${msg}</strong>`);
             }
         }).fail(function () {
             index++;
             subIndex = 0;
-            Msg.show(`<strong>购买物品【${getItemNameById(itemId)}】：连接超时</strong>`, -1);
+            Msg.show(`<strong>购买物品【${getItemNameById(itemId)}】：连接超时</strong>`);
         }).always(function () {
             isStop = isStop || $wait.data('stop');
             if (isStop || index >= itemIdList.length) {

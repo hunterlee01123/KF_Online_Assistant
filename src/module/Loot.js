@@ -1247,7 +1247,10 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
         boxesStat += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i>`;
     }
-    Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, -1);
+    Msg.show(
+        `<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`,
+        Config.autoSaveLootLogInSpecialCaseEnabled ? Config.defShowMsgDuration : -1
+    );
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
         Util.deleteCookie(Const.getDailyBonusCookieName);
@@ -2240,8 +2243,12 @@ const readHaloInfo = function (isInitLootPage = false) {
         }
     }).always(function (result) {
         Msg.remove($wait);
-        if (result === 'timeout') setTimeout(() => readHaloInfo(isInitLootPage), Const.defAjaxInterval);
-        else if (result === 'error') Msg.show('<strong>战力光环信息获取失败！</strong>');
+        if (result === 'timeout') {
+            setTimeout(() => readHaloInfo(isInitLootPage), Const.defAjaxInterval);
+        }
+        else if (result === 'error') {
+            Msg.show('<strong>战力光环信息获取失败！</strong>', -1);
+        }
     });
 };
 
@@ -2424,7 +2431,6 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId, is
                     (isNew ?
                         `恭喜你提升了光环的效果！新数值为【<em>${randomNum}%</em>】` : `你本次随机值为【<em>${randomNum}%</em>】，未超过光环效果`) +
                     `</strong><i>${costResult.type}<ins>${(-costResult.num).toLocaleString()}</ins></i>`
-                    , -1
                 );
 
                 let pay = {};

@@ -587,7 +587,7 @@ export const getDailyBonus = function () {
                         msgStatText += `<i>${key}<em>+${num.toLocaleString()}</em></i>`;
                     }
                     console.log('领取每日奖励，' + logStatText);
-                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText, -1);
+                    Msg.show('<strong>领取每日奖励</strong>' + msgStatText);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', {gain});
                     if (Config.promoteHaloLimit > 0) Util.deleteCookie(Const.promoteHaloCookieName);
                 }
