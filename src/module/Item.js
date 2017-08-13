@@ -780,7 +780,7 @@ export const handleUselessSubProperties = function (html) {
         let subPropertiesHtml = '';
         for (let value of matches[1].split('。')) {
             if (!value) continue;
-            let subMatches = /(\S+?)\(/.exec(value);
+            let subMatches = /([^<>]+?)\(/.exec(value);
             if (subMatches) {
                 let property = subMatches[1];
                 if (!keyList.includes(armPropertyKeyList.get(property))) {

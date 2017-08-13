@@ -21,7 +21,7 @@ import * as Loot from './module/Loot';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '11.4.1';
+const version = '11.4.2';
 
 /**
  * 导出模块

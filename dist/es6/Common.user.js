@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.4.1
+// @version     11.4.2
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.4.1';
+const version = '11.4.2';
 
 /**
  * 导出模块
@@ -3967,7 +3967,7 @@ const handleUselessSubProperties = exports.handleUselessSubProperties = function
         let subPropertiesHtml = '';
         for (let value of matches[1].split('。')) {
             if (!value) continue;
-            let subMatches = /(\S+?)\(/.exec(value);
+            let subMatches = /([^<>]+?)\(/.exec(value);
             if (subMatches) {
                 let property = subMatches[1];
                 if (!keyList.includes(armPropertyKeyList.get(property))) {
@@ -9328,7 +9328,7 @@ const appendCss = exports.appendCss = function () {
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   ${_Info2.default.isMobile ? '.topmenu { position: static; }' : ''}
   ${_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : ''}
-  .topmenu { z-index: 1; }
+  .topmenu { z-index: 1003; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
