@@ -84,7 +84,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.4';
+const version = '11.4.1';
 
 /**
  * 导出模块
@@ -3178,7 +3178,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3703,8 +3703,10 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
         let id = parseInt(matches[1]);
         let $tr = $this.parent('tr');
         $tr.attr('data-id', id);
+        let $td = $tr.find('> td:nth-child(3)');
+        $td.html(handleUselessSubProperties($td.html()));
         if (Config.armsMemo[id]) {
-            $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
+            $td.attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
         if (type === 0) {
             $this.prepend(`<input name="armCheck" type="checkbox" value="${id}">`);
@@ -3734,7 +3736,7 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
                     let $wait = Msg.wait('<strong>正在获取争夺首页信息&hellip;</strong>');
                     Loot.updateLootInfo(function () {
                         Msg.remove($wait);
-                        $('#pdChangeArmDialog').parent().hide();
+                        Dialog.close('pdChangeArmDialog');
                         let $armId = $('input[name="armId"]:first');
                         let $armMemo = $('input[name="armMemo"]:first');
                         $armId.val(id);
@@ -3862,6 +3864,9 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
     Script.runFunc('Item.showArmInfoDialog_after_');
 };
 
+// 装备属性关键词列表
+const armPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']]);
+
 /**
  * 获取计算器武器参数设置
  * @param {number} armInfo 装备ID
@@ -3892,13 +3897,12 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
         }
     }
 
-    let mainPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']]);
     for (let value of armInfo['主属性']) {
         let [property = ''] = value.split('(', 1);
         property = property.trim();
         if (property) {
             info['主属性数量']++;
-            info['所有的主属性'] += mainPropertyKeyList.get(property) + ' ';
+            info['所有的主属性'] += armPropertyKeyList.get(property) + ' ';
         }
     }
 
@@ -3909,7 +3913,7 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
         let matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(value);
         if (matches) {
             info['从属性数量']++;
-            info['所有的从属性'] += mainPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+            info['所有的从属性'] += armPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
         }
     }
 
@@ -3923,6 +3927,41 @@ const getWeaponParameterSetting = exports.getWeaponParameterSetting = function (
         content = content.replace(`[${key}]`, $.trim(value));
     }
     return content;
+};
+
+/**
+ * 处理无用的从属性
+ * @param {string} html 装备的HTML代码
+ * @returns {string} 处理后的HTML代码
+ */
+const handleUselessSubProperties = exports.handleUselessSubProperties = function (html) {
+    let armInfo = getArmInfo(html);
+    let keyList = [];
+    for (let value of armInfo['主属性']) {
+        let [property = ''] = value.split('(', 1);
+        if (property) {
+            keyList.push(armPropertyKeyList.get(property));
+        }
+    }
+
+    let matches = /从属性：(.+?)(<br(?: \/)?>|$)/.exec(html);
+    if (matches) {
+        let subPropertiesHtml = '';
+        for (let value of matches[1].split('。')) {
+            if (!value) continue;
+            let subMatches = /(\S+?)\(/.exec(value);
+            if (subMatches) {
+                let property = subMatches[1];
+                if (!keyList.includes(armPropertyKeyList.get(property))) {
+                    value = `<span class="pd_useless_sub_property">${value}</span>`;
+                }
+            }
+            subPropertiesHtml += value + '。';
+        }
+        html = html.replace(matches[0], '从属性：' + subPropertiesHtml + matches[2]);
+    }
+
+    return html;
 };
 
 /**
@@ -5802,6 +5841,7 @@ const handlePointsArea = function () {
     $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
+    $armArea.html(Item.handleUselessSubProperties($armArea.html()));
     $(`
 <tr>
   <td>
@@ -6734,7 +6774,7 @@ const updateLootInfo = exports.updateLootInfo = function (callback = null) {
 
         let armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
         if (armHtml.includes('（装备中）')) {
-            $points.find('#pdArmArea').html(armHtml);
+            $armArea.html(Item.handleUselessSubProperties(armHtml));
         }
 
         let propertiesHtml = $properties.html();
@@ -7119,9 +7159,9 @@ const showLevelPointListConfigDialog = function (callback) {
 const addOrChangeArm = function (type) {
     (0, _Config.read)();
     const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
-    let $dialog = $('#' + dialogName);
+    let $dialog = $('#' + dialogName).parent();
     if ($dialog.length > 0 && type === 1) {
-        $dialog.parent().fadeIn('fast');
+        $dialog.fadeIn('fast');
         Dialog.resize(dialogName);
     } else {
         let $wait = Msg.wait('<strong>正在获取装备信息&hellip;</strong>');
@@ -9315,6 +9355,7 @@ const appendCss = exports.appendCss = function () {
   .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
+  .pd_useless_sub_property { color: #888; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }

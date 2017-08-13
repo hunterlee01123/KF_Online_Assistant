@@ -208,6 +208,7 @@ const handlePointsArea = function () {
         .after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
+    $armArea.html(Item.handleUselessSubProperties($armArea.html()));
     $(`
 <tr>
   <td>
@@ -1190,7 +1191,7 @@ export const updateLootInfo = function (callback = null) {
 
         let armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
         if (armHtml.includes('（装备中）')) {
-            $points.find('#pdArmArea').html(armHtml);
+            $armArea.html(Item.handleUselessSubProperties(armHtml));
         }
 
         let propertiesHtml = $properties.html();
@@ -1597,9 +1598,9 @@ const showLevelPointListConfigDialog = function (callback) {
 const addOrChangeArm = function (type) {
     readConfig();
     const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
-    let $dialog = $('#' + dialogName);
+    let $dialog = $('#' + dialogName).parent();
     if ($dialog.length > 0 && type === 1) {
-        $dialog.parent().fadeIn('fast');
+        $dialog.fadeIn('fast');
         Dialog.resize(dialogName);
     }
     else {

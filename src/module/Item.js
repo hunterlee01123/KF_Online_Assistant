@@ -527,8 +527,10 @@ export const handleArmArea = function ($armArea, type = 0) {
         let id = parseInt(matches[1]);
         let $tr = $this.parent('tr');
         $tr.attr('data-id', id);
+        let $td = $tr.find('> td:nth-child(3)');
+        $td.html(handleUselessSubProperties($td.html()));
         if (Config.armsMemo[id]) {
-            $tr.find('> td:nth-child(3)').attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
+            $td.attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
         }
         if (type === 0) {
             $this.prepend(`<input name="armCheck" type="checkbox" value="${id}">`);
@@ -558,7 +560,7 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                     let $wait = Msg.wait('<strong>正在获取争夺首页信息&hellip;</strong>');
                     Loot.updateLootInfo(function () {
                         Msg.remove($wait);
-                        $('#pdChangeArmDialog').parent().hide();
+                        Dialog.close('pdChangeArmDialog');
                         let $armId = $('input[name="armId"]:first');
                         let $armMemo = $('input[name="armMemo"]:first');
                         $armId.val(id);
@@ -689,6 +691,12 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
     Script.runFunc('Item.showArmInfoDialog_after_');
 };
 
+// 装备属性关键词列表
+const armPropertyKeyList = new Map([
+    ['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'],
+    ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']
+]);
+
 /**
  * 获取计算器武器参数设置
  * @param {number} armInfo 装备ID
@@ -719,16 +727,12 @@ export const getWeaponParameterSetting = function (armId, armInfo) {
         }
     }
 
-    let mainPropertyKeyList = new Map([
-        ['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'],
-        ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']
-    ]);
     for (let value of armInfo['主属性']) {
         let [property = ''] = value.split('(', 1);
         property = property.trim();
         if (property) {
             info['主属性数量']++;
-            info['所有的主属性'] += mainPropertyKeyList.get(property) + ' ';
+            info['所有的主属性'] += armPropertyKeyList.get(property) + ' ';
         }
     }
 
@@ -739,7 +743,7 @@ export const getWeaponParameterSetting = function (armId, armInfo) {
         let matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(value);
         if (matches) {
             info['从属性数量']++;
-            info['所有的从属性'] += mainPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' +
+            info['所有的从属性'] += armPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' +
                 Math.floor(parseFloat(matches[3]) * 10) + ' ';
         }
     }
@@ -754,6 +758,41 @@ export const getWeaponParameterSetting = function (armId, armInfo) {
         content = content.replace(`[${key}]`, $.trim(value));
     }
     return content;
+};
+
+/**
+ * 处理无用的从属性
+ * @param {string} html 装备的HTML代码
+ * @returns {string} 处理后的HTML代码
+ */
+export const handleUselessSubProperties = function (html) {
+    let armInfo = getArmInfo(html);
+    let keyList = [];
+    for (let value of armInfo['主属性']) {
+        let [property = ''] = value.split('(', 1);
+        if (property) {
+            keyList.push(armPropertyKeyList.get(property));
+        }
+    }
+
+    let matches = /从属性：(.+?)(<br(?: \/)?>|$)/.exec(html);
+    if (matches) {
+        let subPropertiesHtml = '';
+        for (let value of matches[1].split('。')) {
+            if (!value) continue;
+            let subMatches = /(\S+?)\(/.exec(value);
+            if (subMatches) {
+                let property = subMatches[1];
+                if (!keyList.includes(armPropertyKeyList.get(property))) {
+                    value = `<span class="pd_useless_sub_property">${value}</span>`;
+                }
+            }
+            subPropertiesHtml += value + '。';
+        }
+        html = html.replace(matches[0], '从属性：' + subPropertiesHtml + matches[2]);
+    }
+
+    return html;
 };
 
 /**
