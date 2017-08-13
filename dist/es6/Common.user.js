@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.4.2
+// @version     11.4.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.4.2';
+const version = '11.4.3';
 
 /**
  * 导出模块
@@ -3849,7 +3849,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
   <button name="saveMemo" type="submit">保存备注</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1001;');
+    let $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1003;');
 
     $dialog.on('click', 'a[data-name="copy"]', function (e) {
         e.preventDefault();
@@ -7217,7 +7217,7 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
     </tbody>
   </table>
 </div>`;
-    let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1001;');
+    let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1003;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
     if (type === 1) {
@@ -9323,16 +9323,16 @@ const appendCss = exports.appendCss = function () {
   .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }
   .pd_search_type_list {
     position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;
-    text-indent: 13px; cursor: pointer; z-index: 1003;
+    text-indent: 13px; cursor: pointer; z-index: 1004;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   ${_Info2.default.isMobile ? '.topmenu { position: static; }' : ''}
   ${_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : ''}
-  .topmenu { z-index: 1003; }
+  .topmenu { z-index: 1001; }
   
   /* 消息框 */
-  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
-  .pd_msg_container { position: ${_Info2.default.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1002; }
+  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
+  .pd_msg_container { position: ${_Info2.default.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1003; }
   .pd_msg {
     border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;
     font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;
@@ -9396,7 +9396,7 @@ const appendCss = exports.appendCss = function () {
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
-    position: ${_Info2.default.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1000;
+    position: ${_Info2.default.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1002;
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
   .pd_cfg_box h1 {

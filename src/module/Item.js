@@ -657,7 +657,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
   <button name="saveMemo" type="submit">保存备注</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
-    let $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1001;');
+    let $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1003;');
 
     $dialog.on('click', 'a[data-name="copy"]', function (e) {
         e.preventDefault();

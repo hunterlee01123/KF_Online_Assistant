@@ -97,16 +97,16 @@ export const appendCss = function () {
   .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }
   .pd_search_type_list {
     position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;
-    text-indent: 13px; cursor: pointer; z-index: 1003;
+    text-indent: 13px; cursor: pointer; z-index: 1004;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   ${Info.isMobile ? '.topmenu { position: static; }' : ''}
   ${Info.isMobile ? '.r_cmenu { position: static !important; }' : ''}
-  .topmenu { z-index: 1003; }
+  .topmenu { z-index: 1001; }
   
   /* 消息框 */
-  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1001; }
-  .pd_msg_container { position: ${Info.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1002; }
+  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
+  .pd_msg_container { position: ${Info.isMobile ? 'absolute' : 'fixed'}; width: 100%; z-index: 1003; }
   .pd_msg {
     border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;
     font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;
@@ -170,7 +170,7 @@ export const appendCss = function () {
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }
   .pd_cfg_box {
-    position: ${Info.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1000;
+    position: ${Info.isMobile ? 'absolute' : 'fixed'}; border: 1px solid #9191ff; display: none; z-index: 1002;
     -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);
   }
   .pd_cfg_box h1 {

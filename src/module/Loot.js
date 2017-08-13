@@ -1639,7 +1639,7 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
     </tbody>
   </table>
 </div>`;
-    let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1001;');
+    let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1003;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
     if (type === 1) {
