@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.4.3
+// @version     11.4.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -102,7 +102,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.4.3';
+const version = '11.4.4';
 
 /**
  * 导出模块
@@ -7216,6 +7216,10 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
       <tr><td colspan="3"><span style="color:#00f;">不显示超过10件以上的物品，如物品超过10件，请熔炼掉多余的即可全部显示。</span></td></tr>
     </tbody>
   </table>
+</div>
+<div class="pd_cfg_btns">
+  ${type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : ''}
+  <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1003;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
@@ -7223,6 +7227,27 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
     if (type === 1) {
         $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
             $dialog.fadeOut('fast');
+        });
+    } else {
+        $dialog.find('[name="manualInputArmId"]').click(function () {
+            let armId = parseInt(prompt('请输入装备ID：'));
+            if (!armId || armId < 0) return;
+            let $wait = Msg.wait('<strong>正在装备中&hellip;</strong>');
+            $.post('kf_fw_ig_mybpdt.php', `do=4&id=${armId}&safeid=${safeId}`, function (html) {
+                let msg = Util.removeHtmlTag(html);
+                if (/装备完毕/.test(msg)) {
+                    updateLootInfo(function () {
+                        Msg.remove($wait);
+                        Dialog.close(dialogName);
+                    });
+                } else {
+                    Msg.remove($wait);
+                    alert(msg);
+                }
+            }).fail(function () {
+                Msg.remove($wait);
+                alert('连接超时');
+            });
         });
     }
     Item.handleArmArea($armArea, type);
@@ -9373,7 +9398,7 @@ const appendCss = exports.appendCss = function () {
   .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
-  .pd_useless_sub_property { color: #888; }
+  .pd_useless_sub_property { color: #999; text-decoration: line-through; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }

@@ -1638,6 +1638,10 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
       <tr><td colspan="3"><span style="color:#00f;">不显示超过10件以上的物品，如物品超过10件，请熔炼掉多余的即可全部显示。</span></td></tr>
     </tbody>
   </table>
+</div>
+<div class="pd_cfg_btns">
+  ${type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : ''}
+  <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1003;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
@@ -1645,6 +1649,29 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
     if (type === 1) {
         $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
             $dialog.fadeOut('fast');
+        });
+    }
+    else {
+        $dialog.find('[name="manualInputArmId"]').click(function () {
+            let armId = parseInt(prompt('请输入装备ID：'));
+            if (!armId || armId < 0) return;
+            let $wait = Msg.wait('<strong>正在装备中&hellip;</strong>');
+            $.post('kf_fw_ig_mybpdt.php', `do=4&id=${armId}&safeid=${safeId}`, function (html) {
+                let msg = Util.removeHtmlTag(html);
+                if (/装备完毕/.test(msg)) {
+                    updateLootInfo(function () {
+                        Msg.remove($wait);
+                        Dialog.close(dialogName);
+                    });
+                }
+                else {
+                    Msg.remove($wait);
+                    alert(msg);
+                }
+            }).fail(function () {
+                Msg.remove($wait);
+                alert('连接超时');
+            });
         });
     }
     Item.handleArmArea($armArea, type);

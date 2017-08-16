@@ -147,7 +147,7 @@ export const appendCss = function () {
   .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
-  .pd_useless_sub_property { color: #888; }
+  .pd_useless_sub_property { color: #999; text-decoration: line-through; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
