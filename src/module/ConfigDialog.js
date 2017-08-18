@@ -257,7 +257,7 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
       </label><br>
       <label>
-        <input name="addSelfRatingLinkEnabled" type="checkbox"> 添加自助评分链接
+        <input name="addSelfRateLinkEnabled" type="checkbox"> 添加自助评分链接
         <span class="pd_cfg_tips" title="在帖子页面添加自助评分链接（仅限评分人员使用）">[?]</span>
       </label>
     </fieldset>
