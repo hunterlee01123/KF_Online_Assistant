@@ -79,7 +79,7 @@ const Const = {
     // 统计楼层最大能访问的帖子页数
     statFloorMaxPage: 300,
     // 可进行自助评分的版块ID列表
-    selfRatingFidList: [41, 67, 92, 127, 68, 163],
+    selfRateFidList: [41, 67, 92, 127, 68, 163],
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义快捷导航菜单内容

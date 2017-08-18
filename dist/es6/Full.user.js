@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.4.4
+// @version     11.4.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -96,6 +96,10 @@ var _Loot = require('./module/Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
 
+var _SelfRate = require('./module/SelfRate');
+
+var SelfRate = _interopRequireWildcard(_SelfRate);
+
 var _ConfigDialog = require('./module/ConfigDialog');
 
 var ConfigDialog = _interopRequireWildcard(_ConfigDialog);
@@ -105,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.4.4';
+const version = '11.4.5';
 
 /**
  * 导出模块
@@ -129,6 +133,7 @@ const exportModule = function () {
         _Info2.default.w.Card = require('./module/Card');
         _Info2.default.w.Item = require('./module/Item');
         _Info2.default.w.Loot = require('./module/Loot');
+        _Info2.default.w.SelfRate = require('./module/SelfRate');
         _Info2.default.w.Script = require('./module/Script');
         const Conf = require('./module/Config');
         _Info2.default.w.readConfig = Conf.read;
@@ -174,7 +179,9 @@ const init = function () {
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
-        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
+        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
+            $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
+        }
         Index.addPromoteHaloInterval();
         if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     } else if (location.pathname === '/read.php') {
@@ -200,6 +207,7 @@ const init = function () {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
+        if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -254,14 +262,15 @@ const init = function () {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
     } else if (location.pathname === '/kf_fw_1wkfb.php') {
         if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
-            Other.highlightRatingErrorSize();
+            SelfRate.highlightRateErrorSize();
             if (/\/kf_fw_1wkfb\.php\?ping=2/i.test(location.href)) {
-                Other.refreshWaitCheckRatingPage();
+                SelfRate.refreshWaitCheckRatePage();
             }
         } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
-            Other.showSelfRatingErrorSizeSubmitWarning();
+            SelfRate.addUnrecognizedSizeWarning();
+            SelfRate.showErrorSizeSubmitWarning();
         }
-        Other.addLinksInGoodPostPage();
+        SelfRate.addLinksInGoodPostPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
@@ -319,7 +328,7 @@ const init = function () {
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/TmpLog":21,"./module/Util":22}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/SelfRate":21,"./module/TmpLog":22,"./module/Util":23}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -721,7 +730,7 @@ const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./TmpLog":22,"./Util":23}],3:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -905,7 +914,7 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":23}],4:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -1063,6 +1072,8 @@ const Config = exports.Config = {
     autoSavePostContentWhenSubmitEnabled: false,
     // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
+    // 在帖子页面添加自助评分链接（仅限评分人员使用），true：开启；false：关闭
+    addSelfRateLinkEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1241,7 +1252,7 @@ const normalize = exports.normalize = function (options) {
     return settings;
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":22,"./Util":23}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -1401,6 +1412,59 @@ const show = exports.show = function () {
       </label>
     </fieldset>
     <fieldset>
+      <legend>首页相关</legend>
+      <label>
+        @提醒
+        <select name="atTipsHandleType" style="width: 140px;">
+          <option value="no_highlight">取消已读提醒高亮</option>
+          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
+          <option value="hide_box_1">不显示已读提醒的消息框</option>
+          <option value="hide_box_2">永不显示消息框</option>
+          <option value="default">保持默认</option>
+          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
+        </select>
+        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
+        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
+        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
+        <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
+        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
+        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>版块页面相关</legend>
+      <label>
+        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
+        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
+      </label><br>
+      <label>
+        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
+        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+      </label>
+    </fieldset>
+  </div>
+
+  <div class="pd_cfg_panel">
+    <fieldset>
       <legend>帖子页面相关</legend>
       <label>
         帖子每页楼层数量
@@ -1470,59 +1534,10 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
-      </label>
-    </fieldset>
-  </div>
-
-  <div class="pd_cfg_panel">
-    <fieldset>
-      <legend>首页相关</legend>
-      <label>
-        @提醒
-        <select name="atTipsHandleType" style="width: 140px;">
-          <option value="no_highlight">取消已读提醒高亮</option>
-          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
-          <option value="hide_box_1">不显示已读提醒的消息框</option>
-          <option value="hide_box_2">永不显示消息框</option>
-          <option value="default">保持默认</option>
-          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
-        </select>
-        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
-        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
       </label><br>
       <label>
-        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
-        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
-        <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
-      </label><br>
-      <label>
-        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
-        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
-        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
-      </label>
-    </fieldset>
-    <fieldset>
-      <legend>版块页面相关</legend>
-      <label>
-        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
-        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
-      </label><br>
-      <label>
-        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
-        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+        <input name="addSelfRatingLinkEnabled" type="checkbox"> 添加自助评分链接
+        <span class="pd_cfg_tips" title="在帖子页面添加自助评分链接（仅限评分人员使用）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -2606,7 +2621,7 @@ const showBuyItemTipsDialog = function () {
     Dialog.show(dialogName);
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":22,"./Util":23}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2691,6 +2706,8 @@ const Const = {
     minBuyThreadWarningSell: 6,
     // 统计楼层最大能访问的帖子页数
     statFloorMaxPage: 300,
+    // 可进行自助评分的版块ID列表
+    selfRateFidList: [41, 67, 92, 127, 68, 163],
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义快捷导航菜单内容
@@ -2883,7 +2900,7 @@ const close = exports.close = function (id) {
     return false;
 };
 
-},{"./Info":9,"./Public":18,"./Util":22}],8:[function(require,module,exports){
+},{"./Info":9,"./Public":18,"./Util":23}],8:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
@@ -3153,7 +3170,7 @@ const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
     if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":22,"./Util":23}],9:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -4988,7 +5005,7 @@ const showMyInfoInItemShop = exports.showMyInfoInItemShop = function () {
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],11:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./Public":18,"./Script":20,"./Util":23}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -5092,7 +5109,7 @@ const getMergeLog = exports.getMergeLog = function (log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],12:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":23}],12:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -5649,7 +5666,7 @@ const showLogText = function (log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":22}],13:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":23}],13:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -8099,7 +8116,7 @@ const getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function
     }
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],14:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":22,"./Util":23}],14:[function(require,module,exports){
 /* 争夺记录模块 */
 'use strict';
 
@@ -8187,7 +8204,7 @@ const getMergeLog = exports.getMergeLog = function (log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],15:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":23}],15:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -8323,7 +8340,7 @@ const destroy = exports.destroy = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.refreshWaitCheckRatingPage = exports.addLinksInGoodPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _Info = require('./Info');
 
@@ -8749,93 +8766,6 @@ const addAvatarChangeAlert = exports.addAvatarChangeAlert = function () {
 };
 
 /**
- * 高亮自助评分错标文件大小
- */
-const highlightRatingErrorSize = exports.highlightRatingErrorSize = function () {
-    $('.adp1 a[href^="read.php?tid="]').each(function () {
-        let $this = $(this);
-        let title = $this.text();
-        let ratingSize = 0;
-        let $ratingCell = $this.parent('td').next('td');
-        let matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
-        if (matches) {
-            ratingSize = parseInt(matches[1]);
-        }
-
-        let { type, titleSize } = Public.checkRatingSize(title, ratingSize);
-        if (type === -1) {
-            $ratingCell.css('color', '#ff9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
-        } else if (type === 1) {
-            $ratingCell.addClass('pd_highlight pd_custom_tips').attr('title', `标题文件大小(${titleSize.toLocaleString()}M)与认定文件大小(${ratingSize.toLocaleString()}M)不一致`);
-        }
-    });
-};
-
-/**
- * 在提交自助评分时显示错标文件大小警告
- */
-const showSelfRatingErrorSizeSubmitWarning = exports.showSelfRatingErrorSizeSubmitWarning = function () {
-    $('form[name="mail1"]').submit(function () {
-        let ratingSize = parseFloat($('[name="psize"]').val());
-        if (isNaN(ratingSize) || ratingSize <= 0) return;
-        if (parseInt($('[name="psizegb"]').val()) === 2) ratingSize *= 1024;
-        let title = $('.adp1 a[href^="read.php?tid="]').text();
-        let { type, titleSize } = Public.checkRatingSize(title, ratingSize);
-        if (type === 1) {
-            return confirm(`标题文件大小(${titleSize.toLocaleString()}M)与认定文件大小(${ratingSize.toLocaleString()}M)不一致，是否继续？`);
-        }
-    });
-};
-
-/**
- * 在优秀帖相关页面上添加链接
- */
-const addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function () {
-    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
-        $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
-            let $this = $(this);
-            let uid = parseInt($this.text());
-            $this.wrapInner(`<a class="${uid === _Info2.default.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
-        });
-    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
-        $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
-            let $this = $(this);
-            let userName = $this.text().trim();
-            if (userName === '0') return;
-            $this.wrapInner(`<a class="${userName === _Info2.default.userName ? 'pd_highlight' : ''}" href="profile.php?action=show&username=${userName}" target="_blank"></a>`);
-        });
-        $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
-            let $this = $(this);
-            let matches = /\[(\d+)]板块/.exec($this.text());
-            if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
-        });
-    }
-};
-
-/**
- * 当检测到待检查的评分记录含有负数倒计时的情况下，自动刷新页面
- */
-const refreshWaitCheckRatingPage = exports.refreshWaitCheckRatingPage = function () {
-    if (!/剩余-\d+分钟/.test($('.adp1:eq(1) > tbody > tr:last-child > td:first-child').text())) return;
-
-    /**
-     * 刷新
-     */
-    const refresh = function () {
-        console.log('自动刷新Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_1wkfb.php?ping=2&t=' + $.now(),
-            timeout: 10000
-        }).done(function (html) {
-            if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
-        }).fail(() => setTimeout(refresh, _Const2.default.defAjaxInterval));
-    };
-
-    refresh();
-};
-
-/**
  * 在论坛排行页面为用户名添加链接
  */
 const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function () {
@@ -8860,7 +8790,7 @@ const handleProfilePage = exports.handleProfilePage = function () {
     })).css('vertical-align', 'top');
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":22,"./Util":23}],17:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -9207,14 +9137,14 @@ const addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function
     });
 };
 
-},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":22}],18:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":23}],18:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -10420,32 +10350,6 @@ const turnPageViaKeyboard = exports.turnPageViaKeyboard = function () {
 };
 
 /**
- * 检查自助评分文件大小
- * @param {string} title 帖子标题
- * @param {number} ratingSize 评分大小
- * @returns {{}} 检查结果
- */
-const checkRatingSize = exports.checkRatingSize = function (title, ratingSize) {
-    let titleSize = 0;
-    let matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
-    if (matches) {
-        for (let i = 0; i < matches.length; i++) {
-            let sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
-            if (!sizeMatches) continue;
-            let size = parseFloat(sizeMatches[1]);
-            if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
-            titleSize += size;
-        }
-    }
-
-    if (!titleSize || !ratingSize) {
-        return { type: -1 };
-    } else if (titleSize > ratingSize * (100 + _Const2.default.ratingErrorSizePercent) / 100 + 1 || titleSize < ratingSize * (100 - _Const2.default.ratingErrorSizePercent) / 100 - 1) {
-        return { type: 1, titleSize, ratingSize };
-    } else return { type: 0 };
-};
-
-/**
  * 显示通用的导入/导出设置对话框
  * @param {string} title 对话框标题
  * @param {string} configName 设置名称
@@ -10527,14 +10431,14 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
     });
 };
 
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":22,"./Util":23}],19:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.addSelfRatingLink = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -11341,7 +11245,20 @@ const getThreadTitle = exports.getThreadTitle = function () {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
 
-},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":22}],20:[function(require,module,exports){
+/**
+ * 在帖子页面添加自助评分链接
+ */
+const addSelfRatingLink = exports.addSelfRatingLink = function () {
+    let fid = parseInt($('input[name="fid"]:first').val());
+    if (!fid || !_Const2.default.selfRateFidList.includes(fid)) return;
+    let tid = parseInt($('input[name="tid"]:first').val());
+    let safeId = Public.getSafeId();
+    if (!safeId || !tid) return;
+    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
+    $('a[href^="kf_tidfavor.php?action=favor"]').parent().append(`<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}">自助评分</a>`);
+};
+
+},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
@@ -11685,7 +11602,157 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":22,"./Util":23}],21:[function(require,module,exports){
+/* 其它模块 */
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.addLinksInGoodPostPage = exports.refreshWaitCheckRatePage = exports.addUnrecognizedSizeWarning = exports.showErrorSizeSubmitWarning = exports.highlightRateErrorSize = exports.checkRateSize = undefined;
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
+
+var _Msg = require('./Msg');
+
+var Msg = _interopRequireWildcard(_Msg);
+
+var _Const = require('./Const');
+
+var _Const2 = _interopRequireDefault(_Const);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * 检查自助评分文件大小
+ * @param {string} title 帖子标题
+ * @param {number} ratingSize 评分大小
+ * @returns {{}} 检查结果
+ */
+const checkRateSize = exports.checkRateSize = function (title, ratingSize) {
+    let titleSize = 0;
+    let matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
+    if (matches) {
+        for (let i = 0; i < matches.length; i++) {
+            let sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
+            if (!sizeMatches) continue;
+            let size = parseFloat(sizeMatches[1]);
+            if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
+            titleSize += size;
+        }
+    }
+
+    if (!titleSize || !ratingSize) {
+        return { type: -1 };
+    } else if (titleSize > ratingSize * (100 + _Const2.default.ratingErrorSizePercent) / 100 + 1 || titleSize < ratingSize * (100 - _Const2.default.ratingErrorSizePercent) / 100 - 1) {
+        return { type: 1, titleSize, ratingSize };
+    } else return { type: 0 };
+};
+
+/**
+ * 高亮自助评分错标文件大小
+ */
+const highlightRateErrorSize = exports.highlightRateErrorSize = function () {
+    $('.adp1 a[href^="read.php?tid="]').each(function () {
+        let $this = $(this);
+        let title = $this.text();
+        let ratingSize = 0;
+        let $ratingCell = $this.parent('td').next('td');
+        let matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
+        if (matches) {
+            ratingSize = parseInt(matches[1]);
+        }
+
+        let { type, titleSize } = checkRateSize(title, ratingSize);
+        if (type === -1) {
+            $ratingCell.css('color', '#ff9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
+        } else if (type === 1) {
+            $ratingCell.addClass('pd_highlight pd_custom_tips').attr('title', `标题文件大小(${titleSize.toLocaleString()}M)与认定文件大小(${ratingSize.toLocaleString()}M)不一致`);
+        }
+    });
+};
+
+/**
+ * 在提交自助评分时显示错标文件大小警告
+ */
+const showErrorSizeSubmitWarning = exports.showErrorSizeSubmitWarning = function () {
+    $('form[name="mail1"]').submit(function () {
+        let ratingSize = parseFloat($('[name="psize"]').val());
+        if (isNaN(ratingSize) || ratingSize <= 0) return;
+        if (parseInt($('[name="psizegb"]').val()) === 2) ratingSize *= 1024;
+        let title = $('.adp1 a[href^="read.php?tid="]').text();
+        let { type, titleSize } = checkRateSize(title, ratingSize);
+        if (type === 1) {
+            return confirm(`标题文件大小(${titleSize.toLocaleString()}M)与认定文件大小(${ratingSize.toLocaleString()}M)不一致，是否继续？`);
+        }
+    });
+};
+
+/**
+ * 在自助评分页面添加无法识别标题文件大小的警告
+ */
+const addUnrecognizedSizeWarning = exports.addUnrecognizedSizeWarning = function () {
+    let $title = $('.adp1 a[href^="read.php?tid="]');
+    let title = $title.text();
+    let { type } = checkRateSize(title, 1);
+    if (type === -1) {
+        $title.after('<span style="margin-left: 5px; color: #ff9933;">(标题文件大小无法解析)</span>');
+    }
+};
+
+/**
+ * 当检测到待检查的评分记录含有负数倒计时的情况下，自动刷新页面
+ */
+const refreshWaitCheckRatePage = exports.refreshWaitCheckRatePage = function () {
+    if (!/剩余-\d+分钟/.test($('.adp1:eq(1) > tbody > tr:last-child > td:first-child').text())) return;
+
+    /**
+     * 刷新
+     */
+    const refresh = function () {
+        console.log('自动刷新Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + $.now(),
+            timeout: 10000
+        }).done(function (html) {
+            if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
+        }).fail(() => setTimeout(refresh, _Const2.default.defAjaxInterval));
+    };
+
+    refresh();
+};
+
+/**
+ * 在优秀帖相关页面上添加链接
+ */
+const addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function () {
+    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+            let $this = $(this);
+            let uid = parseInt($this.text());
+            $this.wrapInner(`<a class="${uid === _Info2.default.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
+        });
+    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
+            let $this = $(this);
+            let userName = $this.text().trim();
+            if (userName === '0') return;
+            $this.wrapInner(`<a class="${userName === _Info2.default.userName ? 'pd_highlight' : ''}" href="profile.php?action=show&username=${userName}" target="_blank"></a>`);
+        });
+        $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+            let $this = $(this);
+            let matches = /\[(\d+)]板块/.exec($this.text());
+            if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
+        });
+    }
+};
+
+},{"./Const":6,"./Info":9,"./Msg":15}],22:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -11782,7 +11849,7 @@ const deleteValue = exports.deleteValue = function (key) {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],22:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":23}],23:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 

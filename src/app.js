@@ -18,10 +18,11 @@ import * as Bank from './module/Bank';
 import * as Card from './module/Card';
 import * as Item from './module/Item';
 import * as Loot from './module/Loot';
+import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '11.4.4';
+const version = '11.4.5';
 
 /**
  * 导出模块
@@ -45,6 +46,7 @@ const exportModule = function () {
         Info.w.Card = require('./module/Card');
         Info.w.Item = require('./module/Item');
         Info.w.Loot = require('./module/Loot');
+        Info.w.SelfRate = require('./module/SelfRate');
         Info.w.Script = require('./module/Script');
         const Conf = require('./module/Config');
         Info.w.readConfig = Conf.read;
@@ -120,7 +122,7 @@ const init = function () {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        if (Config.addSelfRatingLinkEnabled) Read.addSelfRatingLink();
+        if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
@@ -194,16 +196,16 @@ const init = function () {
     }
     else if (location.pathname === '/kf_fw_1wkfb.php') {
         if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
-            Other.highlightRatingErrorSize();
+            SelfRate.highlightRateErrorSize();
             if (/\/kf_fw_1wkfb\.php\?ping=2/i.test(location.href)) {
-                Other.refreshWaitCheckRatingPage();
+                SelfRate.refreshWaitCheckRatePage();
             }
         }
         else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
-            Other.addSelfRatingUnrecognizedSizeWarning();
-            Other.showSelfRatingErrorSizeSubmitWarning();
+            SelfRate.addUnrecognizedSizeWarning();
+            SelfRate.showErrorSizeSubmitWarning();
         }
-        Other.addLinksInGoodPostPage();
+        SelfRate.addLinksInGoodPostPage();
     }
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();

@@ -75,6 +75,10 @@ var _Loot = require('./module/Loot');
 
 var Loot = _interopRequireWildcard(_Loot);
 
+var _SelfRate = require('./module/SelfRate');
+
+var SelfRate = _interopRequireWildcard(_SelfRate);
+
 var _ConfigDialog = require('./module/ConfigDialog');
 
 var ConfigDialog = _interopRequireWildcard(_ConfigDialog);
@@ -84,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.4.4';
+var version = '11.4.5';
 
 /**
  * 导出模块
@@ -108,6 +112,7 @@ var exportModule = function exportModule() {
         _Info2.default.w.Card = require('./module/Card');
         _Info2.default.w.Item = require('./module/Item');
         _Info2.default.w.Loot = require('./module/Loot');
+        _Info2.default.w.SelfRate = require('./module/SelfRate');
         _Info2.default.w.Script = require('./module/Script');
         var Conf = require('./module/Config');
         _Info2.default.w.readConfig = Conf.read;
@@ -155,7 +160,9 @@ var init = function init() {
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
-        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
+        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
+            $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
+        }
         Index.addPromoteHaloInterval();
         if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     } else if (location.pathname === '/read.php') {
@@ -181,6 +188,7 @@ var init = function init() {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
+        if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -235,14 +243,15 @@ var init = function init() {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
     } else if (location.pathname === '/kf_fw_1wkfb.php') {
         if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
-            Other.highlightRatingErrorSize();
+            SelfRate.highlightRateErrorSize();
             if (/\/kf_fw_1wkfb\.php\?ping=2/i.test(location.href)) {
-                Other.refreshWaitCheckRatingPage();
+                SelfRate.refreshWaitCheckRatePage();
             }
         } else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
-            Other.showSelfRatingErrorSizeSubmitWarning();
+            SelfRate.addUnrecognizedSizeWarning();
+            SelfRate.showErrorSizeSubmitWarning();
         }
-        Other.addLinksInGoodPostPage();
+        SelfRate.addLinksInGoodPostPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
@@ -300,7 +309,7 @@ var init = function init() {
 
 if (typeof jQuery !== 'undefined') $(document).ready(init);
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/TmpLog":21,"./module/Util":22}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/SelfRate":21,"./module/TmpLog":22,"./module/Util":23}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -786,7 +795,7 @@ var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositD
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],3:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./TmpLog":22,"./Util":23}],3:[function(require,module,exports){
 /* 卡片模块 */
 'use strict';
 
@@ -1009,7 +1018,7 @@ var addStartBatchModeButton = exports.addStartBatchModeButton = function addStar
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":22}],4:[function(require,module,exports){
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":23}],4:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -1169,6 +1178,8 @@ var Config = exports.Config = {
     autoSavePostContentWhenSubmitEnabled: false,
     // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
+    // 在帖子页面添加自助评分链接（仅限评分人员使用），true：开启；false：关闭
+    addSelfRateLinkEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1373,7 +1384,7 @@ var normalize = exports.normalize = function normalize(options) {
     return settings;
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":21,"./Util":22}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":22,"./Util":23}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -1428,7 +1439,7 @@ var show = exports.show = function show() {
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     Script.runFunc('ConfigDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u3001\u81EA\u52A8\u4E89\u593A\u3001\u81EA\u52A8\u8D2D\u4E70\u7269\u54C1\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoPromoteHaloEnabled" type="checkbox"> \u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF</label>\n      </legend>\n      <label>\n        \u82B1\u8D39\n        <select name="promoteHaloCostType" required>\n          <option value="1">100KFB</option>\n          <option value="2">1000KFB</option>\n          <option value="11">0.2\u8D21\u732E</option>\n          <option value="12">2\u8D21\u732E</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u82B1\u8D39\u7C7B\u578B">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n         \u9AD8\u4E8E <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>\n         <span data-id="promoteHaloLimitUnit">KFB</span>\u65F6\n         <span class="pd_cfg_tips" title="\u5728\u64CD\u4F5C\u540E\u6240\u5269\u4F59\u7684KFB\u6216\u8D21\u732E\u9AD8\u4E8E\u6307\u5B9A\u503C\u65F6\u624D\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\uFF0C\u8BBE\u4E3A0\u8868\u793A\u4E0D\u9650\u5236">[?]</span>\n      </label><br>\n      <label>\n        \u6BCF\u9694 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> \u5C0F\u65F6\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF0C\u6700\u4F4E\u503C\uFF1A8\u5C0F\u65F6">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> \u81EA\u52A8\u5224\u65AD\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u5224\u65AD\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF08\u5728\u6709\u5269\u4F59\u6B21\u6570\u65F6\u5C3D\u53EF\u80FD\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox" data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> \u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u68C0\u67E5\u5E76\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\uFF08\u4F7F\u7528\u52A9\u624B\u8FDB\u884C\u4E89\u593A\u7684\u7528\u6237\u8BF7\u52FF\u52FE\u9009\u6B64\u9009\u9879\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u5728 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u68C0\u67E5\u4E89\u593A\u60C5\u51B5\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:05:00">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u4E89\u593A\u8BB0\u5F55\u4FDD\u5B58\u5929\u6570 <input name="lootLogSaveDays" type="number" min="1" max="20" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveDays + '\uFF0C\u6700\u5927\u503C\uFF1A20">[?]</span>\n      </label><br>\n      <label>\n        <input name="showChangePointsInfoEnabled" type="checkbox"> \u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\uFF0C\u51B7\u5374\u65F6\u5219\u663E\u793A\u5012\u8BA1\u65F6">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoBuyItemEnabled" type="checkbox"> \u81EA\u52A8\u8D2D\u4E70\u7269\u54C1</label>\n      </legend>\n      <label>\n        \u7269\u54C1ID\u5217\u8868 <input name="buyItemIdList" type="text" maxlength="50" style="width: 150px;">\n      </label>\n      <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">\u8BE6\u7EC6\u8BF4\u660E&raquo;</a><br>\n      <label>\n        \u5728 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:45:00">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u7B49\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86\u8BBA\u575B\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u5728\u697C\u5C42\u5185\u7684\u7528\u6237\u540D\u65C1\u663E\u793A\u8BE5\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="buyThreadNoJumpEnabled" type="checkbox"> \u8D2D\u4E70\u5E16\u5B50\u65F6\u4E0D\u8DF3\u8F6C\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 140px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7528\u6237\u83DC\u5355\u4E0A\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addFastNavMenuEnabled" type="checkbox"> \u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355\n        <span class="pd_cfg_tips" title="\u4E3A\u9876\u90E8\u5BFC\u822A\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u4E2D\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="clearTmpData" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684Cookies\u548C\u672C\u5730\u5B58\u50A8\u6570\u636E\uFF08\u4E0D\u5305\u62EC\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\uFF09" href="#">\u6E05\u9664\u4E34\u65F6\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u3001\u81EA\u52A8\u4E89\u593A\u3001\u81EA\u52A8\u8D2D\u4E70\u7269\u54C1\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoPromoteHaloEnabled" type="checkbox"> \u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF</label>\n      </legend>\n      <label>\n        \u82B1\u8D39\n        <select name="promoteHaloCostType" required>\n          <option value="1">100KFB</option>\n          <option value="2">1000KFB</option>\n          <option value="11">0.2\u8D21\u732E</option>\n          <option value="12">2\u8D21\u732E</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u82B1\u8D39\u7C7B\u578B">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n         \u9AD8\u4E8E <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>\n         <span data-id="promoteHaloLimitUnit">KFB</span>\u65F6\n         <span class="pd_cfg_tips" title="\u5728\u64CD\u4F5C\u540E\u6240\u5269\u4F59\u7684KFB\u6216\u8D21\u732E\u9AD8\u4E8E\u6307\u5B9A\u503C\u65F6\u624D\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\uFF0C\u8BBE\u4E3A0\u8868\u793A\u4E0D\u9650\u5236">[?]</span>\n      </label><br>\n      <label>\n        \u6BCF\u9694 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> \u5C0F\u65F6\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF0C\u6700\u4F4E\u503C\uFF1A8\u5C0F\u65F6">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> \u81EA\u52A8\u5224\u65AD\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u5224\u65AD\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF08\u5728\u6709\u5269\u4F59\u6B21\u6570\u65F6\u5C3D\u53EF\u80FD\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox" data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> \u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u68C0\u67E5\u5E76\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\uFF08\u4F7F\u7528\u52A9\u624B\u8FDB\u884C\u4E89\u593A\u7684\u7528\u6237\u8BF7\u52FF\u52FE\u9009\u6B64\u9009\u9879\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u5728 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u68C0\u67E5\u4E89\u593A\u60C5\u51B5\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:05:00">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u4E89\u593A\u8BB0\u5F55\u4FDD\u5B58\u5929\u6570 <input name="lootLogSaveDays" type="number" min="1" max="20" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveDays + '\uFF0C\u6700\u5927\u503C\uFF1A20">[?]</span>\n      </label><br>\n      <label>\n        <input name="showChangePointsInfoEnabled" type="checkbox"> \u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\uFF0C\u51B7\u5374\u65F6\u5219\u663E\u793A\u5012\u8BA1\u65F6">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoBuyItemEnabled" type="checkbox"> \u81EA\u52A8\u8D2D\u4E70\u7269\u54C1</label>\n      </legend>\n      <label>\n        \u7269\u54C1ID\u5217\u8868 <input name="buyItemIdList" type="text" maxlength="50" style="width: 150px;">\n      </label>\n      <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">\u8BE6\u7EC6\u8BF4\u660E&raquo;</a><br>\n      <label>\n        \u5728 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:45:00">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 140px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showVipSurplusTimeEnabled" type="checkbox"> \u663E\u793AVIP\u5269\u4F59\u65F6\u95F4\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793AVIP\u5269\u4F59\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u7B49\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86\u8BBA\u575B\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> \u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u5404\u7B49\u7EA7\u989C\u8272">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u5728\u697C\u5C42\u5185\u7684\u7528\u6237\u540D\u65C1\u663E\u793A\u8BE5\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="buyThreadNoJumpEnabled" type="checkbox"> \u8D2D\u4E70\u5E16\u5B50\u65F6\u4E0D\u8DF3\u8F6C\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInMiaolaDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addSelfRatingLinkEnabled" type="checkbox"> \u6DFB\u52A0\u81EA\u52A9\u8BC4\u5206\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u6DFB\u52A0\u81EA\u52A9\u8BC4\u5206\u94FE\u63A5\uFF08\u4EC5\u9650\u8BC4\u5206\u4EBA\u5458\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7528\u6237\u83DC\u5355\u4E0A\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addFastNavMenuEnabled" type="checkbox"> \u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355\n        <span class="pd_cfg_tips" title="\u4E3A\u9876\u90E8\u5BFC\u822A\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u4E2D\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
     var $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
     $dialog.submit(function (e) {
@@ -2485,7 +2496,7 @@ var showBuyItemTipsDialog = function showBuyItemTipsDialog() {
     Dialog.show(dialogName);
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],6:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":22,"./Util":23}],6:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2572,6 +2583,8 @@ var Const = {
     minBuyThreadWarningSell: 6,
     // 统计楼层最大能访问的帖子页数
     statFloorMaxPage: 300,
+    // 可进行自助评分的版块ID列表
+    selfRateFidList: [41, 67, 92, 127, 68, 163],
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义快捷导航菜单内容
@@ -2766,7 +2779,7 @@ var close = exports.close = function close(id) {
     return false;
 };
 
-},{"./Info":9,"./Public":18,"./Util":22}],8:[function(require,module,exports){
+},{"./Info":9,"./Public":18,"./Util":23}],8:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
@@ -3038,7 +3051,7 @@ var addChangePointsInfoTips = exports.addChangePointsInfoTips = function addChan
     if (tipsText) $('#pdLoot').append('<span id="pdChangePointsTips"> (\u6539\u70B9\uFF1A' + tipsText + ')</span>');
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":21,"./Util":22}],9:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":22,"./Util":23}],9:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -5443,7 +5456,7 @@ var showMyInfoInItemShop = exports.showMyInfoInItemShop = function showMyInfoInI
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./Public":18,"./Script":20,"./Util":22}],11:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./Public":18,"./Script":20,"./Util":23}],11:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -5610,7 +5623,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],12:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":23}],12:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -6686,7 +6699,7 @@ var showLogText = function showLogText(log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":22}],13:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":23}],13:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -9414,7 +9427,7 @@ var getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function g
     }
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":21,"./Util":22}],14:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":22,"./Util":23}],14:[function(require,module,exports){
 /* 争夺记录模块 */
 'use strict';
 
@@ -9506,7 +9519,7 @@ var getMergeLog = exports.getMergeLog = function getMergeLog(log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],15:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":23}],15:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -9644,7 +9657,7 @@ var destroy = exports.destroy = function destroy() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.refreshWaitCheckRatingPage = exports.addLinksInGoodPostPage = exports.showSelfRatingErrorSizeSubmitWarning = exports.highlightRatingErrorSize = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -10121,102 +10134,6 @@ var addAvatarChangeAlert = exports.addAvatarChangeAlert = function addAvatarChan
 };
 
 /**
- * 高亮自助评分错标文件大小
- */
-var highlightRatingErrorSize = exports.highlightRatingErrorSize = function highlightRatingErrorSize() {
-    $('.adp1 a[href^="read.php?tid="]').each(function () {
-        var $this = $(this);
-        var title = $this.text();
-        var ratingSize = 0;
-        var $ratingCell = $this.parent('td').next('td');
-        var matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
-        if (matches) {
-            ratingSize = parseInt(matches[1]);
-        }
-
-        var _Public$checkRatingSi = Public.checkRatingSize(title, ratingSize),
-            type = _Public$checkRatingSi.type,
-            titleSize = _Public$checkRatingSi.titleSize;
-
-        if (type === -1) {
-            $ratingCell.css('color', '#ff9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
-        } else if (type === 1) {
-            $ratingCell.addClass('pd_highlight pd_custom_tips').attr('title', '\u6807\u9898\u6587\u4EF6\u5927\u5C0F(' + titleSize.toLocaleString() + 'M)\u4E0E\u8BA4\u5B9A\u6587\u4EF6\u5927\u5C0F(' + ratingSize.toLocaleString() + 'M)\u4E0D\u4E00\u81F4');
-        }
-    });
-};
-
-/**
- * 在提交自助评分时显示错标文件大小警告
- */
-var showSelfRatingErrorSizeSubmitWarning = exports.showSelfRatingErrorSizeSubmitWarning = function showSelfRatingErrorSizeSubmitWarning() {
-    $('form[name="mail1"]').submit(function () {
-        var ratingSize = parseFloat($('[name="psize"]').val());
-        if (isNaN(ratingSize) || ratingSize <= 0) return;
-        if (parseInt($('[name="psizegb"]').val()) === 2) ratingSize *= 1024;
-        var title = $('.adp1 a[href^="read.php?tid="]').text();
-
-        var _Public$checkRatingSi2 = Public.checkRatingSize(title, ratingSize),
-            type = _Public$checkRatingSi2.type,
-            titleSize = _Public$checkRatingSi2.titleSize;
-
-        if (type === 1) {
-            return confirm('\u6807\u9898\u6587\u4EF6\u5927\u5C0F(' + titleSize.toLocaleString() + 'M)\u4E0E\u8BA4\u5B9A\u6587\u4EF6\u5927\u5C0F(' + ratingSize.toLocaleString() + 'M)\u4E0D\u4E00\u81F4\uFF0C\u662F\u5426\u7EE7\u7EED\uFF1F');
-        }
-    });
-};
-
-/**
- * 在优秀帖相关页面上添加链接
- */
-var addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function addLinksInGoodPostPage() {
-    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
-        $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
-            var $this = $(this);
-            var uid = parseInt($this.text());
-            $this.wrapInner('<a class="' + (uid === _Info2.default.uid ? 'pd_highlight' : '') + '" href="profile.php?action=show&uid=' + uid + '" target="_blank"></a>');
-        });
-    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
-        $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
-            var $this = $(this);
-            var userName = $this.text().trim();
-            if (userName === '0') return;
-            $this.wrapInner('<a class="' + (userName === _Info2.default.userName ? 'pd_highlight' : '') + '" href="profile.php?action=show&username=' + userName + '" target="_blank"></a>');
-        });
-        $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
-            var $this = $(this);
-            var matches = /\[(\d+)]板块/.exec($this.text());
-            if (matches) $this.wrapInner('<a href="thread.php?fid=' + matches[1] + '" target="_blank"></a>');
-        });
-    }
-};
-
-/**
- * 当检测到待检查的评分记录含有负数倒计时的情况下，自动刷新页面
- */
-var refreshWaitCheckRatingPage = exports.refreshWaitCheckRatingPage = function refreshWaitCheckRatingPage() {
-    if (!/剩余-\d+分钟/.test($('.adp1:eq(1) > tbody > tr:last-child > td:first-child').text())) return;
-
-    /**
-     * 刷新
-     */
-    var refresh = function refresh() {
-        console.log('自动刷新Start');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_1wkfb.php?ping=2&t=' + $.now(),
-            timeout: 10000
-        }).done(function (html) {
-            if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
-        }).fail(function () {
-            return setTimeout(refresh, _Const2.default.defAjaxInterval);
-        });
-    };
-
-    refresh();
-};
-
-/**
  * 在论坛排行页面为用户名添加链接
  */
 var addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function addUserNameLinkInRankPage() {
@@ -10247,7 +10164,7 @@ var handleProfilePage = exports.handleProfilePage = function handleProfilePage()
     })).css('vertical-align', 'top');
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":21,"./Util":22}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":22,"./Util":23}],17:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -10623,14 +10540,14 @@ var addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function a
     });
 };
 
-},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":22}],18:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":23}],18:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.checkRatingSize = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -11836,32 +11753,6 @@ var turnPageViaKeyboard = exports.turnPageViaKeyboard = function turnPageViaKeyb
 };
 
 /**
- * 检查自助评分文件大小
- * @param {string} title 帖子标题
- * @param {number} ratingSize 评分大小
- * @returns {{}} 检查结果
- */
-var checkRatingSize = exports.checkRatingSize = function checkRatingSize(title, ratingSize) {
-    var titleSize = 0;
-    var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
-    if (matches) {
-        for (var i = 0; i < matches.length; i++) {
-            var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
-            if (!sizeMatches) continue;
-            var size = parseFloat(sizeMatches[1]);
-            if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
-            titleSize += size;
-        }
-    }
-
-    if (!titleSize || !ratingSize) {
-        return { type: -1 };
-    } else if (titleSize > ratingSize * (100 + _Const2.default.ratingErrorSizePercent) / 100 + 1 || titleSize < ratingSize * (100 - _Const2.default.ratingErrorSizePercent) / 100 - 1) {
-        return { type: 1, titleSize: titleSize, ratingSize: ratingSize };
-    } else return { type: 0 };
-};
-
-/**
  * 显示通用的导入/导出设置对话框
  * @param {string} title 对话框标题
  * @param {string} configName 设置名称
@@ -11926,14 +11817,14 @@ var addSlowActionChecked = exports.addSlowActionChecked = function addSlowAction
     });
 };
 
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":21,"./Util":22}],19:[function(require,module,exports){
+},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":22,"./Util":23}],19:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.addSelfRatingLink = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -12737,7 +12628,20 @@ var getThreadTitle = exports.getThreadTitle = function getThreadTitle() {
     return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
 };
 
-},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":22}],20:[function(require,module,exports){
+/**
+ * 在帖子页面添加自助评分链接
+ */
+var addSelfRatingLink = exports.addSelfRatingLink = function addSelfRatingLink() {
+    var fid = parseInt($('input[name="fid"]:first').val());
+    if (!fid || !_Const2.default.selfRateFidList.includes(fid)) return;
+    var tid = parseInt($('input[name="tid"]:first').val());
+    var safeId = Public.getSafeId();
+    if (!safeId || !tid) return;
+    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
+    $('a[href^="kf_tidfavor.php?action=favor"]').parent().append('<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=' + safeId + '&ptid=' + tid + '">\u81EA\u52A9\u8BC4\u5206</a>');
+};
+
+},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
@@ -13130,7 +13034,169 @@ var handleInstallScriptLink = exports.handleInstallScriptLink = function handleI
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":21,"./Util":22}],21:[function(require,module,exports){
+},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":22,"./Util":23}],21:[function(require,module,exports){
+/* 其它模块 */
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.addLinksInGoodPostPage = exports.refreshWaitCheckRatePage = exports.addUnrecognizedSizeWarning = exports.showErrorSizeSubmitWarning = exports.highlightRateErrorSize = exports.checkRateSize = undefined;
+
+var _Info = require('./Info');
+
+var _Info2 = _interopRequireDefault(_Info);
+
+var _Msg = require('./Msg');
+
+var Msg = _interopRequireWildcard(_Msg);
+
+var _Const = require('./Const');
+
+var _Const2 = _interopRequireDefault(_Const);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * 检查自助评分文件大小
+ * @param {string} title 帖子标题
+ * @param {number} ratingSize 评分大小
+ * @returns {{}} 检查结果
+ */
+var checkRateSize = exports.checkRateSize = function checkRateSize(title, ratingSize) {
+    var titleSize = 0;
+    var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
+            if (!sizeMatches) continue;
+            var size = parseFloat(sizeMatches[1]);
+            if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
+            titleSize += size;
+        }
+    }
+
+    if (!titleSize || !ratingSize) {
+        return { type: -1 };
+    } else if (titleSize > ratingSize * (100 + _Const2.default.ratingErrorSizePercent) / 100 + 1 || titleSize < ratingSize * (100 - _Const2.default.ratingErrorSizePercent) / 100 - 1) {
+        return { type: 1, titleSize: titleSize, ratingSize: ratingSize };
+    } else return { type: 0 };
+};
+
+/**
+ * 高亮自助评分错标文件大小
+ */
+var highlightRateErrorSize = exports.highlightRateErrorSize = function highlightRateErrorSize() {
+    $('.adp1 a[href^="read.php?tid="]').each(function () {
+        var $this = $(this);
+        var title = $this.text();
+        var ratingSize = 0;
+        var $ratingCell = $this.parent('td').next('td');
+        var matches = /认定\[(\d+)\]/i.exec($ratingCell.text());
+        if (matches) {
+            ratingSize = parseInt(matches[1]);
+        }
+
+        var _checkRateSize = checkRateSize(title, ratingSize),
+            type = _checkRateSize.type,
+            titleSize = _checkRateSize.titleSize;
+
+        if (type === -1) {
+            $ratingCell.css('color', '#ff9933').attr('title', '标题文件大小无法解析').addClass('pd_custom_tips');
+        } else if (type === 1) {
+            $ratingCell.addClass('pd_highlight pd_custom_tips').attr('title', '\u6807\u9898\u6587\u4EF6\u5927\u5C0F(' + titleSize.toLocaleString() + 'M)\u4E0E\u8BA4\u5B9A\u6587\u4EF6\u5927\u5C0F(' + ratingSize.toLocaleString() + 'M)\u4E0D\u4E00\u81F4');
+        }
+    });
+};
+
+/**
+ * 在提交自助评分时显示错标文件大小警告
+ */
+var showErrorSizeSubmitWarning = exports.showErrorSizeSubmitWarning = function showErrorSizeSubmitWarning() {
+    $('form[name="mail1"]').submit(function () {
+        var ratingSize = parseFloat($('[name="psize"]').val());
+        if (isNaN(ratingSize) || ratingSize <= 0) return;
+        if (parseInt($('[name="psizegb"]').val()) === 2) ratingSize *= 1024;
+        var title = $('.adp1 a[href^="read.php?tid="]').text();
+
+        var _checkRateSize2 = checkRateSize(title, ratingSize),
+            type = _checkRateSize2.type,
+            titleSize = _checkRateSize2.titleSize;
+
+        if (type === 1) {
+            return confirm('\u6807\u9898\u6587\u4EF6\u5927\u5C0F(' + titleSize.toLocaleString() + 'M)\u4E0E\u8BA4\u5B9A\u6587\u4EF6\u5927\u5C0F(' + ratingSize.toLocaleString() + 'M)\u4E0D\u4E00\u81F4\uFF0C\u662F\u5426\u7EE7\u7EED\uFF1F');
+        }
+    });
+};
+
+/**
+ * 在自助评分页面添加无法识别标题文件大小的警告
+ */
+var addUnrecognizedSizeWarning = exports.addUnrecognizedSizeWarning = function addUnrecognizedSizeWarning() {
+    var $title = $('.adp1 a[href^="read.php?tid="]');
+    var title = $title.text();
+
+    var _checkRateSize3 = checkRateSize(title, 1),
+        type = _checkRateSize3.type;
+
+    if (type === -1) {
+        $title.after('<span style="margin-left: 5px; color: #ff9933;">(标题文件大小无法解析)</span>');
+    }
+};
+
+/**
+ * 当检测到待检查的评分记录含有负数倒计时的情况下，自动刷新页面
+ */
+var refreshWaitCheckRatePage = exports.refreshWaitCheckRatePage = function refreshWaitCheckRatePage() {
+    if (!/剩余-\d+分钟/.test($('.adp1:eq(1) > tbody > tr:last-child > td:first-child').text())) return;
+
+    /**
+     * 刷新
+     */
+    var refresh = function refresh() {
+        console.log('自动刷新Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_1wkfb.php?ping=2&t=' + $.now(),
+            timeout: 10000
+        }).done(function (html) {
+            if (/剩余-\d+分钟/.test(html)) setTimeout(refresh, _Const2.default.defAjaxInterval);
+        }).fail(function () {
+            return setTimeout(refresh, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    refresh();
+};
+
+/**
+ * 在优秀帖相关页面上添加链接
+ */
+var addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function addLinksInGoodPostPage() {
+    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
+            var $this = $(this);
+            var uid = parseInt($this.text());
+            $this.wrapInner('<a class="' + (uid === _Info2.default.uid ? 'pd_highlight' : '') + '" href="profile.php?action=show&uid=' + uid + '" target="_blank"></a>');
+        });
+    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
+            var $this = $(this);
+            var userName = $this.text().trim();
+            if (userName === '0') return;
+            $this.wrapInner('<a class="' + (userName === _Info2.default.userName ? 'pd_highlight' : '') + '" href="profile.php?action=show&username=' + userName + '" target="_blank"></a>');
+        });
+        $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+            var $this = $(this);
+            var matches = /\[(\d+)]板块/.exec($this.text());
+            if (matches) $this.wrapInner('<a href="thread.php?fid=' + matches[1] + '" target="_blank"></a>');
+        });
+    }
+};
+
+},{"./Const":6,"./Info":9,"./Msg":15}],22:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -13253,7 +13319,7 @@ var deleteValue = exports.deleteValue = function deleteValue(key) {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Util":22}],22:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Util":23}],23:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 

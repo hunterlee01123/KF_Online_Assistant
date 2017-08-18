@@ -1228,36 +1228,6 @@ export const turnPageViaKeyboard = function () {
 };
 
 /**
- * 检查自助评分文件大小
- * @param {string} title 帖子标题
- * @param {number} ratingSize 评分大小
- * @returns {{}} 检查结果
- */
-export const checkRatingSize = function (title, ratingSize) {
-    let titleSize = 0;
-    let matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
-    if (matches) {
-        for (let i = 0; i < matches.length; i++) {
-            let sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
-            if (!sizeMatches) continue;
-            let size = parseFloat(sizeMatches[1]);
-            if (sizeMatches[2].toUpperCase() === 'G') size *= 1024;
-            titleSize += size;
-        }
-    }
-
-    if (!titleSize || !ratingSize) {
-        return {type: -1};
-    }
-    else if (titleSize > ratingSize * (100 + Const.ratingErrorSizePercent) / 100 + 1 ||
-        titleSize < ratingSize * (100 - Const.ratingErrorSizePercent) / 100 - 1
-    ) {
-        return {type: 1, titleSize, ratingSize};
-    }
-    else return {type: 0};
-};
-
-/**
  * 显示通用的导入/导出设置对话框
  * @param {string} title 对话框标题
  * @param {string} configName 设置名称

@@ -852,7 +852,7 @@ export const getThreadTitle = function () {
  */
 export const addSelfRatingLink = function () {
     let fid = parseInt($('input[name="fid"]:first').val());
-    if (!fid || !Const.selfRatingFidList.includes(fid)) return;
+    if (!fid || !Const.selfRateFidList.includes(fid)) return;
     let tid = parseInt($('input[name="tid"]:first').val());
     let safeId = Public.getSafeId();
     if (!safeId || !tid) return;
