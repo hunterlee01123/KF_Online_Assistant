@@ -60,14 +60,14 @@ const Const = {
     // ajax请求的默认时间间隔（毫秒）
     defAjaxInterval: 200,
     // 特殊情况下的ajax请求（如使用道具、打开盒子等）的时间间隔（毫秒），可设置为函数来返回值
-    specialAjaxInterval () {
+    specialAjaxInterval() {
         if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 慢速情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
     // 部分操作的最小时间间隔（毫秒）
     minActionInterval: 1000,
     // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
-    lootAttackInterval () {
+    lootAttackInterval() {
         if (Config.slowAttackEnabled) return Math.floor(Math.random() * 3000) + 4000; // 慢速情况
         else return Math.floor(Math.random() * 200) + 1000; // 正常情况
     },
@@ -78,6 +78,8 @@ const Const = {
     minBuyThreadWarningSell: 6,
     // 统计楼层最大能访问的帖子页数
     statFloorMaxPage: 300,
+    // 可进行自助评分的版块ID列表
+    selfRatingFidList: [41, 67, 92, 127, 68, 163],
     // 自助评分错标范围百分比
     ratingErrorSizePercent: 3,
     // 自定义快捷导航菜单内容

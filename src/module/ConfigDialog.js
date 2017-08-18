@@ -133,6 +133,59 @@ export const show = function () {
       </label>
     </fieldset>
     <fieldset>
+      <legend>首页相关</legend>
+      <label>
+        @提醒
+        <select name="atTipsHandleType" style="width: 140px;">
+          <option value="no_highlight">取消已读提醒高亮</option>
+          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
+          <option value="hide_box_1">不显示已读提醒的消息框</option>
+          <option value="hide_box_2">永不显示消息框</option>
+          <option value="default">保持默认</option>
+          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
+        </select>
+        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
+        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
+        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
+        <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
+        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
+        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>版块页面相关</legend>
+      <label>
+        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
+        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
+        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
+      </label><br>
+      <label>
+        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
+        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+      </label>
+    </fieldset>
+  </div>
+
+  <div class="pd_cfg_panel">
+    <fieldset>
       <legend>帖子页面相关</legend>
       <label>
         帖子每页楼层数量
@@ -202,59 +255,10 @@ export const show = function () {
       <label class="pd_cfg_ml">
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
-      </label>
-    </fieldset>
-  </div>
-
-  <div class="pd_cfg_panel">
-    <fieldset>
-      <legend>首页相关</legend>
-      <label>
-        @提醒
-        <select name="atTipsHandleType" style="width: 140px;">
-          <option value="no_highlight">取消已读提醒高亮</option>
-          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
-          <option value="hide_box_1">不显示已读提醒的消息框</option>
-          <option value="hide_box_2">永不显示消息框</option>
-          <option value="default">保持默认</option>
-          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
-        </select>
-        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
-        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
       </label><br>
       <label>
-        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
-        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
-        <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
-      </label><br>
-      <label>
-        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
-        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
-        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
-      </label>
-    </fieldset>
-    <fieldset>
-      <legend>版块页面相关</legend>
-      <label>
-        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> 显示帖子页数快捷链接
-        <span class="pd_cfg_tips" title="在版块页面中显示帖子页数快捷链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        页数链接最大数量 <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="在帖子页数快捷链接中显示页数链接的最大数量">[?]</span>
-      </label><br>
-      <label>
-        <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
-        <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
+        <input name="addSelfRatingLinkEnabled" type="checkbox"> 添加自助评分链接
+        <span class="pd_cfg_tips" title="在帖子页面添加自助评分链接（仅限评分人员使用）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
