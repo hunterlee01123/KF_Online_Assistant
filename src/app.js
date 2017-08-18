@@ -91,8 +91,9 @@ const init = function () {
         if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
-        if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2)
+        if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
             $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
+        }
         Index.addPromoteHaloInterval();
         if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     }
@@ -199,6 +200,7 @@ const init = function () {
             }
         }
         else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
+            Other.addSelfRatingUnrecognizedSizeWarning();
             Other.showSelfRatingErrorSizeSubmitWarning();
         }
         Other.addLinksInGoodPostPage();

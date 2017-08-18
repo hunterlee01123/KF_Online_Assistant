@@ -478,6 +478,18 @@ export const showSelfRatingErrorSizeSubmitWarning = function () {
 };
 
 /**
+ * 在自助评分页面添加无法识别标题文件大小的警告
+ */
+export const addSelfRatingUnrecognizedSizeWarning = function () {
+    let $title = $('.adp1 a[href^="read.php?tid="]');
+    let title = $title.text();
+    let {type} = Public.checkRatingSize(title, 1);
+    if (type === -1) {
+        $title.after('<span style="margin-left: 5px; color: #ff9933;">(标题文件大小无法解析)</span>');
+    }
+};
+
+/**
  * 在优秀帖相关页面上添加链接
  */
 export const addLinksInGoodPostPage = function () {
