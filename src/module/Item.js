@@ -1157,7 +1157,7 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
             Log.push(
                 '熔炼装备',
                 `共有\`${num}\`个【\`${armGroup}\`】装备熔炼成功`,
-                {gain: {'武器经验': totalExp}, pay: {'装备': -num}}
+                {gain: {'武器经验': exp}, pay: {'装备': -num}}
             );
         }
         $('.pd_result[data-name="armResult"]:last').append(`
@@ -1242,10 +1242,10 @@ export const getArmsLevelInfo = function (html) {
         ['护甲', 0],
         ['项链', 0],
     ]);
-    let matches = html.match(/value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/g);
+    let matches = html.match(/value="(\S+?)等级\[\s*(\d+)\s*] 经验:(\d+)"/g);
     for (let i in matches) {
-        let subMatches = /value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/.exec(matches[i]);
-        armsLevelList.set(subMatches[1], parseInt(subMatches[2]));
+        let subMatches = /value="(\S+?)等级\[\s*(\d+)\s*] 经验:(\d+)"/.exec(matches[i]);
+        armsLevelList.set(subMatches[1], {'等级': parseInt(subMatches[2]), '经验': parseInt(subMatches[3])});
     }
     return armsLevelList;
 };

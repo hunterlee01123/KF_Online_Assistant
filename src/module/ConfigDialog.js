@@ -129,7 +129,7 @@ export const show = function () {
       <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">详细说明&raquo;</a><br>
       <label>
         在 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后购买物品
-        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:45:00">[?]</span>
+        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:40:00（注：请不要设置为在此之前的时间）">[?]</span>
       </label>
     </fieldset>
     <fieldset>

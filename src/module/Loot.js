@@ -39,10 +39,10 @@ let extraPointsList = {};
 let haloInfo = {};
 // 当前装备情况
 let currentArmInfo = {};
-// 道具使用情况列表
-let itemUsedNumList = new Map();
 // 装备等级情况列表
 let armsLevelList = new Map();
+// 道具使用情况列表
+let itemUsedNumList = new Map();
 // 修改点数可用次数
 let changePointsAvailableCount = 0;
 // 点数分配记录列表
@@ -122,8 +122,13 @@ export const enhanceLootIndexPage = function () {
  * 处理争夺属性区域
  */
 const handlePropertiesArea = function () {
-    $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative')
-        .append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+    $properties.attr('id', 'pdPropertiesArea')
+        .find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+    $properties.find('input[value^="武器等级"]')
+        .after(`<span id="pdWeaponExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`)
+        .change(function () {
+            $('#pdWeaponExpDiff em').text(armsLevelList.get('武器')['经验'] - Math.pow((armsLevelList.get('武器')['等级'] + 1), 2) * 2);
+        }).trigger('change');
 
     $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>')
         .insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]'))
@@ -1199,6 +1204,7 @@ export const updateLootInfo = function (callback = null) {
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
         currentArmInfo = Item.getArmInfo($armArea.html());
+        $properties.find('input[value^="武器等级"]').trigger('change');
 
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);

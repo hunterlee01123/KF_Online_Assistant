@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.4.6
+// @version     11.4.7
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.4.6';
+const version = '11.4.7';
 
 /**
  * 导出模块
@@ -297,7 +297,6 @@ const init = function () {
                 Loot.checkLoot();
             }
         } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-            isAutoLootStarted = true;
             Loot.autoSaveLootLog();
         }
     }
@@ -1013,8 +1012,8 @@ const Config = exports.Config = {
     autoBuyItemEnabled: false,
     // 购买物品ID列表，例：['101','103|102']
     buyItemIdList: [],
-    // 在当天的指定时间之后购买物品（本地时间），例：00:45:00
-    buyItemAfterTime: '00:45:00',
+    // 在当天的指定时间之后购买物品（本地时间），例：00:40:00
+    buyItemAfterTime: '00:40:00',
 
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
@@ -1405,7 +1404,7 @@ const show = exports.show = function () {
       <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">详细说明&raquo;</a><br>
       <label>
         在 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后购买物品
-        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:45:00">[?]</span>
+        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:40:00（注：请不要设置为在此之前的时间）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -4343,7 +4342,7 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
             let { exp, num } = smeltInfo[armGroup];
             totalExp += exp;
             resultStat += `【${armGroup}】 <i>装备<ins>-${num}</ins></i> <i>武器经验<em>+${exp.toLocaleString()}</em></i><br>`;
-            Log.push('熔炼装备', `共有\`${num}\`个【\`${armGroup}\`】装备熔炼成功`, { gain: { '武器经验': totalExp }, pay: { '装备': -num } });
+            Log.push('熔炼装备', `共有\`${num}\`个【\`${armGroup}\`】装备熔炼成功`, { gain: { '武器经验': exp }, pay: { '装备': -num } });
         }
         $('.pd_result[data-name="armResult"]:last').append(`
 <li class="pd_stat">
@@ -4418,10 +4417,10 @@ const getArmInfo = exports.getArmInfo = function (html) {
  */
 const getArmsLevelInfo = exports.getArmsLevelInfo = function (html) {
     let armsLevelList = new Map([['武器', 0], ['护甲', 0], ['项链', 0]]);
-    let matches = html.match(/value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/g);
+    let matches = html.match(/value="(\S+?)等级\[\s*(\d+)\s*] 经验:(\d+)"/g);
     for (let i in matches) {
-        let subMatches = /value="(\S+?)等级\[\s*(\d+)\s*] 经验:\d+"/.exec(matches[i]);
-        armsLevelList.set(subMatches[1], parseInt(subMatches[2]));
+        let subMatches = /value="(\S+?)等级\[\s*(\d+)\s*] 经验:(\d+)"/.exec(matches[i]);
+        armsLevelList.set(subMatches[1], { '等级': parseInt(subMatches[2]), '经验': parseInt(subMatches[3]) });
     }
     return armsLevelList;
 };
@@ -5748,10 +5747,10 @@ let extraPointsList = {};
 let haloInfo = {};
 // 当前装备情况
 let currentArmInfo = {};
-// 道具使用情况列表
-let itemUsedNumList = new Map();
 // 装备等级情况列表
 let armsLevelList = new Map();
+// 道具使用情况列表
+let itemUsedNumList = new Map();
 // 修改点数可用次数
 let changePointsAvailableCount = 0;
 // 点数分配记录列表
@@ -5826,7 +5825,10 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  * 处理争夺属性区域
  */
 const handlePropertiesArea = function () {
-    $properties.find('input[value$="可分配属性"]').parent('td').css('position', 'relative').append('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+    $properties.attr('id', 'pdPropertiesArea').find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+    $properties.find('input[value^="武器等级"]').after(`<span id="pdWeaponExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`).change(function () {
+        $('#pdWeaponExpDiff em').text(armsLevelList.get('武器')['经验'] - Math.pow(armsLevelList.get('武器')['等级'] + 1, 2) * 2);
+    }).trigger('change');
 
     $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
         e.preventDefault();
@@ -6817,6 +6819,7 @@ const updateLootInfo = exports.updateLootInfo = function (callback = null) {
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
         currentArmInfo = Item.getArmInfo($armArea.html());
+        $properties.find('input[value^="武器等级"]').trigger('change');
 
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);
@@ -9345,7 +9348,9 @@ const appendCss = exports.appendCss = function () {
   .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }
   .pd_id_color_select > td { position: relative; cursor: pointer; }
   .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }
-  .pd_property_diff { position: absolute; top: 0px; right: 28px; }
+  #pdPropertiesArea td { position: relative; }
+  #pdPropertiesArea input[type="text"] { width: 211px; }
+  .pd_property_diff { position: absolute; top: 0px; right: 5px; }
   .pd_property_diff em { font-style: normal; }
 
   /* 设置对话框 */
@@ -11600,7 +11605,7 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
 };
 
 },{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":22,"./Util":23}],21:[function(require,module,exports){
-/* 其它模块 */
+/* 自助评分模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {

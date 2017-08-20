@@ -1,4 +1,4 @@
-/* 其它模块 */
+/* 自助评分模块 */
 'use strict';
 import Info from './Info';
 import * as Msg from './Msg';
