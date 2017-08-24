@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        在首页显示经验值信息
-// @version     1.0
+// @version     1.1
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13507426
@@ -16,9 +16,11 @@
     const Util = require('./Util');
     Const.getExpInfoCookieName = 'getExpInfo';
 
-    let deleteCookie = () => Util.deleteCookie(Const.getExpInfoCookieName);
-    addFunc('Loot.lootAttack_check_after_', deleteCookie);
+    const deleteCookie = () => Util.deleteCookie(Const.getExpInfoCookieName);
     addFunc('Public.getDailyBonus_after_', deleteCookie);
+    addFunc('Item.buyItems_complete_', deleteCookie);
+    if (location.pathname === '/kf_growup.php') deleteCookie();
+
     if (!Info.isInHomePage) return;
 
     const setExpInfo = function (percent, exp) {
