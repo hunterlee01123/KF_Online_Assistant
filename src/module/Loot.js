@@ -107,13 +107,16 @@ export const enhanceLootIndexPage = function () {
     if (log.includes('本日无争夺记录') || log.includes('你已经复活')) {
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     }
+    else if (log.includes('你被击败了') && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
+        Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+    }
     addLootLogHeader();
     showLogStat(levelInfoList);
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
         && !Util.getCookie(Const.lootAttackingCookieName)
     ) {
-        $(document).ready(setTimeout(autoLoot, 500));
+        $(document).ready(() => setTimeout(autoLoot, 500));
     }
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
 };
@@ -2134,7 +2137,7 @@ const getTempPointsLogList = function (logList) {
 const getAutoLootCookieDate = function () {
     let now = new Date();
     let date = Util.getTimezoneDateByTime('02:30:00');
-    if (now > date) {
+    if (now > date || !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled) {
         date = Util.getTimezoneDateByTime('00:00:30');
         date.setDate(date.getDate() + 1);
     }

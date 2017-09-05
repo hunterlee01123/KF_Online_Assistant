@@ -52,10 +52,6 @@ export const init = function () {
 
     addArmsButton();
     addBatchUseAndSellItemsButton();
-
-    if (localStorage.getItem(Const.storagePrefix + 'myObjectsInfo_' + Info.uid)) {
-        localStorage.removeItem(Const.storagePrefix + 'myObjectsInfo_' + Info.uid);
-    }
 };
 
 /**
@@ -530,7 +526,7 @@ export const handleArmArea = function ($armArea, type = 0) {
         let $td = $tr.find('> td:nth-child(3)');
         $td.html(handleUselessSubProperties($td.html()));
         if (Config.armsMemo[id]) {
-            $td.attr('data-memo', Config.armsMemo[id].slice(0, 12).replace(/"/g, ''));
+            $td.attr('data-memo', Config.armsMemo[id].replace(/"/g, ''));
         }
         if (type === 0) {
             $this.prepend(`<input name="armCheck" type="checkbox" value="${id}">`);
@@ -649,7 +645,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
   </div>
   <div style="margin-top: 5px;">
     <label>
-      装备备注：<input name="armMemo" type="text" maxlength="20" style="width: 180px;">
+      装备备注：<input name="armMemo" type="text" maxlength="100" style="width: 200px;">
     </label>
   </div>
 </div>
@@ -673,7 +669,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
         let $node = $armArea.find(`tr[data-id="${armId}"] > td:nth-child(3)`);
         if (value) {
             Config.armsMemo[armId] = value;
-            $node.attr('data-memo', value.slice(0, 12).replace(/"/g, ''));
+            $node.attr('data-memo', value.replace(/"/g, ''));
         }
         else {
             delete Config.armsMemo[armId];
