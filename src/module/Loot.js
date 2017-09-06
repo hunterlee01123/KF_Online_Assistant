@@ -127,11 +127,20 @@ export const enhanceLootIndexPage = function () {
 const handlePropertiesArea = function () {
     $properties.attr('id', 'pdPropertiesArea')
         .find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
-    $properties.find('input[value^="武器等级"]')
-        .after(`<span id="pdWeaponExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`)
-        .change(function () {
-            $('#pdWeaponExpDiff em').text(armsLevelList.get('武器')['经验'] - Math.pow((armsLevelList.get('武器')['等级'] + 1), 2) * 2);
-        }).trigger('change');
+
+    $properties.on('change', '.pd_arm_level', function () {
+        let type = $(this).data('type');
+        let diffName = 'Weapon';
+        if (type === '护甲') diffName = 'Armor';
+        else if (type === '项链') diffName = 'Necklace';
+        $(`#pd${diffName}ExpDiff em`).text(armsLevelList.get(type)['经验'] - Math.pow((armsLevelList.get(type)['等级'] + 1), 2) * 2);
+    });
+    $properties.find('input[value^="武器等级"]').addClass('pd_arm_level').attr('data-type', '武器')
+        .after(`<span id="pdWeaponExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`).trigger('change');
+    $properties.find('input[value^="护甲等级"]').addClass('pd_arm_level').attr('data-type', '护甲')
+        .after(`<span id="pdArmorExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`).trigger('change');
+    $properties.find('input[value^="项链等级"]').addClass('pd_arm_level').attr('data-type', '项链')
+        .after(`<span id="pdNecklaceExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`).trigger('change');
 
     $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>')
         .insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]'))
@@ -1208,7 +1217,7 @@ export const updateLootInfo = function (callback = null) {
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
         currentArmInfo = Item.getArmInfo($armArea.html());
-        $properties.find('input[value^="武器等级"]').trigger('change');
+        $properties.find('.pd_arm_level').trigger('change');
 
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);

@@ -136,7 +136,7 @@ export const appendCss = function () {
   .pd_item_btns { text-align: right; margin-top: 5px;  }
   .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }
   .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }
-  .pd_arm_equipped { background-color:#EEEEFF; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }
+  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }
   .pd_arm_equipped > td:nth-child(3)::before { content: "（装备中）"; font-weight: bold; }
   .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
   .kf_fw_ig4 > tbody > tr > td { position: relative; }
