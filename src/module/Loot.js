@@ -256,12 +256,11 @@ const handlePointsArea = function () {
     });
 
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
+    $changeCount.wrapInner('<span id="pdChangeCount"></span>');
     let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.text());
     if (changeCountMatches) {
         changePointsAvailableCount = parseInt(changeCountMatches[1]);
-        $changeCount.wrapInner('<span id="pdChangeCount"></span>');
     }
-
     let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($changeCount.text());
     if (countDownMatches) {
         let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
@@ -269,8 +268,9 @@ const handlePointsArea = function () {
     }
     else {
         let count = parseInt(Util.getCookie(Const.changePointsInfoCookieName));
-        if (count !== changePointsAvailableCount)
+        if (count !== changePointsAvailableCount) {
             Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
+        }
     }
 
     extraPointsList = {
@@ -1189,13 +1189,14 @@ export const updateLootInfo = function (callback = null) {
             changePointsAvailableCount = 0;
             let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
             Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+            $points.find('#pdChangeCount').text(`(下次修改配点还需[${countDownMatches[1]}]分钟)`);
         }
         let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
         if (changeCountMatches) {
             changePointsAvailableCount = parseInt(changeCountMatches[1]);
             Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
+            $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
         }
-        $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
 
         let armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
         if (armHtml.includes('（装备中）')) {
