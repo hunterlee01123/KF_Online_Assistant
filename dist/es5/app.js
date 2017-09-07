@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.5';
+var version = '11.6';
 
 /**
  * 导出模块
@@ -1261,6 +1261,8 @@ var Config = exports.Config = {
 
     // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
     slowActionEnabled: false,
+    // 是否分组排列装备，true：开启；false：关闭
+    sortArmsByGroupEnabled: false,
     // 装备备注，格式：{装备ID:'备注信息'}，例：{123456:'备注信息'}
     armsMemo: {},
     // 是否在打开盒子后熔炼装备，true：开启；false：关闭
@@ -3096,7 +3098,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3259,7 +3261,9 @@ var addBatchOpenBoxesLink = function addBatchOpenBoxesLink() {
         var currentNum = parseInt($info.find('span:last').text());
         var num = parseInt(prompt('\u4F60\u8981\u6253\u5F00\u591A\u5C11\u4E2A\u3010' + boxType + '\u3011\uFF1F', currentNum));
         if (!num || num < 0) return;
-        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        if (!Config.sortArmsByGroupEnabled) {
+            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        }
         Msg.destroy();
         openBoxes({ id: id, boxType: boxType, num: num, safeId: safeId });
     });
@@ -3328,8 +3332,8 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
 
                     var prefix = type.split('的')[0];
                     if (prefix === '神秘') continue;
-                    var name = prefix + '\u7684' + group;
-                    armTypesCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
+                    var _name = prefix + '\u7684' + group;
+                    armTypesCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + _name + '" ' + (Config.defSmeltArmTypeList.includes(_name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
                 }
             } catch (err) {
                 _didIteratorError4 = true;
@@ -3430,7 +3434,9 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
         }
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
-        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        if (!Config.sortArmsByGroupEnabled) {
+            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        }
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             var $this = $(this);
@@ -3556,6 +3562,7 @@ var openBoxes = function openBoxes(_ref) {
 
             console.log('\u7B2C' + index + '\u6B21\uFF1A' + msg);
             $('.pd_result[data-name="boxResult"]:last').append('<li><b>\u7B2C' + index + '\u6B21\uFF1A</b>' + msg + '</li>');
+            Script.runFunc('Item.openBoxes_success_', msg);
         }).fail(function () {
             failNum++;
         }).always(function () {
@@ -3639,9 +3646,9 @@ var openBoxes = function openBoxes(_ref) {
 
                             try {
                                 for (var _iterator7 = Util.getSortedObjectKeyList(typeList, value)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                                    var name = _step7.value;
+                                    var _name2 = _step7.value;
 
-                                    tmpHtml += '<i>' + name + '<em>+' + value[name].toLocaleString() + '</em></i> ';
+                                    tmpHtml += '<i>' + _name2 + '<em>+' + value[_name2].toLocaleString() + '</em></i> ';
                                 }
                             } catch (err) {
                                 _didIteratorError7 = true;
@@ -3773,8 +3780,43 @@ var handleArmArea = exports.handleArmArea = function handleArmArea($armArea) {
         }
     });
 
+    if (Config.sortArmsByGroupEnabled) {
+        sortArmsByGroup($armArea);
+    }
+
     if (type === 1) {
         $armArea.find('a[data-name="equip"]').attr('data-name', 'add').text('加入');
+    }
+};
+
+/**
+ * 分组排列装备
+ * @param {jQuery} $armArea 装备区域节点
+ */
+var sortArmsByGroup = exports.sortArmsByGroup = function sortArmsByGroup($armArea) {
+    var _iteratorNormalCompletion8 = true;
+    var _didIteratorError8 = false;
+    var _iteratorError8 = undefined;
+
+    try {
+        for (var _iterator8 = armGroupList[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            var armGroup = _step8.value;
+
+            $armArea.find('tr[data-group="' + armGroup + '"]').insertBefore($armArea.find('tr[data-id]:first'));
+        }
+    } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                _iterator8.return();
+            }
+        } finally {
+            if (_didIteratorError8) {
+                throw _iteratorError8;
+            }
+        }
     }
 };
 
@@ -3805,8 +3847,8 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
                         var $armMemo = $('input[name="armMemo"]:first');
                         $armId.val(id);
                         $armMemo.val($('#pdArmArea > span:first').text().trim());
-                        $.each([$armId, $armMemo], function () {
-                            this.get(0).defaultValue = '';
+                        $('.pd_arm_input').each(function () {
+                            this.defaultValue = '';
                         });
                     });
                 }
@@ -3833,11 +3875,17 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
         });
     }).on('click', 'a[data-name="add"]', function () {
         var $tr = $(this).closest('tr');
-        var id = parseInt($tr.data('id'));
+        var armId = parseInt($tr.data('id'));
+        var armClass = $tr.data('class');
         var armInfo = getArmInfo($tr.find('> td:nth-child(3)').html());
         $('#pdAddArmDialog').parent().hide();
-        $('#pdAddArmMemo').val(armInfo['名称']);
-        $('#pdAddArmId').val(id).focus();
+        if (armClass === '武器') {
+            $('#pdAddWeaponMemo').val(armInfo['名称']);
+            $('#pdAddWeaponId').val(armId).focus();
+        } else if (armClass === '护甲') {
+            $('#pdAddArmorMemo').val(armInfo['名称']);
+            $('#pdAddArmorId').val(armId).focus();
+        }
     }).on('mouseenter', 'tr', function () {
         var $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
@@ -3931,53 +3979,19 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
     info['装备ID'] = '#' + armId;
 
     var smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
-    var _iteratorNormalCompletion8 = true;
-    var _didIteratorError8 = false;
-    var _iteratorError8 = undefined;
-
-    try {
-        for (var _iterator8 = smKeyList[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var _step8$value = _slicedToArray(_step8.value, 2),
-                key = _step8$value[0],
-                value = _step8$value[1];
-
-            if (key in armInfo) {
-                info['神秘属性数量']++;
-                info['所有的神秘属性'] += value + ' ';
-            }
-        }
-    } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-                _iterator8.return();
-            }
-        } finally {
-            if (_didIteratorError8) {
-                throw _iteratorError8;
-            }
-        }
-    }
-
     var _iteratorNormalCompletion9 = true;
     var _didIteratorError9 = false;
     var _iteratorError9 = undefined;
 
     try {
-        for (var _iterator9 = armInfo['主属性'][Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var value = _step9.value;
+        for (var _iterator9 = smKeyList[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var _step9$value = _slicedToArray(_step9.value, 2),
+                key = _step9$value[0],
+                value = _step9$value[1];
 
-            var _value$split = value.split('(', 1),
-                _value$split2 = _slicedToArray(_value$split, 1),
-                _value$split2$ = _value$split2[0],
-                property = _value$split2$ === undefined ? '' : _value$split2$;
-
-            property = property.trim();
-            if (property) {
-                info['主属性数量']++;
-                info['所有的主属性'] += armPropertyKeyList.get(property) + ' ';
+            if (key in armInfo) {
+                info['神秘属性数量']++;
+                info['所有的神秘属性'] += value + ' ';
             }
         }
     } catch (err) {
@@ -3995,21 +4009,23 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
     var _iteratorNormalCompletion10 = true;
     var _didIteratorError10 = false;
     var _iteratorError10 = undefined;
 
     try {
-        for (var _iterator10 = armInfo['从属性'][Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-            var _value = _step10.value;
+        for (var _iterator10 = armInfo['主属性'][Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var value = _step10.value;
 
-            _value = $.trim(_value);
-            if (!_value) continue;
-            var matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(_value);
-            if (matches) {
-                info['从属性数量']++;
-                info['所有的从属性'] += armPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+            var _value$split = value.split('(', 1),
+                _value$split2 = _slicedToArray(_value$split, 1),
+                _value$split2$ = _value$split2[0],
+                property = _value$split2$ === undefined ? '' : _value$split2$;
+
+            property = property.trim();
+            if (property) {
+                info['主属性数量']++;
+                info['所有的主属性'] += armPropertyKeyList.get(property) + ' ';
             }
         }
     } catch (err) {
@@ -4027,18 +4043,22 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var content = '\n[\u7EC4\u522B] [\u88C5\u5907ID]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
+    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
     var _iteratorNormalCompletion11 = true;
     var _didIteratorError11 = false;
     var _iteratorError11 = undefined;
 
     try {
-        for (var _iterator11 = Util.entries(info)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _step11$value = _slicedToArray(_step11.value, 2),
-                key = _step11$value[0],
-                _value2 = _step11$value[1];
+        for (var _iterator11 = armInfo['从属性'][Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var _value = _step11.value;
 
-            content = content.replace('[' + key + ']', $.trim(_value2));
+            _value = $.trim(_value);
+            if (!_value) continue;
+            var matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(_value);
+            if (matches) {
+                info['从属性数量']++;
+                info['所有的从属性'] += armPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+            }
         }
     } catch (err) {
         _didIteratorError11 = true;
@@ -4055,33 +4075,18 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    return content;
-};
-
-/**
- * 处理无用的从属性
- * @param {string} html 装备的HTML代码
- * @returns {string} 处理后的HTML代码
- */
-var handleUselessSubProperties = exports.handleUselessSubProperties = function handleUselessSubProperties(html) {
-    var armInfo = getArmInfo(html);
-    var keyList = [];
+    var content = '\n[\u7EC4\u522B] [\u88C5\u5907ID]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = armInfo['主属性'][Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var _value3 = _step12.value;
+        for (var _iterator12 = Util.entries(info)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var _step12$value = _slicedToArray(_step12.value, 2),
+                key = _step12$value[0],
+                _value2 = _step12$value[1];
 
-            var _value3$split = _value3.split('(', 1),
-                _value3$split2 = _slicedToArray(_value3$split, 1),
-                _value3$split2$ = _value3$split2[0],
-                _property = _value3$split2$ === undefined ? '' : _value3$split2$;
-
-            if (_property) {
-                keyList.push(armPropertyKeyList.get(_property));
-            }
+            content = content.replace('[' + key + ']', $.trim(_value2));
         }
     } catch (err) {
         _didIteratorError12 = true;
@@ -4098,16 +4103,59 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
         }
     }
 
+    return content;
+};
+
+/**
+ * 处理无用的从属性
+ * @param {string} html 装备的HTML代码
+ * @returns {string} 处理后的HTML代码
+ */
+var handleUselessSubProperties = exports.handleUselessSubProperties = function handleUselessSubProperties(html) {
+    var armInfo = getArmInfo(html);
+    var keyList = [];
+    var _iteratorNormalCompletion13 = true;
+    var _didIteratorError13 = false;
+    var _iteratorError13 = undefined;
+
+    try {
+        for (var _iterator13 = armInfo['主属性'][Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var _value3 = _step13.value;
+
+            var _value3$split = _value3.split('(', 1),
+                _value3$split2 = _slicedToArray(_value3$split, 1),
+                _value3$split2$ = _value3$split2[0],
+                _property = _value3$split2$ === undefined ? '' : _value3$split2$;
+
+            if (_property) {
+                keyList.push(armPropertyKeyList.get(_property));
+            }
+        }
+    } catch (err) {
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion13 && _iterator13.return) {
+                _iterator13.return();
+            }
+        } finally {
+            if (_didIteratorError13) {
+                throw _iteratorError13;
+            }
+        }
+    }
+
     var matches = /从属性：(.+?)(<br(?: \/)?>|$)/.exec(html);
     if (matches) {
         var subPropertiesHtml = '';
-        var _iteratorNormalCompletion13 = true;
-        var _didIteratorError13 = false;
-        var _iteratorError13 = undefined;
+        var _iteratorNormalCompletion14 = true;
+        var _didIteratorError14 = false;
+        var _iteratorError14 = undefined;
 
         try {
-            for (var _iterator13 = matches[1].split('。')[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-                var value = _step13.value;
+            for (var _iterator14 = matches[1].split('。')[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+                var value = _step14.value;
 
                 if (!value) continue;
                 var subMatches = /([^<>]+?)\(/.exec(value);
@@ -4120,16 +4168,16 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
                 subPropertiesHtml += value + '。';
             }
         } catch (err) {
-            _didIteratorError13 = true;
-            _iteratorError13 = err;
+            _didIteratorError14 = true;
+            _iteratorError14 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion13 && _iterator13.return) {
-                    _iterator13.return();
+                if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                    _iterator14.return();
                 }
             } finally {
-                if (_didIteratorError13) {
-                    throw _iteratorError13;
+                if (_didIteratorError14) {
+                    throw _iteratorError14;
                 }
             }
         }
@@ -4144,7 +4192,17 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
  * 添加装备相关按钮
  */
 var addArmsButton = function addArmsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="selectAll" type="button" title="\u5168\u9009">\u5168\u9009</button>\n  <button name="selectInverse" type="button" title="\u53CD\u9009">\u53CD\u9009</button>\n  <button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n  <button name="clearArmsMemo" type="button" style="color: #f00;" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F" hidden>\u663E\u793A\u6700\u7EC8\u52A0\u6210</button><!-- \u4E34\u65F6\u7981\u7528 -->\n  <button name="smeltSelectArms" type="button" style="color: #00f;" title="\u6279\u91CF\u7194\u70BC\u5F53\u524D\u9875\u9762\u4E0A\u6240\u9009\u7684\u88C5\u5907">\u7194\u70BC\u6240\u9009</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u79CD\u7C7B\u7684\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="selectAll"]').click(function () {
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <label>\n    <input name="sortArmsByGroupEnabled" type="checkbox" ' + (Config.sortArmsByGroupEnabled ? 'checked' : '') + '> \u5206\u7EC4\u6392\u5217</input>\n    <span class="pd_cfg_tips" title="\u5206\u7EC4\u6392\u5217\u88C5\u5907">[?]</span>\n  </label>\n  <button name="selectAll" type="button" title="\u5168\u9009">\u5168\u9009</button>\n  <button name="selectInverse" type="button" title="\u53CD\u9009">\u53CD\u9009</button>\n  <button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n  <button name="clearArmsMemo" type="button" style="color: #f00;" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F" hidden>\u663E\u793A\u6700\u7EC8\u52A0\u6210</button><!-- \u4E34\u65F6\u7981\u7528 -->\n  <button name="smeltSelectArms" type="button" style="color: #00f;" title="\u6279\u91CF\u7194\u70BC\u5F53\u524D\u9875\u9762\u4E0A\u6240\u9009\u7684\u88C5\u5907">\u7194\u70BC\u6240\u9009</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u79CD\u7C7B\u7684\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="sortArmsByGroupEnabled"]').click(function () {
+        var checked = $(this).prop('checked');
+        if (Config[name] !== checked) {
+            (0, _Config.read)();
+            Config.sortArmsByGroupEnabled = checked;
+            (0, _Config.write)();
+        }
+        if (checked) {
+            sortArmsByGroup($armArea);
+        }
+    }).end().find('[name="selectAll"]').click(function () {
         return Util.selectAll($armArea.find('input[name="armCheck"]'));
     }).end().find('[name="selectInverse"]').click(function () {
         return Util.selectInverse($armArea.find('input[name="armCheck"]'));
@@ -4160,29 +4218,29 @@ var addArmsButton = function addArmsButton() {
         });
         if (!armInfoList.length) return;
         var copyData = '';
-        var _iteratorNormalCompletion14 = true;
-        var _didIteratorError14 = false;
-        var _iteratorError14 = undefined;
+        var _iteratorNormalCompletion15 = true;
+        var _didIteratorError15 = false;
+        var _iteratorError15 = undefined;
 
         try {
-            for (var _iterator14 = armInfoList[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-                var _step14$value = _step14.value,
-                    id = _step14$value.id,
-                    info = _step14$value.info;
+            for (var _iterator15 = armInfoList[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+                var _step15$value = _step15.value,
+                    id = _step15$value.id,
+                    info = _step15$value.info;
 
                 copyData += getWeaponParameterSetting(id, info) + '\n\n';
             }
         } catch (err) {
-            _didIteratorError14 = true;
-            _iteratorError14 = err;
+            _didIteratorError15 = true;
+            _iteratorError15 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                    _iterator14.return();
+                if (!_iteratorNormalCompletion15 && _iterator15.return) {
+                    _iterator15.return();
                 }
             } finally {
-                if (_didIteratorError14) {
-                    throw _iteratorError14;
+                if (_didIteratorError15) {
+                    throw _iteratorError15;
                 }
             }
         }
@@ -4342,39 +4400,39 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
     (0, _Config.read)();
 
     var armTypeCheckedHtml = '';
-    var _iteratorNormalCompletion15 = true;
-    var _didIteratorError15 = false;
-    var _iteratorError15 = undefined;
+    var _iteratorNormalCompletion16 = true;
+    var _didIteratorError16 = false;
+    var _iteratorError16 = undefined;
 
     try {
-        for (var _iterator15 = armGroupList[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-            var group = _step15.value;
+        for (var _iterator16 = armGroupList[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var group = _step16.value;
 
             armTypeCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
-            var _iteratorNormalCompletion16 = true;
-            var _didIteratorError16 = false;
-            var _iteratorError16 = undefined;
+            var _iteratorNormalCompletion17 = true;
+            var _didIteratorError17 = false;
+            var _iteratorError17 = undefined;
 
             try {
-                for (var _iterator16 = armTypeList[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-                    var type = _step16.value;
+                for (var _iterator17 = armTypeList[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+                    var type = _step17.value;
 
                     var prefix = type.split('的')[0];
                     if (prefix === '神秘') continue;
-                    var name = prefix + '\u7684' + group;
-                    armTypeCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + name + '" ' + (Config.defSmeltArmTypeList.includes(name) ? 'checked' : '') + '> ' + prefix + '\n</label>';
+                    var _name3 = prefix + '\u7684' + group;
+                    armTypeCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + _name3 + '" ' + (Config.defSmeltArmTypeList.includes(_name3) ? 'checked' : '') + '> ' + prefix + '\n</label>';
                 }
             } catch (err) {
-                _didIteratorError16 = true;
-                _iteratorError16 = err;
+                _didIteratorError17 = true;
+                _iteratorError17 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                        _iterator16.return();
+                    if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                        _iterator17.return();
                     }
                 } finally {
-                    if (_didIteratorError16) {
-                        throw _iteratorError16;
+                    if (_didIteratorError17) {
+                        throw _iteratorError17;
                     }
                 }
             }
@@ -4382,16 +4440,16 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
             armTypeCheckedHtml += '</li>';
         }
     } catch (err) {
-        _didIteratorError15 = true;
-        _iteratorError15 = err;
+        _didIteratorError16 = true;
+        _iteratorError16 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion15 && _iterator15.return) {
-                _iterator15.return();
+            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                _iterator16.return();
             }
         } finally {
-            if (_didIteratorError15) {
-                throw _iteratorError15;
+            if (_didIteratorError16) {
+                throw _iteratorError16;
             }
         }
     }
@@ -4581,25 +4639,25 @@ var smeltArms = function smeltArms(_ref2) {
             resultDetailStat = '',
             msgStat = '',
             logStat = '';
-        var _iteratorNormalCompletion17 = true;
-        var _didIteratorError17 = false;
-        var _iteratorError17 = undefined;
+        var _iteratorNormalCompletion18 = true;
+        var _didIteratorError18 = false;
+        var _iteratorError18 = undefined;
 
         try {
-            for (var _iterator17 = Util.getSortedObjectKeyList(armClassList, smeltInfo)[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-                var armClass = _step17.value;
+            for (var _iterator18 = Util.getSortedObjectKeyList(armClassList, smeltInfo)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+                var armClass = _step18.value;
 
                 resultDetailStat += '<b>\u3010' + armClass + '\u3011\uFF1A</b><br>';
                 var armClassNum = 0;
                 var gain = {};
                 gain[armClass + '\u7ECF\u9A8C'] = 0;
-                var _iteratorNormalCompletion18 = true;
-                var _didIteratorError18 = false;
-                var _iteratorError18 = undefined;
+                var _iteratorNormalCompletion19 = true;
+                var _didIteratorError19 = false;
+                var _iteratorError19 = undefined;
 
                 try {
-                    for (var _iterator18 = Util.getSortedObjectKeyList(armGroupList, smeltInfo[armClass])[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-                        var armGroup = _step18.value;
+                    for (var _iterator19 = Util.getSortedObjectKeyList(armGroupList, smeltInfo[armClass])[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+                        var armGroup = _step19.value;
 
                         armGroupNum++;
                         var _smeltInfo$armClass$a = smeltInfo[armClass][armGroup],
@@ -4611,16 +4669,16 @@ var smeltArms = function smeltArms(_ref2) {
                         resultDetailStat += '&nbsp;&nbsp;\u3010' + armGroup + '\u3011 <i>\u88C5\u5907<ins>-' + num + '</ins></i> <i>' + armClass + '\u7ECF\u9A8C<em>+' + exp.toLocaleString() + '</em></i><br>';
                     }
                 } catch (err) {
-                    _didIteratorError18 = true;
-                    _iteratorError18 = err;
+                    _didIteratorError19 = true;
+                    _iteratorError19 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion18 && _iterator18.return) {
-                            _iterator18.return();
+                        if (!_iteratorNormalCompletion19 && _iterator19.return) {
+                            _iterator19.return();
                         }
                     } finally {
-                        if (_didIteratorError18) {
-                            throw _iteratorError18;
+                        if (_didIteratorError19) {
+                            throw _iteratorError19;
                         }
                     }
                 }
@@ -4632,16 +4690,16 @@ var smeltArms = function smeltArms(_ref2) {
                 Log.push('熔炼装备', '\u5171\u6709`' + armClassNum + '`\u4E2A\u3010`' + armClass + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: gain, pay: { '装备': -armClassNum } });
             }
         } catch (err) {
-            _didIteratorError17 = true;
-            _iteratorError17 = err;
+            _didIteratorError18 = true;
+            _iteratorError18 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion17 && _iterator17.return) {
-                    _iterator17.return();
+                if (!_iteratorNormalCompletion18 && _iterator18.return) {
+                    _iterator18.return();
                 }
             } finally {
-                if (_didIteratorError17) {
-                    throw _iteratorError17;
+                if (_didIteratorError18) {
+                    throw _iteratorError18;
                 }
             }
         }
@@ -4739,12 +4797,12 @@ var getArmInfo = exports.getArmInfo = function getArmInfo(html) {
     matches = /从属性：(.+?)(\n|$)/.exec(description);
     if (matches) armInfo['从属性'] = matches[1].split('。');
 
-    matches = /最终加成：(.+?)(\n|$)/.exec(description);
-    if (matches) armInfo['最终加成'] = matches[1].split(' | ');
+    /*matches = /最终加成：(.+?)(\n|$)/.exec(description);
+    if (matches) armInfo['最终加成'] = matches[1].split(' | ');*/ // 临时禁用
 
-    var smMatches = description.match(/(.神秘)：(.+?)。/g);
+    var smMatches = description.match(/([^。\s]+神秘)：(.+?)。/g);
     for (var i in smMatches) {
-        var subMatches = /(.神秘)：(.+?)。/.exec(smMatches[i]);
+        var subMatches = /([^。\s]+神秘)：(.+?)。/.exec(smMatches[i]);
         if (smMatches) {
             armInfo[subMatches[1]] = subMatches[2];
         }
@@ -4838,27 +4896,27 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
     (0, _Config.read)();
 
     var itemTypesOptionHtml = '';
-    var _iteratorNormalCompletion19 = true;
-    var _didIteratorError19 = false;
-    var _iteratorError19 = undefined;
+    var _iteratorNormalCompletion20 = true;
+    var _didIteratorError20 = false;
+    var _iteratorError20 = undefined;
 
     try {
-        for (var _iterator19 = itemTypeList.slice(6)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-            var itemName = _step19.value;
+        for (var _iterator20 = itemTypeList.slice(6)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+            var itemName = _step20.value;
 
             itemTypesOptionHtml += '<option>' + itemName + '</option>';
         }
     } catch (err) {
-        _didIteratorError19 = true;
-        _iteratorError19 = err;
+        _didIteratorError20 = true;
+        _iteratorError20 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion19 && _iterator19.return) {
-                _iterator19.return();
+            if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                _iterator20.return();
             }
         } finally {
-            if (_didIteratorError19) {
-                throw _iteratorError19;
+            if (_didIteratorError20) {
+                throw _iteratorError20;
             }
         }
     }
@@ -5037,13 +5095,13 @@ var useItems = function useItems(_ref4) {
 
         var itemTypeNum = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion20 = true;
-        var _didIteratorError20 = false;
-        var _iteratorError20 = undefined;
+        var _iteratorNormalCompletion21 = true;
+        var _didIteratorError21 = false;
+        var _iteratorError21 = undefined;
 
         try {
-            for (var _iterator20 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-                var itemName = _step20.value;
+            for (var _iterator21 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+                var itemName = _step21.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -5054,29 +5112,29 @@ var useItems = function useItems(_ref4) {
                 if (stat['无效道具'] === 0) delete stat['无效道具'];
                 if (!$.isEmptyObject(stat)) {
                     resultStat += '\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011 <i>\u9053\u5177<ins>-' + successNum + '</ins></i> ';
-                    var _iteratorNormalCompletion21 = true;
-                    var _didIteratorError21 = false;
-                    var _iteratorError21 = undefined;
+                    var _iteratorNormalCompletion22 = true;
+                    var _didIteratorError22 = false;
+                    var _iteratorError22 = undefined;
 
                     try {
-                        for (var _iterator21 = Util.entries(stat)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-                            var _step21$value = _slicedToArray(_step21.value, 2),
-                                key = _step21$value[0],
-                                num = _step21$value[1];
+                        for (var _iterator22 = Util.entries(stat)[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+                            var _step22$value = _slicedToArray(_step22.value, 2),
+                                key = _step22$value[0],
+                                num = _step22$value[1];
 
                             resultStat += '<i>' + key + '<em>+' + num + '</em></i> ';
                         }
                     } catch (err) {
-                        _didIteratorError21 = true;
-                        _iteratorError21 = err;
+                        _didIteratorError22 = true;
+                        _iteratorError22 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion21 && _iterator21.return) {
-                                _iterator21.return();
+                            if (!_iteratorNormalCompletion22 && _iterator22.return) {
+                                _iterator22.return();
                             }
                         } finally {
-                            if (_didIteratorError21) {
-                                throw _iteratorError21;
+                            if (_didIteratorError22) {
+                                throw _iteratorError22;
                             }
                         }
                     }
@@ -5086,16 +5144,16 @@ var useItems = function useItems(_ref4) {
                 }
             }
         } catch (err) {
-            _didIteratorError20 = true;
-            _iteratorError20 = err;
+            _didIteratorError21 = true;
+            _iteratorError21 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion20 && _iterator20.return) {
-                    _iterator20.return();
+                if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                    _iterator21.return();
                 }
             } finally {
-                if (_didIteratorError20) {
-                    throw _iteratorError20;
+                if (_didIteratorError21) {
+                    throw _iteratorError21;
                 }
             }
         }
@@ -5229,13 +5287,13 @@ var sellItems = function sellItems(_ref6) {
         var itemTypeNum = 0,
             totalSell = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion22 = true;
-        var _didIteratorError22 = false;
-        var _iteratorError22 = undefined;
+        var _iteratorNormalCompletion23 = true;
+        var _didIteratorError23 = false;
+        var _iteratorError23 = undefined;
 
         try {
-            for (var _iterator22 = Util.getSortedObjectKeyList(typeList, sellInfo)[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-                var itemName = _step22.value;
+            for (var _iterator23 = Util.getSortedObjectKeyList(typeList, sellInfo)[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+                var itemName = _step23.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -5248,16 +5306,16 @@ var sellItems = function sellItems(_ref6) {
                 Log.push('出售道具', '\u5171\u6709`' + num + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': _sell }, pay: { '道具': -num } });
             }
         } catch (err) {
-            _didIteratorError22 = true;
-            _iteratorError22 = err;
+            _didIteratorError23 = true;
+            _iteratorError23 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion22 && _iterator22.return) {
-                    _iterator22.return();
+                if (!_iteratorNormalCompletion23 && _iterator23.return) {
+                    _iterator23.return();
                 }
             } finally {
-                if (_didIteratorError22) {
-                    throw _iteratorError22;
+                if (_didIteratorError23) {
+                    throw _iteratorError23;
                 }
             }
         }
@@ -5354,58 +5412,34 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
             if (msg.includes('购买成功')) {
                 index++;
                 subIndex = 0;
-                var matches = /\+(\d+)(武器经验|护甲经验|经验)/.exec(msg);
+                var matches = /\+(\d+)(武器\/护甲经验|经验)/.exec(msg);
                 if (matches) {
                     var num = parseInt(matches[1]),
                         key = matches[2];
-                    if (key === '经验') key = '经验值';
-
                     var gain = {},
                         pay = getItemPayById(itemId);
-                    gain[key] = num;
+                    if (key === '经验') {
+                        gain['经验值'] = num;
+                    } else {
+                        gain['武器经验'] = num;
+                        gain['护甲经验'] = num;
+                    }
                     if (pay) {
                         Log.push('购买物品', '\u5171\u6709`1`\u4E2A\u3010`' + itemName + '`\u3011\u8D2D\u4E70\u6210\u529F', { gain: gain, pay: pay });
                     }
 
                     var msgStat = '';
-                    var _iteratorNormalCompletion23 = true;
-                    var _didIteratorError23 = false;
-                    var _iteratorError23 = undefined;
-
-                    try {
-                        for (var _iterator23 = Util.entries(gain)[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
-                            var _step23$value = _slicedToArray(_step23.value, 2),
-                                _key = _step23$value[0],
-                                value = _step23$value[1];
-
-                            msgStat += '<i>' + _key + '<em>+' + value.toLocaleString() + '</em></i>';
-                        }
-                    } catch (err) {
-                        _didIteratorError23 = true;
-                        _iteratorError23 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion23 && _iterator23.return) {
-                                _iterator23.return();
-                            }
-                        } finally {
-                            if (_didIteratorError23) {
-                                throw _iteratorError23;
-                            }
-                        }
-                    }
-
                     var _iteratorNormalCompletion24 = true;
                     var _didIteratorError24 = false;
                     var _iteratorError24 = undefined;
 
                     try {
-                        for (var _iterator24 = Util.entries(pay)[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+                        for (var _iterator24 = Util.entries(gain)[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
                             var _step24$value = _slicedToArray(_step24.value, 2),
-                                _key2 = _step24$value[0],
+                                _key = _step24$value[0],
                                 value = _step24$value[1];
 
-                            msgStat += '<i>' + _key2 + '<ins>' + value.toLocaleString() + '</ins></i>';
+                            msgStat += '<i>' + _key + '<em>+' + value.toLocaleString() + '</em></i>';
                         }
                     } catch (err) {
                         _didIteratorError24 = true;
@@ -5418,6 +5452,33 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
                         } finally {
                             if (_didIteratorError24) {
                                 throw _iteratorError24;
+                            }
+                        }
+                    }
+
+                    var _iteratorNormalCompletion25 = true;
+                    var _didIteratorError25 = false;
+                    var _iteratorError25 = undefined;
+
+                    try {
+                        for (var _iterator25 = Util.entries(pay)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+                            var _step25$value = _slicedToArray(_step25.value, 2),
+                                _key2 = _step25$value[0],
+                                value = _step25$value[1];
+
+                            msgStat += '<i>' + _key2 + '<ins>' + value.toLocaleString() + '</ins></i>';
+                        }
+                    } catch (err) {
+                        _didIteratorError25 = true;
+                        _iteratorError25 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion25 && _iterator25.return) {
+                                _iterator25.return();
+                            }
+                        } finally {
+                            if (_didIteratorError25) {
+                                throw _iteratorError25;
                             }
                         }
                     }
@@ -5465,13 +5526,13 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
         });
     };
 
-    var _iteratorNormalCompletion25 = true;
-    var _didIteratorError25 = false;
-    var _iteratorError25 = undefined;
+    var _iteratorNormalCompletion26 = true;
+    var _didIteratorError26 = false;
+    var _iteratorError26 = undefined;
 
     try {
-        for (var _iterator25 = buyItemIdList[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-            var value = _step25.value;
+        for (var _iterator26 = buyItemIdList[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+            var value = _step26.value;
 
             if (!/^\d+(\|\d+)*$/.test(value)) continue;
             var arr = value.split('|').filter(function (id) {
@@ -5482,16 +5543,16 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
             }
         }
     } catch (err) {
-        _didIteratorError25 = true;
-        _iteratorError25 = err;
+        _didIteratorError26 = true;
+        _iteratorError26 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion25 && _iterator25.return) {
-                _iterator25.return();
+            if (!_iteratorNormalCompletion26 && _iterator26.return) {
+                _iterator26.return();
             }
         } finally {
-            if (_didIteratorError25) {
-                throw _iteratorError25;
+            if (_didIteratorError26) {
+                throw _iteratorError26;
             }
         }
     }
@@ -6771,9 +6832,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.updateLootInfo = exports.lootAttack = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _Info = require('./Info');
 
@@ -6852,7 +6913,7 @@ var extraPointsList = {};
 // 光环信息
 var haloInfo = {};
 // 当前装备情况
-var currentArmInfo = {};
+var currentArmInfo = new Map();
 // 装备等级情况列表
 var armsLevelList = new Map();
 // 道具使用情况列表
@@ -6894,7 +6955,16 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     propertyList = getLootPropertyList(propertiesHtml);
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-    currentArmInfo = Item.getArmInfo($armArea.html());
+
+    var _$armArea$html$split = $armArea.html().split('（装备中）'),
+        _$armArea$html$split2 = _slicedToArray(_$armArea$html$split, 3),
+        _$armArea$html$split3 = _$armArea$html$split2[1],
+        weaponInfoHtml = _$armArea$html$split3 === undefined ? '' : _$armArea$html$split3,
+        _$armArea$html$split4 = _$armArea$html$split2[2],
+        armorInfoHtml = _$armArea$html$split4 === undefined ? '' : _$armArea$html$split4;
+
+    currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+    currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -7018,7 +7088,7 @@ var handlePointsArea = function handlePointsArea() {
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
     $armArea.html(Item.handleUselessSubProperties($armArea.html()));
-    $('\n<tr>\n  <td>\n    \u88C5\u5907ID\u548C\u5907\u6CE8\n    <span class="pd_cfg_tips" title="\u53EF\u70B9\u51FB\u53F3\u8FB9\u7684\u201C\u66F4\u6362\u88C5\u5907\u201D\u6309\u94AE\uFF0C\u4E5F\u53EF\u624B\u52A8\u586B\u5199\u88C5\u5907ID\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u66F4\u6362\u88C5\u5907\u3002\n\u5F53\u6587\u672C\u6846\u5185\u7684\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u65F6\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u5C06\u4F1A\u81EA\u52A8\u66F4\u6362\u88C5\u5907\uFF08\u70B9\u51FB\u201C\u4FEE\u6539\u70B9\u6570\u5206\u914D\u201D\u6309\u94AE\u53EA\u4F1A\u4FEE\u6539\u70B9\u6570\u800C\u4E0D\u4F1A\u66F4\u6362\u88C5\u5907\uFF09\u3002">[?]</span>\n  </td>\n  <td>\n    <input name="armId" type="text" value="" maxlength="15" title="\u88C5\u5907ID" placeholder="\u88C5\u5907ID" style="width: 70px;">\n    <input name="armMemo" type="text" value="" maxlength="15" title="\u88C5\u5907\u5907\u6CE8" placeholder="\u88C5\u5907\u5907\u6CE8" style="width: 100px;">\n    <a class="pd_btn_link" data-name="changeArm" href="#" title="\u66F4\u6362\u5F53\u524D\u88C5\u5907">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
+    $('\n<tr>\n  <td>\n    \u88C5\u5907ID\u548C\u5907\u6CE8\n    <span class="pd_cfg_tips" title="\u53EF\u70B9\u51FB\u53F3\u8FB9\u7684\u201C\u66F4\u6362\u88C5\u5907\u201D\u6309\u94AE\uFF0C\u4E5F\u53EF\u624B\u52A8\u586B\u5199\u88C5\u5907ID\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u66F4\u6362\u88C5\u5907\u3002\n\u5F53\u6587\u672C\u6846\u5185\u7684\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u65F6\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u5C06\u4F1A\u81EA\u52A8\u66F4\u6362\u88C5\u5907\uFF08\u70B9\u51FB\u201C\u4FEE\u6539\u70B9\u6570\u5206\u914D\u201D\u6309\u94AE\u53EA\u4F1A\u4FEE\u6539\u70B9\u6570\u800C\u4E0D\u4F1A\u66F4\u6362\u88C5\u5907\uFF09\u3002">[?]</span>\n  </td>\n  <td>\n    <input class="pd_arm_input" name="weaponId" type="text" value="" maxlength="15" title="\u6B66\u5668ID" placeholder="\u6B66\u5668ID" style="width: 70px;">\n    <input class="pd_arm_input" name="weaponMemo" type="text" value="" maxlength="20" title="\u6B66\u5668\u5907\u6CE8" placeholder="\u6B66\u5668\u5907\u6CE8" style="width: 80px;">\n    <input class="pd_arm_input" name="armorId" type="text" value="" maxlength="15" title="\u62A4\u7532ID" placeholder="\u62A4\u7532ID" style="width: 70px;">\n    <input class="pd_arm_input" name="armorMemo" type="text" value="" maxlength="20" title="\u62A4\u7532\u5907\u6CE8" placeholder="\u62A4\u7532\u5907\u6CE8" style="width: 80px;">\n    <a class="pd_btn_link" data-name="changeArm" href="#" title="\u66F4\u6362\u5F53\u524D\u88C5\u5907">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
         e.preventDefault();
         addOrChangeArm(0);
     });
@@ -7271,10 +7341,14 @@ var getPointNameByFieldName = exports.getPointNameByFieldName = function getPoin
             return '耐力';
         case 'l':
             return '幸运';
-        case 'armId':
-            return '装备ID';
-        case 'armMemo':
-            return '装备备注';
+        case 'weaponId':
+            return '武器ID';
+        case 'weaponMemo':
+            return '武器备注';
+        case 'armorId':
+            return '护甲ID';
+        case 'armorMemo':
+            return '护甲备注';
         default:
             return '';
     }
@@ -7303,10 +7377,14 @@ var getFieldNameByPointName = exports.getFieldNameByPointName = function getFiel
             return 'p';
         case '幸运':
             return 'l';
-        case '装备ID':
-            return 'armId';
-        case '装备备注':
-            return 'armMemo';
+        case '武器ID':
+            return 'weaponId';
+        case '武器备注':
+            return 'weaponMemo';
+        case '护甲ID':
+            return 'armorId';
+        case '护甲备注':
+            return 'armorMemo';
         default:
             return '';
     }
@@ -7333,7 +7411,7 @@ var getExtraPoint = exports.getExtraPoint = function getExtraPoint(pointName, po
         case '智力':
             return Math.floor(point * haloPercent) + elapsedMedicine;
         case '意志':
-            return Math.floor(point * haloPercent) + elapsedMedicine;
+            return Math.floor((Math.floor(point * haloPercent) + elapsedMedicine + point) * (currentArmInfo.get('护甲')['组别'] === '铠甲' ? 1.1 : 1)) - point;
         default:
             return 0;
     }
@@ -7427,13 +7505,13 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         if (level > 0) {
             var points = Config.levelPointList[parseInt(level)];
             if ((typeof points === 'undefined' ? 'undefined' : _typeof(points)) !== 'object') return;
-            $points.find('.pd_point, input[name="armId"], input[name="armMemo"]').each(function () {
+            $points.find('.pd_point, .pd_arm_input').each(function () {
                 var $this = $(this);
                 var pointName = getPointNameByFieldName($this.attr('name'));
                 $this.val(points[pointName]);
             }).trigger('change');
         } else if (level === 0) {
-            $points.find('.pd_point, input[name="armId"], input[name="armMemo"]').each(function () {
+            $points.find('.pd_point, .pd_arm_input').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
         }
@@ -7455,26 +7533,23 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
         var _iteratorError2 = undefined;
 
         try {
-            for (var _iterator2 = Array.from($points.find('.pd_point, input[name="armId"], input[name="armMemo"]'))[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            for (var _iterator2 = Array.from($points.find('.pd_point, .pd_arm_input'))[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                 var elem = _step2.value;
 
                 var $elem = $(elem);
-                var name = $elem.attr('name');
+                var _name = $elem.attr('name');
                 var value = $.trim($elem.val());
                 if ($elem.is('.pd_point')) {
                     value = parseInt(value);
                     if (!value || value < 0) return;
                 } else {
                     if (!value) continue;
-                    if (name === 'armId') {
+                    if (_name === 'weaponId' || _name === 'armorId') {
                         value = parseInt(value);
                         if (!value || value < 0) return;
                     }
                 }
-                points[getPointNameByFieldName(name)] = value;
-                if (!points['装备ID'] && points['装备备注']) {
-                    delete points['装备备注'];
-                }
+                points[getPointNameByFieldName(_name)] = value;
             }
         } catch (err) {
             _didIteratorError2 = true;
@@ -7519,17 +7594,17 @@ var fillPoints = function fillPoints($points) {
                 $(this).val(pointsMatches[index + 1]).trigger('change');
             }
         });
-        $points.find('input[name="armMemo"]').val(pointsMatches[7]);
-        $points.find('input[name="armId"]').val(pointsMatches[8]);
+        $points.find('input[name="weaponMemo"]').val(pointsMatches[7]);
+        $points.find('input[name="weaponId"]').val(pointsMatches[8]);
     } else {
         var numMatches = value.match(/\b\d{1,4}\b/g);
         if (!numMatches) return;
         $points.find('.pd_point').each(function (index) {
             if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');else return false;
         });
-        var armIdMatches = /\b(\d{5,})\b/.exec(value);
-        if (armIdMatches) {
-            $points.find('input[name="armId"]').val(armIdMatches[1]);
+        var weaponIdMatches = /\b(\d{5,})\b/.exec(value);
+        if (weaponIdMatches) {
+            $points.find('input[name="weaponId"]').val(weaponIdMatches[1]);
         }
     }
 };
@@ -7551,7 +7626,7 @@ var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
                 points = _step3$value[1];
 
             if (!$.isNumeric(level)) continue;
-            pointListHtml += '<option value="' + level + '">\u7B2C' + level + '\u5C42 ' + (points['装备ID'] ? '(装)' : '') + '</option>';
+            pointListHtml += '<option value="' + level + '">\u7B2C' + level + '\u5C42 ' + (points['武器ID'] || points['护甲ID'] ? '(装)' : '') + '</option>';
         }
     } catch (err) {
         _didIteratorError3 = true;
@@ -7629,7 +7704,7 @@ var addAttackBtns = function addAttackBtns() {
         var checked = $this.prop('checked');
         if (name in Config && Config[name] !== checked) {
             (0, _Config.read)();
-            Config[name] = $this.prop('checked');
+            Config[name] = checked;
             (0, _Config.write)();
         }
     }).find('[name="customPointsScriptEnabled"]').click(function () {
@@ -7670,10 +7745,15 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
             pointsText = '',
             propertiesText = '';
 
-        var armId = parseInt($points.find('input[name="armId"]').val());
-        var armMemo = $.trim($points.find('input[name="armMemo"]').val());
-        if (armId > 0) {
-            armsText = '\u88C5\u5907ID\uFF1A' + armId + (armMemo ? '，装备备注：' + armMemo : '');
+        var weaponId = parseInt($points.find('input[name="weaponId"]').val());
+        var weaponMemo = $.trim($points.find('input[name="weaponMemo"]').val());
+        if (weaponId > 0) {
+            armsText += '\u6B66\u5668ID\uFF1A' + weaponId + (weaponMemo ? '，武器备注：' + weaponMemo : '');
+        }
+        var armorId = parseInt($points.find('input[name="armorId"]').val());
+        var armorMemo = $.trim($points.find('input[name="armorMemo"]').val());
+        if (armorId > 0) {
+            armsText += (armsText ? '；' : '') + '\u62A4\u7532ID\uFF1A' + armorId + (armorMemo ? '，护甲备注：' + armorMemo : '');
         }
 
         $points.find('.pd_point').each(function () {
@@ -7729,11 +7809,11 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
     };
 
     /**
-     * 修改点数分配方案
+     * 修改点数分配方案和装备
      * @param {number} nextLevel 下一层（设为-1表示采用当前点数分配方案）
-     * @returns {Deferred} Deferred对象
+     * @param {function} callback 回调函数
      */
-    var changePoints = function changePoints(nextLevel) {
+    var changePointsAndArms = function changePointsAndArms(nextLevel, callback) {
         if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') {
             var points = null;
             try {
@@ -7775,8 +7855,8 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 nextLevel = nextLevel > 1 ? nextLevel : 1;
             } else if (points === false) {
                 recordPointsLog();
-                return $.Deferred().resolve('ignore');
-            } else return $.Deferred().resolve('error');
+                return callback('ignore');
+            } else return callback('error');
         }
 
         var nextLevelText = getCurrentLevel(logList) + 1;
@@ -7785,93 +7865,121 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
         }))) : -1;
         var $levelPointListSelect = $('#pdLevelPointListSelect');
         if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
-        var isChangeArm = false,
+        var isChangeWeapon = false,
+            isChangeArmor = false,
             isChangePoints = false;
-        $points.find('.pd_point, input[name="armId"]').each(function () {
+        $points.find('.pd_point, input[name="weaponId"], input[name="armorId"]').each(function () {
             var $this = $(this);
             var name = $this.attr('name');
             var value = $.trim($this.val());
             if (value && this.defaultValue !== value) {
-                if (name === 'armId') isChangeArm = true;else isChangePoints = true;
+                if (name === 'weaponId') isChangeWeapon = true;else if (name === 'armorId') isChangeArmor = true;else isChangePoints = true;
             }
         });
 
-        if (isChangeArm || isChangePoints) {
-            var _$;
-
+        if (isChangeWeapon || isChangeArmor || isChangePoints) {
             if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
-                if (confirm('可分配属性点尚未用完，是否继续攻击？')) _Info2.default.w.unusedPointNumAlert = true;else return $.Deferred().resolve('error');
+                if (confirm('可分配属性点尚未用完，是否继续攻击？')) _Info2.default.w.unusedPointNumAlert = true;else return callback('error');
             }
 
-            var armId = parseInt($points.find('input[name="armId"]').val());
-            var ajaxList = [['ignore'], ['ignore']];
-            if (isChangeArm) {
-                ajaxList[0] = $.ajax({
+            var weaponId = parseInt($points.find('input[name="weaponId"]').val());
+            var armorId = parseInt($points.find('input[name="armorId"]').val());
+            var ajaxList = ['ignore', 'ignore', 'ignore'];
+            if (isChangeWeapon) {
+                ajaxList[0] = {
                     type: 'POST',
                     url: 'kf_fw_ig_mybpdt.php',
                     timeout: _Const2.default.defAjaxTimeout,
-                    data: 'do=4&id=' + armId + '&safeid=' + safeId
-                });
+                    data: 'do=4&id=' + weaponId + '&safeid=' + safeId
+                };
+            }
+            if (isChangeArmor) {
+                ajaxList[1] = {
+                    type: 'POST',
+                    url: 'kf_fw_ig_mybpdt.php',
+                    timeout: _Const2.default.defAjaxTimeout,
+                    data: 'do=4&id=' + armorId + '&safeid=' + safeId
+                };
             }
             if (isChangePoints) {
-                ajaxList[1] = $.ajax({
+                ajaxList[2] = {
                     type: 'POST',
                     url: 'kf_fw_ig_enter.php',
                     timeout: _Const2.default.defAjaxTimeout,
                     data: $points.closest('form').serialize()
-                });
+                };
             }
 
-            return (_$ = $).when.apply(_$, ajaxList).then(function (_ref2, _ref3) {
-                var _ref5 = _slicedToArray(_ref2, 1),
-                    msg1 = _ref5[0];
+            var result = 'success';
+            $(document).clearQueue('ChangePointsAndArms');
+            $.each(ajaxList, function (index, ajax) {
+                if (ajax === 'ignore') return;
+                $(document).queue('ChangePointsAndArms', function () {
+                    $.ajax(ajax).done(function (html) {
+                        if (index === 0) {
+                            var msg = Util.removeHtmlTag(html);
+                            if (/装备完毕/.test(msg)) {
+                                $points.find('input[name="weaponId"], input[name="weaponMemo"]').each(function () {
+                                    this.defaultValue = $(this).val();
+                                });
+                            } else {
+                                Msg.show('<strong>\u66F4\u6362\u6B66\u5668\uFF1A' + msg + '</strong>', -1);
+                                Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
+                                result = 'error';
+                            }
+                        } else if (index === 1) {
+                            var _msg = Util.removeHtmlTag(html);
+                            if (/装备完毕/.test(_msg)) {
+                                $points.find('input[name="armorId"], input[name="armorMemo"]').each(function () {
+                                    this.defaultValue = $(this).val();
+                                });
+                            } else {
+                                Msg.show('<strong>\u66F4\u6362\u62A4\u7532\uFF1A' + _msg + '</strong>', -1);
+                                Script.runFunc('Loot.lootAttack_changePoints_error_', _msg);
+                                result = 'error';
+                            }
+                        } else if (index === 2) {
+                            var _Util$getResponseMsg = Util.getResponseMsg(html),
+                                _msg2 = _Util$getResponseMsg.msg;
 
-                var _ref4 = _slicedToArray(_ref3, 1),
-                    msg2 = _ref4[0];
-
-                if (msg1 !== 'ignore') {
-                    var msg = Util.removeHtmlTag(msg1);
-                    if (/装备完毕/.test(msg1)) {
-                        $points.find('input[name="armId"], input[name="armMemo"]').each(function () {
-                            this.defaultValue = $(this).val();
-                        });
-                    } else {
-                        Msg.show('<strong>\u66F4\u6362\u6B66\u5668\uFF1A' + msg + '</strong>', -1);
-                        Script.runFunc('Loot.lootAttack_changePoints_error_', msg);
-                        return 'error';
-                    }
-                }
-
-                if (msg2 !== 'ignore') {
-                    var _Util$getResponseMsg = Util.getResponseMsg(msg2),
-                        _msg = _Util$getResponseMsg.msg;
-
-                    if (/已经重新配置加点！/.test(_msg)) {
-                        Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
-                        $points.find('.pd_point').each(function () {
-                            this.defaultValue = $(this).val();
-                        });
-                    } else {
-                        var matches = /你还需要等待(\d+)分钟/.exec(_msg);
-                        if (matches) {
-                            var nextTime = Util.getDate('+' + parseInt(matches[1]) + 'm');
-                            Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+                            if (/已经重新配置加点！/.test(_msg2)) {
+                                Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
+                                $points.find('.pd_point').each(function () {
+                                    this.defaultValue = $(this).val();
+                                });
+                            } else {
+                                var matches = /你还需要等待(\d+)分钟/.exec(_msg2);
+                                if (matches) {
+                                    var nextTime = Util.getDate('+' + parseInt(matches[1]) + 'm');
+                                    Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+                                }
+                                Msg.show('<strong>\u7B2C<em>' + nextLevelText + '</em>\u5C42\u65B9\u6848\uFF1A' + _msg2 + '</strong>', -1);
+                                Script.runFunc('Loot.lootAttack_changePoints_error_', _msg2);
+                                result = 'error';
+                            }
                         }
-                        Msg.show('<strong>\u7B2C<em>' + nextLevelText + '</em>\u5C42\u65B9\u6848\uFF1A' + _msg + '</strong>', -1);
-                        Script.runFunc('Loot.lootAttack_changePoints_error_', _msg);
-                        return 'error';
-                    }
-                }
-
-                recordPointsLog(true);
-                Script.runFunc('Loot.lootAttack_changePoints_success_', [msg1, msg2]);
-                return 'success';
-            }, function () {
-                return 'timeout';
+                    }).fail(function () {
+                        result = 'timeout';
+                    }).always(function () {
+                        if (result === 'error' || result === 'timeout') {
+                            $(document).clearQueue('ChangePointsAndArms');
+                            callback(result);
+                        } else if (!$(document).queue('ChangePointsAndArms').length) {
+                            recordPointsLog(true);
+                            Script.runFunc('Loot.lootAttack_changePoints_success_');
+                            callback(result);
+                        } else {
+                            setTimeout(function () {
+                                return $(document).dequeue('ChangePointsAndArms');
+                            }, _Const2.default.minActionInterval);
+                        }
+                    });
+                });
             });
+            $(document).dequeue('ChangePointsAndArms');
         } else {
             if (nextLevelText === 1) recordPointsLog();
-            return $.Deferred().resolve('ignore');
+            callback('ignore');
         }
     };
 
@@ -7883,9 +7991,13 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
     var ready = function ready(currentLevel) {
         var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Const2.default.lootAttackInterval;
 
-        changePoints(currentLevel >= 0 ? currentLevel + 1 : -1).done(function (result) {
+        changePointsAndArms(currentLevel >= 0 ? currentLevel + 1 : -1, function (result) {
             if (result === 'ignore') {
                 setTimeout(attack, typeof interval === 'function' ? interval() : interval);
+            } else if (result === 'timeout') {
+                setTimeout(function () {
+                    return ready(currentLevel, interval);
+                }, _Const2.default.minActionInterval);
             } else if (result === 'success') {
                 setTimeout(function () {
                     updateLootInfo(function () {
@@ -7893,12 +8005,7 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                     });
                 }, _Const2.default.defAjaxInterval);
             }
-        }).fail(function (result) {
-            if (result === 'timeout') setTimeout(function () {
-                return ready(currentLevel, interval);
-            }, _Const2.default.minActionInterval);
-        }).always(function (result) {
-            if (!['success', 'ignore', 'timeout'].includes(result)) {
+            if (result === 'error') {
                 Msg.remove($wait);
             }
         });
@@ -8037,8 +8144,19 @@ var updateLootInfo = exports.updateLootInfo = function updateLootInfo() {
         propertyList = getLootPropertyList(propertiesHtml);
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-        currentArmInfo = Item.getArmInfo($armArea.html());
         $properties.find('.pd_arm_level').trigger('change');
+
+        var _$armArea$html$split5 = $armArea.html().split('（装备中）'),
+            _$armArea$html$split6 = _slicedToArray(_$armArea$html$split5, 3),
+            _$armArea$html$split7 = _$armArea$html$split6[1],
+            weaponInfoHtml = _$armArea$html$split7 === undefined ? '' : _$armArea$html$split7,
+            _$armArea$html$split8 = _$armArea$html$split6[2],
+            armorInfoHtml = _$armArea$html$split8 === undefined ? '' : _$armArea$html$split8;
+
+        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+
+        $points.find('.pd_point').trigger('change');
 
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);
@@ -8258,7 +8376,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
     var dialogName = 'pdLevelPointListConfigDialog';
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
-    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u88C5\u5907ID\u548C\u88C5\u5907\u5907\u6CE8\u4E3A\u53EF\u9009\u9879\uFF0C\u53EA\u5728\u9700\u8981\u66F4\u6362\u88C5\u5907\u65F6\u586B\u5199<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr>\n          <th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th><th>\u88C5\u5907ID</th><th>\u88C5\u5907\u5907\u6CE8</th><th></th>\n        </tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u6B66\u5668\u3001\u62A4\u7532ID\u548C\u5907\u6CE8\u4E3A\u53EF\u9009\u9879\uFF0C\u53EA\u5728\u9700\u8981\u66F4\u6362\u88C5\u5907\u65F6\u586B\u5199<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735" target="_blank">\u6B64\u8D3453\u697C</a>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr>\n          <th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th>\n<th>\u6B66\u5668ID</th><th>\u6B66\u5668\u5907\u6CE8</th><th>\u62A4\u7532ID</th><th>\u62A4\u7532\u5907\u6CE8</th><th></th>\n        </tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 840px;');
     var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
 
@@ -8268,7 +8386,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
      * @param {{}} points 点数对象
      */
     var addLevelPointHtml = function addLevelPointHtml(level, points) {
-        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" value="' + points['力量'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" value="' + points['体质'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" value="' + points['敏捷'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" value="' + points['灵活'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" value="' + points['智力'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" value="' + points['意志'] + '" min="1" style="width: 50px;" required></td>\n  <td><input name="armId" type="text" value="' + (points['装备ID'] ? points['装备ID'] : '') + '" maxlength="15" style="width: 65px;"></td>\n  <td><input name="armMemo" type="text" value="' + (points['装备备注'] ? points['装备备注'] : '') + '" maxlength="15" style="width: 80px;"></td>\n  <td style="text-align: left;">\n    <a class="pd_btn_link" data-name="fill" href="#">\u586B\u5145</a>\n    <a class="pd_btn_link" data-name="addArm" href="#">\u88C5\u5907</a>\n    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">\u5220\u9664</a>\n  </td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B" hidden> <!-- \u4E34\u65F6\u7981\u7528 -->\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C" hidden>\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6" hidden>\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387" hidden>\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387" hidden>\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24" hidden>\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="[\u98DE\u8EAB\u5288\u65A9]\u4F24\u5BB3\uFF1A\u653B\u51FB+\u4F53\u8D28\u503C*5+\u667A\u529B\u503C*5" hidden>\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n  <td hidden></td>\n  <td hidden></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
+        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" value="' + points['力量'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" value="' + points['体质'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" value="' + points['敏捷'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" value="' + points['灵活'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" value="' + points['智力'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" value="' + points['意志'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_arm_input" name="weaponId" type="text" value="' + (points['武器ID'] ? points['武器ID'] : '') + '" maxlength="15" style="width: 65px;"></td>\n  <td><input class="pd_arm_input" name="weaponMemo" type="text" value="' + (points['武器备注'] ? points['武器备注'] : '') + '" maxlength="20" style="width: 70px;"></td>\n  <td><input class="pd_arm_input" name="armorId" type="text" value="' + (points['护甲ID'] ? points['护甲ID'] : '') + '" maxlength="15" style="width: 65px;"></td>\n  <td><input class="pd_arm_input" name="armorMemo" type="text" value="' + (points['护甲备注'] ? points['护甲备注'] : '') + '" maxlength="20" style="width: 70px;"></td>\n  <td style="text-align: left;">\n    <a class="pd_btn_link" data-name="fill" href="#">\u586B\u5145</a>\n    <a class="pd_btn_link" data-name="addArm" href="#">\u88C5\u5907</a>\n    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">\u5220\u9664</a>\n  </td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B" hidden> <!-- \u4E34\u65F6\u7981\u7528 -->\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C" hidden>\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6" hidden>\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387" hidden>\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387" hidden>\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24" hidden>\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="[\u98DE\u8EAB\u5288\u65A9]\u4F24\u5BB3\uFF1A\u653B\u51FB+\u4F53\u8D28\u503C*5+\u667A\u529B\u503C*5" hidden>\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n  <td hidden></td>\n  <td hidden></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
     };
 
     $dialog.submit(function (e) {
@@ -8295,11 +8413,11 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
             var _iteratorError11 = undefined;
 
             try {
-                for (var _iterator11 = Array.from($this.find('.pd_point, [name="armId"], [name="armMemo"]'))[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                for (var _iterator11 = Array.from($this.find('.pd_point, .pd_arm_input'))[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
                     var elem = _step11.value;
 
                     var $elem = $(elem);
-                    var name = $elem.attr('name');
+                    var _name2 = $elem.attr('name');
                     var value = null;
                     value = $.trim($elem.val());
                     if ($elem.is('.pd_point')) {
@@ -8307,12 +8425,12 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
                         if (!value || value < 0) return;
                     } else {
                         if (!value) continue;
-                        if (name === 'armId') {
+                        if (_name2 === 'weaponId' || _name2 === 'armorId') {
                             value = parseInt(value);
                             if (!value || value < 0) return;
                         }
                     }
-                    points[getPointNameByFieldName(name)] = value;
+                    points[getPointNameByFieldName(_name2)] = value;
                 }
             } catch (err) {
                 _didIteratorError11 = true;
@@ -8329,9 +8447,6 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
                 }
             }
 
-            if (!points['装备ID'] && points['装备备注']) {
-                delete points['装备备注'];
-            }
             if (Util.deepEqual(prevPoints, points)) return;
 
             levelPointList[level] = points;
@@ -8385,9 +8500,9 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
         Dialog.resize(dialogName);
     }).on('click', '[data-name="addArm"]', function (e) {
         e.preventDefault();
-        $levelPointList.find('#pdAddArmId, #pdAddArmMemo').removeAttr('id');
+        $levelPointList.find('#pdAddWeaponId, #pdAddWeaponMemo, #pdAddArmorId, #pdAddArmorMemo').removeAttr('id');
         var $tr = $(this).closest('tr');
-        $tr.find('[name="armId"]').attr('id', 'pdAddArmId').end().find('[name="armMemo"]').attr('id', 'pdAddArmMemo');
+        $tr.find('[name="weaponId"]').attr('id', 'pdAddWeaponId').end().find('[name="weaponMemo"]').attr('id', 'pdAddWeaponMemo').end().find('[name="armorId"]').attr('id', 'pdAddArmorId').end().find('[name="armorMemo"]').attr('id', 'pdAddArmorMemo');
         addOrChangeArm(1);
     }).on('change', '.pd_point', function () {
         var $this = $(this);
@@ -8535,34 +8650,60 @@ var showAddOrChangeArmDialog = function showAddOrChangeArmDialog(type, armHtml) 
     var dialogName = 'pd' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog';
     if ($('#' + dialogName).length > 0) return;
 
-    var html = '\n<div class="pd_cfg_main" style="padding: 0;">\n  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">\n    <tbody>\n      <tr hidden><td colspan="3" class="kf_fw_ig_title1">\u6211\u7684\u88C5\u5907\u80CC\u5305</td></tr>\n      <tr><td width="10%">\u88C5\u5907</td><td width="10%">\u7194\u70BC</td><td width="80%">\u540D\u79F0</td></tr>\n      ' + armHtml + '\n      <tr><td colspan="3"><span style="color:#00f;">\u4E0D\u663E\u793A\u8D85\u8FC710\u4EF6\u4EE5\u4E0A\u7684\u7269\u54C1\uFF0C\u5982\u7269\u54C1\u8D85\u8FC710\u4EF6\uFF0C\u8BF7\u7194\u70BC\u6389\u591A\u4F59\u7684\u5373\u53EF\u5168\u90E8\u663E\u793A\u3002</span></td></tr>\n    </tbody>\n  </table>\n</div>\n<div class="pd_cfg_btns">\n  ' + (type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : '') + '\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main" style="padding: 0;">\n  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">\n    <tbody>\n      <tr hidden><td colspan="3" class="kf_fw_ig_title1">\u6211\u7684\u88C5\u5907\u80CC\u5305</td></tr>\n      <tr><td width="10%">\u88C5\u5907</td><td width="10%">\u7194\u70BC</td><td width="80%">\u540D\u79F0</td></tr>\n      ' + armHtml + '\n      <tr><td colspan="3"><span style="color:#00f;">\u4E0D\u663E\u793A\u8D85\u8FC710\u4EF6\u4EE5\u4E0A\u7684\u7269\u54C1\uFF0C\u5982\u7269\u54C1\u8D85\u8FC710\u4EF6\uFF0C\u8BF7\u7194\u70BC\u6389\u591A\u4F59\u7684\u5373\u53EF\u5168\u90E8\u663E\u793A\u3002</span></td></tr>\n    </tbody>\n  </table>\n</div>\n<div class="pd_cfg_btns">\n  <label>\n    <input name="sortArmsByGroupEnabled" type="checkbox" ' + (Config.sortArmsByGroupEnabled ? 'checked' : '') + '> \u5206\u7EC4\u6392\u5217</input>\n    <span class="pd_cfg_tips" title="\u5206\u7EC4\u6392\u5217\u88C5\u5907">[?]</span>\n  </label>\n  ' + (type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : '') + '\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
     var $dialog = Dialog.create(dialogName, (type === 1 ? '加入' : '更换') + '\u88C5\u5907', html, 'min-width: 820px; z-index: 1003;');
     var $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
+    $dialog.find('[name="sortArmsByGroupEnabled"]').click(function () {
+        var checked = $(this).prop('checked');
+        if (Config[name] !== checked) {
+            (0, _Config.read)();
+            Config.sortArmsByGroupEnabled = checked;
+            (0, _Config.write)();
+        }
+        if (checked) {
+            Item.sortArmsByGroup($armArea);
+        }
+    });
     if (type === 1) {
         $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
             $dialog.fadeOut('fast');
         });
     } else {
         $dialog.find('[name="manualInputArmId"]').click(function () {
-            var armId = parseInt(prompt('请输入装备ID：'));
-            if (!armId || armId < 0) return;
+            var value = $.trim(prompt('请输入装备ID（多个ID用空格分隔）：'));
+            if (!value) return;
+            var armIdList = value.split(' ');
             var $wait = Msg.wait('<strong>正在装备中&hellip;</strong>');
-            $.post('kf_fw_ig_mybpdt.php', 'do=4&id=' + armId + '&safeid=' + safeId, function (html) {
-                var msg = Util.removeHtmlTag(html);
-                if (/装备完毕/.test(msg)) {
-                    updateLootInfo(function () {
+            $(document).clearQueue('ChangeArms');
+            $.each(armIdList, function (i, armId) {
+                if (!armId) return;
+                $(document).queue('ChangeArms', function () {
+                    $.post('kf_fw_ig_mybpdt.php', 'do=4&id=' + armId + '&safeid=' + safeId, function (html) {
+                        var msg = Util.removeHtmlTag(html);
+                        if (!/装备完毕/.test(msg)) {
+                            Msg.remove($wait);
+                            alert(msg);
+                        }
+                    }).fail(function () {
+                        $(document).clearQueue('ChangeArms');
                         Msg.remove($wait);
-                        Dialog.close(dialogName);
+                        alert('连接超时');
+                    }).always(function () {
+                        if (!$(document).queue('ChangeArms').length) {
+                            updateLootInfo(function () {
+                                Msg.remove($wait);
+                                Dialog.close(dialogName);
+                            });
+                        } else {
+                            setTimeout(function () {
+                                return $(document).dequeue('ChangeArms');
+                            }, _Const2.default.minActionInterval);
+                        }
                     });
-                } else {
-                    Msg.remove($wait);
-                    alert(msg);
-                }
-            }).fail(function () {
-                Msg.remove($wait);
-                alert('连接超时');
+                });
             });
+            $(document).dequeue('ChangeArms');
         });
     }
     Item.handleArmArea($armArea, type);
@@ -10730,7 +10871,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1001; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1001; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');

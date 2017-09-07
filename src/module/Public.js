@@ -184,13 +184,14 @@ export const appendCss = function () {
   .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }
   .pd_cfg_main legend { font-weight: bold; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
-  .pd_cfg_main button { vertical-align: middle; }
+  pd_cfg_main button { vertical-align: middle; }
   .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
   .pd_cfg_tips:hover { color: #ff0000; }
   #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
   .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }
   .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }
   .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }
+  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }
   .pd_cfg_btns button { min-width: 80px; }
   .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }
   .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }

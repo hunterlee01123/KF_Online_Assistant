@@ -127,7 +127,9 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
-        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        if (!Config.sortArmsByGroupEnabled) {
+            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        }
         Msg.destroy();
         openBoxes({id, boxType, num, safeId});
     });
@@ -261,7 +263,9 @@ const showOpenAllBoxesDialog = function () {
         }
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
-        $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        if (!Config.sortArmsByGroupEnabled) {
+            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        }
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
             let $this = $(this);
@@ -538,8 +542,22 @@ export const handleArmArea = function ($armArea, type = 0) {
         }
     });
 
+    if (Config.sortArmsByGroupEnabled) {
+        sortArmsByGroup($armArea);
+    }
+
     if (type === 1) {
         $armArea.find('a[data-name="equip"]').attr('data-name', 'add').text('加入');
+    }
+};
+
+/**
+ * 分组排列装备
+ * @param {jQuery} $armArea 装备区域节点
+ */
+export const sortArmsByGroup = function ($armArea) {
+    for (let armGroup of armGroupList) {
+        $armArea.find(`tr[data-group="${armGroup}"]`).insertBefore($armArea.find('tr[data-id]:first'));
     }
 };
 
@@ -811,6 +829,10 @@ export const handleUselessSubProperties = function (html) {
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
+  <label>
+    <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
+    <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
+  </label>
   <button name="selectAll" type="button" title="全选">全选</button>
   <button name="selectInverse" type="button" title="反选">反选</button>
   <button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
@@ -819,7 +841,17 @@ const addArmsButton = function () {
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
+`).insertAfter($armArea).find('[name="sortArmsByGroupEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config[name] !== checked) {
+            readConfig();
+            Config.sortArmsByGroupEnabled = checked;
+            writeConfig();
+        }
+        if (checked) {
+            sortArmsByGroup($armArea);
+        }
+    }).end().find('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
         .end().find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
         .end().find('[name="copyWeaponParameterSetting"]')
         .click(function () {
