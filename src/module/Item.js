@@ -376,6 +376,7 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
 
             console.log(`第${index}次：${msg}`);
             $('.pd_result[data-name="boxResult"]:last').append(`<li><b>第${index}次：</b>${msg}</li>`);
+            Script.runFunc('Item.openBoxes_success_', msg);
         }).fail(function () {
             failNum++;
         }).always(function () {
@@ -567,8 +568,8 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                         let $armMemo = $('input[name="armMemo"]:first');
                         $armId.val(id);
                         $armMemo.val($('#pdArmArea > span:first').text().trim());
-                        $.each([$armId, $armMemo], function () {
-                            this.get(0).defaultValue = '';
+                        $('.pd_arm_input').each(function () {
+                            this.defaultValue = '';
                         });
                     });
                 }
@@ -597,11 +598,18 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
         });
     }).on('click', 'a[data-name="add"]', function () {
         let $tr = $(this).closest('tr');
-        let id = parseInt($tr.data('id'));
+        let armId = parseInt($tr.data('id'));
+        let armClass = $tr.data('class');
         let armInfo = getArmInfo($tr.find('> td:nth-child(3)').html());
         $('#pdAddArmDialog').parent().hide();
-        $('#pdAddArmMemo').val(armInfo['名称']);
-        $('#pdAddArmId').val(id).focus();
+        if (armClass === '武器') {
+            $('#pdAddWeaponMemo').val(armInfo['名称']);
+            $('#pdAddWeaponId').val(armId).focus();
+        }
+        else if (armClass === '护甲') {
+            $('#pdAddArmorMemo').val(armInfo['名称']);
+            $('#pdAddArmorId').val(armId).focus();
+        }
     }).on('mouseenter', 'tr', function () {
         let $this = $(this);
         if (!$this.has('> td[id^="wp_"]').length) return;
@@ -1257,8 +1265,8 @@ export const getArmInfo = function (html) {
     matches = /从属性：(.+?)(\n|$)/.exec(description);
     if (matches) armInfo['从属性'] = matches[1].split('。');
 
-    matches = /最终加成：(.+?)(\n|$)/.exec(description);
-    if (matches) armInfo['最终加成'] = matches[1].split(' | ');
+    /*matches = /最终加成：(.+?)(\n|$)/.exec(description);
+    if (matches) armInfo['最终加成'] = matches[1].split(' | ');*/ // 临时禁用
 
     let smMatches = description.match(/([^。\s]+神秘)：(.+?)。/g);
     for (let i in smMatches) {
@@ -1814,13 +1822,17 @@ export const buyItems = function (buyItemIdList, safeId) {
             if (msg.includes('购买成功')) {
                 index++;
                 subIndex = 0;
-                let matches = /\+(\d+)(武器经验|护甲经验|经验)/.exec(msg);
+                let matches = /\+(\d+)(武器\/护甲经验|经验)/.exec(msg);
                 if (matches) {
                     let num = parseInt(matches[1]), key = matches[2];
-                    if (key === '经验') key = '经验值';
-
                     let gain = {}, pay = getItemPayById(itemId);
-                    gain[key] = num;
+                    if (key === '经验') {
+                        gain['经验值'] = num;
+                    }
+                    else {
+                        gain['武器经验'] = num;
+                        gain['护甲经验'] = num;
+                    }
                     if (pay) {
                         Log.push('购买物品', `共有\`1\`个【\`${itemName}\`】购买成功`, {gain, pay});
                     }
