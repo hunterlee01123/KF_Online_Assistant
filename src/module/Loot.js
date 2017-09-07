@@ -38,7 +38,7 @@ let extraPointsList = {};
 // 光环信息
 let haloInfo = {};
 // 当前装备情况
-let currentArmInfo = {};
+let currentArmInfo = new Map();
 // 装备等级情况列表
 let armsLevelList = new Map();
 // 道具使用情况列表
@@ -82,7 +82,10 @@ export const enhanceLootIndexPage = function () {
     propertyList = getLootPropertyList(propertiesHtml);
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-    currentArmInfo = Item.getArmInfo($armArea.html());
+
+    let [, weaponInfoHtml = '', armorInfoHtml = ''] = $armArea.html().split('（装备中）');
+    currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+    currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -571,7 +574,9 @@ export const getExtraPoint = function (pointName, point) {
         case '智力':
             return Math.floor(point * haloPercent) + elapsedMedicine;
         case '意志':
-            return Math.floor(point * haloPercent) + elapsedMedicine;
+            return Math.floor(
+                (Math.floor(point * haloPercent) + elapsedMedicine + point) * (currentArmInfo.get('护甲') && currentArmInfo.get('护甲')['组别'] === '铠甲' ? 1.1 : 1)
+            ) - point;
         default:
             return 0;
     }
@@ -1216,8 +1221,13 @@ export const updateLootInfo = function (callback = null) {
         propertyList = getLootPropertyList(propertiesHtml);
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-        currentArmInfo = Item.getArmInfo($armArea.html());
         $properties.find('.pd_arm_level').trigger('change');
+
+        let [, weaponInfoHtml = '', armorInfoHtml = ''] = $armArea.html().split('（装备中）');
+        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+
+        $points.find('.pd_point').trigger('change');
 
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);

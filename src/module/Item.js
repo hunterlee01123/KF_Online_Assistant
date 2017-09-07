@@ -1260,9 +1260,9 @@ export const getArmInfo = function (html) {
     matches = /最终加成：(.+?)(\n|$)/.exec(description);
     if (matches) armInfo['最终加成'] = matches[1].split(' | ');
 
-    let smMatches = description.match(/(.神秘)：(.+?)。/g);
+    let smMatches = description.match(/([^。\s]+神秘)：(.+?)。/g);
     for (let i in smMatches) {
-        let subMatches = /(.神秘)：(.+?)。/.exec(smMatches[i]);
+        let subMatches = /([^。\s]+神秘)：(.+?)。/.exec(smMatches[i]);
         if (smMatches) {
             armInfo[subMatches[1]] = subMatches[2];
         }
