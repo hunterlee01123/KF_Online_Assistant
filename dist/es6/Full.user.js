@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.6
+// @version     11.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.6';
+const version = '11.7';
 
 /**
  * 导出模块
@@ -3217,7 +3217,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3764,6 +3764,8 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
     if (type === 1) {
         $armArea.find('a[data-name="equip"]').attr('data-name', 'add').text('加入');
     }
+
+    Script.runFunc('Item.handleArmArea_after_', { $armArea, type });
 };
 
 /**
@@ -3772,7 +3774,22 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
  */
 const sortArmsByGroup = exports.sortArmsByGroup = function ($armArea) {
     for (let armGroup of armGroupList) {
-        $armArea.find(`tr[data-group="${armGroup}"]`).insertBefore($armArea.find('tr[data-id]:first'));
+        $armArea.find(`tr[data-group="${armGroup}"]`).insertAfter($armArea.find('tr:nth-child(2)'));
+    }
+};
+
+/**
+ * 按ID顺序排列装备
+ * @param {jQuery} $armArea 装备区域节点
+ */
+const sortArmsById = exports.sortArmsById = function ($armArea) {
+    let armIdList = [];
+    $armArea.find('tr[data-id]').each(function () {
+        armIdList.push(parseInt($(this).data('id')));
+    });
+    armIdList.sort((a, b) => a - b);
+    for (let armId of armIdList) {
+        $armArea.find(`tr[data-id="${armId}"]`).insertAfter($armArea.find('tr:nth-child(2)'));
     }
 };
 
@@ -3922,7 +3939,9 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
+    if (armInfo['类别'] !== '护甲') {
+        $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
+    }
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -3931,7 +3950,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
 };
 
 // 装备属性关键词列表
-const armPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']]);
+const armPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD'], ['被攻击回血100+', '回血'], ['获得无护甲魔法盾500+', '护盾'], ['每减少5%生命值获得额外意志', '加防'], ['反弹对方实际伤害15%+', '反伤'], ['减少来自暴击的伤害10%+', '暴减'], ['减少来自技能的伤害10%+', '技减'], ['回血', '回血'], ['护盾', '护盾'], ['加防', '加防'], ['反伤', '反伤'], ['暴减', '暴减'], ['技减', '技减']]);
 
 /**
  * 获取计算器武器参数设置
@@ -4036,19 +4055,62 @@ const handleUselessSubProperties = exports.handleUselessSubProperties = function
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <label>
-    <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
-    <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
-  </label>
-  <button name="selectAll" type="button" title="全选">全选</button>
-  <button name="selectInverse" type="button" title="反选">反选</button>
-  <button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
   <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
-  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息" hidden>显示最终加成</button><!-- 临时禁用 -->
+  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="sortArmsByGroupEnabled"]').click(function () {
+`).insertAfter($armArea).find('[name="clearArmsMemo"]').click(function () {
+        if (!confirm('是否清除所有装备的备注？')) return;
+        (0, _Config.read)();
+        Config.armsMemo = {};
+        (0, _Config.write)();
+    }).end().find('[name="showArmsFinalAddition"]').click(function () {
+        if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
+        Msg.destroy();
+        let oriEquippedArmList = [];
+        let armList = [];
+        $armArea.find('tr[data-id]').each(function () {
+            let $this = $(this);
+            let armId = parseInt($this.data('id'));
+            let armClass = $this.data('class');
+            if (armId && armClass) {
+                armList.push({ armId, armClass });
+            }
+            if ($this.hasClass('pd_arm_equipped')) {
+                oriEquippedArmList.push({ armId, armClass });
+            }
+        });
+        if (oriEquippedArmList.length < 2 && !confirm('显示最终加成信息后，未在当前页面上出现的已使用的某类别的装备将使用该页面上的最后一件装备，是否继续？')) return;
+        if (armList.length > 0) {
+            showArmsFinalAddition(armList, oriEquippedArmList, safeId);
+        }
+    }).end().find('[name="smeltSelectArms"]').click(function () {
+        let idList = [];
+        $armArea.find('input[name="armCheck"]:checked').each(function () {
+            idList.push(parseInt($(this).val()));
+        });
+        if (!idList.length || !confirm(`是否熔炼所选的${idList.length}件装备？`)) return;
+        smeltArms({ idList, safeId });
+    }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
+    addCommonArmsButton($('.pd_item_btns[data-name="handleArmBtns"]'), $armArea);
+};
+
+/**
+ * 添加装备相关的通用按钮
+ * @param {jQuery} $area 要添加的区域节点
+ * @param {jQuery} $armArea 装备区域节点
+ */
+const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armArea) {
+    $(`
+<label>
+  <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
+  <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
+</label>
+<button name="selectAll" type="button" title="全选" style="min-width: inherit;">全选</button>
+<button name="selectInverse" type="button" title="反选" style="min-width: inherit;">反选</button>
+<button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
+`).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
         let checked = $(this).prop('checked');
         if (Config[name] !== checked) {
             (0, _Config.read)();
@@ -4057,8 +4119,10 @@ const addArmsButton = function () {
         }
         if (checked) {
             sortArmsByGroup($armArea);
+        } else {
+            sortArmsById($armArea);
         }
-    }).end().find('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]'))).end().find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]'))).end().find('[name="copyWeaponParameterSetting"]').click(function () {
+    }).end().filter('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]'))).end().filter('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]'))).end().filter('[name="copyWeaponParameterSetting"]').click(function () {
         let $this = $(this);
         let armInfoList = [];
         $armArea.find('input[name="armCheck"]:checked').each(function () {
@@ -4071,6 +4135,7 @@ const addArmsButton = function () {
         if (!armInfoList.length) return;
         let copyData = '';
         for (let { id, info } of armInfoList) {
+            if (info['类别'] === '护甲') continue;
             copyData += getWeaponParameterSetting(id, info) + '\n\n';
         }
         $this.data('copy-text', copyData.trim());
@@ -4078,55 +4143,26 @@ const addArmsButton = function () {
         if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
             alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
-    }).end().find('[name="clearArmsMemo"]').click(function () {
-        if (!confirm('是否清除所有装备的备注？')) return;
-        (0, _Config.read)();
-        Config.armsMemo = {};
-        (0, _Config.write)();
-    }).end().find('[name="showArmsFinalAddition"]').click(function () {
-        if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
-        Msg.destroy();
-        let oriEquippedArmId = 0;
-        let armIdList = [];
-        $armArea.find('td[id^="wp_"]').each(function () {
-            let $this = $(this);
-            let id = parseInt($this.parent('tr').data('id'));
-            if (id) {
-                armIdList.push(id);
-            }
-            if ($this.parent('tr').hasClass('pd_arm_equipped')) {
-                oriEquippedArmId = id;
-            }
-        });
-        if (!oriEquippedArmId && !confirm('当前页面未发现有已装备的武器，显示最终加成信息后将用最后一件武器进行装备，是否继续？')) return;
-        if (armIdList.length > 0) {
-            showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
-        }
-    }).end().find('[name="smeltSelectArms"]').click(function () {
-        let idList = [];
-        $armArea.find('input[name="armCheck"]:checked').each(function () {
-            idList.push(parseInt($(this).val()));
-        });
-        if (!idList.length || !confirm(`是否熔炼所选的${idList.length}件装备？`)) return;
-        smeltArms({ idList, safeId });
-    }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
+    });
 };
 
 /**
  * 显示装备最终加成信息
- * @param {number[]} armIdList 装备ID列表
- * @param {number} oriEquippedArmId 原先的装备ID
+ * @param {Object[]} armList 装备列表
+ * @param {Object[]} oriEquippedArmList 原先的装备列表
  * @param {string} safeId SafeID
  */
-const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
+const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
     let index = 0;
 
     /**
      * 装备
      * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
      * @param {boolean} isComplete 是否操作完成
+     * @param {function} callback 回调函数
      */
-    const equip = function (armId, isComplete = false) {
+    const equip = function ({ armId, armClass }, isComplete = false, callback = null) {
         $.ajax({
             type: 'POST',
             url: 'kf_fw_ig_mybpdt.php',
@@ -4134,53 +4170,60 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             let msg = Util.removeHtmlTag(html);
-            console.log(`装备ID[${armId}]：${msg.replace('\n', ' ')}`);
-            if (isComplete) return;
-            if (!/装备完毕/.test(msg)) index++;
-            if (index >= armIdList.length) {
+            console.log(`【装备ID[${armId}]，装备类别[${armClass}]】：${msg.replace('\n', ' ')}`);
+            if (isComplete) {
+                if (typeof callback === 'function') callback();
+                return;
+            }
+            if (!/装备完毕/.test(msg)) {
+                index++;
+            }
+            if (index >= armList.length) {
                 complete();
                 return;
             }
             if (!/装备完毕/.test(msg)) {
-                setTimeout(() => equip(armIdList[index]), _Const2.default.minActionInterval);
+                setTimeout(() => equip(armList[index]), _Const2.default.minActionInterval);
             } else {
-                setTimeout(() => getFinalAddition(armId), _Const2.default.defAjaxInterval);
+                setTimeout(() => getFinalAddition({ armId, armClass }), _Const2.default.defAjaxInterval);
             }
-        }).fail(() => setTimeout(() => equip(armId), _Const2.default.minActionInterval));
+        }).fail(() => setTimeout(() => equip({ armId, armClass }, isComplete, callback), _Const2.default.minActionInterval));
     };
 
     /**
      * 获取当前装备的最终加成
+     * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
      */
-    const getFinalAddition = function (armId) {
+    const getFinalAddition = function ({ armId, armClass }) {
         $.ajax({
             type: 'GET',
             url: 'kf_fw_ig_index.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
-            $wait.find('.pd_countdown').text(armIdList.length - (index + 1));
+            $wait.find('.pd_countdown').text(armList.length - (index + 1));
             if ($wait.data('stop')) {
                 complete();
                 return;
             }
 
-            let matches = />(最终加成：[^<>]+)</.exec(html);
+            let matches = armClass === '武器' ? />(攻击伤害\+[^<>]+)</.exec(html) : />(受伤回血\+[^<>]+)</.exec(html);
             if (matches) {
                 let info = matches[1];
-                console.log(`装备ID[${armId}]：${info}`);
-                let $armInfo = $armArea.find(`td[id="wp_${armId}"]`).parent('tr').find('td:nth-child(3)');
+                console.log(`【装备ID[${armId}]，装备类别[${armClass}]】：${info}`);
+                let $armInfo = $armArea.find(`tr[data-id="${armId}"]`).find('td:nth-child(3)');
                 $armInfo.find('.pd_final_addition_info').remove();
-                $armInfo.append(`<span class="pd_final_addition_info"><br>${info}</span>`);
+                $armInfo.append(`<span class="pd_final_addition_info" title="最终加成：${info}"><br>最终加成：${info}</span>`);
             }
 
             index++;
-            if (index >= armIdList.length) {
+            if (index >= armList.length) {
                 complete();
                 return;
             }
-            setTimeout(() => equip(armIdList[index]), _Const2.default.minActionInterval);
-            Script.runFunc('Item.showArmsFinalAddition_show_', armId);
-        }).fail(() => setTimeout(() => getFinalAddition(armId), _Const2.default.defAjaxInterval));
+            setTimeout(() => equip(armList[index]), _Const2.default.minActionInterval);
+            Script.runFunc('Item.showArmsFinalAddition_show_', { armId, armClass });
+        }).fail(() => setTimeout(() => getFinalAddition({ armId, armClass }), _Const2.default.defAjaxInterval));
     };
 
     /**
@@ -4188,14 +4231,23 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
      */
     const complete = function () {
         Msg.remove($wait);
-        if (oriEquippedArmId) {
-            setTimeout(() => equip(oriEquippedArmId, true), _Const2.default.minActionInterval);
+        if (oriEquippedArmList.length > 0) {
+            let $wait = Msg.wait('<strong>正在还原为之前的装备&hellip;</strong>');
+            setTimeout(() => equip(oriEquippedArmList[0], true, function () {
+                if (!oriEquippedArmList[1]) {
+                    Msg.remove($wait);
+                    return;
+                }
+                setTimeout(() => equip(oriEquippedArmList[1], true, function () {
+                    Msg.remove($wait);
+                }), _Const2.default.minActionInterval);
+            }), _Const2.default.minActionInterval);
         }
         Script.runFunc('Item.showArmsFinalAddition_complete_');
     };
 
-    let $wait = Msg.wait(`<strong>正在获取装备最终加成信息&hellip;</strong><i>剩余：<em class="pd_countdown">${armIdList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-    equip(armIdList[0]);
+    let $wait = Msg.wait(`<strong>正在获取装备最终加成信息&hellip;</strong><i>剩余：<em class="pd_countdown">${armList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+    equip(armList[0]);
 };
 
 /**
@@ -5877,9 +5929,13 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
 
-    let [, weaponInfoHtml = '', armorInfoHtml = ''] = $armArea.html().split('（装备中）');
-    currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-    currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+    let armHtml = $armArea.html();
+    if (armHtml.includes('（装备中）')) {
+        let [armInfoHtml] = armHtml.split('<br><br>');
+        let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
+        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+    } else return;
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -5978,7 +6034,14 @@ const handlePointsArea = function () {
     $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
-    $armArea.html(Item.handleUselessSubProperties($armArea.html()));
+    let [armInfoHtml, finalAddAdditionHtml = ''] = $armArea.html().split('<br><br>', 2);
+    let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
+    let newArmHtml = '';
+    if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+    if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+    if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+    $armArea.html(newArmHtml);
+
     $(`
 <tr>
   <td>
@@ -6960,7 +7023,16 @@ const updateLootInfo = exports.updateLootInfo = function (callback = null) {
 
         let armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
         if (armHtml.includes('（装备中）')) {
-            $armArea.html(Item.handleUselessSubProperties(armHtml));
+            let [armInfoHtml, finalAddAdditionHtml = ''] = armHtml.split('<br><br>', 2);
+            let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
+            let newArmHtml = '';
+            if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+            if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+            if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+            $armArea.html(newArmHtml);
+
+            currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+            currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
         }
 
         let propertiesHtml = $properties.html();
@@ -6968,11 +7040,6 @@ const updateLootInfo = exports.updateLootInfo = function (callback = null) {
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
         $properties.find('.pd_arm_level').trigger('change');
-
-        let [, weaponInfoHtml = '', armorInfoHtml = ''] = $armArea.html().split('（装备中）');
-        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
-
         $points.find('.pd_point').trigger('change');
 
         if (typeof callback === 'function') callback();
@@ -7392,27 +7459,13 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
   </table>
 </div>
 <div class="pd_cfg_btns">
-  <label>
-    <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
-    <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
-  </label>
   ${type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : ''}
   <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1003;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
-    $dialog.find('[name="sortArmsByGroupEnabled"]').click(function () {
-        let checked = $(this).prop('checked');
-        if (Config[name] !== checked) {
-            (0, _Config.read)();
-            Config.sortArmsByGroupEnabled = checked;
-            (0, _Config.write)();
-        }
-        if (checked) {
-            Item.sortArmsByGroup($armArea);
-        }
-    });
+    Item.addCommonArmsButton($dialog.find('.pd_cfg_btns'), $armArea);
     if (type === 1) {
         $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
             $dialog.fadeOut('fast');
@@ -9507,9 +9560,9 @@ const appendCss = exports.appendCss = function () {
   .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }
   .kf_fw_ig4 > tbody > tr > td { position: relative; }
   .kf_fw_ig4 > tbody > tr > td[data-memo]::after {
-    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);
+    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .7);
   }
-  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }
+  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .7); }
   .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }

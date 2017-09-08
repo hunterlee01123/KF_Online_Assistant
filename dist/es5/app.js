@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.6';
+var version = '11.7';
 
 /**
  * 导出模块
@@ -3098,7 +3098,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3787,6 +3787,8 @@ var handleArmArea = exports.handleArmArea = function handleArmArea($armArea) {
     if (type === 1) {
         $armArea.find('a[data-name="equip"]').attr('data-name', 'add').text('加入');
     }
+
+    Script.runFunc('Item.handleArmArea_after_', { $armArea: $armArea, type: type });
 };
 
 /**
@@ -3802,7 +3804,7 @@ var sortArmsByGroup = exports.sortArmsByGroup = function sortArmsByGroup($armAre
         for (var _iterator8 = armGroupList[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
             var armGroup = _step8.value;
 
-            $armArea.find('tr[data-group="' + armGroup + '"]').insertBefore($armArea.find('tr[data-id]:first'));
+            $armArea.find('tr[data-group="' + armGroup + '"]').insertAfter($armArea.find('tr:nth-child(2)'));
         }
     } catch (err) {
         _didIteratorError8 = true;
@@ -3815,6 +3817,44 @@ var sortArmsByGroup = exports.sortArmsByGroup = function sortArmsByGroup($armAre
         } finally {
             if (_didIteratorError8) {
                 throw _iteratorError8;
+            }
+        }
+    }
+};
+
+/**
+ * 按ID顺序排列装备
+ * @param {jQuery} $armArea 装备区域节点
+ */
+var sortArmsById = exports.sortArmsById = function sortArmsById($armArea) {
+    var armIdList = [];
+    $armArea.find('tr[data-id]').each(function () {
+        armIdList.push(parseInt($(this).data('id')));
+    });
+    armIdList.sort(function (a, b) {
+        return a - b;
+    });
+    var _iteratorNormalCompletion9 = true;
+    var _didIteratorError9 = false;
+    var _iteratorError9 = undefined;
+
+    try {
+        for (var _iterator9 = armIdList[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var armId = _step9.value;
+
+            $armArea.find('tr[data-id="' + armId + '"]').insertAfter($armArea.find('tr:nth-child(2)'));
+        }
+    } catch (err) {
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion9 && _iterator9.return) {
+                _iterator9.return();
+            }
+        } finally {
+            if (_didIteratorError9) {
+                throw _iteratorError9;
             }
         }
     }
@@ -3945,7 +3985,9 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
+    if (armInfo['类别'] !== '护甲') {
+        $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
+    }
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -3954,7 +3996,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
 };
 
 // 装备属性关键词列表
-var armPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']]);
+var armPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD'], ['被攻击回血100+', '回血'], ['获得无护甲魔法盾500+', '护盾'], ['每减少5%生命值获得额外意志', '加防'], ['反弹对方实际伤害15%+', '反伤'], ['减少来自暴击的伤害10%+', '暴减'], ['减少来自技能的伤害10%+', '技减'], ['回血', '回血'], ['护盾', '护盾'], ['加防', '加防'], ['反伤', '反伤'], ['暴减', '暴减'], ['技减', '技减']]);
 
 /**
  * 获取计算器武器参数设置
@@ -3979,53 +4021,19 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
     info['装备ID'] = '#' + armId;
 
     var smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
-    var _iteratorNormalCompletion9 = true;
-    var _didIteratorError9 = false;
-    var _iteratorError9 = undefined;
-
-    try {
-        for (var _iterator9 = smKeyList[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var _step9$value = _slicedToArray(_step9.value, 2),
-                key = _step9$value[0],
-                value = _step9$value[1];
-
-            if (key in armInfo) {
-                info['神秘属性数量']++;
-                info['所有的神秘属性'] += value + ' ';
-            }
-        }
-    } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-                _iterator9.return();
-            }
-        } finally {
-            if (_didIteratorError9) {
-                throw _iteratorError9;
-            }
-        }
-    }
-
     var _iteratorNormalCompletion10 = true;
     var _didIteratorError10 = false;
     var _iteratorError10 = undefined;
 
     try {
-        for (var _iterator10 = armInfo['主属性'][Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-            var value = _step10.value;
+        for (var _iterator10 = smKeyList[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var _step10$value = _slicedToArray(_step10.value, 2),
+                key = _step10$value[0],
+                value = _step10$value[1];
 
-            var _value$split = value.split('(', 1),
-                _value$split2 = _slicedToArray(_value$split, 1),
-                _value$split2$ = _value$split2[0],
-                property = _value$split2$ === undefined ? '' : _value$split2$;
-
-            property = property.trim();
-            if (property) {
-                info['主属性数量']++;
-                info['所有的主属性'] += armPropertyKeyList.get(property) + ' ';
+            if (key in armInfo) {
+                info['神秘属性数量']++;
+                info['所有的神秘属性'] += value + ' ';
             }
         }
     } catch (err) {
@@ -4043,21 +4051,23 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
     var _iteratorNormalCompletion11 = true;
     var _didIteratorError11 = false;
     var _iteratorError11 = undefined;
 
     try {
-        for (var _iterator11 = armInfo['从属性'][Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _value = _step11.value;
+        for (var _iterator11 = armInfo['主属性'][Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var value = _step11.value;
 
-            _value = $.trim(_value);
-            if (!_value) continue;
-            var matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(_value);
-            if (matches) {
-                info['从属性数量']++;
-                info['所有的从属性'] += armPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+            var _value$split = value.split('(', 1),
+                _value$split2 = _slicedToArray(_value$split, 1),
+                _value$split2$ = _value$split2[0],
+                property = _value$split2$ === undefined ? '' : _value$split2$;
+
+            property = property.trim();
+            if (property) {
+                info['主属性数量']++;
+                info['所有的主属性'] += armPropertyKeyList.get(property) + ' ';
             }
         }
     } catch (err) {
@@ -4075,18 +4085,22 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var content = '\n[\u7EC4\u522B] [\u88C5\u5907ID]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
+    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
 
     try {
-        for (var _iterator12 = Util.entries(info)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-            var _step12$value = _slicedToArray(_step12.value, 2),
-                key = _step12$value[0],
-                _value2 = _step12$value[1];
+        for (var _iterator12 = armInfo['从属性'][Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var _value = _step12.value;
 
-            content = content.replace('[' + key + ']', $.trim(_value2));
+            _value = $.trim(_value);
+            if (!_value) continue;
+            var matches = /(?:\[.])?(\S+?)\((\S+?)x([\d\.]+)%\)/.exec(_value);
+            if (matches) {
+                info['从属性数量']++;
+                info['所有的从属性'] += armPropertyKeyList.get(matches[1]) + ' ' + subPropertyKeyList.get(matches[2]) + ' ' + Math.floor(parseFloat(matches[3]) * 10) + ' ';
+            }
         }
     } catch (err) {
         _didIteratorError12 = true;
@@ -4103,33 +4117,18 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    return content;
-};
-
-/**
- * 处理无用的从属性
- * @param {string} html 装备的HTML代码
- * @returns {string} 处理后的HTML代码
- */
-var handleUselessSubProperties = exports.handleUselessSubProperties = function handleUselessSubProperties(html) {
-    var armInfo = getArmInfo(html);
-    var keyList = [];
+    var content = '\n[\u7EC4\u522B] [\u88C5\u5907ID]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
     var _iteratorNormalCompletion13 = true;
     var _didIteratorError13 = false;
     var _iteratorError13 = undefined;
 
     try {
-        for (var _iterator13 = armInfo['主属性'][Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var _value3 = _step13.value;
+        for (var _iterator13 = Util.entries(info)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var _step13$value = _slicedToArray(_step13.value, 2),
+                key = _step13$value[0],
+                _value2 = _step13$value[1];
 
-            var _value3$split = _value3.split('(', 1),
-                _value3$split2 = _slicedToArray(_value3$split, 1),
-                _value3$split2$ = _value3$split2[0],
-                _property = _value3$split2$ === undefined ? '' : _value3$split2$;
-
-            if (_property) {
-                keyList.push(armPropertyKeyList.get(_property));
-            }
+            content = content.replace('[' + key + ']', $.trim(_value2));
         }
     } catch (err) {
         _didIteratorError13 = true;
@@ -4146,16 +4145,59 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
         }
     }
 
+    return content;
+};
+
+/**
+ * 处理无用的从属性
+ * @param {string} html 装备的HTML代码
+ * @returns {string} 处理后的HTML代码
+ */
+var handleUselessSubProperties = exports.handleUselessSubProperties = function handleUselessSubProperties(html) {
+    var armInfo = getArmInfo(html);
+    var keyList = [];
+    var _iteratorNormalCompletion14 = true;
+    var _didIteratorError14 = false;
+    var _iteratorError14 = undefined;
+
+    try {
+        for (var _iterator14 = armInfo['主属性'][Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+            var _value3 = _step14.value;
+
+            var _value3$split = _value3.split('(', 1),
+                _value3$split2 = _slicedToArray(_value3$split, 1),
+                _value3$split2$ = _value3$split2[0],
+                _property = _value3$split2$ === undefined ? '' : _value3$split2$;
+
+            if (_property) {
+                keyList.push(armPropertyKeyList.get(_property));
+            }
+        }
+    } catch (err) {
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion14 && _iterator14.return) {
+                _iterator14.return();
+            }
+        } finally {
+            if (_didIteratorError14) {
+                throw _iteratorError14;
+            }
+        }
+    }
+
     var matches = /从属性：(.+?)(<br(?: \/)?>|$)/.exec(html);
     if (matches) {
         var subPropertiesHtml = '';
-        var _iteratorNormalCompletion14 = true;
-        var _didIteratorError14 = false;
-        var _iteratorError14 = undefined;
+        var _iteratorNormalCompletion15 = true;
+        var _didIteratorError15 = false;
+        var _iteratorError15 = undefined;
 
         try {
-            for (var _iterator14 = matches[1].split('。')[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-                var value = _step14.value;
+            for (var _iterator15 = matches[1].split('。')[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+                var value = _step15.value;
 
                 if (!value) continue;
                 var subMatches = /([^<>]+?)\(/.exec(value);
@@ -4166,69 +4208,6 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
                     }
                 }
                 subPropertiesHtml += value + '。';
-            }
-        } catch (err) {
-            _didIteratorError14 = true;
-            _iteratorError14 = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion14 && _iterator14.return) {
-                    _iterator14.return();
-                }
-            } finally {
-                if (_didIteratorError14) {
-                    throw _iteratorError14;
-                }
-            }
-        }
-
-        html = html.replace(matches[0], '从属性：' + subPropertiesHtml + matches[2]);
-    }
-
-    return html;
-};
-
-/**
- * 添加装备相关按钮
- */
-var addArmsButton = function addArmsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <label>\n    <input name="sortArmsByGroupEnabled" type="checkbox" ' + (Config.sortArmsByGroupEnabled ? 'checked' : '') + '> \u5206\u7EC4\u6392\u5217</input>\n    <span class="pd_cfg_tips" title="\u5206\u7EC4\u6392\u5217\u88C5\u5907">[?]</span>\n  </label>\n  <button name="selectAll" type="button" title="\u5168\u9009">\u5168\u9009</button>\n  <button name="selectInverse" type="button" title="\u53CD\u9009">\u53CD\u9009</button>\n  <button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n  <button name="clearArmsMemo" type="button" style="color: #f00;" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F" hidden>\u663E\u793A\u6700\u7EC8\u52A0\u6210</button><!-- \u4E34\u65F6\u7981\u7528 -->\n  <button name="smeltSelectArms" type="button" style="color: #00f;" title="\u6279\u91CF\u7194\u70BC\u5F53\u524D\u9875\u9762\u4E0A\u6240\u9009\u7684\u88C5\u5907">\u7194\u70BC\u6240\u9009</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u79CD\u7C7B\u7684\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="sortArmsByGroupEnabled"]').click(function () {
-        var checked = $(this).prop('checked');
-        if (Config[name] !== checked) {
-            (0, _Config.read)();
-            Config.sortArmsByGroupEnabled = checked;
-            (0, _Config.write)();
-        }
-        if (checked) {
-            sortArmsByGroup($armArea);
-        }
-    }).end().find('[name="selectAll"]').click(function () {
-        return Util.selectAll($armArea.find('input[name="armCheck"]'));
-    }).end().find('[name="selectInverse"]').click(function () {
-        return Util.selectInverse($armArea.find('input[name="armCheck"]'));
-    }).end().find('[name="copyWeaponParameterSetting"]').click(function () {
-        var $this = $(this);
-        var armInfoList = [];
-        $armArea.find('input[name="armCheck"]:checked').each(function () {
-            var $this = $(this);
-            var id = parseInt($this.val());
-            var html = $this.closest('tr').find('> td:nth-child(3)').html();
-            if (!html) return;
-            armInfoList.push({ id: id, info: getArmInfo(html) });
-        });
-        if (!armInfoList.length) return;
-        var copyData = '';
-        var _iteratorNormalCompletion15 = true;
-        var _didIteratorError15 = false;
-        var _iteratorError15 = undefined;
-
-        try {
-            for (var _iterator15 = armInfoList[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-                var _step15$value = _step15.value,
-                    id = _step15$value.id,
-                    info = _step15$value.info;
-
-                copyData += getWeaponParameterSetting(id, info) + '\n\n';
             }
         } catch (err) {
             _didIteratorError15 = true;
@@ -4245,12 +4224,17 @@ var addArmsButton = function addArmsButton() {
             }
         }
 
-        $this.data('copy-text', copyData.trim());
-        console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
-        if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
-            alert('你的浏览器不支持复制，请打开Web控制台查看');
-        }
-    }).end().find('[name="clearArmsMemo"]').click(function () {
+        html = html.replace(matches[0], '从属性：' + subPropertiesHtml + matches[2]);
+    }
+
+    return html;
+};
+
+/**
+ * 添加装备相关按钮
+ */
+var addArmsButton = function addArmsButton() {
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="clearArmsMemo" type="button" style="color: #f00;" title="\u6E05\u9664\u6240\u6709\u88C5\u5907\u7684\u5907\u6CE8">\u6E05\u9664\u5907\u6CE8</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltSelectArms" type="button" style="color: #00f;" title="\u6279\u91CF\u7194\u70BC\u5F53\u524D\u9875\u9762\u4E0A\u6240\u9009\u7684\u88C5\u5907">\u7194\u70BC\u6240\u9009</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u79CD\u7C7B\u7684\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="clearArmsMemo"]').click(function () {
         if (!confirm('是否清除所有装备的备注？')) return;
         (0, _Config.read)();
         Config.armsMemo = {};
@@ -4258,21 +4242,22 @@ var addArmsButton = function addArmsButton() {
     }).end().find('[name="showArmsFinalAddition"]').click(function () {
         if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
         Msg.destroy();
-        var oriEquippedArmId = 0;
-        var armIdList = [];
-        $armArea.find('td[id^="wp_"]').each(function () {
+        var oriEquippedArmList = [];
+        var armList = [];
+        $armArea.find('tr[data-id]').each(function () {
             var $this = $(this);
-            var id = parseInt($this.parent('tr').data('id'));
-            if (id) {
-                armIdList.push(id);
+            var armId = parseInt($this.data('id'));
+            var armClass = $this.data('class');
+            if (armId && armClass) {
+                armList.push({ armId: armId, armClass: armClass });
             }
-            if ($this.parent('tr').hasClass('pd_arm_equipped')) {
-                oriEquippedArmId = id;
+            if ($this.hasClass('pd_arm_equipped')) {
+                oriEquippedArmList.push({ armId: armId, armClass: armClass });
             }
         });
-        if (!oriEquippedArmId && !confirm('当前页面未发现有已装备的武器，显示最终加成信息后将用最后一件武器进行装备，是否继续？')) return;
-        if (armIdList.length > 0) {
-            showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
+        if (oriEquippedArmList.length < 2 && !confirm('显示最终加成信息后，未在当前页面上出现的已使用的某类别的装备将使用该页面上的最后一件装备，是否继续？')) return;
+        if (armList.length > 0) {
+            showArmsFinalAddition(armList, oriEquippedArmList, safeId);
         }
     }).end().find('[name="smeltSelectArms"]').click(function () {
         var idList = [];
@@ -4284,24 +4269,100 @@ var addArmsButton = function addArmsButton() {
     }).end().find('[name="smeltArms"]').click(function () {
         return showBatchSmeltArmsDialog(safeId);
     });
+    addCommonArmsButton($('.pd_item_btns[data-name="handleArmBtns"]'), $armArea);
+};
+
+/**
+ * 添加装备相关的通用按钮
+ * @param {jQuery} $area 要添加的区域节点
+ * @param {jQuery} $armArea 装备区域节点
+ */
+var addCommonArmsButton = exports.addCommonArmsButton = function addCommonArmsButton($area, $armArea) {
+    $('\n<label>\n  <input name="sortArmsByGroupEnabled" type="checkbox" ' + (Config.sortArmsByGroupEnabled ? 'checked' : '') + '> \u5206\u7EC4\u6392\u5217</input>\n  <span class="pd_cfg_tips" title="\u5206\u7EC4\u6392\u5217\u88C5\u5907">[?]</span>\n</label>\n<button name="selectAll" type="button" title="\u5168\u9009" style="min-width: inherit;">\u5168\u9009</button>\n<button name="selectInverse" type="button" title="\u53CD\u9009" style="min-width: inherit;">\u53CD\u9009</button>\n<button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n').prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
+        var checked = $(this).prop('checked');
+        if (Config[name] !== checked) {
+            (0, _Config.read)();
+            Config.sortArmsByGroupEnabled = checked;
+            (0, _Config.write)();
+        }
+        if (checked) {
+            sortArmsByGroup($armArea);
+        } else {
+            sortArmsById($armArea);
+        }
+    }).end().filter('[name="selectAll"]').click(function () {
+        return Util.selectAll($armArea.find('input[name="armCheck"]'));
+    }).end().filter('[name="selectInverse"]').click(function () {
+        return Util.selectInverse($armArea.find('input[name="armCheck"]'));
+    }).end().filter('[name="copyWeaponParameterSetting"]').click(function () {
+        var $this = $(this);
+        var armInfoList = [];
+        $armArea.find('input[name="armCheck"]:checked').each(function () {
+            var $this = $(this);
+            var id = parseInt($this.val());
+            var html = $this.closest('tr').find('> td:nth-child(3)').html();
+            if (!html) return;
+            armInfoList.push({ id: id, info: getArmInfo(html) });
+        });
+        if (!armInfoList.length) return;
+        var copyData = '';
+        var _iteratorNormalCompletion16 = true;
+        var _didIteratorError16 = false;
+        var _iteratorError16 = undefined;
+
+        try {
+            for (var _iterator16 = armInfoList[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+                var _step16$value = _step16.value,
+                    id = _step16$value.id,
+                    info = _step16$value.info;
+
+                if (info['类别'] === '护甲') continue;
+                copyData += getWeaponParameterSetting(id, info) + '\n\n';
+            }
+        } catch (err) {
+            _didIteratorError16 = true;
+            _iteratorError16 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion16 && _iterator16.return) {
+                    _iterator16.return();
+                }
+            } finally {
+                if (_didIteratorError16) {
+                    throw _iteratorError16;
+                }
+            }
+        }
+
+        $this.data('copy-text', copyData.trim());
+        console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
+        if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
+            alert('你的浏览器不支持复制，请打开Web控制台查看');
+        }
+    });
 };
 
 /**
  * 显示装备最终加成信息
- * @param {number[]} armIdList 装备ID列表
- * @param {number} oriEquippedArmId 原先的装备ID
+ * @param {Object[]} armList 装备列表
+ * @param {Object[]} oriEquippedArmList 原先的装备列表
  * @param {string} safeId SafeID
  */
-var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippedArmId, safeId) {
+var showArmsFinalAddition = function showArmsFinalAddition(armList, oriEquippedArmList, safeId) {
     var index = 0;
 
     /**
      * 装备
      * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
      * @param {boolean} isComplete 是否操作完成
+     * @param {function} callback 回调函数
      */
-    var equip = function equip(armId) {
+    var equip = function equip(_ref2) {
+        var armId = _ref2.armId,
+            armClass = _ref2.armClass;
         var isComplete = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var callback = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
 
         $.ajax({
             type: 'POST',
@@ -4310,65 +4371,75 @@ var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippe
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
             var msg = Util.removeHtmlTag(html);
-            console.log('\u88C5\u5907ID[' + armId + ']\uFF1A' + msg.replace('\n', ' '));
-            if (isComplete) return;
-            if (!/装备完毕/.test(msg)) index++;
-            if (index >= armIdList.length) {
+            console.log('\u3010\u88C5\u5907ID[' + armId + ']\uFF0C\u88C5\u5907\u7C7B\u522B[' + armClass + ']\u3011\uFF1A' + msg.replace('\n', ' '));
+            if (isComplete) {
+                if (typeof callback === 'function') callback();
+                return;
+            }
+            if (!/装备完毕/.test(msg)) {
+                index++;
+            }
+            if (index >= armList.length) {
                 complete();
                 return;
             }
             if (!/装备完毕/.test(msg)) {
                 setTimeout(function () {
-                    return equip(armIdList[index]);
+                    return equip(armList[index]);
                 }, _Const2.default.minActionInterval);
             } else {
                 setTimeout(function () {
-                    return getFinalAddition(armId);
+                    return getFinalAddition({ armId: armId, armClass: armClass });
                 }, _Const2.default.defAjaxInterval);
             }
         }).fail(function () {
             return setTimeout(function () {
-                return equip(armId);
+                return equip({ armId: armId, armClass: armClass }, isComplete, callback);
             }, _Const2.default.minActionInterval);
         });
     };
 
     /**
      * 获取当前装备的最终加成
+     * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
      */
-    var getFinalAddition = function getFinalAddition(armId) {
+    var getFinalAddition = function getFinalAddition(_ref3) {
+        var armId = _ref3.armId,
+            armClass = _ref3.armClass;
+
         $.ajax({
             type: 'GET',
             url: 'kf_fw_ig_index.php?t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout
         }).done(function (html) {
-            $wait.find('.pd_countdown').text(armIdList.length - (index + 1));
+            $wait.find('.pd_countdown').text(armList.length - (index + 1));
             if ($wait.data('stop')) {
                 complete();
                 return;
             }
 
-            var matches = />(最终加成：[^<>]+)</.exec(html);
+            var matches = armClass === '武器' ? />(攻击伤害\+[^<>]+)</.exec(html) : />(受伤回血\+[^<>]+)</.exec(html);
             if (matches) {
                 var info = matches[1];
-                console.log('\u88C5\u5907ID[' + armId + ']\uFF1A' + info);
-                var $armInfo = $armArea.find('td[id="wp_' + armId + '"]').parent('tr').find('td:nth-child(3)');
+                console.log('\u3010\u88C5\u5907ID[' + armId + ']\uFF0C\u88C5\u5907\u7C7B\u522B[' + armClass + ']\u3011\uFF1A' + info);
+                var $armInfo = $armArea.find('tr[data-id="' + armId + '"]').find('td:nth-child(3)');
                 $armInfo.find('.pd_final_addition_info').remove();
-                $armInfo.append('<span class="pd_final_addition_info"><br>' + info + '</span>');
+                $armInfo.append('<span class="pd_final_addition_info" title="\u6700\u7EC8\u52A0\u6210\uFF1A' + info + '"><br>\u6700\u7EC8\u52A0\u6210\uFF1A' + info + '</span>');
             }
 
             index++;
-            if (index >= armIdList.length) {
+            if (index >= armList.length) {
                 complete();
                 return;
             }
             setTimeout(function () {
-                return equip(armIdList[index]);
+                return equip(armList[index]);
             }, _Const2.default.minActionInterval);
-            Script.runFunc('Item.showArmsFinalAddition_show_', armId);
+            Script.runFunc('Item.showArmsFinalAddition_show_', { armId: armId, armClass: armClass });
         }).fail(function () {
             return setTimeout(function () {
-                return getFinalAddition(armId);
+                return getFinalAddition({ armId: armId, armClass: armClass });
             }, _Const2.default.defAjaxInterval);
         });
     };
@@ -4378,16 +4449,27 @@ var showArmsFinalAddition = function showArmsFinalAddition(armIdList, oriEquippe
      */
     var complete = function complete() {
         Msg.remove($wait);
-        if (oriEquippedArmId) {
+        if (oriEquippedArmList.length > 0) {
+            var _$wait = Msg.wait('<strong>正在还原为之前的装备&hellip;</strong>');
             setTimeout(function () {
-                return equip(oriEquippedArmId, true);
+                return equip(oriEquippedArmList[0], true, function () {
+                    if (!oriEquippedArmList[1]) {
+                        Msg.remove(_$wait);
+                        return;
+                    }
+                    setTimeout(function () {
+                        return equip(oriEquippedArmList[1], true, function () {
+                            Msg.remove(_$wait);
+                        });
+                    }, _Const2.default.minActionInterval);
+                });
             }, _Const2.default.minActionInterval);
         }
         Script.runFunc('Item.showArmsFinalAddition_complete_');
     };
 
-    var $wait = Msg.wait('<strong>\u6B63\u5728\u83B7\u53D6\u88C5\u5907\u6700\u7EC8\u52A0\u6210\u4FE1\u606F&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + armIdList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-    equip(armIdList[0]);
+    var $wait = Msg.wait('<strong>\u6B63\u5728\u83B7\u53D6\u88C5\u5907\u6700\u7EC8\u52A0\u6210\u4FE1\u606F&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + armList.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+    equip(armList[0]);
 };
 
 /**
@@ -4400,22 +4482,22 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
     (0, _Config.read)();
 
     var armTypeCheckedHtml = '';
-    var _iteratorNormalCompletion16 = true;
-    var _didIteratorError16 = false;
-    var _iteratorError16 = undefined;
+    var _iteratorNormalCompletion17 = true;
+    var _didIteratorError17 = false;
+    var _iteratorError17 = undefined;
 
     try {
-        for (var _iterator16 = armGroupList[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-            var group = _step16.value;
+        for (var _iterator17 = armGroupList[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+            var group = _step17.value;
 
             armTypeCheckedHtml += '<li><b>' + group + '\uFF1A</b>';
-            var _iteratorNormalCompletion17 = true;
-            var _didIteratorError17 = false;
-            var _iteratorError17 = undefined;
+            var _iteratorNormalCompletion18 = true;
+            var _didIteratorError18 = false;
+            var _iteratorError18 = undefined;
 
             try {
-                for (var _iterator17 = armTypeList[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-                    var type = _step17.value;
+                for (var _iterator18 = armTypeList[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+                    var type = _step18.value;
 
                     var prefix = type.split('的')[0];
                     if (prefix === '神秘') continue;
@@ -4423,16 +4505,16 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
                     armTypeCheckedHtml += '\n<label style="margin-right: 5px;">\n  <input type="checkbox" name="smeltArmsType" value="' + _name3 + '" ' + (Config.defSmeltArmTypeList.includes(_name3) ? 'checked' : '') + '> ' + prefix + '\n</label>';
                 }
             } catch (err) {
-                _didIteratorError17 = true;
-                _iteratorError17 = err;
+                _didIteratorError18 = true;
+                _iteratorError18 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion17 && _iterator17.return) {
-                        _iterator17.return();
+                    if (!_iteratorNormalCompletion18 && _iterator18.return) {
+                        _iterator18.return();
                     }
                 } finally {
-                    if (_didIteratorError17) {
-                        throw _iteratorError17;
+                    if (_didIteratorError18) {
+                        throw _iteratorError18;
                     }
                 }
             }
@@ -4440,16 +4522,16 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
             armTypeCheckedHtml += '</li>';
         }
     } catch (err) {
-        _didIteratorError16 = true;
-        _iteratorError16 = err;
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion16 && _iterator16.return) {
-                _iterator16.return();
+            if (!_iteratorNormalCompletion17 && _iterator17.return) {
+                _iterator17.return();
             }
         } finally {
-            if (_didIteratorError16) {
-                throw _iteratorError16;
+            if (_didIteratorError17) {
+                throw _iteratorError17;
             }
         }
     }
@@ -4487,14 +4569,14 @@ var showBatchSmeltArmsDialog = function showBatchSmeltArmsDialog() {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-var smeltArms = function smeltArms(_ref2) {
-    var _ref2$typeList = _ref2.typeList,
-        typeList = _ref2$typeList === undefined ? [] : _ref2$typeList,
-        _ref2$idList = _ref2.idList,
-        idList = _ref2$idList === undefined ? [] : _ref2$idList,
-        safeId = _ref2.safeId,
-        _ref2$nextActionEnabl = _ref2.nextActionEnabled,
-        nextActionEnabled = _ref2$nextActionEnabl === undefined ? false : _ref2$nextActionEnabl;
+var smeltArms = function smeltArms(_ref4) {
+    var _ref4$typeList = _ref4.typeList,
+        typeList = _ref4$typeList === undefined ? [] : _ref4$typeList,
+        _ref4$idList = _ref4.idList,
+        idList = _ref4$idList === undefined ? [] : _ref4$idList,
+        safeId = _ref4.safeId,
+        _ref4$nextActionEnabl = _ref4.nextActionEnabled,
+        nextActionEnabled = _ref4$nextActionEnabl === undefined ? false : _ref4$nextActionEnabl;
 
     var successNum = 0,
         index = 0;
@@ -4581,11 +4663,11 @@ var smeltArms = function smeltArms(_ref2) {
 
         index = 0;
         $(document).clearQueue('SmeltArms');
-        $.each(armList, function (i, _ref3) {
-            var armId = _ref3.armId,
-                armClass = _ref3.armClass,
-                armGroup = _ref3.armGroup,
-                armName = _ref3.armName;
+        $.each(armList, function (i, _ref5) {
+            var armId = _ref5.armId,
+                armClass = _ref5.armClass,
+                armGroup = _ref5.armGroup,
+                armName = _ref5.armName;
 
             $(document).queue('SmeltArms', function () {
                 return smelt(armId, armClass, armGroup, armName, armList.length);
@@ -4639,25 +4721,25 @@ var smeltArms = function smeltArms(_ref2) {
             resultDetailStat = '',
             msgStat = '',
             logStat = '';
-        var _iteratorNormalCompletion18 = true;
-        var _didIteratorError18 = false;
-        var _iteratorError18 = undefined;
+        var _iteratorNormalCompletion19 = true;
+        var _didIteratorError19 = false;
+        var _iteratorError19 = undefined;
 
         try {
-            for (var _iterator18 = Util.getSortedObjectKeyList(armClassList, smeltInfo)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-                var armClass = _step18.value;
+            for (var _iterator19 = Util.getSortedObjectKeyList(armClassList, smeltInfo)[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+                var armClass = _step19.value;
 
                 resultDetailStat += '<b>\u3010' + armClass + '\u3011\uFF1A</b><br>';
                 var armClassNum = 0;
                 var gain = {};
                 gain[armClass + '\u7ECF\u9A8C'] = 0;
-                var _iteratorNormalCompletion19 = true;
-                var _didIteratorError19 = false;
-                var _iteratorError19 = undefined;
+                var _iteratorNormalCompletion20 = true;
+                var _didIteratorError20 = false;
+                var _iteratorError20 = undefined;
 
                 try {
-                    for (var _iterator19 = Util.getSortedObjectKeyList(armGroupList, smeltInfo[armClass])[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
-                        var armGroup = _step19.value;
+                    for (var _iterator20 = Util.getSortedObjectKeyList(armGroupList, smeltInfo[armClass])[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+                        var armGroup = _step20.value;
 
                         armGroupNum++;
                         var _smeltInfo$armClass$a = smeltInfo[armClass][armGroup],
@@ -4669,16 +4751,16 @@ var smeltArms = function smeltArms(_ref2) {
                         resultDetailStat += '&nbsp;&nbsp;\u3010' + armGroup + '\u3011 <i>\u88C5\u5907<ins>-' + num + '</ins></i> <i>' + armClass + '\u7ECF\u9A8C<em>+' + exp.toLocaleString() + '</em></i><br>';
                     }
                 } catch (err) {
-                    _didIteratorError19 = true;
-                    _iteratorError19 = err;
+                    _didIteratorError20 = true;
+                    _iteratorError20 = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion19 && _iterator19.return) {
-                            _iterator19.return();
+                        if (!_iteratorNormalCompletion20 && _iterator20.return) {
+                            _iterator20.return();
                         }
                     } finally {
-                        if (_didIteratorError19) {
-                            throw _iteratorError19;
+                        if (_didIteratorError20) {
+                            throw _iteratorError20;
                         }
                     }
                 }
@@ -4690,16 +4772,16 @@ var smeltArms = function smeltArms(_ref2) {
                 Log.push('熔炼装备', '\u5171\u6709`' + armClassNum + '`\u4E2A\u3010`' + armClass + '`\u3011\u88C5\u5907\u7194\u70BC\u6210\u529F', { gain: gain, pay: { '装备': -armClassNum } });
             }
         } catch (err) {
-            _didIteratorError18 = true;
-            _iteratorError18 = err;
+            _didIteratorError19 = true;
+            _iteratorError19 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion18 && _iterator18.return) {
-                    _iterator18.return();
+                if (!_iteratorNormalCompletion19 && _iterator19.return) {
+                    _iterator19.return();
                 }
             } finally {
-                if (_didIteratorError18) {
-                    throw _iteratorError18;
+                if (_didIteratorError19) {
+                    throw _iteratorError19;
                 }
             }
         }
@@ -4896,27 +4978,27 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
     (0, _Config.read)();
 
     var itemTypesOptionHtml = '';
-    var _iteratorNormalCompletion20 = true;
-    var _didIteratorError20 = false;
-    var _iteratorError20 = undefined;
+    var _iteratorNormalCompletion21 = true;
+    var _didIteratorError21 = false;
+    var _iteratorError21 = undefined;
 
     try {
-        for (var _iterator20 = itemTypeList.slice(6)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-            var itemName = _step20.value;
+        for (var _iterator21 = itemTypeList.slice(6)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+            var itemName = _step21.value;
 
             itemTypesOptionHtml += '<option>' + itemName + '</option>';
         }
     } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
+        _didIteratorError21 = true;
+        _iteratorError21 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion20 && _iterator20.return) {
-                _iterator20.return();
+            if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                _iterator21.return();
             }
         } finally {
-            if (_didIteratorError20) {
-                throw _iteratorError20;
+            if (_didIteratorError21) {
+                throw _iteratorError21;
             }
         }
     }
@@ -4956,11 +5038,11 @@ var showBatchUseAndSellItemsDialog = function showBatchUseAndSellItemsDialog(typ
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-var useItems = function useItems(_ref4) {
-    var typeList = _ref4.typeList,
-        safeId = _ref4.safeId,
-        _ref4$nextActionEnabl = _ref4.nextActionEnabled,
-        nextActionEnabled = _ref4$nextActionEnabl === undefined ? false : _ref4$nextActionEnabl;
+var useItems = function useItems(_ref6) {
+    var typeList = _ref6.typeList,
+        safeId = _ref6.safeId,
+        _ref6$nextActionEnabl = _ref6.nextActionEnabled,
+        nextActionEnabled = _ref6$nextActionEnabl === undefined ? false : _ref6$nextActionEnabl;
 
     var totalSuccessNum = 0,
         totalValidNum = 0,
@@ -5046,9 +5128,9 @@ var useItems = function useItems(_ref4) {
 
         index = 0;
         $(document).clearQueue('UseItems');
-        $.each(itemList, function (i, _ref5) {
-            var itemId = _ref5.itemId,
-                itemName = _ref5.itemName;
+        $.each(itemList, function (i, _ref7) {
+            var itemId = _ref7.itemId,
+                itemName = _ref7.itemName;
 
             $(document).queue('UseItems', function () {
                 return use(itemId, itemName, itemList.length);
@@ -5095,13 +5177,13 @@ var useItems = function useItems(_ref4) {
 
         var itemTypeNum = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion21 = true;
-        var _didIteratorError21 = false;
-        var _iteratorError21 = undefined;
+        var _iteratorNormalCompletion22 = true;
+        var _didIteratorError22 = false;
+        var _iteratorError22 = undefined;
 
         try {
-            for (var _iterator21 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-                var itemName = _step21.value;
+            for (var _iterator22 = Util.getSortedObjectKeyList(typeList, useInfo)[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+                var itemName = _step22.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -5112,29 +5194,29 @@ var useItems = function useItems(_ref4) {
                 if (stat['无效道具'] === 0) delete stat['无效道具'];
                 if (!$.isEmptyObject(stat)) {
                     resultStat += '\u3010Lv.' + itemLevel + '\uFF1A' + itemName + '\u3011 <i>\u9053\u5177<ins>-' + successNum + '</ins></i> ';
-                    var _iteratorNormalCompletion22 = true;
-                    var _didIteratorError22 = false;
-                    var _iteratorError22 = undefined;
+                    var _iteratorNormalCompletion23 = true;
+                    var _didIteratorError23 = false;
+                    var _iteratorError23 = undefined;
 
                     try {
-                        for (var _iterator22 = Util.entries(stat)[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-                            var _step22$value = _slicedToArray(_step22.value, 2),
-                                key = _step22$value[0],
-                                num = _step22$value[1];
+                        for (var _iterator23 = Util.entries(stat)[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
+                            var _step23$value = _slicedToArray(_step23.value, 2),
+                                key = _step23$value[0],
+                                num = _step23$value[1];
 
                             resultStat += '<i>' + key + '<em>+' + num + '</em></i> ';
                         }
                     } catch (err) {
-                        _didIteratorError22 = true;
-                        _iteratorError22 = err;
+                        _didIteratorError23 = true;
+                        _iteratorError23 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion22 && _iterator22.return) {
-                                _iterator22.return();
+                            if (!_iteratorNormalCompletion23 && _iterator23.return) {
+                                _iterator23.return();
                             }
                         } finally {
-                            if (_didIteratorError22) {
-                                throw _iteratorError22;
+                            if (_didIteratorError23) {
+                                throw _iteratorError23;
                             }
                         }
                     }
@@ -5144,16 +5226,16 @@ var useItems = function useItems(_ref4) {
                 }
             }
         } catch (err) {
-            _didIteratorError21 = true;
-            _iteratorError21 = err;
+            _didIteratorError22 = true;
+            _iteratorError22 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion21 && _iterator21.return) {
-                    _iterator21.return();
+                if (!_iteratorNormalCompletion22 && _iterator22.return) {
+                    _iterator22.return();
                 }
             } finally {
-                if (_didIteratorError21) {
-                    throw _iteratorError21;
+                if (_didIteratorError22) {
+                    throw _iteratorError22;
                 }
             }
         }
@@ -5180,11 +5262,11 @@ var useItems = function useItems(_ref4) {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-var sellItems = function sellItems(_ref6) {
-    var typeList = _ref6.typeList,
-        safeId = _ref6.safeId,
-        _ref6$nextActionEnabl = _ref6.nextActionEnabled,
-        nextActionEnabled = _ref6$nextActionEnabl === undefined ? false : _ref6$nextActionEnabl;
+var sellItems = function sellItems(_ref8) {
+    var typeList = _ref8.typeList,
+        safeId = _ref8.safeId,
+        _ref8$nextActionEnabl = _ref8.nextActionEnabled,
+        nextActionEnabled = _ref8$nextActionEnabl === undefined ? false : _ref8$nextActionEnabl;
 
     var successNum = 0,
         index = 0;
@@ -5253,9 +5335,9 @@ var sellItems = function sellItems(_ref6) {
 
         index = 0;
         $(document).clearQueue('SellItems');
-        $.each(itemList, function (i, _ref7) {
-            var itemId = _ref7.itemId,
-                itemName = _ref7.itemName;
+        $.each(itemList, function (i, _ref9) {
+            var itemId = _ref9.itemId,
+                itemName = _ref9.itemName;
 
             $(document).queue('SellItems', function () {
                 return sell(itemId, itemName, itemList.length);
@@ -5287,13 +5369,13 @@ var sellItems = function sellItems(_ref6) {
         var itemTypeNum = 0,
             totalSell = 0;
         var resultStat = '';
-        var _iteratorNormalCompletion23 = true;
-        var _didIteratorError23 = false;
-        var _iteratorError23 = undefined;
+        var _iteratorNormalCompletion24 = true;
+        var _didIteratorError24 = false;
+        var _iteratorError24 = undefined;
 
         try {
-            for (var _iterator23 = Util.getSortedObjectKeyList(typeList, sellInfo)[Symbol.iterator](), _step23; !(_iteratorNormalCompletion23 = (_step23 = _iterator23.next()).done); _iteratorNormalCompletion23 = true) {
-                var itemName = _step23.value;
+            for (var _iterator24 = Util.getSortedObjectKeyList(typeList, sellInfo)[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
+                var itemName = _step24.value;
 
                 itemTypeNum++;
                 var itemLevel = getLevelByName(itemName);
@@ -5306,16 +5388,16 @@ var sellItems = function sellItems(_ref6) {
                 Log.push('出售道具', '\u5171\u6709`' + num + '`\u4E2A\u3010`Lv.' + itemLevel + '\uFF1A' + itemName + '`\u3011\u9053\u5177\u51FA\u552E\u6210\u529F', { gain: { 'KFB': _sell }, pay: { '道具': -num } });
             }
         } catch (err) {
-            _didIteratorError23 = true;
-            _iteratorError23 = err;
+            _didIteratorError24 = true;
+            _iteratorError24 = err;
         } finally {
             try {
-                if (!_iteratorNormalCompletion23 && _iterator23.return) {
-                    _iterator23.return();
+                if (!_iteratorNormalCompletion24 && _iterator24.return) {
+                    _iterator24.return();
                 }
             } finally {
-                if (_didIteratorError23) {
-                    throw _iteratorError23;
+                if (_didIteratorError24) {
+                    throw _iteratorError24;
                 }
             }
         }
@@ -5429,44 +5511,17 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
                     }
 
                     var msgStat = '';
-                    var _iteratorNormalCompletion24 = true;
-                    var _didIteratorError24 = false;
-                    var _iteratorError24 = undefined;
-
-                    try {
-                        for (var _iterator24 = Util.entries(gain)[Symbol.iterator](), _step24; !(_iteratorNormalCompletion24 = (_step24 = _iterator24.next()).done); _iteratorNormalCompletion24 = true) {
-                            var _step24$value = _slicedToArray(_step24.value, 2),
-                                _key = _step24$value[0],
-                                value = _step24$value[1];
-
-                            msgStat += '<i>' + _key + '<em>+' + value.toLocaleString() + '</em></i>';
-                        }
-                    } catch (err) {
-                        _didIteratorError24 = true;
-                        _iteratorError24 = err;
-                    } finally {
-                        try {
-                            if (!_iteratorNormalCompletion24 && _iterator24.return) {
-                                _iterator24.return();
-                            }
-                        } finally {
-                            if (_didIteratorError24) {
-                                throw _iteratorError24;
-                            }
-                        }
-                    }
-
                     var _iteratorNormalCompletion25 = true;
                     var _didIteratorError25 = false;
                     var _iteratorError25 = undefined;
 
                     try {
-                        for (var _iterator25 = Util.entries(pay)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+                        for (var _iterator25 = Util.entries(gain)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
                             var _step25$value = _slicedToArray(_step25.value, 2),
-                                _key2 = _step25$value[0],
+                                _key = _step25$value[0],
                                 value = _step25$value[1];
 
-                            msgStat += '<i>' + _key2 + '<ins>' + value.toLocaleString() + '</ins></i>';
+                            msgStat += '<i>' + _key + '<em>+' + value.toLocaleString() + '</em></i>';
                         }
                     } catch (err) {
                         _didIteratorError25 = true;
@@ -5479,6 +5534,33 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
                         } finally {
                             if (_didIteratorError25) {
                                 throw _iteratorError25;
+                            }
+                        }
+                    }
+
+                    var _iteratorNormalCompletion26 = true;
+                    var _didIteratorError26 = false;
+                    var _iteratorError26 = undefined;
+
+                    try {
+                        for (var _iterator26 = Util.entries(pay)[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
+                            var _step26$value = _slicedToArray(_step26.value, 2),
+                                _key2 = _step26$value[0],
+                                value = _step26$value[1];
+
+                            msgStat += '<i>' + _key2 + '<ins>' + value.toLocaleString() + '</ins></i>';
+                        }
+                    } catch (err) {
+                        _didIteratorError26 = true;
+                        _iteratorError26 = err;
+                    } finally {
+                        try {
+                            if (!_iteratorNormalCompletion26 && _iterator26.return) {
+                                _iterator26.return();
+                            }
+                        } finally {
+                            if (_didIteratorError26) {
+                                throw _iteratorError26;
                             }
                         }
                     }
@@ -5526,13 +5608,13 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
         });
     };
 
-    var _iteratorNormalCompletion26 = true;
-    var _didIteratorError26 = false;
-    var _iteratorError26 = undefined;
+    var _iteratorNormalCompletion27 = true;
+    var _didIteratorError27 = false;
+    var _iteratorError27 = undefined;
 
     try {
-        for (var _iterator26 = buyItemIdList[Symbol.iterator](), _step26; !(_iteratorNormalCompletion26 = (_step26 = _iterator26.next()).done); _iteratorNormalCompletion26 = true) {
-            var value = _step26.value;
+        for (var _iterator27 = buyItemIdList[Symbol.iterator](), _step27; !(_iteratorNormalCompletion27 = (_step27 = _iterator27.next()).done); _iteratorNormalCompletion27 = true) {
+            var value = _step27.value;
 
             if (!/^\d+(\|\d+)*$/.test(value)) continue;
             var arr = value.split('|').filter(function (id) {
@@ -5543,16 +5625,16 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
             }
         }
     } catch (err) {
-        _didIteratorError26 = true;
-        _iteratorError26 = err;
+        _didIteratorError27 = true;
+        _iteratorError27 = err;
     } finally {
         try {
-            if (!_iteratorNormalCompletion26 && _iterator26.return) {
-                _iterator26.return();
+            if (!_iteratorNormalCompletion27 && _iterator27.return) {
+                _iterator27.return();
             }
         } finally {
-            if (_didIteratorError26) {
-                throw _iteratorError26;
+            if (_didIteratorError27) {
+                throw _iteratorError27;
             }
         }
     }
@@ -6956,15 +7038,22 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
 
-    var _$armArea$html$split = $armArea.html().split('（装备中）'),
-        _$armArea$html$split2 = _slicedToArray(_$armArea$html$split, 3),
-        _$armArea$html$split3 = _$armArea$html$split2[1],
-        weaponInfoHtml = _$armArea$html$split3 === undefined ? '' : _$armArea$html$split3,
-        _$armArea$html$split4 = _$armArea$html$split2[2],
-        armorInfoHtml = _$armArea$html$split4 === undefined ? '' : _$armArea$html$split4;
+    var armHtml = $armArea.html();
+    if (armHtml.includes('（装备中）')) {
+        var _armHtml$split = armHtml.split('<br><br>'),
+            _armHtml$split2 = _slicedToArray(_armHtml$split, 1),
+            armInfoHtml = _armHtml$split2[0];
 
-    currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-    currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+        var _armInfoHtml$split = armInfoHtml.split('（装备中）'),
+            _armInfoHtml$split2 = _slicedToArray(_armInfoHtml$split, 3),
+            _armInfoHtml$split2$ = _armInfoHtml$split2[1],
+            weaponInfoHtml = _armInfoHtml$split2$ === undefined ? '' : _armInfoHtml$split2$,
+            _armInfoHtml$split2$2 = _armInfoHtml$split2[2],
+            armorInfoHtml = _armInfoHtml$split2$2 === undefined ? '' : _armInfoHtml$split2$2;
+
+        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+    } else return;
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -7087,7 +7176,25 @@ var handlePointsArea = function handlePointsArea() {
     $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
-    $armArea.html(Item.handleUselessSubProperties($armArea.html()));
+    var _$armArea$html$split = $armArea.html().split('<br><br>', 2),
+        _$armArea$html$split2 = _slicedToArray(_$armArea$html$split, 2),
+        armInfoHtml = _$armArea$html$split2[0],
+        _$armArea$html$split3 = _$armArea$html$split2[1],
+        finalAddAdditionHtml = _$armArea$html$split3 === undefined ? '' : _$armArea$html$split3;
+
+    var _armInfoHtml$split3 = armInfoHtml.split('（装备中）'),
+        _armInfoHtml$split4 = _slicedToArray(_armInfoHtml$split3, 3),
+        _armInfoHtml$split4$ = _armInfoHtml$split4[1],
+        weaponInfoHtml = _armInfoHtml$split4$ === undefined ? '' : _armInfoHtml$split4$,
+        _armInfoHtml$split4$2 = _armInfoHtml$split4[2],
+        armorInfoHtml = _armInfoHtml$split4$2 === undefined ? '' : _armInfoHtml$split4$2;
+
+    var newArmHtml = '';
+    if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+    if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+    if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+    $armArea.html(newArmHtml);
+
     $('\n<tr>\n  <td>\n    \u88C5\u5907ID\u548C\u5907\u6CE8\n    <span class="pd_cfg_tips" title="\u53EF\u70B9\u51FB\u53F3\u8FB9\u7684\u201C\u66F4\u6362\u88C5\u5907\u201D\u6309\u94AE\uFF0C\u4E5F\u53EF\u624B\u52A8\u586B\u5199\u88C5\u5907ID\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u66F4\u6362\u88C5\u5907\u3002\n\u5F53\u6587\u672C\u6846\u5185\u7684\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u65F6\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u5C06\u4F1A\u81EA\u52A8\u66F4\u6362\u88C5\u5907\uFF08\u70B9\u51FB\u201C\u4FEE\u6539\u70B9\u6570\u5206\u914D\u201D\u6309\u94AE\u53EA\u4F1A\u4FEE\u6539\u70B9\u6570\u800C\u4E0D\u4F1A\u66F4\u6362\u88C5\u5907\uFF09\u3002">[?]</span>\n  </td>\n  <td>\n    <input class="pd_arm_input" name="weaponId" type="text" value="" maxlength="15" title="\u6B66\u5668ID" placeholder="\u6B66\u5668ID" style="width: 70px;">\n    <input class="pd_arm_input" name="weaponMemo" type="text" value="" maxlength="20" title="\u6B66\u5668\u5907\u6CE8" placeholder="\u6B66\u5668\u5907\u6CE8" style="width: 80px;">\n    <input class="pd_arm_input" name="armorId" type="text" value="" maxlength="15" title="\u62A4\u7532ID" placeholder="\u62A4\u7532ID" style="width: 70px;">\n    <input class="pd_arm_input" name="armorMemo" type="text" value="" maxlength="20" title="\u62A4\u7532\u5907\u6CE8" placeholder="\u62A4\u7532\u5907\u6CE8" style="width: 80px;">\n    <a class="pd_btn_link" data-name="changeArm" href="#" title="\u66F4\u6362\u5F53\u524D\u88C5\u5907">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
         e.preventDefault();
         addOrChangeArm(0);
@@ -7537,19 +7644,19 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
                 var elem = _step2.value;
 
                 var $elem = $(elem);
-                var _name = $elem.attr('name');
+                var name = $elem.attr('name');
                 var value = $.trim($elem.val());
                 if ($elem.is('.pd_point')) {
                     value = parseInt(value);
                     if (!value || value < 0) return;
                 } else {
                     if (!value) continue;
-                    if (_name === 'weaponId' || _name === 'armorId') {
+                    if (name === 'weaponId' || name === 'armorId') {
                         value = parseInt(value);
                         if (!value || value < 0) return;
                     }
                 }
-                points[getPointNameByFieldName(_name)] = value;
+                points[getPointNameByFieldName(name)] = value;
             }
         } catch (err) {
             _didIteratorError2 = true;
@@ -8137,7 +8244,27 @@ var updateLootInfo = exports.updateLootInfo = function updateLootInfo() {
 
         var armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
         if (armHtml.includes('（装备中）')) {
-            $armArea.html(Item.handleUselessSubProperties(armHtml));
+            var _armHtml$split3 = armHtml.split('<br><br>', 2),
+                _armHtml$split4 = _slicedToArray(_armHtml$split3, 2),
+                armInfoHtml = _armHtml$split4[0],
+                _armHtml$split4$ = _armHtml$split4[1],
+                finalAddAdditionHtml = _armHtml$split4$ === undefined ? '' : _armHtml$split4$;
+
+            var _armInfoHtml$split5 = armInfoHtml.split('（装备中）'),
+                _armInfoHtml$split6 = _slicedToArray(_armInfoHtml$split5, 3),
+                _armInfoHtml$split6$ = _armInfoHtml$split6[1],
+                weaponInfoHtml = _armInfoHtml$split6$ === undefined ? '' : _armInfoHtml$split6$,
+                _armInfoHtml$split6$2 = _armInfoHtml$split6[2],
+                armorInfoHtml = _armInfoHtml$split6$2 === undefined ? '' : _armInfoHtml$split6$2;
+
+            var newArmHtml = '';
+            if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+            if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+            if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+            $armArea.html(newArmHtml);
+
+            currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+            currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
         }
 
         var propertiesHtml = $properties.html();
@@ -8145,17 +8272,6 @@ var updateLootInfo = exports.updateLootInfo = function updateLootInfo() {
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
         $properties.find('.pd_arm_level').trigger('change');
-
-        var _$armArea$html$split5 = $armArea.html().split('（装备中）'),
-            _$armArea$html$split6 = _slicedToArray(_$armArea$html$split5, 3),
-            _$armArea$html$split7 = _$armArea$html$split6[1],
-            weaponInfoHtml = _$armArea$html$split7 === undefined ? '' : _$armArea$html$split7,
-            _$armArea$html$split8 = _$armArea$html$split6[2],
-            armorInfoHtml = _$armArea$html$split8 === undefined ? '' : _$armArea$html$split8;
-
-        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
-
         $points.find('.pd_point').trigger('change');
 
         if (typeof callback === 'function') callback();
@@ -8417,7 +8533,7 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
                     var elem = _step11.value;
 
                     var $elem = $(elem);
-                    var _name2 = $elem.attr('name');
+                    var name = $elem.attr('name');
                     var value = null;
                     value = $.trim($elem.val());
                     if ($elem.is('.pd_point')) {
@@ -8425,12 +8541,12 @@ var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(cal
                         if (!value || value < 0) return;
                     } else {
                         if (!value) continue;
-                        if (_name2 === 'weaponId' || _name2 === 'armorId') {
+                        if (name === 'weaponId' || name === 'armorId') {
                             value = parseInt(value);
                             if (!value || value < 0) return;
                         }
                     }
-                    points[getPointNameByFieldName(_name2)] = value;
+                    points[getPointNameByFieldName(name)] = value;
                 }
             } catch (err) {
                 _didIteratorError11 = true;
@@ -8650,21 +8766,11 @@ var showAddOrChangeArmDialog = function showAddOrChangeArmDialog(type, armHtml) 
     var dialogName = 'pd' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog';
     if ($('#' + dialogName).length > 0) return;
 
-    var html = '\n<div class="pd_cfg_main" style="padding: 0;">\n  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">\n    <tbody>\n      <tr hidden><td colspan="3" class="kf_fw_ig_title1">\u6211\u7684\u88C5\u5907\u80CC\u5305</td></tr>\n      <tr><td width="10%">\u88C5\u5907</td><td width="10%">\u7194\u70BC</td><td width="80%">\u540D\u79F0</td></tr>\n      ' + armHtml + '\n      <tr><td colspan="3"><span style="color:#00f;">\u4E0D\u663E\u793A\u8D85\u8FC710\u4EF6\u4EE5\u4E0A\u7684\u7269\u54C1\uFF0C\u5982\u7269\u54C1\u8D85\u8FC710\u4EF6\uFF0C\u8BF7\u7194\u70BC\u6389\u591A\u4F59\u7684\u5373\u53EF\u5168\u90E8\u663E\u793A\u3002</span></td></tr>\n    </tbody>\n  </table>\n</div>\n<div class="pd_cfg_btns">\n  <label>\n    <input name="sortArmsByGroupEnabled" type="checkbox" ' + (Config.sortArmsByGroupEnabled ? 'checked' : '') + '> \u5206\u7EC4\u6392\u5217</input>\n    <span class="pd_cfg_tips" title="\u5206\u7EC4\u6392\u5217\u88C5\u5907">[?]</span>\n  </label>\n  ' + (type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : '') + '\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main" style="padding: 0;">\n  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">\n    <tbody>\n      <tr hidden><td colspan="3" class="kf_fw_ig_title1">\u6211\u7684\u88C5\u5907\u80CC\u5305</td></tr>\n      <tr><td width="10%">\u88C5\u5907</td><td width="10%">\u7194\u70BC</td><td width="80%">\u540D\u79F0</td></tr>\n      ' + armHtml + '\n      <tr><td colspan="3"><span style="color:#00f;">\u4E0D\u663E\u793A\u8D85\u8FC710\u4EF6\u4EE5\u4E0A\u7684\u7269\u54C1\uFF0C\u5982\u7269\u54C1\u8D85\u8FC710\u4EF6\uFF0C\u8BF7\u7194\u70BC\u6389\u591A\u4F59\u7684\u5373\u53EF\u5168\u90E8\u663E\u793A\u3002</span></td></tr>\n    </tbody>\n  </table>\n</div>\n<div class="pd_cfg_btns">\n  ' + (type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : '') + '\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
     var $dialog = Dialog.create(dialogName, (type === 1 ? '加入' : '更换') + '\u88C5\u5907', html, 'min-width: 820px; z-index: 1003;');
     var $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
-    $dialog.find('[name="sortArmsByGroupEnabled"]').click(function () {
-        var checked = $(this).prop('checked');
-        if (Config[name] !== checked) {
-            (0, _Config.read)();
-            Config.sortArmsByGroupEnabled = checked;
-            (0, _Config.write)();
-        }
-        if (checked) {
-            Item.sortArmsByGroup($armArea);
-        }
-    });
+    Item.addCommonArmsButton($dialog.find('.pd_cfg_btns'), $armArea);
     if (type === 1) {
         $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
             $dialog.fadeOut('fast');
@@ -10871,7 +10977,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1001; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .9);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .9); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1001; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .7);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .7); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');

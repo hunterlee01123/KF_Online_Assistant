@@ -549,6 +549,8 @@ export const handleArmArea = function ($armArea, type = 0) {
     if (type === 1) {
         $armArea.find('a[data-name="equip"]').attr('data-name', 'add').text('加入');
     }
+
+    Script.runFunc('Item.handleArmArea_after_', {$armArea, type});
 };
 
 /**
@@ -851,7 +853,7 @@ const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
   <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
-  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息" hidden>显示最终加成</button><!-- 临时禁用 -->
+  <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
@@ -866,21 +868,22 @@ const addArmsButton = function () {
         .click(function () {
             if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
             Msg.destroy();
-            let oriEquippedArmId = 0;
-            let armIdList = [];
-            $armArea.find('td[id^="wp_"]').each(function () {
+            let oriEquippedArmList = [];
+            let armList = [];
+            $armArea.find('tr[data-id]').each(function () {
                 let $this = $(this);
-                let id = parseInt($this.parent('tr').data('id'));
-                if (id) {
-                    armIdList.push(id);
+                let armId = parseInt($this.data('id'));
+                let armClass = $this.data('class');
+                if (armId && armClass) {
+                    armList.push({armId, armClass});
                 }
-                if ($this.parent('tr').hasClass('pd_arm_equipped')) {
-                    oriEquippedArmId = id;
+                if ($this.hasClass('pd_arm_equipped')) {
+                    oriEquippedArmList.push({armId, armClass});
                 }
             });
-            if (!oriEquippedArmId && !confirm('当前页面未发现有已装备的武器，显示最终加成信息后将用最后一件武器进行装备，是否继续？')) return;
-            if (armIdList.length > 0) {
-                showArmsFinalAddition(armIdList, oriEquippedArmId, safeId);
+            if (oriEquippedArmList.length < 2 && !confirm('显示最终加成信息后，未在当前页面上出现的已使用的某类别的装备将使用该页面上的最后一件装备，是否继续？')) return;
+            if (armList.length > 0) {
+                showArmsFinalAddition(armList, oriEquippedArmList, safeId);
             }
         }).end().find('[name="smeltSelectArms"]')
         .click(function () {
@@ -950,19 +953,21 @@ export const addCommonArmsButton = function ($area, $armArea) {
 
 /**
  * 显示装备最终加成信息
- * @param {number[]} armIdList 装备ID列表
- * @param {number} oriEquippedArmId 原先的装备ID
+ * @param {Object[]} armList 装备列表
+ * @param {Object[]} oriEquippedArmList 原先的装备列表
  * @param {string} safeId SafeID
  */
-const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
+const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
     let index = 0;
 
     /**
      * 装备
      * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
      * @param {boolean} isComplete 是否操作完成
+     * @param {function} callback 回调函数
      */
-    const equip = function (armId, isComplete = false) {
+    const equip = function ({armId, armClass}, isComplete = false, callback = null) {
         $.ajax({
             type: 'POST',
             url: 'kf_fw_ig_mybpdt.php',
@@ -970,54 +975,61 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
             let msg = Util.removeHtmlTag(html);
-            console.log(`装备ID[${armId}]：${msg.replace('\n', ' ')}`);
-            if (isComplete) return;
-            if (!/装备完毕/.test(msg)) index++;
-            if (index >= armIdList.length) {
+            console.log(`【装备ID[${armId}]，装备类别[${armClass}]】：${msg.replace('\n', ' ')}`);
+            if (isComplete) {
+                if (typeof callback === 'function') callback();
+                return;
+            }
+            if (!/装备完毕/.test(msg)) {
+                index++;
+            }
+            if (index >= armList.length) {
                 complete();
                 return;
             }
             if (!/装备完毕/.test(msg)) {
-                setTimeout(() => equip(armIdList[index]), Const.minActionInterval);
+                setTimeout(() => equip(armList[index]), Const.minActionInterval);
             }
             else {
-                setTimeout(() => getFinalAddition(armId), Const.defAjaxInterval);
+                setTimeout(() => getFinalAddition({armId, armClass}), Const.defAjaxInterval);
             }
-        }).fail(() => setTimeout(() => equip(armId), Const.minActionInterval));
+        }).fail(() => setTimeout(() => equip({armId, armClass}, isComplete, callback), Const.minActionInterval));
     };
 
     /**
      * 获取当前装备的最终加成
+     * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
      */
-    const getFinalAddition = function (armId) {
+    const getFinalAddition = function ({armId, armClass}) {
         $.ajax({
             type: 'GET',
             url: 'kf_fw_ig_index.php?t=' + $.now(),
             timeout: Const.defAjaxTimeout,
         }).done(function (html) {
-            $wait.find('.pd_countdown').text(armIdList.length - (index + 1));
+            $wait.find('.pd_countdown').text(armList.length - (index + 1));
             if ($wait.data('stop')) {
                 complete();
                 return;
             }
 
-            let matches = />(最终加成：[^<>]+)</.exec(html);
+            let matches = armClass === '武器' ? />(攻击伤害\+[^<>]+)</.exec(html) : />(受伤回血\+[^<>]+)</.exec(html);
             if (matches) {
                 let info = matches[1];
-                console.log(`装备ID[${armId}]：${info}`);
-                let $armInfo = $armArea.find(`td[id="wp_${armId}"]`).parent('tr').find('td:nth-child(3)');
+                console.log(`【装备ID[${armId}]，装备类别[${armClass}]】：${info}`);
+                let $armInfo = $armArea.find(`tr[data-id="${armId}"]`).find('td:nth-child(3)');
                 $armInfo.find('.pd_final_addition_info').remove();
-                $armInfo.append(`<span class="pd_final_addition_info"><br>${info}</span>`);
+                $armInfo.append(`<span class="pd_final_addition_info" title="最终加成：${info}"><br>最终加成：${info}</span>`);
             }
 
             index++;
-            if (index >= armIdList.length) {
+            if (index >= armList.length) {
                 complete();
                 return;
             }
-            setTimeout(() => equip(armIdList[index]), Const.minActionInterval);
-            Script.runFunc('Item.showArmsFinalAddition_show_', armId);
-        }).fail(() => setTimeout(() => getFinalAddition(armId), Const.defAjaxInterval));
+            setTimeout(() => equip(armList[index]), Const.minActionInterval);
+            Script.runFunc('Item.showArmsFinalAddition_show_', {armId, armClass});
+        }).fail(() => setTimeout(() => getFinalAddition({armId, armClass}), Const.defAjaxInterval));
     };
 
     /**
@@ -1025,17 +1037,26 @@ const showArmsFinalAddition = function (armIdList, oriEquippedArmId, safeId) {
      */
     const complete = function () {
         Msg.remove($wait);
-        if (oriEquippedArmId) {
-            setTimeout(() => equip(oriEquippedArmId, true), Const.minActionInterval);
+        if (oriEquippedArmList.length > 0) {
+            let $wait = Msg.wait('<strong>正在还原为之前的装备&hellip;</strong>');
+            setTimeout(() => equip(oriEquippedArmList[0], true, function () {
+                if (!oriEquippedArmList[1]) {
+                    Msg.remove($wait);
+                    return;
+                }
+                setTimeout(() => equip(oriEquippedArmList[1], true, function () {
+                    Msg.remove($wait);
+                }), Const.minActionInterval);
+            }), Const.minActionInterval);
         }
         Script.runFunc('Item.showArmsFinalAddition_complete_');
     };
 
     let $wait = Msg.wait(
-        `<strong>正在获取装备最终加成信息&hellip;</strong><i>剩余：<em class="pd_countdown">${armIdList.length}</em></i>` +
+        `<strong>正在获取装备最终加成信息&hellip;</strong><i>剩余：<em class="pd_countdown">${armList.length}</em></i>` +
         `<a class="pd_stop_action" href="#">停止操作</a>`
     );
-    equip(armIdList[0]);
+    equip(armList[0]);
 };
 
 /**
