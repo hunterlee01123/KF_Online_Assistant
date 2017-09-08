@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        增强提交优秀帖
-// @version     1.0
+// @version     1.1
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13719455
@@ -27,9 +27,10 @@
                 return false;
             }
         });
+        if ($('.pd_good_post_mark').length > 0) flag = true;
         if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
 
-        $floor.css({ 'outline': '3px solid #f00', 'outline-offset': '-3px' });
+        $floor.addClass('pd_good_post_mark').css({ 'outline': '3px solid #f00', 'outline-offset': '-3px' });
 
         try {
             eval($this.data('onclick'));
