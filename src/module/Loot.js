@@ -83,9 +83,14 @@ export const enhanceLootIndexPage = function () {
     itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
     armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
 
-    let [, weaponInfoHtml = '', armorInfoHtml = ''] = $armArea.html().split('（装备中）');
-    currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-    currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+    let armHtml = $armArea.html();
+    if (armHtml.includes('（装备中）')) {
+        let [armInfoHtml] = armHtml.split('<br><br>');
+        let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
+        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+    }
+    else return;
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -228,7 +233,14 @@ const handlePointsArea = function () {
         .after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
     $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
 
-    $armArea.html(Item.handleUselessSubProperties($armArea.html()));
+    let [armInfoHtml, finalAddAdditionHtml = ''] = $armArea.html().split('<br><br>', 2);
+    let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
+    let newArmHtml = '';
+    if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+    if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+    if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+    $armArea.html(newArmHtml);
+
     $(`
 <tr>
   <td>
@@ -1267,7 +1279,16 @@ export const updateLootInfo = function (callback = null) {
 
         let armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
         if (armHtml.includes('（装备中）')) {
-            $armArea.html(Item.handleUselessSubProperties(armHtml));
+            let [armInfoHtml, finalAddAdditionHtml = ''] = armHtml.split('<br><br>', 2);
+            let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
+            let newArmHtml = '';
+            if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+            if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+            if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+            $armArea.html(newArmHtml);
+
+            currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+            currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
         }
 
         let propertiesHtml = $properties.html();
@@ -1275,11 +1296,6 @@ export const updateLootInfo = function (callback = null) {
         itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
         armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
         $properties.find('.pd_arm_level').trigger('change');
-
-        let [, weaponInfoHtml = '', armorInfoHtml = ''] = $armArea.html().split('（装备中）');
-        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
-
         $points.find('.pd_point').trigger('change');
 
         if (typeof callback === 'function') callback();
@@ -1742,6 +1758,9 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
         }
         if (checked) {
             Item.sortArmsByGroup($armArea);
+        }
+        else {
+            Item.sortArmsById($armArea);
         }
     });
     if (type === 1) {

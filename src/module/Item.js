@@ -557,7 +557,22 @@ export const handleArmArea = function ($armArea, type = 0) {
  */
 export const sortArmsByGroup = function ($armArea) {
     for (let armGroup of armGroupList) {
-        $armArea.find(`tr[data-group="${armGroup}"]`).insertBefore($armArea.find('tr[data-id]:first'));
+        $armArea.find(`tr[data-group="${armGroup}"]`).insertAfter($armArea.find('tr:nth-child(2)'));
+    }
+};
+
+/**
+ * 按ID顺序排列装备
+ * @param {jQuery} $armArea 装备区域节点
+ */
+export const sortArmsById = function ($armArea) {
+    let armIdList = [];
+    $armArea.find('tr[data-id]').each(function () {
+        armIdList.push(parseInt($(this).data('id')));
+    });
+    armIdList.sort((a, b) => a - b);
+    for (let armId of armIdList) {
+        $armArea.find(`tr[data-id="${armId}"]`).insertAfter($armArea.find('tr:nth-child(2)'));
     }
 };
 
@@ -711,7 +726,10 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
         Dialog.close(dialogName);
     });
 
-    $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
+
+    if (armInfo['类别'] !== '护甲') {
+        $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
+    }
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -722,7 +740,10 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
 // 装备属性关键词列表
 const armPropertyKeyList = new Map([
     ['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'],
-    ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD']
+    ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD'],
+    ['被攻击回血100+', '回血'], ['获得无护甲魔法盾500+', '护盾'], ['每减少5%生命值获得额外意志', '加防'], ['反弹对方实际伤害15%+', '反伤'],
+    ['减少来自暴击的伤害10%+', '暴减'], ['减少来自技能的伤害10%+', '技减'],
+    ['回血', '回血'], ['护盾', '护盾'], ['加防', '加防'], ['反伤', '反伤'], ['暴减', '暴减'], ['技减', '技减'],
 ]);
 
 /**
@@ -851,6 +872,9 @@ const addArmsButton = function () {
         if (checked) {
             sortArmsByGroup($armArea);
         }
+        else {
+            sortArmsById($armArea);
+        }
     }).end().find('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
         .end().find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
         .end().find('[name="copyWeaponParameterSetting"]')
@@ -867,6 +891,7 @@ const addArmsButton = function () {
             if (!armInfoList.length) return;
             let copyData = '';
             for (let {id, info} of armInfoList) {
+                if (info['类别'] === '护甲') continue;
                 copyData += getWeaponParameterSetting(id, info) + '\n\n';
             }
             $this.data('copy-text', copyData.trim());
