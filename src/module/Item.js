@@ -850,56 +850,12 @@ export const handleUselessSubProperties = function (html) {
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <label>
-    <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
-    <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
-  </label>
-  <button name="selectAll" type="button" title="全选">全选</button>
-  <button name="selectInverse" type="button" title="反选">反选</button>
-  <button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
   <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
   <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息" hidden>显示最终加成</button><!-- 临时禁用 -->
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="sortArmsByGroupEnabled"]').click(function () {
-        let checked = $(this).prop('checked');
-        if (Config[name] !== checked) {
-            readConfig();
-            Config.sortArmsByGroupEnabled = checked;
-            writeConfig();
-        }
-        if (checked) {
-            sortArmsByGroup($armArea);
-        }
-        else {
-            sortArmsById($armArea);
-        }
-    }).end().find('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
-        .end().find('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
-        .end().find('[name="copyWeaponParameterSetting"]')
-        .click(function () {
-            let $this = $(this);
-            let armInfoList = [];
-            $armArea.find('input[name="armCheck"]:checked').each(function () {
-                let $this = $(this);
-                let id = parseInt($this.val());
-                let html = $this.closest('tr').find('> td:nth-child(3)').html();
-                if (!html) return;
-                armInfoList.push({id: id, info: getArmInfo(html)});
-            });
-            if (!armInfoList.length) return;
-            let copyData = '';
-            for (let {id, info} of armInfoList) {
-                if (info['类别'] === '护甲') continue;
-                copyData += getWeaponParameterSetting(id, info) + '\n\n';
-            }
-            $this.data('copy-text', copyData.trim());
-            console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
-            if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
-                alert('你的浏览器不支持复制，请打开Web控制台查看');
-            }
-        }).end().find('[name="clearArmsMemo"]')
+`).insertAfter($armArea).find('[name="clearArmsMemo"]')
         .click(function () {
             if (!confirm('是否清除所有装备的备注？')) return;
             readConfig();
@@ -935,6 +891,61 @@ const addArmsButton = function () {
             if (!idList.length || !confirm(`是否熔炼所选的${idList.length}件装备？`)) return;
             smeltArms({idList, safeId});
         }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
+    addCommonArmsButton($('.pd_item_btns[data-name="handleArmBtns"]'), $armArea);
+};
+
+/**
+ * 添加装备相关的通用按钮
+ * @param {jQuery} $area 要添加的区域节点
+ * @param {jQuery} $armArea 装备区域节点
+ */
+export const addCommonArmsButton = function ($area, $armArea) {
+    $(`
+<label>
+  <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
+  <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
+</label>
+<button name="selectAll" type="button" title="全选" style="min-width: inherit;">全选</button>
+<button name="selectInverse" type="button" title="反选" style="min-width: inherit;">反选</button>
+<button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
+`).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config[name] !== checked) {
+            readConfig();
+            Config.sortArmsByGroupEnabled = checked;
+            writeConfig();
+        }
+        if (checked) {
+            sortArmsByGroup($armArea);
+        }
+        else {
+            sortArmsById($armArea);
+        }
+    }).end().filter('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
+        .end().filter('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
+        .end().filter('[name="copyWeaponParameterSetting"]')
+        .click(function () {
+            let $this = $(this);
+            let armInfoList = [];
+            $armArea.find('input[name="armCheck"]:checked').each(function () {
+                let $this = $(this);
+                let id = parseInt($this.val());
+                let html = $this.closest('tr').find('> td:nth-child(3)').html();
+                if (!html) return;
+                armInfoList.push({id: id, info: getArmInfo(html)});
+            });
+            if (!armInfoList.length) return;
+            let copyData = '';
+            for (let {id, info} of armInfoList) {
+                if (info['类别'] === '护甲') continue;
+                copyData += getWeaponParameterSetting(id, info) + '\n\n';
+            }
+            $this.data('copy-text', copyData.trim());
+            console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
+            if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
+                alert('你的浏览器不支持复制，请打开Web控制台查看');
+            }
+        });
 };
 
 /**

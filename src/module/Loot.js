@@ -1739,30 +1739,13 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
   </table>
 </div>
 <div class="pd_cfg_btns">
-  <label>
-    <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
-    <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
-  </label>
   ${type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : ''}
   <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1003;');
     let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
 
-    $dialog.find('[name="sortArmsByGroupEnabled"]').click(function () {
-        let checked = $(this).prop('checked');
-        if (Config[name] !== checked) {
-            readConfig();
-            Config.sortArmsByGroupEnabled = checked;
-            writeConfig();
-        }
-        if (checked) {
-            Item.sortArmsByGroup($armArea);
-        }
-        else {
-            Item.sortArmsById($armArea);
-        }
-    });
+    Item.addCommonArmsButton($dialog.find('.pd_cfg_btns'), $armArea);
     if (type === 1) {
         $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
             $dialog.fadeOut('fast');
