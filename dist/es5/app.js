@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.7';
+var version = '11.7.1';
 
 /**
  * 导出模块
@@ -3098,7 +3098,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getWeaponParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3959,7 +3959,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
     if ($('#' + dialogName).length > 0) return;
     Msg.destroy();
 
-    var html = '\n<div class="pd_cfg_main">\n  <div style="width: 550px; margin-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #99f;">\n    <span style="color: ' + armInfo['颜色'] + '">' + armInfo['名称'] + '</span> - ' + armInfo['描述'] + '\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u88C5\u5907ID\uFF1A<input name="armId" type="text" value="' + armId + '" style="width: 100px;" readonly></label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armId]" href="#">\u590D\u5236</a>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E\uFF1A</label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">\u590D\u5236</a><br>\n    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\n      \u88C5\u5907\u5907\u6CE8\uFF1A<input name="armMemo" type="text" maxlength="100" style="width: 200px;">\n    </label>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="saveMemo" type="submit">\u4FDD\u5B58\u5907\u6CE8</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div style="width: 550px; margin-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #99f;">\n    <span style="color: ' + armInfo['颜色'] + '">' + armInfo['名称'] + '</span> - ' + armInfo['描述'] + '\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u88C5\u5907ID\uFF1A<input name="armId" type="text" value="' + armId + '" style="width: 100px;" readonly></label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armId]" href="#">\u590D\u5236</a>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\u88C5\u5907\u53C2\u6570\u8BBE\u7F6E\uFF1A</label>\n    <a class="pd_btn_link" data-name="copy" data-target="[name=armParameterSetting]" href="#">\u590D\u5236</a><br>\n    <textarea name="armParameterSetting" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>\n  </div>\n  <div style="margin-top: 5px;">\n    <label>\n      \u88C5\u5907\u5907\u6CE8\uFF1A<input name="armMemo" type="text" maxlength="100" style="width: 200px;">\n    </label>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <button name="saveMemo" type="submit">\u4FDD\u5B58\u5907\u6CE8</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
     var $dialog = Dialog.create(dialogName, '装备信息', html, 'z-index: 1003;');
 
     $dialog.on('click', 'a[data-name="copy"]', function (e) {
@@ -3985,9 +3985,7 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
         Dialog.close(dialogName);
     });
 
-    if (armInfo['类别'] !== '护甲') {
-        $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
-    }
+    $dialog.find('textarea[name="armParameterSetting"]').val(getArmParameterSetting(armId, armInfo));
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -3996,15 +3994,15 @@ var showArmInfoDialog = function showArmInfoDialog(armId, armInfo, $armArea) {
 };
 
 // 装备属性关键词列表
-var armPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD'], ['被攻击回血100+', '回血'], ['获得无护甲魔法盾500+', '护盾'], ['每减少5%生命值获得额外意志', '加防'], ['反弹对方实际伤害15%+', '反伤'], ['减少来自暴击的伤害10%+', '暴减'], ['减少来自技能的伤害10%+', '技减'], ['回血', '回血'], ['护盾', '护盾'], ['加防', '加防'], ['反伤', '反伤'], ['暴减', '暴减'], ['技减', '技减']]);
+var armPropertyKeyList = new Map([['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'], ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD'], ['被攻击回血100+', 'HEL'], ['获得无护甲魔法盾500+', 'SLD'], ['每减少5%生命值获得额外意志', 'AMR'], ['反弹对方实际伤害15%+', 'RFL'], ['减少来自暴击的伤害10%+', 'CRD'], ['减少来自技能的伤害10%+', 'SRD'], ['回血', 'HEL'], ['护盾', 'SLD'], ['加防', 'AMR'], ['反伤', 'RFL'], ['暴减', 'CRD'], ['技减', 'SRD']]);
 
 /**
- * 获取计算器武器参数设置
- * @param {number} armInfo 装备ID
+ * 获取计算器装备参数设置
+ * @param {number} armId 装备ID
  * @param {{}} armInfo 装备信息
- * @returns {string} 武器参数设置
+ * @returns {string} 装备参数设置
  */
-var getWeaponParameterSetting = exports.getWeaponParameterSetting = function getWeaponParameterSetting(armId, armInfo) {
+var getArmParameterSetting = exports.getArmParameterSetting = function getArmParameterSetting(armId, armInfo) {
     var info = {
         '组别': '',
         '装备ID': '',
@@ -4016,11 +4014,11 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         '所有的从属性': ''
     };
 
-    var groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff']]);
+    var groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff'], ['布甲', 'Cloth'], ['皮甲', 'Leather'], ['铠甲', 'Plate']]);
     info['组别'] = groupKeyList.get(armInfo['组别']);
     info['装备ID'] = '#' + armId;
 
-    var smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
+    var smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT'], ['冰霜神秘', 'IMT'], ['尖刺神秘', 'TMT'], ['仇恨神秘', 'HMT']]);
     var _iteratorNormalCompletion10 = true;
     var _didIteratorError10 = false;
     var _iteratorError10 = undefined;
@@ -4085,7 +4083,7 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
+    var subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT'], ['体质', 'VIT'], ['灵活', 'DEX'], ['意志', 'RES']]);
     var _iteratorNormalCompletion12 = true;
     var _didIteratorError12 = false;
     var _iteratorError12 = undefined;
@@ -4117,7 +4115,7 @@ var getWeaponParameterSetting = exports.getWeaponParameterSetting = function get
         }
     }
 
-    var content = '\n[\u7EC4\u522B] [\u88C5\u5907ID]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027] \n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
+    var content = '\n[\u7EC4\u522B] [\u88C5\u5907ID]\n[\u795E\u79D8\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u795E\u79D8\u5C5E\u6027]\n[\u4E3B\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4E3B\u5C5E\u6027]\n[\u4ECE\u5C5E\u6027\u6570\u91CF] [\u6240\u6709\u7684\u4ECE\u5C5E\u6027]\n'.trim();
     var _iteratorNormalCompletion13 = true;
     var _didIteratorError13 = false;
     var _iteratorError13 = undefined;
@@ -4255,7 +4253,7 @@ var addArmsButton = function addArmsButton() {
                 oriEquippedArmList.push({ armId: armId, armClass: armClass });
             }
         });
-        if (oriEquippedArmList.length < 2 && !confirm('显示最终加成信息后，未在当前页面上出现的已使用的某类别的装备将使用该页面上的最后一件装备，是否继续？')) return;
+        if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
         if (armList.length > 0) {
             showArmsFinalAddition(armList, oriEquippedArmList, safeId);
         }
@@ -4278,7 +4276,7 @@ var addArmsButton = function addArmsButton() {
  * @param {jQuery} $armArea 装备区域节点
  */
 var addCommonArmsButton = exports.addCommonArmsButton = function addCommonArmsButton($area, $armArea) {
-    $('\n<label>\n  <input name="sortArmsByGroupEnabled" type="checkbox" ' + (Config.sortArmsByGroupEnabled ? 'checked' : '') + '> \u5206\u7EC4\u6392\u5217</input>\n  <span class="pd_cfg_tips" title="\u5206\u7EC4\u6392\u5217\u88C5\u5907">[?]</span>\n</label>\n<button name="selectAll" type="button" title="\u5168\u9009" style="min-width: inherit;">\u5168\u9009</button>\n<button name="selectInverse" type="button" title="\u53CD\u9009" style="min-width: inherit;">\u53CD\u9009</button>\n<button name="copyWeaponParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u6B66\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u6B66\u5668\u53C2\u6570</button>\n').prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
+    $('\n<label>\n  <input name="sortArmsByGroupEnabled" type="checkbox" ' + (Config.sortArmsByGroupEnabled ? 'checked' : '') + '> \u5206\u7EC4\u6392\u5217</input>\n  <span class="pd_cfg_tips" title="\u5206\u7EC4\u6392\u5217\u88C5\u5907">[?]</span>\n</label>\n<button name="selectAll" type="button" title="\u5168\u9009" style="min-width: inherit;">\u5168\u9009</button>\n<button name="selectInverse" type="button" title="\u53CD\u9009" style="min-width: inherit;">\u53CD\u9009</button>\n<button name="copyArmParameterSetting" type="button" title="\u590D\u5236\u6240\u9009\u88C5\u5907\u7684\u8BA1\u7B97\u5668\u53C2\u6570\u8BBE\u7F6E">\u590D\u5236\u88C5\u5907\u53C2\u6570</button>\n').prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
         var checked = $(this).prop('checked');
         if (Config[name] !== checked) {
             (0, _Config.read)();
@@ -4294,7 +4292,7 @@ var addCommonArmsButton = exports.addCommonArmsButton = function addCommonArmsBu
         return Util.selectAll($armArea.find('input[name="armCheck"]'));
     }).end().filter('[name="selectInverse"]').click(function () {
         return Util.selectInverse($armArea.find('input[name="armCheck"]'));
-    }).end().filter('[name="copyWeaponParameterSetting"]').click(function () {
+    }).end().filter('[name="copyArmParameterSetting"]').click(function () {
         var $this = $(this);
         var armInfoList = [];
         $armArea.find('input[name="armCheck"]:checked').each(function () {
@@ -4316,8 +4314,7 @@ var addCommonArmsButton = exports.addCommonArmsButton = function addCommonArmsBu
                     id = _step16$value.id,
                     info = _step16$value.info;
 
-                if (info['类别'] === '护甲') continue;
-                copyData += getWeaponParameterSetting(id, info) + '\n\n';
+                copyData += getArmParameterSetting(id, info) + '\n\n';
             }
         } catch (err) {
             _didIteratorError16 = true;
@@ -4335,8 +4332,8 @@ var addCommonArmsButton = exports.addCommonArmsButton = function addCommonArmsBu
         }
 
         $this.data('copy-text', copyData.trim());
-        console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
-        if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
+        console.log('所选装备的计算器装备参数设置：\n\n' + copyData.trim());
+        if (!Util.copyText($this, '所选装备的计算器装备参数设置已复制')) {
             alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
     });
@@ -7692,9 +7689,12 @@ var addLevelPointListSelect = function addLevelPointListSelect() {
  * @param $points
  */
 var fillPoints = function fillPoints($points) {
-    var value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之前的字符串将被当作装备备注）'));
+    var value = $.trim(prompt('\u8BF7\u8F93\u5165\u4EE5\u4EFB\u610F\u5B57\u7B26\u5206\u9694\u7684\u4E00\u4E32\u6570\u5B57\uFF0C\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D\uFF08\u6CE8\uFF1A5\u4F4D\u6570\u4EE5\u4E0A\u7684\u6570\u5B57\u5C06\u88AB\u5F53\u4F5C\u88C5\u5907ID\uFF09\uFF1A\n\u53EF\u76F4\u63A5\u8F93\u5165\u8BA1\u7B97\u5668\u8F93\u51FA\u7684\u70B9\u6570\u8BBE\u7F6E\uFF0C\u4F8B\uFF1A1 100 50 5 25 1  0 3 Bow #1234567 Cloth #7654321'));
     if (!value) return;
-    var pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d{5,})/.exec(value);
+    var pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+(\S+)\s+#(\d+)\s+(\S+)\s+#(\d+)/.exec(value);
+    if (!pointsMatches) {
+        pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d+)/.exec(value);
+    }
     if (pointsMatches) {
         $points.find('.pd_point').each(function (index) {
             if (index + 1 < pointsMatches.length) {
@@ -7703,15 +7703,20 @@ var fillPoints = function fillPoints($points) {
         });
         $points.find('input[name="weaponMemo"]').val(pointsMatches[7]);
         $points.find('input[name="weaponId"]').val(pointsMatches[8]);
+        if (pointsMatches[9] && pointsMatches[10]) {
+            $points.find('input[name="armorMemo"]').val(pointsMatches[9]);
+            $points.find('input[name="armorId"]').val(pointsMatches[10]);
+        }
     } else {
         var numMatches = value.match(/\b\d{1,4}\b/g);
         if (!numMatches) return;
         $points.find('.pd_point').each(function (index) {
             if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');else return false;
         });
-        var weaponIdMatches = /\b(\d{5,})\b/.exec(value);
-        if (weaponIdMatches) {
-            $points.find('input[name="weaponId"]').val(weaponIdMatches[1]);
+        var armIdMatches = value.match(/\b(\d{5,})\b/g);
+        for (var i in armIdMatches) {
+            var name = parseInt(i) === 0 ? 'weaponId' : 'armorId';
+            $points.find('input[name="' + name + '"]').val(armIdMatches[i]);
         }
     }
 };

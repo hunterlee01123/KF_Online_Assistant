@@ -688,9 +688,9 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
     <a class="pd_btn_link" data-name="copy" data-target="[name=armId]" href="#">复制</a>
   </div>
   <div style="margin-top: 5px;">
-    <label>武器参数设置：</label>
-    <a class="pd_btn_link" data-name="copy" data-target="[name=armInfo]" href="#">复制</a><br>
-    <textarea name="armInfo" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>
+    <label>装备参数设置：</label>
+    <a class="pd_btn_link" data-name="copy" data-target="[name=armParameterSetting]" href="#">复制</a><br>
+    <textarea name="armParameterSetting" rows="6" style="width: 550px;" wrap="off" style="white-space: pre;" readonly></textarea>
   </div>
   <div style="margin-top: 5px;">
     <label>
@@ -728,10 +728,7 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
         Dialog.close(dialogName);
     });
 
-
-    if (armInfo['类别'] !== '护甲') {
-        $dialog.find('textarea[name="armInfo"]').val(getWeaponParameterSetting(armId, armInfo));
-    }
+    $dialog.find('textarea[name="armParameterSetting"]').val(getArmParameterSetting(armId, armInfo));
     if (Config.armsMemo[armId]) {
         $dialog.find('input[name="armMemo"]').val(Config.armsMemo[armId]);
     }
@@ -743,18 +740,18 @@ const showArmInfoDialog = function (armId, armInfo, $armArea) {
 const armPropertyKeyList = new Map([
     ['增加攻击力', 'ATK'], ['增加暴击伤害', 'CRT'], ['增加技能伤害', 'SKL'], ['穿透对方意志', 'BRC'], ['生命夺取', 'LCH'], ['增加速度', 'SPD'],
     ['攻击', 'ATK'], ['暴击', 'CRT'], ['技能', 'SKL'], ['穿透', 'BRC'], ['吸血', 'LCH'], ['速度', 'SPD'],
-    ['被攻击回血100+', '回血'], ['获得无护甲魔法盾500+', '护盾'], ['每减少5%生命值获得额外意志', '加防'], ['反弹对方实际伤害15%+', '反伤'],
-    ['减少来自暴击的伤害10%+', '暴减'], ['减少来自技能的伤害10%+', '技减'],
-    ['回血', '回血'], ['护盾', '护盾'], ['加防', '加防'], ['反伤', '反伤'], ['暴减', '暴减'], ['技减', '技减'],
+    ['被攻击回血100+', 'HEL'], ['获得无护甲魔法盾500+', 'SLD'], ['每减少5%生命值获得额外意志', 'AMR'], ['反弹对方实际伤害15%+', 'RFL'],
+    ['减少来自暴击的伤害10%+', 'CRD'], ['减少来自技能的伤害10%+', 'SRD'],
+    ['回血', 'HEL'], ['护盾', 'SLD'], ['加防', 'AMR'], ['反伤', 'RFL'], ['暴减', 'CRD'], ['技减', 'SRD'],
 ]);
 
 /**
- * 获取计算器武器参数设置
- * @param {number} armInfo 装备ID
+ * 获取计算器装备参数设置
+ * @param {number} armId 装备ID
  * @param {{}} armInfo 装备信息
- * @returns {string} 武器参数设置
+ * @returns {string} 装备参数设置
  */
-export const getWeaponParameterSetting = function (armId, armInfo) {
+export const getArmParameterSetting = function (armId, armInfo) {
     let info = {
         '组别': '',
         '装备ID': '',
@@ -766,11 +763,11 @@ export const getWeaponParameterSetting = function (armId, armInfo) {
         '所有的从属性': '',
     };
 
-    let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff']]);
+    let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff'], ['布甲', 'Cloth'], ['皮甲', 'Leather'], ['铠甲', 'Plate']]);
     info['组别'] = groupKeyList.get(armInfo['组别']);
     info['装备ID'] = '#' + armId;
 
-    let smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT']]);
+    let smKeyList = new Map([['火神秘', 'FMT'], ['雷神秘', 'LMT'], ['风神秘', 'AMT'], ['冰霜神秘', 'IMT'], ['尖刺神秘', 'TMT'], ['仇恨神秘', 'HMT']]);
     for (let [key, value] of smKeyList) {
         if (key in armInfo) {
             info['神秘属性数量']++;
@@ -787,7 +784,9 @@ export const getWeaponParameterSetting = function (armId, armInfo) {
         }
     }
 
-    let subPropertyKeyList = new Map([['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT']]);
+    let subPropertyKeyList = new Map([
+        ['系数(x3)', 'COF'], ['力量', 'STR'], ['敏捷', 'AGI'], ['智力', 'INT'], ['体质', 'VIT'], ['灵活', 'DEX'], ['意志', 'RES']
+    ]);
     for (let value of armInfo['从属性']) {
         value = $.trim(value);
         if (!value) continue;
@@ -801,7 +800,7 @@ export const getWeaponParameterSetting = function (armId, armInfo) {
 
     let content = `
 [组别] [装备ID]
-[神秘属性数量] [所有的神秘属性] 
+[神秘属性数量] [所有的神秘属性]
 [主属性数量] [所有的主属性]
 [从属性数量] [所有的从属性]
 `.trim();
@@ -881,7 +880,7 @@ const addArmsButton = function () {
                     oriEquippedArmList.push({armId, armClass});
                 }
             });
-            if (oriEquippedArmList.length < 2 && !confirm('显示最终加成信息后，未在当前页面上出现的已使用的某类别的装备将使用该页面上的最后一件装备，是否继续？')) return;
+            if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
             if (armList.length > 0) {
                 showArmsFinalAddition(armList, oriEquippedArmList, safeId);
             }
@@ -910,7 +909,7 @@ export const addCommonArmsButton = function ($area, $armArea) {
 </label>
 <button name="selectAll" type="button" title="全选" style="min-width: inherit;">全选</button>
 <button name="selectInverse" type="button" title="反选" style="min-width: inherit;">反选</button>
-<button name="copyWeaponParameterSetting" type="button" title="复制所选装备的武器参数设置">复制武器参数</button>
+<button name="copyArmParameterSetting" type="button" title="复制所选装备的计算器参数设置">复制装备参数</button>
 `).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
         let checked = $(this).prop('checked');
         if (Config[name] !== checked) {
@@ -926,7 +925,7 @@ export const addCommonArmsButton = function ($area, $armArea) {
         }
     }).end().filter('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
         .end().filter('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
-        .end().filter('[name="copyWeaponParameterSetting"]')
+        .end().filter('[name="copyArmParameterSetting"]')
         .click(function () {
             let $this = $(this);
             let armInfoList = [];
@@ -940,12 +939,11 @@ export const addCommonArmsButton = function ($area, $armArea) {
             if (!armInfoList.length) return;
             let copyData = '';
             for (let {id, info} of armInfoList) {
-                if (info['类别'] === '护甲') continue;
-                copyData += getWeaponParameterSetting(id, info) + '\n\n';
+                copyData += getArmParameterSetting(id, info) + '\n\n';
             }
             $this.data('copy-text', copyData.trim());
-            console.log('所选装备的武器参数设置：\n\n' + copyData.trim());
-            if (!Util.copyText($this, '所选装备的武器参数设置已复制')) {
+            console.log('所选装备的计算器装备参数设置：\n\n' + copyData.trim());
+            if (!Util.copyText($this, '所选装备的计算器装备参数设置已复制')) {
                 alert('你的浏览器不支持复制，请打开Web控制台查看');
             }
         });

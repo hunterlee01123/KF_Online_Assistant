@@ -769,9 +769,13 @@ const addLevelPointListSelect = function () {
  * @param $points
  */
 const fillPoints = function ($points) {
-    let value = $.trim(prompt('请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中：\n（注：5位数以上的数字将被当作装备ID，其之前的字符串将被当作装备备注）'));
+    let value = $.trim(prompt(`请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中（注：5位数以上的数字将被当作装备ID）：
+可直接输入计算器输出的点数设置，例：1 100 50 5 25 1  0 3 Bow #1234567 Cloth #7654321`));
     if (!value) return;
-    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d{5,})/.exec(value);
+    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+(\S+)\s+#(\d+)\s+(\S+)\s+#(\d+)/.exec(value);
+    if (!pointsMatches) {
+        pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d+)/.exec(value);
+    }
     if (pointsMatches) {
         $points.find('.pd_point').each(function (index) {
             if (index + 1 < pointsMatches.length) {
@@ -780,6 +784,10 @@ const fillPoints = function ($points) {
         });
         $points.find('input[name="weaponMemo"]').val(pointsMatches[7]);
         $points.find('input[name="weaponId"]').val(pointsMatches[8]);
+        if (pointsMatches[9] && pointsMatches[10]) {
+            $points.find('input[name="armorMemo"]').val(pointsMatches[9]);
+            $points.find('input[name="armorId"]').val(pointsMatches[10]);
+        }
     }
     else {
         let numMatches = value.match(/\b\d{1,4}\b/g);
@@ -788,9 +796,10 @@ const fillPoints = function ($points) {
             if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');
             else return false;
         });
-        let weaponIdMatches = /\b(\d{5,})\b/.exec(value);
-        if (weaponIdMatches) {
-            $points.find('input[name="weaponId"]').val(weaponIdMatches[1]);
+        let armIdMatches = value.match(/\b(\d{5,})\b/g);
+        for (let i in armIdMatches) {
+            let name = parseInt(i) === 0 ? 'weaponId' : 'armorId';
+            $points.find(`input[name="${name}"]`).val(armIdMatches[i]);
         }
     }
 };
