@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        增强提交优秀帖
-// @version     1.1
+// @version     1.2
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13719455
@@ -9,28 +9,41 @@
 'use strict';
 (function () {
     if (location.pathname !== '/read.php') return;
+    $('head').append('<style>.pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }</style>');
 
     $('a[id^="cztz"]').attr('data-onclick', function () {
         return $(this).attr('onclick');
     }).removeAttr('onclick');
 
-    $('#alldiv').on('click', 'a[id^="cztz"]', function () {
+    $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
+        let $this = $(this);
+        let $floor = $(this).closest('.readlou').next().next('.readtext');
+        if ($this.data('highlight')) {
+            $floor.removeClass('pd_good_post_mark');
+            $this.removeData('highlight');
+        }
+        else {
+            $floor.addClass('pd_good_post_mark');
+            $this.data('highlight', true);
+        }
+    }).on('click', 'a[id^="cztz"]', function () {
         let $this = $(this);
         let $floor = $this.closest('div[id^="floor"]').next('.readtext');
-
         let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
         let flag = false;
         $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
-            if ($(this).closest('.readtext').find('.read_fds:contains("本帖为优秀帖")').length > 0) {
+            let $currentFloor = $(this).closest('.readtext');
+            if ($currentFloor.is($floor)) return;
+            if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
+                flag = true;
+                return false;
+            }
+            else if ($currentFloor.hasClass('pd_good_post_mark')) {
                 flag = true;
                 return false;
             }
         });
-        if ($('.pd_good_post_mark').length > 0) flag = true;
         if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
-
-        $floor.addClass('pd_good_post_mark').css({'outline': '3px solid #f00', 'outline-offset': '-3px'});
-
         try {
             eval($this.data('onclick'));
         }
