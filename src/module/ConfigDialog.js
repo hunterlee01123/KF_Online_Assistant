@@ -1367,7 +1367,7 @@ const showBuyItemTipsDialog = function () {
     在物品ID列表填入相应的物品ID，可自动购买所需的物品，每天最多可购买两次。<br>
     （即：只购买1种物品的话最多可购买2次；购买2种物品的话每种物品只能购买1次，合计2次）<br>
     <strong>各物品ID：</strong><br>
-    等级经验药丸：101、等级经验药丸（蛋）：102、修炼手册（武器）：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
+    <b>等级经验药丸</b>：101；<b>等级经验药丸（蛋）</b>：102；<b>修炼手册</b>：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
     <strong>格式：</strong><br>
     两次购买之间的物品ID请用<b>英文逗号</b>分隔；同一次购买的物品ID如用<b>竖线</b>分隔，表示前一种物品如费用不足，可自动更换为购买另一种物品。<br>
     <strong>例子：</strong><br>

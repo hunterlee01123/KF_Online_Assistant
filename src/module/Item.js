@@ -26,7 +26,7 @@ export const boxTypeList = ['普通盒子', '幸运盒子', '稀有盒子', '传
 // 装备类别列表
 export const armClassList = ['武器', '护甲', '项链'];
 // 装备组别列表
-export const armGroupList = ['长剑', '短弓', '法杖', '布甲', '皮甲', '铠甲'];
+export const armGroupList = ['长剑', '短弓', '法杖', '铠甲', '皮甲', '布甲'];
 // 装备种类列表
 export const armTypeList = ['普通的装备', '幸运的装备', '稀有的装备', '传奇的装备', '神秘的装备'];
 
@@ -49,6 +49,9 @@ export const init = function () {
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
 
+    if (Config.autoSaveArmsInfoEnabled) {
+        addSavedArmsInfo($armArea);
+    }
     handleArmArea($armArea);
     bindArmLinkClickEvent($armArea, safeId);
 
@@ -80,11 +83,23 @@ export const getNextObjects = function (sequence, callback = null) {
             let trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
             let $area = index === 1 ? $armArea : $itemArea;
             let addHtml = '';
+            let newArmsInfo = {};
             for (let i in trMatches) {
                 let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
                 if (!idMatches) continue;
-                if (!$area.has(`[id="wp_${idMatches[1]}"]`).length) {
+                let id = parseInt(idMatches[1]);
+                if (!$area.has(`[id="wp_${id}"]`).length) {
                     addHtml += trMatches[i];
+                }
+                if (index === 1) {
+                    newArmsInfo[id] = trMatches[i];
+                }
+            }
+            if (index === 1 && Config.autoSaveArmsInfoEnabled) {
+                let armsInfo = readArmsInfo();
+                if (!Util.deepEqual(armsInfo, newArmsInfo)) {
+                    $.extend(armsInfo, newArmsInfo);
+                    writeArmsInfo(armsInfo);
                 }
             }
             if (addHtml) {
@@ -141,10 +156,21 @@ const addBatchOpenBoxesLink = function () {
 const addOpenAllBoxesButton = function () {
     $(`
 <div class="pd_item_btns" data-name="openBoxesBtns">
+  <label>
+    <input name="autoSaveArmsInfoEnabled" type="checkbox" ${Config.autoSaveArmsInfoEnabled ? 'checked' : ''}> 保存装备信息</input>
+    <span class="pd_cfg_tips" title="在批量打开盒子时自动保存装备信息，可突破装备背包最多显示10件的限制">[?]</span>
+  </label>
   <button name="clearMsg" type="button" title="清除页面上所有的消息框">清除消息框</button>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
-`).insertAfter($boxArea).find('[name="clearMsg"]').click(Msg.destroy)
+`).insertAfter($boxArea).find('[name="autoSaveArmsInfoEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config.autoSaveArmsInfoEnabled !== checked) {
+            readConfig();
+            Config.autoSaveArmsInfoEnabled = checked;
+            writeConfig();
+        }
+    }).end().find('[name="clearMsg"]').click(Msg.destroy)
         .end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
     Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
@@ -503,6 +529,54 @@ const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false
     $(document).dequeue('OpenBoxes');
 };
 
+// 保存我的装备信息的键值名称
+const myArmsInfoName = Const.storagePrefix + 'myArmsInfo';
+
+/**
+ * 读取我的装备信息
+ * @returns {{}} 装备信息对象
+ */
+export const readArmsInfo = function () {
+    let info = {};
+    let options = Util.readData(myArmsInfoName + '_' + Info.uid);
+    if (!options) return info;
+    try {
+        options = JSON.parse(options);
+    }
+    catch (ex) {
+        return info;
+    }
+    if (!options || $.type(options) !== 'object') return info;
+    info = options;
+    return info;
+};
+
+/**
+ * 写入我的装备信息
+ * @param {{}} info 装备信息对象
+ */
+export const writeArmsInfo = info => Util.writeData(myArmsInfoName + '_' + Info.uid, JSON.stringify(info));
+
+/**
+ * 清除我的装备信息
+ */
+export const clearArmsInfo = () => Util.deleteData(myArmsInfoName + '_' + Info.uid);
+
+/**
+ * 添加已保存的我的装备信息
+ * @param {jQuery} $armArea 装备区域节点
+ */
+export const addSavedArmsInfo = function ($armArea) {
+    let armsInfo = readArmsInfo();
+    let addHtml = '';
+    for (let armId of Object.keys(armsInfo).reverse()) {
+        if (!$armArea.find(`[id="wp_${armId}"]`).length) {
+            addHtml += armsInfo[armId];
+        }
+    }
+    $armArea.find('> tbody > tr:last-child').before(addHtml);
+};
+
 /**
  * 处理装备区域
  * @param {jQuery} $armArea 装备区域节点
@@ -544,6 +618,9 @@ export const handleArmArea = function ($armArea, type = 0) {
 
     if (Config.sortArmsByGroupEnabled) {
         sortArmsByGroup($armArea);
+    }
+    else if (Config.autoSaveArmsInfoEnabled) {
+        sortArmsById($armArea);
     }
 
     if (type === 1) {
@@ -588,10 +665,11 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
     $armArea.on('click', 'a[data-name="equip"]', function () {
         let $this = $(this);
         let $tr = $this.closest('tr');
-        let id = parseInt($tr.data('id'));
+        let armId = parseInt($tr.data('id'));
         let armClass = $tr.data('class');
-        $.post('kf_fw_ig_mybpdt.php', `do=4&id=${id}&safeid=${safeId}`, function (html) {
-            if (/装备完毕/.test(html)) {
+        $.post('kf_fw_ig_mybpdt.php', `do=4&id=${armId}&safeid=${safeId}`, function (html) {
+            let msg = Util.removeHtmlTag(html);
+            if (/装备完毕/.test(msg)) {
                 $armArea.find(`.pd_arm_equipped[data-class="${armClass}"]`).removeClass('pd_arm_equipped');
                 $this.closest('tr').addClass('pd_arm_equipped');
                 if (type === 1) {
@@ -601,7 +679,7 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                         Dialog.close('pdChangeArmDialog');
                         let $armId = $('input[name="armId"]:first');
                         let $armMemo = $('input[name="armMemo"]:first');
-                        $armId.val(id);
+                        $armId.val(armId);
                         $armMemo.val($('#pdArmArea > span:first').text().trim());
                         $('.pd_arm_input').each(function () {
                             this.defaultValue = '';
@@ -610,7 +688,13 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                 }
             }
             else {
-                alert(Util.removeHtmlTag(html));
+                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                    let armsInfo = readArmsInfo();
+                    delete armsInfo[armId];
+                    writeArmsInfo(armsInfo);
+                    $armArea.find(`tr[data-id="${armId}"]`).replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                }
+                alert(msg);
             }
         });
     }).on('click', 'a[data-name="smelt"]', function () {
@@ -628,6 +712,12 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                 }
             }
             else {
+                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                    let armsInfo = readArmsInfo();
+                    delete armsInfo[armId];
+                    writeArmsInfo(armsInfo);
+                    $armArea.find(`tr[data-id="${armId}"]`).replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                }
                 alert(msg);
             }
         });
@@ -763,7 +853,7 @@ export const getArmParameterSetting = function (armId, armInfo) {
         '所有的从属性': '',
     };
 
-    let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff'], ['布甲', 'Cloth'], ['皮甲', 'Leather'], ['铠甲', 'Plate']]);
+    let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff'], ['铠甲', 'Plate'], ['皮甲', 'Leather'], ['布甲', 'Cloth']]);
     info['组别'] = groupKeyList.get(armInfo['组别']);
     info['装备ID'] = '#' + armId;
 
@@ -851,17 +941,25 @@ export const handleUselessSubProperties = function (html) {
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
+  <button name="clearArmsInfo" type="button" style="color: #f00;" title="清除已保存的装备信息及备注">清除信息</button>
   <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="clearArmsMemo"]')
+`).insertAfter($armArea).find('[name="clearArmsInfo"]')
         .click(function () {
-            if (!confirm('是否清除所有装备的备注？')) return;
-            readConfig();
-            Config.armsMemo = {};
-            writeConfig();
+            let type = parseInt(prompt('请输入要清除的装备信息类型（1：装备信息；2：装备备注）：'));
+            if (!type) return;
+            if (type === 2) {
+                readConfig();
+                Config.armsMemo = {};
+                writeConfig();
+                alert('所有装备的备注已被清除');
+            }
+            else {
+                clearArmsInfo();
+                alert('在本地保存的装备信息已被清除');
+            }
         })
         .end().find('[name="showArmsFinalAddition"]')
         .click(function () {
@@ -912,7 +1010,7 @@ export const addCommonArmsButton = function ($area, $armArea) {
 <button name="copyArmParameterSetting" type="button" title="复制所选装备的计算器参数设置">复制装备参数</button>
 `).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
         let checked = $(this).prop('checked');
-        if (Config[name] !== checked) {
+        if (Config.sortArmsByGroupEnabled !== checked) {
             readConfig();
             Config.sortArmsByGroupEnabled = checked;
             writeConfig();
@@ -1125,6 +1223,7 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
     let successNum = 0, index = 0;
     let smeltInfo = {};
     let isDeleteMemo = false;
+    let smeltedArmIdList = [];
 
     /**
      * 熔炼
@@ -1156,6 +1255,9 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
             if (armId in Config.armsMemo) {
                 isDeleteMemo = true;
                 delete Config.armsMemo[armId];
+            }
+            if (Config.autoSaveArmsInfoEnabled) {
+                smeltedArmIdList.push(armId);
             }
             if (!(armClass in smeltInfo)) smeltInfo[armClass] = {};
             if (!(armGroup in smeltInfo[armClass])) smeltInfo[armClass][armGroup] = {num: 0, exp: 0};
@@ -1284,6 +1386,13 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
         );
 
         if (isDeleteMemo) writeConfig();
+        if (Config.autoSaveArmsInfoEnabled) {
+            let armsInfo = readArmsInfo();
+            for (let armId of smeltedArmIdList) {
+                delete armsInfo[armId];
+            }
+            writeArmsInfo(armsInfo);
+        }
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
         if (nextActionEnabled) nextAction();
         Script.runFunc('Item.smeltArms_complete_');
@@ -1308,9 +1417,9 @@ export const getArmClassNameByGroupName = function (groupName) {
         case '短弓':
         case '法杖':
             return '武器';
-        case '布甲':
-        case '皮甲':
         case '铠甲':
+        case '皮甲':
+        case '布甲':
             return '护甲';
         default:
             return '';
@@ -1855,7 +1964,7 @@ export const buyItems = function (buyItemIdList, safeId) {
             case 102:
                 return '等级经验药丸（蛋）';
             case 103:
-                return '修炼手册（武器）';
+                return '修炼手册';
             default:
                 return '未知';
         }

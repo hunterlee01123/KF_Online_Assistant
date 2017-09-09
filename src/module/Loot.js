@@ -1027,8 +1027,8 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         $points.find('.pd_point, input[name="weaponId"], input[name="armorId"]').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
-            let value = $.trim($this.val());
-            if (value && this.defaultValue !== value) {
+            let value = parseInt($this.val());
+            if (value > 0 && this.defaultValue !== value) {
                 if (name === 'weaponId') isChangeWeapon = true;
                 else if (name === 'armorId') isChangeArmor = true;
                 else isChangePoints = true;
@@ -1796,6 +1796,8 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
             $(document).dequeue('ChangeArms');
         });
     }
+
+    Item.addSavedArmsInfo($armArea);
     Item.handleArmArea($armArea, type);
     Item.bindArmLinkClickEvent($armArea, safeId, 1);
 

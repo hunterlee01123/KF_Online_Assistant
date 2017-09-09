@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '11.7.1';
+const version = '11.8';
 
 /**
  * 导出模块
@@ -179,6 +179,7 @@ const init = function () {
         if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
     }
     else if (location.pathname === '/kf_growup.php') {
+        Other.addSmLevelFormula();
         Other.addAutoChangeIdColorButton();
     }
     else if (location.pathname === '/guanjianci.php') {

@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.7.1';
+const version = '11.8';
 
 /**
  * 导出模块
@@ -229,6 +229,7 @@ const init = function () {
     } else if (/\/personal\.php\?action=post/i.test(location.href)) {
         if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
     } else if (location.pathname === '/kf_growup.php') {
+        Other.addSmLevelFormula();
         Other.addAutoChangeIdColorButton();
     } else if (location.pathname === '/guanjianci.php') {
         Other.highlightUnReadAtTipsMsg();
@@ -1134,6 +1135,8 @@ const Config = exports.Config = {
 
     // 是否延长部分批量操作的时间间隔（如使用道具、打开盒子等），true：开启；false：关闭
     slowActionEnabled: false,
+    // 是否自动保存我的装备信息，true：开启；false：关闭
+    autoSaveArmsInfoEnabled: false,
     // 是否分组排列装备，true：开启；false：关闭
     sortArmsByGroupEnabled: false,
     // 装备备注，格式：{装备ID:'备注信息'}，例：{123456:'备注信息'}
@@ -2588,7 +2591,7 @@ const showBuyItemTipsDialog = function () {
     在物品ID列表填入相应的物品ID，可自动购买所需的物品，每天最多可购买两次。<br>
     （即：只购买1种物品的话最多可购买2次；购买2种物品的话每种物品只能购买1次，合计2次）<br>
     <strong>各物品ID：</strong><br>
-    等级经验药丸：101、等级经验药丸（蛋）：102、修炼手册（武器）：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
+    <b>等级经验药丸</b>：101；<b>等级经验药丸（蛋）</b>：102；<b>修炼手册</b>：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
     <strong>格式：</strong><br>
     两次购买之间的物品ID请用<b>英文逗号</b>分隔；同一次购买的物品ID如用<b>竖线</b>分隔，表示前一种物品如费用不足，可自动更换为购买另一种物品。<br>
     <strong>例子：</strong><br>
@@ -2704,8 +2707,6 @@ const Const = {
     tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
     // 存储临时点数分配记录列表的LocalStorage名称
     itemLogStorageName: storagePrefix + 'itemLog',
-    // 存储我的物品信息的LocalStorage名称
-    myObjectsInfoStorageName: storagePrefix + 'myObjectsInfo',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
@@ -3196,7 +3197,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3255,7 +3256,7 @@ const boxTypeList = exports.boxTypeList = ['普通盒子', '幸运盒子', '稀�
 // 装备类别列表
 const armClassList = exports.armClassList = ['武器', '护甲', '项链'];
 // 装备组别列表
-const armGroupList = exports.armGroupList = ['长剑', '短弓', '法杖', '布甲', '皮甲', '铠甲'];
+const armGroupList = exports.armGroupList = ['长剑', '短弓', '法杖', '铠甲', '皮甲', '布甲'];
 // 装备种类列表
 const armTypeList = exports.armTypeList = ['普通的装备', '幸运的装备', '稀有的装备', '传奇的装备', '神秘的装备'];
 
@@ -3275,6 +3276,9 @@ const init = exports.init = function () {
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
 
+    if (Config.autoSaveArmsInfoEnabled) {
+        addSavedArmsInfo($armArea);
+    }
     handleArmArea($armArea);
     bindArmLinkClickEvent($armArea, safeId);
 
@@ -3305,11 +3309,23 @@ const getNextObjects = exports.getNextObjects = function (sequence, callback = n
             let trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
             let $area = index === 1 ? $armArea : $itemArea;
             let addHtml = '';
+            let newArmsInfo = {};
             for (let i in trMatches) {
                 let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
                 if (!idMatches) continue;
-                if (!$area.has(`[id="wp_${idMatches[1]}"]`).length) {
+                let id = parseInt(idMatches[1]);
+                if (!$area.has(`[id="wp_${id}"]`).length) {
                     addHtml += trMatches[i];
+                }
+                if (index === 1) {
+                    newArmsInfo[id] = trMatches[i];
+                }
+            }
+            if (index === 1 && Config.autoSaveArmsInfoEnabled) {
+                let armsInfo = readArmsInfo();
+                if (!Util.deepEqual(armsInfo, newArmsInfo)) {
+                    $.extend(armsInfo, newArmsInfo);
+                    writeArmsInfo(armsInfo);
                 }
             }
             if (addHtml) {
@@ -3365,10 +3381,21 @@ const addBatchOpenBoxesLink = function () {
 const addOpenAllBoxesButton = function () {
     $(`
 <div class="pd_item_btns" data-name="openBoxesBtns">
+  <label>
+    <input name="autoSaveArmsInfoEnabled" type="checkbox" ${Config.autoSaveArmsInfoEnabled ? 'checked' : ''}> 保存装备信息</input>
+    <span class="pd_cfg_tips" title="在批量打开盒子时自动保存装备信息，可突破装备背包最多显示10件的限制">[?]</span>
+  </label>
   <button name="clearMsg" type="button" title="清除页面上所有的消息框">清除消息框</button>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
-`).insertAfter($boxArea).find('[name="clearMsg"]').click(Msg.destroy).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
+`).insertAfter($boxArea).find('[name="autoSaveArmsInfoEnabled"]').click(function () {
+        let checked = $(this).prop('checked');
+        if (Config.autoSaveArmsInfoEnabled !== checked) {
+            (0, _Config.read)();
+            Config.autoSaveArmsInfoEnabled = checked;
+            (0, _Config.write)();
+        }
+    }).end().find('[name="clearMsg"]').click(Msg.destroy).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
     Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
@@ -3699,6 +3726,53 @@ const openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = fals
     $(document).dequeue('OpenBoxes');
 };
 
+// 保存我的装备信息的键值名称
+const myArmsInfoName = _Const2.default.storagePrefix + 'myArmsInfo';
+
+/**
+ * 读取我的装备信息
+ * @returns {{}} 装备信息对象
+ */
+const readArmsInfo = exports.readArmsInfo = function () {
+    let info = {};
+    let options = Util.readData(myArmsInfoName + '_' + _Info2.default.uid);
+    if (!options) return info;
+    try {
+        options = JSON.parse(options);
+    } catch (ex) {
+        return info;
+    }
+    if (!options || $.type(options) !== 'object') return info;
+    info = options;
+    return info;
+};
+
+/**
+ * 写入我的装备信息
+ * @param {{}} info 装备信息对象
+ */
+const writeArmsInfo = exports.writeArmsInfo = info => Util.writeData(myArmsInfoName + '_' + _Info2.default.uid, JSON.stringify(info));
+
+/**
+ * 清除我的装备信息
+ */
+const clearArmsInfo = exports.clearArmsInfo = () => Util.deleteData(myArmsInfoName + '_' + _Info2.default.uid);
+
+/**
+ * 添加已保存的我的装备信息
+ * @param {jQuery} $armArea 装备区域节点
+ */
+const addSavedArmsInfo = exports.addSavedArmsInfo = function ($armArea) {
+    let armsInfo = readArmsInfo();
+    let addHtml = '';
+    for (let armId of Object.keys(armsInfo).reverse()) {
+        if (!$armArea.find(`[id="wp_${armId}"]`).length) {
+            addHtml += armsInfo[armId];
+        }
+    }
+    $armArea.find('> tbody > tr:last-child').before(addHtml);
+};
+
 /**
  * 处理装备区域
  * @param {jQuery} $armArea 装备区域节点
@@ -3738,6 +3812,8 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
 
     if (Config.sortArmsByGroupEnabled) {
         sortArmsByGroup($armArea);
+    } else if (Config.autoSaveArmsInfoEnabled) {
+        sortArmsById($armArea);
     }
 
     if (type === 1) {
@@ -3782,10 +3858,11 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
     $armArea.on('click', 'a[data-name="equip"]', function () {
         let $this = $(this);
         let $tr = $this.closest('tr');
-        let id = parseInt($tr.data('id'));
+        let armId = parseInt($tr.data('id'));
         let armClass = $tr.data('class');
-        $.post('kf_fw_ig_mybpdt.php', `do=4&id=${id}&safeid=${safeId}`, function (html) {
-            if (/装备完毕/.test(html)) {
+        $.post('kf_fw_ig_mybpdt.php', `do=4&id=${armId}&safeid=${safeId}`, function (html) {
+            let msg = Util.removeHtmlTag(html);
+            if (/装备完毕/.test(msg)) {
                 $armArea.find(`.pd_arm_equipped[data-class="${armClass}"]`).removeClass('pd_arm_equipped');
                 $this.closest('tr').addClass('pd_arm_equipped');
                 if (type === 1) {
@@ -3795,7 +3872,7 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
                         Dialog.close('pdChangeArmDialog');
                         let $armId = $('input[name="armId"]:first');
                         let $armMemo = $('input[name="armMemo"]:first');
-                        $armId.val(id);
+                        $armId.val(armId);
                         $armMemo.val($('#pdArmArea > span:first').text().trim());
                         $('.pd_arm_input').each(function () {
                             this.defaultValue = '';
@@ -3803,7 +3880,13 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
                     });
                 }
             } else {
-                alert(Util.removeHtmlTag(html));
+                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                    let armsInfo = readArmsInfo();
+                    delete armsInfo[armId];
+                    writeArmsInfo(armsInfo);
+                    $armArea.find(`tr[data-id="${armId}"]`).replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                }
+                alert(msg);
             }
         });
     }).on('click', 'a[data-name="smelt"]', function () {
@@ -3820,6 +3903,12 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
                     (0, _Config.write)();
                 }
             } else {
+                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                    let armsInfo = readArmsInfo();
+                    delete armsInfo[armId];
+                    writeArmsInfo(armsInfo);
+                    $armArea.find(`tr[data-id="${armId}"]`).replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                }
                 alert(msg);
             }
         });
@@ -3947,7 +4036,7 @@ const getArmParameterSetting = exports.getArmParameterSetting = function (armId,
         '所有的从属性': ''
     };
 
-    let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff'], ['布甲', 'Cloth'], ['皮甲', 'Leather'], ['铠甲', 'Plate']]);
+    let groupKeyList = new Map([['长剑', 'Sword'], ['短弓', 'Bow'], ['法杖', 'Staff'], ['铠甲', 'Plate'], ['皮甲', 'Leather'], ['布甲', 'Cloth']]);
     info['组别'] = groupKeyList.get(armInfo['组别']);
     info['装备ID'] = '#' + armId;
 
@@ -4032,16 +4121,23 @@ const handleUselessSubProperties = exports.handleUselessSubProperties = function
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="clearArmsMemo" type="button" style="color: #f00;" title="清除所有装备的备注">清除备注</button>
+  <button name="clearArmsInfo" type="button" style="color: #f00;" title="清除已保存的装备信息及备注">清除信息</button>
   <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="clearArmsMemo"]').click(function () {
-        if (!confirm('是否清除所有装备的备注？')) return;
-        (0, _Config.read)();
-        Config.armsMemo = {};
-        (0, _Config.write)();
+`).insertAfter($armArea).find('[name="clearArmsInfo"]').click(function () {
+        let type = parseInt(prompt('请输入要清除的装备信息类型（1：装备信息；2：装备备注）：'));
+        if (!type) return;
+        if (type === 2) {
+            (0, _Config.read)();
+            Config.armsMemo = {};
+            (0, _Config.write)();
+            alert('所有装备的备注已被清除');
+        } else {
+            clearArmsInfo();
+            alert('在本地保存的装备信息已被清除');
+        }
     }).end().find('[name="showArmsFinalAddition"]').click(function () {
         if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
         Msg.destroy();
@@ -4089,7 +4185,7 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
 <button name="copyArmParameterSetting" type="button" title="复制所选装备的计算器参数设置">复制装备参数</button>
 `).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
         let checked = $(this).prop('checked');
-        if (Config[name] !== checked) {
+        if (Config.sortArmsByGroupEnabled !== checked) {
             (0, _Config.read)();
             Config.sortArmsByGroupEnabled = checked;
             (0, _Config.write)();
@@ -4294,6 +4390,7 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
         index = 0;
     let smeltInfo = {};
     let isDeleteMemo = false;
+    let smeltedArmIdList = [];
 
     /**
      * 熔炼
@@ -4325,6 +4422,9 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
             if (armId in Config.armsMemo) {
                 isDeleteMemo = true;
                 delete Config.armsMemo[armId];
+            }
+            if (Config.autoSaveArmsInfoEnabled) {
+                smeltedArmIdList.push(armId);
             }
             if (!(armClass in smeltInfo)) smeltInfo[armClass] = {};
             if (!(armGroup in smeltInfo[armClass])) smeltInfo[armClass][armGroup] = { num: 0, exp: 0 };
@@ -4444,6 +4544,13 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
         Msg.show(`<strong>共有<em>${armGroupNum}</em>个组别中的<em>${successNum}</em>个装备熔炼成功</strong>${msgStat}`, -1);
 
         if (isDeleteMemo) (0, _Config.write)();
+        if (Config.autoSaveArmsInfoEnabled) {
+            let armsInfo = readArmsInfo();
+            for (let armId of smeltedArmIdList) {
+                delete armsInfo[armId];
+            }
+            writeArmsInfo(armsInfo);
+        }
         setTimeout(() => getNextObjects(2), _Const2.default.defAjaxInterval);
         if (nextActionEnabled) nextAction();
         Script.runFunc('Item.smeltArms_complete_');
@@ -4466,9 +4573,9 @@ const getArmClassNameByGroupName = exports.getArmClassNameByGroupName = function
         case '短弓':
         case '法杖':
             return '武器';
-        case '布甲':
-        case '皮甲':
         case '铠甲':
+        case '皮甲':
+        case '布甲':
             return '护甲';
         default:
             return '';
@@ -4967,7 +5074,7 @@ const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
             case 102:
                 return '等级经验药丸（蛋）';
             case 103:
-                return '修炼手册（武器）';
+                return '修炼手册';
             default:
                 return '未知';
         }
@@ -6764,8 +6871,8 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         $points.find('.pd_point, input[name="weaponId"], input[name="armorId"]').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
-            let value = $.trim($this.val());
-            if (value && this.defaultValue !== value) {
+            let value = parseInt($this.val());
+            if (value > 0 && this.defaultValue !== value) {
                 if (name === 'weaponId') isChangeWeapon = true;else if (name === 'armorId') isChangeArmor = true;else isChangePoints = true;
             }
         });
@@ -7490,6 +7597,8 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
             $(document).dequeue('ChangeArms');
         });
     }
+
+    Item.addSavedArmsInfo($armArea);
     Item.handleArmArea($armArea, type);
     Item.bindArmLinkClickEvent($armArea, safeId, 1);
 
@@ -8560,7 +8669,7 @@ const destroy = exports.destroy = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addSmLevelFormula = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _Info = require('./Info');
 
@@ -8826,6 +8935,13 @@ const addMsgSelectButton = exports.addMsgSelectButton = function () {
     }).parent().attr('colspan', 4).prev('td').attr('colspan', 3);
 
     $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('[type="button"][value="全选"]').click(() => Util.selectInverse($checkeds));
+};
+
+/**
+ * 添加神秘等级计算公式
+ */
+const addSmLevelFormula = exports.addSmLevelFormula = function () {
+    $('.gro_divlv, .gro_divhui').eq(0).closest('table').parent().prev().css('padding-bottom', '0').after('<div style="margin: 15px 0 20px; font-size: 14px; text-align: center; color: #f00;">神秘等级 = 神秘系数<sup>2</sup> + 贡献数值*10 + 发帖数量/100</div>');
 };
 
 /**
@@ -12645,7 +12761,12 @@ const readData = exports.readData = (key, storageType = _Info2.default.storageTy
  * @param {string} storageType 存储类型
  */
 const writeData = exports.writeData = (key, value, storageType = _Info2.default.storageType) => {
-    if (storageType === 'ByUid' || storageType === 'Global') GM_setValue(key, value);else localStorage.setItem(key, value);
+    try {
+        if (storageType === 'ByUid' || storageType === 'Global') GM_setValue(key, value);else localStorage.setItem(key, value);
+    } catch (ex) {
+        console.log(ex);
+        alert('写入数据失败，可能是浏览器不支持所设定的存储类型或localStorage超出限额');
+    }
 };
 
 /**

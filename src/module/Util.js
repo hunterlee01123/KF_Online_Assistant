@@ -583,8 +583,14 @@ export const readData = (key, storageType = Info.storageType) => {
  * @param {string} storageType 存储类型
  */
 export const writeData = (key, value, storageType = Info.storageType) => {
-    if (storageType === 'ByUid' || storageType === 'Global') GM_setValue(key, value);
-    else localStorage.setItem(key, value);
+    try {
+        if (storageType === 'ByUid' || storageType === 'Global') GM_setValue(key, value);
+        else localStorage.setItem(key, value);
+    }
+    catch (ex) {
+        console.log(ex);
+        alert('写入数据失败，可能是浏览器不支持所设定的存储类型或localStorage超出限额');
+    }
 };
 
 /**
