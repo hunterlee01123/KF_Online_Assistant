@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.8
+// @version     11.8.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.8';
+const version = '11.8.1';
 
 /**
  * 导出模块
@@ -6893,8 +6893,8 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         $points.find('.pd_point, input[name="weaponId"], input[name="armorId"]').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
-            let value = parseInt($this.val());
-            if (value > 0 && this.defaultValue !== value) {
+            let value = $.trim($this.val());
+            if (parseInt(value) > 0 && this.defaultValue !== value) {
                 if (name === 'weaponId') isChangeWeapon = true;else if (name === 'armorId') isChangeArmor = true;else isChangePoints = true;
             }
         });
