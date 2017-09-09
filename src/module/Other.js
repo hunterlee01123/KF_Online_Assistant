@@ -272,6 +272,15 @@ export const addMsgSelectButton = function () {
 };
 
 /**
+ * 添加神秘等级计算公式
+ */
+export const addSmLevelFormula = function () {
+    $('.gro_divlv, .gro_divhui').eq(0).closest('table').parent().prev().css('padding-bottom', '0').after(
+        '<div style="margin: 15px 0 20px; font-size: 14px; text-align: center; color: #f00;">神秘等级 = 神秘系数<sup>2</sup> + 贡献数值*10 + 发帖数量/100</div>'
+    );
+};
+
+/**
  * 添加自动更换ID颜色的按钮
  */
 export const addAutoChangeIdColorButton = function () {
