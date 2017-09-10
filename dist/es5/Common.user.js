@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.8.2
+// @version     11.8.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.8.2';
+var version = '11.8.3';
 
 /**
  * 导出模块
@@ -3857,6 +3857,18 @@ var addSavedArmsInfo = exports.addSavedArmsInfo = function addSavedArmsInfo($arm
 };
 
 /**
+ * 移除指定ID的已保存的装备信息
+ * @param armId 装备ID
+ * @param {jQuery} $armArea 装备区域节点
+ */
+var removeSavedArmInfo = function removeSavedArmInfo(armId, $armArea) {
+    var armsInfo = readArmsInfo();
+    delete armsInfo[armId];
+    writeArmsInfo(armsInfo);
+    $armArea.find('tr[data-id="' + armId + '"]').replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+};
+
+/**
  * 处理装备区域
  * @param {jQuery} $armArea 装备区域节点
  * @param {number} type 页面类型，0：我的物品页面；1：争夺首页点数分配对话框
@@ -4012,10 +4024,7 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
                 }
             } else {
                 if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
-                    var armsInfo = readArmsInfo();
-                    delete armsInfo[armId];
-                    writeArmsInfo(armsInfo);
-                    $armArea.find('tr[data-id="' + armId + '"]').replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                    removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
             }
@@ -4027,18 +4036,18 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
         $.post('kf_fw_ig_mybpdt.php', 'do=5&id=' + armId + '&safeid=' + safeId, function (html) {
             var msg = Util.removeHtmlTag(html);
             if (/装备消失/.test(msg)) {
-                $this.closest('tr').html('<td colspan="3">' + msg + '</td>');
+                $this.closest('tr').replaceWith('<tr><td colspan="3">' + msg + '</td></tr>');
                 if (armId in Config.armsMemo) {
                     (0, _Config.read)();
                     delete Config.armsMemo[armId];
                     (0, _Config.write)();
                 }
+                if (Config.autoSaveArmsInfoEnabled) {
+                    removeSavedArmInfo(armId, $armArea);
+                }
             } else {
                 if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
-                    var armsInfo = readArmsInfo();
-                    delete armsInfo[armId];
-                    writeArmsInfo(armsInfo);
-                    $armArea.find('tr[data-id="' + armId + '"]').replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                    removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
             }
@@ -4513,10 +4522,7 @@ var showArmsFinalAddition = function showArmsFinalAddition(armList, oriEquippedA
             if (!/装备完毕/.test(msg)) {
                 index++;
                 if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
-                    var armsInfo = readArmsInfo();
-                    delete armsInfo[armId];
-                    writeArmsInfo(armsInfo);
-                    $armArea.find('tr[data-id="' + armId + '"]').replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                    removeSavedArmInfo(armId, $armArea);
                 }
             }
             if (index >= armList.length) {
