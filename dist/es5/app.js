@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.8.1';
+var version = '11.8.2';
 
 /**
  * 导出模块
@@ -4493,6 +4493,12 @@ var showArmsFinalAddition = function showArmsFinalAddition(armList, oriEquippedA
             }
             if (!/装备完毕/.test(msg)) {
                 index++;
+                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                    var armsInfo = readArmsInfo();
+                    delete armsInfo[armId];
+                    writeArmsInfo(armsInfo);
+                    $armArea.find('tr[data-id="' + armId + '"]').replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                }
             }
             if (index >= armList.length) {
                 complete();

@@ -1078,6 +1078,12 @@ const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
             }
             if (!/装备完毕/.test(msg)) {
                 index++;
+                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                    let armsInfo = readArmsInfo();
+                    delete armsInfo[armId];
+                    writeArmsInfo(armsInfo);
+                    $armArea.find(`tr[data-id="${armId}"]`).replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                }
             }
             if (index >= armList.length) {
                 complete();

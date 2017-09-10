@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.8.1
+// @version     11.8.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.8.1';
+const version = '11.8.2';
 
 /**
  * 导出模块
@@ -4270,6 +4270,12 @@ const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
             }
             if (!/装备完毕/.test(msg)) {
                 index++;
+                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                    let armsInfo = readArmsInfo();
+                    delete armsInfo[armId];
+                    writeArmsInfo(armsInfo);
+                    $armArea.find(`tr[data-id="${armId}"]`).replaceWith('<tr><td colspan="3" style="color: #777;">该装备不存在</td></tr>');
+                }
             }
             if (index >= armList.length) {
                 complete();
