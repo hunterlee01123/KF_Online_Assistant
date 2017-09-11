@@ -12,7 +12,7 @@ import Const from './Const';
  */
 export const checkRateSize = function (title, ratingSize) {
     let titleSize = 0;
-    let matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
+    let matches = title.match(/\b(\d+(?:\.\d+)?)\s?(M|G)B?\b/ig);
     if (matches) {
         for (let i = 0; i < matches.length; i++) {
             let sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
@@ -114,14 +114,14 @@ export const refreshWaitCheckRatePage = function () {
  * 在优秀帖相关页面上添加链接
  */
 export const addLinksInGoodPostPage = function () {
-    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+    if (/\/kf_fw_1wkfb\.php\?ping=5/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
             let $this = $(this);
             let uid = parseInt($this.text());
             $this.wrapInner(`<a class="${uid === Info.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
         });
     }
-    else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+    else if (/\/kf_fw_1wkfb\.php\?ping=6/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
             let $this = $(this);
             let userName = $this.text().trim();

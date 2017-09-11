@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.8.3
+// @version     11.8.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.8.3';
+var version = '11.8.4';
 
 /**
  * 导出模块
@@ -4068,15 +4068,11 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
             $('#pdAddArmorMemo').val(armInfo['名称']);
             $('#pdAddArmorId').val(armId).focus();
         }
-    }).on('mouseenter', 'tr', function () {
-        var $this = $(this);
-        if (!$this.has('> td[id^="wp_"]').length) return;
-        var $td = $this.find('> td:nth-child(3)');
+    }).on('mouseenter', 'tr[data-id]', function () {
+        var $td = $(this).find('> td:nth-child(3)');
         $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="查看装备信息">查</a>');
-    }).on('mouseleave', 'tr', function () {
-        var $this = $(this);
-        if (!$this.has('> td[id^="wp_"]').length) return;
-        $this.find('> td:nth-child(3) .show_arm_info').remove();
+    }).on('mouseleave', 'tr[data-id]', function () {
+        $(this).find('> td:nth-child(3) .show_arm_info').remove();
     }).on('click', '.show_arm_info', function (e) {
         e.preventDefault();
         var $this = $(this);
@@ -9003,7 +8999,9 @@ var showAddOrChangeArmDialog = function showAddOrChangeArmDialog(type, armHtml) 
         });
     }
 
-    Item.addSavedArmsInfo($armArea);
+    if (Config.autoSaveArmsInfoEnabled) {
+        Item.addSavedArmsInfo($armArea);
+    }
     Item.handleArmArea($armArea, type);
     Item.bindArmLinkClickEvent($armArea, safeId, 1);
 
@@ -13593,7 +13591,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 var checkRateSize = exports.checkRateSize = function checkRateSize(title, ratingSize) {
     var titleSize = 0;
-    var matches = title.match(/\D(\d+(?:\.\d+)?)\s?(M|G)/ig);
+    var matches = title.match(/\b(\d+(?:\.\d+)?)\s?(M|G)B?\b/ig);
     if (matches) {
         for (var i = 0; i < matches.length; i++) {
             var sizeMatches = /(\d+(?:\.\d+)?)\s?(M|G)/i.exec(matches[i]);
@@ -13701,13 +13699,13 @@ var refreshWaitCheckRatePage = exports.refreshWaitCheckRatePage = function refre
  * 在优秀帖相关页面上添加链接
  */
 var addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function addLinksInGoodPostPage() {
-    if (/\/kf_fw_1wkfb\.php\?ping=5/i.test(location.href)) {
+    if (/\/kf_fw_1wkfb\.php\?ping=5/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
             var $this = $(this);
             var uid = parseInt($this.text());
             $this.wrapInner('<a class="' + (uid === _Info2.default.uid ? 'pd_highlight' : '') + '" href="profile.php?action=show&uid=' + uid + '" target="_blank"></a>');
         });
-    } else if (/\/kf_fw_1wkfb\.php\?ping=6/i.test(location.href)) {
+    } else if (/\/kf_fw_1wkfb\.php\?ping=6/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
             var $this = $(this);
             var userName = $this.text().trim();

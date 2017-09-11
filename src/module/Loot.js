@@ -1797,7 +1797,9 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
         });
     }
 
-    Item.addSavedArmsInfo($armArea);
+    if (Config.autoSaveArmsInfoEnabled) {
+        Item.addSavedArmsInfo($armArea);
+    }
     Item.handleArmArea($armArea, type);
     Item.bindArmLinkClickEvent($armArea, safeId, 1);
 

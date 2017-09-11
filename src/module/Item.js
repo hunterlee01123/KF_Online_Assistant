@@ -744,15 +744,11 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
             $('#pdAddArmorMemo').val(armInfo['名称']);
             $('#pdAddArmorId').val(armId).focus();
         }
-    }).on('mouseenter', 'tr', function () {
-        let $this = $(this);
-        if (!$this.has('> td[id^="wp_"]').length) return;
-        let $td = $this.find('> td:nth-child(3)');
+    }).on('mouseenter', 'tr[data-id]', function () {
+        let $td = $(this).find('> td:nth-child(3)');
         $td.append('<a class="show_arm_info" data-name="showArmInfo" href="#" title="查看装备信息">查</a>');
-    }).on('mouseleave', 'tr', function () {
-        let $this = $(this);
-        if (!$this.has('> td[id^="wp_"]').length) return;
-        $this.find('> td:nth-child(3) .show_arm_info').remove();
+    }).on('mouseleave', 'tr[data-id]', function () {
+        $(this).find('> td:nth-child(3) .show_arm_info').remove();
     }).on('click', '.show_arm_info', function (e) {
         e.preventDefault();
         let $this = $(this);
