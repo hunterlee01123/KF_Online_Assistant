@@ -73,6 +73,7 @@ export const handleBankPage = function () {
     $transferLimit.html(
         $transferLimit.html()
             .replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${num}">${parseInt(num).toLocaleString()}</b>`)
+            .replace('额度通过发帖(每个主题帖200额度/回复帖10额度)和被评分（评分数x120%额度）获得', '额度可通过领取每日奖励获得')
     );
     addBatchTransferButton();
 

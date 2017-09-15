@@ -142,7 +142,7 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
-        if (!Config.sortArmsByGroupEnabled) {
+        if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         }
         Msg.destroy();
@@ -289,7 +289,7 @@ const showOpenAllBoxesDialog = function () {
         }
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         Dialog.close(dialogName);
-        if (!Config.sortArmsByGroupEnabled) {
+        if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         }
         $(document).clearQueue('OpenAllBoxes');
@@ -694,6 +694,7 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                         $armId.val(armId);
                         $armMemo.val($('#pdArmArea > span:first').text().trim());
                         $('.pd_arm_input').each(function () {
+                            $(this).val('');
                             this.defaultValue = '';
                         });
                     });
@@ -1010,8 +1011,13 @@ export const addCommonArmsButton = function ($area, $armArea) {
   <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
   <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
 </label>
-<button name="selectAll" type="button" title="全选" style="min-width: inherit;">全选</button>
-<button name="selectInverse" type="button" title="反选" style="min-width: inherit;">反选</button>
+<select name="select" style="vertical-align: middle; margin-bottom: 2px;">
+  <option>选择装备</option>
+  <option value="selectAll">全选</option>
+  <option value="selectInverse">反选</option>
+  <option value="selectWeapon">选择武器</option>
+  <option value="selectArmor">选择护甲</option>
+</select>
 <button name="copyArmParameterSetting" type="button" title="复制所选装备的计算器参数设置">复制装备参数</button>
 `).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
         let checked = $(this).prop('checked');
@@ -1026,30 +1032,46 @@ export const addCommonArmsButton = function ($area, $armArea) {
         else {
             sortArmsById($armArea);
         }
-    }).end().filter('[name="selectAll"]').click(() => Util.selectAll($armArea.find('input[name="armCheck"]')))
-        .end().filter('[name="selectInverse"]').click(() => Util.selectInverse($armArea.find('input[name="armCheck"]')))
-        .end().filter('[name="copyArmParameterSetting"]')
-        .click(function () {
+    }).end().filter('[name="select"]').change(function () {
+        let value = $(this).val();
+        let $checkboxes = $armArea.find('input[name="armCheck"]');
+        if (value === 'selectAll') {
+            Util.selectAll($checkboxes);
+        }
+        else if (value === 'selectInverse') {
+            Util.selectInverse($checkboxes);
+        }
+        else if (value === 'selectWeapon') {
+            $checkboxes.prop('checked', false);
+            Util.selectInverse($armArea.find('tr[data-class="武器"] input[name="armCheck"]'));
+        }
+        else if (value === 'selectArmor') {
+            $checkboxes.prop('checked', false);
+            Util.selectInverse($armArea.find('tr[data-class="护甲"] input[name="armCheck"]'));
+        }
+        this.selectedIndex = 0;
+    }).end().filter('[name="copyArmParameterSetting"]').click(function () {
+        let $this = $(this);
+        let armInfoList = [];
+        $armArea.find('input[name="armCheck"]:checked').each(function () {
             let $this = $(this);
-            let armInfoList = [];
-            $armArea.find('input[name="armCheck"]:checked').each(function () {
-                let $this = $(this);
-                let id = parseInt($this.val());
-                let html = $this.closest('tr').find('> td:nth-child(3)').html();
-                if (!html) return;
-                armInfoList.push({id: id, info: getArmInfo(html)});
-            });
-            if (!armInfoList.length) return;
-            let copyData = '';
-            for (let {id, info} of armInfoList) {
-                copyData += getArmParameterSetting(id, info) + '\n\n';
-            }
-            $this.data('copy-text', copyData.trim());
-            console.log('所选装备的计算器装备参数设置：\n\n' + copyData.trim());
-            if (!Util.copyText($this, '所选装备的计算器装备参数设置已复制')) {
-                alert('你的浏览器不支持复制，请打开Web控制台查看');
-            }
+            let id = parseInt($this.val());
+            let html = $this.closest('tr').find('> td:nth-child(3)').html();
+            if (!html) return;
+            armInfoList.push({id: id, info: getArmInfo(html)});
         });
+        if (!armInfoList.length) return;
+        let copyData = '';
+        for (let {id, info} of armInfoList) {
+            copyData += getArmParameterSetting(id, info) + '\n\n';
+        }
+        $this.data('copy-text', copyData.trim());
+        console.log('所选装备的计算器装备参数设置：\n\n' + copyData.trim());
+        if (!Util.copyText($this, '所选装备的计算器装备参数设置已复制')) {
+            alert('你的浏览器不支持复制，请打开Web控制台查看');
+        }
+    });
+    Script.runFunc('Item.addCommonArmsButton_after_');
 };
 
 /**

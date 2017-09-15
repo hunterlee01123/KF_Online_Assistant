@@ -1785,6 +1785,7 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
                             updateLootInfo(function () {
                                 Msg.remove($wait);
                                 Dialog.close(dialogName);
+                                $('.pd_arm_input').val('');
                             });
                         }
                         else {
