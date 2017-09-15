@@ -50,13 +50,14 @@ export const init = function () {
     addOpenAllBoxesButton();
 
     // 临时措施
-    let oldArmsInfo = localStorage.getItem(Const.storagePrefix + 'myArmsInfo' + '_' + Info.uid);
+    let oldArmsInfo = Util.readData(Const.storagePrefix + 'myArmsInfo' + '_' + Info.uid);
     if (oldArmsInfo) {
         try {
+            console.log('转移装备信息');
             let oldArmList = JSON.parse(oldArmsInfo);
             let armsInfo = readArmsInfo();
             armsInfo['装备列表'] = oldArmList;
-            localStorage.removeItem(Const.storagePrefix + 'myArmsInfo' + '_' + Info.uid);
+            Util.deleteData(Const.storagePrefix + 'myArmsInfo' + '_' + Info.uid);
         }
         catch (ex) {
             console.log(ex);
