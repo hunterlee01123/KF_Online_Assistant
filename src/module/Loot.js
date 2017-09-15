@@ -1081,6 +1081,11 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                                 $points.find('input[name="weaponId"], input[name="weaponMemo"]').each(function () {
                                     this.defaultValue = $(this).val();
                                 });
+                                if (Config.autoSaveArmsInfoEnabled) {
+                                    let armsInfo = Item.readArmsInfo();
+                                    armsInfo['已装备武器'] = weaponId;
+                                    Item.writeArmsInfo(armsInfo);
+                                }
                             }
                             else {
                                 Msg.show((`<strong>更换武器：${msg}</strong>`), -1);
@@ -1094,6 +1099,11 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                                 $points.find('input[name="armorId"], input[name="armorMemo"]').each(function () {
                                     this.defaultValue = $(this).val();
                                 });
+                                if (Config.autoSaveArmsInfoEnabled) {
+                                    let armsInfo = Item.readArmsInfo();
+                                    armsInfo['已装备护甲'] = armorId;
+                                    Item.writeArmsInfo(armsInfo);
+                                }
                             }
                             else {
                                 Msg.show((`<strong>更换护甲：${msg}</strong>`), -1);
@@ -1772,7 +1782,14 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
                 $(document).queue('ChangeArms', function () {
                     $.post('kf_fw_ig_mybpdt.php', `do=4&id=${armId}&safeid=${safeId}`, function (html) {
                         let msg = Util.removeHtmlTag(html);
-                        if (!/装备完毕/.test(msg)) {
+                        if (/装备完毕/.test(msg)) {
+                            if (Config.autoSaveArmsInfoEnabled) {
+                                let armsInfo = Item.readArmsInfo();
+                                armsInfo['已装备武器'] = armsInfo['已装备护甲'] = 0;
+                                Item.writeArmsInfo(armsInfo);
+                            }
+                        }
+                        else {
                             Msg.remove($wait);
                             alert(msg);
                         }
