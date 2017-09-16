@@ -1222,8 +1222,9 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             if (Config.autoLootEnabled) {
                 Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
             }
+            if (Const.debug) console.log(html);
             if (!/你\(\d+\)遭遇了/.test(html) || index % Const.lootAttackPerCheckLevel === 0) {
-                if (html === 'no') isFail = true;
+                if (html === 'no' && /你被击败了/.test(log)) isFail = true;
                 setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
                 return;
             }

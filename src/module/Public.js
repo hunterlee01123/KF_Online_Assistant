@@ -583,6 +583,7 @@ export const getDailyBonus = function () {
                 showFormatLog('领取每日奖励', html);
                 let {msg} = Util.getResponseMsg(html);
                 Msg.remove($wait);
+                if (Const.debug) console.log(msg);
 
                 if (/领取成功/.test(msg)) {
                     let logStatText = '', msgStatText = '';

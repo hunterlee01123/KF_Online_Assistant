@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.9.4
+// @version     11.9.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.9.4';
+const version = '11.9.5';
 
 /**
  * 导出模块
@@ -7165,8 +7165,9 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             if (Config.autoLootEnabled) {
                 Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
             }
+            if (_Const2.default.debug) console.log(html);
             if (!/你\(\d+\)遭遇了/.test(html) || index % _Const2.default.lootAttackPerCheckLevel === 0) {
-                if (html === 'no') isFail = true;
+                if (html === 'no' && /你被击败了/.test(log)) isFail = true;
                 setTimeout(() => updateLootInfo(after), _Const2.default.defAjaxInterval);
                 return;
             }
@@ -10253,6 +10254,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
                 showFormatLog('领取每日奖励', html);
                 let { msg } = Util.getResponseMsg(html);
                 Msg.remove($wait);
+                if (_Const2.default.debug) console.log(msg);
 
                 if (/领取成功/.test(msg)) {
                     let logStatText = '',
