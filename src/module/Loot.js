@@ -90,7 +90,10 @@ export const enhanceLootIndexPage = function () {
         currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
         currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
     }
-    else return;
+    else {
+        console.log('需要至少使用一件装备才能在此页面正常使用KFOL助手的功能');
+        return;
+    }
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -280,6 +283,28 @@ const handlePointsArea = function () {
         writeConfig();
         alert('设置已保存');
     });
+
+    $points.find('input[name="prosubmit"]').replaceWith('<button name="prosubmit" type="submit">修改点数分配</button>');
+    $('<button name="changePointsAndArms" type="button" title="按照当前页面上的点数设置和装备ID进行修改" style="margin-left: 3px;">修改点数和装备</button>')
+        .insertAfter($points.find('button[name="prosubmit"]'))
+        .css('display', /你被击败了/.test(log) ? 'inline-block' : 'none')
+        .click(function () {
+            let $wait = Msg.wait('<strong>正在修改点数和装备&hellip;</strong>');
+            changePointsAndArms(-1, function (result) {
+                if (result === 'success') {
+                    updateLootInfo(function () {
+                        Msg.remove($wait);
+                        Msg.show('<strong>已成功修改为指定的点数设置和装备ID</strong>', 3);
+                    });
+                }
+                else {
+                    Msg.remove($wait);
+                    if (result === 'ignore') {
+                        alert('当前页面的点数设置和装备ID没有发生变化');
+                    }
+                }
+            });
+        });
 
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
     $changeCount.wrapInner('<span id="pdChangeCount"></span>');
@@ -971,7 +996,7 @@ export const changePointsAndArms = function (nextLevel, callback) {
 
     if (isChangeWeapon || isChangeArmor || isChangePoints) {
         if (Config.unusedPointNumAlertEnabled && !Info.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
-            if (confirm('可分配属性点尚未用完，是否继续攻击？')) Info.w.unusedPointNumAlert = true;
+            if (confirm('可分配属性点尚未用完，是否继续？')) Info.w.unusedPointNumAlert = true;
             else return callback('error');
         }
 
@@ -1240,7 +1265,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
                 }
-                else setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
+                else {
+                    setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
+                }
+                $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
                 Script.runFunc('Loot.lootAttack_complete_');
             }
             else {
@@ -1414,7 +1442,6 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     );
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-        console.debug('Loot.getDailyBonus');
         Util.deleteCookie(Const.getDailyBonusCookieName);
         Public.getDailyBonus();
     }

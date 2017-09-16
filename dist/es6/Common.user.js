@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.9.3
+// @version     11.9.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.9.3';
+const version = '11.9.4';
 
 /**
  * 导出模块
@@ -6130,7 +6130,10 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
         let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
         currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
         currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
-    } else return;
+    } else {
+        console.log('需要至少使用一件装备才能在此页面正常使用KFOL助手的功能');
+        return;
+    }
 
     $logBox = $('#pk_text_div');
     $log = $('#pk_text');
@@ -6275,6 +6278,24 @@ const handlePointsArea = function () {
         Config.keyLevelList = value.split(' ').map(level => parseInt(level)).filter(level => level > 0);
         (0, _Config.write)();
         alert('设置已保存');
+    });
+
+    $points.find('input[name="prosubmit"]').replaceWith('<button name="prosubmit" type="submit">修改点数分配</button>');
+    $('<button name="changePointsAndArms" type="button" title="按照当前页面上的点数设置和装备ID进行修改" style="margin-left: 3px;">修改点数和装备</button>').insertAfter($points.find('button[name="prosubmit"]')).css('display', /你被击败了/.test(log) ? 'inline-block' : 'none').click(function () {
+        let $wait = Msg.wait('<strong>正在修改点数和装备&hellip;</strong>');
+        changePointsAndArms(-1, function (result) {
+            if (result === 'success') {
+                updateLootInfo(function () {
+                    Msg.remove($wait);
+                    Msg.show('<strong>已成功修改为指定的点数设置和装备ID</strong>', 3);
+                });
+            } else {
+                Msg.remove($wait);
+                if (result === 'ignore') {
+                    alert('当前页面的点数设置和装备ID没有发生变化');
+                }
+            }
+        });
     });
 
     let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
@@ -6929,7 +6950,7 @@ const changePointsAndArms = exports.changePointsAndArms = function (nextLevel, c
 
     if (isChangeWeapon || isChangeArmor || isChangePoints) {
         if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
-            if (confirm('可分配属性点尚未用完，是否继续攻击？')) _Info2.default.w.unusedPointNumAlert = true;else return callback('error');
+            if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return callback('error');
         }
 
         let weaponId = parseInt($points.find('input[name="weaponId"]').val());
@@ -7183,7 +7204,10 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 if (isChecked) {
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
-                } else setTimeout(() => updateLootInfo(after), _Const2.default.defAjaxInterval);
+                } else {
+                    setTimeout(() => updateLootInfo(after), _Const2.default.defAjaxInterval);
+                }
+                $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
                 Script.runFunc('Loot.lootAttack_complete_');
             } else {
                 if (/你被击败了/.test(log)) {
@@ -7348,7 +7372,6 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, Config.autoSaveLootLogInSpecialCaseEnabled ? Config.defShowMsgDuration : -1);
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-        console.debug('Loot.getDailyBonus');
         Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
         Public.getDailyBonus();
     }
