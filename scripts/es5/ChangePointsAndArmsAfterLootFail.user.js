@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        在被击败后修改点数分配方案
-// @version     1.0
-// @trigger     end
+// @version     1.1
+// @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13737219
 // @description 当被击败后还有剩余改点次数的情况下修改点数分配方案

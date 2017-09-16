@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        在特殊情况下停止批量打开盒子
-// @version     1.0
-// @trigger     end
+// @version     1.1
+// @trigger     start
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13737242
 // @description 在开出指定种类的道具后停止批量打开盒子
