@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.9.2
+// @version     11.9.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.9.2';
+var version = '11.9.3';
 
 /**
  * 导出模块
@@ -3212,6 +3212,7 @@ var init = exports.init = function init() {
             var oldArmList = JSON.parse(oldArmsInfo);
             var armsInfo = readArmsInfo();
             armsInfo['装备列表'] = oldArmList;
+            writeArmsInfo(armsInfo);
             Util.deleteData(_Const2.default.storagePrefix + 'myArmsInfo' + '_' + _Info2.default.uid);
         } catch (ex) {
             console.log(ex);
@@ -9438,17 +9439,21 @@ var showEnhanceLog = function showEnhanceLog(logList, levelInfoList, pointsLogLi
 
         if (pointsLogList[level]) {
             var levelPointsLog = pointsLogList[level];
-            enemy = enemy.replace('特别', '');
-            var pointMatches = /灵活：\d+\+\d+=(\d+)/.exec(levelPointsLog);
+            /*enemy = enemy.replace('特别', '');
+            let pointMatches = /灵活：\d+\+\d+=(\d+)/.exec(levelPointsLog);
             if (pointMatches) {
-                var realCriticalStrikePercent = getRealProperty('灵活', parseInt(pointMatches[1]), level, enemy);
-                levelPointsLog = levelPointsLog.replace(/(暴击几率：\d+%)/, '$1<span class="pd_custom_tips" title="\u5B9E\u9645\u66B4\u51FB\u51E0\u7387">(' + realCriticalStrikePercent + '%)</span>');
+                let realCriticalStrikePercent = getRealProperty('灵活', parseInt(pointMatches[1]), level, enemy);
+                levelPointsLog = levelPointsLog.replace(
+                    /(暴击几率：\d+%)/, `$1<span class="pd_custom_tips" title="实际暴击几率">(${realCriticalStrikePercent}%)</span>`
+                );
             }
             pointMatches = /智力：\d+\+\d+=(\d+)/.exec(levelPointsLog);
             if (pointMatches) {
-                var realSkillPercent = getRealProperty('智力', parseInt(pointMatches[1]), level, enemy);
-                levelPointsLog = levelPointsLog.replace(/(技能释放概率：\d+%)/, '$1<span class="pd_custom_tips" title="\u5B9E\u9645\u6280\u80FD\u91CA\u653E\u6982\u7387">(' + realSkillPercent + '%)</span>');
-            }
+                let realSkillPercent = getRealProperty('智力', parseInt(pointMatches[1]), level, enemy);
+                levelPointsLog = levelPointsLog.replace(
+                    /(技能释放概率：\d+%)/, `$1<span class="pd_custom_tips" title="实际技能释放概率">(${realSkillPercent}%)</span>`
+                );
+            }*/ // 临时禁用
             list[level] = list[level].replace('</li>', ('</li><li class="pk_log_g" style="color: #666;">' + levelPointsLog + '</li>').replace(/\n/g, '<br>'));
         }
     });

@@ -57,6 +57,7 @@ export const init = function () {
             let oldArmList = JSON.parse(oldArmsInfo);
             let armsInfo = readArmsInfo();
             armsInfo['装备列表'] = oldArmList;
+            writeArmsInfo(armsInfo);
             Util.deleteData(Const.storagePrefix + 'myArmsInfo' + '_' + Info.uid);
         }
         catch (ex) {

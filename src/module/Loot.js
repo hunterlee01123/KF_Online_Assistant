@@ -2100,7 +2100,7 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
 
         if (pointsLogList[level]) {
             let levelPointsLog = pointsLogList[level];
-            enemy = enemy.replace('特别', '');
+            /*enemy = enemy.replace('特别', '');
             let pointMatches = /灵活：\d+\+\d+=(\d+)/.exec(levelPointsLog);
             if (pointMatches) {
                 let realCriticalStrikePercent = getRealProperty('灵活', parseInt(pointMatches[1]), level, enemy);
@@ -2114,7 +2114,7 @@ const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
                 levelPointsLog = levelPointsLog.replace(
                     /(技能释放概率：\d+%)/, `$1<span class="pd_custom_tips" title="实际技能释放概率">(${realSkillPercent}%)</span>`
                 );
-            }
+            }*/ // 临时禁用
             list[level] = list[level].replace(
                 '</li>', `</li><li class="pk_log_g" style="color: #666;">${levelPointsLog}</li>`.replace(/\n/g, '<br>')
             );
