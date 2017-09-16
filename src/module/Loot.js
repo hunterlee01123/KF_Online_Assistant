@@ -1244,6 +1244,15 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 Script.runFunc('Loot.lootAttack_complete_');
             }
             else {
+                if (/你被击败了/.test(log)) {
+                    setTimeout(function () {
+                        updateLootInfo(function () {
+                            if (/你被击败了/.test(log)) isFail = true;
+                            after();
+                        });
+                    }, Const.defAjaxInterval);
+                    return;
+                }
                 if (!isChecked) setTimeout(() => updateLootInfo, Const.defAjaxInterval);
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);

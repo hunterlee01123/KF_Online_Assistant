@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.9.1
+// @version     11.9.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.9.1';
+var version = '11.9.2';
 
 /**
  * 导出模块
@@ -8459,6 +8459,15 @@ var lootAttack = exports.lootAttack = function lootAttack(_ref) {
                 }, _Const2.default.defAjaxInterval);
                 Script.runFunc('Loot.lootAttack_complete_');
             } else {
+                if (/你被击败了/.test(log)) {
+                    setTimeout(function () {
+                        updateLootInfo(function () {
+                            if (/你被击败了/.test(log)) isFail = true;
+                            after();
+                        });
+                    }, _Const2.default.defAjaxInterval);
+                    return;
+                }
                 if (!isChecked) setTimeout(function () {
                     return updateLootInfo;
                 }, _Const2.default.defAjaxInterval);
