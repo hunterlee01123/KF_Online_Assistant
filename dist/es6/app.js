@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.9.5';
+const version = '11.9.6';
 
 /**
  * 导出模块
@@ -3830,18 +3830,18 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
         let $this = $(this);
         let matches = /wp_(\d+)/.exec($this.attr('id'));
         if (!matches) return;
-        let id = parseInt(matches[1]);
+        let armId = parseInt(matches[1]);
         let $tr = $this.parent('tr');
         let $td = $tr.find('> td:nth-child(3)');
         let html = $td.html();
         let armInfo = getArmInfo(html);
-        $tr.attr('data-id', id).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
-        $td.html(handleUselessSubProperties(html));
-        if (Config.armsMemo[id]) {
-            $td.attr('data-memo', Config.armsMemo[id].replace(/"/g, ''));
+        $tr.attr('data-id', armId).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
+        $td.html(`<i class="pd_arm_id">[ID: ${armId}]</i> ${handleUselessSubProperties(html)}`);
+        if (Config.armsMemo[armId]) {
+            $td.attr('data-memo', Config.armsMemo[armId].replace(/"/g, ''));
         }
         if (type === 0) {
-            $this.prepend(`<input name="armCheck" type="checkbox" value="${id}">`);
+            $this.prepend(`<input name="armCheck" type="checkbox" value="${armId}">`);
         }
     });
 
@@ -4242,12 +4242,15 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
   <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
   <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
 </label>
-<select name="select" style="vertical-align: middle; margin-bottom: 2px;">
+<select name="select" style="width: 92px; vertical-align: middle; margin-bottom: 2px;">
   <option>选择装备</option>
   <option value="selectAll">全选</option>
   <option value="selectInverse">反选</option>
+  <option value="selectCancel">取消</option>
   <option value="selectWeapon">选择武器</option>
   <option value="selectArmor">选择护甲</option>
+  <option value="selectNoMemo">选择无备注的装备</option>
+  <option value="selectArmId">选择指定ID的装备</option>
 </select>
 <button name="copyArmParameterSetting" type="button" title="复制所选装备的计算器参数设置">复制装备参数</button>
 `).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
@@ -4263,18 +4266,29 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
             sortArmsById($armArea);
         }
     }).end().filter('[name="select"]').change(function () {
-        let value = $(this).val();
+        let name = $(this).val();
         let $checkboxes = $armArea.find('input[name="armCheck"]');
-        if (value === 'selectAll') {
+        if (name === 'selectAll') {
             Util.selectAll($checkboxes);
-        } else if (value === 'selectInverse') {
+        } else if (name === 'selectInverse') {
             Util.selectInverse($checkboxes);
-        } else if (value === 'selectWeapon') {
+        } else if (name === 'selectCancel') {
             $checkboxes.prop('checked', false);
-            Util.selectInverse($armArea.find('tr[data-class="武器"] input[name="armCheck"]'));
-        } else if (value === 'selectArmor') {
+        } else if (name === 'selectWeapon') {
             $checkboxes.prop('checked', false);
-            Util.selectInverse($armArea.find('tr[data-class="护甲"] input[name="armCheck"]'));
+            $armArea.find('tr[data-class="武器"] input[name="armCheck"]').prop('checked', true);
+        } else if (name === 'selectArmor') {
+            $checkboxes.prop('checked', false);
+            $armArea.find('tr[data-class="护甲"] input[name="armCheck"]').prop('checked', true);
+        } else if (name === 'selectNoMemo') {
+            $checkboxes.prop('checked', false);
+            $armArea.find('tr:not(:has(td[data-memo])) input[name="armCheck"]').prop('checked', true);
+        } else if (name === 'selectArmId') {
+            let text = $.trim(prompt('请输入要选择的装备ID（多个装备ID用空格分隔）：'));
+            if (text) {
+                $checkboxes.prop('checked', false);
+                $armArea.find(text.split(' ').map(armId => `tr[data-id="${armId}"] input[name="armCheck"]`).join(',')).prop('checked', true);
+            }
         }
         this.selectedIndex = 0;
     }).end().filter('[name="copyArmParameterSetting"]').click(function () {
@@ -4298,7 +4312,7 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
             alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
     });
-    Script.runFunc('Item.addCommonArmsButton_after_');
+    Script.runFunc('Item.addCommonArmsButton_after_', { $area, $armArea });
 };
 
 /**
@@ -9821,6 +9835,7 @@ const appendCss = exports.appendCss = function () {
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   .pd_useless_sub_property { color: #999; text-decoration: line-through; }
+  .pd_arm_id { font-style: normal; color: #999; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
@@ -10229,13 +10244,12 @@ const getDailyBonus = exports.getDailyBonus = function () {
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
             $.get(`${url}&t=${$.now()}`, function (html) {
-                Util.setCookie(_Const2.default.getDailyBonusCookieName, 1, getCookieDate());
                 showFormatLog('领取每日奖励', html);
                 let { msg } = Util.getResponseMsg(html);
                 Msg.remove($wait);
-                if (_Const2.default.debug) console.log(msg);
 
                 if (/领取成功/.test(msg)) {
+                    Util.setCookie(_Const2.default.getDailyBonusCookieName, 1, getCookieDate());
                     let logStatText = '',
                         msgStatText = '';
                     for (let [key, num] of Util.entries(gain)) {
@@ -10246,6 +10260,8 @@ const getDailyBonus = exports.getDailyBonus = function () {
                     Msg.show('<strong>领取每日奖励</strong>' + msgStatText);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', { gain });
                     if (Config.promoteHaloLimit > 0) Util.deleteCookie(_Const2.default.promoteHaloCookieName);
+                } else {
+                    Util.setCookie(_Const2.default.getDailyBonusCookieName, -1, Util.getDate('+5m'));
                 }
                 Script.runFunc('Public.getDailyBonus_after_', msg);
             }).fail(() => Msg.remove($wait));

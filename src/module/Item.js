@@ -637,18 +637,18 @@ export const handleArmArea = function ($armArea, type = 0) {
         let $this = $(this);
         let matches = /wp_(\d+)/.exec($this.attr('id'));
         if (!matches) return;
-        let id = parseInt(matches[1]);
+        let armId = parseInt(matches[1]);
         let $tr = $this.parent('tr');
         let $td = $tr.find('> td:nth-child(3)');
         let html = $td.html();
         let armInfo = getArmInfo(html);
-        $tr.attr('data-id', id).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
-        $td.html(handleUselessSubProperties(html));
-        if (Config.armsMemo[id]) {
-            $td.attr('data-memo', Config.armsMemo[id].replace(/"/g, ''));
+        $tr.attr('data-id', armId).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
+        $td.html(`<i class="pd_arm_id">[ID: ${armId}]</i> ${handleUselessSubProperties(html)}`);
+        if (Config.armsMemo[armId]) {
+            $td.attr('data-memo', Config.armsMemo[armId].replace(/"/g, ''));
         }
         if (type === 0) {
-            $this.prepend(`<input name="armCheck" type="checkbox" value="${id}">`);
+            $this.prepend(`<input name="armCheck" type="checkbox" value="${armId}">`);
         }
     });
 
@@ -1067,12 +1067,15 @@ export const addCommonArmsButton = function ($area, $armArea) {
   <input name="sortArmsByGroupEnabled" type="checkbox" ${Config.sortArmsByGroupEnabled ? 'checked' : ''}> 分组排列</input>
   <span class="pd_cfg_tips" title="分组排列装备">[?]</span>
 </label>
-<select name="select" style="vertical-align: middle; margin-bottom: 2px;">
+<select name="select" style="width: 92px; vertical-align: middle; margin-bottom: 2px;">
   <option>选择装备</option>
   <option value="selectAll">全选</option>
   <option value="selectInverse">反选</option>
+  <option value="selectCancel">取消</option>
   <option value="selectWeapon">选择武器</option>
   <option value="selectArmor">选择护甲</option>
+  <option value="selectNoMemo">选择无备注的装备</option>
+  <option value="selectArmId">选择指定ID的装备</option>
 </select>
 <button name="copyArmParameterSetting" type="button" title="复制所选装备的计算器参数设置">复制装备参数</button>
 `).prependTo($area).find('[name="sortArmsByGroupEnabled"]').click(function () {
@@ -1089,21 +1092,35 @@ export const addCommonArmsButton = function ($area, $armArea) {
             sortArmsById($armArea);
         }
     }).end().filter('[name="select"]').change(function () {
-        let value = $(this).val();
+        let name = $(this).val();
         let $checkboxes = $armArea.find('input[name="armCheck"]');
-        if (value === 'selectAll') {
+        if (name === 'selectAll') {
             Util.selectAll($checkboxes);
         }
-        else if (value === 'selectInverse') {
+        else if (name === 'selectInverse') {
             Util.selectInverse($checkboxes);
         }
-        else if (value === 'selectWeapon') {
+        else if (name === 'selectCancel') {
             $checkboxes.prop('checked', false);
-            Util.selectInverse($armArea.find('tr[data-class="武器"] input[name="armCheck"]'));
         }
-        else if (value === 'selectArmor') {
+        else if (name === 'selectWeapon') {
             $checkboxes.prop('checked', false);
-            Util.selectInverse($armArea.find('tr[data-class="护甲"] input[name="armCheck"]'));
+            $armArea.find('tr[data-class="武器"] input[name="armCheck"]').prop('checked', true);
+        }
+        else if (name === 'selectArmor') {
+            $checkboxes.prop('checked', false);
+            $armArea.find('tr[data-class="护甲"] input[name="armCheck"]').prop('checked', true);
+        }
+        else if (name === 'selectNoMemo') {
+            $checkboxes.prop('checked', false);
+            $armArea.find('tr:not(:has(td[data-memo])) input[name="armCheck"]').prop('checked', true);
+        }
+        else if (name === 'selectArmId') {
+            let text = $.trim(prompt('请输入要选择的装备ID（多个装备ID用空格分隔）：'));
+            if (text) {
+                $checkboxes.prop('checked', false);
+                $armArea.find(text.split(' ').map(armId => `tr[data-id="${armId}"] input[name="armCheck"]`).join(',')).prop('checked', true);
+            }
         }
         this.selectedIndex = 0;
     }).end().filter('[name="copyArmParameterSetting"]').click(function () {
@@ -1127,7 +1144,7 @@ export const addCommonArmsButton = function ($area, $armArea) {
             alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
     });
-    Script.runFunc('Item.addCommonArmsButton_after_');
+    Script.runFunc('Item.addCommonArmsButton_after_', {$area, $armArea});
 };
 
 /**

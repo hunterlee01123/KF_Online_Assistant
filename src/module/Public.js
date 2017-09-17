@@ -148,6 +148,7 @@ export const appendCss = function () {
   .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   .pd_useless_sub_property { color: #999; text-decoration: line-through; }
+  .pd_arm_id { font-style: normal; color: #999; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
@@ -579,13 +580,12 @@ export const getDailyBonus = function () {
             if (parseInt(matches[5]) > 0) gain['转账额度'] = parseInt(matches[5]);
 
             $.get(`${url}&t=${$.now()}`, function (html) {
-                Util.setCookie(Const.getDailyBonusCookieName, 1, getCookieDate());
                 showFormatLog('领取每日奖励', html);
                 let {msg} = Util.getResponseMsg(html);
                 Msg.remove($wait);
-                if (Const.debug) console.log(msg);
 
                 if (/领取成功/.test(msg)) {
+                    Util.setCookie(Const.getDailyBonusCookieName, 1, getCookieDate());
                     let logStatText = '', msgStatText = '';
                     for (let [key, num] of Util.entries(gain)) {
                         logStatText += `${key}+${num} `;
@@ -595,6 +595,9 @@ export const getDailyBonus = function () {
                     Msg.show('<strong>领取每日奖励</strong>' + msgStatText);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', {gain});
                     if (Config.promoteHaloLimit > 0) Util.deleteCookie(Const.promoteHaloCookieName);
+                }
+                else {
+                    Util.setCookie(Const.getDailyBonusCookieName, -1, Util.getDate('+5m'));
                 }
                 Script.runFunc('Public.getDailyBonus_after_', msg);
             }).fail(() => Msg.remove($wait));
