@@ -18,7 +18,7 @@ export const handleMultiQuote = function (type = 1) {
             e.preventDefault();
             localStorage.removeItem(Const.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
-            $(type === 2 ? '#textarea' : '[name="atc_content"]').val('');
+            $(type === 2 ? '#textarea' : 'textarea[name="atc_content"]').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -70,7 +70,9 @@ export const handleMultiQuote = function (type = 1) {
                         $countdown.text(parseInt($countdown.text()) - 1);
                         if (index === list.length - 1) {
                             Msg.destroy();
-                            $('#textarea').val(content).focus();
+                            let $textarea = $('#textarea');
+                            $textarea.get(0).defaultValue = content;
+                            $textarea.val(content).focus();
                             $keywords.trigger('change');
                         }
                         else {
@@ -93,7 +95,9 @@ export const handleMultiQuote = function (type = 1) {
         $(document).dequeue('MultiQuote');
     }
     else {
-        $('[name="atc_content"]').val(content).focus();
+        let $textarea = $('textarea[name="atc_content"]');
+        $textarea.get(0).defaultValue = content;
+        $textarea.val(content).focus();
         $keywords.trigger('change');
     }
     Script.runFunc('Post.handleMultiQuote_after_', type);
@@ -273,9 +277,9 @@ export const importKfSmileEnhanceExtension = function () {
  */
 export const preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea[name="atc_content"]');
         let content = $textArea.val();
-        if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !Info.w.isSubmit) {
+        if (content && content !== $textArea.get(0).defaultValue && !Info.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
             e.returnValue = msg;
             return msg;
@@ -291,7 +295,7 @@ export const preventCloseWindowWhenEditPost = function () {
  * 在提交时保存发帖内容
  */
 export const savePostContentWhenSubmit = function () {
-    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
+    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea[name="atc_content"]');
     $('form[action="post.php?"]').submit(function () {
         let content = $textArea.val();
         if ($.trim(content).length > 0) sessionStorage.setItem(Const.postContentStorageName, content);

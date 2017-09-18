@@ -131,6 +131,7 @@ export const appendCss = function () {
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
+  .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }
   
   /* 我的物品页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }

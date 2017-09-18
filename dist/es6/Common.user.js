@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     11.9.6
+// @version     11.9.7
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.9.6';
+const version = '11.9.7';
 
 /**
  * 导出模块
@@ -205,6 +205,7 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
+        Read.handleGoodPostSubmit();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -3294,21 +3295,6 @@ const init = exports.init = function () {
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
 
-    // 临时措施
-    let oldArmsInfo = Util.readData(_Const2.default.storagePrefix + 'myArmsInfo' + '_' + _Info2.default.uid);
-    if (oldArmsInfo) {
-        try {
-            console.log('转移装备信息');
-            let oldArmList = JSON.parse(oldArmsInfo);
-            let armsInfo = readArmsInfo();
-            armsInfo['装备列表'] = oldArmList;
-            writeArmsInfo(armsInfo);
-            Util.deleteData(_Const2.default.storagePrefix + 'myArmsInfo' + '_' + _Info2.default.uid);
-        } catch (ex) {
-            console.log(ex);
-        }
-    }
-
     if (Config.autoSaveArmsInfoEnabled) {
         addSavedArmsInfo($armArea);
     }
@@ -4308,6 +4294,7 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
                 $armArea.find(text.split(' ').map(armId => `tr[data-id="${armId}"] input[name="armCheck"]`).join(',')).prop('checked', true);
             }
         }
+        Script.runFunc('Item.addCommonArmsButton_select_change_', { name, $armArea });
         this.selectedIndex = 0;
     }).end().filter('[name="copyArmParameterSetting"]').click(function () {
         let $this = $(this);
@@ -6154,7 +6141,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     log = $log.html();
     logList = getLogList(log);
     levelInfoList = getLevelInfoList(logList);
-    if (/你被击败了|本日无争夺记录|你已经复活/.test(log)) {
+    if (/你被击败了|开始争夺战斗/.test(log)) {
         localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
     } else {
         pointsLogList = getTempPointsLogList(logList);
@@ -6168,7 +6155,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
         $('#wdsx').show();
     }
 
-    if (log.includes('本日无争夺记录') || log.includes('你已经复活')) {
+    if (log.includes('开始争夺战斗')) {
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     } else if (log.includes('你被击败了') && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
@@ -7948,7 +7935,7 @@ const handleLootLogNav = function () {
         }
     });
 
-    if (!log.includes('本日无争夺记录') && !log.includes('你已经复活')) {
+    if (log.includes('遭遇了')) {
         let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
         let curLevelInfoList = getLevelInfoList(curLogList);
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
@@ -9355,7 +9342,7 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
-            $(type === 2 ? '#textarea' : '[name="atc_content"]').val('');
+            $(type === 2 ? '#textarea' : 'textarea[name="atc_content"]').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -9403,7 +9390,9 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
                     $countdown.text(parseInt($countdown.text()) - 1);
                     if (index === list.length - 1) {
                         Msg.destroy();
-                        $('#textarea').val(content).focus();
+                        let $textarea = $('#textarea');
+                        $textarea.get(0).defaultValue = content;
+                        $textarea.val(content).focus();
                         $keywords.trigger('change');
                     } else {
                         setTimeout(function () {
@@ -9423,7 +9412,9 @@ const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
     if (type === 2) {
         $(document).dequeue('MultiQuote');
     } else {
-        $('[name="atc_content"]').val(content).focus();
+        let $textarea = $('textarea[name="atc_content"]');
+        $textarea.get(0).defaultValue = content;
+        $textarea.val(content).focus();
         $keywords.trigger('change');
     }
     Script.runFunc('Post.handleMultiQuote_after_', type);
@@ -9601,9 +9592,9 @@ const importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = fu
  */
 const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function () {
     window.addEventListener('beforeunload', function (e) {
-        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
+        let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea[name="atc_content"]');
         let content = $textArea.val();
-        if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
+        if (content && content !== $textArea.get(0).defaultValue && !_Info2.default.w.isSubmit) {
             let msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
             e.returnValue = msg;
             return msg;
@@ -9619,7 +9610,7 @@ const preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = 
  * 在提交时保存发帖内容
  */
 const savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function () {
-    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
+    let $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea[name="atc_content"]');
     $('form[action="post.php?"]').submit(function () {
         let content = $textArea.val();
         if ($.trim(content).length > 0) sessionStorage.setItem(_Const2.default.postContentStorageName, content);
@@ -9836,6 +9827,7 @@ const appendCss = exports.appendCss = function () {
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
+  .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }
   
   /* 我的物品页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
@@ -10965,7 +10957,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSelfRatingLink = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.handleGoodPostSubmit = exports.addSelfRatingLink = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -11687,7 +11679,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
      * @param {string} id 表情ID
      */
     const addSmileCode = function (id) {
-        let textArea = $('[name="atc_content"]').get(0);
+        let textArea = $('textarea[name="atc_content"]').get(0);
         if (!textArea) return;
         let code = `[s:${id}]`;
         Util.addCode(textArea, code);
@@ -11783,6 +11775,65 @@ const addSelfRatingLink = exports.addSelfRatingLink = function () {
     if (!safeId || !tid) return;
     if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
     $('a[href^="kf_tidfavor.php?action=favor"]').parent().append(`<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}">自助评分</a>`);
+};
+
+/**
+ * 处理优秀帖提交
+ */
+const handleGoodPostSubmit = exports.handleGoodPostSubmit = function () {
+    $('a[id^="cztz"]').attr('data-onclick', function () {
+        return $(this).attr('onclick');
+    }).removeAttr('onclick');
+
+    $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
+        let $this = $(this);
+        let $floor = $this.closest('.readlou').next().next('.readtext');
+        if ($this.data('highlight')) {
+            $floor.removeClass('pd_good_post_mark');
+            $this.removeData('highlight');
+        } else {
+            $floor.addClass('pd_good_post_mark');
+            $this.data('highlight', true);
+        }
+    }).on('click', 'a[id^="cztz"]', function () {
+        let $this = $(this);
+        if ($this.data('wait')) return;
+        let $floor = $this.closest('div[id^="floor"]').next('.readtext');
+        let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
+        let flag = false;
+        $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
+            let $currentFloor = $(this).closest('.readtext');
+            if ($currentFloor.is($floor)) return;
+            if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
+                flag = true;
+                return false;
+            }
+        });
+        if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
+
+        let safeId = Public.getSafeId();
+        let matches = /cztzyx\('(\d+)','(\d+|tpc)'\)/.exec($this.data('onclick'));
+        if (!matches || !safeId) return;
+        $this.next('.pd_good_post_msg').remove();
+        $this.data('wait', true);
+        $.ajax({
+            type: 'POST',
+            url: 'diy_read_cztz.php',
+            data: `tid=${matches[1]}&pid=${matches[2]}&safeid=${safeId}`,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (/已将本帖操作为优秀帖|该楼层已经是优秀帖/.test(html)) {
+                let $content = $floor.find('> table > tbody > tr > td');
+                if (!$content.find('.read_fds:contains("本帖为优秀帖")').length) {
+                    $content.find('.readidms, .readidm').after('<fieldset class="read_fds"><legend>↓</legend>本帖为优秀帖</fieldset>');
+                }
+            }
+            if (!/已将本楼层提交为优秀帖申请/.test(html)) {
+                $floor.removeClass('pd_good_post_mark');
+            }
+            $this.after(`<span class="pd_good_post_msg" style="margin-left: 5px; color: #777;">(${html})</span>`);
+        }).always(() => $this.removeData('wait'));
+    });
 };
 
 },{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){

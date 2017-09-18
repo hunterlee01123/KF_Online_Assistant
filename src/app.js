@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '11.9.6';
+const version = '11.9.7';
 
 /**
  * 导出模块
@@ -123,6 +123,7 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
+        Read.handleGoodPostSubmit();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();

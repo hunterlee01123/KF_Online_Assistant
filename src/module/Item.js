@@ -49,22 +49,6 @@ export const init = function () {
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
 
-    // 临时措施
-    let oldArmsInfo = Util.readData(Const.storagePrefix + 'myArmsInfo' + '_' + Info.uid);
-    if (oldArmsInfo) {
-        try {
-            console.log('转移装备信息');
-            let oldArmList = JSON.parse(oldArmsInfo);
-            let armsInfo = readArmsInfo();
-            armsInfo['装备列表'] = oldArmList;
-            writeArmsInfo(armsInfo);
-            Util.deleteData(Const.storagePrefix + 'myArmsInfo' + '_' + Info.uid);
-        }
-        catch (ex) {
-            console.log(ex);
-        }
-    }
-
     if (Config.autoSaveArmsInfoEnabled) {
         addSavedArmsInfo($armArea);
     }
@@ -1122,6 +1106,7 @@ export const addCommonArmsButton = function ($area, $armArea) {
                 $armArea.find(text.split(' ').map(armId => `tr[data-id="${armId}"] input[name="armCheck"]`).join(',')).prop('checked', true);
             }
         }
+        Script.runFunc('Item.addCommonArmsButton_select_change_', {name, $armArea});
         this.selectedIndex = 0;
     }).end().filter('[name="copyArmParameterSetting"]').click(function () {
         let $this = $(this);

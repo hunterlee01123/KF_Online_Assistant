@@ -100,7 +100,7 @@ export const enhanceLootIndexPage = function () {
     log = $log.html();
     logList = getLogList(log);
     levelInfoList = getLevelInfoList(logList);
-    if (/你被击败了|本日无争夺记录|你已经复活/.test(log)) {
+    if (/你被击败了|开始争夺战斗/.test(log)) {
         localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
     }
     else {
@@ -115,7 +115,7 @@ export const enhanceLootIndexPage = function () {
         $('#wdsx').show();
     }
 
-    if (log.includes('本日无争夺记录') || log.includes('你已经复活')) {
+    if (log.includes('开始争夺战斗')) {
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     }
     else if (log.includes('你被击败了') && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
@@ -2037,7 +2037,7 @@ const handleLootLogNav = function () {
         }
     });
 
-    if (!log.includes('本日无争夺记录') && !log.includes('你已经复活')) {
+    if (log.includes('遭遇了')) {
         let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
         let curLevelInfoList = getLevelInfoList(curLogList);
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;

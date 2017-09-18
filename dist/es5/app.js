@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '11.9.6';
+var version = '11.9.7';
 
 /**
  * 导出模块
@@ -189,6 +189,7 @@ var init = function init() {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
+        Read.handleGoodPostSubmit();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -3182,21 +3183,6 @@ var init = exports.init = function init() {
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
 
-    // 临时措施
-    var oldArmsInfo = Util.readData(_Const2.default.storagePrefix + 'myArmsInfo' + '_' + _Info2.default.uid);
-    if (oldArmsInfo) {
-        try {
-            console.log('转移装备信息');
-            var oldArmList = JSON.parse(oldArmsInfo);
-            var armsInfo = readArmsInfo();
-            armsInfo['装备列表'] = oldArmList;
-            writeArmsInfo(armsInfo);
-            Util.deleteData(_Const2.default.storagePrefix + 'myArmsInfo' + '_' + _Info2.default.uid);
-        } catch (ex) {
-            console.log(ex);
-        }
-    }
-
     if (Config.autoSaveArmsInfoEnabled) {
         addSavedArmsInfo($armArea);
     }
@@ -4495,6 +4481,7 @@ var addCommonArmsButton = exports.addCommonArmsButton = function addCommonArmsBu
                 }).join(',')).prop('checked', true);
             }
         }
+        Script.runFunc('Item.addCommonArmsButton_select_change_', { name: name, $armArea: $armArea });
         this.selectedIndex = 0;
     }).end().filter('[name="copyArmParameterSetting"]').click(function () {
         var $this = $(this);
@@ -7309,7 +7296,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     log = $log.html();
     logList = getLogList(log);
     levelInfoList = getLevelInfoList(logList);
-    if (/你被击败了|本日无争夺记录|你已经复活/.test(log)) {
+    if (/你被击败了|开始争夺战斗/.test(log)) {
         localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
     } else {
         pointsLogList = getTempPointsLogList(logList);
@@ -7323,7 +7310,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
         $('#wdsx').show();
     }
 
-    if (log.includes('本日无争夺记录') || log.includes('你已经复活')) {
+    if (log.includes('开始争夺战斗')) {
         $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
     } else if (log.includes('你被击败了') && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
@@ -9260,7 +9247,7 @@ var handleLootLogNav = function handleLootLogNav() {
         }
     });
 
-    if (!log.includes('本日无争夺记录') && !log.includes('你已经复活')) {
+    if (log.includes('遭遇了')) {
         var curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
         var curLevelInfoList = getLevelInfoList(curLogList);
         var curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
@@ -10861,7 +10848,7 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
-            $(type === 2 ? '#textarea' : '[name="atc_content"]').val('');
+            $(type === 2 ? '#textarea' : 'textarea[name="atc_content"]').val('');
             alert('多重引用数据已被清除');
         });
     }
@@ -10952,7 +10939,9 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
                     $countdown.text(parseInt($countdown.text()) - 1);
                     if (index === list.length - 1) {
                         Msg.destroy();
-                        $('#textarea').val(content).focus();
+                        var $textarea = $('#textarea');
+                        $textarea.get(0).defaultValue = content;
+                        $textarea.val(content).focus();
                         $keywords.trigger('change');
                     } else {
                         setTimeout(function () {
@@ -10972,7 +10961,9 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
     if (type === 2) {
         $(document).dequeue('MultiQuote');
     } else {
-        $('[name="atc_content"]').val(content).focus();
+        var $textarea = $('textarea[name="atc_content"]');
+        $textarea.get(0).defaultValue = content;
+        $textarea.val(content).focus();
         $keywords.trigger('change');
     }
     Script.runFunc('Post.handleMultiQuote_after_', type);
@@ -11135,9 +11126,9 @@ var importKfSmileEnhanceExtension = exports.importKfSmileEnhanceExtension = func
  */
 var preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = function preventCloseWindowWhenEditPost() {
     window.addEventListener('beforeunload', function (e) {
-        var $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
+        var $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea[name="atc_content"]');
         var content = $textArea.val();
-        if (content && content !== $textArea.get(0).defaultValue && !/\[\/quote]\n*$/.test(content) && !_Info2.default.w.isSubmit) {
+        if (content && content !== $textArea.get(0).defaultValue && !_Info2.default.w.isSubmit) {
             var msg = '你可能正在撰写发帖内容中，确定要关闭页面吗？';
             e.returnValue = msg;
             return msg;
@@ -11153,7 +11144,7 @@ var preventCloseWindowWhenEditPost = exports.preventCloseWindowWhenEditPost = fu
  * 在提交时保存发帖内容
  */
 var savePostContentWhenSubmit = exports.savePostContentWhenSubmit = function savePostContentWhenSubmit() {
-    var $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'input[name="atc_content"]');
+    var $textArea = $(location.pathname === '/post.php' ? '#textarea' : 'textarea[name="atc_content"]');
     $('form[action="post.php?"]').submit(function () {
         var content = $textArea.val();
         if ($.trim(content).length > 0) sessionStorage.setItem(_Const2.default.postContentStorageName, content);
@@ -11299,7 +11290,7 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1001; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .7);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .7); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  .pd_arm_id { font-style: normal; color: #999; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;\n    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  ' + (_Info2.default.isMobile ? '.topmenu { position: static; }' : '') + '\n  ' + (_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : '') + '\n  .topmenu { z-index: 1001; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readlou .pd_goto_link { color: #000; }\n  .readlou .pd_goto_link:hover { color: #51d; }\n  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }\n  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }\n  .pd_user_memo_tips:hover { color: #ddd; }\n  .readtext img[onclick] { max-width: 550px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .7);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .7); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  .pd_arm_id { font-style: normal; color: #999; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }\n  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  pd_cfg_main button { vertical-align: middle; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (Config.customCssEnabled) {
         $('head').append('<style>' + Config.customCssContent + '</style>');
@@ -12475,7 +12466,7 @@ var addSlowActionChecked = exports.addSlowActionChecked = function addSlowAction
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSelfRatingLink = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.handleGoodPostSubmit = exports.addSelfRatingLink = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -13194,7 +13185,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
      * @param {string} id 表情ID
      */
     var addSmileCode = function addSmileCode(id) {
-        var textArea = $('[name="atc_content"]').get(0);
+        var textArea = $('textarea[name="atc_content"]').get(0);
         if (!textArea) return;
         var code = '[s:' + id + ']';
         Util.addCode(textArea, code);
@@ -13290,6 +13281,67 @@ var addSelfRatingLink = exports.addSelfRatingLink = function addSelfRatingLink()
     if (!safeId || !tid) return;
     if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
     $('a[href^="kf_tidfavor.php?action=favor"]').parent().append('<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=' + safeId + '&ptid=' + tid + '">\u81EA\u52A9\u8BC4\u5206</a>');
+};
+
+/**
+ * 处理优秀帖提交
+ */
+var handleGoodPostSubmit = exports.handleGoodPostSubmit = function handleGoodPostSubmit() {
+    $('a[id^="cztz"]').attr('data-onclick', function () {
+        return $(this).attr('onclick');
+    }).removeAttr('onclick');
+
+    $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
+        var $this = $(this);
+        var $floor = $this.closest('.readlou').next().next('.readtext');
+        if ($this.data('highlight')) {
+            $floor.removeClass('pd_good_post_mark');
+            $this.removeData('highlight');
+        } else {
+            $floor.addClass('pd_good_post_mark');
+            $this.data('highlight', true);
+        }
+    }).on('click', 'a[id^="cztz"]', function () {
+        var $this = $(this);
+        if ($this.data('wait')) return;
+        var $floor = $this.closest('div[id^="floor"]').next('.readtext');
+        var url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
+        var flag = false;
+        $('.readidmsbottom, .readidmleft').find('a[href="' + url + '"]').each(function () {
+            var $currentFloor = $(this).closest('.readtext');
+            if ($currentFloor.is($floor)) return;
+            if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
+                flag = true;
+                return false;
+            }
+        });
+        if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
+
+        var safeId = Public.getSafeId();
+        var matches = /cztzyx\('(\d+)','(\d+|tpc)'\)/.exec($this.data('onclick'));
+        if (!matches || !safeId) return;
+        $this.next('.pd_good_post_msg').remove();
+        $this.data('wait', true);
+        $.ajax({
+            type: 'POST',
+            url: 'diy_read_cztz.php',
+            data: 'tid=' + matches[1] + '&pid=' + matches[2] + '&safeid=' + safeId,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (/已将本帖操作为优秀帖|该楼层已经是优秀帖/.test(html)) {
+                var $content = $floor.find('> table > tbody > tr > td');
+                if (!$content.find('.read_fds:contains("本帖为优秀帖")').length) {
+                    $content.find('.readidms, .readidm').after('<fieldset class="read_fds"><legend>↓</legend>本帖为优秀帖</fieldset>');
+                }
+            }
+            if (!/已将本楼层提交为优秀帖申请/.test(html)) {
+                $floor.removeClass('pd_good_post_mark');
+            }
+            $this.after('<span class="pd_good_post_msg" style="margin-left: 5px; color: #777;">(' + html + ')</span>');
+        }).always(function () {
+            return $this.removeData('wait');
+        });
+    });
 };
 
 },{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){
