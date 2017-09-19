@@ -107,7 +107,6 @@ const init = function () {
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
-        if (Config.customSmColorEnabled) Read.modifySmColor();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();

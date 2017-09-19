@@ -94,32 +94,6 @@ export const modifyMySmColor = function () {
 };
 
 /**
- * 修改各等级神秘颜色
- */
-export const modifySmColor = function () {
-    if (!Config.customSmColorConfigList.length) return;
-    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
-        let $this = $(this);
-        let smLevel = '';
-        if ($this.is('.readidmleft > a')) {
-            smLevel = $this.parent().next('.readidmright').text().toUpperCase();
-            if (!/(-?\d+|MAX)/i.test(smLevel)) return;
-        }
-        else {
-            let matches = /(-?\d+|MAX)级神秘/i.exec($this.parent().contents().last().text());
-            if (!matches) return;
-            smLevel = matches[1].toUpperCase();
-        }
-        for (let {min, max, color} of Config.customSmColorConfigList) {
-            if (Util.compareSmLevel(smLevel, min) >= 0 && Util.compareSmLevel(smLevel, max) <= 0) {
-                modifyFloorSmColor($this, color);
-                break;
-            }
-        }
-    });
-};
-
-/**
  * 调整帖子内容宽度，使其保持一致
  */
 export const adjustThreadContentWidth = function () {
@@ -572,7 +546,7 @@ export const handleBuyThreadBtn = function () {
             if (!sell || !url) return;
             if (sell >= Const.minBuyThreadWarningSell && !confirm(`此贴售价 ${sell} KFB，是否购买？`)) return;
             if (Config.buyThreadNoJumpEnabled) {
-                let $wait = Msg.wait('正在购买帖子&hellip;');
+                let $wait = Msg.wait('<strong>正在购买帖子&hellip;</strong>');
                 $.get(url + '&t=' + $.now(), function (html) {
                     Public.showFormatLog('购买帖子', html);
                     let {msg} = Util.getResponseMsg(html);

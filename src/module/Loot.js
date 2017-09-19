@@ -1225,7 +1225,12 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             if (Const.debug) console.log(html);
             if (!/你\(\d+\)遭遇了/.test(html) || index % Const.lootAttackPerCheckLevel === 0) {
                 if (html === 'no' && /你被击败了/.test(log)) isFail = true;
-                setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
+                setTimeout(function () {
+                    updateLootInfo(function () {
+                        if (!/你被击败了/.test(log)) isFail = false;
+                        after();
+                    });
+                }, Const.defAjaxInterval);
                 return;
             }
             log = html + log;
