@@ -2,6 +2,7 @@
 'use strict';
 import Info from './Info';
 import Const from './Const';
+import * as Public from './Public';
 
 /**
  * 检查自助评分文件大小
@@ -133,4 +134,79 @@ export const addLinksInGoodPostPage = function () {
             if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
         });
     }
+};
+
+/**
+ * 在帖子页面添加自助评分链接
+ */
+export const addSelfRatingLink = function () {
+    let fid = parseInt($('input[name="fid"]:first').val());
+    if (!fid || !Const.selfRateFidList.includes(fid)) return;
+    let tid = parseInt($('input[name="tid"]:first').val());
+    let safeId = Public.getSafeId();
+    if (!safeId || !tid) return;
+    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
+    $('a[href^="kf_tidfavor.php?action=favor"]').parent().append(
+        `<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}">自助评分</a>`
+    );
+};
+
+/**
+ * 处理优秀帖提交
+ */
+export const handleGoodPostSubmit = function () {
+    $('a[id^="cztz"]').attr('data-onclick', function () {
+        return $(this).attr('onclick');
+    }).removeAttr('onclick');
+
+    $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
+        let $this = $(this);
+        let $floor = $this.closest('.readlou').next().next('.readtext');
+        if ($this.data('highlight')) {
+            $floor.removeClass('pd_good_post_mark');
+            $this.removeData('highlight');
+        }
+        else {
+            $floor.addClass('pd_good_post_mark');
+            $this.data('highlight', true);
+        }
+    }).on('click', 'a[id^="cztz"]', function () {
+        let $this = $(this);
+        if ($this.data('wait')) return;
+        let $floor = $this.closest('div[id^="floor"]').next('.readtext');
+        let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
+        let flag = false;
+        $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
+            let $currentFloor = $(this).closest('.readtext');
+            if ($currentFloor.is($floor)) return;
+            if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
+                flag = true;
+                return false;
+            }
+        });
+        if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
+
+        let safeId = Public.getSafeId();
+        let matches = /cztzyx\('(\d+)','(\d+|tpc)'\)/.exec($this.data('onclick'));
+        if (!matches || !safeId) return;
+        $this.next('.pd_good_post_msg').remove();
+        $this.data('wait', true);
+        $.ajax({
+            type: 'POST',
+            url: 'diy_read_cztz.php',
+            data: `tid=${matches[1]}&pid=${matches[2]}&safeid=${safeId}`,
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            if (/已将本帖操作为优秀帖|该楼层已经是优秀帖/.test(html)) {
+                let $content = $floor.find('> table > tbody > tr > td');
+                if (!$content.find('.read_fds:contains("本帖为优秀帖")').length) {
+                    $content.find('.readidms, .readidm').after('<fieldset class="read_fds"><legend>↓</legend>本帖为优秀帖</fieldset>');
+                }
+            }
+            if (!/已将本楼层提交为优秀帖申请/.test(html)) {
+                $floor.removeClass('pd_good_post_mark');
+            }
+            $this.after(`<span class="pd_good_post_msg" style="margin-left: 5px; color: #777;">(${html})</span>`);
+        }).always(() => $this.removeData('wait'));
+    });
 };

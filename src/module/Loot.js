@@ -47,7 +47,9 @@ let itemUsedNumList = new Map();
 let changePointsAvailableCount = 0;
 // 点数分配记录列表
 let pointsLogList = [];
-
+/**
+ * @todo 将争夺保存天数改为次数
+ */
 /**
  * 初始化
  */

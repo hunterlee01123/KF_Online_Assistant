@@ -1238,7 +1238,9 @@ export const turnPageViaKeyboard = function () {
 /**
  * 显示通用的导入/导出设置对话框
  * @param {string} title 对话框标题
- * @param {string} configName 设置名称
+ * @param {string|{}} configName 设置名称或设置方法对象
+ * @param {function} configName.read 读取设置的方法
+ * @param {function} configName.write 写入设置的方法
  * @param {?function} [callback] 回调方法
  * @param {?function} [callbackAfterSubmit] 在提交之后的回调方法
  */
@@ -1260,6 +1262,7 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
   <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
+    let settings = $.type(configName) === 'object' ? configName.read() : Config[configName];
 
     $dialog.submit(function (e) {
         e.preventDefault();
@@ -1273,20 +1276,26 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
             alert('设置有错误');
             return;
         }
-        if (!options || $.type(options) !== $.type(Config[configName])) {
+        if (!options || $.type(options) !== $.type(settings)) {
             alert('设置有错误');
             return;
         }
-        Config[configName] = options;
-        writeConfig();
+        if ($.type(configName) === 'object') {
+            configName.write(options);
+        }
+        else {
+            Config[configName] = options;
+            writeConfig();
+        }
         alert('设置已导入');
         Dialog.close(dialogName);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
         else location.reload();
     });
     Dialog.show(dialogName);
-    $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
+    $dialog.find('[name="commonConfig"]').val(JSON.stringify(settings)).select().focus();
     if (typeof callback === 'function') callback($dialog);
+    Script.runFunc('Public.showCommonImportOrExportConfigDialog_after_', {title, configName});
 };
 
 /**

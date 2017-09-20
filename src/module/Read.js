@@ -5,6 +5,7 @@ import * as Util from './Util';
 import * as Msg from './Msg';
 import * as Dialog from './Dialog';
 import Const from './Const';
+import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
 import * as Script from './Script';
 import * as Public from './Public';
@@ -120,35 +121,41 @@ export const adjustThreadContentFontSize = function () {
 };
 
 /**
- * 添加复制购买人名单的选项
+ * 添加复制购买人名单和查看购买帖子记录的选项
  */
 export const addCopyBuyersListOption = function () {
     $('.readtext select[name="buyers"]').each(function () {
-        $(this).find('option:first-child').after('<option value="copyList">复制名单</option>');
+        $(this).find('option:first-child').after('<option value="copyList">复制名单</option><option value="openBuyThreadLogDialog">查看购买记录</option>');
     });
     $(document).on('change', 'select[name="buyers"]', function () {
         let $this = $(this);
-        if ($this.val() !== 'copyList') return;
-        let buyerList = $this.find('option').map(function (index) {
-            let name = $(this).text();
-            if (index === 0 || index === 1 || name.includes('-'.repeat(11))) return null;
-            else return name;
-        }).get().join('\n');
-        $this.get(0).selectedIndex = 0;
-        if (!buyerList) {
-            alert('暂时无人购买');
-            return;
-        }
+        let name = $this.val();
+        if (name === 'copyList') {
+            let buyerList = $this.find('option').map(function (index) {
+                let name = $(this).text();
+                if (index <= 2 || name.includes('-'.repeat(11))) return null;
+                else return name;
+            }).get().join('\n');
+            $this.get(0).selectedIndex = 0;
+            if (!buyerList) {
+                alert('暂时无人购买');
+                return;
+            }
 
-        const dialogName = 'pdCopyBuyerListDialog';
-        if ($('#' + dialogName).length > 0) return;
-        let html = `
+            const dialogName = 'pdCopyBuyerListDialog';
+            if ($('#' + dialogName).length > 0) return;
+            let html = `
 <div class="pd_cfg_main">
   <textarea name="buyerList" style="width: 200px; height: 300px; margin: 5px 0;" readonly>${buyerList}</textarea>
 </div>`;
-        let $dialog = Dialog.create(dialogName, '购买人名单', html);
-        Dialog.show(dialogName);
-        $dialog.find('[name="buyerList"]').select().focus();
+            let $dialog = Dialog.create(dialogName, '购买人名单', html);
+            Dialog.show(dialogName);
+            $dialog.find('[name="buyerList"]').select().focus();
+        }
+        else if (name === 'openBuyThreadLogDialog') {
+            $this.get(0).selectedIndex = 0;
+            showBuyThreadLogDialog();
+        }
     });
 };
 
@@ -552,6 +559,17 @@ export const handleBuyThreadBtn = function () {
                     let {msg} = Util.getResponseMsg(html);
                     Msg.remove($wait);
                     if (/操作完成/.test(msg)) {
+                        if (Config.saveBuyThreadLogEnabled) {
+                            let urlMatches = /tid=(\d+)&pid=(\d+|tpc)/.exec(url);
+                            if (!urlMatches) return;
+                            let fid = parseInt($('input[name="fid"]:first').val());
+                            let tid = parseInt(urlMatches[1]);
+                            let pid = urlMatches[2];
+                            let forumName = $('a[href^="kf_tidfavor.php?action=favor"]').parent().find('a[href^="thread.php?fid="]:last').text().trim();
+                            let threadTitle = getThreadTitle();
+                            let userName = $this.closest('.readtext').find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').text().trim();
+                            recordBuyThreadLog({fid, tid, pid, forumName, threadTitle, userName, sell});
+                        }
                         location.reload();
                     }
                     else if (/您已经购买此帖/.test(msg)) {
@@ -818,80 +836,141 @@ export const showAttachImageOutsideSellBox = function () {
  * @returns {string} 帖子标题
  */
 export const getThreadTitle = function () {
-    return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
+    return $('form[name="delatc"] > div:first > table > tbody > tr > td > span:first').text().trim();
+};
+
+// 保存购买帖子记录的键值名称
+const buyThreadLogName = Const.storagePrefix + 'buyThreadLog';
+
+/**
+ * 读取购买帖子记录
+ * @returns {{}[]} 购买帖子记录
+ */
+export const readBuyThreadLog = function () {
+    let log = [];
+    let options = Util.readData(buyThreadLogName + '_' + Info.uid);
+    console.debug(options);
+    if (!options) return log;
+    try {
+        options = JSON.parse(options);
+    }
+    catch (ex) {
+        return log;
+    }
+    if (!options || !Array.isArray(options)) return log;
+    log = options;
+    return log;
 };
 
 /**
- * 在帖子页面添加自助评分链接
+ * 写入购买帖子记录
+ * @param {{}[]} log 购买帖子记录
  */
-export const addSelfRatingLink = function () {
-    let fid = parseInt($('input[name="fid"]:first').val());
-    if (!fid || !Const.selfRateFidList.includes(fid)) return;
-    let tid = parseInt($('input[name="tid"]:first').val());
-    let safeId = Public.getSafeId();
-    if (!safeId || !tid) return;
-    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
-    $('a[href^="kf_tidfavor.php?action=favor"]').parent().append(
-        `<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}">自助评分</a>`
-    );
+export const writeBuyThreadLog = log => Util.writeData(buyThreadLogName + '_' + Info.uid, JSON.stringify(log));
+
+/**
+ * 清除购买帖子记录
+ */
+export const clearBuyThreadLog = () => Util.deleteData(buyThreadLogName + '_' + Info.uid);
+
+/**
+ * 记录一条新的购买帖子记录
+ * @param {number} fid 版块ID
+ * @param {number} tid 帖子ID
+ * @param {string} pid 楼层ID
+ * @param {string} forumName 版块名称
+ * @param {string} threadTitle 贴子标题
+ * @param {string} userName 购买贴的所有者
+ * @param {number} sell 售价
+ */
+export const recordBuyThreadLog = function ({fid, tid, pid, forumName, threadTitle, userName, sell}) {
+    let log = readBuyThreadLog();
+    log.push($.extend({time: $.now()}, {fid, tid, pid, forumName, threadTitle, userName, sell}));
+    log = log.sort((a, b) => a.time - b.time).slice(-Config.saveBuyThreadLogMaxNum);
+    writeBuyThreadLog(log);
 };
 
 /**
- * 处理优秀帖提交
+ * 显示购买帖子记录对话框
  */
-export const handleGoodPostSubmit = function () {
-    $('a[id^="cztz"]').attr('data-onclick', function () {
-        return $(this).attr('onclick');
-    }).removeAttr('onclick');
+export const showBuyThreadLogDialog = function () {
+    const dialogName = 'pdBuyThreadLogDialog';
+    if ($('#' + dialogName).length > 0) return;
 
-    $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
-        let $this = $(this);
-        let $floor = $this.closest('.readlou').next().next('.readtext');
-        if ($this.data('highlight')) {
-            $floor.removeClass('pd_good_post_mark');
-            $this.removeData('highlight');
-        }
-        else {
-            $floor.addClass('pd_good_post_mark');
-            $this.data('highlight', true);
-        }
-    }).on('click', 'a[id^="cztz"]', function () {
-        let $this = $(this);
-        if ($this.data('wait')) return;
-        let $floor = $this.closest('div[id^="floor"]').next('.readtext');
-        let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
-        let flag = false;
-        $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
-            let $currentFloor = $(this).closest('.readtext');
-            if ($currentFloor.is($floor)) return;
-            if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
-                flag = true;
-                return false;
-            }
-        });
-        if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
+    let log = readBuyThreadLog();
+    let html = `
+<div class="pd_cfg_main">
+  <div style="margin-top: 5px;">
+    <label>
+      保存最近的 <input name="saveBuyThreadLogMaxNum" type="number" value="${Config.saveBuyThreadLogMaxNum}" min="1" max="10000" style="width: 60px;"> 条记录
+    </label>
+    <a class="pd_btn_link" data-name="save" href="#">保存</a>
+  </div>
+  <fieldset>
+    <legend>购买帖子记录 <span class="pd_stat" data-name="logHeaderInfo"></span></legend>
+    <div class="pd_stat pd_log_content" id="pdBuyThreadLog" style="width: 900px; max-height: 450px; height: auto;"></div>
+  </fieldset>
+</div>
+<div class="pd_cfg_btns">
+  <span class="pd_cfg_about"><a data-name="openImOrExBuyThreadLogDialog" href="#">导入/导出购买帖子记录</a></span>
+  <button data-action="close" type="button">关闭</button>
+  <button name="clear" type="button">清除记录</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '购买帖子记录', html);
+    let $buyThreadLog = $dialog.find('#pdBuyThreadLog');
 
-        let safeId = Public.getSafeId();
-        let matches = /cztzyx\('(\d+)','(\d+|tpc)'\)/.exec($this.data('onclick'));
-        if (!matches || !safeId) return;
-        $this.next('.pd_good_post_msg').remove();
-        $this.data('wait', true);
-        $.ajax({
-            type: 'POST',
-            url: 'diy_read_cztz.php',
-            data: `tid=${matches[1]}&pid=${matches[2]}&safeid=${safeId}`,
-            timeout: Const.defAjaxTimeout,
-        }).done(function (html) {
-            if (/已将本帖操作为优秀帖|该楼层已经是优秀帖/.test(html)) {
-                let $content = $floor.find('> table > tbody > tr > td');
-                if (!$content.find('.read_fds:contains("本帖为优秀帖")').length) {
-                    $content.find('.readidms, .readidm').after('<fieldset class="read_fds"><legend>↓</legend>本帖为优秀帖</fieldset>');
-                }
-            }
-            if (!/已将本楼层提交为优秀帖申请/.test(html)) {
-                $floor.removeClass('pd_good_post_mark');
-            }
-            $this.after(`<span class="pd_good_post_msg" style="margin-left: 5px; color: #777;">(${html})</span>`);
-        }).always(() => $this.removeData('wait'));
+    $dialog.find('[data-name="save"]').click(function (e) {
+        e.preventDefault();
+        let num = parseInt($dialog.find('[name="saveBuyThreadLogMaxNum"]').val());
+        if (!num || num > 10000 || num < 0) {
+            alert('数量取值范围：1-10000');
+            return;
+        }
+        readConfig();
+        Config.saveBuyThreadLogMaxNum = num;
+        writeConfig();
+        alert('设置已保存');
+    }).end().find('[data-name="openImOrExBuyThreadLogDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('购买帖子记录', {read: readBuyThreadLog, write: writeBuyThreadLog});
+    }).end().find('[name="clear"]').click(function () {
+        if (confirm('是否清除所有购买帖子记录？')) {
+            clearBuyThreadLog();
+            alert('购买帖子记录已清除');
+        }
     });
+
+    let logInfo = {};
+    for (let info of log) {
+        let date = Util.getDateString(new Date(info.time));
+        if (!(date in logInfo)) logInfo[date] = [];
+        logInfo[date].push(info);
+    }
+    let totalSell = 0;
+    let logHtml = '';
+    for (let date of Object.keys(logInfo).sort((a, b) => a > b ? 1 : -1)) {
+        let currentDateHtml = '';
+        let currentDateTotalSell = 0;
+        for (let {time, fid, tid, pid, forumName, threadTitle, userName, sell} of logInfo[date]) {
+            totalSell += sell;
+            currentDateTotalSell += sell;
+            currentDateHtml += `
+<p>
+  <b>${Util.getTimeString(new Date(time))}：</b>[<a href="thread.php?fid=${fid}" target="_blank">${forumName}</a>]
+  《<a href="read.php?tid=${tid}${pid === 'tpc' ? '' : '&spid=' + pid}" target="_blank">${threadTitle}</a>》
+  &nbsp;发帖者：<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>
+  &nbsp;售价：<em>${sell}</em>KFB
+</p>`;
+        }
+        logHtml += `<h3>【${date}】 (共<em>${logInfo[date].length}</em>项，合计<em>${currentDateTotalSell.toLocaleString()}</em>KFB)</h3>${currentDateHtml}`;
+    }
+    $buyThreadLog.html(logHtml ? logHtml : '暂无购买帖子记录（需开启“保存购买帖子记录”的功能）');
+    $dialog.find('[data-name="logHeaderInfo"]').html(`(共<em>${log.length}</em>项，总售价<em>${totalSell.toLocaleString()}</em>KFB)`);
+
+    Dialog.show(dialogName);
+    let $lastChild = $buyThreadLog.find('p:last');
+    if ($lastChild.length > 0) {
+        $lastChild.get(0).scrollIntoView();
+    }
+    Script.runFunc('Read.showBuyThreadLogDialog_after_');
 };

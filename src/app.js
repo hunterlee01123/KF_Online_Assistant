@@ -121,8 +121,8 @@ const init = function () {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
-        Read.handleGoodPostSubmit();
+        if (Config.addSelfRateLinkEnabled) SelfRate.addSelfRatingLink();
+        SelfRate.handleGoodPostSubmit();
     }
     else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();

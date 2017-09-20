@@ -6,6 +6,8 @@ import Const from './Const';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 import * as LootLog from './LootLog';
+import * as Item from './Item';
+import * as Read from './Read';
 
 // 保存设置的键值名称
 const name = Const.storagePrefix + 'config';
@@ -118,6 +120,10 @@ export const Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否在购买帖子时页面不跳转，true：开启；false：关闭
     buyThreadNoJumpEnabled: true,
+    // 是否保存购买帖子记录，true：开启；false：关闭
+    saveBuyThreadLogEnabled: true,
+    // 购买帖子记录的最大保存数量
+    saveBuyThreadLogMaxNum: 2000,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
@@ -280,6 +286,8 @@ export const changeStorageType = function (storageType) {
     let log = Log.read();
     let tmpLog = TmpLog.read();
     let lootLog = LootLog.read();
+    let armsInfo = Item.readArmsInfo();
+    let buyThreadLog = Read.readBuyThreadLog();
     Info.storageType = storageType;
     if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', Info.storageType);
     if (!Util.deepEqual(Config, Info.w.Config) || !$.isEmptyObject(log)) {
@@ -288,6 +296,8 @@ export const changeStorageType = function (storageType) {
             Log.write(log);
             TmpLog.write(tmpLog);
             LootLog.write(lootLog);
+            Item.writeArmsInfo(armsInfo);
+            Read.writeBuyThreadLog(buyThreadLog);
         }
     }
 };

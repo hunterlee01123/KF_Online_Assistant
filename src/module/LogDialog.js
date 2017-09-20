@@ -8,6 +8,7 @@ import {
 } from './Config';
 import * as Log from './Log';
 import * as Item from './Item';
+import * as Read from './Read';
 import * as Script from './Script';
 
 /**
@@ -49,7 +50,10 @@ export const show = function () {
   </fieldset>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
+  <span class="pd_cfg_about">
+    <a class="pd_btn_link" data-name="openImOrExLogDialog" href="#">导入/导出日志</a>
+    <a class="pd_btn_link" data-name="openBuyThreadLogDialog" href="#">查看购买帖子记录</a>
+  </span>
   <button data-action="close" type="button">关闭</button>
   <button name="clear" type="button">清除日志</button>
 </div>`;
@@ -142,6 +146,9 @@ export const show = function () {
     }).end().find('[data-name="openImOrExLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLogDialog();
+    }).end().find('[data-name="openBuyThreadLogDialog"]').click(function (e) {
+        e.preventDefault();
+        Read.showBuyThreadLogDialog();
     });
 
     showLogContent(log, dateList[curIndex], $dialog);
