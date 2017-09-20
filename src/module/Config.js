@@ -120,8 +120,8 @@ export const Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否在购买帖子时页面不跳转，true：开启；false：关闭
     buyThreadNoJumpEnabled: true,
-    // 是否保存购买帖子记录，true：开启；false：关闭
-    saveBuyThreadLogEnabled: true,
+    // 是否保存购买帖子记录（需同时开启“在购买帖子时页面不跳转”的功能），true：开启；false：关闭
+    saveBuyThreadLogEnabled: false,
     // 购买帖子记录的最大保存数量
     saveBuyThreadLogMaxNum: 2000,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭

@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.0
+// @version     12.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.0';
+const version = '12.0.1';
 
 /**
  * 导出模块
@@ -1067,8 +1067,8 @@ const Config = exports.Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否在购买帖子时页面不跳转，true：开启；false：关闭
     buyThreadNoJumpEnabled: true,
-    // 是否保存购买帖子记录，true：开启；false：关闭
-    saveBuyThreadLogEnabled: true,
+    // 是否保存购买帖子记录（需同时开启“在购买帖子时页面不跳转”的功能），true：开启；false：关闭
+    saveBuyThreadLogEnabled: false,
     // 购买帖子记录的最大保存数量
     saveBuyThreadLogMaxNum: 2000,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
@@ -1532,7 +1532,7 @@ const show = exports.show = function () {
       </label>
       <label class="pd_cfg_ml">
         <input name="saveBuyThreadLogEnabled" type="checkbox"> 保存购买帖子记录
-        <span class="pd_cfg_tips" title="自动保存购买帖子的记录，可在助手日志或购买人名单里点击查看购买记录">[?]</span>
+        <span class="pd_cfg_tips" title="自动保存购买帖子的记录，可在助手日志或购买人名单里点击查看购买记录（需同时开启“购买帖子时不跳转”的功能）">[?]</span>
       </label><br>
       <label>
         <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> 写帖子时阻止关闭页面

@@ -241,7 +241,7 @@ export const show = function () {
       </label>
       <label class="pd_cfg_ml">
         <input name="saveBuyThreadLogEnabled" type="checkbox"> 保存购买帖子记录
-        <span class="pd_cfg_tips" title="自动保存购买帖子的记录，可在助手日志或购买人名单里点击查看购买记录">[?]</span>
+        <span class="pd_cfg_tips" title="自动保存购买帖子的记录，可在助手日志或购买人名单里点击查看购买记录（需同时开启“购买帖子时不跳转”的功能）">[?]</span>
       </label><br>
       <label>
         <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> 写帖子时阻止关闭页面
