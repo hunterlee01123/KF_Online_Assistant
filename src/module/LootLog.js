@@ -44,14 +44,13 @@ export const clear = () => Util.deleteData(name + '_' + Info.uid);
  */
 export const record = function (logList, pointsLogList) {
     let log = read();
-    let overdueDate = Util.getDate(`-${Config.lootLogSaveDays}d`).getTime();
-    $.each(Util.getObjectKeyList(log, 1), function (i, key) {
-        key = parseInt(key);
-        if (isNaN(key) || key <= overdueDate) delete log[key];
-        else return false;
-    });
     log[$.now()] = {log: logList, points: pointsLogList};
-    write(log);
+    let newLog = {};
+    $.each(Util.getObjectKeyList(log, 1).slice(-Config.lootLogSaveMaxNum), function (i, key) {
+        key = parseInt(key);
+        newLog[key] = log[key];
+    });
+    write(newLog);
 };
 
 /**

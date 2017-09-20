@@ -111,8 +111,8 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="20" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="默认值：${defConfig.lootLogSaveDays}，最大值：20">[?]</span>
+        保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
+        <span class="pd_cfg_tips" title="争夺记录最大保存数量，默认值：${defConfig.lootLogSaveMaxNum}，最大值：20">[?]</span>
       </label><br>
       <label>
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
