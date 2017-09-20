@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '11.9.7';
+const version = '12.0';
 
 /**
  * 导出模块
@@ -171,7 +171,6 @@ const init = function () {
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
-        if (Config.customSmColorEnabled) Read.modifySmColor();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
@@ -186,8 +185,8 @@ const init = function () {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        if (Config.addSelfRateLinkEnabled) Read.addSelfRatingLink();
-        Read.handleGoodPostSubmit();
+        if (Config.addSelfRateLinkEnabled) SelfRate.addSelfRatingLink();
+        SelfRate.handleGoodPostSubmit();
     } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
@@ -399,7 +398,7 @@ const handleBankPage = exports.handleBankPage = function () {
     $fee.html($fee.html().replace(/\(手续费(\d+)%\)/, '(手续费<span id="pdFee" data-num="$1">$1</span>%)'));
 
     let $transferLimit = $('form[name="form3"] > span:first');
-    $transferLimit.html($transferLimit.html().replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${num}">${parseInt(num).toLocaleString()}</b>`).replace('额度通过发帖(每个主题帖200额度/回复帖10额度)和被评分（评分数x120%额度）获得', '额度可通过领取每日奖励获得'));
+    $transferLimit.html($transferLimit.html().replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${num}">${parseInt(num).toLocaleString()}</b>`).replace('额度通过发帖(每个主题帖200额度/回复帖10额度)和被评分（评分数x120%额度）获得', '在转账时会扣除相应额度，额度是一次性的，可通过领取每日奖励获得'));
     addBatchTransferButton();
 
     $(document).on('change', '[name="savemoney"], [name="drawmoney"], [name="to_money"], [name="to_money"], [name="transfer_money"]', function () {
@@ -927,6 +926,14 @@ var _LootLog = require('./LootLog');
 
 var LootLog = _interopRequireWildcard(_LootLog);
 
+var _Item = require('./Item');
+
+var Item = _interopRequireWildcard(_Item);
+
+var _Read = require('./Read');
+
+var Read = _interopRequireWildcard(_Read);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -969,8 +976,8 @@ const Config = exports.Config = {
     autoSaveLootLogInSpecialCaseEnabled: false,
     // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00
     checkLootAfterTime: '00:05:00',
-    // 历史争夺记录保存天数
-    lootLogSaveDays: 7,
+    // 历史争夺记录的最大保存数量
+    lootLogSaveMaxNum: 7,
     // 是否在首页显示改点剩余次数信息（冷却时则显示倒计时），true：开启；false：关闭
     showChangePointsInfoEnabled: false,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
@@ -1028,10 +1035,6 @@ const Config = exports.Config = {
     threadContentFontSize: 0,
     // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空
     customMySmColor: '',
-    // 是否开启自定义各等级神秘颜色的功能，（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），true：开启；false：关闭
-    customSmColorEnabled: false,
-    // 自定义各等级神秘颜色的设置列表，例：[{min:'50',max:'100',color:'#009cff'},{min:'800',max:'MAX',color:'#ff0000'}]
-    customSmColorConfigList: [],
     // 是否将帖子中的绯月其它域名的链接修改为当前域名，true：开启；false：关闭
     modifyKfOtherDomainEnabled: true,
     // 是否在帖子页面开启多重回复和多重引用的功能，true：开启；false：关闭
@@ -1046,14 +1049,18 @@ const Config = exports.Config = {
     turnPageViaKeyboardEnabled: false,
     // 是否在购买帖子时页面不跳转，true：开启；false：关闭
     buyThreadNoJumpEnabled: true,
+    // 是否保存购买帖子记录，true：开启；false：关闭
+    saveBuyThreadLogEnabled: true,
+    // 购买帖子记录的最大保存数量
+    saveBuyThreadLogMaxNum: 2000,
     // 是否在撰写发帖内容时阻止关闭页面，true：开启；false：关闭
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
     autoSavePostContentWhenSubmitEnabled: false,
-    // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
-    kfSmileEnhanceExtensionEnabled: false,
     // 在帖子页面添加自助评分链接（仅限评分人员使用），true：开启；false：关闭
     addSelfRateLinkEnabled: false,
+    // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
+    kfSmileEnhanceExtensionEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1207,6 +1214,8 @@ const changeStorageType = exports.changeStorageType = function (storageType) {
     let log = Log.read();
     let tmpLog = TmpLog.read();
     let lootLog = LootLog.read();
+    let armsInfo = Item.readArmsInfo();
+    let buyThreadLog = Read.readBuyThreadLog();
     _Info2.default.storageType = storageType;
     if (typeof GM_setValue !== 'undefined') GM_setValue('StorageType', _Info2.default.storageType);
     if (!Util.deepEqual(Config, _Info2.default.w.Config) || !$.isEmptyObject(log)) {
@@ -1215,6 +1224,8 @@ const changeStorageType = exports.changeStorageType = function (storageType) {
             Log.write(log);
             TmpLog.write(tmpLog);
             LootLog.write(lootLog);
+            Item.writeArmsInfo(armsInfo);
+            Read.writeBuyThreadLog(buyThreadLog);
         }
     }
 };
@@ -1232,11 +1243,10 @@ const normalize = exports.normalize = function (options) {
             settings[key] = value;
         }
     }
-    if (typeof settings.lootLogSaveDays !== 'undefined' && settings.lootLogSaveDays > 20) settings.lootLogSaveDays = 20;
     return settings;
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./LootLog":14,"./TmpLog":22,"./Util":23}],5:[function(require,module,exports){
+},{"./Const":6,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Read":19,"./TmpLog":22,"./Util":23}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -1374,8 +1384,8 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        争夺记录保存天数 <input name="lootLogSaveDays" type="number" min="1" max="20" style="width: 40px;" required>
-        <span class="pd_cfg_tips" title="默认值：${_Config.Config.lootLogSaveDays}，最大值：20">[?]</span>
+        保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
+        <span class="pd_cfg_tips" title="争夺记录最大保存数量，默认值：${_Config.Config.lootLogSaveMaxNum}，最大值：20">[?]</span>
       </label><br>
       <label>
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
@@ -1482,11 +1492,6 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空">[?]</span>
       </label><br>
       <label>
-        <input name="customSmColorEnabled" type="checkbox" data-disabled="[data-name=openCustomSmColorDialog]"> 自定义各等级神秘颜色
-        <span class="pd_cfg_tips" title="自定义各等级神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），请点击详细设置自定义各等级颜色">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openCustomSmColorDialog" href="#">详细设置&raquo;</a><br>
-      <label>
         <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> 显示用户备注
         <span class="pd_cfg_tips" title="在楼层内的用户名旁显示该用户的自定义备注，请点击详细设置自定义用户备注">[?]</span>
       </label>
@@ -1504,12 +1509,12 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在帖子页面解析HTML5多媒体标签，详见【常见问题12】">[?]</span>
       </label><br>
       <label>
-        <input name="buyThreadNoJumpEnabled" type="checkbox"> 购买帖子时不跳转
+        <input name="buyThreadNoJumpEnabled" type="checkbox" data-disabled="[name=saveBuyThreadLogEnabled]" data-mutex="true"> 购买帖子时不跳转
         <span class="pd_cfg_tips" title="使用Ajax的方式购买帖子，购买时页面不会跳转">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
-        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
+        <input name="saveBuyThreadLogEnabled" type="checkbox"> 保存购买帖子记录
+        <span class="pd_cfg_tips" title="自动保存购买帖子的记录，可在助手日志或购买人名单里点击查看购买记录">[?]</span>
       </label><br>
       <label>
         <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> 写帖子时阻止关闭页面
@@ -1522,6 +1527,10 @@ const show = exports.show = function () {
       <label>
         <input name="addSelfRateLinkEnabled" type="checkbox"> 添加自助评分链接
         <span class="pd_cfg_tips" title="在帖子页面添加自助评分链接（仅限评分人员使用）">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1907,147 +1916,6 @@ const showImportOrExportSettingDialog = function () {
     });
     Dialog.show(dialogName);
     $setting.val(JSON.stringify(Util.getDifferenceSetOfObject(_Config.Config, Config))).select().focus();
-};
-
-/**
- * 显示自定义各等级神秘颜色设置对话框
- */
-const showCustomSmColorDialog = function () {
-    const dialogName = 'pdCustomSmColorDialog';
-    if ($('#' + dialogName).length > 0) return;
-    let html = `
-<div class="pd_cfg_main">
-  <div style="border-bottom: 1px solid #9191ff; margin-bottom: 7px; padding-bottom: 5px;">
-    <strong>
-      示例（<a target="_blank" href="http://www.35ui.cn/jsnote/peise.html">常用配色表</a> / 
-      <a target="_blank" href="read.php?tid=488016">配色方案收集贴</a>）：
-    </strong><br>
-    <b>等级范围：</b>4-4 <b>颜色：</b><span style="color: #0000ff;">#0000ff</span><br>
-    <b>等级范围：</b>10-99 <b>颜色：</b><span style="color: #5ad465;">#5ad465</span><br>
-    <b>等级范围：</b>5000-MAX <b>颜色：</b><span style="color: #ff0000;">#ff0000</span>
-  </div>
-  <ul data-name="smColorList"></ul>
-  <div style="margin-top: 5px;" data-name="customSmColorAddBtns">
-    <a class="pd_btn_link" data-action="addOne" href="#">增加1个</a>
-    <a class="pd_btn_link" data-action="addFive" href="#">增加5个</a>
-    <a class="pd_btn_link" data-action="clear" href="#">清除所有</a>
-  </div>
-</div>
-<div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a data-name="openImOrExCustomSmColorConfigDialog" href="#">导入/导出配色方案</a></span>
-  <button type="submit">保存</button>
-  <button data-action="close" type="button">取消</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, '自定义各等级神秘颜色', html, 'min-width: 327px;');
-    let $customSmColorList = $dialog.find('[data-name="smColorList"]');
-
-    $customSmColorList.on('change', '[name="color"]', function () {
-        let $this = $(this);
-        let color = $.trim($this.val());
-        if (/^#[0-9a-fA-F]{6}$/.test(color)) {
-            $this.next('[type="color"]').val(color.toLowerCase());
-        }
-    }).on('change', '[type="color"]', function () {
-        let $this = $(this);
-        $this.prev('[type="text"]').val($this.val().toString().toLowerCase());
-    }).on('click', 'a', function (e) {
-        e.preventDefault();
-        $(this).closest('li').remove();
-    });
-
-    /**
-     * 获取每列神秘颜色的HTML内容
-     * @param {string} min 最小神秘等级
-     * @param {string} max 最大神秘等级
-     * @param {string} color 颜色
-     * @returns {string} 每列神秘颜色的HTML内容
-     */
-    const getSmColorLineHtml = function ({ min = '', max = '', color = '' } = {}) {
-        return `
-<li>
-  <label>等级范围 <input name="min" type="text" maxlength="5" style="width: 30px;" value="${min}"></label>
-  <label>- <input name="max" type="text" maxlength="5" style="width: 30px;" value="${max}"></label>
-  <label>
-    &nbsp;颜色 <input name="color" type="text" maxlength="7" style="width: 50px;" value="${color}">
-    <input style="margin-left: 0;" type="color" value="${color}">
-  </label>
-  <a href="#">删除</a>
-</li>`;
-    };
-
-    let smColorHtml = '';
-    for (let data of Config.customSmColorConfigList) {
-        smColorHtml += getSmColorLineHtml(data);
-    }
-    $customSmColorList.html(smColorHtml);
-
-    $dialog.submit(function (e) {
-        e.preventDefault();
-        let list = [];
-        let verification = true;
-        $customSmColorList.find('li').each(function () {
-            let $this = $(this);
-            let $txtSmMin = $this.find('[name="min"]');
-            let min = $.trim($txtSmMin.val()).toUpperCase();
-            if (min === '') return;
-            if (!/^(-?\d+|MAX)$/i.test(min)) {
-                verification = false;
-                $txtSmMin.select().focus();
-                alert('等级范围格式不正确');
-                return false;
-            }
-            let $txtSmMax = $this.find('[name="max"]');
-            let max = $.trim($txtSmMax.val()).toUpperCase();
-            if (max === '') return;
-            if (!/^(-?\d+|MAX)$/i.test(max)) {
-                verification = false;
-                $txtSmMax.select().focus();
-                alert('等级范围格式不正确');
-                return false;
-            }
-            if (Util.compareSmLevel(max, min) < 0) {
-                verification = false;
-                $txtSmMin.select().focus();
-                alert('等级范围格式不正确');
-                return false;
-            }
-            let $txtSmColor = $this.find('[name="color"]');
-            let color = $.trim($txtSmColor.val()).toLowerCase();
-            if (color === '') return;
-            if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
-                verification = false;
-                $txtSmColor.select().focus();
-                alert('颜色格式不正确');
-                return false;
-            }
-            list.push({ min, max, color });
-        });
-        if (verification) {
-            list.sort((a, b) => Util.compareSmLevel(a.min, b.min) > 0 ? 1 : -1);
-            Config.customSmColorConfigList = list;
-            (0, _Config.write)();
-            Dialog.close(dialogName);
-        }
-    }).find('[data-action="addOne"], [data-action="addFive"]').click(function (e) {
-        e.preventDefault();
-        let num = 1;
-        if ($(this).is('[data-action="addFive"]')) num = 5;
-        for (let i = 1; i <= num; i++) {
-            $customSmColorList.append(getSmColorLineHtml());
-        }
-        Dialog.resize(dialogName);
-    }).end().find('[data-action="clear"]').click(function (e) {
-        e.preventDefault();
-        if (confirm('是否清除所有颜色？')) {
-            $customSmColorList.empty();
-            Dialog.resize(dialogName);
-        }
-    }).end().find('[data-name="openImOrExCustomSmColorConfigDialog"]').click(function (e) {
-        e.preventDefault();
-        Public.showCommonImportOrExportConfigDialog('配色方案', 'customSmColorConfigList', $dialog => $dialog.find('.pd_cfg_about').append('<a target="_blank" href="read.php?tid=488016">其他人分享的配色方案</a>'));
-    });
-
-    Dialog.show(dialogName);
 };
 
 /**
@@ -3292,7 +3160,7 @@ const init = exports.init = function () {
  * @param {number} sequence 下一批物品的插入顺序，1：向前插入；2：往后添加
  * @param {function} callback 回调函数
  */
-const getNextObjects = exports.getNextObjects = function (sequence, callback = null) {
+const getNextObjects = exports.getNextObjects = function (sequence = 1, callback = null) {
     console.log('获取下一批物品Start');
     $.ajax({
         type: 'GET',
@@ -3310,7 +3178,7 @@ const getNextObjects = exports.getNextObjects = function (sequence, callback = n
             let trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
             let $area = index === 1 ? $armArea : $itemArea;
             let addHtml = '';
-            let newArmsInfo = { '已装备武器': 0, '已装备护甲': 0, '装备列表': {} };
+            let newArmsInfo = { '已装备武器': 0, '已装备护甲': 0, '上次记录的最新装备': 0, '上次记录的时间': 0, '装备列表': {} };
             for (let i in trMatches) {
                 let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
                 if (!idMatches) continue;
@@ -3380,6 +3248,9 @@ const addBatchOpenBoxesLink = function () {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         }
         Msg.destroy();
+        if (Config.autoSaveArmsInfoEnabled) {
+            getNextObjects(1);
+        }
         openBoxes({ id, boxType, num, safeId });
     });
 };
@@ -3521,6 +3392,9 @@ const showOpenAllBoxesDialog = function () {
         Dialog.close(dialogName);
         if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        }
+        if (Config.autoSaveArmsInfoEnabled) {
+            getNextObjects(1);
         }
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
@@ -3743,7 +3617,7 @@ const myArmsInfoName = _Const2.default.storagePrefix + 'myArmsInfo2';
  * @returns {{}} 装备信息对象
  */
 const readArmsInfo = exports.readArmsInfo = function () {
-    let info = { '已装备武器': 0, '已装备护甲': 0, '装备列表': {} };
+    let info = { '已装备武器': 0, '已装备护甲': 0, '上次记录的最新装备': 0, '上次记录的时间': 0, '装备列表': {} };
     let options = Util.readData(myArmsInfoName + '_' + _Info2.default.uid);
     if (!options) return info;
     try {
@@ -3812,7 +3686,9 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
         $this.removeAttr('id').prepend(`<td id="${id}"><a data-name="equip" href="javascript:;">装备</a></td><td><a data-name="smelt" href="javascript:;">熔炼</a></td>`).addClass('pd_arm_equipped');
     });
 
-    $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function () {
+    let writeArmsInfoflag = false;
+    let armsInfo = Config.autoSaveArmsInfoEnabled ? readArmsInfo() : {};
+    $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function (index) {
         let $this = $(this);
         let matches = /wp_(\d+)/.exec($this.attr('id'));
         if (!matches) return;
@@ -3822,7 +3698,16 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
         let html = $td.html();
         let armInfo = getArmInfo(html);
         $tr.attr('data-id', armId).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
-        $td.html(`<i class="pd_arm_id">[ID: ${armId}]</i> ${handleUselessSubProperties(html)}`);
+        let newArmMark = false;
+        if (Config.autoSaveArmsInfoEnabled) {
+            if (index === 0 && (!armsInfo['上次记录的最新装备'] || !armsInfo['上次记录的时间'] || Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= 1)) {
+                writeArmsInfoflag = true;
+                armsInfo['上次记录的最新装备'] = armId;
+                armsInfo['上次记录的时间'] = $.now();
+            }
+            if (armId > armsInfo['上次记录的最新装备']) newArmMark = true;
+        }
+        $td.html(`${newArmMark ? '<i class="pd_new_arm_mark">[新]</i> ' : ''}<i class="pd_arm_id">[ID: ${armId}]</i> ${handleUselessSubProperties(html)}`);
         if (Config.armsMemo[armId]) {
             $td.attr('data-memo', Config.armsMemo[armId].replace(/"/g, ''));
         }
@@ -3840,19 +3725,17 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
             sortArmsById($armArea);
         }
 
-        let armsInfo = readArmsInfo();
         let realEquippedWeaponId = parseInt($armArea.find('.pd_arm_equipped[data-class="武器"]:not([data-saved="true"])').data('id'));
         let realEquippedArmorId = parseInt($armArea.find('.pd_arm_equipped[data-class="护甲"]:not([data-saved="true"])').data('id'));
-        let flag = false;
         if (realEquippedWeaponId > 0 && armsInfo['已装备武器'] !== realEquippedWeaponId) {
-            flag = true;
+            writeArmsInfoflag = true;
             armsInfo['已装备武器'] = realEquippedWeaponId;
         }
         if (realEquippedArmorId > 0 && armsInfo['已装备护甲'] !== realEquippedArmorId) {
-            flag = true;
+            writeArmsInfoflag = true;
             armsInfo['已装备护甲'] = realEquippedArmorId;
         }
-        if (flag) {
+        if (writeArmsInfoflag) {
             writeArmsInfo(armsInfo);
         }
         $armArea.find(`.pd_arm_equipped[data-saved="true"][data-class="武器"]:not([data-id="${armsInfo['已装备武器']}"])`).removeClass('pd_arm_equipped');
@@ -4691,8 +4574,7 @@ const getArmInfo = exports.getArmInfo = function (html) {
         '描述': '',
         '作用': '',
         '主属性': [],
-        '从属性': [],
-        '最终加成': []
+        '从属性': []
     };
     let matches = /<span style="color:([^<>]+);">([^<>]+)<\/span>/.exec(html);
     if (!matches) return armInfo;
@@ -4711,9 +4593,6 @@ const getArmInfo = exports.getArmInfo = function (html) {
 
     matches = /从属性：(.+?)(\n|$)/.exec(description);
     if (matches) armInfo['从属性'] = matches[1].split('。');
-
-    /*matches = /最终加成：(.+?)(\n|$)/.exec(description);
-    if (matches) armInfo['最终加成'] = matches[1].split(' | ');*/ // 临时禁用
 
     let smMatches = description.match(/([^。\s]+神秘)：(.+?)。/g);
     for (let i in smMatches) {
@@ -5450,6 +5329,10 @@ var _Item = require('./Item');
 
 var Item = _interopRequireWildcard(_Item);
 
+var _Read = require('./Read');
+
+var Read = _interopRequireWildcard(_Read);
+
 var _Script = require('./Script');
 
 var Script = _interopRequireWildcard(_Script);
@@ -5495,7 +5378,10 @@ const show = exports.show = function () {
   </fieldset>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a data-name="openImOrExLogDialog" href="#">导入/导出日志</a></span>
+  <span class="pd_cfg_about">
+    <a class="pd_btn_link" data-name="openImOrExLogDialog" href="#">导入/导出日志</a>
+    <a class="pd_btn_link" data-name="openBuyThreadLogDialog" href="#">查看购买帖子记录</a>
+  </span>
   <button data-action="close" type="button">关闭</button>
   <button name="clear" type="button">清除日志</button>
 </div>`;
@@ -5579,6 +5465,9 @@ const show = exports.show = function () {
     }).end().find('[data-name="openImOrExLogDialog"]').click(function (e) {
         e.preventDefault();
         showImportOrExportLogDialog();
+    }).end().find('[data-name="openBuyThreadLogDialog"]').click(function (e) {
+        e.preventDefault();
+        Read.showBuyThreadLogDialog();
     });
 
     showLogContent(log, dateList[curIndex], $dialog);
@@ -5980,7 +5869,7 @@ const showLogText = function (log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Script":20,"./Util":23}],13:[function(require,module,exports){
+},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Read":19,"./Script":20,"./Util":23}],13:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
@@ -7148,7 +7037,12 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             if (_Const2.default.debug) console.log(html);
             if (!/你\(\d+\)遭遇了/.test(html) || index % _Const2.default.lootAttackPerCheckLevel === 0) {
                 if (html === 'no' && /你被击败了/.test(log)) isFail = true;
-                setTimeout(() => updateLootInfo(after), _Const2.default.defAjaxInterval);
+                setTimeout(function () {
+                    updateLootInfo(function () {
+                        if (!/你被击败了/.test(log)) isFail = false;
+                        after();
+                    });
+                }, _Const2.default.defAjaxInterval);
                 return;
             }
             log = html + log;
@@ -8663,13 +8557,13 @@ const clear = exports.clear = () => Util.deleteData(name + '_' + _Info2.default.
  */
 const record = exports.record = function (logList, pointsLogList) {
     let log = read();
-    let overdueDate = Util.getDate(`-${Config.lootLogSaveDays}d`).getTime();
-    $.each(Util.getObjectKeyList(log, 1), function (i, key) {
-        key = parseInt(key);
-        if (isNaN(key) || key <= overdueDate) delete log[key];else return false;
-    });
     log[$.now()] = { log: logList, points: pointsLogList };
-    write(log);
+    let newLog = {};
+    $.each(Util.getObjectKeyList(log, 1).slice(-Config.lootLogSaveMaxNum), function (i, key) {
+        key = parseInt(key);
+        newLog[key] = log[key];
+    });
+    write(newLog);
 };
 
 /**
@@ -9828,6 +9722,7 @@ const appendCss = exports.appendCss = function () {
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   .pd_useless_sub_property { color: #999; text-decoration: line-through; }
   .pd_arm_id { font-style: normal; color: #999; }
+  .pd_new_arm_mark { font-style: normal; color: #f00; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
@@ -10853,7 +10748,9 @@ const turnPageViaKeyboard = exports.turnPageViaKeyboard = function () {
 /**
  * 显示通用的导入/导出设置对话框
  * @param {string} title 对话框标题
- * @param {string} configName 设置名称
+ * @param {string|{}} configName 设置名称或设置方法对象
+ * @param {function} configName.read 读取设置的方法
+ * @param {function} configName.write 写入设置的方法
  * @param {?function} [callback] 回调方法
  * @param {?function} [callbackAfterSubmit] 在提交之后的回调方法
  */
@@ -10875,6 +10772,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
   <button data-action="close" type="button">取消</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
+    let settings = $.type(configName) === 'object' ? configName.read() : Config[configName];
 
     $dialog.submit(function (e) {
         e.preventDefault();
@@ -10887,19 +10785,24 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
             alert('设置有错误');
             return;
         }
-        if (!options || $.type(options) !== $.type(Config[configName])) {
+        if (!options || $.type(options) !== $.type(settings)) {
             alert('设置有错误');
             return;
         }
-        Config[configName] = options;
-        (0, _Config.write)();
+        if ($.type(configName) === 'object') {
+            configName.write(options);
+        } else {
+            Config[configName] = options;
+            (0, _Config.write)();
+        }
         alert('设置已导入');
         Dialog.close(dialogName);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
     });
     Dialog.show(dialogName);
-    $dialog.find('[name="commonConfig"]').val(JSON.stringify(Config[configName])).select().focus();
+    $dialog.find('[name="commonConfig"]').val(JSON.stringify(settings)).select().focus();
     if (typeof callback === 'function') callback($dialog);
+    Script.runFunc('Public.showCommonImportOrExportConfigDialog_after_', { title, configName });
 };
 
 /**
@@ -10939,7 +10842,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleGoodPostSubmit = exports.addSelfRatingLink = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifySmColor = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -10960,6 +10863,8 @@ var Dialog = _interopRequireWildcard(_Dialog);
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
+
+var _Config = require('./Config');
 
 var _Log = require('./Log');
 
@@ -11059,31 +10964,6 @@ const modifyMySmColor = exports.modifyMySmColor = function () {
 };
 
 /**
- * 修改各等级神秘颜色
- */
-const modifySmColor = exports.modifySmColor = function () {
-    if (!Config.customSmColorConfigList.length) return;
-    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
-        let $this = $(this);
-        let smLevel = '';
-        if ($this.is('.readidmleft > a')) {
-            smLevel = $this.parent().next('.readidmright').text().toUpperCase();
-            if (!/(-?\d+|MAX)/i.test(smLevel)) return;
-        } else {
-            let matches = /(-?\d+|MAX)级神秘/i.exec($this.parent().contents().last().text());
-            if (!matches) return;
-            smLevel = matches[1].toUpperCase();
-        }
-        for (let { min, max, color } of Config.customSmColorConfigList) {
-            if (Util.compareSmLevel(smLevel, min) >= 0 && Util.compareSmLevel(smLevel, max) <= 0) {
-                modifyFloorSmColor($this, color);
-                break;
-            }
-        }
-    });
-};
-
-/**
  * 调整帖子内容宽度，使其保持一致
  */
 const adjustThreadContentWidth = exports.adjustThreadContentWidth = function () {
@@ -11110,34 +10990,39 @@ const adjustThreadContentFontSize = exports.adjustThreadContentFontSize = functi
 };
 
 /**
- * 添加复制购买人名单的选项
+ * 添加复制购买人名单和查看购买帖子记录的选项
  */
 const addCopyBuyersListOption = exports.addCopyBuyersListOption = function () {
     $('.readtext select[name="buyers"]').each(function () {
-        $(this).find('option:first-child').after('<option value="copyList">复制名单</option>');
+        $(this).find('option:first-child').after('<option value="copyList">复制名单</option><option value="openBuyThreadLogDialog">查看购买记录</option>');
     });
     $(document).on('change', 'select[name="buyers"]', function () {
         let $this = $(this);
-        if ($this.val() !== 'copyList') return;
-        let buyerList = $this.find('option').map(function (index) {
-            let name = $(this).text();
-            if (index === 0 || index === 1 || name.includes('-'.repeat(11))) return null;else return name;
-        }).get().join('\n');
-        $this.get(0).selectedIndex = 0;
-        if (!buyerList) {
-            alert('暂时无人购买');
-            return;
-        }
+        let name = $this.val();
+        if (name === 'copyList') {
+            let buyerList = $this.find('option').map(function (index) {
+                let name = $(this).text();
+                if (index <= 2 || name.includes('-'.repeat(11))) return null;else return name;
+            }).get().join('\n');
+            $this.get(0).selectedIndex = 0;
+            if (!buyerList) {
+                alert('暂时无人购买');
+                return;
+            }
 
-        const dialogName = 'pdCopyBuyerListDialog';
-        if ($('#' + dialogName).length > 0) return;
-        let html = `
+            const dialogName = 'pdCopyBuyerListDialog';
+            if ($('#' + dialogName).length > 0) return;
+            let html = `
 <div class="pd_cfg_main">
   <textarea name="buyerList" style="width: 200px; height: 300px; margin: 5px 0;" readonly>${buyerList}</textarea>
 </div>`;
-        let $dialog = Dialog.create(dialogName, '购买人名单', html);
-        Dialog.show(dialogName);
-        $dialog.find('[name="buyerList"]').select().focus();
+            let $dialog = Dialog.create(dialogName, '购买人名单', html);
+            Dialog.show(dialogName);
+            $dialog.find('[name="buyerList"]').select().focus();
+        } else if (name === 'openBuyThreadLogDialog') {
+            $this.get(0).selectedIndex = 0;
+            showBuyThreadLogDialog();
+        }
     });
 };
 
@@ -11513,12 +11398,23 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
             if (!sell || !url) return;
             if (sell >= _Const2.default.minBuyThreadWarningSell && !confirm(`此贴售价 ${sell} KFB，是否购买？`)) return;
             if (Config.buyThreadNoJumpEnabled) {
-                let $wait = Msg.wait('正在购买帖子&hellip;');
+                let $wait = Msg.wait('<strong>正在购买帖子&hellip;</strong>');
                 $.get(url + '&t=' + $.now(), function (html) {
                     Public.showFormatLog('购买帖子', html);
                     let { msg } = Util.getResponseMsg(html);
                     Msg.remove($wait);
                     if (/操作完成/.test(msg)) {
+                        if (Config.saveBuyThreadLogEnabled) {
+                            let urlMatches = /tid=(\d+)&pid=(\d+|tpc)/.exec(url);
+                            if (!urlMatches) return;
+                            let fid = parseInt($('input[name="fid"]:first').val());
+                            let tid = parseInt(urlMatches[1]);
+                            let pid = urlMatches[2];
+                            let forumName = $('a[href^="kf_tidfavor.php?action=favor"]').parent().find('a[href^="thread.php?fid="]:last').text().trim();
+                            let threadTitle = getThreadTitle();
+                            let userName = $this.closest('.readtext').find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').text().trim();
+                            recordBuyThreadLog({ fid, tid, pid, forumName, threadTitle, userName, sell });
+                        }
                         location.reload();
                     } else if (/您已经购买此帖/.test(msg)) {
                         alert('你已经购买过此帖');
@@ -11743,82 +11639,144 @@ const showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = fu
  * @returns {string} 帖子标题
  */
 const getThreadTitle = exports.getThreadTitle = function () {
-    return $('form[name="delatc"] > div:first > table > tbody > tr > td > span').text().trim();
+    return $('form[name="delatc"] > div:first > table > tbody > tr > td > span:first').text().trim();
+};
+
+// 保存购买帖子记录的键值名称
+const buyThreadLogName = _Const2.default.storagePrefix + 'buyThreadLog';
+
+/**
+ * 读取购买帖子记录
+ * @returns {{}[]} 购买帖子记录
+ */
+const readBuyThreadLog = exports.readBuyThreadLog = function () {
+    let log = [];
+    let options = Util.readData(buyThreadLogName + '_' + _Info2.default.uid);
+    if (!options) return log;
+    try {
+        options = JSON.parse(options);
+    } catch (ex) {
+        return log;
+    }
+    if (!options || !Array.isArray(options)) return log;
+    log = options;
+    return log;
 };
 
 /**
- * 在帖子页面添加自助评分链接
+ * 写入购买帖子记录
+ * @param {{}[]} log 购买帖子记录
  */
-const addSelfRatingLink = exports.addSelfRatingLink = function () {
-    let fid = parseInt($('input[name="fid"]:first').val());
-    if (!fid || !_Const2.default.selfRateFidList.includes(fid)) return;
-    let tid = parseInt($('input[name="tid"]:first').val());
-    let safeId = Public.getSafeId();
-    if (!safeId || !tid) return;
-    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
-    $('a[href^="kf_tidfavor.php?action=favor"]').parent().append(`<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}">自助评分</a>`);
+const writeBuyThreadLog = exports.writeBuyThreadLog = log => Util.writeData(buyThreadLogName + '_' + _Info2.default.uid, JSON.stringify(log));
+
+/**
+ * 清除购买帖子记录
+ */
+const clearBuyThreadLog = exports.clearBuyThreadLog = () => Util.deleteData(buyThreadLogName + '_' + _Info2.default.uid);
+
+/**
+ * 记录一条新的购买帖子记录
+ * @param {number} fid 版块ID
+ * @param {number} tid 帖子ID
+ * @param {string} pid 楼层ID
+ * @param {string} forumName 版块名称
+ * @param {string} threadTitle 贴子标题
+ * @param {string} userName 购买贴的所有者
+ * @param {number} sell 售价
+ */
+const recordBuyThreadLog = exports.recordBuyThreadLog = function ({ fid, tid, pid, forumName, threadTitle, userName, sell }) {
+    let log = readBuyThreadLog();
+    log.push($.extend({ time: $.now() }, { fid, tid, pid, forumName, threadTitle, userName, sell }));
+    log = log.sort((a, b) => a.time - b.time).slice(-Config.saveBuyThreadLogMaxNum);
+    writeBuyThreadLog(log);
 };
 
 /**
- * 处理优秀帖提交
+ * 显示购买帖子记录对话框
  */
-const handleGoodPostSubmit = exports.handleGoodPostSubmit = function () {
-    $('a[id^="cztz"]').attr('data-onclick', function () {
-        return $(this).attr('onclick');
-    }).removeAttr('onclick');
+const showBuyThreadLogDialog = exports.showBuyThreadLogDialog = function () {
+    const dialogName = 'pdBuyThreadLogDialog';
+    if ($('#' + dialogName).length > 0) return;
 
-    $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
-        let $this = $(this);
-        let $floor = $this.closest('.readlou').next().next('.readtext');
-        if ($this.data('highlight')) {
-            $floor.removeClass('pd_good_post_mark');
-            $this.removeData('highlight');
-        } else {
-            $floor.addClass('pd_good_post_mark');
-            $this.data('highlight', true);
+    let log = readBuyThreadLog();
+    let html = `
+<div class="pd_cfg_main">
+  <div style="margin-top: 5px;">
+    <label>
+      保存最近的 <input name="saveBuyThreadLogMaxNum" type="number" value="${Config.saveBuyThreadLogMaxNum}" min="1" max="10000" style="width: 60px;"> 条记录
+    </label>
+    <a class="pd_btn_link" data-name="save" href="#">保存</a>
+  </div>
+  <fieldset>
+    <legend>购买帖子记录 <span class="pd_stat" data-name="logHeaderInfo"></span></legend>
+    <div class="pd_stat pd_log_content" id="pdBuyThreadLog" style="width: 900px; max-height: 450px; height: auto;"></div>
+  </fieldset>
+</div>
+<div class="pd_cfg_btns">
+  <span class="pd_cfg_about"><a data-name="openImOrExBuyThreadLogDialog" href="#">导入/导出购买帖子记录</a></span>
+  <button data-action="close" type="button">关闭</button>
+  <button name="clear" type="button">清除记录</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '购买帖子记录', html);
+    let $buyThreadLog = $dialog.find('#pdBuyThreadLog');
+
+    $dialog.find('[data-name="save"]').click(function (e) {
+        e.preventDefault();
+        let num = parseInt($dialog.find('[name="saveBuyThreadLogMaxNum"]').val());
+        if (!num || num > 10000 || num < 0) {
+            alert('数量取值范围：1-10000');
+            return;
         }
-    }).on('click', 'a[id^="cztz"]', function () {
-        let $this = $(this);
-        if ($this.data('wait')) return;
-        let $floor = $this.closest('div[id^="floor"]').next('.readtext');
-        let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
-        let flag = false;
-        $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
-            let $currentFloor = $(this).closest('.readtext');
-            if ($currentFloor.is($floor)) return;
-            if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
-                flag = true;
-                return false;
-            }
-        });
-        if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
-
-        let safeId = Public.getSafeId();
-        let matches = /cztzyx\('(\d+)','(\d+|tpc)'\)/.exec($this.data('onclick'));
-        if (!matches || !safeId) return;
-        $this.next('.pd_good_post_msg').remove();
-        $this.data('wait', true);
-        $.ajax({
-            type: 'POST',
-            url: 'diy_read_cztz.php',
-            data: `tid=${matches[1]}&pid=${matches[2]}&safeid=${safeId}`,
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            if (/已将本帖操作为优秀帖|该楼层已经是优秀帖/.test(html)) {
-                let $content = $floor.find('> table > tbody > tr > td');
-                if (!$content.find('.read_fds:contains("本帖为优秀帖")').length) {
-                    $content.find('.readidms, .readidm').after('<fieldset class="read_fds"><legend>↓</legend>本帖为优秀帖</fieldset>');
-                }
-            }
-            if (!/已将本楼层提交为优秀帖申请/.test(html)) {
-                $floor.removeClass('pd_good_post_mark');
-            }
-            $this.after(`<span class="pd_good_post_msg" style="margin-left: 5px; color: #777;">(${html})</span>`);
-        }).always(() => $this.removeData('wait'));
+        (0, _Config.read)();
+        Config.saveBuyThreadLogMaxNum = num;
+        (0, _Config.write)();
+        alert('设置已保存');
+    }).end().find('[data-name="openImOrExBuyThreadLogDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('购买帖子记录', { read: readBuyThreadLog, write: writeBuyThreadLog });
+    }).end().find('[name="clear"]').click(function () {
+        if (confirm('是否清除所有购买帖子记录？')) {
+            clearBuyThreadLog();
+            alert('购买帖子记录已清除');
+        }
     });
+
+    let logInfo = {};
+    for (let info of log) {
+        let date = Util.getDateString(new Date(info.time));
+        if (!(date in logInfo)) logInfo[date] = [];
+        logInfo[date].push(info);
+    }
+    let totalSell = 0;
+    let logHtml = '';
+    for (let date of Object.keys(logInfo).sort((a, b) => a > b ? 1 : -1)) {
+        let currentDateHtml = '';
+        let currentDateTotalSell = 0;
+        for (let { time, fid, tid, pid, forumName, threadTitle, userName, sell } of logInfo[date]) {
+            totalSell += sell;
+            currentDateTotalSell += sell;
+            currentDateHtml += `
+<p>
+  <b>${Util.getTimeString(new Date(time))}：</b>[<a href="thread.php?fid=${fid}" target="_blank">${forumName}</a>]
+  《<a href="read.php?tid=${tid}${pid === 'tpc' ? '' : '&spid=' + pid}" target="_blank">${threadTitle}</a>》
+  &nbsp;发帖者：<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>
+  &nbsp;售价：<em>${sell}</em>KFB
+</p>`;
+        }
+        logHtml += `<h3>【${date}】 (共<em>${logInfo[date].length}</em>项，合计<em>${currentDateTotalSell.toLocaleString()}</em>KFB)</h3>${currentDateHtml}`;
+    }
+    $buyThreadLog.html(logHtml ? logHtml : '暂无购买帖子记录（需开启“保存购买帖子记录”的功能）');
+    $dialog.find('[data-name="logHeaderInfo"]').html(`(共<em>${log.length}</em>项，总售价<em>${totalSell.toLocaleString()}</em>KFB)`);
+
+    Dialog.show(dialogName);
+    let $lastChild = $buyThreadLog.find('p:last');
+    if ($lastChild.length > 0) {
+        $lastChild.get(0).scrollIntoView();
+    }
+    Script.runFunc('Read.showBuyThreadLogDialog_after_');
 };
 
-},{"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){
+},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
@@ -12169,19 +12127,19 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addLinksInGoodPostPage = exports.refreshWaitCheckRatePage = exports.addUnrecognizedSizeWarning = exports.showErrorSizeSubmitWarning = exports.highlightRateErrorSize = exports.checkRateSize = undefined;
+exports.handleGoodPostSubmit = exports.addSelfRatingLink = exports.addLinksInGoodPostPage = exports.refreshWaitCheckRatePage = exports.addUnrecognizedSizeWarning = exports.showErrorSizeSubmitWarning = exports.highlightRateErrorSize = exports.checkRateSize = undefined;
 
 var _Info = require('./Info');
 
 var _Info2 = _interopRequireDefault(_Info);
 
-var _Msg = require('./Msg');
-
-var Msg = _interopRequireWildcard(_Msg);
-
 var _Const = require('./Const');
 
 var _Const2 = _interopRequireDefault(_Const);
+
+var _Public = require('./Public');
+
+var Public = _interopRequireWildcard(_Public);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -12312,7 +12270,79 @@ const addLinksInGoodPostPage = exports.addLinksInGoodPostPage = function () {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Msg":15}],22:[function(require,module,exports){
+/**
+ * 在帖子页面添加自助评分链接
+ */
+const addSelfRatingLink = exports.addSelfRatingLink = function () {
+    let fid = parseInt($('input[name="fid"]:first').val());
+    if (!fid || !_Const2.default.selfRateFidList.includes(fid)) return;
+    let tid = parseInt($('input[name="tid"]:first').val());
+    let safeId = Public.getSafeId();
+    if (!safeId || !tid) return;
+    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
+    $('a[href^="kf_tidfavor.php?action=favor"]').parent().append(`<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}">自助评分</a>`);
+};
+
+/**
+ * 处理优秀帖提交
+ */
+const handleGoodPostSubmit = exports.handleGoodPostSubmit = function () {
+    $('a[id^="cztz"]').attr('data-onclick', function () {
+        return $(this).attr('onclick');
+    }).removeAttr('onclick');
+
+    $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
+        let $this = $(this);
+        let $floor = $this.closest('.readlou').next().next('.readtext');
+        if ($this.data('highlight')) {
+            $floor.removeClass('pd_good_post_mark');
+            $this.removeData('highlight');
+        } else {
+            $floor.addClass('pd_good_post_mark');
+            $this.data('highlight', true);
+        }
+    }).on('click', 'a[id^="cztz"]', function () {
+        let $this = $(this);
+        if ($this.data('wait')) return;
+        let $floor = $this.closest('div[id^="floor"]').next('.readtext');
+        let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
+        let flag = false;
+        $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
+            let $currentFloor = $(this).closest('.readtext');
+            if ($currentFloor.is($floor)) return;
+            if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
+                flag = true;
+                return false;
+            }
+        });
+        if (flag && !confirm('在当前页面中该会员已经有回帖被评为优秀帖，是否继续？')) return;
+
+        let safeId = Public.getSafeId();
+        let matches = /cztzyx\('(\d+)','(\d+|tpc)'\)/.exec($this.data('onclick'));
+        if (!matches || !safeId) return;
+        $this.next('.pd_good_post_msg').remove();
+        $this.data('wait', true);
+        $.ajax({
+            type: 'POST',
+            url: 'diy_read_cztz.php',
+            data: `tid=${matches[1]}&pid=${matches[2]}&safeid=${safeId}`,
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (/已将本帖操作为优秀帖|该楼层已经是优秀帖/.test(html)) {
+                let $content = $floor.find('> table > tbody > tr > td');
+                if (!$content.find('.read_fds:contains("本帖为优秀帖")').length) {
+                    $content.find('.readidms, .readidm').after('<fieldset class="read_fds"><legend>↓</legend>本帖为优秀帖</fieldset>');
+                }
+            }
+            if (!/已将本楼层提交为优秀帖申请/.test(html)) {
+                $floor.removeClass('pd_good_post_mark');
+            }
+            $this.after(`<span class="pd_good_post_msg" style="margin-left: 5px; color: #777;">(${html})</span>`);
+        }).always(() => $this.removeData('wait'));
+    });
+};
+
+},{"./Const":6,"./Info":9,"./Public":18}],22:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 

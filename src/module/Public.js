@@ -150,6 +150,7 @@ export const appendCss = function () {
   .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }
   .pd_useless_sub_property { color: #999; text-decoration: line-through; }
   .pd_arm_id { font-style: normal; color: #999; }
+  .pd_new_arm_mark { font-style: normal; color: #f00; }
   
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }

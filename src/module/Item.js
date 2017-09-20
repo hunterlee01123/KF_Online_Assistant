@@ -64,7 +64,7 @@ export const init = function () {
  * @param {number} sequence 下一批物品的插入顺序，1：向前插入；2：往后添加
  * @param {function} callback 回调函数
  */
-export const getNextObjects = function (sequence, callback = null) {
+export const getNextObjects = function (sequence = 1, callback = null) {
     console.log('获取下一批物品Start');
     $.ajax({
         type: 'GET',
@@ -83,7 +83,7 @@ export const getNextObjects = function (sequence, callback = null) {
             let trMatches = matches[1].match(/<tr(.+?)<\/tr>/g);
             let $area = index === 1 ? $armArea : $itemArea;
             let addHtml = '';
-            let newArmsInfo = {'已装备武器': 0, '已装备护甲': 0, '装备列表': {}};
+            let newArmsInfo = {'已装备武器': 0, '已装备护甲': 0, '上次记录的最新装备': 0, '上次记录的时间': 0, '装备列表': {}};
             for (let i in trMatches) {
                 let idMatches = /"wp_(\d+)"/.exec(trMatches[i]);
                 if (!idMatches) continue;
@@ -154,6 +154,9 @@ const addBatchOpenBoxesLink = function () {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
         }
         Msg.destroy();
+        if (Config.autoSaveArmsInfoEnabled) {
+            getNextObjects(1);
+        }
         openBoxes({id, boxType, num, safeId});
     });
 };
@@ -299,6 +302,9 @@ const showOpenAllBoxesDialog = function () {
         Dialog.close(dialogName);
         if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
+        }
+        if (Config.autoSaveArmsInfoEnabled) {
+            getNextObjects(1);
         }
         $(document).clearQueue('OpenAllBoxes');
         $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
@@ -545,7 +551,7 @@ const myArmsInfoName = Const.storagePrefix + 'myArmsInfo2';
  * @returns {{}} 装备信息对象
  */
 export const readArmsInfo = function () {
-    let info = {'已装备武器': 0, '已装备护甲': 0, '装备列表': {}};
+    let info = {'已装备武器': 0, '已装备护甲': 0, '上次记录的最新装备': 0, '上次记录的时间': 0, '装备列表': {}};
     let options = Util.readData(myArmsInfoName + '_' + Info.uid);
     if (!options) return info;
     try {
@@ -617,7 +623,9 @@ export const handleArmArea = function ($armArea, type = 0) {
         ).addClass('pd_arm_equipped');
     });
 
-    $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function () {
+    let writeArmsInfoflag = false;
+    let armsInfo = Config.autoSaveArmsInfoEnabled ? readArmsInfo() : {};
+    $armArea.find('tr:not([data-id]) > td[id^="wp_"]').each(function (index) {
         let $this = $(this);
         let matches = /wp_(\d+)/.exec($this.attr('id'));
         if (!matches) return;
@@ -627,7 +635,18 @@ export const handleArmArea = function ($armArea, type = 0) {
         let html = $td.html();
         let armInfo = getArmInfo(html);
         $tr.attr('data-id', armId).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
-        $td.html(`<i class="pd_arm_id">[ID: ${armId}]</i> ${handleUselessSubProperties(html)}`);
+        let newArmMark = false;
+        if (Config.autoSaveArmsInfoEnabled) {
+            if (index === 0 && (!armsInfo['上次记录的最新装备'] || !armsInfo['上次记录的时间'] ||
+                    Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= 1)
+            ) {
+                writeArmsInfoflag = true;
+                armsInfo['上次记录的最新装备'] = armId;
+                armsInfo['上次记录的时间'] = $.now();
+            }
+            if (armId > armsInfo['上次记录的最新装备']) newArmMark = true;
+        }
+        $td.html(`${newArmMark ? '<i class="pd_new_arm_mark">[新]</i> ' : ''}<i class="pd_arm_id">[ID: ${armId}]</i> ${handleUselessSubProperties(html)}`);
         if (Config.armsMemo[armId]) {
             $td.attr('data-memo', Config.armsMemo[armId].replace(/"/g, ''));
         }
@@ -645,19 +664,17 @@ export const handleArmArea = function ($armArea, type = 0) {
             sortArmsById($armArea);
         }
 
-        let armsInfo = readArmsInfo();
         let realEquippedWeaponId = parseInt($armArea.find('.pd_arm_equipped[data-class="武器"]:not([data-saved="true"])').data('id'));
         let realEquippedArmorId = parseInt($armArea.find('.pd_arm_equipped[data-class="护甲"]:not([data-saved="true"])').data('id'));
-        let flag = false;
         if (realEquippedWeaponId > 0 && armsInfo['已装备武器'] !== realEquippedWeaponId) {
-            flag = true;
+            writeArmsInfoflag = true;
             armsInfo['已装备武器'] = realEquippedWeaponId;
         }
         if (realEquippedArmorId > 0 && armsInfo['已装备护甲'] !== realEquippedArmorId) {
-            flag = true;
+            writeArmsInfoflag = true;
             armsInfo['已装备护甲'] = realEquippedArmorId;
         }
-        if (flag) {
+        if (writeArmsInfoflag) {
             writeArmsInfo(armsInfo);
         }
         $armArea.find(`.pd_arm_equipped[data-saved="true"][data-class="武器"]:not([data-id="${armsInfo['已装备武器']}"])`).removeClass('pd_arm_equipped');
@@ -1537,7 +1554,6 @@ export const getArmInfo = function (html) {
         '作用': '',
         '主属性': [],
         '从属性': [],
-        '最终加成': [],
     };
     let matches = /<span style="color:([^<>]+);">([^<>]+)<\/span>/.exec(html);
     if (!matches) return armInfo;
@@ -1556,9 +1572,6 @@ export const getArmInfo = function (html) {
 
     matches = /从属性：(.+?)(\n|$)/.exec(description);
     if (matches) armInfo['从属性'] = matches[1].split('。');
-
-    /*matches = /最终加成：(.+?)(\n|$)/.exec(description);
-    if (matches) armInfo['最终加成'] = matches[1].split(' | ');*/ // 临时禁用
 
     let smMatches = description.match(/([^。\s]+神秘)：(.+?)。/g);
     for (let i in smMatches) {

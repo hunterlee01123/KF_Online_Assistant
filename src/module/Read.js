@@ -849,7 +849,6 @@ const buyThreadLogName = Const.storagePrefix + 'buyThreadLog';
 export const readBuyThreadLog = function () {
     let log = [];
     let options = Util.readData(buyThreadLogName + '_' + Info.uid);
-    console.debug(options);
     if (!options) return log;
     try {
         options = JSON.parse(options);
