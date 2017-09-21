@@ -1075,6 +1075,7 @@ export const addCommonArmsButton = function ($area, $armArea) {
   <option value="selectCancel">取消</option>
   <option value="selectWeapon">选择武器</option>
   <option value="selectArmor">选择护甲</option>
+  <option value="selectNewArm">选择新装备</option>
   <option value="selectNoMemo">选择无备注的装备</option>
   <option value="selectArmId">选择指定ID的装备</option>
 </select>
@@ -1111,6 +1112,10 @@ export const addCommonArmsButton = function ($area, $armArea) {
         else if (name === 'selectArmor') {
             $checkboxes.prop('checked', false);
             $armArea.find('tr[data-class="护甲"] input[name="armCheck"]').prop('checked', true);
+        }
+        else if (name === 'selectNewArm') {
+            $checkboxes.prop('checked', false);
+            $armArea.find('tr:has(.pd_new_arm_mark) input[name="armCheck"]').prop('checked', true);
         }
         else if (name === 'selectNoMemo') {
             $checkboxes.prop('checked', false);
