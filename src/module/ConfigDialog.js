@@ -362,7 +362,7 @@ export const show = function () {
   <span class="pd_cfg_about">
     <a target="_blank" href="read.php?tid=508450">By 喵拉布丁</a>
     <i style="color: #666; font-style: normal;">(V${Info.version})</i>
-    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
+    <a target="_blank" href="https://gitee.com/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>

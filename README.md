@@ -3,14 +3,14 @@ KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能
 
 ## 脚本下载地址
 __注：初次安装请先阅读安装方法__  
-__以下3个版本仅在数据存储类型的支持程度方面有所区别（在其它功能上并无区别），关于各存储类型的区别详见【[常见问题1](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#1)】__  
-__关于ES5和ES6版本的区别请参见【[常见问题2](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#2)】（如实在不清楚应该安装哪个版本，请一律安装ES5版本）__  
-1. __全功能版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Full.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.user.js)]  
+__以下3个版本仅在数据存储类型的支持程度方面有所区别（在其它功能上并无区别），关于各存储类型的区别详见【[常见问题1](https://gitee.com/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#1)】__  
+__关于ES5和ES6版本的区别请参见【[常见问题2](https://gitee.com/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98#2)】（如实在不清楚应该安装哪个版本，请一律安装ES5版本）__  
+1. __全功能版：__[[ES5](https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Full.user.js)] [[ES6](https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.user.js)]  
 可使用全部的存储类型（默认、按uid、全局）  
 __（部分浏览器可能无法使用或有功能异常，例如Firefox + Greasemonkey、搜狗浏览器等；Firefox浏览器如要使用此版本请安装Tampermonkey扩展）__  
-2. __通用版：__ [[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js)]  
+2. __通用版：__ [[ES5](https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js)] [[ES6](https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js)]  
 仅能使用默认的存储类型，绝大多数浏览器通用 __（如全功能版无法使用，请安装此版本）__  
-3. __Firefox特别版：__[[ES5](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
+3. __Firefox特别版：__[[ES5](https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js)] [[ES6](https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js)]  
 Firefox + Greasemonkey专用（如上面两个版本无法使用，请安装此版），引入了一个额外的jQuery脚本，可使用全部的存储类型 __（代价是脚本初始化用时将翻倍，且在特殊情况下少数功能会受到限制，如只使用默认存储类型的话，强烈建议安装通用版）__
 
 __注：如发现脚本无法生效或功能异常，请尝试安装其它版本（通用版及ES5版本的兼容性最好）__
@@ -31,10 +31,10 @@ __在设置里开启定时模式后可按时进行自动操作（如不开启的
 __存储类型选择非默认时，请勿随便删除脚本，否则会导致设置丢失__
 
 ## 常见问题
-[详细问题请参见此页面&raquo;](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
+[详细问题请参见此页面&raquo;](https://gitee.com/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 
 ## 更新日志
-[详细日志请参见此页面&raquo;](https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
+[详细日志请参见此页面&raquo;](https://gitee.com/miaolapd/KF_Online_Assistant/wikis/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
 
 ## 编译脚本
 在项目目录下执行`npm install`安装依赖包（需安装[Node.js](https://nodejs.org/)）；  

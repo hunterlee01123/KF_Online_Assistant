@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name        KF Online助手
 // @namespace   https://greasyfork.org/users/4514
-// @icon        https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/icon.png
+// @icon        https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/icon.png
 // @author      喵拉布丁
 // @homepage    https://github.com/miaolapd/KF_Online_Assistant
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
-// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.meta.js
-// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js
-// @require     https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
+// @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.meta.js
+// @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js
+// @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.1
+// @version     12.1.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.1';
+const version = '12.1.1';
 
 /**
  * 导出模块
@@ -1702,7 +1702,7 @@ const show = exports.show = function () {
   <span class="pd_cfg_about">
     <a target="_blank" href="read.php?tid=508450">By 喵拉布丁</a>
     <i style="color: #666; font-style: normal;">(V${_Info2.default.version})</i>
-    <a target="_blank" href="https://git.oschina.net/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
+    <a target="_blank" href="https://gitee.com/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>

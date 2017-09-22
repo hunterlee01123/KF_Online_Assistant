@@ -30,9 +30,9 @@ const metaExt = '.meta.js';
 // 匹配meta内容正则表达式
 const metaContentRegex = /(\/\/ ==UserScript==(?:.|\r|\n)+?\/\/ ==\/UserScript==)(?:.|\r|\n)+/;
 // babel-polyfill脚本的URL
-const polyfillUrl = 'https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.20.0';
+const polyfillUrl = 'https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.20.0';
 // jQuery脚本的URL
-const jQueryUrl = 'https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4';
+const jQueryUrl = 'https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4';
 
 /**
  * 打包模块（ES6版本）
@@ -84,8 +84,8 @@ const buildCommonEdition = function (isEs6 = false) {
         .pipe(replace(/\r\n/g, '\n'))
         .pipe(replace(
             /\/\/ @pd-update-url-placeholder/,
-            `// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Common.meta.js\n` +
-            `// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Common.user.js`
+            `// @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Common.meta.js\n` +
+            `// @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Common.user.js`
         ))
         .pipe(replace(/\/\/ @pd-require\r?\n/, !isEs6 ? `// @require     ${polyfillUrl}\n` : ''))
         .pipe(gulp.dest(distPath + path))
@@ -106,8 +106,8 @@ const buildFullEdition = function (isEs6 = false) {
         .pipe(replace(/\r\n/g, '\n'))
         .pipe(replace(
             /\/\/ @pd-update-url-placeholder/,
-            `// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Full.meta.js\n` +
-            `// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Full.user.js`
+            `// @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Full.meta.js\n` +
+            `// @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/${path}Full.user.js`
         ))
         .pipe(replace(/\/\/ @pd-require\r?\n/, !isEs6 ? `// @require     ${polyfillUrl}\n` : ''))
         .pipe(replace(/(\/\/ @grant\s+)none/, '$1GM_getValue\n$1GM_setValue\n$1GM_deleteValue'))
@@ -130,8 +130,8 @@ const buildForFirefoxEdition = function (isEs6 = false) {
         .pipe(replace(/\r\n/g, '\n'))
         .pipe(replace(
             /\/\/ @pd-update-url-placeholder/,
-            `// @updateURL   https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}ForFirefox.meta.js\n` +
-            `// @downloadURL https://git.oschina.net/miaolapd/KF_Online_Assistant/raw/master/dist/${path}ForFirefox.user.js`
+            `// @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/${path}ForFirefox.meta.js\n` +
+            `// @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/${path}ForFirefox.user.js`
         ))
         .pipe(replace(/(\/\/ @grant\s+)none/, '$1GM_getValue\n$1GM_setValue\n$1GM_deleteValue'))
         .pipe(replace(
