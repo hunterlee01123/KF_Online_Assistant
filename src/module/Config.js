@@ -319,3 +319,37 @@ export const normalize = function (options) {
     }
     return settings;
 };
+
+/**
+ * 清除数据
+ * @param {string} name 要清除的数据名称
+ */
+export const clearData = function (name) {
+    if (name === 'cookies') {
+        for (let key in Const) {
+            if (/CookieName$/.test(key)) {
+                Util.deleteCookie(Const[key]);
+            }
+        }
+    }
+    else if (name === 'tmpData') {
+        TmpLog.clear();
+        localStorage.removeItem(Const.multiQuoteStorageName);
+        localStorage.removeItem(Const.tempPointsLogListStorageName);
+    }
+    else if (name === 'config') {
+        clear();
+    }
+    else if (name === 'log') {
+        Log.clear();
+    }
+    else if (name === 'lootLog') {
+        LootLog.clear();
+    }
+    else if (name === 'armsInfo') {
+        Item.clearArmsInfo();
+    }
+    else if (name === 'buyThreadLog') {
+        Read.clearBuyThreadLog();
+    }
+};

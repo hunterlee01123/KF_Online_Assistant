@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.0.1
+// @version     12.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.0.1';
+const version = '12.1';
 
 /**
  * 导出模块
@@ -286,39 +286,53 @@ const init = function () {
         }
     }
 
-    let isAutoPromoteHaloStarted = false;
-    if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
-        isAutoPromoteHaloStarted = true;
-        Loot.getPromoteHaloInfo(location.pathname === '/kf_fw_ig_index.php');
-    }
-    if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
+    $(document).clearQueue('AutoAction');
 
-    let isAutoLootStarted = false;
-    if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+    if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
+        $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
+    }
+    if (location.pathname === '/kf_fw_ig_index.php') {
+        $(document).queue('AutoAction', () => Loot.init());
+    }
+
+    if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !isAutoPromoteHaloStarted) {
-                isAutoLootStarted = true;
-                Loot.checkLoot();
+            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) {
+                $(document).queue('AutoAction', () => Loot.checkLoot());
             }
         } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-            Loot.autoSaveLootLog();
+            $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
         }
     }
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
-        if (!Config.getBonusAfterLootCompleteEnabled || !isAutoLootStarted) Public.getDailyBonus();
+        $(document).queue('AutoAction', () => Public.getDailyBonus());
     }
 
-    if ((_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName) && !isAutoLootStarted) {
+    if ((_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName)) {
         let safeId = Public.getSafeId();
-        if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+        if (safeId) {
+            $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList, safeId));
+        }
     }
 
-    if (Config.autoSaveCurrentDepositEnabled && _Info2.default.isInHomePage) Public.autoSaveCurrentDeposit();
+    if (/kf_fw_ig_mybp\.php#openboxes/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+        $(document).queue('AutoAction', () => Item.autoOpenBoxes());
+    }
 
-    if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) Public.changeIdColor();
+    if (_Info2.default.isInHomePage && Config.autoSaveCurrentDepositEnabled) {
+        $(document).queue('AutoAction', () => Public.autoSaveCurrentDeposit());
+    }
 
-    if (Config.timingModeEnabled && (_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php')) Public.startTimingMode();
+    $(document).dequeue('AutoAction');
+
+    if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) {
+        Public.changeIdColor();
+    }
+
+    if (Config.timingModeEnabled && (_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php#openboxes/.test(location.href))) {
+        Public.startTimingMode();
+    }
 
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 
@@ -326,7 +340,9 @@ const init = function () {
     console.log(`【KF Online助手】初始化耗时：${endDate - startDate}ms`);
 };
 
-if (typeof jQuery !== 'undefined') $(document).ready(init);
+if (typeof jQuery !== 'undefined') {
+    $(document).ready(init);
+}
 
 },{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/SelfRate":21,"./module/TmpLog":22,"./module/Util":23}],2:[function(require,module,exports){
 /* 银行模块 */
@@ -921,7 +937,7 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.normalize = exports.changeStorageType = exports.clear = exports.write = exports.read = exports.init = exports.Config = undefined;
+exports.clearData = exports.normalize = exports.changeStorageType = exports.clear = exports.write = exports.read = exports.init = exports.Config = undefined;
 
 var _Info = require('./Info');
 
@@ -999,6 +1015,8 @@ const Config = exports.Config = {
     checkLootAfterTime: '00:05:00',
     // 历史争夺记录的最大保存数量
     lootLogSaveMaxNum: 7,
+    // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭
+    autoOpenBoxesAfterLootEnabled: false,
     // 是否在首页显示改点剩余次数信息（冷却时则显示倒计时），true：开启；false：关闭
     showChangePointsInfoEnabled: false,
     // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
@@ -1267,6 +1285,34 @@ const normalize = exports.normalize = function (options) {
     return settings;
 };
 
+/**
+ * 清除数据
+ * @param {string} name 要清除的数据名称
+ */
+const clearData = exports.clearData = function (name) {
+    if (name === 'cookies') {
+        for (let key in _Const2.default) {
+            if (/CookieName$/.test(key)) {
+                Util.deleteCookie(_Const2.default[key]);
+            }
+        }
+    } else if (name === 'tmpData') {
+        TmpLog.clear();
+        localStorage.removeItem(_Const2.default.multiQuoteStorageName);
+        localStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
+    } else if (name === 'config') {
+        clear();
+    } else if (name === 'log') {
+        Log.clear();
+    } else if (name === 'lootLog') {
+        LootLog.clear();
+    } else if (name === 'armsInfo') {
+        Item.clearArmsInfo();
+    } else if (name === 'buyThreadLog') {
+        Read.clearBuyThreadLog();
+    }
+};
+
 },{"./Const":6,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Read":19,"./TmpLog":22,"./Util":23}],5:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
@@ -1321,7 +1367,7 @@ const show = exports.show = function () {
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
-    <a class="pd_btn_link" data-name="clearTmpData" title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除临时数据</a>
+    <a class="pd_btn_link" data-name="openClearDataDialog" title="清除与助手有关的数据" href="#">清除数据</a>
     <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">运行命令</a>
     <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">导入/导出设置</a>
   </div>
@@ -1409,6 +1455,10 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="争夺记录最大保存数量，默认值：${_Config.Config.lootLogSaveMaxNum}，最大值：20">[?]</span>
       </label><br>
       <label>
+        <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> 在争夺后自动一键开盒
+        <span class="pd_cfg_tips" title="在争夺完后自动一键开盒（并执行后续操作），要打开的盒子种类和要执行的后续操作请在我的物品页面进行设定">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
         <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
       </label>
@@ -1688,15 +1738,6 @@ const show = exports.show = function () {
             alert('设置已重置');
             location.reload();
         }
-    }).end().find('[data-name="clearTmpData"]').click(function (e) {
-        e.preventDefault();
-        let type = prompt('可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据', 0);
-        if (type === null) return;
-        type = parseInt(type);
-        if (!isNaN(type) && type >= 0) {
-            clearTmpData(type);
-            alert('缓存已清除');
-        }
     });
 
     $dialog.on('click', 'a[data-name^="open"][href="#"]', function (e) {
@@ -1704,7 +1745,7 @@ const show = exports.show = function () {
         let $this = $(this);
         if ($this.hasClass('pd_disabled_link')) return;
         let name = $this.data('name');
-        if (name === 'openRumCommandDialog') showRunCommandDialog();else if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();else if (name === 'openBuyItemTipsDialog') showBuyItemTipsDialog();else if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
+        if (name === 'openClearDataDialog') showClearDataDialog();else if (name === 'openRumCommandDialog') showRunCommandDialog();else if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();else if (name === 'openBuyItemTipsDialog') showBuyItemTipsDialog();else if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();else if (name === 'openUserMemoDialog') showUserMemoDialog();else if (name === 'openCustomCssDialog') showCustomCssDialog();else if (name === 'openCustomScriptDialog') Script.showDialog();else if (name === 'openFollowUserDialog') showFollowUserDialog();else if (name === 'openBlockUserDialog') showBlockUserDialog();else if (name === 'openBlockThreadDialog') showBlockThreadDialog();
     }).find('[name="promoteHaloCostType"]').change(function () {
         let typeId = parseInt($(this).val());
         $dialog.find('[data-id="promoteHaloLimitUnit"]').text(typeId >= 11 ? '贡献' : 'KFB');
@@ -1832,22 +1873,56 @@ const verifyMainConfig = function ($dialog) {
 };
 
 /**
- * 清除临时数据
- * @param {number} type 清除类别，0：全部清除；1：清除Cookies；2：清除本地临时数据
+ * 显示清除数据对话框
  */
-const clearTmpData = function (type = 0) {
-    if (type === 0 || type === 1) {
-        for (let key in _Const2.default) {
-            if (/CookieName$/.test(key)) {
-                Util.deleteCookie(_Const2.default[key]);
-            }
+const showClearDataDialog = function () {
+    const dialogName = 'pdClearDataDialog';
+    if ($('#' + dialogName).length > 0) return;
+
+    let html = `
+<div class="pd_cfg_main">
+  <fieldset style="margin-top: 5px;">
+    <legend>请选择想清除的临时缓存数据（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
+    <select name="caches" size="2" style="width: 340px;" multiple>
+      <option value="cookies">助手Cookies</option><option value="tmpData">助手临时数据</option>
+    </select>
+  </fieldset>
+  <fieldset style="margin-top: 5px;">
+    <legend>请选择想清除的设置或日志（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
+    <select name="settingsAndLogs" size="5" style="width: 340px;" multiple>
+      <option value="config">助手设置</option><option value="log">助手日志</option><option value="lootLog">争夺记录</option>
+      <option value="armsInfo">装备信息</option><option value="buyThreadLog">购买帖子记录</option>
+    </select>
+  </fieldset>
+</div>
+<div class="pd_cfg_btns">
+  <button type="submit" style="color: #f00;">清除数据</button>
+  <button data-action="close" type="button">取消</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '清除数据', html);
+
+    $dialog.on('keydown', 'select', function (e) {
+        if (e.ctrlKey && e.keyCode === 65) {
+            e.preventDefault();
+            $(this).children().prop('selected', true);
         }
-    }
-    if (type === 0 || type === 2) {
-        TmpLog.clear();
-        localStorage.removeItem(_Const2.default.multiQuoteStorageName);
-        localStorage.removeItem(_Const2.default.tempPointsLogListStorageName);
-    }
+    }).submit(function (e) {
+        e.preventDefault();
+        let caches = $dialog.find('[name="caches"]').val();
+        let settingsAndLogs = $dialog.find('[name="settingsAndLogs"]').val();
+        if (!caches && !settingsAndLogs || !confirm('是否清除选定的数据？')) return;
+        for (let name of caches) {
+            (0, _Config.clearData)(name);
+        }
+        for (let name of settingsAndLogs) {
+            (0, _Config.clearData)(name);
+        }
+        alert('选定的数据已清除');
+        location.reload();
+    });
+
+    Dialog.show(dialogName);
+    Script.runFunc('ConfigDialog.showClearDataDialog_after_');
 };
 
 /**
@@ -2520,6 +2595,8 @@ const Const = {
     enemyStatLatestLevelNum: 10,
     // 争夺攻击时每隔指定层数进行一次检查
     lootAttackPerCheckLevel: 20,
+    // 新装备标志的持续时间（天）
+    newArmMarkDuration: 1,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -2538,7 +2615,7 @@ const Const = {
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 210,
+    tmpHaloInfoExpires: 420,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
@@ -2595,8 +2672,6 @@ const Const = {
     postContentStorageName: storagePrefix + 'postContent',
     // 存储临时点数分配记录列表的LocalStorage名称
     tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
-    // 存储临时点数分配记录列表的LocalStorage名称
-    itemLogStorageName: storagePrefix + 'itemLog',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
@@ -3087,7 +3162,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3369,12 +3444,16 @@ const showOpenAllBoxesDialog = function () {
 </div>
 <div class="pd_cfg_btns">
   <button name="open" type="button" style="color: #f00;">一键开盒</button>
+  <button name="save" type="button">保存设置</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '一键开盒', html);
     let $smeltArmTypeList = $dialog.find('ul[data-name="smeltArmTypeList"]');
 
-    $dialog.find('[name="open"]').click(function () {
+    /**
+     * 保存设置
+     */
+    const saveSettings = function () {
         (0, _Config.read)();
         let tmpBoxTypeList = $dialog.find('select[name="openBoxesTypes"]').val();
         if (!Array.isArray(tmpBoxTypeList)) tmpBoxTypeList = [];
@@ -3405,11 +3484,15 @@ const showOpenAllBoxesDialog = function () {
         }
 
         (0, _Config.write)();
+    };
+
+    $dialog.find('[name="open"]').click(function () {
         if (!Config.defOpenBoxTypeList.length) {
             alert('未选择盒子种类');
             return;
         }
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
+        saveSettings();
         Dialog.close(dialogName);
         if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
@@ -3429,6 +3512,9 @@ const showOpenAllBoxesDialog = function () {
             $(document).queue('OpenAllBoxes', () => openBoxes({ id, boxType, num, safeId, nextActionEnabled: true }));
         });
         $(document).dequeue('OpenAllBoxes');
+    }).end().find('[name="save"]').click(function () {
+        saveSettings();
+        alert('设置已保存');
     }).end().find('a[data-name="selectAll"]').click(() => Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]'))).end().find('a[data-name="selectInverse"]').click(() => Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]')));
 
     $dialog.on('keydown', 'select[name$="Types"]', function (e) {
@@ -3461,6 +3547,30 @@ const showOpenAllBoxesDialog = function () {
 };
 
 /**
+ * 自动一键开盒
+ */
+const autoOpenBoxes = exports.autoOpenBoxes = function () {
+    let safeId = Public.getSafeId();
+    if (!safeId) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
+    $(document).clearQueue('OpenAllBoxes');
+    $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
+        let $this = $(this);
+        let boxType = $this.find('span:first').text().trim() + '盒子';
+        if (!Config.defOpenBoxTypeList.includes(boxType)) return;
+        let num = parseInt($this.find('span:last').text());
+        if (!num || num < 0) return;
+        let id = parseInt($boxArea.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
+        if (!id) return;
+        $(document).queue('OpenAllBoxes', () => openBoxes({ id, boxType, num, safeId, nextActionEnabled: true }));
+    });
+    $(document).dequeue('OpenAllBoxes');
+    $(document).dequeue('AutoAction');
+};
+
+/**
  * 打开盒子
  * @param {number} id 盒子类型ID
  * @param {string} boxType 盒子类型名称
@@ -3468,7 +3578,7 @@ const showOpenAllBoxesDialog = function () {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = false }) {
+const openBoxes = exports.openBoxes = function ({ id, boxType, num, safeId, nextActionEnabled = false }) {
     let successNum = 0,
         failNum = 0,
         index = 0;
@@ -3721,7 +3831,7 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
         $tr.attr('data-id', armId).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
         let newArmMark = false;
         if (Config.autoSaveArmsInfoEnabled) {
-            if (index === 0 && (!armsInfo['上次记录的最新装备'] || !armsInfo['上次记录的时间'] || Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= 1)) {
+            if (index === 0 && (!armsInfo['上次记录的最新装备'] || !armsInfo['上次记录的时间'] || Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= _Const2.default.newArmMarkDuration)) {
                 writeArmsInfoflag = true;
                 armsInfo['上次记录的最新装备'] = armId;
                 armsInfo['上次记录的时间'] = $.now();
@@ -4091,7 +4201,7 @@ const addArmsButton = function () {
             alert('在本地保存的装备信息已被清除');
         }
     }).end().find('[name="showArmsFinalAddition"]').click(function () {
-        if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
+        if (!confirm('是否显示当前页面上所有装备的最终加成信息？（请不要在争夺途中使用此功能）')) return;
         Msg.destroy();
         let oriEquippedArmList = [];
         let armList = [];
@@ -4115,7 +4225,7 @@ const addArmsButton = function () {
         $armArea.find('input[name="armCheck"]:checked').each(function () {
             idList.push(parseInt($(this).val()));
         });
-        if (!idList.length || !confirm(`是否熔炼所选的${idList.length}件装备？`)) return;
+        if (!idList.length || !confirm(`是否熔炼所选的 ${idList.length} 件装备？`)) return;
         smeltArms({ idList, safeId });
     }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
     addCommonArmsButton($('.pd_item_btns[data-name="handleArmBtns"]'), $armArea);
@@ -4139,6 +4249,7 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
   <option value="selectCancel">取消</option>
   <option value="selectWeapon">选择武器</option>
   <option value="selectArmor">选择护甲</option>
+  <option value="selectNewArm">选择新装备</option>
   <option value="selectNoMemo">选择无备注的装备</option>
   <option value="selectArmId">选择指定ID的装备</option>
 </select>
@@ -4170,6 +4281,9 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
         } else if (name === 'selectArmor') {
             $checkboxes.prop('checked', false);
             $armArea.find('tr[data-class="护甲"] input[name="armCheck"]').prop('checked', true);
+        } else if (name === 'selectNewArm') {
+            $checkboxes.prop('checked', false);
+            $armArea.find('tr:has(.pd_new_arm_mark) input[name="armCheck"]').prop('checked', true);
         } else if (name === 'selectNoMemo') {
             $checkboxes.prop('checked', false);
             $armArea.find('tr:not(:has(td[data-memo])) input[name="armCheck"]').prop('checked', true);
@@ -5051,7 +5165,10 @@ const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
  * @param {string} safeId SafeID
  */
 const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
-    if (Util.getCookie(_Const2.default.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) return;
+    if (Util.getCookie(_Const2.default.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
     let index = 0,
         subIndex = 0;
     let isStop = false;
@@ -5180,6 +5297,7 @@ const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
                 Msg.remove($wait);
                 Util.deleteCookie(_Const2.default.buyItemReadyCookieName);
                 Util.setCookie(_Const2.default.buyItemCookieName, 1, getCookieDate());
+                $(document).dequeue('AutoAction');
                 Script.runFunc('Item.buyItems_complete_');
             } else {
                 setTimeout(() => buy(parseInt(itemIdList[index][subIndex])), _Const2.default.minActionInterval);
@@ -5196,6 +5314,7 @@ const buyItems = exports.buyItems = function (buyItemIdList, safeId) {
     }
     if (!itemIdList.length) {
         Util.setCookie(_Const2.default.buyItemCookieName, 1, getCookieDate());
+        $(document).dequeue('AutoAction');
         return;
     }
     Util.setCookie(_Const2.default.buyItemReadyCookieName, 1, Util.getDate('+5m'));
@@ -6056,8 +6175,9 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     showLogStat(levelInfoList);
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
-        $(document).ready(() => setTimeout(autoLoot, 500));
+        $(document).queue('AutoAction', () => autoLoot());
     }
+    $(document).dequeue('AutoAction');
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
 };
 
@@ -7103,10 +7223,10 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 if (isChecked) {
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
+                    $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
                 } else {
                     setTimeout(() => updateLootInfo(after), _Const2.default.defAjaxInterval);
                 }
-                $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
                 Script.runFunc('Loot.lootAttack_complete_');
             } else {
                 if (/你被击败了/.test(log)) {
@@ -7272,8 +7392,15 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
         Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
-        Public.getDailyBonus();
+        $(document).queue('AutoAction', () => Public.getDailyBonus());
     }
+    if (Config.autoOpenBoxesAfterLootEnabled) {
+        $(document).queue('AutoAction', function () {
+            $(document).clearQueue('AutoAction');
+            setTimeout(() => location.href = 'kf_fw_ig_mybp.php#openboxes', _Const2.default.minActionInterval);
+        });
+    }
+    $(document).dequeue('AutoAction');
     Script.runFunc('Loot.recordLootLog_after_');
 };
 
@@ -7840,7 +7967,6 @@ const handleLootLogNav = function () {
 
         if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了/.test(log) && keyList[curIndex] === 0) {
             Util.deleteCookie(_Const2.default.lootCompleteCookieName);
-            autoSaveLootLog();
         }
     }
 };
@@ -8115,7 +8241,10 @@ const getAutoLootCookieDate = function () {
  * 检查争夺情况
  */
 const checkLoot = exports.checkLoot = function () {
-    if (new Date() < Util.getDateByTime(Config.checkLootAfterTime)) return;
+    if (new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
 
     console.log('检查争夺情况Start');
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
@@ -8143,6 +8272,7 @@ const checkLoot = exports.checkLoot = function () {
                 }
                 Util.setCookie(_Const2.default.lootCheckingCookieName, 1, Util.getDate('+1m'));
                 Msg.destroy();
+                $(document).clearQueue('AutoAction');
                 location.href = 'kf_fw_ig_index.php';
             } else {
                 Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
@@ -8150,7 +8280,11 @@ const checkLoot = exports.checkLoot = function () {
         },
         error() {
             Msg.remove($wait);
+            $(document).clearQueue('AutoAction');
             setTimeout(checkLoot, _Const2.default.defAjaxInterval);
+        },
+        complete: function () {
+            $(document).dequeue('AutoAction');
         }
     });
 };
@@ -8159,17 +8293,24 @@ const checkLoot = exports.checkLoot = function () {
  * 自动争夺
  */
 const autoLoot = function () {
-    if (/你被击败了/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) return;
+    if (/你被击败了/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
     let safeId = Public.getSafeId();
     let currentLevel = getCurrentLevel(logList);
     if (!safeId || Config.attackTargetLevel > 0 && Config.attackTargetLevel <= currentLevel) {
         Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
+        $(document).dequeue('AutoAction');
         return;
     }
     Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
     Util.deleteCookie(_Const2.default.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function';
-    if (Config.unusedPointNumAlertEnabled && !autoChangePointsEnabled && !checkPoints($points)) return;
+    if (Config.unusedPointNumAlertEnabled && !autoChangePointsEnabled && !checkPoints($points)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
     lootAttack({ type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId });
 };
 
@@ -8206,6 +8347,9 @@ const autoSaveLootLog = exports.autoSaveLootLog = function () {
         error() {
             Msg.remove($wait);
             setTimeout(autoSaveLootLog, _Const2.default.defAjaxInterval);
+        },
+        complete() {
+            $(document).dequeue('AutoAction');
         }
     });
 };
@@ -8332,9 +8476,8 @@ const setHaloInfo = exports.setHaloInfo = function (newHaloInfo) {
 
 /**
  * 获取战力光环页面信息
- * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
-const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage = false) {
+const getPromoteHaloInfo = exports.getPromoteHaloInfo = function () {
     Script.runFunc('Loot.getPromoteHaloInfo_before_');
     console.log('获取战力光环页面信息Start');
     let $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
@@ -8347,7 +8490,7 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
     const setCookie = function (value) {
         let nextTime = Util.getDate(value);
         Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime.getTime(), nextTime);
-        if (isInitLootPage) init();
+        $(document).dequeue('AutoAction');
         return false;
     };
 
@@ -8406,7 +8549,7 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
                 if (maxCount > -1) totalCount = totalCount > maxCount ? maxCount : totalCount;
             }
 
-            promoteHalo(totalCount, Config.promoteHaloCostType, safeId, isInitLootPage);
+            promoteHalo(totalCount, Config.promoteHaloCostType, safeId);
         }).fail(function () {
             Msg.remove($wait);
             setTimeout(getPromoteHaloInfo, _Const2.default.defAjaxInterval);
@@ -8421,9 +8564,8 @@ const getPromoteHaloInfo = exports.getPromoteHaloInfo = function (isInitLootPage
  * @param {number} totalCount 提升战力光环总次数
  * @param {number} promoteHaloCostType 自动提升战力光环的花费类型，参见{@link Config.promoteHaloCostType}
  * @param {string} safeId SafeID
- * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
-const promoteHalo = exports.promoteHalo = function (totalCount, promoteHaloCostType, safeId, isInitLootPage = false) {
+const promoteHalo = exports.promoteHalo = function (totalCount, promoteHaloCostType, safeId) {
     console.log('提升战力光环Start');
     let $wait = Msg.wait(`<strong>正在提升战力光环&hellip;</strong><i>剩余：<em class="pd_countdown">${totalCount}</em></i><a class="pd_stop_action" href="#">停止操作</a>`);
     TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
@@ -8479,11 +8621,11 @@ const promoteHalo = exports.promoteHalo = function (totalCount, promoteHaloCostT
                 Msg.remove($wait);
                 if (nextTime > 0 || isStop) {
                     Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime, new Date(nextTime));
+                    $(document).dequeue('AutoAction');
                 } else {
                     Util.deleteCookie(_Const2.default.promoteHaloCookieName);
                     getPromoteHaloInfo();
                 }
-                if (isInitLootPage) init();
                 Script.runFunc('Loot.promoteHalo_after_');
             } else {
                 setTimeout(promote, _Const2.default.promoteHaloActionInterval);
@@ -10068,26 +10210,32 @@ const startTimingMode = exports.startTimingMode = function () {
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
 
-        let isAutoPromoteHaloStarted = false;
+        $(document).clearQueue('AutoAction');
+
         if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
-            isAutoPromoteHaloStarted = true;
-            Loot.getPromoteHaloInfo();
+            $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
         }
 
         if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
-            if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
-                if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) Loot.checkLoot();
+            if (Config.autoLootEnabled) {
+                if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) $(document).queue('AutoAction', () => Loot.checkLoot());
             } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-                Loot.autoSaveLootLog();
+                $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
             }
         }
 
-        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) getDailyBonus();
+        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
+            $(document).queue('AutoAction', () => getDailyBonus());
+        }
 
         if (Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName)) {
             let safeId = getSafeId();
-            if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+            if (safeId) {
+                $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList, safeId));
+            }
         }
+
+        $(document).dequeue('AutoAction');
 
         let { action, interval } = getNextTimingIntervalInfo();
         if (interval > 0) errorNum = 0;
@@ -10180,6 +10328,8 @@ const getDailyBonus = exports.getDailyBonus = function () {
     }).fail(function () {
         Msg.remove($wait);
         setTimeout(getDailyBonus, _Const2.default.defAjaxInterval);
+    }).always(function () {
+        $(document).dequeue('AutoAction');
     });
 };
 
@@ -10459,6 +10609,7 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
  */
 const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead = false) {
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
+        $(document).dequeue('AutoAction');
         return;
     }
     let $kfb = $('a[href="kf_givemekfb.php"]');
@@ -10468,20 +10619,33 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
      * @param {number} cash 当前持有的KFB
      */
     const saveCurrentDeposit = function (cash) {
-        if (cash < Config.saveCurrentDepositAfterKfb) return;
+        if (cash < Config.saveCurrentDepositAfterKfb) {
+            $(document).dequeue('AutoAction');
+            return;
+        }
         let multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
         if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
         let money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > cash) return;
+        if (money <= 0 || money > cash) {
+            $(document).dequeue('AutoAction');
+            return;
+        }
         console.log('自动活期存款Start');
-        $.post('hack.php?H_name=bank', { action: 'save', btype: 1, savemoney: money }, function (html) {
+        $.ajax({
+            type: 'POST',
+            url: 'hack.php?H_name=bank',
+            data: { action: 'save', btype: 1, savemoney: money },
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
             showFormatLog('自动存款', html);
             let { msg } = Util.getResponseMsg(html);
             if (/完成存款/.test(msg)) {
                 Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
                 console.log(`共有${money}KFB已自动存入活期存款`);
-                Msg.show(`共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款`);
+                Msg.show(`<strong>共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款</strong>`);
             }
+        }).always(function () {
+            $(document).dequeue('AutoAction');
         });
     };
 

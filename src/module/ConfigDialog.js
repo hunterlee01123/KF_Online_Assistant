@@ -10,6 +10,7 @@ import {
     clear as clearConfig,
     changeStorageType,
     normalize as normalizeConfig,
+    clearData,
     Config as defConfig,
 } from './Config';
 import * as TmpLog from './TmpLog';
@@ -27,7 +28,7 @@ export const show = function () {
     let html = `
 <div class="pd_cfg_main">
   <div class="pd_cfg_nav">
-    <a class="pd_btn_link" data-name="clearTmpData" title="清除与助手有关的Cookies和本地存储数据（不包括助手设置和日志）" href="#">清除临时数据</a>
+    <a class="pd_btn_link" data-name="openClearDataDialog" title="清除与助手有关的数据" href="#">清除数据</a>
     <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">运行命令</a>
     <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">导入/导出设置</a>
   </div>
@@ -398,17 +399,6 @@ export const show = function () {
             alert('设置已重置');
             location.reload();
         }
-    }).end().find('[data-name="clearTmpData"]').click(function (e) {
-        e.preventDefault();
-        let type = prompt(
-            '可清除与助手有关的Cookies和本地临时数据（不包括助手设置和日志）\n请填写清除类型，0：全部清除；1：清除Cookies；2：清除本地临时数据', 0
-        );
-        if (type === null) return;
-        type = parseInt(type);
-        if (!isNaN(type) && type >= 0) {
-            clearTmpData(type);
-            alert('缓存已清除');
-        }
     });
 
     $dialog.on('click', 'a[data-name^="open"][href="#"]', function (e) {
@@ -416,7 +406,8 @@ export const show = function () {
         let $this = $(this);
         if ($this.hasClass('pd_disabled_link')) return;
         let name = $this.data('name');
-        if (name === 'openRumCommandDialog') showRunCommandDialog();
+        if (name === 'openClearDataDialog') showClearDataDialog();
+        else if (name === 'openRumCommandDialog') showRunCommandDialog();
         else if (name === 'openImportOrExportSettingDialog') showImportOrExportSettingDialog();
         else if (name === 'openBuyItemTipsDialog') showBuyItemTipsDialog();
         else if (name === 'openCustomSmColorDialog') showCustomSmColorDialog();
@@ -559,22 +550,56 @@ const verifyMainConfig = function ($dialog) {
 };
 
 /**
- * 清除临时数据
- * @param {number} type 清除类别，0：全部清除；1：清除Cookies；2：清除本地临时数据
+ * 显示清除数据对话框
  */
-const clearTmpData = function (type = 0) {
-    if (type === 0 || type === 1) {
-        for (let key in Const) {
-            if (/CookieName$/.test(key)) {
-                Util.deleteCookie(Const[key]);
-            }
+const showClearDataDialog = function () {
+    const dialogName = 'pdClearDataDialog';
+    if ($('#' + dialogName).length > 0) return;
+
+    let html = `
+<div class="pd_cfg_main">
+  <fieldset style="margin-top: 5px;">
+    <legend>请选择想清除的临时缓存数据（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
+    <select name="caches" size="2" style="width: 340px;" multiple>
+      <option value="cookies">助手Cookies</option><option value="tmpData">助手临时数据</option>
+    </select>
+  </fieldset>
+  <fieldset style="margin-top: 5px;">
+    <legend>请选择想清除的设置或日志（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
+    <select name="settingsAndLogs" size="5" style="width: 340px;" multiple>
+      <option value="config">助手设置</option><option value="log">助手日志</option><option value="lootLog">争夺记录</option>
+      <option value="armsInfo">装备信息</option><option value="buyThreadLog">购买帖子记录</option>
+    </select>
+  </fieldset>
+</div>
+<div class="pd_cfg_btns">
+  <button type="submit" style="color: #f00;">清除数据</button>
+  <button data-action="close" type="button">取消</button>
+</div>`;
+    let $dialog = Dialog.create(dialogName, '清除数据', html);
+
+    $dialog.on('keydown', 'select', (function (e) {
+        if (e.ctrlKey && e.keyCode === 65) {
+            e.preventDefault();
+            $(this).children().prop('selected', true);
         }
-    }
-    if (type === 0 || type === 2) {
-        TmpLog.clear();
-        localStorage.removeItem(Const.multiQuoteStorageName);
-        localStorage.removeItem(Const.tempPointsLogListStorageName);
-    }
+    })).submit(function (e) {
+        e.preventDefault();
+        let caches = $dialog.find('[name="caches"]').val();
+        let settingsAndLogs = $dialog.find('[name="settingsAndLogs"]').val();
+        if (!caches && !settingsAndLogs || !confirm('是否清除选定的数据？')) return;
+        for (let name of caches) {
+            clearData(name);
+        }
+        for (let name of settingsAndLogs) {
+            clearData(name);
+        }
+        alert('选定的数据已清除');
+        location.reload();
+    });
+
+    Dialog.show(dialogName);
+    Script.runFunc('ConfigDialog.showClearDataDialog_after_');
 };
 
 /**

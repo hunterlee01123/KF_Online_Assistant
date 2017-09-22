@@ -96,8 +96,6 @@ const Const = {
     postContentStorageName: storagePrefix + 'postContent',
     // 存储临时点数分配记录列表的LocalStorage名称
     tempPointsLogListStorageName: storagePrefix + 'tempPointsLogList',
-    // 存储临时点数分配记录列表的LocalStorage名称
-    itemLogStorageName: storagePrefix + 'itemLog',
 
     // 神秘等级升级提醒的临时日志名称
     smLevelUpTmpLogName: 'SmLevelUp',
