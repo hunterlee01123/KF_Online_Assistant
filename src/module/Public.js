@@ -494,28 +494,34 @@ export const startTimingMode = function () {
     const checkRefreshInterval = function () {
         Msg.remove($('.pd_refresh_notice').parent());
 
-        let isAutoPromoteHaloStarted = false;
+        $(document).clearQueue('AutoAction');
+
         if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
-            isAutoPromoteHaloStarted = true;
-            Loot.getPromoteHaloInfo();
+            $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
         }
 
         if (!Util.getCookie(Const.lootCompleteCookieName)) {
-            if (Config.autoLootEnabled && !isAutoPromoteHaloStarted) {
+            if (Config.autoLootEnabled) {
                 if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
-                    Loot.checkLoot();
+                    $(document).queue('AutoAction', () => Loot.checkLoot());
             }
             else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-                Loot.autoSaveLootLog();
+                $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
             }
         }
 
-        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) getDailyBonus();
+        if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) {
+            $(document).queue('AutoAction', () => getDailyBonus());
+        }
 
         if (Config.autoBuyItemEnabled && !Util.getCookie(Const.buyItemCookieName)) {
             let safeId = getSafeId();
-            if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+            if (safeId) {
+                $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList, safeId));
+            }
         }
+
+        $(document).dequeue('AutoAction');
 
         let {action, interval} = getNextTimingIntervalInfo();
         if (interval > 0) errorNum = 0;
@@ -611,6 +617,8 @@ export const getDailyBonus = function () {
     }).fail(function () {
         Msg.remove($wait);
         setTimeout(getDailyBonus, Const.defAjaxInterval);
+    }).always(function () {
+        $(document).dequeue('AutoAction');
     });
 };
 
@@ -910,6 +918,7 @@ export const addFastNavMenu = function () {
 export const autoSaveCurrentDeposit = function (isRead = false) {
     if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 &&
             Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
+        $(document).dequeue('AutoAction');
         return;
     }
     let $kfb = $('a[href="kf_givemekfb.php"]');
@@ -919,24 +928,35 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
      * @param {number} cash 当前持有的KFB
      */
     const saveCurrentDeposit = function (cash) {
-        if (cash < Config.saveCurrentDepositAfterKfb) return;
+        if (cash < Config.saveCurrentDepositAfterKfb) {
+            $(document).dequeue('AutoAction');
+            return;
+        }
         let multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
         if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb)
             multiple++;
         let money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > cash) return;
+        if (money <= 0 || money > cash) {
+            $(document).dequeue('AutoAction');
+            return;
+        }
         console.log('自动活期存款Start');
-        $.post('hack.php?H_name=bank',
-            {action: 'save', btype: 1, savemoney: money},
-            function (html) {
-                showFormatLog('自动存款', html);
-                let {msg} = Util.getResponseMsg(html);
-                if (/完成存款/.test(msg)) {
-                    Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
-                    console.log(`共有${money}KFB已自动存入活期存款`);
-                    Msg.show(`共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款`);
-                }
-            });
+        $.ajax({
+            type: 'POST',
+            url: 'hack.php?H_name=bank',
+            data: {action: 'save', btype: 1, savemoney: money},
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            showFormatLog('自动存款', html);
+            let {msg} = Util.getResponseMsg(html);
+            if (/完成存款/.test(msg)) {
+                Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
+                console.log(`共有${money}KFB已自动存入活期存款`);
+                Msg.show(`<strong>共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款</strong>`);
+            }
+        }).always(function () {
+            $(document).dequeue('AutoAction');
+        });
     };
 
     if (isRead) {

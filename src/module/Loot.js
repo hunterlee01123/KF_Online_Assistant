@@ -127,8 +127,9 @@ export const enhanceLootIndexPage = function () {
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
         && !Util.getCookie(Const.lootAttackingCookieName)
     ) {
-        $(document).ready(() => setTimeout(autoLoot, 500));
+        $(document).queue('AutoAction', () => autoLoot());
     }
+    $(document).dequeue('AutoAction');
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
 };
 
@@ -1270,11 +1271,11 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 if (isChecked) {
                     Msg.remove($wait);
                     recordLootInfo(logList, levelInfoList, pointsLogList);
+                    $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
                 }
                 else {
                     setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
                 }
-                $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
                 Script.runFunc('Loot.lootAttack_complete_');
             }
             else {
@@ -1449,8 +1450,15 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
 
     if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
         Util.deleteCookie(Const.getDailyBonusCookieName);
-        Public.getDailyBonus();
+        $(document).queue('AutoAction', () => Public.getDailyBonus());
     }
+    if (Config.autoOpenBoxesAfterLootEnabled) {
+        $(document).queue('AutoAction', function () {
+            $(document).clearQueue('AutoAction');
+            setTimeout(() => location.href = 'kf_fw_ig_mybp.php#openboxes', Const.minActionInterval);
+        });
+    }
+    $(document).dequeue('AutoAction');
     Script.runFunc('Loot.recordLootLog_after_');
 };
 
@@ -2050,7 +2058,6 @@ const handleLootLogNav = function () {
 
         if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了/.test(log) && keyList[curIndex] === 0) {
             Util.deleteCookie(Const.lootCompleteCookieName);
-            autoSaveLootLog();
         }
     }
 };
@@ -2328,7 +2335,10 @@ const getAutoLootCookieDate = function () {
  * 检查争夺情况
  */
 export const checkLoot = function () {
-    if (new Date() < Util.getDateByTime(Config.checkLootAfterTime)) return;
+    if (new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
 
     console.log('检查争夺情况Start');
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
@@ -2356,6 +2366,7 @@ export const checkLoot = function () {
                 }
                 Util.setCookie(Const.lootCheckingCookieName, 1, Util.getDate('+1m'));
                 Msg.destroy();
+                $(document).clearQueue('AutoAction');
                 location.href = 'kf_fw_ig_index.php';
             }
             else {
@@ -2364,7 +2375,11 @@ export const checkLoot = function () {
         },
         error() {
             Msg.remove($wait);
+            $(document).clearQueue('AutoAction');
             setTimeout(checkLoot, Const.defAjaxInterval);
+        },
+        complete: function () {
+            $(document).dequeue('AutoAction');
         }
     });
 };
@@ -2373,17 +2388,24 @@ export const checkLoot = function () {
  * 自动争夺
  */
 const autoLoot = function () {
-    if (/你被击败了/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) return;
+    if (/你被击败了/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
     let safeId = Public.getSafeId();
     let currentLevel = getCurrentLevel(logList);
     if (!safeId || Config.attackTargetLevel > 0 && Config.attackTargetLevel <= currentLevel) {
         Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
+        $(document).dequeue('AutoAction');
         return;
     }
     Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
     Util.deleteCookie(Const.lootCompleteCookieName);
     let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function';
-    if (Config.unusedPointNumAlertEnabled && !autoChangePointsEnabled && !checkPoints($points)) return;
+    if (Config.unusedPointNumAlertEnabled && !autoChangePointsEnabled && !checkPoints($points)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
     lootAttack({type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId});
 };
 
@@ -2421,6 +2443,9 @@ export const autoSaveLootLog = function () {
         error() {
             Msg.remove($wait);
             setTimeout(autoSaveLootLog, Const.defAjaxInterval);
+        },
+        complete() {
+            $(document).dequeue('AutoAction');
         }
     });
 };
@@ -2552,9 +2577,8 @@ export const setHaloInfo = function (newHaloInfo) {
 
 /**
  * 获取战力光环页面信息
- * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
-export const getPromoteHaloInfo = function (isInitLootPage = false) {
+export const getPromoteHaloInfo = function () {
     Script.runFunc('Loot.getPromoteHaloInfo_before_');
     console.log('获取战力光环页面信息Start');
     let $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
@@ -2567,7 +2591,7 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
     const setCookie = function (value) {
         let nextTime = Util.getDate(value);
         Util.setCookie(Const.promoteHaloCookieName, nextTime.getTime(), nextTime);
-        if (isInitLootPage) init();
+        $(document).dequeue('AutoAction');
         return false;
     };
 
@@ -2628,7 +2652,7 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
                 if (maxCount > -1) totalCount = totalCount > maxCount ? maxCount : totalCount;
             }
 
-            promoteHalo(totalCount, Config.promoteHaloCostType, safeId, isInitLootPage);
+            promoteHalo(totalCount, Config.promoteHaloCostType, safeId);
         }).fail(function () {
             Msg.remove($wait);
             setTimeout(getPromoteHaloInfo, Const.defAjaxInterval);
@@ -2644,9 +2668,8 @@ export const getPromoteHaloInfo = function (isInitLootPage = false) {
  * @param {number} totalCount 提升战力光环总次数
  * @param {number} promoteHaloCostType 自动提升战力光环的花费类型，参见{@link Config.promoteHaloCostType}
  * @param {string} safeId SafeID
- * @param {boolean} isInitLootPage 是否初始化争夺首页
  */
-export const promoteHalo = function (totalCount, promoteHaloCostType, safeId, isInitLootPage = false) {
+export const promoteHalo = function (totalCount, promoteHaloCostType, safeId) {
     console.log('提升战力光环Start');
     let $wait = Msg.wait(
         `<strong>正在提升战力光环&hellip;</strong><i>剩余：<em class="pd_countdown">${totalCount}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
@@ -2715,12 +2738,12 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId, is
                 Msg.remove($wait);
                 if (nextTime > 0 || isStop) {
                     Util.setCookie(Const.promoteHaloCookieName, nextTime, new Date(nextTime));
+                    $(document).dequeue('AutoAction');
                 }
                 else {
                     Util.deleteCookie(Const.promoteHaloCookieName);
                     getPromoteHaloInfo();
                 }
-                if (isInitLootPage) init();
                 Script.runFunc('Loot.promoteHalo_after_');
             }
             else {

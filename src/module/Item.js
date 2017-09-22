@@ -255,12 +255,16 @@ const showOpenAllBoxesDialog = function () {
 </div>
 <div class="pd_cfg_btns">
   <button name="open" type="button" style="color: #f00;">一键开盒</button>
+  <button name="save" type="button">保存设置</button>
   <button data-action="close" type="button">关闭</button>
 </div>`;
     let $dialog = Dialog.create(dialogName, '一键开盒', html);
     let $smeltArmTypeList = $dialog.find('ul[data-name="smeltArmTypeList"]');
 
-    $dialog.find('[name="open"]').click(function () {
+    /**
+     * 保存设置
+     */
+    const saveSettings = function () {
         readConfig();
         let tmpBoxTypeList = $dialog.find('select[name="openBoxesTypes"]').val();
         if (!Array.isArray(tmpBoxTypeList)) tmpBoxTypeList = [];
@@ -294,11 +298,15 @@ const showOpenAllBoxesDialog = function () {
         }
 
         writeConfig();
+    };
+
+    $dialog.find('[name="open"]').click(function () {
         if (!Config.defOpenBoxTypeList.length) {
             alert('未选择盒子种类');
             return;
         }
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
+        saveSettings();
         Dialog.close(dialogName);
         if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
             $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
@@ -318,6 +326,9 @@ const showOpenAllBoxesDialog = function () {
             $(document).queue('OpenAllBoxes', () => openBoxes({id, boxType, num, safeId, nextActionEnabled: true}));
         });
         $(document).dequeue('OpenAllBoxes');
+    }).end().find('[name="save"]').click(function () {
+        saveSettings();
+        alert('设置已保存');
     }).end().find('a[data-name="selectAll"]').click(() => Util.selectAll($smeltArmTypeList.find('input[name="smeltArmsType"]')))
         .end().find('a[data-name="selectInverse"]').click(() => Util.selectInverse($smeltArmTypeList.find('input[name="smeltArmsType"]')));
 
@@ -352,6 +363,30 @@ const showOpenAllBoxesDialog = function () {
 };
 
 /**
+ * 自动一键开盒
+ */
+export const autoOpenBoxes = function () {
+    let safeId = Public.getSafeId();
+    if (!safeId) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
+    $(document).clearQueue('OpenAllBoxes');
+    $boxArea.find('> tbody > tr:nth-child(2) > td').each(function (index) {
+        let $this = $(this);
+        let boxType = $this.find('span:first').text().trim() + '盒子';
+        if (!Config.defOpenBoxTypeList.includes(boxType)) return;
+        let num = parseInt($this.find('span:last').text());
+        if (!num || num < 0) return;
+        let id = parseInt($boxArea.find(`> tbody > tr:nth-child(3) > td:nth-child(${index + 1}) > a[data-name="openBoxes"]`).data('id'));
+        if (!id) return;
+        $(document).queue('OpenAllBoxes', () => openBoxes({id, boxType, num, safeId, nextActionEnabled: true}));
+    });
+    $(document).dequeue('OpenAllBoxes');
+    $(document).dequeue('AutoAction');
+};
+
+/**
  * 打开盒子
  * @param {number} id 盒子类型ID
  * @param {string} boxType 盒子类型名称
@@ -359,7 +394,7 @@ const showOpenAllBoxesDialog = function () {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false}) {
+export const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled = false}) {
     let successNum = 0, failNum = 0, index = 0;
     let randomTotalNum = 0, randomTotalCount = 0;
     let isStop = false;
@@ -638,7 +673,7 @@ export const handleArmArea = function ($armArea, type = 0) {
         let newArmMark = false;
         if (Config.autoSaveArmsInfoEnabled) {
             if (index === 0 && (!armsInfo['上次记录的最新装备'] || !armsInfo['上次记录的时间'] ||
-                    Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= 1)
+                    Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= Const.newArmMarkDuration)
             ) {
                 writeArmsInfoflag = true;
                 armsInfo['上次记录的最新装备'] = armId;
@@ -1026,7 +1061,7 @@ const addArmsButton = function () {
         })
         .end().find('[name="showArmsFinalAddition"]')
         .click(function () {
-            if (!confirm('是否显示当前页面上所有装备的最终加成信息？')) return;
+            if (!confirm('是否显示当前页面上所有装备的最终加成信息？（请不要在争夺途中使用此功能）')) return;
             Msg.destroy();
             let oriEquippedArmList = [];
             let armList = [];
@@ -1051,7 +1086,7 @@ const addArmsButton = function () {
             $armArea.find('input[name="armCheck"]:checked').each(function () {
                 idList.push(parseInt($(this).val()));
             });
-            if (!idList.length || !confirm(`是否熔炼所选的${idList.length}件装备？`)) return;
+            if (!idList.length || !confirm(`是否熔炼所选的 ${idList.length} 件装备？`)) return;
             smeltArms({idList, safeId});
         }).end().find('[name="smeltArms"]').click(() => showBatchSmeltArmsDialog(safeId));
     addCommonArmsButton($('.pd_item_btns[data-name="handleArmBtns"]'), $armArea);
@@ -2061,7 +2096,10 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
  * @param {string} safeId SafeID
  */
 export const buyItems = function (buyItemIdList, safeId) {
-    if (Util.getCookie(Const.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) return;
+    if (Util.getCookie(Const.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) {
+        $(document).dequeue('AutoAction');
+        return;
+    }
     let index = 0, subIndex = 0;
     let isStop = false;
     let itemIdList = [];
@@ -2190,6 +2228,7 @@ export const buyItems = function (buyItemIdList, safeId) {
                 Msg.remove($wait);
                 Util.deleteCookie(Const.buyItemReadyCookieName);
                 Util.setCookie(Const.buyItemCookieName, 1, getCookieDate());
+                $(document).dequeue('AutoAction');
                 Script.runFunc('Item.buyItems_complete_');
             }
             else {
@@ -2208,6 +2247,7 @@ export const buyItems = function (buyItemIdList, safeId) {
     }
     if (!itemIdList.length) {
         Util.setCookie(Const.buyItemCookieName, 1, getCookieDate());
+        $(document).dequeue('AutoAction');
         return;
     }
     Util.setCookie(Const.buyItemReadyCookieName, 1, Util.getDate('+5m'));

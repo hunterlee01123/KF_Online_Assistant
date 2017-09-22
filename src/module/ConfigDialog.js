@@ -115,6 +115,10 @@ export const show = function () {
         <span class="pd_cfg_tips" title="争夺记录最大保存数量，默认值：${defConfig.lootLogSaveMaxNum}，最大值：20">[?]</span>
       </label><br>
       <label>
+        <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> 在争夺后自动一键开盒
+        <span class="pd_cfg_tips" title="在争夺完后自动一键开盒（并执行后续操作），要打开的盒子种类和要执行的后续操作请在我的物品页面进行设定">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
         <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
       </label>

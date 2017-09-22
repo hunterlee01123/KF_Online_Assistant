@@ -222,42 +222,56 @@ const init = function () {
         }
     }
 
-    let isAutoPromoteHaloStarted = false;
-    if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
-        isAutoPromoteHaloStarted = true;
-        Loot.getPromoteHaloInfo(location.pathname === '/kf_fw_ig_index.php');
-    }
-    if (location.pathname === '/kf_fw_ig_index.php' && !isAutoPromoteHaloStarted) Loot.init();
+    $(document).clearQueue('AutoAction');
 
-    let isAutoLootStarted = false;
-    if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootCompleteCookieName)) {
+    if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
+        $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
+    }
+    if (location.pathname === '/kf_fw_ig_index.php') {
+        $(document).queue('AutoAction', () => Loot.init());
+    }
+
+    if (!Util.getCookie(Const.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)) && !isAutoPromoteHaloStarted) {
-                isAutoLootStarted = true;
-                Loot.checkLoot();
+            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootAttackingCookieName) &&
+                !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
+            ) {
+                $(document).queue('AutoAction', () => Loot.checkLoot());
             }
         }
         else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-            Loot.autoSaveLootLog();
+            $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
         }
     }
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) {
-        if (!Config.getBonusAfterLootCompleteEnabled || !isAutoLootStarted) Public.getDailyBonus();
+        $(document).queue('AutoAction', () => Public.getDailyBonus());
     }
 
-    if ((Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled &&
-        !Util.getCookie(Const.buyItemCookieName) && !isAutoLootStarted
-    ) {
+    if ((Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled && !Util.getCookie(Const.buyItemCookieName)) {
         let safeId = Public.getSafeId();
-        if (safeId) Item.buyItems(Config.buyItemIdList, safeId);
+        if (safeId) {
+            $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList, safeId));
+        }
     }
 
-    if (Config.autoSaveCurrentDepositEnabled && Info.isInHomePage) Public.autoSaveCurrentDeposit();
+    if (/kf_fw_ig_mybp\.php#openboxes/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.lootCompleteCookieName)) {
+        $(document).queue('AutoAction', () => Item.autoOpenBoxes());
+    }
 
-    if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) Public.changeIdColor();
+    if (Info.isInHomePage && Config.autoSaveCurrentDepositEnabled) {
+        $(document).queue('AutoAction', () => Public.autoSaveCurrentDeposit());
+    }
 
-    if (Config.timingModeEnabled && (Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php')) Public.startTimingMode();
+    $(document).dequeue('AutoAction');
+
+    if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) {
+        Public.changeIdColor();
+    }
+
+    if (Config.timingModeEnabled && (Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php#openboxes/.test(location.href))) {
+        Public.startTimingMode();
+    }
 
     if (Config.customScriptEnabled) Script.runCustomScript('end');
 
@@ -265,4 +279,6 @@ const init = function () {
     console.log(`【KF Online助手】初始化耗时：${endDate - startDate}ms`);
 };
 
-if (typeof jQuery !== 'undefined') $(document).ready(init);
+if (typeof jQuery !== 'undefined') {
+    $(document).ready(init);
+}

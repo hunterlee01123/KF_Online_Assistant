@@ -19,6 +19,8 @@ const Const = {
     enemyStatLatestLevelNum: 10,
     // 争夺攻击时每隔指定层数进行一次检查
     lootAttackPerCheckLevel: 20,
+    // 新装备标志的持续时间（天）
+    newArmMarkDuration: 1,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
     getCustomPoints: null,
 
@@ -37,7 +39,7 @@ const Const = {
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
     // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 210,
+    tmpHaloInfoExpires: 420,
     // 争夺攻击进行中的有效期（分钟）
     lootAttackingExpires: 10,
     // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
