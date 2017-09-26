@@ -113,7 +113,7 @@ export const show = function () {
       </label>
       <label class="pd_cfg_ml">
         保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
-        <span class="pd_cfg_tips" title="争夺记录最大保存数量，默认值：${defConfig.lootLogSaveMaxNum}，最大值：20">[?]</span>
+        <span class="pd_cfg_tips" title="争夺记录最大保存次数，默认值：${defConfig.lootLogSaveMaxNum}，最大值：20">[?]</span>
       </label><br>
       <label>
         <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> 在争夺后自动一键开盒
@@ -134,7 +134,7 @@ export const show = function () {
       <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">详细说明&raquo;</a><br>
       <label>
         在 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后购买物品
-        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:40:00（注：请不要设置为在此之前的时间）">[?]</span>
+        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:40:00（注：请不要设置为在00:25:00之前的时间）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -288,11 +288,11 @@ export const show = function () {
       </label><br>
       <label>
         消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
-        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15（默认值：-1）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}">[?]</span>
+        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}，最大值：365">[?]</span>
       </label><br>
       <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
@@ -517,6 +517,11 @@ const verifyMainConfig = function ($dialog) {
     let buyItemAfterTime = $.trim($txtBuyItemAfterTime.val());
     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(buyItemAfterTime)) {
         alert('在指定时间之后购买物品格式不正确');
+        $txtBuyItemAfterTime.select().focus();
+        return false;
+    }
+    else if (buyItemAfterTime < '00:25:00') {
+        alert('在指定时间之后购买物品不得小于00:25:00');
         $txtBuyItemAfterTime.select().focus();
         return false;
     }

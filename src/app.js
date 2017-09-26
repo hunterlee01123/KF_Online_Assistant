@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.1.1';
+const version = '12.1.2';
 
 /**
  * 导出模块
@@ -255,7 +255,7 @@ const init = function () {
         }
     }
 
-    if (/kf_fw_ig_mybp\.php#openboxes/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.lootCompleteCookieName)) {
+    if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.lootCompleteCookieName)) {
         $(document).queue('AutoAction', () => Item.autoOpenBoxes());
     }
 
@@ -269,7 +269,7 @@ const init = function () {
         Public.changeIdColor();
     }
 
-    if (Config.timingModeEnabled && (Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php#openboxes/.test(location.href))) {
+    if (Config.timingModeEnabled && (Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href))) {
         Public.startTimingMode();
     }
 

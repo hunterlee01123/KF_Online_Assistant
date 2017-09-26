@@ -672,12 +672,15 @@ export const handleArmArea = function ($armArea, type = 0) {
         $tr.attr('data-id', armId).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
         let newArmMark = false;
         if (Config.autoSaveArmsInfoEnabled) {
-            if (index === 0 && (!armsInfo['上次记录的最新装备'] || !armsInfo['上次记录的时间'] ||
-                    Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= Const.newArmMarkDuration)
-            ) {
-                writeArmsInfoflag = true;
-                armsInfo['上次记录的最新装备'] = armId;
-                armsInfo['上次记录的时间'] = $.now();
+            if (index === 0) {
+                let today = Util.getMidnightHourDate(0);
+                let prev = armsInfo['上次记录的时间'] && armsInfo['上次记录的最新装备'] ? new Date(armsInfo['上次记录的时间']) : new Date(0);
+                prev.setHours(0, 0, 0, 0);
+                if (Math.abs(today - prev) >= Const.newArmMarkDuration * 24 * 60 * 60 * 1000) {
+                    writeArmsInfoflag = true;
+                    armsInfo['上次记录的最新装备'] = armId;
+                    armsInfo['上次记录的时间'] = $.now();
+                }
             }
             if (armId > armsInfo['上次记录的最新装备']) newArmMark = true;
         }
@@ -802,16 +805,30 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
     }).on('click', 'a[data-name="smelt"]', function () {
         if (!confirm('确定熔炼此装备吗？')) return;
         let $this = $(this);
-        let armId = parseInt($this.closest('tr').data('id'));
+        let $tr = $this.closest('tr');
+        let armId = parseInt($tr.data('id'));
         $.post('kf_fw_ig_mybpdt.php', `do=5&id=${armId}&safeid=${safeId}`, function (html) {
             let msg = Util.removeHtmlTag(html);
             if (/装备消失/.test(msg)) {
-                $this.closest('tr').replaceWith(`<tr><td colspan="3">${msg}</td></tr>`);
                 if (armId in Config.armsMemo) {
                     readConfig();
                     delete Config.armsMemo[armId];
                     writeConfig();
                 }
+
+                let matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
+                if (matches) {
+                    let armClass = $tr.data('class');
+                    let gain = {};
+                    gain[armClass + '经验'] = parseInt(matches[1]);
+                    Log.push(
+                        '熔炼装备',
+                        `共有\`1\`个【\`${armClass}\`】装备熔炼成功`,
+                        {gain, pay: {'装备': -1}}
+                    );
+                }
+
+                $tr.replaceWith(`<tr><td colspan="3">${msg}</td></tr>`);
                 if (Config.autoSaveArmsInfoEnabled) {
                     removeSavedArmInfo(armId, $armArea);
                 }

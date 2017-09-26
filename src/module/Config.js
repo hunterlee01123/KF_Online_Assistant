@@ -47,7 +47,7 @@ export const Config = {
     autoSaveLootLogInSpecialCaseEnabled: false,
     // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00
     checkLootAfterTime: '00:05:00',
-    // 历史争夺记录的最大保存数量
+    // 历史争夺记录的最大保存次数
     lootLogSaveMaxNum: 7,
     // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭
     autoOpenBoxesAfterLootEnabled: false,

@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.1.1';
+const version = '12.1.2';
 
 /**
  * 导出模块
@@ -295,7 +295,7 @@ const init = function () {
         }
     }
 
-    if (/kf_fw_ig_mybp\.php#openboxes/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+    if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         $(document).queue('AutoAction', () => Item.autoOpenBoxes());
     }
 
@@ -309,7 +309,7 @@ const init = function () {
         Public.changeIdColor();
     }
 
-    if (Config.timingModeEnabled && (_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php#openboxes/.test(location.href))) {
+    if (Config.timingModeEnabled && (_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href))) {
         Public.startTimingMode();
     }
 
@@ -992,7 +992,7 @@ const Config = exports.Config = {
     autoSaveLootLogInSpecialCaseEnabled: false,
     // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00
     checkLootAfterTime: '00:05:00',
-    // 历史争夺记录的最大保存数量
+    // 历史争夺记录的最大保存次数
     lootLogSaveMaxNum: 7,
     // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭
     autoOpenBoxesAfterLootEnabled: false,
@@ -1431,7 +1431,7 @@ const show = exports.show = function () {
       </label>
       <label class="pd_cfg_ml">
         保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
-        <span class="pd_cfg_tips" title="争夺记录最大保存数量，默认值：${_Config.Config.lootLogSaveMaxNum}，最大值：20">[?]</span>
+        <span class="pd_cfg_tips" title="争夺记录最大保存次数，默认值：${_Config.Config.lootLogSaveMaxNum}，最大值：20">[?]</span>
       </label><br>
       <label>
         <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> 在争夺后自动一键开盒
@@ -1452,7 +1452,7 @@ const show = exports.show = function () {
       <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">详细说明&raquo;</a><br>
       <label>
         在 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后购买物品
-        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:40:00（注：请不要设置为在此之前的时间）">[?]</span>
+        <span class="pd_cfg_tips" title="在当天的指定时间之后购买物品（本地时间），例：00:40:00（注：请不要设置为在00:25:00之前的时间）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1606,11 +1606,11 @@ const show = exports.show = function () {
       </label><br>
       <label>
         消息显示时间 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> 秒
-        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15">[?]</span>
+        <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15（默认值：-1）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${_Config.Config.logSaveDays}">[?]</span>
+        <span class="pd_cfg_tips" title="默认值：${_Config.Config.logSaveDays}，最大值：365">[?]</span>
       </label><br>
       <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
@@ -1680,7 +1680,7 @@ const show = exports.show = function () {
   <span class="pd_cfg_about">
     <a target="_blank" href="read.php?tid=508450">By 喵拉布丁</a>
     <i style="color: #666; font-style: normal;">(V${_Info2.default.version})</i>
-    <a target="_blank" href="https://gitee.com/miaolapd/KF_Online_Assistant/wikis/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
+    <a target="_blank" href="https://gitee.com/miaolapd/KF_Online_Assistant/wikis/pages?title=%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>
@@ -1819,6 +1819,10 @@ const verifyMainConfig = function ($dialog) {
     let buyItemAfterTime = $.trim($txtBuyItemAfterTime.val());
     if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(buyItemAfterTime)) {
         alert('在指定时间之后购买物品格式不正确');
+        $txtBuyItemAfterTime.select().focus();
+        return false;
+    } else if (buyItemAfterTime < '00:25:00') {
+        alert('在指定时间之后购买物品不得小于00:25:00');
         $txtBuyItemAfterTime.select().focus();
         return false;
     }
@@ -3810,10 +3814,15 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
         $tr.attr('data-id', armId).attr('data-class', armInfo['类别']).attr('data-group', armInfo['组别']);
         let newArmMark = false;
         if (Config.autoSaveArmsInfoEnabled) {
-            if (index === 0 && (!armsInfo['上次记录的最新装备'] || !armsInfo['上次记录的时间'] || Math.abs(new Date().getDate() - new Date(armsInfo['上次记录的时间']).getDate()) >= _Const2.default.newArmMarkDuration)) {
-                writeArmsInfoflag = true;
-                armsInfo['上次记录的最新装备'] = armId;
-                armsInfo['上次记录的时间'] = $.now();
+            if (index === 0) {
+                let today = Util.getMidnightHourDate(0);
+                let prev = armsInfo['上次记录的时间'] && armsInfo['上次记录的最新装备'] ? new Date(armsInfo['上次记录的时间']) : new Date(0);
+                prev.setHours(0, 0, 0, 0);
+                if (Math.abs(today - prev) >= _Const2.default.newArmMarkDuration * 24 * 60 * 60 * 1000) {
+                    writeArmsInfoflag = true;
+                    armsInfo['上次记录的最新装备'] = armId;
+                    armsInfo['上次记录的时间'] = $.now();
+                }
             }
             if (armId > armsInfo['上次记录的最新装备']) newArmMark = true;
         }
@@ -3937,16 +3946,26 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
     }).on('click', 'a[data-name="smelt"]', function () {
         if (!confirm('确定熔炼此装备吗？')) return;
         let $this = $(this);
-        let armId = parseInt($this.closest('tr').data('id'));
+        let $tr = $this.closest('tr');
+        let armId = parseInt($tr.data('id'));
         $.post('kf_fw_ig_mybpdt.php', `do=5&id=${armId}&safeid=${safeId}`, function (html) {
             let msg = Util.removeHtmlTag(html);
             if (/装备消失/.test(msg)) {
-                $this.closest('tr').replaceWith(`<tr><td colspan="3">${msg}</td></tr>`);
                 if (armId in Config.armsMemo) {
                     (0, _Config.read)();
                     delete Config.armsMemo[armId];
                     (0, _Config.write)();
                 }
+
+                let matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
+                if (matches) {
+                    let armClass = $tr.data('class');
+                    let gain = {};
+                    gain[armClass + '经验'] = parseInt(matches[1]);
+                    Log.push('熔炼装备', `共有\`1\`个【\`${armClass}\`】装备熔炼成功`, { gain, pay: { '装备': -1 } });
+                }
+
+                $tr.replaceWith(`<tr><td colspan="3">${msg}</td></tr>`);
                 if (Config.autoSaveArmsInfoEnabled) {
                     removeSavedArmInfo(armId, $armArea);
                 }
@@ -7376,7 +7395,7 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     if (Config.autoOpenBoxesAfterLootEnabled) {
         $(document).queue('AutoAction', function () {
             $(document).clearQueue('AutoAction');
-            setTimeout(() => location.href = 'kf_fw_ig_mybp.php#openboxes', _Const2.default.minActionInterval);
+            setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', _Const2.default.minActionInterval);
         });
     }
     $(document).dequeue('AutoAction');

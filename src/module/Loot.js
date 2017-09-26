@@ -1455,7 +1455,7 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
     if (Config.autoOpenBoxesAfterLootEnabled) {
         $(document).queue('AutoAction', function () {
             $(document).clearQueue('AutoAction');
-            setTimeout(() => location.href = 'kf_fw_ig_mybp.php#openboxes', Const.minActionInterval);
+            setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
         });
     }
     $(document).dequeue('AutoAction');
