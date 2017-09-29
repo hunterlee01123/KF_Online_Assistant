@@ -82,16 +82,14 @@ export const Config = {
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',
-    // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
-    smLevelUpAlertEnabled: false,
     // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
     fixedDepositDueAlertEnabled: false,
+    // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
+    smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
     smRankChangeAlertEnabled: false,
     // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
     homePageThreadFastGotoLinkEnabled: true,
-    // 是否在首页显示VIP剩余时间，true：开启；false：关闭
-    showVipSurplusTimeEnabled: false,
 
     // 是否在版块页面中显示帖子页数快捷链接，true：开启；false：关闭
     showFastGotoThreadPageEnabled: false,

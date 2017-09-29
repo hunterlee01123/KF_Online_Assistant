@@ -445,7 +445,7 @@ export const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled 
             else if (msg.includes('操作过快')) {
                 $(document).queue('OpenBoxes', open);
             }
-            else if (msg.includes('盒子不足')) {
+            else if (msg.includes('盒子不足') || msg.includes('错误的安全码')) {
                 $(document).clearQueue('OpenBoxes');
                 isStop = true;
             }
@@ -1384,7 +1384,7 @@ const showBatchSmeltArmsDialog = function () {
 const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabled = false}) {
     let successNum = 0, index = 0;
     let smeltInfo = {};
-    let isDeleteMemo = false;
+    let isStop = false, isDeleteMemo = false;
     let smeltedArmIdList = [];
 
     /**
@@ -1406,6 +1406,7 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
             if (!html) return;
             let msg = Util.removeHtmlTag(html);
             console.log(`【${armName}】 ${msg}`);
+            if (msg.includes('错误的安全码')) isStop = true;
             $('.pd_result[data-name="armResult"]:last').append(`<li>【${armName}】 ${msg}</li>`);
             $armArea.find(`td[id="wp_${armId}"]`).parent('tr').fadeOut('normal', function () {
                 $(this).remove();
@@ -1415,22 +1416,25 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
             }
 
             let matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
-            if (!matches) return;
-            successNum++;
-            if (armId in Config.armsMemo) {
-                isDeleteMemo = true;
-                delete Config.armsMemo[armId];
+            if (matches) {
+                successNum++;
+                if (armId in Config.armsMemo) {
+                    isDeleteMemo = true;
+                    delete Config.armsMemo[armId];
+                }
+                if (!(armClass in smeltInfo)) smeltInfo[armClass] = {};
+                if (!(armGroup in smeltInfo[armClass])) smeltInfo[armClass][armGroup] = {num: 0, exp: 0};
+                smeltInfo[armClass][armGroup].num++;
+                smeltInfo[armClass][armGroup].exp += parseInt(matches[1]);
+                $wait.find('.pd_countdown').text(successNum);
             }
-            if (!(armClass in smeltInfo)) smeltInfo[armClass] = {};
-            if (!(armGroup in smeltInfo[armClass])) smeltInfo[armClass][armGroup] = {num: 0, exp: 0};
-            smeltInfo[armClass][armGroup].num++;
-            smeltInfo[armClass][armGroup].exp += parseInt(matches[1]);
-            $wait.find('.pd_countdown').text(successNum);
-            Script.runFunc('Item.smeltArms_after_');
+            Script.runFunc('Item.smeltArms_after_', msg);
         }).fail(function () {
             $('.pd_result[data-name="armResult"]:last').append(`<li>【${armName}】 <span class="pd_notice">连接超时</span></li>`);
         }).always(function () {
-            if ($wait.data('stop')) complete();
+            if (isStop || $wait.data('stop')) {
+                complete();
+            }
             else {
                 if (index === armNum) setTimeout(getNextArms, Const.minActionInterval);
                 else setTimeout(() => $(document).dequeue('SmeltArms'), Const.minActionInterval);
@@ -1792,6 +1796,7 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
     let totalSuccessNum = 0, totalValidNum = 0, totalInvalidNum = 0, index = 0;
     let useInfo = {};
     let tmpItemTypeList = [...typeList];
+    let isStop = true;
 
     /**
      * 使用
@@ -1825,10 +1830,13 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
                 $wait.find('.pd_countdown').text(totalSuccessNum);
                 isDelete = true;
             }
-            else if (/无法再使用/.test(msg)) {
+            else if (msg.includes('无法再使用')) {
                 index = itemNum;
                 let typeIndex = tmpItemTypeList.indexOf(itemName);
                 if (typeIndex > -1) tmpItemTypeList.splice(typeIndex, 1);
+            }
+            else if (msg.includes('错误的安全码')) {
+                isStop = true;
             }
             else {
                 isDelete = true;
@@ -1841,13 +1849,15 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
             }
             console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
             $('.pd_result[data-name="itemResult"]:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
-            Script.runFunc('Item.useItems_after_');
+            Script.runFunc('Item.useItems_after_', msg);
         }).fail(function () {
             $('.pd_result[data-name="itemResult"]:last').append(
                 `<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`
             );
         }).always(function () {
-            if ($wait.data('stop')) complete();
+            if (isStop || $wait.data('stop')) {
+                complete();
+            }
             else {
                 if (index === itemNum) setTimeout(
                     getNextItems,
@@ -1979,6 +1989,7 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
 const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
     let successNum = 0, index = 0;
     let sellInfo = {};
+    let isStop = false;
 
     /**
      * 出售
@@ -1996,6 +2007,7 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
         }).done(function (html) {
             if (!html) return;
             let msg = Util.removeHtmlTag(html);
+            if (msg.includes('错误的安全码')) isStop = true;
             console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
             $('.pd_result[data-name="itemResult"]:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
             $itemArea.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
@@ -2003,19 +2015,20 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
             });
 
             let matches = /出售该物品获得了\[\s*(\d+)\s*]KFB/.exec(msg);
-            if (!matches) return;
-            successNum++;
-            if (!(itemName in sellInfo)) sellInfo[itemName] = {num: 0, sell: 0};
-            sellInfo[itemName].num++;
-            sellInfo[itemName].sell += parseInt(matches[1]);
-            $wait.find('.pd_countdown').text(successNum);
-            Script.runFunc('Item.sellItems_after_');
+            if (matches) {
+                successNum++;
+                if (!(itemName in sellInfo)) sellInfo[itemName] = {num: 0, sell: 0};
+                sellInfo[itemName].num++;
+                sellInfo[itemName].sell += parseInt(matches[1]);
+                $wait.find('.pd_countdown').text(successNum);
+            }
+            Script.runFunc('Item.sellItems_after_', msg);
         }).fail(function () {
             $('.pd_result[data-name="itemResult"]:last').append(
                 `<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`
             );
         }).always(function () {
-            if ($wait.data('stop')) {
+            if (isStop || $wait.data('stop')) {
                 complete();
             }
             else {

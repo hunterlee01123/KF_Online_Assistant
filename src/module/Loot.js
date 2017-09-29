@@ -303,6 +303,9 @@ const handlePointsArea = function () {
                     if (result === 'ignore') {
                         alert('当前页面的点数设置和装备ID没有发生变化');
                     }
+                    else if (result === 'timeout') {
+                        alert('连接超时，请重试');
+                    }
                 }
             });
         });
@@ -2376,7 +2379,9 @@ export const checkLoot = function () {
         error() {
             Msg.remove($wait);
             $(document).clearQueue('AutoAction');
-            setTimeout(checkLoot, Const.defAjaxInterval);
+            $(document).queue('AutoAction', function () {
+                setTimeout(checkLoot, Const.defAjaxInterval);
+            });
         },
         complete: function () {
             $(document).dequeue('AutoAction');
@@ -2442,7 +2447,9 @@ export const autoSaveLootLog = function () {
         },
         error() {
             Msg.remove($wait);
-            setTimeout(autoSaveLootLog, Const.defAjaxInterval);
+            $(document).queue('AutoAction', function () {
+                setTimeout(autoSaveLootLog, Const.defAjaxInterval);
+            });
         },
         complete() {
             $(document).dequeue('AutoAction');

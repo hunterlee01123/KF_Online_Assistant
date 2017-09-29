@@ -25,7 +25,7 @@ const Const = {
     getCustomPoints: null,
 
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
-    actionFinishRetryInterval: 30,
+    actionFinishRetryInterval: 60,
     // 在连接超时的情况下获取剩余时间失败后的重试间隔（分钟），用于定时模式
     errorRefreshInterval: 1,
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
@@ -130,8 +130,6 @@ const Const = {
     prevReadAtTipsCookieName: 'prevReadAtTips',
     // 标记已进行定期存款到期提醒的Cookie名称
     fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
-    // 存储VIP剩余时间的Cookie名称
-    vipSurplusTimeCookieName: 'vipSurplusTime',
     // 标记已自动更换ID颜色的Cookie名称
     autoChangeIdColorCookieName: 'autoChangeIdColor',
 };

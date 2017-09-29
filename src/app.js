@@ -90,7 +90,6 @@ const init = function () {
         Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
-        if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {

@@ -616,7 +616,9 @@ export const getDailyBonus = function () {
         }
     }).fail(function () {
         Msg.remove($wait);
-        setTimeout(getDailyBonus, Const.defAjaxInterval);
+        $(document).queue('AutoAction', function () {
+            setTimeout(getDailyBonus, Const.defAjaxInterval);
+        });
     }).always(function () {
         $(document).dequeue('AutoAction');
     });
@@ -940,6 +942,7 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
             $(document).dequeue('AutoAction');
             return;
         }
+
         console.log('自动活期存款Start');
         $.ajax({
             type: 'POST',
@@ -963,12 +966,16 @@ export const autoSaveCurrentDeposit = function (isRead = false) {
         console.log('获取当前持有KFB Start');
         $.get(`profile.php?action=show&uid=${Info.uid}&t=${$.now()}`, function (html) {
             let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
-            if (matches) saveCurrentDeposit(parseInt(matches[1]));
+            if (matches) {
+                saveCurrentDeposit(parseInt(matches[1]));
+            }
         });
     }
     else {
         let kfb = parseInt($kfb.data('kfb'));
-        if (kfb) saveCurrentDeposit(kfb);
+        if (kfb) {
+            saveCurrentDeposit(kfb);
+        }
     }
 };
 

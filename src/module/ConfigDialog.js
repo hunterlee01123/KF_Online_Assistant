@@ -152,12 +152,12 @@ export const show = function () {
         <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
-        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
-      </label><br>
-      <label>
         <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
         <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
+        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
@@ -166,10 +166,6 @@ export const show = function () {
       <label>
         <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
         <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
-        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -291,8 +287,8 @@ export const show = function () {
         <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15（默认值：-1）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${defConfig.logSaveDays}，最大值：365">[?]</span>
+        日志保存天数 <input name="logSaveDays" type="number" min="1" max="270" style="width: 46px;" required>
+        <span class="pd_cfg_tips" title="日志保存天数，默认值：${defConfig.logSaveDays}，最大值：270">[?]</span>
       </label><br>
       <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
@@ -593,6 +589,8 @@ const showClearDataDialog = function () {
         let caches = $dialog.find('[name="caches"]').val();
         let settingsAndLogs = $dialog.find('[name="settingsAndLogs"]').val();
         if (!caches && !settingsAndLogs || !confirm('是否清除选定的数据？')) return;
+        caches = caches ? caches : [];
+        settingsAndLogs = settingsAndLogs ? settingsAndLogs : [];
         for (let name of caches) {
             clearData(name);
         }
