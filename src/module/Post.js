@@ -216,8 +216,8 @@ export const addExtraPostEditorButton = function () {
 export const addExtraOptionInPostPage = function () {
     $(`
 <div class="pd_post_extra_option">
-  <label><input type="checkbox" name="autoAnalyzeUrl" checked> 自动分析url</label><br>
-  <label><input type="checkbox" name="windCodeAutoConvert" checked> Wind Code自动转换</label>
+  <label><input type="checkbox" name="autoAnalyzeUrl" checked> 自动分析url</label>
+  <label style="margin-left: 5px;"><input type="checkbox" name="windCodeAutoConvert" checked> Wind Code自动转换</label>
 </div>
 `).appendTo($('#menu_show')
         .closest('td'))

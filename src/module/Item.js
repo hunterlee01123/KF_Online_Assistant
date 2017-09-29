@@ -1796,7 +1796,7 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
     let totalSuccessNum = 0, totalValidNum = 0, totalInvalidNum = 0, index = 0;
     let useInfo = {};
     let tmpItemTypeList = [...typeList];
-    let isStop = true;
+    let isStop = false;
 
     /**
      * 使用

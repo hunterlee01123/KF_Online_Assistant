@@ -155,7 +155,7 @@ export const appendCss = function () {
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
   .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
-  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }
+  .pd_post_extra_option { text-align: left; margin: 5px; }
   .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }
   
   /* 其它页面 */

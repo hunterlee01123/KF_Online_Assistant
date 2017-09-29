@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.2
+// @version     12.2.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.2';
+const version = '12.2.1';
 
 /**
  * 导出模块
@@ -4899,7 +4899,7 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
         index = 0;
     let useInfo = {};
     let tmpItemTypeList = [...typeList];
-    let isStop = true;
+    let isStop = false;
 
     /**
      * 使用
@@ -9607,8 +9607,8 @@ const addExtraPostEditorButton = exports.addExtraPostEditorButton = function () 
 const addExtraOptionInPostPage = exports.addExtraOptionInPostPage = function () {
     $(`
 <div class="pd_post_extra_option">
-  <label><input type="checkbox" name="autoAnalyzeUrl" checked> 自动分析url</label><br>
-  <label><input type="checkbox" name="windCodeAutoConvert" checked> Wind Code自动转换</label>
+  <label><input type="checkbox" name="autoAnalyzeUrl" checked> 自动分析url</label>
+  <label style="margin-left: 5px;"><input type="checkbox" name="windCodeAutoConvert" checked> Wind Code自动转换</label>
 </div>
 `).appendTo($('#menu_show').closest('td')).on('click', '[type="checkbox"]', function () {
         let $this = $(this);
@@ -9946,7 +9946,7 @@ const appendCss = exports.appendCss = function () {
   /* 发帖页面 */
   #pdSmilePanel img { margin: 3px; cursor: pointer; }
   .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }
-  .pd_post_extra_option { text-align: left; margin-top: 5px; margin-left: 5px; }
+  .pd_post_extra_option { text-align: left; margin: 5px; }
   .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }
   
   /* 其它页面 */
