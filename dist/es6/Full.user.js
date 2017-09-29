@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.1.2
+// @version     12.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.1.2';
+const version = '12.2';
 
 /**
  * 导出模块
@@ -176,7 +176,6 @@ const init = function () {
         Index.addSearchTypeSelectBox();
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
-        if (Config.showVipSurplusTimeEnabled) Index.showVipSurplusTime();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
@@ -218,6 +217,7 @@ const init = function () {
         } else if (/\baction=quote/i.test(location.href)) {
             Post.removeUnpairedBBCodeInQuoteContent();
         }
+        Post.addFillTitleBtn();
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
@@ -1048,16 +1048,14 @@ const Config = exports.Config = {
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',
-    // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
-    smLevelUpAlertEnabled: false,
     // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
     fixedDepositDueAlertEnabled: false,
+    // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
+    smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
     smRankChangeAlertEnabled: false,
     // 在首页帖子链接旁显示快速跳转至页末的链接，true：开启；false：关闭
     homePageThreadFastGotoLinkEnabled: true,
-    // 是否在首页显示VIP剩余时间，true：开启；false：关闭
-    showVipSurplusTimeEnabled: false,
 
     // 是否在版块页面中显示帖子页数快捷链接，true：开启；false：关闭
     showFastGotoThreadPageEnabled: false,
@@ -1491,12 +1489,12 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
-        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
-      </label><br>
-      <label>
         <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
         <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
+      </label><br>
+      <label>
+        <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
+        <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         <input name="smRankChangeAlertEnabled" type="checkbox"> 系数排名变化提醒
@@ -1505,10 +1503,6 @@ const show = exports.show = function () {
       <label>
         <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
         <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showVipSurplusTimeEnabled" type="checkbox"> 显示VIP剩余时间
-        <span class="pd_cfg_tips" title="在首页显示VIP剩余时间">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1630,8 +1624,8 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="默认的消息显示时间（秒），设置为-1表示永久显示，例：15（默认值：-1）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        日志保存天数 <input name="logSaveDays" type="number" min="1" max="365" style="width: 46px;" required>
-        <span class="pd_cfg_tips" title="默认值：${_Config.Config.logSaveDays}，最大值：365">[?]</span>
+        日志保存天数 <input name="logSaveDays" type="number" min="1" max="270" style="width: 46px;" required>
+        <span class="pd_cfg_tips" title="日志保存天数，默认值：${_Config.Config.logSaveDays}，最大值：270">[?]</span>
       </label><br>
       <label>
         <input name="showSearchLinkEnabled" type="checkbox"> 显示搜索链接
@@ -1915,6 +1909,8 @@ const showClearDataDialog = function () {
         let caches = $dialog.find('[name="caches"]').val();
         let settingsAndLogs = $dialog.find('[name="settingsAndLogs"]').val();
         if (!caches && !settingsAndLogs || !confirm('是否清除选定的数据？')) return;
+        caches = caches ? caches : [];
+        settingsAndLogs = settingsAndLogs ? settingsAndLogs : [];
         for (let name of caches) {
             (0, _Config.clearData)(name);
         }
@@ -2605,7 +2601,7 @@ const Const = {
     getCustomPoints: null,
 
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
-    actionFinishRetryInterval: 30,
+    actionFinishRetryInterval: 60,
     // 在连接超时的情况下获取剩余时间失败后的重试间隔（分钟），用于定时模式
     errorRefreshInterval: 1,
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
@@ -2710,8 +2706,6 @@ const Const = {
     prevReadAtTipsCookieName: 'prevReadAtTips',
     // 标记已进行定期存款到期提醒的Cookie名称
     fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
-    // 存储VIP剩余时间的Cookie名称
-    vipSurplusTimeCookieName: 'vipSurplusTime',
     // 标记已自动更换ID颜色的Cookie名称
     autoChangeIdColorCookieName: 'autoChangeIdColor'
 };
@@ -3634,7 +3628,7 @@ const openBoxes = exports.openBoxes = function ({ id, boxType, num, safeId, next
                 }
             } else if (msg.includes('操作过快')) {
                 $(document).queue('OpenBoxes', open);
-            } else if (msg.includes('盒子不足')) {
+            } else if (msg.includes('盒子不足') || msg.includes('错误的安全码')) {
                 $(document).clearQueue('OpenBoxes');
                 isStop = true;
             } else {
@@ -4513,7 +4507,8 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
     let successNum = 0,
         index = 0;
     let smeltInfo = {};
-    let isDeleteMemo = false;
+    let isStop = false,
+        isDeleteMemo = false;
     let smeltedArmIdList = [];
 
     /**
@@ -4535,6 +4530,7 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
             if (!html) return;
             let msg = Util.removeHtmlTag(html);
             console.log(`【${armName}】 ${msg}`);
+            if (msg.includes('错误的安全码')) isStop = true;
             $('.pd_result[data-name="armResult"]:last').append(`<li>【${armName}】 ${msg}</li>`);
             $armArea.find(`td[id="wp_${armId}"]`).parent('tr').fadeOut('normal', function () {
                 $(this).remove();
@@ -4544,22 +4540,25 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
             }
 
             let matches = /获得对应装备经验\[\+(\d+)]/.exec(msg);
-            if (!matches) return;
-            successNum++;
-            if (armId in Config.armsMemo) {
-                isDeleteMemo = true;
-                delete Config.armsMemo[armId];
+            if (matches) {
+                successNum++;
+                if (armId in Config.armsMemo) {
+                    isDeleteMemo = true;
+                    delete Config.armsMemo[armId];
+                }
+                if (!(armClass in smeltInfo)) smeltInfo[armClass] = {};
+                if (!(armGroup in smeltInfo[armClass])) smeltInfo[armClass][armGroup] = { num: 0, exp: 0 };
+                smeltInfo[armClass][armGroup].num++;
+                smeltInfo[armClass][armGroup].exp += parseInt(matches[1]);
+                $wait.find('.pd_countdown').text(successNum);
             }
-            if (!(armClass in smeltInfo)) smeltInfo[armClass] = {};
-            if (!(armGroup in smeltInfo[armClass])) smeltInfo[armClass][armGroup] = { num: 0, exp: 0 };
-            smeltInfo[armClass][armGroup].num++;
-            smeltInfo[armClass][armGroup].exp += parseInt(matches[1]);
-            $wait.find('.pd_countdown').text(successNum);
-            Script.runFunc('Item.smeltArms_after_');
+            Script.runFunc('Item.smeltArms_after_', msg);
         }).fail(function () {
             $('.pd_result[data-name="armResult"]:last').append(`<li>【${armName}】 <span class="pd_notice">连接超时</span></li>`);
         }).always(function () {
-            if ($wait.data('stop')) complete();else {
+            if (isStop || $wait.data('stop')) {
+                complete();
+            } else {
                 if (index === armNum) setTimeout(getNextArms, _Const2.default.minActionInterval);else setTimeout(() => $(document).dequeue('SmeltArms'), _Const2.default.minActionInterval);
             }
         });
@@ -4899,6 +4898,7 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
         index = 0;
     let useInfo = {};
     let tmpItemTypeList = [...typeList];
+    let isStop = true;
 
     /**
      * 使用
@@ -4930,10 +4930,12 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
                 }
                 $wait.find('.pd_countdown').text(totalSuccessNum);
                 isDelete = true;
-            } else if (/无法再使用/.test(msg)) {
+            } else if (msg.includes('无法再使用')) {
                 index = itemNum;
                 let typeIndex = tmpItemTypeList.indexOf(itemName);
                 if (typeIndex > -1) tmpItemTypeList.splice(typeIndex, 1);
+            } else if (msg.includes('错误的安全码')) {
+                isStop = true;
             } else {
                 isDelete = true;
             }
@@ -4945,11 +4947,13 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
             }
             console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
             $('.pd_result[data-name="itemResult"]:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
-            Script.runFunc('Item.useItems_after_');
+            Script.runFunc('Item.useItems_after_', msg);
         }).fail(function () {
             $('.pd_result[data-name="itemResult"]:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
         }).always(function () {
-            if ($wait.data('stop')) complete();else {
+            if (isStop || $wait.data('stop')) {
+                complete();
+            } else {
                 if (index === itemNum) setTimeout(getNextItems, typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);else setTimeout(() => $(document).dequeue('UseItems'), typeof _Const2.default.specialAjaxInterval === 'function' ? _Const2.default.specialAjaxInterval() : _Const2.default.specialAjaxInterval);
             }
         });
@@ -5063,6 +5067,7 @@ const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
     let successNum = 0,
         index = 0;
     let sellInfo = {};
+    let isStop = false;
 
     /**
      * 出售
@@ -5080,6 +5085,7 @@ const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
         }).done(function (html) {
             if (!html) return;
             let msg = Util.removeHtmlTag(html);
+            if (msg.includes('错误的安全码')) isStop = true;
             console.log(`【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}`);
             $('.pd_result[data-name="itemResult"]:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 ${msg}</li>`);
             $itemArea.find(`[id="wp_${itemId}"]`).fadeOut('normal', function () {
@@ -5087,17 +5093,18 @@ const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
             });
 
             let matches = /出售该物品获得了\[\s*(\d+)\s*]KFB/.exec(msg);
-            if (!matches) return;
-            successNum++;
-            if (!(itemName in sellInfo)) sellInfo[itemName] = { num: 0, sell: 0 };
-            sellInfo[itemName].num++;
-            sellInfo[itemName].sell += parseInt(matches[1]);
-            $wait.find('.pd_countdown').text(successNum);
-            Script.runFunc('Item.sellItems_after_');
+            if (matches) {
+                successNum++;
+                if (!(itemName in sellInfo)) sellInfo[itemName] = { num: 0, sell: 0 };
+                sellInfo[itemName].num++;
+                sellInfo[itemName].sell += parseInt(matches[1]);
+                $wait.find('.pd_countdown').text(successNum);
+            }
+            Script.runFunc('Item.sellItems_after_', msg);
         }).fail(function () {
             $('.pd_result[data-name="itemResult"]:last').append(`<li>【Lv.${getLevelByName(itemName)}：${itemName}】 <span class="pd_notice">连接超时</span></li>`);
         }).always(function () {
-            if ($wait.data('stop')) {
+            if (isStop || $wait.data('stop')) {
                 complete();
             } else {
                 if (index === itemNum) setTimeout(getNextItems, _Const2.default.minActionInterval);else setTimeout(() => $(document).dequeue('SellItems'), _Const2.default.minActionInterval);
@@ -6325,6 +6332,8 @@ const handlePointsArea = function () {
                 Msg.remove($wait);
                 if (result === 'ignore') {
                     alert('当前页面的点数设置和装备ID没有发生变化');
+                } else if (result === 'timeout') {
+                    alert('连接超时，请重试');
                 }
             }
         });
@@ -8300,7 +8309,9 @@ const checkLoot = exports.checkLoot = function () {
         error() {
             Msg.remove($wait);
             $(document).clearQueue('AutoAction');
-            setTimeout(checkLoot, _Const2.default.defAjaxInterval);
+            $(document).queue('AutoAction', function () {
+                setTimeout(checkLoot, _Const2.default.defAjaxInterval);
+            });
         },
         complete: function () {
             $(document).dequeue('AutoAction');
@@ -8365,7 +8376,9 @@ const autoSaveLootLog = exports.autoSaveLootLog = function () {
         },
         error() {
             Msg.remove($wait);
-            setTimeout(autoSaveLootLog, _Const2.default.defAjaxInterval);
+            $(document).queue('AutoAction', function () {
+                setTimeout(autoSaveLootLog, _Const2.default.defAjaxInterval);
+            });
         },
         complete() {
             $(document).dequeue('AutoAction');
@@ -9363,7 +9376,7 @@ const handleProfilePage = exports.handleProfilePage = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addRedundantKeywordWarning = exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.addFillTitleBtn = exports.addRedundantKeywordWarning = exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Info = require('./Info');
 
@@ -9704,6 +9717,29 @@ const addRedundantKeywordWarning = exports.addRedundantKeywordWarning = function
             alert('所填关键词已超过5个，多余的关键词将被忽略');
             $this.select().focus();
         }
+    });
+};
+
+/**
+ * 添加填充标题按钮
+ */
+const addFillTitleBtn = exports.addFillTitleBtn = function () {
+    $('<a class="pd_btn_link" data-name="fill" href="#" title="按照格式填充标题">填充</a>').insertAfter('#btyl').click(function (e) {
+        e.preventDefault();
+        let value = $.trim(prompt(`请按格式填写标题名称，会自动填充到相应的表单中（选填项可不填）：
+例：[诸神字幕组][Seiren][清恋][01-12合集][简繁日内挂][1080P][百度30D][3.25GB][BDRIP]
+或 [nostalabel]待雪の花 ～snow drop～[MEGA长期][667MB][BMP]`));
+        if (!value) return;
+        let matches = /(.+)\[([^\[\]]+?)(\d+D|长期)?\]\[(\d+(?:\.\d+)?(?:G|M)B?)\](?:\[([^\[\]]+)\])?/i.exec(value);
+        if (!matches) {
+            alert('标题格式不符合标准');
+            return;
+        }
+        $('#diy_titlewplx').val(matches[2]);
+        $('#diy_titleyxqx').val(matches[3] ? matches[3] : '');
+        $('#diy_titlezytj').val(matches[4]);
+        $('#diy_titlezygs').val(matches[5] ? matches[5] : '');
+        $('#diy_titlezpmc').val(matches[1]).trigger('change');
     });
 };
 
@@ -10346,7 +10382,9 @@ const getDailyBonus = exports.getDailyBonus = function () {
         }
     }).fail(function () {
         Msg.remove($wait);
-        setTimeout(getDailyBonus, _Const2.default.defAjaxInterval);
+        $(document).queue('AutoAction', function () {
+            setTimeout(getDailyBonus, _Const2.default.defAjaxInterval);
+        });
     }).always(function () {
         $(document).dequeue('AutoAction');
     });
@@ -10649,6 +10687,7 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
             $(document).dequeue('AutoAction');
             return;
         }
+
         console.log('自动活期存款Start');
         $.ajax({
             type: 'POST',
@@ -10672,11 +10711,15 @@ const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead
         console.log('获取当前持有KFB Start');
         $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${$.now()}`, function (html) {
             let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
-            if (matches) saveCurrentDeposit(parseInt(matches[1]));
+            if (matches) {
+                saveCurrentDeposit(parseInt(matches[1]));
+            }
         });
     } else {
         let kfb = parseInt($kfb.data('kfb'));
-        if (kfb) saveCurrentDeposit(kfb);
+        if (kfb) {
+            saveCurrentDeposit(kfb);
+        }
     }
 };
 

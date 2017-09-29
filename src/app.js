@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.1.2';
+const version = '12.2';
 
 /**
  * 导出模块
@@ -135,6 +135,7 @@ const init = function () {
         else if (/\baction=quote/i.test(location.href)) {
             Post.removeUnpairedBBCodeInQuoteContent();
         }
+        Post.addFillTitleBtn();
         Post.addExtraPostEditorButton();
         Post.addExtraOptionInPostPage();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();

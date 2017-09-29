@@ -333,3 +333,28 @@ export const addRedundantKeywordWarning = function () {
         }
     });
 };
+
+/**
+ * 添加填充标题按钮
+ */
+export const addFillTitleBtn = function () {
+    $('<a class="pd_btn_link" data-name="fill" href="#" title="按照格式填充标题">填充</a>').insertAfter('#btyl').click(function (e) {
+        e.preventDefault();
+        let value = $.trim(
+            prompt(`请按格式填写标题名称，会自动填充到相应的表单中（选填项可不填）：
+例：[诸神字幕组][Seiren][清恋][01-12合集][简繁日内挂][1080P][百度30D][3.25GB][BDRIP]
+或 [nostalabel]待雪の花 ～snow drop～[MEGA长期][667MB][BMP]`)
+        );
+        if (!value) return;
+        let matches = /(.+)\[([^\[\]]+?)(\d+D|长期)?\]\[(\d+(?:\.\d+)?(?:G|M)B?)\](?:\[([^\[\]]+)\])?/i.exec(value);
+        if (!matches) {
+            alert('标题格式不符合标准');
+            return;
+        }
+        $('#diy_titlewplx').val(matches[2]);
+        $('#diy_titleyxqx').val(matches[3] ? matches[3] : '');
+        $('#diy_titlezytj').val(matches[4]);
+        $('#diy_titlezygs').val(matches[5] ? matches[5] : '');
+        $('#diy_titlezpmc').val(matches[1]).trigger('change');
+    });
+};
