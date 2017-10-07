@@ -13,8 +13,8 @@ const Info = {
     isInHomePage: location.pathname === '/' || location.pathname === '/index.php',
     // 是否为移动版
     isMobile: false,
-    // 当前域名是否在miaola.info下
-    isInMiaolaDomain: location.host.endsWith('.miaola.info'),
+    // 当前域名是否在特殊域名下
+    isInSpecialDomain: location.host.endsWith('.miaola.info') || location.host.endsWith('.koyuki.cc'),
     // 版本号
     version: '',
     // 当前窗口

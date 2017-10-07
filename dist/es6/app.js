@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.2.1';
+const version = '12.2.2';
 
 /**
  * 导出模块
@@ -201,7 +201,7 @@ const init = function () {
         Post.addExtraOptionInPostPage();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        if (_Info2.default.isInMiaolaDomain) Post.addAttachChangeAlert();
+        if (_Info2.default.isInSpecialDomain) Post.addAttachChangeAlert();
     } else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.init();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
@@ -235,7 +235,7 @@ const init = function () {
         Other.highlightUnReadAtTipsMsg();
     } else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
         Other.syncModifyPerPageFloorNum();
-        if (_Info2.default.isInMiaolaDomain) Other.addAvatarChangeAlert();
+        if (_Info2.default.isInSpecialDomain) Other.addAvatarChangeAlert();
     } else if (/\/job\.php\?action=preview$/i.test(location.href)) {
         Post.modifyPostPreviewPage();
     } else if (location.pathname === '/search.php') {
@@ -259,9 +259,10 @@ const init = function () {
     if (Config.blockThreadEnabled) Public.blockThread();
     if (Config.followUserEnabled) Public.followUsers();
     if (_Info2.default.isMobile) Public.bindElementTitleClick();
-    if (_Info2.default.isInMiaolaDomain) {
-        if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
-            Post.importKfSmileEnhanceExtension();
+    if (_Info2.default.isInSpecialDomain) {
+        if (['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
+            if (Config.kfSmileEnhanceExtensionEnabled) Post.importKfSmileEnhanceExtension();
+            Post.replaceSiteLink();
         }
     }
 
@@ -1573,7 +1574,7 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在帖子页面添加自助评分链接（仅限评分人员使用）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInMiaolaDomain ? '' : 'disabled'}> 开启绯月表情增强插件
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>
@@ -3113,8 +3114,8 @@ const Info = {
   isInHomePage: location.pathname === '/' || location.pathname === '/index.php',
   // 是否为移动版
   isMobile: false,
-  // 当前域名是否在miaola.info下
-  isInMiaolaDomain: location.host.endsWith('.miaola.info'),
+  // 当前域名是否在特殊域名下
+  isInSpecialDomain: location.host.endsWith('.miaola.info') || location.host.endsWith('.koyuki.cc'),
   // 版本号
   version: '',
   // 当前窗口
@@ -9355,7 +9356,7 @@ const handleProfilePage = exports.handleProfilePage = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addFillTitleBtn = exports.addRedundantKeywordWarning = exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
+exports.replaceSiteLink = exports.addFillTitleBtn = exports.addRedundantKeywordWarning = exports.savePostContentWhenSubmit = exports.preventCloseWindowWhenEditPost = exports.importKfSmileEnhanceExtension = exports.addAttachChangeAlert = exports.modifyPostPreviewPage = exports.addExtraOptionInPostPage = exports.addExtraPostEditorButton = exports.removeUnpairedBBCodeInQuoteContent = exports.handleMultiQuote = undefined;
 
 var _Info = require('./Info');
 
@@ -9707,18 +9708,31 @@ const addFillTitleBtn = exports.addFillTitleBtn = function () {
         e.preventDefault();
         let value = $.trim(prompt(`请按格式填写标题名称，会自动填充到相应的表单中（选填项可不填）：
 例：[诸神字幕组][Seiren][清恋][01-12合集][简繁日内挂][1080P][百度30D][3.25GB][BDRIP]
-或 [nostalabel]待雪の花 ～snow drop～[MEGA长期][667MB][BMP]`));
+或 [自购][新作][nostalabel]待雪の花 ～snow drop～[MEGA长期][667MB][BMP]`));
         if (!value) return;
-        let matches = /(.+)\[([^\[\]]+?)(\d+D|长期)?\]\[(\d+(?:\.\d+)?(?:G|M)B?)\](?:\[([^\[\]]+)\])?/i.exec(value);
+        let matches = /(\[自购\])?(\[新作\])?(.+)\[([^\[\]]+?)(\d+D|长期)?\]\[(\d+(?:\.\d+)?(?:G|M)B?)\](?:\[([^\[\]]+)\])?/i.exec(value);
         if (!matches) {
             alert('标题格式不符合标准');
             return;
         }
-        $('#diy_titlewplx').val(matches[2]);
-        $('#diy_titleyxqx').val(matches[3] ? matches[3] : '');
-        $('#diy_titlezytj').val(matches[4]);
-        $('#diy_titlezygs').val(matches[5] ? matches[5] : '');
-        $('#diy_titlezpmc').val(matches[1]).trigger('change');
+        $('#diy_titlezigou').prop('checked', typeof matches[1] !== 'undefined');
+        $('#diy_xinzuo').prop('checked', typeof matches[2] !== 'undefined');
+        $('#diy_titlewplx').val(matches[4]);
+        $('#diy_titleyxqx').val(matches[5] ? matches[5] : '');
+        $('#diy_titlezytj').val(matches[6]);
+        $('#diy_titlezygs').val(matches[7] ? matches[7] : '');
+        $('#diy_titlezpmc').val(matches[3]).trigger('change');
+    });
+};
+
+/**
+ * 将发帖框内的站内链接替换为官方站点的链接
+ */
+const replaceSiteLink = exports.replaceSiteLink = function () {
+    $('form[name="FORM"]').submit(function () {
+        let $textArea = $(this).find('textarea[name="atc_content"]');
+        if (!$textArea.length) return;
+        $textArea.val($textArea.val().replace(new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'), 'http://bbs.2dkf.com/$1.php'));
     });
 };
 
@@ -10634,7 +10648,7 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
   <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
   <li><a href="hack.php?H_name=bank">银行</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>
-  ${_Info2.default.isInMiaolaDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
+  ${_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
   ${_Const2.default.customFastNavMenuContent}
 </ul>`);
 };
@@ -11714,7 +11728,7 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
         let $this = $(this);
         let url = $this.attr('href');
         if (/m\.miaola\.info\//i.test(url)) return;
-        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola|kfer)\.\w+?\/).+/i.exec(url);
+        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
 };

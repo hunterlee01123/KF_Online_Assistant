@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.2.1';
+const version = '12.2.2';
 
 /**
  * 导出模块
@@ -140,7 +140,7 @@ const init = function () {
         Post.addExtraOptionInPostPage();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        if (Info.isInMiaolaDomain) Post.addAttachChangeAlert();
+        if (Info.isInSpecialDomain) Post.addAttachChangeAlert();
     }
     else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.init();
@@ -187,7 +187,7 @@ const init = function () {
     }
     else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
         Other.syncModifyPerPageFloorNum();
-        if (Info.isInMiaolaDomain) Other.addAvatarChangeAlert();
+        if (Info.isInSpecialDomain) Other.addAvatarChangeAlert();
     }
     else if (/\/job\.php\?action=preview$/i.test(location.href)) {
         Post.modifyPostPreviewPage();
@@ -216,9 +216,10 @@ const init = function () {
     if (Config.blockThreadEnabled) Public.blockThread();
     if (Config.followUserEnabled) Public.followUsers();
     if (Info.isMobile) Public.bindElementTitleClick();
-    if (Info.isInMiaolaDomain) {
-        if (Config.kfSmileEnhanceExtensionEnabled && ['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
-            Post.importKfSmileEnhanceExtension();
+    if (Info.isInSpecialDomain) {
+        if (['/read.php', '/post.php', '/message.php'].includes(location.pathname)) {
+            if (Config.kfSmileEnhanceExtensionEnabled) Post.importKfSmileEnhanceExtension();
+            Post.replaceSiteLink();
         }
     }
 
