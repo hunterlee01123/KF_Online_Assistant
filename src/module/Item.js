@@ -783,7 +783,6 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                     let $wait = Msg.wait('<strong>正在获取争夺首页信息&hellip;</strong>');
                     Loot.updateLootInfo(function () {
                         Msg.remove($wait);
-                        Dialog.close('pdChangeArmDialog');
                         let $armId = $('input[name="armId"]:first');
                         let $armMemo = $('input[name="armMemo"]:first');
                         $armId.val(armId);
@@ -792,6 +791,7 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                             $(this).val('');
                             this.defaultValue = '';
                         });
+                        Script.runFunc('Item.bindArmLinkClickEvent_equip_after_', {$armArea, type});
                     });
                 }
             }
@@ -2123,10 +2123,9 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
 /**
  * 购买物品
  * @param {string[]} buyItemIdList 购买物品ID列表
- * @param {string} safeId SafeID
  */
-export const buyItems = function (buyItemIdList, safeId) {
-    if (Util.getCookie(Const.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) {
+export const buyItems = function (buyItemIdList) {
+    if (new Date() < Util.getDateByTime(Config.buyItemAfterTime)) {
         $(document).dequeue('AutoAction');
         return;
     }
@@ -2182,10 +2181,42 @@ export const buyItems = function (buyItemIdList, safeId) {
     };
 
     /**
+     * 读取购买页面信息
+     */
+    const readBuyInfo = function () {
+        console.log('读取购买页面信息Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_shop.php?t=' + $.now(),
+            timeout: Const.defAjaxTimeout,
+        }).done(function (html) {
+            if (Util.getCookie(Const.buyItemReadyCookieName)) {
+                Msg.remove($wait);
+                $(document).dequeue('AutoAction');
+                return;
+            }
+            let matches = /safeid=(\w+)/.exec(html);
+            if (matches) {
+                Util.setCookie(Const.buyItemReadyCookieName, 1, Util.getDate('+5m'));
+                let safeId = matches[1];
+                setTimeout(() => buy(parseInt(itemIdList[index][subIndex]), safeId), Const.defAjaxInterval);
+            }
+            else {
+                Msg.remove($wait);
+                Util.setCookie(Const.buyItemCookieName, 1, Util.getDate('+15m'));
+                $(document).dequeue('AutoAction');
+            }
+        }).fail(function () {
+            setTimeout(readBuyInfo, Const.defAjaxInterval);
+        });
+    };
+
+    /**
      * 购买
      * @param {number} itemId 物品ID
+     * @param {string} safeId SafeID
      */
-    const buy = function (itemId) {
+    const buy = function (itemId, safeId) {
         $.ajax({
             type: 'POST',
             url: 'kf_fw_ig_shop.php',
@@ -2262,7 +2293,7 @@ export const buyItems = function (buyItemIdList, safeId) {
                 Script.runFunc('Item.buyItems_complete_');
             }
             else {
-                setTimeout(() => buy(parseInt(itemIdList[index][subIndex])), Const.minActionInterval);
+                setTimeout(() => buy(parseInt(itemIdList[index][subIndex]), safeId), Const.minActionInterval);
             }
         });
     };
@@ -2280,11 +2311,10 @@ export const buyItems = function (buyItemIdList, safeId) {
         $(document).dequeue('AutoAction');
         return;
     }
-    Util.setCookie(Const.buyItemReadyCookieName, 1, Util.getDate('+5m'));
     let $wait = Msg.wait(
         `<strong>正在购买物品中&hellip;</strong><i>剩余：<em class="pd_countdown">${itemIdList.length}</em></i><a class="pd_stop_action" href="#">停止操作</a>`
     );
-    buy(parseInt(itemIdList[index][subIndex]));
+    readBuyInfo();
 };
 
 /**

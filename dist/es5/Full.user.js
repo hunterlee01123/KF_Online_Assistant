@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.2.2
+// @version     12.2.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.2.2';
+var version = '12.2.3';
 
 /**
  * 导出模块
@@ -323,13 +323,10 @@ var init = function init() {
         });
     }
 
-    if ((_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName)) {
-        var safeId = Public.getSafeId();
-        if (safeId) {
-            $(document).queue('AutoAction', function () {
-                return Item.buyItems(Config.buyItemIdList, safeId);
-            });
-        }
+    if ((_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php') && Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName) && !Util.getCookie(_Const2.default.buyItemReadyCookieName)) {
+        $(document).queue('AutoAction', function () {
+            return Item.buyItems(Config.buyItemIdList);
+        });
     }
 
     if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(_Const2.default.lootCompleteCookieName)) {
@@ -4093,7 +4090,6 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
                     var $wait = Msg.wait('<strong>正在获取争夺首页信息&hellip;</strong>');
                     Loot.updateLootInfo(function () {
                         Msg.remove($wait);
-                        Dialog.close('pdChangeArmDialog');
                         var $armId = $('input[name="armId"]:first');
                         var $armMemo = $('input[name="armMemo"]:first');
                         $armId.val(armId);
@@ -4102,6 +4098,7 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
                             $(this).val('');
                             this.defaultValue = '';
                         });
+                        Script.runFunc('Item.bindArmLinkClickEvent_equip_after_', { $armArea: $armArea, type: type });
                     });
                 }
             } else {
@@ -5732,10 +5729,9 @@ var sellItems = function sellItems(_ref8) {
 /**
  * 购买物品
  * @param {string[]} buyItemIdList 购买物品ID列表
- * @param {string} safeId SafeID
  */
-var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
-    if (Util.getCookie(_Const2.default.buyItemReadyCookieName) || new Date() < Util.getDateByTime(Config.buyItemAfterTime)) {
+var buyItems = exports.buyItems = function buyItems(buyItemIdList) {
+    if (new Date() < Util.getDateByTime(Config.buyItemAfterTime)) {
         $(document).dequeue('AutoAction');
         return;
     }
@@ -5792,10 +5788,43 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
     };
 
     /**
+     * 读取购买页面信息
+     */
+    var readBuyInfo = function readBuyInfo() {
+        console.log('读取购买页面信息Start');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_shop.php?t=' + $.now(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            if (Util.getCookie(_Const2.default.buyItemReadyCookieName)) {
+                Msg.remove($wait);
+                $(document).dequeue('AutoAction');
+                return;
+            }
+            var matches = /safeid=(\w+)/.exec(html);
+            if (matches) {
+                Util.setCookie(_Const2.default.buyItemReadyCookieName, 1, Util.getDate('+5m'));
+                var _safeId = matches[1];
+                setTimeout(function () {
+                    return buy(parseInt(itemIdList[index][subIndex]), _safeId);
+                }, _Const2.default.defAjaxInterval);
+            } else {
+                Msg.remove($wait);
+                Util.setCookie(_Const2.default.buyItemCookieName, 1, Util.getDate('+15m'));
+                $(document).dequeue('AutoAction');
+            }
+        }).fail(function () {
+            setTimeout(readBuyInfo, _Const2.default.defAjaxInterval);
+        });
+    };
+
+    /**
      * 购买
      * @param {number} itemId 物品ID
+     * @param {string} safeId SafeID
      */
-    var buy = function buy(itemId) {
+    var buy = function buy(itemId, safeId) {
         $.ajax({
             type: 'POST',
             url: 'kf_fw_ig_shop.php',
@@ -5919,7 +5948,7 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
                 Script.runFunc('Item.buyItems_complete_');
             } else {
                 setTimeout(function () {
-                    return buy(parseInt(itemIdList[index][subIndex]));
+                    return buy(parseInt(itemIdList[index][subIndex]), safeId);
                 }, _Const2.default.minActionInterval);
             }
         });
@@ -5961,9 +5990,8 @@ var buyItems = exports.buyItems = function buyItems(buyItemIdList, safeId) {
         $(document).dequeue('AutoAction');
         return;
     }
-    Util.setCookie(_Const2.default.buyItemReadyCookieName, 1, Util.getDate('+5m'));
     var $wait = Msg.wait('<strong>\u6B63\u5728\u8D2D\u4E70\u7269\u54C1\u4E2D&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + itemIdList.length + '</em></i><a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-    buy(parseInt(itemIdList[index][subIndex]));
+    readBuyInfo();
 };
 
 /**
@@ -7410,7 +7438,7 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName)) {
+    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName) && parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) !== 1) {
         $(document).queue('AutoAction', function () {
             return autoLoot();
         });
@@ -8176,6 +8204,9 @@ var addAttackBtns = function addAttackBtns() {
         if ($this.prop('disabled')) return;
         $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $this.prop('checked'));
     }).triggerHandler('click');
+
+    var $attackBtnTips = $('.kf_fw_ig1:eq(1) > tbody > tr:first-child > td');
+    $attackBtnTips.html($attackBtnTips.html().replace('（不再点击战斗记录开始）', '（不再点击战斗记录开始）（↑ ↑ ↑ 助手的攻击按钮在上方）'));
 };
 
 /**
@@ -11572,13 +11603,19 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
     var promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         var value = parseInt(Util.getCookie(_Const2.default.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((value - $.now()) / 1000);else promoteHaloInterval = 0;
+        if (value > 0) {
+            promoteHaloInterval = Math.floor((value - $.now()) / 1000);
+        } else {
+            promoteHaloInterval = 0;
+        }
     }
 
     var checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         var _value = parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName));
-        if (_value < 0) checkLootInterval = _Const2.default.checkLootInterval * 60;else {
+        if (_value < 0) {
+            checkLootInterval = _Const2.default.checkLootInterval * 60;
+        } else {
             var date = Util.getDateByTime(Config.checkLootAfterTime);
             var now = new Date();
             if (_value > 0 && now > date) date.setDate(date.getDate() + 1);
@@ -11586,10 +11623,14 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
             if (checkLootInterval < 0) checkLootInterval = 0;
         }
 
-        if (Util.getCookie(_Const2.default.lootAttackingCookieName)) checkLootInterval = _Const2.default.lootAttackingExpires * 60;else {
+        if (Util.getCookie(_Const2.default.lootAttackingCookieName)) {
+            checkLootInterval = _Const2.default.lootAttackingExpires * 60;
+        } else {
             var changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
-            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
+            if (changePointsInfo > 0) {
+                checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
+            }
         }
     }
 
@@ -11602,17 +11643,25 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
             var _now = new Date();
             if (_now > _date) _date.setDate(_date.getDate() + 1);
             getDailyBonusInterval = Math.floor((_date - _now) / 1000);
-        } else if (_value2 < 0) getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;else getDailyBonusInterval = 0;
+        } else if (_value2 < 0) {
+            getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;
+        } else {
+            getDailyBonusInterval = 0;
+        }
     }
 
     var buyItemInterval = -1;
     if (Config.autoBuyItemEnabled) {
         var _date2 = Util.getDateByTime(Config.buyItemAfterTime);
         var _now2 = new Date();
-        if (Util.getCookie(_Const2.default.buyItemCookieName) || _now2 < _date2) {
+        if (Util.getCookie(_Const2.default.buyItemReadyCookieName)) {
+            buyItemInterval = 5 * 60;
+        } else if (Util.getCookie(_Const2.default.buyItemCookieName) || _now2 < _date2) {
             if (_now2 > _date2) _date2.setDate(_date2.getDate() + 1);
             buyItemInterval = Math.floor((_date2 - _now2) / 1000);
-        } else buyItemInterval = 0;
+        } else {
+            buyItemInterval = 0;
+        }
     }
 
     var intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }, { action: '自动购买物品', interval: buyItemInterval }];
@@ -11650,7 +11699,7 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
         }
     }
 
-    return { action: minInterval > 0 ? minAction : '', interval: minInterval };
+    return { action: minInterval > 0 ? minAction : '', interval: minInterval + 1 };
 };
 
 /**
@@ -11777,13 +11826,10 @@ var startTimingMode = exports.startTimingMode = function startTimingMode() {
             });
         }
 
-        if (Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName)) {
-            var safeId = getSafeId();
-            if (safeId) {
-                $(document).queue('AutoAction', function () {
-                    return Item.buyItems(Config.buyItemIdList, safeId);
-                });
-            }
+        if (Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName) && !Util.getCookie(_Const2.default.buyItemReadyCookieName)) {
+            $(document).queue('AutoAction', function () {
+                return Item.buyItems(Config.buyItemIdList);
+            });
         }
 
         $(document).dequeue('AutoAction');

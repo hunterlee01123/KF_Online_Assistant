@@ -125,7 +125,7 @@ export const enhanceLootIndexPage = function () {
     showLogStat(levelInfoList);
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
-        && !Util.getCookie(Const.lootAttackingCookieName)
+        && !Util.getCookie(Const.lootAttackingCookieName) && parseInt(Util.getCookie(Const.lootCompleteCookieName)) !== 1
     ) {
         $(document).queue('AutoAction', () => autoLoot());
     }
@@ -945,6 +945,9 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
             if ($this.prop('disabled')) return;
             $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $this.prop('checked'));
         }).triggerHandler('click');
+
+    let $attackBtnTips = $('.kf_fw_ig1:eq(1) > tbody > tr:first-child > td');
+    $attackBtnTips.html($attackBtnTips.html().replace('（不再点击战斗记录开始）', '（不再点击战斗记录开始）（↑ ↑ ↑ 助手的攻击按钮在上方）'));
 };
 
 /**

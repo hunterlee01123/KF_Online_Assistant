@@ -335,14 +335,20 @@ export const getNextTimingIntervalInfo = function () {
     let promoteHaloInterval = -1;
     if (Config.autoPromoteHaloEnabled) {
         let value = parseInt(Util.getCookie(Const.promoteHaloCookieName));
-        if (value > 0) promoteHaloInterval = Math.floor((value - $.now()) / 1000);
-        else promoteHaloInterval = 0;
+        if (value > 0) {
+            promoteHaloInterval = Math.floor((value - $.now()) / 1000);
+        }
+        else {
+            promoteHaloInterval = 0;
+        }
     }
 
     let checkLootInterval = -1;
     if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
-        if (value < 0) checkLootInterval = Const.checkLootInterval * 60;
+        if (value < 0) {
+            checkLootInterval = Const.checkLootInterval * 60;
+        }
         else {
             let date = Util.getDateByTime(Config.checkLootAfterTime);
             let now = new Date();
@@ -351,11 +357,15 @@ export const getNextTimingIntervalInfo = function () {
             if (checkLootInterval < 0) checkLootInterval = 0;
         }
 
-        if (Util.getCookie(Const.lootAttackingCookieName)) checkLootInterval = Const.lootAttackingExpires * 60;
+        if (Util.getCookie(Const.lootAttackingCookieName)) {
+            checkLootInterval = Const.lootAttackingExpires * 60;
+        }
         else {
             let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
-            if (changePointsInfo > 0) checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
+            if (changePointsInfo > 0) {
+                checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
+            }
         }
     }
 
@@ -369,19 +379,28 @@ export const getNextTimingIntervalInfo = function () {
             if (now > date) date.setDate(date.getDate() + 1);
             getDailyBonusInterval = Math.floor((date - now) / 1000);
         }
-        else if (value < 0) getDailyBonusInterval = Const.getDailyBonusSpecialInterval * 60;
-        else getDailyBonusInterval = 0;
+        else if (value < 0) {
+            getDailyBonusInterval = Const.getDailyBonusSpecialInterval * 60;
+        }
+        else {
+            getDailyBonusInterval = 0;
+        }
     }
 
     let buyItemInterval = -1;
     if (Config.autoBuyItemEnabled) {
         let date = Util.getDateByTime(Config.buyItemAfterTime);
         let now = new Date();
-        if (Util.getCookie(Const.buyItemCookieName) || now < date) {
+        if (Util.getCookie(Const.buyItemReadyCookieName)) {
+            buyItemInterval = 5 * 60;
+        }
+        else if (Util.getCookie(Const.buyItemCookieName) || now < date) {
             if (now > date) date.setDate(date.getDate() + 1);
             buyItemInterval = Math.floor((date - now) / 1000);
         }
-        else buyItemInterval = 0;
+        else {
+            buyItemInterval = 0;
+        }
     }
 
     let intervalList = [
@@ -397,7 +416,7 @@ export const getNextTimingIntervalInfo = function () {
             minInterval = interval;
         }
     }
-    return {action: minInterval > 0 ? minAction : '', interval: minInterval};
+    return {action: minInterval > 0 ? minAction : '', interval: minInterval + 1};
 };
 
 /**
@@ -514,11 +533,8 @@ export const startTimingMode = function () {
             $(document).queue('AutoAction', () => getDailyBonus());
         }
 
-        if (Config.autoBuyItemEnabled && !Util.getCookie(Const.buyItemCookieName)) {
-            let safeId = getSafeId();
-            if (safeId) {
-                $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList, safeId));
-            }
+        if (Config.autoBuyItemEnabled && !Util.getCookie(Const.buyItemCookieName) && !Util.getCookie(Const.buyItemReadyCookieName)) {
+            $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
         }
 
         $(document).dequeue('AutoAction');
