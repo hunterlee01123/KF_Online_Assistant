@@ -1921,7 +1921,12 @@ const addLootLogHeader = function () {
         }
     }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
-        showImportOrExportLootLogDialog();
+        Public.showCommonImportOrExportLogDialog({
+            name: '争夺记录',
+            read: LootLog.read,
+            write: LootLog.write,
+            merge: LootLog.getMergeLog
+        });
     }).end().find('[data-name="clearLootLog"]').click(function (e) {
         e.preventDefault();
         if (!confirm('是否清除所有争夺记录？')) return;
@@ -1931,54 +1936,6 @@ const addLootLogHeader = function () {
     });
 
     handleLootLogNav();
-};
-
-/**
- * 显示导入或导出争夺记录对话框
- */
-const showImportOrExportLootLogDialog = function () {
-    const dialogName = 'pdImOrExLootLogDialog';
-    if ($('#' + dialogName).length > 0) return;
-    let log = LootLog.read();
-    let html = `
-<div class="pd_cfg_main">
-  <strong>导入争夺记录：</strong>将争夺记录内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到别处即可<br>
-  <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
-</div>
-<div class="pd_cfg_btns">
-  <button name="merge" type="button">合并记录</button>
-  <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
-  <button data-action="close" type="button">关闭</button>
-</div>`;
-
-    let $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
-    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
-        e.preventDefault();
-        let name = $(this).attr('name');
-        if (!confirm(`是否将文本框中的争夺记录${name === 'overwrite' ? '覆盖' : '合并'}到本地争夺记录？`)) return;
-        let newLog = $.trim($dialog.find('[name="lootLog"]').val());
-        if (!newLog) return;
-        try {
-            newLog = JSON.parse(newLog);
-        }
-        catch (ex) {
-            alert('争夺记录有错误');
-            return;
-        }
-        if (!newLog || $.type(newLog) !== 'object') {
-            alert('争夺记录有错误');
-            return;
-        }
-        if (name === 'merge') log = LootLog.getMergeLog(log, newLog);
-        else log = newLog;
-        LootLog.write(log);
-        alert('争夺记录已导入');
-        location.reload();
-    });
-
-    Dialog.show(dialogName);
-    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select().focus();
 };
 
 /**

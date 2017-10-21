@@ -612,6 +612,28 @@ export const writeArmsInfo = info => Util.writeData(myArmsInfoName + '_' + Info.
 export const clearArmsInfo = () => Util.deleteData(myArmsInfoName + '_' + Info.uid);
 
 /**
+ * 获取合并后的装备信息
+ * @param {{}} info 当前装备信息
+ * @param {{}} newInfo 新装备信息
+ * @returns {{}} 合并后的装备信息
+ */
+export const getMergeArmsInfo = function (info, newInfo) {
+    for (let key in newInfo) {
+        if (key === '装备列表') {
+            for (let armId in newInfo['装备列表']) {
+                armId = parseInt(armId);
+                if (!armId || armId < 0) continue;
+                info['装备列表'][armId] = newInfo['装备列表'][armId];
+            }
+        }
+        else {
+            info[key] = newInfo[key];
+        }
+    }
+    return info;
+};
+
+/**
  * 添加已保存的我的装备信息
  * @param {jQuery} $armArea 装备区域节点
  */
@@ -1056,25 +1078,39 @@ export const handleUselessSubProperties = function (html) {
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="clearArmsInfo" type="button" style="color: #f00;" title="清除已保存的装备信息及备注">清除信息</button>
+  <button name="openImOrExOrClearArmsLogDialog" type="button" title="导入/导出/清除已保存的装备信息">导入/导出/清除</button>
   <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="clearArmsInfo"]')
+`).insertAfter($armArea).find('[name="openImOrExOrClearArmsLogDialog"]')
         .click(function () {
-            let type = parseInt(prompt('请输入要清除的装备信息类型（1：装备信息；2：装备备注）：'));
-            if (!type) return;
-            if (type === 2) {
-                readConfig();
-                Config.armsMemo = {};
-                writeConfig();
-                alert('所有装备的备注已被清除');
-            }
-            else {
-                clearArmsInfo();
-                alert('在本地保存的装备信息已被清除');
-            }
+            Public.showCommonImportOrExportLogDialog({
+                name: '装备信息',
+                read: readArmsInfo,
+                write: writeArmsInfo,
+                merge: getMergeArmsInfo,
+                callback: function ($dialog) {
+                    $('<button name="clearArmsMemo" type="button" style="color: #00f;">清除备注</button> ' +
+                        '<button name="clear" type="button" style="color: #f00;">清除记录</button>')
+                        .prependTo($dialog.find('.pd_cfg_btns'))
+                        .filter('[name="clearArmsMemo"]')
+                        .click(function () {
+                            if (!confirm('是否清除所有装备的备注？')) return;
+                            readConfig();
+                            Config.armsMemo = {};
+                            writeConfig();
+                            alert('所有装备的备注已被清除');
+                            location.reload();
+                        }).end().filter('[name="clear"]')
+                        .click(function () {
+                            if (!confirm('是否清除所有已保存的装备信息？')) return;
+                            clearArmsInfo();
+                            alert('在本地保存的装备信息已被清除');
+                            location.reload();
+                        });
+                }
+            });
         })
         .end().find('[name="showArmsFinalAddition"]')
         .click(function () {

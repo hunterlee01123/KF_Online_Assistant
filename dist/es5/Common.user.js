@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.2.3
+// @version     12.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.2.3';
+var version = '12.3';
 
 /**
  * 导出模块
@@ -3095,7 +3095,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -3848,6 +3848,27 @@ var clearArmsInfo = exports.clearArmsInfo = function clearArmsInfo() {
 };
 
 /**
+ * 获取合并后的装备信息
+ * @param {{}} info 当前装备信息
+ * @param {{}} newInfo 新装备信息
+ * @returns {{}} 合并后的装备信息
+ */
+var getMergeArmsInfo = exports.getMergeArmsInfo = function getMergeArmsInfo(info, newInfo) {
+    for (var key in newInfo) {
+        if (key === '装备列表') {
+            for (var armId in newInfo['装备列表']) {
+                armId = parseInt(armId);
+                if (!armId || armId < 0) continue;
+                info['装备列表'][armId] = newInfo['装备列表'][armId];
+            }
+        } else {
+            info[key] = newInfo[key];
+        }
+    }
+    return info;
+};
+
+/**
  * 添加已保存的我的装备信息
  * @param {jQuery} $armArea 装备区域节点
  */
@@ -4453,18 +4474,28 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
  * 添加装备相关按钮
  */
 var addArmsButton = function addArmsButton() {
-    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="clearArmsInfo" type="button" style="color: #f00;" title="\u6E05\u9664\u5DF2\u4FDD\u5B58\u7684\u88C5\u5907\u4FE1\u606F\u53CA\u5907\u6CE8">\u6E05\u9664\u4FE1\u606F</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltSelectArms" type="button" style="color: #00f;" title="\u6279\u91CF\u7194\u70BC\u5F53\u524D\u9875\u9762\u4E0A\u6240\u9009\u7684\u88C5\u5907">\u7194\u70BC\u6240\u9009</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u79CD\u7C7B\u7684\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="clearArmsInfo"]').click(function () {
-        var type = parseInt(prompt('请输入要清除的装备信息类型（1：装备信息；2：装备备注）：'));
-        if (!type) return;
-        if (type === 2) {
-            (0, _Config.read)();
-            Config.armsMemo = {};
-            (0, _Config.write)();
-            alert('所有装备的备注已被清除');
-        } else {
-            clearArmsInfo();
-            alert('在本地保存的装备信息已被清除');
-        }
+    $('\n<div class="pd_item_btns" data-name="handleArmBtns">\n  <button name="openImOrExOrClearArmsLogDialog" type="button" title="\u5BFC\u5165/\u5BFC\u51FA/\u6E05\u9664\u5DF2\u4FDD\u5B58\u7684\u88C5\u5907\u4FE1\u606F">\u5BFC\u5165/\u5BFC\u51FA/\u6E05\u9664</button>\n  <button name="showArmsFinalAddition" type="button" title="\u663E\u793A\u5F53\u524D\u9875\u9762\u4E0A\u6240\u6709\u88C5\u5907\u7684\u6700\u7EC8\u52A0\u6210\u4FE1\u606F">\u663E\u793A\u6700\u7EC8\u52A0\u6210</button>\n  <button name="smeltSelectArms" type="button" style="color: #00f;" title="\u6279\u91CF\u7194\u70BC\u5F53\u524D\u9875\u9762\u4E0A\u6240\u9009\u7684\u88C5\u5907">\u7194\u70BC\u6240\u9009</button>\n  <button name="smeltArms" type="button" style="color: #f00;" title="\u6279\u91CF\u7194\u70BC\u6307\u5B9A\u79CD\u7C7B\u7684\u88C5\u5907">\u6279\u91CF\u7194\u70BC</button>\n</div>\n').insertAfter($armArea).find('[name="openImOrExOrClearArmsLogDialog"]').click(function () {
+        Public.showCommonImportOrExportLogDialog({
+            name: '装备信息',
+            read: readArmsInfo,
+            write: writeArmsInfo,
+            merge: getMergeArmsInfo,
+            callback: function callback($dialog) {
+                $('<button name="clearArmsMemo" type="button" style="color: #00f;">清除备注</button> ' + '<button name="clear" type="button" style="color: #f00;">清除记录</button>').prependTo($dialog.find('.pd_cfg_btns')).filter('[name="clearArmsMemo"]').click(function () {
+                    if (!confirm('是否清除所有装备的备注？')) return;
+                    (0, _Config.read)();
+                    Config.armsMemo = {};
+                    (0, _Config.write)();
+                    alert('所有装备的备注已被清除');
+                    location.reload();
+                }).end().filter('[name="clear"]').click(function () {
+                    if (!confirm('是否清除所有已保存的装备信息？')) return;
+                    clearArmsInfo();
+                    alert('在本地保存的装备信息已被清除');
+                    location.reload();
+                });
+            }
+        });
     }).end().find('[name="showArmsFinalAddition"]').click(function () {
         if (!confirm('是否显示当前页面上所有装备的最终加成信息？（请不要在争夺途中使用此功能）')) return;
         Msg.destroy();
@@ -9270,7 +9301,12 @@ var addLootLogHeader = function addLootLogHeader() {
         }
     }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
-        showImportOrExportLootLogDialog();
+        Public.showCommonImportOrExportLogDialog({
+            name: '争夺记录',
+            read: LootLog.read,
+            write: LootLog.write,
+            merge: LootLog.getMergeLog
+        });
     }).end().find('[data-name="clearLootLog"]').click(function (e) {
         e.preventDefault();
         if (!confirm('是否清除所有争夺记录？')) return;
@@ -9280,42 +9316,6 @@ var addLootLogHeader = function addLootLogHeader() {
     });
 
     handleLootLogNav();
-};
-
-/**
- * 显示导入或导出争夺记录对话框
- */
-var showImportOrExportLootLogDialog = function showImportOrExportLootLogDialog() {
-    var dialogName = 'pdImOrExLootLogDialog';
-    if ($('#' + dialogName).length > 0) return;
-    var log = LootLog.read();
-    var html = '\n<div class="pd_cfg_main">\n  <strong>\u5BFC\u5165\u4E89\u593A\u8BB0\u5F55\uFF1A</strong>\u5C06\u4E89\u593A\u8BB0\u5F55\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n  <strong>\u5BFC\u51FA\u4E89\u593A\u8BB0\u5F55\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u522B\u5904\u5373\u53EF<br>\n  <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button name="merge" type="button">\u5408\u5E76\u8BB0\u5F55</button>\n  <button name="overwrite" type="button" style="color: #f00;">\u8986\u76D6\u8BB0\u5F55</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
-
-    var $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
-    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
-        e.preventDefault();
-        var name = $(this).attr('name');
-        if (!confirm('\u662F\u5426\u5C06\u6587\u672C\u6846\u4E2D\u7684\u4E89\u593A\u8BB0\u5F55' + (name === 'overwrite' ? '覆盖' : '合并') + '\u5230\u672C\u5730\u4E89\u593A\u8BB0\u5F55\uFF1F')) return;
-        var newLog = $.trim($dialog.find('[name="lootLog"]').val());
-        if (!newLog) return;
-        try {
-            newLog = JSON.parse(newLog);
-        } catch (ex) {
-            alert('争夺记录有错误');
-            return;
-        }
-        if (!newLog || $.type(newLog) !== 'object') {
-            alert('争夺记录有错误');
-            return;
-        }
-        if (name === 'merge') log = LootLog.getMergeLog(log, newLog);else log = newLog;
-        LootLog.write(log);
-        alert('争夺记录已导入');
-        location.reload();
-    });
-
-    Dialog.show(dialogName);
-    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select().focus();
 };
 
 /**
@@ -11374,7 +11374,7 @@ var replaceSiteLink = exports.replaceSiteLink = function replaceSiteLink() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -12681,6 +12681,58 @@ var showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportConfi
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(settings)).select().focus();
     if (typeof callback === 'function') callback($dialog);
     Script.runFunc('Public.showCommonImportOrExportConfigDialog_after_', { title: title, configName: configName });
+};
+
+/**
+ * 显示通用的导入/导出记录对话框
+ * @param {string} name 记录名称
+ * @param {function} read 读取记录的方法
+ * @param {function} write 写入记录的方法
+ * @param {function} [merge] 获取合并后记录的方法
+ * @param {function} [callback] 回调方法
+ * @param {function} [callbackAfterSubmit] 在提交之后的回调方法
+ */
+var showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDialog = function showCommonImportOrExportLogDialog(_ref) {
+    var name = _ref.name,
+        read = _ref.read,
+        write = _ref.write,
+        merge = _ref.merge,
+        callback = _ref.callback,
+        callbackAfterSubmit = _ref.callbackAfterSubmit;
+
+    console.debug({ name: name, read: read, write: write, merge: merge, callback: callback, callbackAfterSubmit: callbackAfterSubmit });
+    var dialogName = 'pdCommonImOrExLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    var log = read();
+    var html = '\n<div class="pd_cfg_main">\n  <strong>\u5BFC\u5165' + name + '\uFF1A</strong>\u5C06' + name + '\u5185\u5BB9\u7C98\u8D34\u5230\u6587\u672C\u6846\u4E2D\u5E76\u70B9\u51FB\u5408\u5E76\u6216\u8986\u76D6\u6309\u94AE\u5373\u53EF<br>\n  <strong>\u5BFC\u51FA' + name + '\uFF1A</strong>\u590D\u5236\u6587\u672C\u6846\u91CC\u7684\u5185\u5BB9\u5E76\u7C98\u8D34\u5230\u522B\u5904\u5373\u53EF<br>\n  <textarea name="log" style="width: 600px; height: 400px; word-break: break-all;"></textarea>\n</div>\n<div class="pd_cfg_btns">\n  <button name="merge" type="button" ' + (typeof merge !== 'function' ? 'hidden' : '') + '>\u5408\u5E76\u8BB0\u5F55</button>\n  <button name="overwrite" type="button" style="color: #f00;">\u8986\u76D6\u8BB0\u5F55</button>\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+
+    var $dialog = Dialog.create(dialogName, '\u5BFC\u5165\u6216\u5BFC\u51FA' + name, html);
+    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
+        e.preventDefault();
+        var action = $(this).attr('name');
+        if (!confirm('\u662F\u5426\u5C06\u6587\u672C\u6846\u4E2D\u7684' + name + (action === 'overwrite' ? '覆盖' : '合并') + '\u5230\u672C\u5730\uFF1F')) return;
+        var newLog = $.trim($dialog.find('[name="log"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
+        } catch (ex) {
+            alert(name + '\u6709\u9519\u8BEF');
+            return;
+        }
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert(name + '\u6709\u9519\u8BEF');
+            return;
+        }
+        if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);else log = newLog;
+        write(log);
+        alert(name + '\u5DF2\u5BFC\u5165');
+        if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
+    });
+
+    Dialog.show(dialogName);
+    $dialog.find('[name="log"]').val(JSON.stringify(log)).select().focus();
+    if (typeof callback === 'function') callback($dialog);
+    Script.runFunc('Public.showCommonImportOrExportLogDialog_after_', { name: name, read: read, write: write, merge: merge });
 };
 
 /**

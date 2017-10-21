@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.2.3
+// @version     12.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.2.3';
+const version = '12.3';
 
 /**
  * 导出模块
@@ -3158,7 +3158,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3769,6 +3769,27 @@ const writeArmsInfo = exports.writeArmsInfo = info => Util.writeData(myArmsInfoN
 const clearArmsInfo = exports.clearArmsInfo = () => Util.deleteData(myArmsInfoName + '_' + _Info2.default.uid);
 
 /**
+ * 获取合并后的装备信息
+ * @param {{}} info 当前装备信息
+ * @param {{}} newInfo 新装备信息
+ * @returns {{}} 合并后的装备信息
+ */
+const getMergeArmsInfo = exports.getMergeArmsInfo = function (info, newInfo) {
+    for (let key in newInfo) {
+        if (key === '装备列表') {
+            for (let armId in newInfo['装备列表']) {
+                armId = parseInt(armId);
+                if (!armId || armId < 0) continue;
+                info['装备列表'][armId] = newInfo['装备列表'][armId];
+            }
+        } else {
+            info[key] = newInfo[key];
+        }
+    }
+    return info;
+};
+
+/**
  * 添加已保存的我的装备信息
  * @param {jQuery} $armArea 装备区域节点
  */
@@ -4194,23 +4215,33 @@ const handleUselessSubProperties = exports.handleUselessSubProperties = function
 const addArmsButton = function () {
     $(`
 <div class="pd_item_btns" data-name="handleArmBtns">
-  <button name="clearArmsInfo" type="button" style="color: #f00;" title="清除已保存的装备信息及备注">清除信息</button>
+  <button name="openImOrExOrClearArmsLogDialog" type="button" title="导入/导出/清除已保存的装备信息">导入/导出/清除</button>
   <button name="showArmsFinalAddition" type="button" title="显示当前页面上所有装备的最终加成信息">显示最终加成</button>
   <button name="smeltSelectArms" type="button" style="color: #00f;" title="批量熔炼当前页面上所选的装备">熔炼所选</button>
   <button name="smeltArms" type="button" style="color: #f00;" title="批量熔炼指定种类的装备">批量熔炼</button>
 </div>
-`).insertAfter($armArea).find('[name="clearArmsInfo"]').click(function () {
-        let type = parseInt(prompt('请输入要清除的装备信息类型（1：装备信息；2：装备备注）：'));
-        if (!type) return;
-        if (type === 2) {
-            (0, _Config.read)();
-            Config.armsMemo = {};
-            (0, _Config.write)();
-            alert('所有装备的备注已被清除');
-        } else {
-            clearArmsInfo();
-            alert('在本地保存的装备信息已被清除');
-        }
+`).insertAfter($armArea).find('[name="openImOrExOrClearArmsLogDialog"]').click(function () {
+        Public.showCommonImportOrExportLogDialog({
+            name: '装备信息',
+            read: readArmsInfo,
+            write: writeArmsInfo,
+            merge: getMergeArmsInfo,
+            callback: function ($dialog) {
+                $('<button name="clearArmsMemo" type="button" style="color: #00f;">清除备注</button> ' + '<button name="clear" type="button" style="color: #f00;">清除记录</button>').prependTo($dialog.find('.pd_cfg_btns')).filter('[name="clearArmsMemo"]').click(function () {
+                    if (!confirm('是否清除所有装备的备注？')) return;
+                    (0, _Config.read)();
+                    Config.armsMemo = {};
+                    (0, _Config.write)();
+                    alert('所有装备的备注已被清除');
+                    location.reload();
+                }).end().filter('[name="clear"]').click(function () {
+                    if (!confirm('是否清除所有已保存的装备信息？')) return;
+                    clearArmsInfo();
+                    alert('在本地保存的装备信息已被清除');
+                    location.reload();
+                });
+            }
+        });
     }).end().find('[name="showArmsFinalAddition"]').click(function () {
         if (!confirm('是否显示当前页面上所有装备的最终加成信息？（请不要在争夺途中使用此功能）')) return;
         Msg.destroy();
@@ -7893,7 +7924,12 @@ const addLootLogHeader = function () {
         }
     }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
         e.preventDefault();
-        showImportOrExportLootLogDialog();
+        Public.showCommonImportOrExportLogDialog({
+            name: '争夺记录',
+            read: LootLog.read,
+            write: LootLog.write,
+            merge: LootLog.getMergeLog
+        });
     }).end().find('[data-name="clearLootLog"]').click(function (e) {
         e.preventDefault();
         if (!confirm('是否清除所有争夺记录？')) return;
@@ -7903,52 +7939,6 @@ const addLootLogHeader = function () {
     });
 
     handleLootLogNav();
-};
-
-/**
- * 显示导入或导出争夺记录对话框
- */
-const showImportOrExportLootLogDialog = function () {
-    const dialogName = 'pdImOrExLootLogDialog';
-    if ($('#' + dialogName).length > 0) return;
-    let log = LootLog.read();
-    let html = `
-<div class="pd_cfg_main">
-  <strong>导入争夺记录：</strong>将争夺记录内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-  <strong>导出争夺记录：</strong>复制文本框里的内容并粘贴到别处即可<br>
-  <textarea name="lootLog" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
-</div>
-<div class="pd_cfg_btns">
-  <button name="merge" type="button">合并记录</button>
-  <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
-  <button data-action="close" type="button">关闭</button>
-</div>`;
-
-    let $dialog = Dialog.create(dialogName, '导入或导出争夺记录', html);
-    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
-        e.preventDefault();
-        let name = $(this).attr('name');
-        if (!confirm(`是否将文本框中的争夺记录${name === 'overwrite' ? '覆盖' : '合并'}到本地争夺记录？`)) return;
-        let newLog = $.trim($dialog.find('[name="lootLog"]').val());
-        if (!newLog) return;
-        try {
-            newLog = JSON.parse(newLog);
-        } catch (ex) {
-            alert('争夺记录有错误');
-            return;
-        }
-        if (!newLog || $.type(newLog) !== 'object') {
-            alert('争夺记录有错误');
-            return;
-        }
-        if (name === 'merge') log = LootLog.getMergeLog(log, newLog);else log = newLog;
-        LootLog.write(log);
-        alert('争夺记录已导入');
-        location.reload();
-    });
-
-    Dialog.show(dialogName);
-    $dialog.find('[name="lootLog"]').val(JSON.stringify(log)).select().focus();
 };
 
 /**
@@ -9793,7 +9783,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -11108,6 +11098,61 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
     $dialog.find('[name="commonConfig"]').val(JSON.stringify(settings)).select().focus();
     if (typeof callback === 'function') callback($dialog);
     Script.runFunc('Public.showCommonImportOrExportConfigDialog_after_', { title, configName });
+};
+
+/**
+ * 显示通用的导入/导出记录对话框
+ * @param {string} name 记录名称
+ * @param {function} read 读取记录的方法
+ * @param {function} write 写入记录的方法
+ * @param {function} [merge] 获取合并后记录的方法
+ * @param {function} [callback] 回调方法
+ * @param {function} [callbackAfterSubmit] 在提交之后的回调方法
+ */
+const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDialog = function ({ name, read, write, merge, callback, callbackAfterSubmit }) {
+    console.debug({ name, read, write, merge, callback, callbackAfterSubmit });
+    const dialogName = 'pdCommonImOrExLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let log = read();
+    let html = `
+<div class="pd_cfg_main">
+  <strong>导入${name}：</strong>将${name}内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
+  <strong>导出${name}：</strong>复制文本框里的内容并粘贴到别处即可<br>
+  <textarea name="log" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
+</div>
+<div class="pd_cfg_btns">
+  <button name="merge" type="button" ${typeof merge !== 'function' ? 'hidden' : ''}>合并记录</button>
+  <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
+  <button data-action="close" type="button">关闭</button>
+</div>`;
+
+    let $dialog = Dialog.create(dialogName, `导入或导出${name}`, html);
+    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
+        e.preventDefault();
+        let action = $(this).attr('name');
+        if (!confirm(`是否将文本框中的${name}${action === 'overwrite' ? '覆盖' : '合并'}到本地？`)) return;
+        let newLog = $.trim($dialog.find('[name="log"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
+        } catch (ex) {
+            alert(`${name}有错误`);
+            return;
+        }
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert(`${name}有错误`);
+            return;
+        }
+        if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);else log = newLog;
+        write(log);
+        alert(`${name}已导入`);
+        if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
+    });
+
+    Dialog.show(dialogName);
+    $dialog.find('[name="log"]').val(JSON.stringify(log)).select().focus();
+    if (typeof callback === 'function') callback($dialog);
+    Script.runFunc('Public.showCommonImportOrExportLogDialog_after_', { name, read, write, merge });
 };
 
 /**

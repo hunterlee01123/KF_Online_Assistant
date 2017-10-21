@@ -1343,6 +1343,64 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
 };
 
 /**
+ * 显示通用的导入/导出记录对话框
+ * @param {string} name 记录名称
+ * @param {function} read 读取记录的方法
+ * @param {function} write 写入记录的方法
+ * @param {function} [merge] 获取合并后记录的方法
+ * @param {function} [callback] 回调方法
+ * @param {function} [callbackAfterSubmit] 在提交之后的回调方法
+ */
+export const showCommonImportOrExportLogDialog = function ({name, read, write, merge, callback, callbackAfterSubmit}) {
+    console.debug({name, read, write, merge, callback, callbackAfterSubmit});
+    const dialogName = 'pdCommonImOrExLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let log = read();
+    let html = `
+<div class="pd_cfg_main">
+  <strong>导入${name}：</strong>将${name}内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
+  <strong>导出${name}：</strong>复制文本框里的内容并粘贴到别处即可<br>
+  <textarea name="log" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
+</div>
+<div class="pd_cfg_btns">
+  <button name="merge" type="button" ${typeof merge !== 'function' ? 'hidden' : ''}>合并记录</button>
+  <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
+  <button data-action="close" type="button">关闭</button>
+</div>`;
+
+    let $dialog = Dialog.create(dialogName, `导入或导出${name}`, html);
+    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
+        e.preventDefault();
+        let action = $(this).attr('name');
+        if (!confirm(`是否将文本框中的${name}${action === 'overwrite' ? '覆盖' : '合并'}到本地？`)) return;
+        let newLog = $.trim($dialog.find('[name="log"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
+        }
+        catch (ex) {
+            alert(`${name}有错误`);
+            return;
+        }
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert(`${name}有错误`);
+            return;
+        }
+        if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);
+        else log = newLog;
+        write(log);
+        alert(`${name}已导入`);
+        if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
+        else location.reload();
+    });
+
+    Dialog.show(dialogName);
+    $dialog.find('[name="log"]').val(JSON.stringify(log)).select().focus();
+    if (typeof callback === 'function') callback($dialog);
+    Script.runFunc('Public.showCommonImportOrExportLogDialog_after_', {name, read, write, merge});
+};
+
+/**
  * 修改用户名旁有新的评分提醒的颜色
  */
 export const changeNewRateTipsColor = function () {
