@@ -14,5 +14,4 @@
 // @grant       none
 // @run-at      document-end
 // @license     MIT
-// @include-jquery   true
 // ==/UserScript==

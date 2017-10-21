@@ -111,7 +111,6 @@ const buildFullEdition = function (isEs6 = false) {
         ))
         .pipe(replace(/\/\/ @pd-require\r?\n/, !isEs6 ? `// @require     ${polyfillUrl}\n` : ''))
         .pipe(replace(/(\/\/ @grant\s+)none/, '$1GM_getValue\n$1GM_setValue\n$1GM_deleteValue'))
-        .pipe(replace(/(\/\/ @include-jquery\s+true)/, '$1\n// @use-greasemonkey true'))
         .pipe(gulp.dest(distPath + path))
         .pipe(replace(metaContentRegex, '$1'))
         .pipe(rename(fullEditionName + metaExt))
@@ -138,7 +137,6 @@ const buildForFirefoxEdition = function (isEs6 = false) {
             /\/\/ @pd-require\r?\n/,
             (!isEs6 ? `// @require     ${polyfillUrl}\n` : '') + `// @require     ${jQueryUrl}\n`
         ))
-        .pipe(replace(/(\/\/ @include-jquery\s+true)/, '$1\n// @use-greasemonkey true'))
         .pipe(replace(/\b_Info2\.default\.w\.Config\b/g, 'window.Config'))
         .pipe(gulp.dest(distPath + path))
         .pipe(replace(metaContentRegex, '$1'))

@@ -17,6 +17,4 @@
 // @grant       GM_deleteValue
 // @run-at      document-end
 // @license     MIT
-// @include-jquery   true
-// @use-greasemonkey true
 // ==/UserScript==
