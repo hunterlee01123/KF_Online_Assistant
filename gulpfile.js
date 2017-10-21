@@ -119,7 +119,7 @@ const buildFullEdition = function (isEs6 = false) {
 };
 
 /**
- * 生成For Firefox版文件
+ * 生成Firefox特别版文件
  * @param {boolean} isEs6 是否为ES6版本
  * @returns {*}
  */
@@ -152,7 +152,7 @@ gulp.task('compileEs6', () => compileEs6(getBundler()));
 gulp.task('buildEs6CommonEdition', () => buildCommonEdition(true));
 // 生成ES6全功能版文件的任务
 gulp.task('buildEs6FullEdition', () => buildFullEdition(true));
-// 生成ES6 For Firefox版文件的任务
+// 生成ES6 Firefox特别版文件的任务
 gulp.task('buildEs6ForFirefoxEdition', () => buildForFirefoxEdition(true));
 
 // 编译ES5版本的任务
@@ -161,11 +161,11 @@ gulp.task('compileEs5', () => compileEs5());
 gulp.task('buildEs5CommonEdition', () => buildCommonEdition());
 // 生成ES5全功能版文件的任务
 gulp.task('buildEs5FullEdition', () => buildFullEdition());
-// 生成ES5 For Firefox版文件的任务
+// 生成ES5 Firefox特别版文件的任务
 gulp.task('buildEs5ForFirefoxEdition', () => buildForFirefoxEdition());
 
 // 生成ES5通用版压缩文件的任务
-gulp.task('uglify', function () {
+gulp.task('uglifyEs5', function () {
     return gulp.src(distPath + es5Path + commonEditionName + scriptExt)
         .pipe(uglify())
         .pipe(rename(commonEditionName + '.min' + scriptExt))
@@ -191,8 +191,8 @@ gulp.task('copy', () => gulp.src(srcPath + libPath + '*.js').pipe(gulp.dest(dist
 gulp.task('build', function (cb) {
     runSequence(
         'compileEs6', ['buildEs6CommonEdition', 'buildEs6FullEdition', 'buildEs6ForFirefoxEdition'],
-        'compileEs5', ['buildEs5CommonEdition', 'buildEs5FullEdition', 'buildEs5ForFirefoxEdition'], 'uglify',
-        'copy', cb
+        'compileEs5', ['buildEs5CommonEdition', 'buildEs5FullEdition', 'buildEs5ForFirefoxEdition'],
+        'uglifyEs5', 'copy', cb
     );
 });
 
