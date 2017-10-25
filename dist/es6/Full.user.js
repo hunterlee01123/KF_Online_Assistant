@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.3
+// @version     12.3.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.3';
+const version = '12.3.1';
 
 /**
  * 导出模块
@@ -9921,9 +9921,10 @@ const appendCss = exports.appendCss = function () {
     text-indent: 13px; cursor: pointer; z-index: 1004;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
+  .topmenu { z-index: 1001; }
+  .r_cmenu { z-index: 1; }
   ${_Info2.default.isMobile ? '.topmenu { position: static; }' : ''}
   ${_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : ''}
-  .topmenu { z-index: 1001; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }

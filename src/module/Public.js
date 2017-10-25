@@ -100,9 +100,10 @@ export const appendCss = function () {
     text-indent: 13px; cursor: pointer; z-index: 1004;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
+  .topmenu { z-index: 1001; }
+  .r_cmenu { z-index: 1; }
   ${Info.isMobile ? '.topmenu { position: static; }' : ''}
   ${Info.isMobile ? '.r_cmenu { position: static !important; }' : ''}
-  .topmenu { z-index: 1001; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
