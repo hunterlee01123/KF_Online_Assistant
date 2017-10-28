@@ -6,6 +6,7 @@ import Const from './Const';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 import * as Public from './Public';
+import * as Script from './Script';
 
 // 最低转账金额
 const minTransferMoney = 20;
@@ -85,52 +86,50 @@ export const handleBankPage = function () {
 };
 
 /**
- * 给活期帐户存款
+ * 存取款
+ * @param {string} action 操作类型，save：存款，draw：取款
+ * @param {number} type 存取款类型，1：活期，2：定期
  * @param {number} money 存款金额（KFB）
- * @param {number} cash 现金（KFB）
- * @param {number} currentDeposit 现有活期存款（KFB）
+ * @param {function} callback 回调函数
  */
-const saveCurrentDeposit = function (money, cash, currentDeposit) {
-    let $wait = Msg.wait('<strong>正在存款中&hellip;</strong>');
-    $.post('hack.php?H_name=bank',
-        {action: 'save', btype: 1, savemoney: money},
-        function (html) {
-            Public.showFormatLog('存款', html);
-            let {msg} = Util.getResponseMsg(html);
-            if (/完成存款/.test(msg)) {
-                Msg.remove($wait);
-                console.log(`共有${money}KFB存入活期存款`);
-                $('#pdCash').text((cash - money).toLocaleString()).data('num', cash - money);
-                $('#pdCurrentDeposit').text((currentDeposit + money).toLocaleString()).data('num', currentDeposit + money);
-                setTimeout(function () {
-                    $(document).dequeue('Bank');
-                }, Const.bankActionInterval);
-            }
-            else {
-                $(document).clearQueue('Bank');
-                alert('存款失败');
-            }
-        });
+export const saveOrDrawMoney = function (action, type, money, callback = null) {
+    let data = {action: action, btype: type};
+    if (action === 'draw') data['drawmoney'] = money;
+    else data['savemoney'] = money;
+    $.ajax({
+        type: 'POST',
+        url: 'hack.php?H_name=bank',
+        timeout: Const.defAjaxTimeout,
+        data: data,
+    }).done(function (html) {
+        Public.showFormatLog('存取款', html);
+        let {msg} = Util.getResponseMsg(html);
+        if (typeof  callback === 'function') callback(msg);
+    }).fail(function () {
+        if (typeof  callback === 'function') callback('timeout');
+    });
 };
 
 /**
- * 从活期帐户取款
- * @param {number} money 取款金额（KFB）
+ * 将指定账户金额节点设置为指定值
+ * @param {jQuery} $node 账户金额节点
+ * @param {number|string} value 数值（可设为相对值，如+=50、-=100）
  */
-export const drawCurrentDeposit = function (money) {
-    let $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
-    $.post('hack.php?H_name=bank',
-        {action: 'draw', btype: 1, drawmoney: money},
-        function (html) {
-            Public.showFormatLog('取款', html);
-            let {msg} = Util.getResponseMsg(html);
-            Msg.remove($wait);
-            if (/完成取款/.test(msg)) {
-                console.log(`从活期存款中取出了${money}KFB`);
-                Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
-            }
-            else Msg.show(msg, -1);
-        });
+export const setNodeValue = function ($node, value) {
+    if (!$node.length) return;
+    let num = 0;
+    if (!$.isNumeric(value)) {
+        let matches = /(\+|-)=(\d+)/.exec(value);
+        if (!matches) return;
+        let diff = parseInt(matches[2]);
+        let oldNum = parseInt($node.data('num'));
+        oldNum = oldNum ? oldNum : 0;
+        num = value.startsWith('+') ? oldNum + diff : oldNum - diff;
+    }
+    else {
+        num = parseInt(value);
+    }
+    $node.text(num.toLocaleString()).data('num', num);
 };
 
 /**
@@ -138,10 +137,8 @@ export const drawCurrentDeposit = function (money) {
  * @param {Array} users 用户列表
  * @param {string} msg 转帐附言
  * @param {boolean} isDeposited 是否已存款
- * @param {number} currentDeposit 现有活期存款
- * @param {number} transferLimit 现有转账额度
  */
-const batchTransfer = function (users, msg, isDeposited, currentDeposit, transferLimit) {
+const batchTransfer = function (users, msg, isDeposited) {
     let successNum = 0, failNum = 0, successMoney = 0;
     $.each(users, function (index, [userName, money]) {
         $(document).queue('Bank', function () {
@@ -183,8 +180,8 @@ const batchTransfer = function (users, msg, isDeposited, currentDeposit, transfe
                     if (isStop || index === users.length - 1) {
                         Msg.destroy();
                         if (successNum > 0) Log.push('批量转账', `共有\`${successNum}\`名用户转账成功`, {pay: {'KFB': -successMoney}});
-                        $('#pdCurrentDeposit').text((currentDeposit - successMoney).toLocaleString()).data('num', currentDeposit - successMoney);
-                        $('#pdTransferLimit').text((transferLimit - successMoney).toLocaleString()).data('num', transferLimit - successMoney);
+                        setNodeValue($('#pdCurrentDeposit'), '-=' + successMoney);
+                        setNodeValue($('#pdTransferLimit'), '-=' + successMoney);
                         console.log(`共有${successNum}名用户转账成功，共有${failNum}名用户转账失败，KFB-${successMoney}`);
                         $('.pd_result:last').append(
                             `<li><b>共有<em>${successNum}</em>名用户转账成功` +
@@ -312,16 +309,15 @@ const addBatchTransferButton = function () {
         let $wait = Msg.wait('<strong>正在获取银行账户信息中&hellip;</strong>');
         $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
             Msg.remove($wait);
-            let cash = 0, currentDeposit = 0, transferLimit = 0;
             let matches = /当前所持：(-?\d+)KFB/.exec(html);
             if (!matches) return;
-            cash = parseInt(matches[1]);
+            let cash = parseInt(matches[1]);
             matches = /活期存款：(-?\d+)KFB/.exec(html);
             if (!matches) return;
-            currentDeposit = parseInt(matches[1]);
+            let currentDeposit = parseInt(matches[1]);
             matches = /可转账额度：(\d+)/.exec(html);
             if (!matches) return;
-            transferLimit = parseInt(matches[1]);
+            let transferLimit = parseInt(matches[1]);
             if (totalMoney > cash + currentDeposit) {
                 alert('资金不足');
                 return;
@@ -330,25 +326,34 @@ const addBatchTransferButton = function () {
                 alert('转账额度不足');
                 return;
             }
+            setNodeValue($('#pdCash'), cash);
+            setNodeValue($('#pdCurrentDeposit'), currentDeposit);
+            setNodeValue($('#pdTransferLimit'), transferLimit);
 
             $(document).clearQueue('Bank');
             let isDeposited = false;
-            let difference = totalMoney - currentDeposit;
-            if (difference > 0) {
+            let diff = totalMoney - currentDeposit;
+            if (diff > 0) {
                 isDeposited = true;
-                $(document).queue('Bank', function () {
-                    saveCurrentDeposit(difference, cash, currentDeposit);
-                    cash -= difference;
-                    currentDeposit += difference;
+                let $wait = Msg.wait('<strong>正在存款中&hellip;</strong>');
+                saveOrDrawMoney('save', 1, diff, function (msg) {
+                    Msg.remove($wait);
+                    if (/完成存款/.test(msg)) {
+                        setNodeValue($('#pdCash'), '-=' + diff);
+                        setNodeValue($('#pdCurrentDeposit'), '+=' + diff);
+                        setTimeout(() => $(document).dequeue('Bank'), Const.bankActionInterval);
+                    }
+                    else {
+                        alert('存款失败');
+                    }
                 });
-                $(document).dequeue('Bank');
             }
             Msg.wait(
                 `<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` +
                 `<a class="pd_stop_action" href="#">停止操作</a>`
             );
             $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
-            batchTransfer(users, msg, isDeposited, currentDeposit, transferLimit);
+            batchTransfer(users, msg, isDeposited);
         });
     }).find('[name="random"]').click(function () {
         let userList = [];
@@ -393,9 +398,16 @@ export const fixedDepositDueAlert = function () {
         let interest = parseInt(matches[1]);
         if (interest > 0) {
             Util.setCookie(Const.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(7));
-            if (confirm(`您的定期存款已到期，共产生利息 ${interest.toLocaleString()} KFB，是否前往银行取款？`)) {
-                location.href = 'hack.php?H_name=bank';
-            }
+            let $msg = Msg.show(
+                `<strong>您的定期存款已到期，共产生利息<em>${interest.toLocaleString()}</em>KFB，是否前往银行取款？</strong><br>` +
+                '<a class="pd_highlight" href="hack.php?H_name=bank">前往</a><a data-name="cancel" href="#">取消</a>',
+                -1
+            );
+            $msg.find('[data-name="cancel"]').click(function (e) {
+                e.preventDefault();
+                $msg.click();
+            });
+            Script.runFunc('Bank.fixedDepositDueAlert_success_', {html, interest});
         }
     });
 };

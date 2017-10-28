@@ -489,6 +489,11 @@ const verifyMainConfig = function ($dialog) {
         $txtCheckLootAfterTime.select().focus();
         return false;
     }
+    else if (checkLootAfterTime < '00:01:00') {
+        alert('在指定时间之后争夺不得小于00:01:00');
+        $txtCheckLootAfterTime.select().focus();
+        return false;
+    }
 
     let $txtBuyItemIdList = $dialog.find('[name="buyItemIdList"]');
     let buyItemIdList = $.trim($txtBuyItemIdList.val());

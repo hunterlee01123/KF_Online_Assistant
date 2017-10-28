@@ -90,33 +90,54 @@ export const addFastDrawMoneyLink = function () {
                 .replace(matches[0], `给你转帐<span class="pd_stat"><em>${money.toLocaleString()}</em></span>KFB`)
         );
 
-        $('<br><a title="从活期存款中取出当前转账的金额" href="#">快速取款</a> | <a title="取出银行账户中的所有活期存款" href="#">取出所有存款</a>')
+        $('<br><a data-name="fastDraw" href="#" title="从活期存款中取出当前转账的金额">快速取款</a> | ' +
+            '<a data-name="fastDrawAll" href="#" title="取出银行账户中的所有活期存款">取出所有存款</a>')
             .appendTo($msg)
-            .filter('a:eq(0)')
+            .filter('[data-name="fastDraw"]')
             .click(function (e) {
                 e.preventDefault();
                 Msg.destroy();
-                Bank.drawCurrentDeposit(money);
+                let $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
+                Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
+                    Msg.remove($wait);
+                    if (msg.includes('完成取款')) {
+                        console.log(`从活期存款中取出了${money}KFB`);
+                        Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
+                    }
+                    else {
+                        alert(msg);
+                    }
+                });
             })
             .end()
-            .filter('a:eq(1)')
+            .filter('[data-name="fastDrawAll"]')
             .click(function (e) {
                 e.preventDefault();
                 Msg.destroy();
                 Msg.wait('<strong>正在获取当前活期存款金额&hellip;</strong>');
                 $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
                     Msg.destroy();
-                    let matches = /活期存款：(\d+)KFB<br/.exec(html);
+                    let matches = /活期存款：(\d+)KFB/.exec(html);
                     if (!matches) {
                         alert('获取当前活期存款金额失败');
                         return;
                     }
                     let money = parseInt(matches[1]);
                     if (money <= 0) {
-                        Msg.show('当前活期存款余额为零', -1);
+                        alert('当前活期存款余额为零');
                         return;
                     }
-                    Bank.drawCurrentDeposit(money);
+                    let $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
+                    Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
+                        Msg.remove($wait);
+                        if (msg.includes('完成取款')) {
+                            console.log(`从活期存款中取出了${money}KFB`);
+                            Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
+                        }
+                        else {
+                            alert(msg);
+                        }
+                    });
                 });
             });
 
