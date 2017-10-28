@@ -83,7 +83,7 @@ export const addUnrecognizedSizeWarning = function () {
     let title = $title.text();
     let {type} = checkRateSize(title, 1);
     if (type === -1) {
-        $title.after('<span style="margin-left: 5px; color: #ff9933;">(标题文件大小无法解析)</span>');
+        $title.parent().append('&nbsp;<span style="color: #ff9933;">(标题文件大小无法解析)</span>');
     }
 };
 
@@ -111,17 +111,17 @@ export const refreshWaitCheckRatePage = function () {
 };
 
 /**
- * 在优秀帖相关页面上添加链接
+ * 在页面上添加相关链接
  */
-export const addLinksInGoodPostPage = function () {
-    if (/\/kf_fw_1wkfb\.php\?ping=5/.test(location.href)) {
+export const addLinksInPage = function () {
+    if (/\/kf_fw_1wkfb\.php\?ping=5\b/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
             let $this = $(this);
             let uid = parseInt($this.text());
             $this.wrapInner(`<a class="${uid === Info.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
         });
     }
-    else if (/\/kf_fw_1wkfb\.php\?ping=6/.test(location.href)) {
+    else if (/\/kf_fw_1wkfb\.php\?ping=6\b/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
             let $this = $(this);
             let userName = $this.text().trim();
@@ -134,21 +134,23 @@ export const addLinksInGoodPostPage = function () {
             if (matches) $this.wrapInner(`<a href="thread.php?fid=${matches[1]}" target="_blank"></a>`);
         });
     }
-};
-
-/**
- * 在帖子页面添加自助评分链接
- */
-export const addSelfRatingLink = function () {
-    let fid = parseInt($('input[name="fid"]:first').val());
-    if (!fid || !Const.selfRateFidList.includes(fid)) return;
-    let tid = parseInt($('input[name="tid"]:first').val());
-    let safeId = Public.getSafeId();
-    if (!safeId || !tid) return;
-    if ($('.readtext:first fieldset legend:contains("本帖最近评分记录")').length > 0) return;
-    $('a[href^="kf_tidfavor.php?action=favor"]').parent().append(
-        `<span style="margin: 0 5px;">|</span><a href="kf_fw_1wkfb.php?do=1&safeid=${safeId}&ptid=${tid}">自助评分</a>`
-    );
+    else if (/\/kf_fw_1wkfb\.php\?ping=8\b/.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
+            let $this = $(this);
+            $this.html(
+                $this.html().replace(/(管理|会员):([^\[\]]+)\]/g, '$1:<a href="profile.php?action=show&username=$2" target="_blank">$2</a>]')
+                    .replace(/\[帖子:(\d+)\]/, '[帖子:<a href="read.php?tid=$1" target="_blank">$1</a>]')
+            );
+        });
+    }
+    else if (/\/kf_fw_1wkfb\.php\?ping=9\b/.test(location.href)) {
+        $('.adp1:last > tbody > tr:gt(2) > td:first-child').each(function () {
+            let $this = $(this);
+            $this.html(
+                $this.html().replace(/UID:(\d+)/, 'UID:<a href="profile.php?action=show&uid=$1" target="_blank">$1</a>')
+            );
+        });
+    }
 };
 
 /**

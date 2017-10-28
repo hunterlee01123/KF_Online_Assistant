@@ -45,8 +45,8 @@ export const Config = {
     attackTargetLevel: 0,
     // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
     autoSaveLootLogInSpecialCaseEnabled: false,
-    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00
-    checkLootAfterTime: '00:05:00',
+    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:45:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
+    checkLootAfterTime: '00:45:00',
     // 历史争夺记录的最大保存次数
     lootLogSaveMaxNum: 7,
     // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭
@@ -128,8 +128,6 @@ export const Config = {
     preventCloseWindowWhenEditPostEnabled: true,
     // 是否在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容，true：开启；false：关闭
     autoSavePostContentWhenSubmitEnabled: false,
-    // 在帖子页面添加自助评分链接（仅限评分人员使用），true：开启；false：关闭
-    addSelfRateLinkEnabled: false,
     // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
 

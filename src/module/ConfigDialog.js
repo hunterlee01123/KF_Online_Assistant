@@ -109,7 +109,7 @@ export const show = function () {
       </label><br>
       <label>
         在 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后争夺
-        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00">[?]</span>
+        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:45:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
@@ -253,10 +253,6 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
       </label><br>
       <label>
-        <input name="addSelfRateLinkEnabled" type="checkbox"> 添加自助评分链接
-        <span class="pd_cfg_tips" title="在帖子页面添加自助评分链接（仅限评分人员使用）">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>

@@ -120,7 +120,6 @@ const init = function () {
         if ($('a[href$="#install-script"]').length > 0) Script.handleInstallScriptLink();
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
-        if (Config.addSelfRateLinkEnabled) SelfRate.addSelfRatingLink();
         SelfRate.handleGoodPostSubmit();
     }
     else if (location.pathname === '/thread.php') {
@@ -196,17 +195,17 @@ const init = function () {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
     }
     else if (location.pathname === '/kf_fw_1wkfb.php') {
-        if (/\/kf_fw_1wkfb\.php\?ping=(2|4)/i.test(location.href)) {
+        if (/\/kf_fw_1wkfb\.php\?ping=(2|4)\b/.test(location.href)) {
             SelfRate.highlightRateErrorSize();
-            if (/\/kf_fw_1wkfb\.php\?ping=2/i.test(location.href)) {
+            if (/\/kf_fw_1wkfb\.php\?ping=2\b/.test(location.href)) {
                 SelfRate.refreshWaitCheckRatePage();
             }
         }
-        else if (/\/kf_fw_1wkfb\.php\?do=1/i.test(location.href)) {
+        else if (/\/kf_fw_1wkfb\.php\?do=1\b/.test(location.href)) {
             SelfRate.addUnrecognizedSizeWarning();
             SelfRate.showErrorSizeSubmitWarning();
         }
-        SelfRate.addLinksInGoodPostPage();
+        SelfRate.addLinksInPage();
     }
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();

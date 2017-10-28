@@ -125,7 +125,7 @@ export const enhanceLootIndexPage = function () {
     showLogStat(levelInfoList);
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
-        && !Util.getCookie(Const.lootAttackingCookieName) && parseInt(Util.getCookie(Const.lootCompleteCookieName)) !== 1
+        && !Util.getCookie(Const.lootAttackingCookieName) && ![-1, -2].includes(parseInt(Util.getCookie(Const.lootCompleteCookieName)))
     ) {
         $(document).queue('AutoAction', () => autoLoot());
     }
@@ -1187,7 +1187,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>'
     );
     let index = 0;
-    let isStop = false, isFail = false;
+    let isStop = false, isPause = false, isFail = false;
 
     /**
      * 准备攻击（用于自动修改点数分配方案）
@@ -1207,7 +1207,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     updateLootInfo(function () {
                         setTimeout(attack, typeof interval === 'function' ? interval() : interval)
                     });
-                }, Const.defAjaxInterval);
+                }, Const.minActionInterval);
             }
             if (result === 'error') {
                 Msg.remove($wait);
@@ -1230,6 +1230,12 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate(`+${Const.lootAttackingExpires}m`));
             }
             if (Const.debug) console.log(html);
+            let {type} = Util.getResponseMsg(html);
+            if (/请稍后重试/.test(html) || type === -1) {
+                isPause = true;
+                after();
+                return;
+            }
             if (!/你\(\d+\)遭遇了/.test(html) || index % Const.lootAttackPerCheckLevel === 0) {
                 if (html === 'no' && /你被击败了/.test(log)) isFail = true;
                 setTimeout(function () {
@@ -1237,7 +1243,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                         if (!/你被击败了/.test(log)) isFail = false;
                         after();
                     });
-                }, Const.defAjaxInterval);
+                }, Const.minActionInterval);
                 return;
             }
             log = html + log;
@@ -1266,12 +1272,17 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             //showNewLootProperty($(this)); // 临时禁用
         });
 
-        isStop = isFail || isStop || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) || $countdown.closest('.pd_msg').data('stop');
+        isStop = isFail || isStop || isPause || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) || $countdown.closest('.pd_msg').data('stop');
         if (isStop) {
             if (Config.autoLootEnabled) {
                 Util.deleteCookie(Const.lootCheckingCookieName);
                 Util.deleteCookie(Const.lootAttackingCookieName);
-                Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
+                if (isPause) {
+                    Util.setCookie(Const.lootCompleteCookieName, -2, Util.getDate(`+${Const.checkLootInterval}m`));
+                }
+                else {
+                    Util.setCookie(Const.lootCompleteCookieName, 1, getAutoLootCookieDate());
+                }
             }
             if (isFail) {
                 if (isChecked) {
@@ -1280,7 +1291,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
                 }
                 else {
-                    setTimeout(() => updateLootInfo(after), Const.defAjaxInterval);
+                    setTimeout(() => updateLootInfo(after), Const.minActionInterval);
                 }
                 Script.runFunc('Loot.lootAttack_complete_');
             }
@@ -1294,7 +1305,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     }, Const.defAjaxInterval);
                     return;
                 }
-                if (!isChecked) setTimeout(() => updateLootInfo, Const.defAjaxInterval);
+                if (!isChecked) setTimeout(() => updateLootInfo, Const.minActionInterval);
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
                 Script.runFunc('Loot.lootAttack_after_');
