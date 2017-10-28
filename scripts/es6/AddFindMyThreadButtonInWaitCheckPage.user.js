@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        在待检查的评分记录页面上查找我的帖子
-// @version     1.0
+// @version     1.1
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13688853
@@ -8,15 +8,16 @@
 // ==/UserScript==
 'use strict';
 (function () {
-    if (!/\/kf_fw_1wkfb\.php\?ping=2/.test(location.href)) return;
+    if (!/\/kf_fw_1wkfb\.php\?ping=2\b/.test(location.href)) return;
     // 我的主题的最大查找页数
     const maxTotalPage = 3;
 
     const Const = require('./Const').default;
     const Msg = require('./Msg');
-    $(`
-<button class="indregister" name="findMyThread" type="button" title="查找我的帖子" style="margin-left: 5px; height: 28px;">查找我的帖子</button>
-`).insertAfter('.indloginm[name="submit"]').click(function () {
+
+    let $appendToTarget = $('.adp1:eq(1) > tbody > tr:first-child > td:nth-child(2)');
+    $('<a class="pd_btn_link pd_highlight" data-name="findMyThread" href="#">[查找我的帖子]</a>').appendTo($appendToTarget).click(function (e) {
+        e.preventDefault();
         let currentPage = 1, totalPage = 1;
         let threadList = [];
 
