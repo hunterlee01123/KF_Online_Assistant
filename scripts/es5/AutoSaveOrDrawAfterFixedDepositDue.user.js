@@ -11,8 +11,14 @@
 addFunc('Bank.fixedDepositDueAlert_success_', function (data) {
     // 操作类型，save：存款；draw：取款
     var type = 'draw';
-    // 存取款金额，设为数字表示存取固定金额，如：'100'；设为cash XX%表示存取现金的指定百分比，如：'cash 50%'；
-    // 设为interest表示存取跟利息同样的金额；设为fixed表示存取跟定期存款同样的金额；设为fixed+interest表示存取跟定期存款加利息同样的金额
+    /**
+     * 存取款金额
+     * 设为 数字 表示存取固定金额，如：'100'
+     * 设为 cash XX% 表示存取现金的指定百分比，如：'cash 50%'
+     * 设为 interest 表示存取跟利息同样的金额
+     * 设为 fixed 表示存取跟定期存款同样的金额
+     * 设为 fixed+interest 表示存取跟定期存款加利息同样的金额
+     */
     var money = 'interest';
 
     var Msg = require('./Msg');
