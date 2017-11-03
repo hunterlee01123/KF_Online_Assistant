@@ -45,8 +45,8 @@ export const Config = {
     attackTargetLevel: 0,
     // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
     autoSaveLootLogInSpecialCaseEnabled: false,
-    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:45:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
-    checkLootAfterTime: '00:45:00',
+    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
+    checkLootAfterTime: '00:05:00',
     // 历史争夺记录的最大保存次数
     lootLogSaveMaxNum: 7,
     // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭

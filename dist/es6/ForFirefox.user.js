@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.3.2
+// @version     12.3.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -108,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.3.2';
+const version = '12.3.3';
 
 /**
  * 导出模块
@@ -260,7 +260,7 @@ const init = function () {
     } else if (location.pathname === '/search.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
     } else if (location.pathname === '/kf_fw_1wkfb.php') {
-        if (/\/kf_fw_1wkfb\.php\?ping=(2|4)\b/.test(location.href)) {
+        if (/\/kf_fw_1wkfb\.php\?ping=(2|4|7)\b/.test(location.href)) {
             SelfRate.highlightRateErrorSize();
             if (/\/kf_fw_1wkfb\.php\?ping=2\b/.test(location.href)) {
                 SelfRate.refreshWaitCheckRatePage();
@@ -1019,8 +1019,8 @@ const Config = exports.Config = {
     attackTargetLevel: 0,
     // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
     autoSaveLootLogInSpecialCaseEnabled: false,
-    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:45:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
-    checkLootAfterTime: '00:45:00',
+    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
+    checkLootAfterTime: '00:05:00',
     // 历史争夺记录的最大保存次数
     lootLogSaveMaxNum: 7,
     // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭
@@ -1452,7 +1452,7 @@ const show = exports.show = function () {
       </label><br>
       <label>
         在 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后争夺
-        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:45:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）">[?]</span>
+        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
@@ -3344,9 +3344,6 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
-        if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
-            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
-        }
         Msg.destroy();
         if (Config.autoSaveArmsInfoEnabled) {
             getNextObjects(1);
@@ -3498,9 +3495,6 @@ const showOpenAllBoxesDialog = function () {
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         saveSettings();
         Dialog.close(dialogName);
-        if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
-            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
-        }
         if (Config.autoSaveArmsInfoEnabled) {
             getNextObjects(1);
         }
@@ -4251,7 +4245,7 @@ const addArmsButton = function () {
             }
         });
     }).end().find('[name="showArmsFinalAddition"]').click(function () {
-        if (!confirm('是否显示当前页面上所有装备的最终加成信息？（请不要在争夺途中使用此功能）')) return;
+        if (!confirm('是否显示当前页面上所有装备的最终加成信息？\n（警告：请不要在争夺攻击途中使用此功能！）')) return;
         Msg.destroy();
         let oriEquippedArmList = [];
         let armList = [];
@@ -11278,13 +11272,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * 为帖子里的每个楼层添加跳转链接
  */
 const addFloorGotoLink = exports.addFloorGotoLink = function () {
+    let sf = Util.getUrlParam('sf');
     $('.readlou > div:nth-child(2) > span').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼$/.test(floorText)) return;
         let linkName = $this.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
-        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}`;
+        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}&sf=${sf}`;
         $this.html(`<a class="pd_goto_link" href="${url}" title="复制楼层链接">${floorText}</a>`);
         $this.find('a').click(function (e) {
             e.preventDefault();
@@ -11313,7 +11308,8 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
         e.preventDefault();
         let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
-        location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
+        let sf = Util.getUrlParam('sf');
+        location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}&sf=${sf ? sf : ''}`;
     }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
     }).end().closest('div').next().css({ 'max-width': '385px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
@@ -11430,6 +11426,7 @@ const addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function () {
             alert('统计楼层格式不正确');
             return;
         }
+        let sf = Util.getUrlParam('sf');
         let startFloor = 0,
             endFloor = 0;
         let valueArr = value.split('-');
@@ -11455,7 +11452,7 @@ const addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function () {
 
         Msg.destroy();
         Msg.wait(`<strong>正在统计楼层中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${endPage - startPage + 1}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-        statFloor(tid, startPage, endPage, startFloor, endFloor);
+        statFloor(tid, startPage, endPage, startFloor, endFloor, sf);
     });
 };
 
@@ -11466,8 +11463,9 @@ const addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function () {
  * @param {number} endPage 结束页数
  * @param {number} startFloor 开始楼层号
  * @param {number} endFloor 结束楼层号
+ * @param {string} sf 防采集代码
  */
-const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
+const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
     let isStop = false;
     let floorList = [];
 
@@ -11478,7 +11476,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
     const stat = function (page) {
         $.ajax({
             type: 'GET',
-            url: `read.php?tid=${tid}&page=${page}&t=${$.now()}`,
+            url: `read.php?tid=${tid}&page=${page}&sf=${sf}&t=${$.now()}`,
             timeout: _Const2.default.defAjaxTimeout,
             success(html) {
                 $('.readtext', html).each(function () {
@@ -12563,7 +12561,7 @@ const checkRateSize = exports.checkRateSize = function (title, ratingSize) {
  * 高亮自助评分错标文件大小
  */
 const highlightRateErrorSize = exports.highlightRateErrorSize = function () {
-    $('.adp1 a[href^="read.php?tid="]').each(function () {
+    $('.adp1:eq(1) a[href^="read.php?tid="]').each(function () {
         let $this = $(this);
         let title = $this.text();
         let ratingSize = 0;
@@ -12665,6 +12663,11 @@ const addLinksInPage = exports.addLinksInPage = function () {
             let $this = $(this);
             $this.html($this.html().replace(/UID:(\d+)/, 'UID:<a href="profile.php?action=show&uid=$1" target="_blank">$1</a>'));
         });
+    } else if (/\/kf_fw_1wkfb\.php\?do=2\b/.test(location.href)) {
+        let $node1 = $('.adp1 > tbody > tr:nth-of-type(4):contains("评分会员") > td:last-child');
+        $node1.wrapInner(`<a href="profile.php?action=show&username=${$node1.text().trim()}" target="_blank"></a>`);
+        let $node2 = $('.adp1 > tbody > tr:nth-of-type(10) > td:last-child:contains("异议提出人")');
+        $node2.html($node2.html().replace(/：(\S+)/, `：<a href="profile.php?action=show&username=$1" target="_blank">$1</a>`));
     }
 };
 

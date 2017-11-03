@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.3.2';
+const version = '12.3.3';
 
 /**
  * 导出模块
@@ -195,7 +195,7 @@ const init = function () {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
     }
     else if (location.pathname === '/kf_fw_1wkfb.php') {
-        if (/\/kf_fw_1wkfb\.php\?ping=(2|4)\b/.test(location.href)) {
+        if (/\/kf_fw_1wkfb\.php\?ping=(2|4|7)\b/.test(location.href)) {
             SelfRate.highlightRateErrorSize();
             if (/\/kf_fw_1wkfb\.php\?ping=2\b/.test(location.href)) {
                 SelfRate.refreshWaitCheckRatePage();

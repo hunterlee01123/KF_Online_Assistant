@@ -38,7 +38,7 @@ export const checkRateSize = function (title, ratingSize) {
  * 高亮自助评分错标文件大小
  */
 export const highlightRateErrorSize = function () {
-    $('.adp1 a[href^="read.php?tid="]').each(function () {
+    $('.adp1:eq(1) a[href^="read.php?tid="]').each(function () {
         let $this = $(this);
         let title = $this.text();
         let ratingSize = 0;
@@ -150,6 +150,12 @@ export const addLinksInPage = function () {
                 $this.html().replace(/UID:(\d+)/, 'UID:<a href="profile.php?action=show&uid=$1" target="_blank">$1</a>')
             );
         });
+    }
+    else if (/\/kf_fw_1wkfb\.php\?do=2\b/.test(location.href)) {
+        let $node1 = $('.adp1 > tbody > tr:nth-of-type(4):contains("评分会员") > td:last-child');
+        $node1.wrapInner(`<a href="profile.php?action=show&username=${$node1.text().trim()}" target="_blank"></a>`);
+        let $node2 = $('.adp1 > tbody > tr:nth-of-type(10) > td:last-child:contains("异议提出人")');
+        $node2.html($node2.html().replace(/：(\S+)/, `：<a href="profile.php?action=show&username=$1" target="_blank">$1</a>`));
     }
 };
 

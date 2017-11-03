@@ -150,9 +150,6 @@ const addBatchOpenBoxesLink = function () {
         let currentNum = parseInt($info.find('span:last').text());
         let num = parseInt(prompt(`你要打开多少个【${boxType}】？`, currentNum));
         if (!num || num < 0) return;
-        if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
-            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
-        }
         Msg.destroy();
         if (Config.autoSaveArmsInfoEnabled) {
             getNextObjects(1);
@@ -308,9 +305,6 @@ const showOpenAllBoxesDialog = function () {
         if (!confirm('是否一键开盒（并执行所选操作）？')) return;
         saveSettings();
         Dialog.close(dialogName);
-        if (!Config.sortArmsByGroupEnabled && !Config.autoSaveArmsInfoEnabled) {
-            $armArea.find('> tbody > tr:nth-child(2)').after('<tr><td colspan="3" style="color: #777;">以上为新装备</td></tr>');
-        }
         if (Config.autoSaveArmsInfoEnabled) {
             getNextObjects(1);
         }
@@ -1114,7 +1108,7 @@ const addArmsButton = function () {
         })
         .end().find('[name="showArmsFinalAddition"]')
         .click(function () {
-            if (!confirm('是否显示当前页面上所有装备的最终加成信息？（请不要在争夺途中使用此功能）')) return;
+            if (!confirm('是否显示当前页面上所有装备的最终加成信息？\n（警告：请不要在争夺攻击途中使用此功能！）')) return;
             Msg.destroy();
             let oriEquippedArmList = [];
             let armList = [];

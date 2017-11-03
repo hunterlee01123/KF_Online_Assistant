@@ -15,13 +15,14 @@ import * as Post from './Post';
  * 为帖子里的每个楼层添加跳转链接
  */
 export const addFloorGotoLink = function () {
+    let sf = Util.getUrlParam('sf');
     $('.readlou > div:nth-child(2) > span').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼$/.test(floorText)) return;
         let linkName = $this.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
-        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}`;
+        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}&sf=${sf}`;
         $this.html(`<a class="pd_goto_link" href="${url}" title="复制楼层链接">${floorText}</a>`);
         $this.find('a').click(function (e) {
             e.preventDefault();
@@ -51,7 +52,8 @@ export const addFastGotoFloorInput = function () {
             e.preventDefault();
             let floor = parseInt($(this).find('input').val());
             if (!floor || floor < 0) return;
-            location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}`;
+            let sf = Util.getUrlParam('sf');
+            location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}&sf=${sf ? sf : ''}`;
         })
         .find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
@@ -178,6 +180,7 @@ export const addStatAndBuyThreadBtn = function () {
                 alert('统计楼层格式不正确');
                 return;
             }
+            let sf = Util.getUrlParam('sf');
             let startFloor = 0, endFloor = 0;
             let valueArr = value.split('-');
             if (valueArr.length === 2) {
@@ -206,7 +209,7 @@ export const addStatAndBuyThreadBtn = function () {
                 `<strong>正在统计楼层中&hellip;</strong><i>剩余页数：<em class="pd_countdown">${endPage - startPage + 1}</em></i>` +
                 `<a class="pd_stop_action" href="#">停止操作</a>`
             );
-            statFloor(tid, startPage, endPage, startFloor, endFloor);
+            statFloor(tid, startPage, endPage, startFloor, endFloor, sf);
         });
 };
 
@@ -217,8 +220,9 @@ export const addStatAndBuyThreadBtn = function () {
  * @param {number} endPage 结束页数
  * @param {number} startFloor 开始楼层号
  * @param {number} endFloor 结束楼层号
+ * @param {string} sf 防采集代码
  */
-const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
+const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
     let isStop = false;
     let floorList = [];
 
@@ -229,7 +233,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor) {
     const stat = function (page) {
         $.ajax({
             type: 'GET',
-            url: `read.php?tid=${tid}&page=${page}&t=${$.now()}`,
+            url: `read.php?tid=${tid}&page=${page}&sf=${sf}&t=${$.now()}`,
             timeout: Const.defAjaxTimeout,
             success(html) {
                 $('.readtext', html).each(function () {

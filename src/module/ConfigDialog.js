@@ -109,7 +109,7 @@ export const show = function () {
       </label><br>
       <label>
         在 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后争夺
-        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:45:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）">[?]</span>
+        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
