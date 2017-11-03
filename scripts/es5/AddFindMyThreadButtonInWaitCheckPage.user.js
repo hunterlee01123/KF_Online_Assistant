@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        在待检查的评分记录页面上查找我的帖子
-// @version     1.1
+// @version     1.2
 // @trigger     end
 // @author      喵拉布丁
 // @homepage    read.php?tid=500968&spid=13688853
@@ -55,7 +55,8 @@
                     var num = 0;
                     $('.adp1:eq(1) a[href^="read.php?tid="]').each(function () {
                         var $this = $(this);
-                        if (threadList.includes($this.attr('href'))) {
+                        var urlMatches = /read\.php\?tid=\d+/.exec($this.attr('href'));
+                        if (urlMatches && threadList.includes(urlMatches[0])) {
                             num++;
                             $this.css('background-color', '#ff0');
                         }
