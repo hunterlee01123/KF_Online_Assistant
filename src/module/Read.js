@@ -236,7 +236,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
             url: `read.php?tid=${tid}&page=${page}&sf=${sf}&t=${$.now()}`,
             timeout: Const.defAjaxTimeout,
             success(html) {
-                $('.readtext', html).each(function () {
+                $('.readtext', html.replace(/src="[^"]+"/g, '')).each(function () {
                     let data = {};
                     let $floor = $(this);
                     let $floorHeader = $floor.prev('div').prev('.readlou');

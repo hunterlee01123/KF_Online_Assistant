@@ -9,6 +9,35 @@ import * as TmpLog from './TmpLog';
 import * as Loot from './Loot';
 
 /**
+ * 处理首页链接
+ */
+export const handleIndexLink = function () {
+    let $kfb = $('a[href="javascript:;"][title="网站虚拟货币"]');
+    $kfb.attr('id', 'pdKfb');
+    let matches = /(-?\d+)KFB\s*\|\s*(-?\d+(?:\.\d+)?)贡献/.exec($kfb.text());
+    if (matches) {
+        let kfb = parseInt(matches[1]);
+        let gongXian = parseFloat(matches[2]);
+        $kfb.html(`<b>${kfb.toLocaleString()}</b>KFB | <b>${gongXian.toLocaleString()}</b>贡献`)
+            .attr('data-kfb', kfb)
+            .attr('data-gongxian', gongXian);
+    }
+
+    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
+    $smLevel.attr('id', 'pdSmLevel');
+    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
+    if (matches) {
+        let smLevel = parseInt(matches[1]);
+        let smRank = matches[2];
+        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`)
+            .attr('data-sm-level', smLevel)
+            .attr('data-sm-rank', smRank);
+    }
+
+    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
+};
+
+/**
  * 处理首页有人@你的消息框
  */
 export const handleAtTips = function () {
@@ -60,7 +89,7 @@ export const handleAtTips = function () {
   <div class="c"></div>
 </div>
 <div class="line"></div>`;
-            $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
+            $('#pdKfb').parent().before(html);
         }
     }
     else if (type === 'hide_box_2') {
@@ -161,37 +190,6 @@ export const addThreadFastGotoLink = function () {
 };
 
 /**
- * 在首页显示VIP剩余时间
- */
-export const showVipSurplusTime = function () {
-    /**
-     * 添加VIP剩余时间的提示
-     * @param {number} hours VIP剩余时间（小时）
-     */
-    const addVipHoursTips = function (hours) {
-        $('#pdSmLevel').parent().after(
-            `<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` +
-            `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`
-        );
-    };
-
-    let vipHours = parseInt(Util.getCookie(Const.vipSurplusTimeCookieName));
-    if (isNaN(vipHours) || vipHours < 0) {
-        console.log('检查VIP剩余时间Start');
-        $.get('kf_vmember.php?t=' + $.now(), function (html) {
-            let hours = 0;
-            let matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
-            if (matches) hours = parseInt(matches[1]);
-            Util.setCookie(Const.vipSurplusTimeCookieName, hours, Util.getDate(`+${Const.vipSurplusTimeExpires}m`));
-            addVipHoursTips(hours);
-        });
-    }
-    else {
-        addVipHoursTips(vipHours);
-    }
-};
-
-/**
  * 在首页上添加搜索类型选择框
  */
 export const addSearchTypeSelectBox = function () {
@@ -200,31 +198,6 @@ export const addSearchTypeSelectBox = function () {
     let $keyWord = $form.find('[type="text"][name="keyword"]');
     $keyWord.css('width', '116px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
-};
-
-/**
- * 处理首页链接
- */
-export const handleIndexLink = function () {
-    let $kfb = $('a[href="kf_givemekfb.php"]');
-    let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
-    if (matches) {
-        let kfb = parseInt(matches[1]);
-        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).attr('data-kfb', kfb);
-    }
-
-    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
-    $smLevel.attr('id', 'pdSmLevel');
-    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
-    if (matches) {
-        let smLevel = parseInt(matches[1]);
-        let smRank = matches[2];
-        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`)
-            .attr('data-sm-level', smLevel)
-            .attr('data-sm-rank', smRank);
-    }
-
-    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
 };
 
 /**

@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.3.3
+// @version     12.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -108,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.3.3';
+const version = '12.4';
 
 /**
  * 导出模块
@@ -176,7 +176,6 @@ const init = function () {
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
-        if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
             $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
         }
@@ -248,7 +247,6 @@ const init = function () {
     } else if (/\/personal\.php\?action=post/i.test(location.href)) {
         if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
     } else if (location.pathname === '/kf_growup.php') {
-        Other.addSmLevelFormula();
         Other.addAutoChangeIdColorButton();
     } else if (location.pathname === '/guanjianci.php') {
         Other.highlightUnReadAtTipsMsg();
@@ -316,10 +314,6 @@ const init = function () {
         $(document).queue('AutoAction', () => Item.autoOpenBoxes());
     }
 
-    if (_Info2.default.isInHomePage && Config.autoSaveCurrentDepositEnabled) {
-        $(document).queue('AutoAction', () => Public.autoSaveCurrentDeposit());
-    }
-
     $(document).dequeue('AutoAction');
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) {
@@ -347,7 +341,7 @@ if (typeof jQuery !== 'undefined') {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.fixedDepositDueAlert = exports.setNodeValue = exports.saveOrDrawMoney = exports.handleBankPage = undefined;
+exports.setNodeValue = exports.handleBankPage = undefined;
 
 var _Util = require('./Util');
 
@@ -381,92 +375,42 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-// 最低转账金额
-const minTransferMoney = 20;
+// 最低转账数额
+let minTransferNum = 0;
+// 最高转账数额
+let maxTransferNum = Number.MAX_SAFE_INTEGER;
 
 /**
  * 对银行页面元素进行处理
  */
 const handleBankPage = exports.handleBankPage = function () {
-    let $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("当前所持：")');
+    let $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("你所拥有的贡献：")');
     if (!$account.length) return;
     let html = $account.html();
-    $account.html(html.replace(/当前所持：(-?\d+)KFB/, (m, kfb) => `当前所持：<b id="pdCash" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB`).replace(/活期存款：(-?\d+)KFB/, (m, kfb) => `活期存款：<b id="pdCurrentDeposit" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB`).replace(/定期存款：(-?\d+)KFB/, (m, kfb) => `定期存款：<b id="pdFixedDeposit" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB`).replace(/可获利息：(-?\d+)/, (m, kfb) => `可获利息：<b id="pdInterest" data-num="${kfb}">${parseInt(kfb).toLocaleString()}</b> KFB `).replace(/定期利息：([\d\.]+)%/, '定期利息：<b id="pdInterestRate" data-num="$1">$1</b>%').replace(/(，才可以获得利息）)/, '$1 <span id="pdExpireTime" style="color: #393;"></span>').replace(/(，取出定期将获得该数额的KFB利息\))/, '$1 <span id="pdExpectedInterest" style="color: #393;"></span>'));
-    $account.find('[data-num]').css('color', '#f60');
+    $account.html(html.replace(/你所拥有的贡献：(-?\d+(?:\.\d+)?)/, (m, num) => `你所拥有的贡献：<b id="pdGongXian" data-num="${num}">${parseFloat(num).toLocaleString()}</b>`));
 
-    let $interest = $('#pdInterest');
-    let interest = parseInt($interest.data('num'));
-    if (interest > 0) $interest.css('color', '#393');
-
-    let fixedDeposit = parseInt($('#pdFixedDeposit').data('num'));
-    if (fixedDeposit > 0 && interest === 0) {
-        let time = parseInt(TmpLog.getValue(_Const2.default.fixedDepositDueTmpLogName));
-        if (!isNaN(time) && time > $.now()) {
-            $('#pdExpireTime').text(`(到期时间：${Util.getDateString(new Date(time))} ${Util.getTimeString(new Date(time), ':', false)})`);
-        }
-
-        let interestRate = parseFloat($('#pdInterestRate').data('num')) / 100;
-        let anticipatedInterest = Math.round(fixedDeposit * interestRate * _Const2.default.fixedDepositDueTime);
-        $('#pdExpectedInterest').text(`(预期利息：${anticipatedInterest.toLocaleString()} KFB)`);
+    let matches = /注意你转账的是贡献，最小\[(\d+(?:\.\d+)?)\]，最大\[(\d+(?:\.\d+)?)\]/.exec(html);
+    if (matches) {
+        minTransferNum = parseFloat(matches[1]);
+        maxTransferNum = parseFloat(matches[2]);
     }
 
-    $('form[name="form1"], form[name="form2"]').submit(function () {
+    $(document).on('change', 'input[name="to_money"]', function () {
         let $this = $(this);
-        let money = 0;
-        if ($this.is('[name="form2"]')) money = parseInt($this.find('input[name="drawmoney"]').val());else money = parseInt($this.find('input[name="savemoney"]').val());
-        if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
-            TmpLog.setValue(_Const2.default.fixedDepositDueTmpLogName, Util.getDate(`+${_Const2.default.fixedDepositDueTime}d`).getTime());
-        }
-    });
-
-    $('form[name="form3"]').submit(function () {
-        let currentDeposit = parseInt($('#pdCurrentDeposit').data('num'));
-        let fixedDeposit = parseInt($('#pdFixedDeposit').data('num'));
-        let money = parseInt($('[name="to_money"]').val());
-        if (!isNaN(money) && fixedDeposit > 0 && money > currentDeposit) {
-            if (!confirm('你的活期存款不足，转账金额将从定期存款里扣除，是否继续？')) {
-                $(this).find('[type="submit"]').prop('disabled', false);
-                return false;
+        let value = $.trim($this.val());
+        if (value) {
+            value = value.replace(/,/g, '');
+            $this.val(value);
+            if ($.isNumeric(value)) {
+                let num = parseFloat(value);
+                if (num < minTransferNum || num > maxTransferNum) {
+                    alert(`转账数额的最小值为[${minTransferNum}]，最大值为[${maxTransferNum}]，超过最大值请分多次转账`);
+                }
             }
         }
     });
 
-    let $fee = $('a[href="hack.php?H_name=bank&action=log"]').parent();
-    $fee.html($fee.html().replace(/\(手续费(\d+)%\)/, '(手续费<span id="pdFee" data-num="$1">$1</span>%)'));
-
-    let $transferLimit = $('form[name="form3"] > span:first');
-    $transferLimit.html($transferLimit.html().replace(/可转账额度：(\d+)/, (m, num) => `可转账额度：<b id="pdTransferLimit" data-num="${num}">${parseInt(num).toLocaleString()}</b>`).replace('额度通过发帖(每个主题帖200额度/回复帖10额度)和被评分（评分数x120%额度）获得', '在转账时会扣除相应额度，额度是一次性的，可通过领取每日奖励获得'));
     addBatchTransferButton();
-
-    $(document).on('change', '[name="savemoney"], [name="drawmoney"], [name="to_money"], [name="to_money"], [name="transfer_money"]', function () {
-        let $this = $(this);
-        let value = $.trim($this.val());
-        if (value) $this.val(value.replace(/,/g, ''));
-    });
-};
-
-/**
- * 存取款
- * @param {string} action 操作类型，save：存款，draw：取款
- * @param {number} type 存取款类型，1：活期，2：定期
- * @param {number} money 存款金额（KFB）
- * @param {function} callback 回调函数
- */
-const saveOrDrawMoney = exports.saveOrDrawMoney = function (action, type, money, callback = null) {
-    let data = { action: action, btype: type };
-    if (action === 'draw') data['drawmoney'] = money;else data['savemoney'] = money;
-    $.ajax({
-        type: 'POST',
-        url: 'hack.php?H_name=bank',
-        timeout: _Const2.default.defAjaxTimeout,
-        data: data
-    }).done(function (html) {
-        Public.showFormatLog('存取款', html);
-        let { msg } = Util.getResponseMsg(html);
-        if (typeof callback === 'function') callback(msg);
-    }).fail(function () {
-        if (typeof callback === 'function') callback('timeout');
-    });
 };
 
 /**
@@ -478,14 +422,14 @@ const setNodeValue = exports.setNodeValue = function ($node, value) {
     if (!$node.length) return;
     let num = 0;
     if (!$.isNumeric(value)) {
-        let matches = /(\+|-)=(\d+)/.exec(value);
+        let matches = /(\+|-)=(\d+(?:\.\d+)?)/.exec(value);
         if (!matches) return;
-        let diff = parseInt(matches[2]);
-        let oldNum = parseInt($node.data('num'));
+        let diff = parseFloat(matches[2]);
+        let oldNum = parseFloat($node.data('num'));
         oldNum = oldNum ? oldNum : 0;
         num = value.startsWith('+') ? oldNum + diff : oldNum - diff;
     } else {
-        num = parseInt(value);
+        num = parseFloat(value);
     }
     $node.text(num.toLocaleString()).data('num', num);
 };
@@ -494,12 +438,12 @@ const setNodeValue = exports.setNodeValue = function ($node, value) {
  * 批量转账
  * @param {Array} users 用户列表
  * @param {string} msg 转帐附言
- * @param {boolean} isDeposited 是否已存款
  */
-const batchTransfer = function (users, msg, isDeposited) {
+const batchTransfer = function (users, msg) {
     let successNum = 0,
         failNum = 0,
         successMoney = 0;
+
     $.each(users, function (index, [userName, money]) {
         $(document).queue('Bank', function () {
             $.ajax({
@@ -526,7 +470,7 @@ const batchTransfer = function (users, msg, isDeposited) {
                     $('.pd_result:last').append(`
 <li>
   ${userName}:${money.toLocaleString()}
-  <span class="pd_notice">(错误：连接超时，转账可能失败，请到<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span>
+  <span class="pd_notice">(错误：连接超时，转账结果未知，请到<a target="_blank" href="hack.php?H_name=bank&action=log">银行日志</a>里进行确认)</span>
 </li>
 `);
                 },
@@ -538,12 +482,11 @@ const batchTransfer = function (users, msg, isDeposited) {
 
                     if (isStop || index === users.length - 1) {
                         Msg.destroy();
-                        if (successNum > 0) Log.push('批量转账', `共有\`${successNum}\`名用户转账成功`, { pay: { 'KFB': -successMoney } });
-                        setNodeValue($('#pdCurrentDeposit'), '-=' + successMoney);
-                        setNodeValue($('#pdTransferLimit'), '-=' + successMoney);
-                        console.log(`共有${successNum}名用户转账成功，共有${failNum}名用户转账失败，KFB-${successMoney}`);
-                        $('.pd_result:last').append(`<li><b>共有<em>${successNum}</em>名用户转账成功` + `${failNum > 0 ? `，共有<em>${failNum}</em>名用户转账失败` : ''}：</b>KFB <ins>-${successMoney.toLocaleString()}</ins></li>`);
-                        Msg.show(`<strong>共有<em>${successNum}</em>名用户转账成功` + `${failNum > 0 ? `，共有<em>${failNum}</em>名用户转账失败` : ''}</strong><i>KFB<ins>-${successMoney.toLocaleString()}</ins></i>`, -1);
+                        if (successNum > 0) Log.push('批量转账', `共有\`${successNum}\`次转账成功`, { pay: { '贡献': -successMoney } });
+                        setNodeValue($('#pdGongXian'), '-=' + successMoney);
+                        console.log(`共有${successNum}次转账成功，共有${failNum}次转账失败，贡献-${successMoney}`);
+                        $('.pd_result:last').append(`<li><b>共有<em>${successNum}</em>次转账成功` + `${failNum > 0 ? `，共有<em>${failNum}</em>次转账失败` : ''}：</b>贡献 <ins>-${successMoney.toLocaleString()}</ins></li>`);
+                        Msg.show(`<strong>共有<em>${successNum}</em>次转账成功` + `${failNum > 0 ? `，共有<em>${failNum}</em>次转账失败` : ''}</strong><i>贡献<ins>-${successMoney.toLocaleString()}</ins></i>`, -1);
                     } else {
                         setTimeout(() => $(document).dequeue('Bank'), _Const2.default.bankActionInterval);
                     }
@@ -551,7 +494,8 @@ const batchTransfer = function (users, msg, isDeposited) {
             });
         });
     });
-    if (!isDeposited) $(document).dequeue('Bank');
+
+    $(document).dequeue('Bank');
 };
 
 /**
@@ -567,20 +511,20 @@ const batchTransferVerify = function ($transfer) {
         $bankUsers.select().focus();
         return false;
     }
-    if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
-        alert(`转帐金额不能小于${minTransferMoney}KFB`);
+    if (/^\s*\S+?:0*(\.0\d+)?\s*$/m.test(users)) {
+        alert(`转帐数额不能小于[${minTransferNum}]贡献`);
         $bankUsers.select().focus();
         return false;
     }
     let $bankMoney = $transfer.find('[name="transfer_money"]');
-    let money = parseInt($bankMoney.val());
+    let money = parseFloat($bankMoney.val());
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
-            alert('通用转账金额格式不正确');
+            alert('通用转账数额格式不正确');
             $bankMoney.select().focus();
             return false;
-        } else if (money < minTransferMoney) {
-            alert(`转帐金额不能小于${minTransferMoney}KFB`);
+        } else if (money < minTransferNum) {
+            alert(`转帐数额不能小于${minTransferNum}贡献`);
             $bankMoney.select().focus();
             return false;
         }
@@ -595,8 +539,8 @@ const addBatchTransferButton = function () {
     let $area = $(`
 <tr id="pdBankTransferArea">
   <td style="vertical-align: top;">
-    使用说明：<br>每行一名用户，<br>如需单独设定金额，<br>可写为“用户名:金额”<br>（注意是<b>英文冒号</b>）<br>例子：<br>
-    <pre style="border: 1px solid #9999ff; padding: 5px;">张三\n李四:200\n王五:500\n信仰风</pre>
+    使用说明：<br>每行一名用户，<br>如需单独设定转账数额，<br>可写为“用户名:贡献”<br>（注意是<b>英文冒号</b>）<br>例子：<br>
+    <pre style="border: 1px solid #9999ff; padding: 5px;">张三\n李四:0.1\n王五:1.2\n信仰风</pre>
   </td>
   <td>
   <form>
@@ -606,7 +550,7 @@ const addBatchTransferButton = function () {
       </label>
     </div>
     <div style="display: inline-block; margin-left: 10px;">
-      <label>通用转帐金额（如所有用户都已设定单独金额则可留空）：<br>
+      <label>通用转帐数额（如所有用户都已设定单独数额则可留空）：<br>
         <input class="pd_input" name="transfer_money" type="text" style="width: 217px;">
       </label><br>
       <label style="margin-top: 5px;">转帐附言（可留空）：<br>
@@ -616,90 +560,73 @@ const addBatchTransferButton = function () {
     <div>
       <button type="submit">批量转账</button>
       <button type="reset">重置</button>
-      <button name="random" type="button" title="为用户列表上的每个用户设定指定范围内的随机金额">随机金额</button>
-      （活期存款不足时，将自动进行存款；批量转账金额不会从定期存款中扣除）
+      <button name="random" type="button" title="为用户列表上的每个用户设定指定范围内的随机数额">随机数额</button>
+      <br><span class="pd_highlight">（注意：你转给对方的是贡献，每名用户的转账数额可超过单次转账的最大值，助手会自动分多次转账）</span>
       ${Util.isIE() || Util.isEdge() ? '<br><span class="pd_highlight">注：IE和Edge浏览器在批量转账给中文名用户时会出现乱码，请使用其它浏览器进行批量转账</span>' : ''}
     </div>
   </form>
   </td>
 </tr>
-`).appendTo('.bank1 > tbody');
+`).insertAfter('.bank1 > tbody > tr:nth-child(2)');
 
     $area.find('form').submit(function (e) {
         e.preventDefault();
         Msg.destroy();
         if (!batchTransferVerify($area)) return;
-        let commonMoney = parseInt($area.find('[name="transfer_money"]').val());
+        let commonMoney = parseFloat($area.find('[name="transfer_money"]').val());
         if (!commonMoney) commonMoney = 0;
         let msg = $area.find('[name="msg"]').val();
         let users = [];
         for (let line of $area.find('[name="users"]').val().split('\n')) {
             line = $.trim(line);
             if (!line) continue;
+
+            let userName = line;
+            let strMoney = 0;
             if (line.includes(':')) {
-                let [userName, money] = line.split(':');
-                if (typeof money === 'undefined') continue;
-                users.push([$.trim(userName), parseInt(money)]);
+                [userName, strMoney] = line.split(':');
+                userName = $.trim(userName);
+                if (typeof strMoney === 'undefined') continue;
             } else {
-                users.push([line, commonMoney]);
+                strMoney = commonMoney;
+            }
+
+            let money = parseFloat(strMoney);
+            money = Math.floor(money * 10) / 10;
+            if (money > maxTransferNum) {
+                let count = Math.floor(money * 10 / (maxTransferNum * 10));
+                let addNum = money * 10 % (maxTransferNum * 10) / 10;
+                for (let i = 1; i <= count; i++) {
+                    users.push([userName, maxTransferNum]);
+                }
+                if (addNum >= 0.1) {
+                    users.push([userName, addNum]);
+                }
+            } else {
+                users.push([userName, money]);
             }
         }
         if (!users.length) return;
 
-        let fee = parseInt($('#pdFee').data('num'));
-        if (isNaN(fee)) fee = 0;
         let totalMoney = 0;
-        for (let [, money] of users) {
+        let realUsers = [];
+        for (let [user, money] of users) {
             totalMoney += money;
+            if (!realUsers.includes(user)) {
+                realUsers.push(user);
+            }
         }
-        totalMoney = Math.floor(totalMoney * (1 + fee));
-        if (!confirm(`共计 ${users.length} 名用户，总额 ${totalMoney.toLocaleString()} KFB，是否转账？`)) return;
 
-        let $wait = Msg.wait('<strong>正在获取银行账户信息中&hellip;</strong>');
-        $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
-            Msg.remove($wait);
-            let matches = /当前所持：(-?\d+)KFB/.exec(html);
-            if (!matches) return;
-            let cash = parseInt(matches[1]);
-            matches = /活期存款：(-?\d+)KFB/.exec(html);
-            if (!matches) return;
-            let currentDeposit = parseInt(matches[1]);
-            matches = /可转账额度：(\d+)/.exec(html);
-            if (!matches) return;
-            let transferLimit = parseInt(matches[1]);
-            if (totalMoney > cash + currentDeposit) {
-                alert('资金不足');
-                return;
-            }
-            if (totalMoney > transferLimit) {
-                alert('转账额度不足');
-                return;
-            }
-            setNodeValue($('#pdCash'), cash);
-            setNodeValue($('#pdCurrentDeposit'), currentDeposit);
-            setNodeValue($('#pdTransferLimit'), transferLimit);
+        let $gongXian = $('#pdGongXian');
+        if ($gongXian.length > 0 && totalMoney > parseFloat($gongXian.data('num'))) {
+            alert(`你当前没有[${totalMoney.toLocaleString()}]贡献可供转账`);
+            return;
+        }
+        if (!confirm(`共计[${realUsers.length}]名用户，总计[${totalMoney.toLocaleString()}]贡献，是否转账？`)) return;
 
-            $(document).clearQueue('Bank');
-            let isDeposited = false;
-            let diff = totalMoney - currentDeposit;
-            if (diff > 0) {
-                isDeposited = true;
-                let $wait = Msg.wait('<strong>正在存款中&hellip;</strong>');
-                saveOrDrawMoney('save', 1, diff, function (msg) {
-                    Msg.remove($wait);
-                    if (/完成存款/.test(msg)) {
-                        setNodeValue($('#pdCash'), '-=' + diff);
-                        setNodeValue($('#pdCurrentDeposit'), '+=' + diff);
-                        setTimeout(() => $(document).dequeue('Bank'), _Const2.default.bankActionInterval);
-                    } else {
-                        alert('存款失败');
-                    }
-                });
-            }
-            Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-            $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
-            batchTransfer(users, msg, isDeposited);
-        });
+        Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
+        $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
+        batchTransfer(users, msg);
     }).find('[name="random"]').click(function () {
         let userList = [];
         for (let line of $area.find('[name="users"]').val().split('\n')) {
@@ -709,16 +636,16 @@ const addBatchTransferButton = function () {
         }
         if (!userList.length) return;
 
-        let range = prompt('设定随机金额的范围（注：最低转账金额为20KFB）', '20-100');
+        let range = prompt('设定随机数额的范围（注：最低转账数额为0.1贡献）', '0.1-1');
         if (range === null) return;
         range = $.trim(range);
-        if (!/^\d+-\d+$/.test(range)) {
-            alert('随机金额范围格式不正确');
+        if (!/^\d+(?:\.\d+)?-\d+(?:\.\d+)?$/.test(range)) {
+            alert('随机数额范围格式不正确');
             return;
         }
         let arr = range.split('-');
-        let min = parseInt(arr[0]),
-            max = parseInt(arr[1]);
+        let min = parseFloat(arr[0]),
+            max = parseFloat(arr[1]);
         if (max < min) {
             alert('最大值不能低于最小值');
             return;
@@ -726,31 +653,9 @@ const addBatchTransferButton = function () {
 
         let content = '';
         for (let userName of userList) {
-            content += userName + ':' + Math.floor(Math.random() * (max - min + 1) + min) + '\n';
+            content += userName + ':' + Math.floor((Math.random() * (max - min + 0.1) + min) * 10) / 10 + '\n';
         }
         $area.find('[name="users"]').val(content);
-    });
-};
-
-/**
- * 定期存款到期提醒
- */
-const fixedDepositDueAlert = exports.fixedDepositDueAlert = function () {
-    console.log('定期存款到期提醒Start');
-    $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
-        Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
-        let matches = /可获利息：(\d+)/.exec(html);
-        if (!matches) return;
-        let interest = parseInt(matches[1]);
-        if (interest > 0) {
-            Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(7));
-            let $msg = Msg.show(`<strong>您的定期存款已到期，共产生利息<em>${interest.toLocaleString()}</em>KFB，是否前往银行取款？</strong><br>` + '<a class="pd_highlight" href="hack.php?H_name=bank">前往</a><a data-name="cancel" href="#">取消</a>', -1);
-            $msg.find('[data-name="cancel"]').click(function (e) {
-                e.preventDefault();
-                $msg.click();
-            });
-            Script.runFunc('Bank.fixedDepositDueAlert_success_', { html, interest });
-        }
     });
 };
 
@@ -1056,8 +961,6 @@ const Config = exports.Config = {
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',
-    // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
-    fixedDepositDueAlertEnabled: false,
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
@@ -1156,13 +1059,6 @@ const Config = exports.Config = {
     // 关键字可使用普通字符串或正则表达式（正则表达式请使用'/abc/'的格式），includeUser、excludeUser、includeFid和excludeFid这三项为可选
     // 例：[{keyWord: '标题1'}, {keyWord: '标题2', includeUser:['用户名1', '用户名2'], includeFid: [5, 56]}, {keyWord: '/关键字A.*关键字B/i', excludeFid: [92, 127, 68]}]
     blockThreadList: [],
-
-    // 是否在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发，true：开启；false：关闭
-    autoSaveCurrentDepositEnabled: false,
-    // 在当前收入已满指定KFB额度之后自动进行活期存款，例：1000
-    saveCurrentDepositAfterKfb: 0,
-    // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
-    saveCurrentDepositKfb: 0,
 
     // 日志保存天数
     logSaveDays: 30,
@@ -1493,10 +1389,6 @@ const show = exports.show = function () {
           <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
         </select>
         <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
-        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
       </label><br>
       <label>
         <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
@@ -1674,22 +1566,6 @@ const show = exports.show = function () {
       </label>
       <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
     </fieldset>
-    <fieldset>
-      <legend>
-        <label>
-          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> 自动活期存款
-          <span class="pd_cfg_tips" title="在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发">[?]</span>
-        </label>
-      </legend>
-      <label>
-        在当前收入已满 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB之后
-        <span class="pd_cfg_tips" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</span>
-      </label><br>
-      <label>
-        将 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB存入活期存款
-        <span class="pd_cfg_tips" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</span>
-      </label>
-    </fieldset>
   </div>
 </div>
 
@@ -1854,23 +1730,6 @@ const verifyMainConfig = function ($dialog) {
         alert('自定义本人的神秘颜色格式不正确，例：#009cff');
         $txtCustomMySmColor.select().focus();
         return false;
-    }
-
-    let $txtSaveCurrentDepositAfterKfb = $dialog.find('[name="saveCurrentDepositAfterKfb"]');
-    let $txtSaveCurrentDepositKfb = $dialog.find('[name="saveCurrentDepositKfb"]');
-    let saveCurrentDepositAfterKfb = parseInt($txtSaveCurrentDepositAfterKfb.val());
-    let saveCurrentDepositKfb = parseInt($txtSaveCurrentDepositKfb.val());
-    if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
-        if (!saveCurrentDepositAfterKfb || saveCurrentDepositAfterKfb <= 0) {
-            alert('自动活期存款满足额度格式不正确');
-            $txtSaveCurrentDepositAfterKfb.select().focus();
-            return false;
-        }
-        if (!saveCurrentDepositKfb || saveCurrentDepositKfb <= 0 || saveCurrentDepositKfb > saveCurrentDepositAfterKfb) {
-            alert('想要存款的金额格式不正确');
-            $txtSaveCurrentDepositKfb.select().focus();
-            return false;
-        }
     }
 
     return true;
@@ -2634,10 +2493,6 @@ const Const = {
     smLevelUpAlertInterval: 3,
     // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
-    // 存储VIP剩余时间的Cookie有效期（分钟）
-    vipSurplusTimeExpires: 60,
-    // 定期存款到期期限（天）
-    fixedDepositDueTime: 90,
 
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
@@ -2683,8 +2538,6 @@ const Const = {
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
     smRankChangeTmpLogName: 'SmRankChange',
-    // 定期存款到期时间的临时日志名称
-    fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
     // 存储战力光环信息的临时日志名称
@@ -2710,8 +2563,6 @@ const Const = {
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
     prevReadAtTipsCookieName: 'prevReadAtTips',
-    // 标记已进行定期存款到期提醒的Cookie名称
-    fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
     // 标记已自动更换ID颜色的Cookie名称
     autoChangeIdColorCookieName: 'autoChangeIdColor'
 };
@@ -2857,7 +2708,7 @@ const close = exports.close = function (id) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.handleIndexLink = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.addSearchTypeSelectBox = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = exports.handleIndexLink = undefined;
 
 var _Info = require('./Info');
 
@@ -2890,6 +2741,31 @@ var Loot = _interopRequireWildcard(_Loot);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * 处理首页链接
+ */
+const handleIndexLink = exports.handleIndexLink = function () {
+    let $kfb = $('a[href="javascript:;"][title="网站虚拟货币"]');
+    $kfb.attr('id', 'pdKfb');
+    let matches = /(-?\d+)KFB\s*\|\s*(-?\d+(?:\.\d+)?)贡献/.exec($kfb.text());
+    if (matches) {
+        let kfb = parseInt(matches[1]);
+        let gongXian = parseFloat(matches[2]);
+        $kfb.html(`<b>${kfb.toLocaleString()}</b>KFB | <b>${gongXian.toLocaleString()}</b>贡献`).attr('data-kfb', kfb).attr('data-gongxian', gongXian);
+    }
+
+    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
+    $smLevel.attr('id', 'pdSmLevel');
+    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
+    if (matches) {
+        let smLevel = parseInt(matches[1]);
+        let smRank = matches[2];
+        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
+    }
+
+    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
+};
 
 /**
  * 处理首页有人@你的消息框
@@ -2937,7 +2813,7 @@ const handleAtTips = exports.handleAtTips = function () {
   <div class="c"></div>
 </div>
 <div class="line"></div>`;
-            $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
+            $('#pdKfb').parent().before(html);
         }
     } else if (type === 'hide_box_2') {
         if ($atTips.length > 0) handleBox();
@@ -3021,33 +2897,6 @@ const addThreadFastGotoLink = exports.addThreadFastGotoLink = function () {
 };
 
 /**
- * 在首页显示VIP剩余时间
- */
-const showVipSurplusTime = exports.showVipSurplusTime = function () {
-    /**
-     * 添加VIP剩余时间的提示
-     * @param {number} hours VIP剩余时间（小时）
-     */
-    const addVipHoursTips = function (hours) {
-        $('#pdSmLevel').parent().after(`<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox${hours > 0 ? 5 : 6}">VIP会员 ` + `(${hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限'})</a><div class="c"></div></div>`);
-    };
-
-    let vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
-    if (isNaN(vipHours) || vipHours < 0) {
-        console.log('检查VIP剩余时间Start');
-        $.get('kf_vmember.php?t=' + $.now(), function (html) {
-            let hours = 0;
-            let matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
-            if (matches) hours = parseInt(matches[1]);
-            Util.setCookie(_Const2.default.vipSurplusTimeCookieName, hours, Util.getDate(`+${_Const2.default.vipSurplusTimeExpires}m`));
-            addVipHoursTips(hours);
-        });
-    } else {
-        addVipHoursTips(vipHours);
-    }
-};
-
-/**
  * 在首页上添加搜索类型选择框
  */
 const addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function () {
@@ -3056,29 +2905,6 @@ const addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function () {
     let $keyWord = $form.find('[type="text"][name="keyword"]');
     $keyWord.css('width', '116px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
-};
-
-/**
- * 处理首页链接
- */
-const handleIndexLink = exports.handleIndexLink = function () {
-    let $kfb = $('a[href="kf_givemekfb.php"]');
-    let matches = /拥有(-?\d+)KFB/.exec($kfb.text());
-    if (matches) {
-        let kfb = parseInt(matches[1]);
-        $kfb.html(`拥有<b>${kfb.toLocaleString()}</b>KFB`).attr('data-kfb', kfb);
-    }
-
-    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
-    $smLevel.attr('id', 'pdSmLevel');
-    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
-    if (matches) {
-        let smLevel = parseInt(matches[1]);
-        let smRank = matches[2];
-        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
-    }
-
-    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
 };
 
 /**
@@ -3488,7 +3314,7 @@ const showOpenAllBoxesDialog = function () {
     };
 
     $dialog.find('[name="open"]').click(function () {
-        if (!Config.defOpenBoxTypeList.length) {
+        if (!$dialog.find('select[name="openBoxesTypes"]').val()) {
             alert('未选择盒子种类');
             return;
         }
@@ -3855,6 +3681,7 @@ const handleArmArea = exports.handleArmArea = function ($armArea, type = 0) {
                 let prev = armsInfo['上次记录的时间'] && armsInfo['上次记录的最新装备'] ? new Date(armsInfo['上次记录的时间']) : new Date(0);
                 prev.setHours(0, 0, 0, 0);
                 if (Math.abs(today - prev) >= _Const2.default.newArmMarkDuration * 24 * 60 * 60 * 1000) {
+                    console.log('更新最新装备记录');
                     writeArmsInfoflag = true;
                     armsInfo['上次记录的最新装备'] = armId;
                     armsInfo['上次记录的时间'] = $.now();
@@ -8945,7 +8772,7 @@ const destroy = exports.destroy = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addSmLevelFormula = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _Info = require('./Info');
 
@@ -9047,55 +8874,13 @@ const highlightUnReadAtTipsMsg = exports.highlightUnReadAtTipsMsg = function () 
  * 在短消息页面中添加快速取款的链接
  */
 const addFastDrawMoneyLink = exports.addFastDrawMoneyLink = function () {
-    if (!$('td:contains("SYSTEM")').length || !$('td:contains("收到了他人转账的KFB")').length) return;
+    if (!$('td:contains("SYSTEM")').length || !$('td:contains("收到了他人转账的贡献")').length) return;
     let $msg = $('.thread2 > tbody > tr:eq(-2) > td:last');
     let html = $msg.html();
-    let matches = /给你转帐(\d+)KFB/i.exec(html);
+    let matches = /给你转帐(\d+(?:\.\d+)?)贡献/.exec(html);
     if (matches) {
-        let money = parseInt(matches[1]);
-        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行').replace(matches[0], `给你转帐<span class="pd_stat"><em>${money.toLocaleString()}</em></span>KFB`));
-
-        $('<br><a data-name="fastDraw" href="#" title="从活期存款中取出当前转账的金额">快速取款</a> | ' + '<a data-name="fastDrawAll" href="#" title="取出银行账户中的所有活期存款">取出所有存款</a>').appendTo($msg).filter('[data-name="fastDraw"]').click(function (e) {
-            e.preventDefault();
-            Msg.destroy();
-            let $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
-            Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
-                Msg.remove($wait);
-                if (msg.includes('完成取款')) {
-                    console.log(`从活期存款中取出了${money}KFB`);
-                    Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
-                } else {
-                    alert(msg);
-                }
-            });
-        }).end().filter('[data-name="fastDrawAll"]').click(function (e) {
-            e.preventDefault();
-            Msg.destroy();
-            Msg.wait('<strong>正在获取当前活期存款金额&hellip;</strong>');
-            $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
-                Msg.destroy();
-                let matches = /活期存款：(\d+)KFB/.exec(html);
-                if (!matches) {
-                    alert('获取当前活期存款金额失败');
-                    return;
-                }
-                let money = parseInt(matches[1]);
-                if (money <= 0) {
-                    alert('当前活期存款余额为零');
-                    return;
-                }
-                let $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
-                Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
-                    Msg.remove($wait);
-                    if (msg.includes('完成取款')) {
-                        console.log(`从活期存款中取出了${money}KFB`);
-                        Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
-                    } else {
-                        alert(msg);
-                    }
-                });
-            });
-        });
+        let gongXian = parseFloat(matches[1]);
+        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行').replace(matches[0], `给你转帐<span class="pd_stat"><em>${gongXian.toLocaleString()}</em></span>贡献`));
 
         $('a[href^="message.php?action=write&remid="]').attr('href', '#').addClass('pd_disabled_link').click(function (e) {
             e.preventDefault();
@@ -9213,7 +8998,7 @@ const addMsgSelectButton = exports.addMsgSelectButton = function () {
     let $checkeds = $('.thread1 > tbody > tr > td:last-child > [type="checkbox"]');
     $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('[type="button"][value="全选"]').click(function (e) {
         e.preventDefault();
-        let value = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
+        let value = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的贡献|收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
         if (value !== '') {
             $checkeds.prop('checked', false);
             let titleArr = value.split('|');
@@ -9230,14 +9015,6 @@ const addMsgSelectButton = exports.addMsgSelectButton = function () {
 
     $('<input value="反选" type="button" style="margin-left: 5px; margin-right: 1px;">').insertAfter('[type="button"][value="全选"]').click(() => Util.selectInverse($checkeds));
 };
-
-/**
- * 添加神秘等级计算公式
- */
-const addSmLevelFormula = exports.addSmLevelFormula = function () {
-    $('.gro_divlv, .gro_divhui').eq(0).closest('table').parent().prev().css('padding-bottom', '0').after('<div style="margin: 15px 0 20px; font-size: 14px; text-align: center; color: #f00;">神秘等级 = 神秘系数<sup>2</sup> + 贡献数值*10 + 发帖数量/100</div>');
-};
-
 /**
  * 添加自动更换ID颜色的按钮
  */
@@ -9412,7 +9189,7 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
  */
 const handleProfilePage = exports.handleProfilePage = function () {
     let $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
-    $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
+    $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/贡献数值：(-?\d+(?:\.\d+)?)/, (m, num) => `贡献数值：<span data-num="${num}">${parseFloat(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
         let now = new Date();
         let html = date;
         if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
@@ -9814,7 +9591,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -10741,69 +10518,6 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
 };
 
 /**
- * 自动活期存款
- * @param {boolean} isRead 是否读取个人信息页面以获得当前所持有KFB的信息
- */
-const autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function (isRead = false) {
-    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
-        $(document).dequeue('AutoAction');
-        return;
-    }
-    let $kfb = $('a[href="kf_givemekfb.php"]');
-
-    /**
-     * 活期存款
-     * @param {number} cash 当前持有的KFB
-     */
-    const saveCurrentDeposit = function (cash) {
-        if (cash < Config.saveCurrentDepositAfterKfb) {
-            $(document).dequeue('AutoAction');
-            return;
-        }
-        let multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
-        if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
-        let money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > cash) {
-            $(document).dequeue('AutoAction');
-            return;
-        }
-
-        console.log('自动活期存款Start');
-        $.ajax({
-            type: 'POST',
-            url: 'hack.php?H_name=bank',
-            data: { action: 'save', btype: 1, savemoney: money },
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            showFormatLog('自动存款', html);
-            let { msg } = Util.getResponseMsg(html);
-            if (/完成存款/.test(msg)) {
-                Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
-                console.log(`共有${money}KFB已自动存入活期存款`);
-                Msg.show(`<strong>共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款</strong>`);
-            }
-        }).always(function () {
-            $(document).dequeue('AutoAction');
-        });
-    };
-
-    if (isRead) {
-        console.log('获取当前持有KFB Start');
-        $.get(`profile.php?action=show&uid=${_Info2.default.uid}&t=${$.now()}`, function (html) {
-            let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
-            if (matches) {
-                saveCurrentDeposit(parseInt(matches[1]));
-            }
-        });
-    } else {
-        let kfb = parseInt($kfb.data('kfb'));
-        if (kfb) {
-            saveCurrentDeposit(kfb);
-        }
-    }
-};
-
-/**
  * 更换ID颜色
  */
 const changeIdColor = exports.changeIdColor = function () {
@@ -11142,7 +10856,6 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
  * @param {function} [callbackAfterSubmit] 在提交之后的回调方法
  */
 const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDialog = function ({ name, read, write, merge, callback, callbackAfterSubmit }) {
-    console.debug({ name, read, write, merge, callback, callbackAfterSubmit });
     const dialogName = 'pdCommonImOrExLogDialog';
     if ($('#' + dialogName).length > 0) return;
     let log = read();
@@ -11188,7 +10901,7 @@ const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDia
 };
 
 /**
- * 修改用户名旁有新的评分提醒的颜色
+ * 修改顶部导航栏的用户名旁有新的评分提醒的颜色
  */
 const changeNewRateTipsColor = exports.changeNewRateTipsColor = function () {
     if (_Info2.default.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
@@ -11479,7 +11192,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
             url: `read.php?tid=${tid}&page=${page}&sf=${sf}&t=${$.now()}`,
             timeout: _Const2.default.defAjaxTimeout,
             success(html) {
-                $('.readtext', html).each(function () {
+                $('.readtext', html.replace(/src="[^"]+"/g, '')).each(function () {
                     let data = {};
                     let $floor = $(this);
                     let $floorHeader = $floor.prev('div').prev('.readlou');

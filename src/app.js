@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.3.3';
+const version = '12.4';
 
 /**
  * 导出模块
@@ -91,7 +91,6 @@ const init = function () {
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
-        if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(Const.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
             $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
         }
@@ -178,7 +177,6 @@ const init = function () {
         if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
     }
     else if (location.pathname === '/kf_growup.php') {
-        Other.addSmLevelFormula();
         Other.addAutoChangeIdColorButton();
     }
     else if (location.pathname === '/guanjianci.php') {
@@ -256,10 +254,6 @@ const init = function () {
 
     if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.lootCompleteCookieName)) {
         $(document).queue('AutoAction', () => Item.autoOpenBoxes());
-    }
-
-    if (Info.isInHomePage && Config.autoSaveCurrentDepositEnabled) {
-        $(document).queue('AutoAction', () => Public.autoSaveCurrentDeposit());
     }
 
     $(document).dequeue('AutoAction');

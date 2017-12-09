@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.3.3';
+var version = '12.4';
 
 /**
  * 导出模块
@@ -158,7 +158,6 @@ var init = function init() {
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
-        if (Config.fixedDepositDueAlertEnabled && !Util.getCookie(_Const2.default.fixedDepositDueAlertCookieName)) Bank.fixedDepositDueAlert();
         if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
             $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
         }
@@ -230,7 +229,6 @@ var init = function init() {
     } else if (/\/personal\.php\?action=post/i.test(location.href)) {
         if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
     } else if (location.pathname === '/kf_growup.php') {
-        Other.addSmLevelFormula();
         Other.addAutoChangeIdColorButton();
     } else if (location.pathname === '/guanjianci.php') {
         Other.highlightUnReadAtTipsMsg();
@@ -312,12 +310,6 @@ var init = function init() {
         });
     }
 
-    if (_Info2.default.isInHomePage && Config.autoSaveCurrentDepositEnabled) {
-        $(document).queue('AutoAction', function () {
-            return Public.autoSaveCurrentDeposit();
-        });
-    }
-
     $(document).dequeue('AutoAction');
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) {
@@ -345,7 +337,7 @@ if (typeof jQuery !== 'undefined') {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.fixedDepositDueAlert = exports.setNodeValue = exports.saveOrDrawMoney = exports.handleBankPage = undefined;
+exports.setNodeValue = exports.handleBankPage = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -381,107 +373,44 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-// 最低转账金额
-var minTransferMoney = 20;
+// 最低转账数额
+var minTransferNum = 0;
+// 最高转账数额
+var maxTransferNum = Number.MAX_SAFE_INTEGER;
 
 /**
  * 对银行页面元素进行处理
  */
 var handleBankPage = exports.handleBankPage = function handleBankPage() {
-    var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("当前所持：")');
+    var $account = $('.bank1 > tbody > tr:nth-child(2) > td:contains("你所拥有的贡献：")');
     if (!$account.length) return;
     var html = $account.html();
-    $account.html(html.replace(/当前所持：(-?\d+)KFB/, function (m, kfb) {
-        return '\u5F53\u524D\u6240\u6301\uFF1A<b id="pdCash" data-num="' + kfb + '">' + parseInt(kfb).toLocaleString() + '</b> KFB';
-    }).replace(/活期存款：(-?\d+)KFB/, function (m, kfb) {
-        return '\u6D3B\u671F\u5B58\u6B3E\uFF1A<b id="pdCurrentDeposit" data-num="' + kfb + '">' + parseInt(kfb).toLocaleString() + '</b> KFB';
-    }).replace(/定期存款：(-?\d+)KFB/, function (m, kfb) {
-        return '\u5B9A\u671F\u5B58\u6B3E\uFF1A<b id="pdFixedDeposit" data-num="' + kfb + '">' + parseInt(kfb).toLocaleString() + '</b> KFB';
-    }).replace(/可获利息：(-?\d+)/, function (m, kfb) {
-        return '\u53EF\u83B7\u5229\u606F\uFF1A<b id="pdInterest" data-num="' + kfb + '">' + parseInt(kfb).toLocaleString() + '</b> KFB ';
-    }).replace(/定期利息：([\d\.]+)%/, '定期利息：<b id="pdInterestRate" data-num="$1">$1</b>%').replace(/(，才可以获得利息）)/, '$1 <span id="pdExpireTime" style="color: #393;"></span>').replace(/(，取出定期将获得该数额的KFB利息\))/, '$1 <span id="pdExpectedInterest" style="color: #393;"></span>'));
-    $account.find('[data-num]').css('color', '#f60');
+    $account.html(html.replace(/你所拥有的贡献：(-?\d+(?:\.\d+)?)/, function (m, num) {
+        return '\u4F60\u6240\u62E5\u6709\u7684\u8D21\u732E\uFF1A<b id="pdGongXian" data-num="' + num + '">' + parseFloat(num).toLocaleString() + '</b>';
+    }));
 
-    var $interest = $('#pdInterest');
-    var interest = parseInt($interest.data('num'));
-    if (interest > 0) $interest.css('color', '#393');
-
-    var fixedDeposit = parseInt($('#pdFixedDeposit').data('num'));
-    if (fixedDeposit > 0 && interest === 0) {
-        var time = parseInt(TmpLog.getValue(_Const2.default.fixedDepositDueTmpLogName));
-        if (!isNaN(time) && time > $.now()) {
-            $('#pdExpireTime').text('(\u5230\u671F\u65F6\u95F4\uFF1A' + Util.getDateString(new Date(time)) + ' ' + Util.getTimeString(new Date(time), ':', false) + ')');
-        }
-
-        var interestRate = parseFloat($('#pdInterestRate').data('num')) / 100;
-        var anticipatedInterest = Math.round(fixedDeposit * interestRate * _Const2.default.fixedDepositDueTime);
-        $('#pdExpectedInterest').text('(\u9884\u671F\u5229\u606F\uFF1A' + anticipatedInterest.toLocaleString() + ' KFB)');
+    var matches = /注意你转账的是贡献，最小\[(\d+(?:\.\d+)?)\]，最大\[(\d+(?:\.\d+)?)\]/.exec(html);
+    if (matches) {
+        minTransferNum = parseFloat(matches[1]);
+        maxTransferNum = parseFloat(matches[2]);
     }
 
-    $('form[name="form1"], form[name="form2"]').submit(function () {
+    $(document).on('change', 'input[name="to_money"]', function () {
         var $this = $(this);
-        var money = 0;
-        if ($this.is('[name="form2"]')) money = parseInt($this.find('input[name="drawmoney"]').val());else money = parseInt($this.find('input[name="savemoney"]').val());
-        if (parseInt($this.find('input[name="btype"]:checked').val()) === 2 && money > 0) {
-            TmpLog.setValue(_Const2.default.fixedDepositDueTmpLogName, Util.getDate('+' + _Const2.default.fixedDepositDueTime + 'd').getTime());
-        }
-    });
-
-    $('form[name="form3"]').submit(function () {
-        var currentDeposit = parseInt($('#pdCurrentDeposit').data('num'));
-        var fixedDeposit = parseInt($('#pdFixedDeposit').data('num'));
-        var money = parseInt($('[name="to_money"]').val());
-        if (!isNaN(money) && fixedDeposit > 0 && money > currentDeposit) {
-            if (!confirm('你的活期存款不足，转账金额将从定期存款里扣除，是否继续？')) {
-                $(this).find('[type="submit"]').prop('disabled', false);
-                return false;
+        var value = $.trim($this.val());
+        if (value) {
+            value = value.replace(/,/g, '');
+            $this.val(value);
+            if ($.isNumeric(value)) {
+                var num = parseFloat(value);
+                if (num < minTransferNum || num > maxTransferNum) {
+                    alert('\u8F6C\u8D26\u6570\u989D\u7684\u6700\u5C0F\u503C\u4E3A[' + minTransferNum + ']\uFF0C\u6700\u5927\u503C\u4E3A[' + maxTransferNum + ']\uFF0C\u8D85\u8FC7\u6700\u5927\u503C\u8BF7\u5206\u591A\u6B21\u8F6C\u8D26');
+                }
             }
         }
     });
 
-    var $fee = $('a[href="hack.php?H_name=bank&action=log"]').parent();
-    $fee.html($fee.html().replace(/\(手续费(\d+)%\)/, '(手续费<span id="pdFee" data-num="$1">$1</span>%)'));
-
-    var $transferLimit = $('form[name="form3"] > span:first');
-    $transferLimit.html($transferLimit.html().replace(/可转账额度：(\d+)/, function (m, num) {
-        return '\u53EF\u8F6C\u8D26\u989D\u5EA6\uFF1A<b id="pdTransferLimit" data-num="' + num + '">' + parseInt(num).toLocaleString() + '</b>';
-    }).replace('额度通过发帖(每个主题帖200额度/回复帖10额度)和被评分（评分数x120%额度）获得', '在转账时会扣除相应额度，额度是一次性的，可通过领取每日奖励获得'));
     addBatchTransferButton();
-
-    $(document).on('change', '[name="savemoney"], [name="drawmoney"], [name="to_money"], [name="to_money"], [name="transfer_money"]', function () {
-        var $this = $(this);
-        var value = $.trim($this.val());
-        if (value) $this.val(value.replace(/,/g, ''));
-    });
-};
-
-/**
- * 存取款
- * @param {string} action 操作类型，save：存款，draw：取款
- * @param {number} type 存取款类型，1：活期，2：定期
- * @param {number} money 存款金额（KFB）
- * @param {function} callback 回调函数
- */
-var saveOrDrawMoney = exports.saveOrDrawMoney = function saveOrDrawMoney(action, type, money) {
-    var callback = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-
-    var data = { action: action, btype: type };
-    if (action === 'draw') data['drawmoney'] = money;else data['savemoney'] = money;
-    $.ajax({
-        type: 'POST',
-        url: 'hack.php?H_name=bank',
-        timeout: _Const2.default.defAjaxTimeout,
-        data: data
-    }).done(function (html) {
-        Public.showFormatLog('存取款', html);
-
-        var _Util$getResponseMsg = Util.getResponseMsg(html),
-            msg = _Util$getResponseMsg.msg;
-
-        if (typeof callback === 'function') callback(msg);
-    }).fail(function () {
-        if (typeof callback === 'function') callback('timeout');
-    });
 };
 
 /**
@@ -493,14 +422,14 @@ var setNodeValue = exports.setNodeValue = function setNodeValue($node, value) {
     if (!$node.length) return;
     var num = 0;
     if (!$.isNumeric(value)) {
-        var matches = /(\+|-)=(\d+)/.exec(value);
+        var matches = /(\+|-)=(\d+(?:\.\d+)?)/.exec(value);
         if (!matches) return;
-        var diff = parseInt(matches[2]);
-        var oldNum = parseInt($node.data('num'));
+        var diff = parseFloat(matches[2]);
+        var oldNum = parseFloat($node.data('num'));
         oldNum = oldNum ? oldNum : 0;
         num = value.startsWith('+') ? oldNum + diff : oldNum - diff;
     } else {
-        num = parseInt(value);
+        num = parseFloat(value);
     }
     $node.text(num.toLocaleString()).data('num', num);
 };
@@ -509,12 +438,12 @@ var setNodeValue = exports.setNodeValue = function setNodeValue($node, value) {
  * 批量转账
  * @param {Array} users 用户列表
  * @param {string} msg 转帐附言
- * @param {boolean} isDeposited 是否已存款
  */
-var batchTransfer = function batchTransfer(users, msg, isDeposited) {
+var batchTransfer = function batchTransfer(users, msg) {
     var successNum = 0,
         failNum = 0,
         successMoney = 0;
+
     $.each(users, function (index, _ref) {
         var _ref2 = _slicedToArray(_ref, 2),
             userName = _ref2[0],
@@ -529,8 +458,8 @@ var batchTransfer = function batchTransfer(users, msg, isDeposited) {
                 success: function success(html) {
                     Public.showFormatLog('批量转账', html);
 
-                    var _Util$getResponseMsg2 = Util.getResponseMsg(html),
-                        msg = _Util$getResponseMsg2.msg;
+                    var _Util$getResponseMsg = Util.getResponseMsg(html),
+                        msg = _Util$getResponseMsg.msg;
 
                     var msgHtml = userName + ' <em>+' + money.toLocaleString() + '</em>';
                     if (/完成转帐!/.test(msg)) {
@@ -545,7 +474,7 @@ var batchTransfer = function batchTransfer(users, msg, isDeposited) {
                 },
                 error: function error() {
                     failNum++;
-                    $('.pd_result:last').append('\n<li>\n  ' + userName + ':' + money.toLocaleString() + '\n  <span class="pd_notice">(\u9519\u8BEF\uFF1A\u8FDE\u63A5\u8D85\u65F6\uFF0C\u8F6C\u8D26\u53EF\u80FD\u5931\u8D25\uFF0C\u8BF7\u5230<a target="_blank" href="hack.php?H_name=bank&action=log">\u94F6\u884C\u65E5\u5FD7</a>\u91CC\u8FDB\u884C\u786E\u8BA4)</span>\n</li>\n');
+                    $('.pd_result:last').append('\n<li>\n  ' + userName + ':' + money.toLocaleString() + '\n  <span class="pd_notice">(\u9519\u8BEF\uFF1A\u8FDE\u63A5\u8D85\u65F6\uFF0C\u8F6C\u8D26\u7ED3\u679C\u672A\u77E5\uFF0C\u8BF7\u5230<a target="_blank" href="hack.php?H_name=bank&action=log">\u94F6\u884C\u65E5\u5FD7</a>\u91CC\u8FDB\u884C\u786E\u8BA4)</span>\n</li>\n');
                 },
                 complete: function complete() {
                     var $countdown = $('.pd_countdown:last');
@@ -555,12 +484,11 @@ var batchTransfer = function batchTransfer(users, msg, isDeposited) {
 
                     if (isStop || index === users.length - 1) {
                         Msg.destroy();
-                        if (successNum > 0) Log.push('批量转账', '\u5171\u6709`' + successNum + '`\u540D\u7528\u6237\u8F6C\u8D26\u6210\u529F', { pay: { 'KFB': -successMoney } });
-                        setNodeValue($('#pdCurrentDeposit'), '-=' + successMoney);
-                        setNodeValue($('#pdTransferLimit'), '-=' + successMoney);
-                        console.log('\u5171\u6709' + successNum + '\u540D\u7528\u6237\u8F6C\u8D26\u6210\u529F\uFF0C\u5171\u6709' + failNum + '\u540D\u7528\u6237\u8F6C\u8D26\u5931\u8D25\uFF0CKFB-' + successMoney);
-                        $('.pd_result:last').append('<li><b>\u5171\u6709<em>' + successNum + '</em>\u540D\u7528\u6237\u8F6C\u8D26\u6210\u529F' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u540D\u7528\u6237\u8F6C\u8D26\u5931\u8D25' : '') + '\uFF1A</b>KFB <ins>-' + successMoney.toLocaleString() + '</ins></li>'));
-                        Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u540D\u7528\u6237\u8F6C\u8D26\u6210\u529F' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u540D\u7528\u6237\u8F6C\u8D26\u5931\u8D25' : '') + '</strong><i>KFB<ins>-' + successMoney.toLocaleString() + '</ins></i>'), -1);
+                        if (successNum > 0) Log.push('批量转账', '\u5171\u6709`' + successNum + '`\u6B21\u8F6C\u8D26\u6210\u529F', { pay: { '贡献': -successMoney } });
+                        setNodeValue($('#pdGongXian'), '-=' + successMoney);
+                        console.log('\u5171\u6709' + successNum + '\u6B21\u8F6C\u8D26\u6210\u529F\uFF0C\u5171\u6709' + failNum + '\u6B21\u8F6C\u8D26\u5931\u8D25\uFF0C\u8D21\u732E-' + successMoney);
+                        $('.pd_result:last').append('<li><b>\u5171\u6709<em>' + successNum + '</em>\u6B21\u8F6C\u8D26\u6210\u529F' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u6B21\u8F6C\u8D26\u5931\u8D25' : '') + '\uFF1A</b>\u8D21\u732E <ins>-' + successMoney.toLocaleString() + '</ins></li>'));
+                        Msg.show('<strong>\u5171\u6709<em>' + successNum + '</em>\u6B21\u8F6C\u8D26\u6210\u529F' + ((failNum > 0 ? '\uFF0C\u5171\u6709<em>' + failNum + '</em>\u6B21\u8F6C\u8D26\u5931\u8D25' : '') + '</strong><i>\u8D21\u732E<ins>-' + successMoney.toLocaleString() + '</ins></i>'), -1);
                     } else {
                         setTimeout(function () {
                             return $(document).dequeue('Bank');
@@ -570,7 +498,8 @@ var batchTransfer = function batchTransfer(users, msg, isDeposited) {
             });
         });
     });
-    if (!isDeposited) $(document).dequeue('Bank');
+
+    $(document).dequeue('Bank');
 };
 
 /**
@@ -586,20 +515,20 @@ var batchTransferVerify = function batchTransferVerify($transfer) {
         $bankUsers.select().focus();
         return false;
     }
-    if (/^\s*\S+?:0*[0-1]?\d\s*$/m.test(users)) {
-        alert('\u8F6C\u5E10\u91D1\u989D\u4E0D\u80FD\u5C0F\u4E8E' + minTransferMoney + 'KFB');
+    if (/^\s*\S+?:0*(\.0\d+)?\s*$/m.test(users)) {
+        alert('\u8F6C\u5E10\u6570\u989D\u4E0D\u80FD\u5C0F\u4E8E[' + minTransferNum + ']\u8D21\u732E');
         $bankUsers.select().focus();
         return false;
     }
     var $bankMoney = $transfer.find('[name="transfer_money"]');
-    var money = parseInt($bankMoney.val());
+    var money = parseFloat($bankMoney.val());
     if (/^\s*[^:]+\s*$/m.test(users)) {
         if (!$.isNumeric(money)) {
-            alert('通用转账金额格式不正确');
+            alert('通用转账数额格式不正确');
             $bankMoney.select().focus();
             return false;
-        } else if (money < minTransferMoney) {
-            alert('\u8F6C\u5E10\u91D1\u989D\u4E0D\u80FD\u5C0F\u4E8E' + minTransferMoney + 'KFB');
+        } else if (money < minTransferNum) {
+            alert('\u8F6C\u5E10\u6570\u989D\u4E0D\u80FD\u5C0F\u4E8E' + minTransferNum + '\u8D21\u732E');
             $bankMoney.select().focus();
             return false;
         }
@@ -611,13 +540,13 @@ var batchTransferVerify = function batchTransferVerify($transfer) {
  * 添加批量转账的按钮
  */
 var addBatchTransferButton = function addBatchTransferButton() {
-    var $area = $('\n<tr id="pdBankTransferArea">\n  <td style="vertical-align: top;">\n    \u4F7F\u7528\u8BF4\u660E\uFF1A<br>\u6BCF\u884C\u4E00\u540D\u7528\u6237\uFF0C<br>\u5982\u9700\u5355\u72EC\u8BBE\u5B9A\u91D1\u989D\uFF0C<br>\u53EF\u5199\u4E3A\u201C\u7528\u6237\u540D:\u91D1\u989D\u201D<br>\uFF08\u6CE8\u610F\u662F<b>\u82F1\u6587\u5192\u53F7</b>\uFF09<br>\u4F8B\u5B50\uFF1A<br>\n    <pre style="border: 1px solid #9999ff; padding: 5px;">\u5F20\u4E09\n\u674E\u56DB:200\n\u738B\u4E94:500\n\u4FE1\u4EF0\u98CE</pre>\n  </td>\n  <td>\n  <form>\n    <div style="display: inline-block;">\n      <label>\u7528\u6237\u5217\u8868\uFF1A<br>\n        <textarea class="pd_textarea" name="users" style="width: 270px; height: 250px;"></textarea>\n      </label>\n    </div>\n    <div style="display: inline-block; margin-left: 10px;">\n      <label>\u901A\u7528\u8F6C\u5E10\u91D1\u989D\uFF08\u5982\u6240\u6709\u7528\u6237\u90FD\u5DF2\u8BBE\u5B9A\u5355\u72EC\u91D1\u989D\u5219\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <input class="pd_input" name="transfer_money" type="text" style="width: 217px;">\n      </label><br>\n      <label style="margin-top: 5px;">\u8F6C\u5E10\u9644\u8A00\uFF08\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>\n      </label>\n    </div>\n    <div>\n      <button type="submit">\u6279\u91CF\u8F6C\u8D26</button>\n      <button type="reset">\u91CD\u7F6E</button>\n      <button name="random" type="button" title="\u4E3A\u7528\u6237\u5217\u8868\u4E0A\u7684\u6BCF\u4E2A\u7528\u6237\u8BBE\u5B9A\u6307\u5B9A\u8303\u56F4\u5185\u7684\u968F\u673A\u91D1\u989D">\u968F\u673A\u91D1\u989D</button>\n      \uFF08\u6D3B\u671F\u5B58\u6B3E\u4E0D\u8DB3\u65F6\uFF0C\u5C06\u81EA\u52A8\u8FDB\u884C\u5B58\u6B3E\uFF1B\u6279\u91CF\u8F6C\u8D26\u91D1\u989D\u4E0D\u4F1A\u4ECE\u5B9A\u671F\u5B58\u6B3E\u4E2D\u6263\u9664\uFF09\n      ' + (Util.isIE() || Util.isEdge() ? '<br><span class="pd_highlight">注：IE和Edge浏览器在批量转账给中文名用户时会出现乱码，请使用其它浏览器进行批量转账</span>' : '') + '\n    </div>\n  </form>\n  </td>\n</tr>\n').appendTo('.bank1 > tbody');
+    var $area = $('\n<tr id="pdBankTransferArea">\n  <td style="vertical-align: top;">\n    \u4F7F\u7528\u8BF4\u660E\uFF1A<br>\u6BCF\u884C\u4E00\u540D\u7528\u6237\uFF0C<br>\u5982\u9700\u5355\u72EC\u8BBE\u5B9A\u8F6C\u8D26\u6570\u989D\uFF0C<br>\u53EF\u5199\u4E3A\u201C\u7528\u6237\u540D:\u8D21\u732E\u201D<br>\uFF08\u6CE8\u610F\u662F<b>\u82F1\u6587\u5192\u53F7</b>\uFF09<br>\u4F8B\u5B50\uFF1A<br>\n    <pre style="border: 1px solid #9999ff; padding: 5px;">\u5F20\u4E09\n\u674E\u56DB:0.1\n\u738B\u4E94:1.2\n\u4FE1\u4EF0\u98CE</pre>\n  </td>\n  <td>\n  <form>\n    <div style="display: inline-block;">\n      <label>\u7528\u6237\u5217\u8868\uFF1A<br>\n        <textarea class="pd_textarea" name="users" style="width: 270px; height: 250px;"></textarea>\n      </label>\n    </div>\n    <div style="display: inline-block; margin-left: 10px;">\n      <label>\u901A\u7528\u8F6C\u5E10\u6570\u989D\uFF08\u5982\u6240\u6709\u7528\u6237\u90FD\u5DF2\u8BBE\u5B9A\u5355\u72EC\u6570\u989D\u5219\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <input class="pd_input" name="transfer_money" type="text" style="width: 217px;">\n      </label><br>\n      <label style="margin-top: 5px;">\u8F6C\u5E10\u9644\u8A00\uFF08\u53EF\u7559\u7A7A\uFF09\uFF1A<br>\n        <textarea class="pd_textarea" name="msg" style="width: 225px; height: 206px;"></textarea>\n      </label>\n    </div>\n    <div>\n      <button type="submit">\u6279\u91CF\u8F6C\u8D26</button>\n      <button type="reset">\u91CD\u7F6E</button>\n      <button name="random" type="button" title="\u4E3A\u7528\u6237\u5217\u8868\u4E0A\u7684\u6BCF\u4E2A\u7528\u6237\u8BBE\u5B9A\u6307\u5B9A\u8303\u56F4\u5185\u7684\u968F\u673A\u6570\u989D">\u968F\u673A\u6570\u989D</button>\n      <br><span class="pd_highlight">\uFF08\u6CE8\u610F\uFF1A\u4F60\u8F6C\u7ED9\u5BF9\u65B9\u7684\u662F\u8D21\u732E\uFF0C\u6BCF\u540D\u7528\u6237\u7684\u8F6C\u8D26\u6570\u989D\u53EF\u8D85\u8FC7\u5355\u6B21\u8F6C\u8D26\u7684\u6700\u5927\u503C\uFF0C\u52A9\u624B\u4F1A\u81EA\u52A8\u5206\u591A\u6B21\u8F6C\u8D26\uFF09</span>\n      ' + (Util.isIE() || Util.isEdge() ? '<br><span class="pd_highlight">注：IE和Edge浏览器在批量转账给中文名用户时会出现乱码，请使用其它浏览器进行批量转账</span>' : '') + '\n    </div>\n  </form>\n  </td>\n</tr>\n').insertAfter('.bank1 > tbody > tr:nth-child(2)');
 
     $area.find('form').submit(function (e) {
         e.preventDefault();
         Msg.destroy();
         if (!batchTransferVerify($area)) return;
-        var commonMoney = parseInt($area.find('[name="transfer_money"]').val());
+        var commonMoney = parseFloat($area.find('[name="transfer_money"]').val());
         if (!commonMoney) commonMoney = 0;
         var msg = $area.find('[name="msg"]').val();
         var users = [];
@@ -631,16 +560,36 @@ var addBatchTransferButton = function addBatchTransferButton() {
 
                 line = $.trim(line);
                 if (!line) continue;
-                if (line.includes(':')) {
-                    var _line$split = line.split(':'),
-                        _line$split2 = _slicedToArray(_line$split, 2),
-                        userName = _line$split2[0],
-                        money = _line$split2[1];
 
-                    if (typeof money === 'undefined') continue;
-                    users.push([$.trim(userName), parseInt(money)]);
+                var userName = line;
+                var strMoney = 0;
+                if (line.includes(':')) {
+                    var _line$split = line.split(':');
+
+                    var _line$split2 = _slicedToArray(_line$split, 2);
+
+                    userName = _line$split2[0];
+                    strMoney = _line$split2[1];
+
+                    userName = $.trim(userName);
+                    if (typeof strMoney === 'undefined') continue;
                 } else {
-                    users.push([line, commonMoney]);
+                    strMoney = commonMoney;
+                }
+
+                var money = parseFloat(strMoney);
+                money = Math.floor(money * 10) / 10;
+                if (money > maxTransferNum) {
+                    var count = Math.floor(money * 10 / (maxTransferNum * 10));
+                    var addNum = money * 10 % (maxTransferNum * 10) / 10;
+                    for (var i = 1; i <= count; i++) {
+                        users.push([userName, maxTransferNum]);
+                    }
+                    if (addNum >= 0.1) {
+                        users.push([userName, addNum]);
+                    }
+                } else {
+                    users.push([userName, money]);
                 }
             }
         } catch (err) {
@@ -660,9 +609,8 @@ var addBatchTransferButton = function addBatchTransferButton() {
 
         if (!users.length) return;
 
-        var fee = parseInt($('#pdFee').data('num'));
-        if (isNaN(fee)) fee = 0;
         var totalMoney = 0;
+        var realUsers = [];
         var _iteratorNormalCompletion2 = true;
         var _didIteratorError2 = false;
         var _iteratorError2 = undefined;
@@ -670,9 +618,13 @@ var addBatchTransferButton = function addBatchTransferButton() {
         try {
             for (var _iterator2 = users[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                 var _step2$value = _slicedToArray(_step2.value, 2),
+                    user = _step2$value[0],
                     _money = _step2$value[1];
 
                 totalMoney += _money;
+                if (!realUsers.includes(user)) {
+                    realUsers.push(user);
+                }
             }
         } catch (err) {
             _didIteratorError2 = true;
@@ -689,56 +641,16 @@ var addBatchTransferButton = function addBatchTransferButton() {
             }
         }
 
-        totalMoney = Math.floor(totalMoney * (1 + fee));
-        if (!confirm('\u5171\u8BA1 ' + users.length + ' \u540D\u7528\u6237\uFF0C\u603B\u989D ' + totalMoney.toLocaleString() + ' KFB\uFF0C\u662F\u5426\u8F6C\u8D26\uFF1F')) return;
+        var $gongXian = $('#pdGongXian');
+        if ($gongXian.length > 0 && totalMoney > parseFloat($gongXian.data('num'))) {
+            alert('\u4F60\u5F53\u524D\u6CA1\u6709[' + totalMoney.toLocaleString() + ']\u8D21\u732E\u53EF\u4F9B\u8F6C\u8D26');
+            return;
+        }
+        if (!confirm('\u5171\u8BA1[' + realUsers.length + ']\u540D\u7528\u6237\uFF0C\u603B\u8BA1[' + totalMoney.toLocaleString() + ']\u8D21\u732E\uFF0C\u662F\u5426\u8F6C\u8D26\uFF1F')) return;
 
-        var $wait = Msg.wait('<strong>正在获取银行账户信息中&hellip;</strong>');
-        $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
-            Msg.remove($wait);
-            var matches = /当前所持：(-?\d+)KFB/.exec(html);
-            if (!matches) return;
-            var cash = parseInt(matches[1]);
-            matches = /活期存款：(-?\d+)KFB/.exec(html);
-            if (!matches) return;
-            var currentDeposit = parseInt(matches[1]);
-            matches = /可转账额度：(\d+)/.exec(html);
-            if (!matches) return;
-            var transferLimit = parseInt(matches[1]);
-            if (totalMoney > cash + currentDeposit) {
-                alert('资金不足');
-                return;
-            }
-            if (totalMoney > transferLimit) {
-                alert('转账额度不足');
-                return;
-            }
-            setNodeValue($('#pdCash'), cash);
-            setNodeValue($('#pdCurrentDeposit'), currentDeposit);
-            setNodeValue($('#pdTransferLimit'), transferLimit);
-
-            $(document).clearQueue('Bank');
-            var isDeposited = false;
-            var diff = totalMoney - currentDeposit;
-            if (diff > 0) {
-                isDeposited = true;
-                var _$wait = Msg.wait('<strong>正在存款中&hellip;</strong>');
-                saveOrDrawMoney('save', 1, diff, function (msg) {
-                    Msg.remove(_$wait);
-                    if (/完成存款/.test(msg)) {
-                        setNodeValue($('#pdCash'), '-=' + diff);
-                        setNodeValue($('#pdCurrentDeposit'), '+=' + diff);
-                        setTimeout(function () {
-                            return $(document).dequeue('Bank');
-                        }, _Const2.default.bankActionInterval);
-                    } else {
-                        alert('存款失败');
-                    }
-                });
-            }
-            Msg.wait('<strong>\u6B63\u5728\u6279\u91CF\u8F6C\u8D26\u4E2D\uFF0C\u8BF7\u8010\u5FC3\u7B49\u5F85&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + users.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
-            $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
-            batchTransfer(users, msg, isDeposited);
-        });
+        Msg.wait('<strong>\u6B63\u5728\u6279\u91CF\u8F6C\u8D26\u4E2D\uFF0C\u8BF7\u8010\u5FC3\u7B49\u5F85&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + users.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
+        $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
+        batchTransfer(users, msg);
     }).find('[name="random"]').click(function () {
         var userList = [];
         var _iteratorNormalCompletion3 = true;
@@ -770,16 +682,16 @@ var addBatchTransferButton = function addBatchTransferButton() {
 
         if (!userList.length) return;
 
-        var range = prompt('设定随机金额的范围（注：最低转账金额为20KFB）', '20-100');
+        var range = prompt('设定随机数额的范围（注：最低转账数额为0.1贡献）', '0.1-1');
         if (range === null) return;
         range = $.trim(range);
-        if (!/^\d+-\d+$/.test(range)) {
-            alert('随机金额范围格式不正确');
+        if (!/^\d+(?:\.\d+)?-\d+(?:\.\d+)?$/.test(range)) {
+            alert('随机数额范围格式不正确');
             return;
         }
         var arr = range.split('-');
-        var min = parseInt(arr[0]),
-            max = parseInt(arr[1]);
+        var min = parseFloat(arr[0]),
+            max = parseFloat(arr[1]);
         if (max < min) {
             alert('最大值不能低于最小值');
             return;
@@ -794,7 +706,7 @@ var addBatchTransferButton = function addBatchTransferButton() {
             for (var _iterator4 = userList[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
                 var userName = _step4.value;
 
-                content += userName + ':' + Math.floor(Math.random() * (max - min + 1) + min) + '\n';
+                content += userName + ':' + Math.floor((Math.random() * (max - min + 0.1) + min) * 10) / 10 + '\n';
             }
         } catch (err) {
             _didIteratorError4 = true;
@@ -812,28 +724,6 @@ var addBatchTransferButton = function addBatchTransferButton() {
         }
 
         $area.find('[name="users"]').val(content);
-    });
-};
-
-/**
- * 定期存款到期提醒
- */
-var fixedDepositDueAlert = exports.fixedDepositDueAlert = function fixedDepositDueAlert() {
-    console.log('定期存款到期提醒Start');
-    $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
-        Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(1));
-        var matches = /可获利息：(\d+)/.exec(html);
-        if (!matches) return;
-        var interest = parseInt(matches[1]);
-        if (interest > 0) {
-            Util.setCookie(_Const2.default.fixedDepositDueAlertCookieName, 1, Util.getMidnightHourDate(7));
-            var $msg = Msg.show('<strong>\u60A8\u7684\u5B9A\u671F\u5B58\u6B3E\u5DF2\u5230\u671F\uFF0C\u5171\u4EA7\u751F\u5229\u606F<em>' + interest.toLocaleString() + '</em>KFB\uFF0C\u662F\u5426\u524D\u5F80\u94F6\u884C\u53D6\u6B3E\uFF1F</strong><br>' + '<a class="pd_highlight" href="hack.php?H_name=bank">前往</a><a data-name="cancel" href="#">取消</a>', -1);
-            $msg.find('[data-name="cancel"]').click(function (e) {
-                e.preventDefault();
-                $msg.click();
-            });
-            Script.runFunc('Bank.fixedDepositDueAlert_success_', { html: html, interest: interest });
-        }
     });
 };
 
@@ -1180,8 +1070,6 @@ var Config = exports.Config = {
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',
-    // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
-    fixedDepositDueAlertEnabled: false,
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
@@ -1280,13 +1168,6 @@ var Config = exports.Config = {
     // 关键字可使用普通字符串或正则表达式（正则表达式请使用'/abc/'的格式），includeUser、excludeUser、includeFid和excludeFid这三项为可选
     // 例：[{keyWord: '标题1'}, {keyWord: '标题2', includeUser:['用户名1', '用户名2'], includeFid: [5, 56]}, {keyWord: '/关键字A.*关键字B/i', excludeFid: [92, 127, 68]}]
     blockThreadList: [],
-
-    // 是否在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发，true：开启；false：关闭
-    autoSaveCurrentDepositEnabled: false,
-    // 在当前收入已满指定KFB额度之后自动进行活期存款，例：1000
-    saveCurrentDepositAfterKfb: 0,
-    // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
-    saveCurrentDepositKfb: 0,
 
     // 日志保存天数
     logSaveDays: 30,
@@ -1522,7 +1403,7 @@ var show = exports.show = function show() {
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     Script.runFunc('ConfigDialog.show_before_');
-    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="openClearDataDialog" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684\u6570\u636E" href="#">\u6E05\u9664\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u3001\u81EA\u52A8\u4E89\u593A\u3001\u81EA\u52A8\u8D2D\u4E70\u7269\u54C1\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoPromoteHaloEnabled" type="checkbox"> \u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF</label>\n      </legend>\n      <label>\n        \u82B1\u8D39\n        <select name="promoteHaloCostType" required>\n          <option value="1">100KFB</option>\n          <option value="2">1000KFB</option>\n          <option value="11">0.2\u8D21\u732E</option>\n          <option value="12">2\u8D21\u732E</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u82B1\u8D39\u7C7B\u578B">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n         \u9AD8\u4E8E <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>\n         <span data-id="promoteHaloLimitUnit">KFB</span>\u65F6\n         <span class="pd_cfg_tips" title="\u5728\u64CD\u4F5C\u540E\u6240\u5269\u4F59\u7684KFB\u6216\u8D21\u732E\u9AD8\u4E8E\u6307\u5B9A\u503C\u65F6\u624D\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\uFF0C\u8BBE\u4E3A0\u8868\u793A\u4E0D\u9650\u5236">[?]</span>\n      </label><br>\n      <label>\n        \u6BCF\u9694 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> \u5C0F\u65F6\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF0C\u6700\u4F4E\u503C\uFF1A8\u5C0F\u65F6">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> \u81EA\u52A8\u5224\u65AD\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u5224\u65AD\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF08\u5728\u6709\u5269\u4F59\u6B21\u6570\u65F6\u5C3D\u53EF\u80FD\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox" data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> \u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u68C0\u67E5\u5E76\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\uFF08\u4F7F\u7528\u52A9\u624B\u8FDB\u884C\u4E89\u593A\u7684\u7528\u6237\u8BF7\u52FF\u52FE\u9009\u6B64\u9009\u9879\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u5728 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u68C0\u67E5\u4E89\u593A\u60C5\u51B5\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:05:00\uFF08\u6CE8\uFF1A\u8BF7\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u56E0\u672C\u5730\u65F6\u95F4\u4E0E\u670D\u52A1\u5668\u65F6\u95F4\u6709\u5DEE\u5F02\u5BFC\u81F4\u5931\u6548\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u4FDD\u5B58\u6700\u8FD1\u7684 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> \u6B21\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u4E89\u593A\u8BB0\u5F55\u6700\u5927\u4FDD\u5B58\u6B21\u6570\uFF0C\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveMaxNum + '\uFF0C\u6700\u5927\u503C\uFF1A20">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> \u5728\u4E89\u593A\u540E\u81EA\u52A8\u4E00\u952E\u5F00\u76D2\n        <span class="pd_cfg_tips" title="\u5728\u4E89\u593A\u5B8C\u540E\u81EA\u52A8\u4E00\u952E\u5F00\u76D2\uFF08\u5E76\u6267\u884C\u540E\u7EED\u64CD\u4F5C\uFF09\uFF0C\u8981\u6253\u5F00\u7684\u76D2\u5B50\u79CD\u7C7B\u548C\u8981\u6267\u884C\u7684\u540E\u7EED\u64CD\u4F5C\u8BF7\u5728\u6211\u7684\u7269\u54C1\u9875\u9762\u8FDB\u884C\u8BBE\u5B9A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showChangePointsInfoEnabled" type="checkbox"> \u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\uFF0C\u51B7\u5374\u65F6\u5219\u663E\u793A\u5012\u8BA1\u65F6">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoBuyItemEnabled" type="checkbox"> \u81EA\u52A8\u8D2D\u4E70\u7269\u54C1</label>\n      </legend>\n      <label>\n        \u7269\u54C1ID\u5217\u8868 <input name="buyItemIdList" type="text" maxlength="50" style="width: 150px;">\n      </label>\n      <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">\u8BE6\u7EC6\u8BF4\u660E&raquo;</a><br>\n      <label>\n        \u5728 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:40:00\uFF08\u6CE8\uFF1A\u8BF7\u4E0D\u8981\u8BBE\u7F6E\u4E3A\u572800:25:00\u4E4B\u524D\u7684\u65F6\u95F4\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 140px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="fixedDepositDueAlertEnabled" type="checkbox"> \u5B9A\u671F\u5B58\u6B3E\u5230\u671F\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u5B9A\u65F6\u5B58\u6B3E\u5230\u671F\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u7B49\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86\u8BBA\u575B\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u5728\u697C\u5C42\u5185\u7684\u7528\u6237\u540D\u65C1\u663E\u793A\u8BE5\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="buyThreadNoJumpEnabled" type="checkbox" data-disabled="[name=saveBuyThreadLogEnabled]" data-mutex="true"> \u8D2D\u4E70\u5E16\u5B50\u65F6\u4E0D\u8DF3\u8F6C\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="saveBuyThreadLogEnabled" type="checkbox"> \u4FDD\u5B58\u8D2D\u4E70\u5E16\u5B50\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4FDD\u5B58\u8D2D\u4E70\u5E16\u5B50\u7684\u8BB0\u5F55\uFF0C\u53EF\u5728\u52A9\u624B\u65E5\u5FD7\u6216\u8D2D\u4E70\u4EBA\u540D\u5355\u91CC\u70B9\u51FB\u67E5\u770B\u8D2D\u4E70\u8BB0\u5F55\uFF08\u9700\u540C\u65F6\u5F00\u542F\u201C\u8D2D\u4E70\u5E16\u5B50\u65F6\u4E0D\u8DF3\u8F6C\u201D\u7684\u529F\u80FD\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInSpecialDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15\uFF08\u9ED8\u8BA4\u503C\uFF1A-1\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="270" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u65E5\u5FD7\u4FDD\u5B58\u5929\u6570\uFF0C\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '\uFF0C\u6700\u5927\u503C\uFF1A270">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7528\u6237\u83DC\u5355\u4E0A\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addFastNavMenuEnabled" type="checkbox"> \u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355\n        <span class="pd_cfg_tips" title="\u4E3A\u9876\u90E8\u5BFC\u822A\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u4E2D\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label>\n          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> \u81EA\u52A8\u6D3B\u671F\u5B58\u6B3E\n          <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u6EE1\u8DB3\u6307\u5B9A\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u5C06\u6307\u5B9A\u6570\u989D\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u53EA\u4F1A\u5728\u9996\u9875\u89E6\u53D1">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB\u4E4B\u540E\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u524D\u6536\u5165\u5DF2\u6EE1\u6307\u5B9AKFB\u989D\u5EA6\u4E4B\u540E\u81EA\u52A8\u8FDB\u884C\u6D3B\u671F\u5B58\u6B3E\uFF0C\u4F8B\uFF1A1000">[?]</span>\n      </label><br>\n      <label>\n        \u5C06 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\n        <span class="pd_cfg_tips" title="\u5C06\u6307\u5B9A\u989D\u5EA6\u7684KFB\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E\u4E2D\uFF0C\u4F8B\uFF1A900\uFF1B\u4E3E\u4F8B\uFF1A\u8BBE\u5B9A\u5DF2\u6EE11000\u5B58900\uFF0C\u5F53\u524D\u6536\u5165\u4E3A2000\uFF0C\u5219\u81EA\u52A8\u5B58\u5165\u91D1\u989D\u4E3A1800">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://gitee.com/miaolapd/KF_Online_Assistant/wikis/pages?title=%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
+    var html = '\n<div class="pd_cfg_main">\n  <div class="pd_cfg_nav">\n    <a class="pd_btn_link" data-name="openClearDataDialog" title="\u6E05\u9664\u4E0E\u52A9\u624B\u6709\u5173\u7684\u6570\u636E" href="#">\u6E05\u9664\u6570\u636E</a>\n    <a class="pd_btn_link" data-name="openRumCommandDialog" href="#">\u8FD0\u884C\u547D\u4EE4</a>\n    <a class="pd_btn_link" data-name="openImportOrExportSettingDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u8BBE\u7F6E</a>\n  </div>\n\n  <div class="pd_cfg_panel" style="margin-bottom: 5px;">\n    <fieldset>\n      <legend>\n        <label>\n          <input name="timingModeEnabled" type="checkbox"> \u5B9A\u65F6\u6A21\u5F0F\n          <span class="pd_cfg_tips" title="\u53EF\u6309\u65F6\u8FDB\u884C\u81EA\u52A8\u64CD\u4F5C\uFF08\u5305\u62EC\u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1\u3001\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u3001\u81EA\u52A8\u4E89\u593A\u3001\u81EA\u52A8\u8D2D\u4E70\u7269\u54C1\uFF0C\u9700\u5F00\u542F\u76F8\u5173\u529F\u80FD\uFF09\n\u53EA\u5728\u8BBA\u575B\u9996\u9875\u548C\u4E89\u593A\u9996\u9875\u751F\u6548\uFF08\u4E0D\u5F00\u542F\u6B64\u6A21\u5F0F\u7684\u8BDD\u53EA\u80FD\u5728\u5237\u65B0\u9875\u9762\u540E\u624D\u4F1A\u8FDB\u884C\u64CD\u4F5C\uFF09">[?]</span>\n        </label>\n      </legend>\n      <label>\n        \u6807\u9898\u63D0\u793A\u65B9\u6848\n        <select name="showTimingModeTipsType">\n          <option value="auto">\u505C\u7559\u4E00\u5206\u949F\u540E\u663E\u793A</option>\n          <option value="always">\u603B\u662F\u663E\u793A</option>\n          <option value="never">\u4E0D\u663E\u793A</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u7684\u7F51\u9875\u6807\u9898\u4E0A\u663E\u793A\u5B9A\u65F6\u6A21\u5F0F\u63D0\u793A\u7684\u65B9\u6848">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoGetDailyBonusEnabled" type="checkbox"> \u81EA\u52A8\u9886\u53D6\u6BCF\u65E5\u5956\u52B1</label>\n      </legend>\n      <label>\n        <input name="getBonusAfterLootCompleteEnabled" type="checkbox"> \u5B8C\u6210\u4E89\u593A\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u4E89\u593A\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="getBonusAfterSpeakCompleteEnabled" type="checkbox"> \u5B8C\u6210\u53D1\u8A00\u540E\u624D\u9886\u53D6\n        <span class="pd_cfg_tips" title="\u5728\u5B8C\u6210\u53D1\u8A00\u5956\u52B1\u540E\u624D\u9886\u53D6\u6BCF\u65E5\u5956\u52B1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoPromoteHaloEnabled" type="checkbox"> \u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF</label>\n      </legend>\n      <label>\n        \u82B1\u8D39\n        <select name="promoteHaloCostType" required>\n          <option value="1">100KFB</option>\n          <option value="2">1000KFB</option>\n          <option value="11">0.2\u8D21\u732E</option>\n          <option value="12">2\u8D21\u732E</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u82B1\u8D39\u7C7B\u578B">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n         \u9AD8\u4E8E <input name="promoteHaloLimit" type="number" min="0" step="0.1" style="width: 55px;" required>\n         <span data-id="promoteHaloLimitUnit">KFB</span>\u65F6\n         <span class="pd_cfg_tips" title="\u5728\u64CD\u4F5C\u540E\u6240\u5269\u4F59\u7684KFB\u6216\u8D21\u732E\u9AD8\u4E8E\u6307\u5B9A\u503C\u65F6\u624D\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\uFF0C\u8BBE\u4E3A0\u8868\u793A\u4E0D\u9650\u5236">[?]</span>\n      </label><br>\n      <label>\n        \u6BCF\u9694 <input name="promoteHaloInterval" type="number" min="8" style="width: 40px;" required> \u5C0F\u65F6\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF0C\u6700\u4F4E\u503C\uFF1A8\u5C0F\u65F6">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="promoteHaloAutoIntervalEnabled" type="checkbox" data-mutex="[name=promoteHaloInterval]"> \u81EA\u52A8\u5224\u65AD\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u5224\u65AD\u63D0\u5347\u6218\u529B\u5149\u73AF\u7684\u95F4\u9694\u65F6\u95F4\uFF08\u5728\u6709\u5269\u4F59\u6B21\u6570\u65F6\u5C3D\u53EF\u80FD\u4F7F\u7528\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u4E89\u593A\u76F8\u5173</legend>\n      <label>\n        <input name="autoLootEnabled" type="checkbox" data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> \u81EA\u52A8\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5F53\u53D1\u73B0\u53EF\u4EE5\u8FDB\u884C\u4E89\u593A\u65F6\uFF0C\u4F1A\u8DF3\u8F6C\u5230\u4E89\u593A\u9996\u9875\u8FDB\u884C\u81EA\u52A8\u653B\u51FB\uFF08\u70B9\u6570\u5206\u914D\u7B49\u76F8\u5173\u529F\u80FD\u8BF7\u5728\u4E89\u593A\u9996\u9875\u4E0A\u8BBE\u7F6E\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u653B\u51FB\u5230\u7B2C <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> \u5C42\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4E89\u593A\u7684\u76EE\u6807\u653B\u51FB\u5C42\u6570\uFF08\u8BBE\u4E3A0\u8868\u793A\u653B\u51FB\u5230\u88AB\u51FB\u8D25\u4E3A\u6B62\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> \u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u5728\u4E0D\u4F7F\u7528\u52A9\u624B\u4E89\u593A\u7684\u60C5\u51B5\u4E0B\u81EA\u52A8\u68C0\u67E5\u5E76\u4FDD\u5B58\u4E89\u593A\u8BB0\u5F55\uFF08\u4F7F\u7528\u52A9\u624B\u8FDB\u884C\u4E89\u593A\u7684\u7528\u6237\u8BF7\u52FF\u52FE\u9009\u6B64\u9009\u9879\uFF09">[?]</span>\n      </label><br>\n      <label>\n        \u5728 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u4E89\u593A\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u68C0\u67E5\u4E89\u593A\u60C5\u51B5\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:05:00\uFF08\u6CE8\uFF1A\u8BF7\u4E0D\u8981\u8BBE\u7F6E\u5F97\u592A\u63A5\u8FD1\u96F6\u70B9\uFF0C\u4EE5\u514D\u56E0\u672C\u5730\u65F6\u95F4\u4E0E\u670D\u52A1\u5668\u65F6\u95F4\u6709\u5DEE\u5F02\u5BFC\u81F4\u5931\u6548\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u4FDD\u5B58\u6700\u8FD1\u7684 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> \u6B21\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u4E89\u593A\u8BB0\u5F55\u6700\u5927\u4FDD\u5B58\u6B21\u6570\uFF0C\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.lootLogSaveMaxNum + '\uFF0C\u6700\u5927\u503C\uFF1A20">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> \u5728\u4E89\u593A\u540E\u81EA\u52A8\u4E00\u952E\u5F00\u76D2\n        <span class="pd_cfg_tips" title="\u5728\u4E89\u593A\u5B8C\u540E\u81EA\u52A8\u4E00\u952E\u5F00\u76D2\uFF08\u5E76\u6267\u884C\u540E\u7EED\u64CD\u4F5C\uFF09\uFF0C\u8981\u6253\u5F00\u7684\u76D2\u5B50\u79CD\u7C7B\u548C\u8981\u6267\u884C\u7684\u540E\u7EED\u64CD\u4F5C\u8BF7\u5728\u6211\u7684\u7269\u54C1\u9875\u9762\u8FDB\u884C\u8BBE\u5B9A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="showChangePointsInfoEnabled" type="checkbox"> \u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u663E\u793A\u6539\u70B9\u5269\u4F59\u6B21\u6570\uFF0C\u51B7\u5374\u65F6\u5219\u663E\u793A\u5012\u8BA1\u65F6">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\n        <label><input name="autoBuyItemEnabled" type="checkbox"> \u81EA\u52A8\u8D2D\u4E70\u7269\u54C1</label>\n      </legend>\n      <label>\n        \u7269\u54C1ID\u5217\u8868 <input name="buyItemIdList" type="text" maxlength="50" style="width: 150px;">\n      </label>\n      <a class="pd_cfg_ml" data-name="openBuyItemTipsDialog" href="#">\u8BE6\u7EC6\u8BF4\u660E&raquo;</a><br>\n      <label>\n        \u5728 <input name="buyItemAfterTime" type="text" maxlength="8" style="width: 55px;" required> \u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\n        <span class="pd_cfg_tips" title="\u5728\u5F53\u5929\u7684\u6307\u5B9A\u65F6\u95F4\u4E4B\u540E\u8D2D\u4E70\u7269\u54C1\uFF08\u672C\u5730\u65F6\u95F4\uFF09\uFF0C\u4F8B\uFF1A00:40:00\uFF08\u6CE8\uFF1A\u8BF7\u4E0D\u8981\u8BBE\u7F6E\u4E3A\u572800:25:00\u4E4B\u524D\u7684\u65F6\u95F4\uFF09">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u9996\u9875\u76F8\u5173</legend>\n      <label>\n        @\u63D0\u9192\n        <select name="atTipsHandleType" style="width: 140px;">\n          <option value="no_highlight">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE</option>\n          <option value="no_highlight_extra">\u53D6\u6D88\u5DF2\u8BFB\u63D0\u9192\u9AD8\u4EAE\uFF0C\u5E76\u5728\u65E0\u63D0\u9192\u65F6\u8865\u4E0A\u6D88\u606F\u6846</option>\n          <option value="hide_box_1">\u4E0D\u663E\u793A\u5DF2\u8BFB\u63D0\u9192\u7684\u6D88\u606F\u6846</option>\n          <option value="hide_box_2">\u6C38\u4E0D\u663E\u793A\u6D88\u606F\u6846</option>\n          <option value="default">\u4FDD\u6301\u9ED8\u8BA4</option>\n          <option value="at_change_to_cao">\u5C06@\u6539\u4E3A\u8279(\u5176\u4ED6\u548C\u65B9\u5F0F2\u76F8\u540C)</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u5BF9\u9996\u9875\u4E0A\u7684\u6709\u4EBA@\u4F60\u7684\u6D88\u606F\u6846\u8FDB\u884C\u5904\u7406\u7684\u65B9\u6848">[?]</span>\n      </label><br>\n      <label>\n        <input name="smLevelUpAlertEnabled" type="checkbox"> \u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7B49\u7EA7\u5347\u7EA7\u540E\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="smRankChangeAlertEnabled" type="checkbox"> \u7CFB\u6570\u6392\u540D\u53D8\u5316\u63D0\u9192\n        <span class="pd_cfg_tips" title="\u5728\u795E\u79D8\u7CFB\u6570\u6392\u540D\u53D1\u751F\u53D8\u5316\u65F6\u8FDB\u884C\u63D0\u9192\uFF0C\u53EA\u5728\u9996\u9875\u751F\u6548">[?]</span>\n      </label><br>\n      <label>\n        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> \u5728\u9996\u9875\u5E16\u5B50\u65C1\u663E\u793A\u8DF3\u8F6C\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u9996\u9875\u5E16\u5B50\u94FE\u63A5\u65C1\u663E\u793A\u5FEB\u901F\u8DF3\u8F6C\u81F3\u9875\u672B\u7684\u94FE\u63A5">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u7248\u5757\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        <input name="showFastGotoThreadPageEnabled" type="checkbox" data-disabled="[name=maxFastGotoThreadPageNum]"> \u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u663E\u793A\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u9875\u6570\u94FE\u63A5\u6700\u5927\u6570\u91CF <input name="maxFastGotoThreadPageNum" type="number" min="1" max="10" style="width: 40px;" required>\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u4E2D\u663E\u793A\u9875\u6570\u94FE\u63A5\u7684\u6700\u5927\u6570\u91CF">[?]</span>\n      </label><br>\n      <label>\n        <input name="highlightNewPostEnabled" type="checkbox"> \u9AD8\u4EAE\u4ECA\u65E5\u7684\u65B0\u5E16\n        <span class="pd_cfg_tips" title="\u5728\u7248\u5757\u9875\u9762\u4E2D\u9AD8\u4EAE\u4ECA\u65E5\u65B0\u53D1\u8868\u5E16\u5B50\u7684\u53D1\u8868\u65F6\u95F4">[?]</span>\n      </label>\n    </fieldset>\n  </div>\n\n  <div class="pd_cfg_panel">\n    <fieldset>\n      <legend>\u5E16\u5B50\u9875\u9762\u76F8\u5173</legend>\n      <label>\n        \u5E16\u5B50\u6BCF\u9875\u697C\u5C42\u6570\u91CF\n        <select name="perPageFloorNum">\n          <option value="10">10</option>\n          <option value="20">20</option>\n          <option value="30">30</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u7535\u68AF\u76F4\u8FBE\u548C\u5E16\u5B50\u9875\u6570\u5FEB\u6377\u94FE\u63A5\u7B49\u529F\u80FD\uFF0C\u5982\u679C\u4FEE\u6539\u4E86\u8BBA\u575B\u8BBE\u7F6E\u91CC\u7684\u201C\u6587\u7AE0\u5217\u8868\u6BCF\u9875\u4E2A\u6570\u201D\uFF0C\u8BF7\u5728\u6B64\u4FEE\u6539\u6210\u76F8\u540C\u7684\u6570\u76EE">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F <input name="threadContentFontSize" type="number" min="7" max="72" style="width: 40px;"> px\n        <span class="pd_cfg_tips" title="\u5E16\u5B50\u5185\u5BB9\u5B57\u4F53\u5927\u5C0F\uFF0C\u7559\u7A7A\u8868\u793A\u4F7F\u7528\u9ED8\u8BA4\u5927\u5C0F\uFF0C\u63A8\u8350\u503C\uFF1A14">[?]</span>\n      </label><br>\n      <label>\n        <input name="adjustThreadContentWidthEnabled" type="checkbox"> \u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\n        <span class="pd_cfg_tips" title="\u8C03\u6574\u5E16\u5B50\u5185\u5BB9\u5BBD\u5EA6\uFF0C\u4F7F\u5176\u4FDD\u6301\u4E00\u81F4">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="turnPageViaKeyboardEnabled" type="checkbox"> \u901A\u8FC7\u5DE6\u53F3\u952E\u7FFB\u9875\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u548C\u641C\u7D22\u9875\u9762\u901A\u8FC7\u5DE6\u53F3\u952E\u8FDB\u884C\u7FFB\u9875">[?]</span>\n      </label><br>\n      <label>\n        <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> \u81EA\u52A8\u66F4\u6362ID\u989C\u8272\n        <span class="pd_cfg_tips" title="\u53EF\u81EA\u52A8\u66F4\u6362ID\u989C\u8272\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u524D\u5F80\u76F8\u5E94\u9875\u9762\u8FDB\u884C\u81EA\u5B9A\u4E49\u8BBE\u7F6E">[?]</span>\n      </label>\n      <a data-name="openAutoChangeSmColorPage" class="pd_cfg_ml" target="_blank" href="kf_growup.php">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        \u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272 <input name="customMySmColor" maxlength="7" style="width: 50px;" type="text">\n        <input style="margin-left: 0;" type="color" data-name="customMySmColorSelect">\n        <span class="pd_cfg_tips" title="\u81EA\u5B9A\u4E49\u672C\u4EBA\u7684\u795E\u79D8\u989C\u8272\uFF08\u5305\u62EC\u5E16\u5B50\u9875\u9762\u7684ID\u663E\u793A\u989C\u8272\u548C\u697C\u5C42\u8FB9\u6846\u989C\u8272\uFF0C\u4EC5\u81EA\u5DF1\u53EF\u89C1\uFF09\uFF0C\u4F8B\uFF1A#009cff\uFF0C\u5982\u65E0\u9700\u6C42\u53EF\u7559\u7A7A">[?]</span>\n      </label><br>\n      <label>\n        <input name="userMemoEnabled" type="checkbox" data-disabled="[data-name=openUserMemoDialog]"> \u663E\u793A\u7528\u6237\u5907\u6CE8\n        <span class="pd_cfg_tips" title="\u5728\u697C\u5C42\u5185\u7684\u7528\u6237\u540D\u65C1\u663E\u793A\u8BE5\u7528\u6237\u7684\u81EA\u5B9A\u4E49\u5907\u6CE8\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u81EA\u5B9A\u4E49\u7528\u6237\u5907\u6CE8">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openUserMemoDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="modifyKfOtherDomainEnabled" type="checkbox"> \u5C06\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D\n        <span class="pd_cfg_tips" title="\u5C06\u5E16\u5B50\u548C\u77ED\u6D88\u606F\u4E2D\u7684\u7EEF\u6708\u5176\u5B83\u57DF\u540D\u7684\u94FE\u63A5\u4FEE\u6539\u4E3A\u5F53\u524D\u57DF\u540D">[?]</span>\n      </label><br>\n      <label>\n        <input name="multiQuoteEnabled" type="checkbox"> \u5F00\u542F\u591A\u91CD\u5F15\u7528\u529F\u80FD\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u5F00\u542F\u591A\u91CD\u56DE\u590D\u548C\u591A\u91CD\u5F15\u7528\u529F\u80FD">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="parseMediaTagEnabled" type="checkbox"> \u89E3\u6790\u591A\u5A92\u4F53\u6807\u7B7E\n        <span class="pd_cfg_tips" title="\u5728\u5E16\u5B50\u9875\u9762\u89E3\u6790HTML5\u591A\u5A92\u4F53\u6807\u7B7E\uFF0C\u8BE6\u89C1\u3010\u5E38\u89C1\u95EE\u989812\u3011">[?]</span>\n      </label><br>\n      <label>\n        <input name="buyThreadNoJumpEnabled" type="checkbox" data-disabled="[name=saveBuyThreadLogEnabled]" data-mutex="true"> \u8D2D\u4E70\u5E16\u5B50\u65F6\u4E0D\u8DF3\u8F6C\n        <span class="pd_cfg_tips" title="\u4F7F\u7528Ajax\u7684\u65B9\u5F0F\u8D2D\u4E70\u5E16\u5B50\uFF0C\u8D2D\u4E70\u65F6\u9875\u9762\u4E0D\u4F1A\u8DF3\u8F6C">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="saveBuyThreadLogEnabled" type="checkbox"> \u4FDD\u5B58\u8D2D\u4E70\u5E16\u5B50\u8BB0\u5F55\n        <span class="pd_cfg_tips" title="\u81EA\u52A8\u4FDD\u5B58\u8D2D\u4E70\u5E16\u5B50\u7684\u8BB0\u5F55\uFF0C\u53EF\u5728\u52A9\u624B\u65E5\u5FD7\u6216\u8D2D\u4E70\u4EBA\u540D\u5355\u91CC\u70B9\u51FB\u67E5\u770B\u8D2D\u4E70\u8BB0\u5F55\uFF08\u9700\u540C\u65F6\u5F00\u542F\u201C\u8D2D\u4E70\u5E16\u5B50\u65F6\u4E0D\u8DF3\u8F6C\u201D\u7684\u529F\u80FD\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="preventCloseWindowWhenEditPostEnabled" type="checkbox"> \u5199\u5E16\u5B50\u65F6\u963B\u6B62\u5173\u95ED\u9875\u9762\n        <span class="pd_cfg_tips" title="\u5728\u64B0\u5199\u53D1\u5E16\u5185\u5BB9\u65F6\uFF0C\u5982\u4E0D\u5C0F\u5FC3\u5173\u95ED\u4E86\u9875\u9762\u4F1A\u8FDB\u884C\u63D0\u793A">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> \u63D0\u4EA4\u65F6\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\n        <span class="pd_cfg_tips" title="\u5728\u63D0\u4EA4\u65F6\u81EA\u52A8\u4FDD\u5B58\u53D1\u5E16\u5185\u5BB9\uFF0C\u4EE5\u4FBF\u5728\u51FA\u73B0\u610F\u5916\u60C5\u51B5\u65F6\u80FD\u591F\u6062\u590D\u53D1\u5E16\u5185\u5BB9\uFF08\u9700\u5728\u4E0D\u5173\u95ED\u5F53\u524D\u6807\u7B7E\u9875\u7684\u60C5\u51B5\u4E0B\u624D\u80FD\u8D77\u6548\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ' + (_Info2.default.isInSpecialDomain ? '' : 'disabled') + '> \u5F00\u542F\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\n        <span class="pd_cfg_tips" title="\u5728\u53D1\u5E16\u6846\u4E0A\u663E\u793A\u7EEF\u6708\u8868\u60C5\u589E\u5F3A\u63D2\u4EF6\uFF08\u4EC5\u5728miaola.info\u57DF\u540D\u4E0B\u751F\u6548\uFF09\uFF0C\u8BE5\u63D2\u4EF6\u7531eddie32\u5F00\u53D1">[?]</span>\n      </label>\n    </fieldset>\n    <fieldset>\n      <legend>\u5176\u5B83\u8BBE\u7F6E</legend>\n      <label class="pd_highlight">\n        \u5B58\u50A8\u7C7B\u578B\n        <select data-name="storageType">\n          <option value="Default">\u9ED8\u8BA4</option>\n          <option value="ByUid">\u6309uid</option>\n          <option value="Global">\u5168\u5C40</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u52A9\u624B\u8BBE\u7F6E\u548C\u65E5\u5FD7\u7684\u5B58\u50A8\u65B9\u5F0F\uFF0C\u8BE6\u60C5\u53C2\u89C1\u3010\u5E38\u89C1\u95EE\u98981\u3011">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u6D4F\u89C8\u5668\u7C7B\u578B\n        <select name="browseType">\n          <option value="auto">\u81EA\u52A8\u68C0\u6D4B</option>\n          <option value="desktop">\u684C\u9762\u7248</option>\n          <option value="mobile">\u79FB\u52A8\u7248</option>\n        </select>\n        <span class="pd_cfg_tips" title="\u7528\u4E8E\u5728KFOL\u52A9\u624B\u4E0A\u5224\u65AD\u6D4F\u89C8\u5668\u7684\u7C7B\u578B\uFF0C\u4E00\u822C\u4F7F\u7528\u81EA\u52A8\u68C0\u6D4B\u5373\u53EF\uFF1B\n\u5982\u679C\u5F53\u524D\u6D4F\u89C8\u5668\u4E0E\u81EA\u52A8\u68C0\u6D4B\u7684\u7C7B\u578B\u4E0D\u76F8\u7B26\uFF08\u79FB\u52A8\u7248\u4F1A\u5728\u8BBE\u7F6E\u754C\u9762\u6807\u9898\u4E0A\u663E\u793A\u201CFor Mobile\u201D\u7684\u5B57\u6837\uFF09\uFF0C\u8BF7\u624B\u52A8\u8BBE\u7F6E\u4E3A\u6B63\u786E\u7684\u7C7B\u578B">[?]</span>\n      </label><br>\n      <label>\n        \u6D88\u606F\u663E\u793A\u65F6\u95F4 <input name="defShowMsgDuration" type="number" min="-1" style="width: 46px;" required> \u79D2\n        <span class="pd_cfg_tips" title="\u9ED8\u8BA4\u7684\u6D88\u606F\u663E\u793A\u65F6\u95F4\uFF08\u79D2\uFF09\uFF0C\u8BBE\u7F6E\u4E3A-1\u8868\u793A\u6C38\u4E45\u663E\u793A\uFF0C\u4F8B\uFF1A15\uFF08\u9ED8\u8BA4\u503C\uFF1A-1\uFF09">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        \u65E5\u5FD7\u4FDD\u5B58\u5929\u6570 <input name="logSaveDays" type="number" min="1" max="270" style="width: 46px;" required>\n        <span class="pd_cfg_tips" title="\u65E5\u5FD7\u4FDD\u5B58\u5929\u6570\uFF0C\u9ED8\u8BA4\u503C\uFF1A' + _Config.Config.logSaveDays + '\uFF0C\u6700\u5927\u503C\uFF1A270">[?]</span>\n      </label><br>\n      <label>\n        <input name="showSearchLinkEnabled" type="checkbox"> \u663E\u793A\u641C\u7D22\u94FE\u63A5\n        <span class="pd_cfg_tips" title="\u5728\u7528\u6237\u83DC\u5355\u4E0A\u663E\u793A\u641C\u7D22\u5BF9\u8BDD\u6846\u7684\u94FE\u63A5">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="animationEffectOffEnabled" type="checkbox"> \u7981\u7528\u52A8\u753B\u6548\u679C\n        <span class="pd_cfg_tips" title="\u7981\u7528jQuery\u7684\u52A8\u753B\u6548\u679C\uFF08\u63A8\u8350\u5728\u914D\u7F6E\u8F83\u5DEE\u7684\u673A\u5668\u4E0A\u4F7F\u7528\uFF09">[?]</span>\n      </label><br>\n      <label>\n        <input name="addFastNavMenuEnabled" type="checkbox"> \u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355\n        <span class="pd_cfg_tips" title="\u4E3A\u9876\u90E8\u5BFC\u822A\u680F\u6DFB\u52A0\u5FEB\u6377\u5BFC\u822A\u83DC\u5355">[?]</span>\n      </label>\n      <label class="pd_cfg_ml">\n        <input name="modifySideBarEnabled" type="checkbox"> \u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u5E73\u94FA\u6837\u5F0F\n        <span class="pd_cfg_tips" title="\u5C06\u4FA7\u8FB9\u680F\u4FEE\u6539\u4E3A\u548C\u624B\u673A\u76F8\u540C\u7684\u5E73\u94FA\u6837\u5F0F">[?]</span>\n      </label><br>\n      <label>\n        <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> \u6DFB\u52A0\u81EA\u5B9A\u4E49CSS\n        <span class="pd_cfg_tips" title="\u4E3A\u9875\u9762\u6DFB\u52A0\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684CSS\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomCssDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> \u6267\u884C\u81EA\u5B9A\u4E49\u811A\u672C\n        <span class="pd_cfg_tips" title="\u6267\u884C\u81EA\u5B9A\u4E49\u7684javascript\u811A\u672C\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u586B\u5165\u81EA\u5B9A\u4E49\u7684\u811A\u672C\u5185\u5BB9">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a>\n    </fieldset>\n    <fieldset>\n      <legend>\u5173\u6CE8\u548C\u5C4F\u853D</legend>\n      <label>\n        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> \u5173\u6CE8\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5173\u6CE8\u7528\u6237\u7684\u529F\u80FD\uFF0C\u6240\u5173\u6CE8\u7684\u7528\u6237\u5C06\u88AB\u52A0\u6CE8\u8BB0\u53F7\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5173\u6CE8\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> \u5C4F\u853D\u7528\u6237\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u7528\u6237\u7684\u529F\u80FD\uFF0C\u4F60\u5C06\u770B\u4E0D\u89C1\u6240\u5C4F\u853D\u7528\u6237\u7684\u53D1\u8A00\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u7528\u6237">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n      <label>\n        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> \u5C4F\u853D\u5E16\u5B50\n        <span class="pd_cfg_tips" title="\u5F00\u542F\u5C4F\u853D\u6807\u9898\u4E2D\u5305\u542B\u6307\u5B9A\u5173\u952E\u5B57\u7684\u5E16\u5B50\u7684\u529F\u80FD\uFF0C\u8BF7\u70B9\u51FB\u8BE6\u7EC6\u8BBE\u7F6E\u7BA1\u7406\u5C4F\u853D\u5173\u952E\u5B57">[?]</span>\n      </label>\n      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">\u8BE6\u7EC6\u8BBE\u7F6E&raquo;</a><br>\n    </fieldset>\n  </div>\n</div>\n\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about">\n    <a target="_blank" href="read.php?tid=508450">By \u55B5\u62C9\u5E03\u4E01</a>\n    <i style="color: #666; font-style: normal;">(V' + _Info2.default.version + ')</i>\n    <a target="_blank" href="https://gitee.com/miaolapd/KF_Online_Assistant/wikis/pages?title=%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[\u5E38\u89C1\u95EE\u9898]</a>\n  </span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n  <button name="default" type="button">\u9ED8\u8BA4\u503C</button>\n</div>';
     var $dialog = Dialog.create(dialogName, 'KFOL助手设置' + (_Info2.default.isMobile ? ' (For Mobile)' : ''), html);
 
     $dialog.submit(function (e) {
@@ -1674,23 +1555,6 @@ var verifyMainConfig = function verifyMainConfig($dialog) {
         alert('自定义本人的神秘颜色格式不正确，例：#009cff');
         $txtCustomMySmColor.select().focus();
         return false;
-    }
-
-    var $txtSaveCurrentDepositAfterKfb = $dialog.find('[name="saveCurrentDepositAfterKfb"]');
-    var $txtSaveCurrentDepositKfb = $dialog.find('[name="saveCurrentDepositKfb"]');
-    var saveCurrentDepositAfterKfb = parseInt($txtSaveCurrentDepositAfterKfb.val());
-    var saveCurrentDepositKfb = parseInt($txtSaveCurrentDepositKfb.val());
-    if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
-        if (!saveCurrentDepositAfterKfb || saveCurrentDepositAfterKfb <= 0) {
-            alert('自动活期存款满足额度格式不正确');
-            $txtSaveCurrentDepositAfterKfb.select().focus();
-            return false;
-        }
-        if (!saveCurrentDepositKfb || saveCurrentDepositKfb <= 0 || saveCurrentDepositKfb > saveCurrentDepositAfterKfb) {
-            alert('想要存款的金额格式不正确');
-            $txtSaveCurrentDepositKfb.select().focus();
-            return false;
-        }
     }
 
     return true;
@@ -2552,10 +2416,6 @@ var Const = {
     smLevelUpAlertInterval: 3,
     // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
-    // 存储VIP剩余时间的Cookie有效期（分钟）
-    vipSurplusTimeExpires: 60,
-    // 定期存款到期期限（天）
-    fixedDepositDueTime: 90,
 
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
@@ -2603,8 +2463,6 @@ var Const = {
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
     smRankChangeTmpLogName: 'SmRankChange',
-    // 定期存款到期时间的临时日志名称
-    fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
     // 存储战力光环信息的临时日志名称
@@ -2630,8 +2488,6 @@ var Const = {
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
     prevReadAtTipsCookieName: 'prevReadAtTips',
-    // 标记已进行定期存款到期提醒的Cookie名称
-    fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
     // 标记已自动更换ID颜色的Cookie名称
     autoChangeIdColorCookieName: 'autoChangeIdColor'
 };
@@ -2779,7 +2635,7 @@ var close = exports.close = function close(id) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.handleIndexLink = exports.addSearchTypeSelectBox = exports.showVipSurplusTime = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.addSearchTypeSelectBox = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = exports.handleIndexLink = undefined;
 
 var _Info = require('./Info');
 
@@ -2812,6 +2668,31 @@ var Loot = _interopRequireWildcard(_Loot);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * 处理首页链接
+ */
+var handleIndexLink = exports.handleIndexLink = function handleIndexLink() {
+    var $kfb = $('a[href="javascript:;"][title="网站虚拟货币"]');
+    $kfb.attr('id', 'pdKfb');
+    var matches = /(-?\d+)KFB\s*\|\s*(-?\d+(?:\.\d+)?)贡献/.exec($kfb.text());
+    if (matches) {
+        var kfb = parseInt(matches[1]);
+        var gongXian = parseFloat(matches[2]);
+        $kfb.html('<b>' + kfb.toLocaleString() + '</b>KFB | <b>' + gongXian.toLocaleString() + '</b>\u8D21\u732E').attr('data-kfb', kfb).attr('data-gongxian', gongXian);
+    }
+
+    var $smLevel = $('a.indbox5[href="kf_growup.php"]');
+    $smLevel.attr('id', 'pdSmLevel');
+    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
+    if (matches) {
+        var smLevel = parseInt(matches[1]);
+        var smRank = matches[2];
+        $smLevel.html('\u795E\u79D8<b>' + smLevel + '</b>\u7EA7 (\u7CFB\u6570\u6392\u540D\u7B2C<b style="color: #00f;">' + smRank + '</b>\u4F4D)').attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
+    }
+
+    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
+};
 
 /**
  * 处理首页有人@你的消息框
@@ -2857,7 +2738,7 @@ var handleAtTips = exports.handleAtTips = function handleAtTips() {
             }
         } else if (!$atTips.length && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
             var html = '\n<div style="width: 300px;">\n  <a class="indbox6" href="guanjianci.php?gjc=' + _Info2.default.userName + '" target="_blank">\u6700\u8FD1\u65E0\u4EBA' + (type === 'at_change_to_cao' ? '艹' : '@') + '\u4F60</a><br>\n  <div class="line"></div>\n  <div class="c"></div>\n</div>\n<div class="line"></div>';
-            $('a[href="kf_givemekfb.php"][title="网站虚拟货币"]').parent().before(html);
+            $('#pdKfb').parent().before(html);
         }
     } else if (type === 'hide_box_2') {
         if ($atTips.length > 0) handleBox();
@@ -2943,33 +2824,6 @@ var addThreadFastGotoLink = exports.addThreadFastGotoLink = function addThreadFa
 };
 
 /**
- * 在首页显示VIP剩余时间
- */
-var showVipSurplusTime = exports.showVipSurplusTime = function showVipSurplusTime() {
-    /**
-     * 添加VIP剩余时间的提示
-     * @param {number} hours VIP剩余时间（小时）
-     */
-    var addVipHoursTips = function addVipHoursTips(hours) {
-        $('#pdSmLevel').parent().after('<div class="line"></div><div style="width: 300px;"><a href="kf_vmember.php" class="indbox' + (hours > 0 ? 5 : 6) + '">VIP\u4F1A\u5458 ' + ('(' + (hours > 0 ? '剩余' + hours + '小时' : '参与论坛获得的额外权限') + ')</a><div class="c"></div></div>'));
-    };
-
-    var vipHours = parseInt(Util.getCookie(_Const2.default.vipSurplusTimeCookieName));
-    if (isNaN(vipHours) || vipHours < 0) {
-        console.log('检查VIP剩余时间Start');
-        $.get('kf_vmember.php?t=' + $.now(), function (html) {
-            var hours = 0;
-            var matches = /我的VIP剩余时间\s*<b>(\d+)<\/b>\s*小时/i.exec(html);
-            if (matches) hours = parseInt(matches[1]);
-            Util.setCookie(_Const2.default.vipSurplusTimeCookieName, hours, Util.getDate('+' + _Const2.default.vipSurplusTimeExpires + 'm'));
-            addVipHoursTips(hours);
-        });
-    } else {
-        addVipHoursTips(vipHours);
-    }
-};
-
-/**
  * 在首页上添加搜索类型选择框
  */
 var addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function addSearchTypeSelectBox() {
@@ -2978,29 +2832,6 @@ var addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function addSearch
     var $keyWord = $form.find('[type="text"][name="keyword"]');
     $keyWord.css('width', '116px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
-};
-
-/**
- * 处理首页链接
- */
-var handleIndexLink = exports.handleIndexLink = function handleIndexLink() {
-    var $kfb = $('a[href="kf_givemekfb.php"]');
-    var matches = /拥有(-?\d+)KFB/.exec($kfb.text());
-    if (matches) {
-        var kfb = parseInt(matches[1]);
-        $kfb.html('\u62E5\u6709<b>' + kfb.toLocaleString() + '</b>KFB').attr('data-kfb', kfb);
-    }
-
-    var $smLevel = $('a.indbox5[href="kf_growup.php"]');
-    $smLevel.attr('id', 'pdSmLevel');
-    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
-    if (matches) {
-        var smLevel = parseInt(matches[1]);
-        var smRank = matches[2];
-        $smLevel.html('\u795E\u79D8<b>' + smLevel + '</b>\u7EA7 (\u7CFB\u6570\u6392\u540D\u7B2C<b style="color: #00f;">' + smRank + '</b>\u4F4D)').attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
-    }
-
-    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
 };
 
 /**
@@ -3457,7 +3288,7 @@ var showOpenAllBoxesDialog = function showOpenAllBoxesDialog() {
     };
 
     $dialog.find('[name="open"]').click(function () {
-        if (!Config.defOpenBoxTypeList.length) {
+        if (!$dialog.find('select[name="openBoxesTypes"]').val()) {
             alert('未选择盒子种类');
             return;
         }
@@ -3945,6 +3776,7 @@ var handleArmArea = exports.handleArmArea = function handleArmArea($armArea) {
                 var prev = armsInfo['上次记录的时间'] && armsInfo['上次记录的最新装备'] ? new Date(armsInfo['上次记录的时间']) : new Date(0);
                 prev.setHours(0, 0, 0, 0);
                 if (Math.abs(today - prev) >= _Const2.default.newArmMarkDuration * 24 * 60 * 60 * 1000) {
+                    console.log('更新最新装备记录');
                     writeArmsInfoflag = true;
                     armsInfo['上次记录的最新装备'] = armId;
                     armsInfo['上次记录的时间'] = $.now();
@@ -10442,7 +10274,7 @@ var destroy = exports.destroy = function destroy() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addSmLevelFormula = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
+exports.handleProfilePage = exports.addUserNameLinkInRankPage = exports.addAvatarChangeAlert = exports.syncModifyPerPageFloorNum = exports.addAutoChangeIdColorButton = exports.addMsgSelectButton = exports.modifyMyPostLink = exports.addFollowAndBlockAndMemoUserLink = exports.addFastDrawMoneyLink = exports.highlightUnReadAtTipsMsg = exports.addFastGotoThreadPageLink = exports.highlightNewPost = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -10546,55 +10378,13 @@ var highlightUnReadAtTipsMsg = exports.highlightUnReadAtTipsMsg = function highl
  * 在短消息页面中添加快速取款的链接
  */
 var addFastDrawMoneyLink = exports.addFastDrawMoneyLink = function addFastDrawMoneyLink() {
-    if (!$('td:contains("SYSTEM")').length || !$('td:contains("收到了他人转账的KFB")').length) return;
+    if (!$('td:contains("SYSTEM")').length || !$('td:contains("收到了他人转账的贡献")').length) return;
     var $msg = $('.thread2 > tbody > tr:eq(-2) > td:last');
     var html = $msg.html();
-    var matches = /给你转帐(\d+)KFB/i.exec(html);
+    var matches = /给你转帐(\d+(?:\.\d+)?)贡献/.exec(html);
     if (matches) {
-        var money = parseInt(matches[1]);
-        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行').replace(matches[0], '\u7ED9\u4F60\u8F6C\u5E10<span class="pd_stat"><em>' + money.toLocaleString() + '</em></span>KFB'));
-
-        $('<br><a data-name="fastDraw" href="#" title="从活期存款中取出当前转账的金额">快速取款</a> | ' + '<a data-name="fastDrawAll" href="#" title="取出银行账户中的所有活期存款">取出所有存款</a>').appendTo($msg).filter('[data-name="fastDraw"]').click(function (e) {
-            e.preventDefault();
-            Msg.destroy();
-            var $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
-            Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
-                Msg.remove($wait);
-                if (msg.includes('完成取款')) {
-                    console.log('\u4ECE\u6D3B\u671F\u5B58\u6B3E\u4E2D\u53D6\u51FA\u4E86' + money + 'KFB');
-                    Msg.show('<strong>\u4ECE\u6D3B\u671F\u5B58\u6B3E\u4E2D\u53D6\u51FA\u4E86<em>' + money.toLocaleString() + '</em>KFB</strong>', -1);
-                } else {
-                    alert(msg);
-                }
-            });
-        }).end().filter('[data-name="fastDrawAll"]').click(function (e) {
-            e.preventDefault();
-            Msg.destroy();
-            Msg.wait('<strong>正在获取当前活期存款金额&hellip;</strong>');
-            $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
-                Msg.destroy();
-                var matches = /活期存款：(\d+)KFB/.exec(html);
-                if (!matches) {
-                    alert('获取当前活期存款金额失败');
-                    return;
-                }
-                var money = parseInt(matches[1]);
-                if (money <= 0) {
-                    alert('当前活期存款余额为零');
-                    return;
-                }
-                var $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
-                Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
-                    Msg.remove($wait);
-                    if (msg.includes('完成取款')) {
-                        console.log('\u4ECE\u6D3B\u671F\u5B58\u6B3E\u4E2D\u53D6\u51FA\u4E86' + money + 'KFB');
-                        Msg.show('<strong>\u4ECE\u6D3B\u671F\u5B58\u6B3E\u4E2D\u53D6\u51FA\u4E86<em>' + money.toLocaleString() + '</em>KFB</strong>', -1);
-                    } else {
-                        alert(msg);
-                    }
-                });
-            });
-        });
+        var gongXian = parseFloat(matches[1]);
+        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行').replace(matches[0], '\u7ED9\u4F60\u8F6C\u5E10<span class="pd_stat"><em>' + gongXian.toLocaleString() + '</em></span>\u8D21\u732E'));
 
         $('a[href^="message.php?action=write&remid="]').attr('href', '#').addClass('pd_disabled_link').click(function (e) {
             e.preventDefault();
@@ -10736,7 +10526,7 @@ var addMsgSelectButton = exports.addMsgSelectButton = function addMsgSelectButto
     var $checkeds = $('.thread1 > tbody > tr > td:last-child > [type="checkbox"]');
     $('<input value="自定义" type="button" style="margin-right: 3px;">').insertBefore('[type="button"][value="全选"]').click(function (e) {
         e.preventDefault();
-        var value = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
+        var value = $.trim(prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的贡献|收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除'));
         if (value !== '') {
             $checkeds.prop('checked', false);
             var titleArr = value.split('|');
@@ -10776,14 +10566,6 @@ var addMsgSelectButton = exports.addMsgSelectButton = function addMsgSelectButto
         return Util.selectInverse($checkeds);
     });
 };
-
-/**
- * 添加神秘等级计算公式
- */
-var addSmLevelFormula = exports.addSmLevelFormula = function addSmLevelFormula() {
-    $('.gro_divlv, .gro_divhui').eq(0).closest('table').parent().prev().css('padding-bottom', '0').after('<div style="margin: 15px 0 20px; font-size: 14px; text-align: center; color: #f00;">神秘等级 = 神秘系数<sup>2</sup> + 贡献数值*10 + 发帖数量/100</div>');
-};
-
 /**
  * 添加自动更换ID颜色的按钮
  */
@@ -10964,6 +10746,8 @@ var handleProfilePage = exports.handleProfilePage = function handleProfilePage()
         return '\u53D1\u5E16\u6570\u91CF\uFF1A<span data-num="' + num + '">' + parseInt(num).toLocaleString() + '</span>';
     }).replace(/论坛货币：(-?\d+)/, function (m, num) {
         return '\u8BBA\u575B\u8D27\u5E01\uFF1A<span data-num="' + num + '">' + parseInt(num).toLocaleString() + '</span>';
+    }).replace(/贡献数值：(-?\d+(?:\.\d+)?)/, function (m, num) {
+        return '\u8D21\u732E\u6570\u503C\uFF1A<span data-num="' + num + '">' + parseFloat(num).toLocaleString() + '</span>';
     }).replace(/在线时间：(\d+)/, function (m, num) {
         return '\u5728\u7EBF\u65F6\u95F4\uFF1A<span data-num="' + num + '">' + parseInt(num).toLocaleString() + '</span>';
     }).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, function (m, date, year, month, day) {
@@ -11395,7 +11179,7 @@ var replaceSiteLink = exports.replaceSiteLink = function replaceSiteLink() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.autoSaveCurrentDeposit = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -12266,74 +12050,6 @@ var addFastNavMenu = exports.addFastNavMenu = function addFastNavMenu() {
 };
 
 /**
- * 自动活期存款
- * @param {boolean} isRead 是否读取个人信息页面以获得当前所持有KFB的信息
- */
-var autoSaveCurrentDeposit = exports.autoSaveCurrentDeposit = function autoSaveCurrentDeposit() {
-    var isRead = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-
-    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 && Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
-        $(document).dequeue('AutoAction');
-        return;
-    }
-    var $kfb = $('a[href="kf_givemekfb.php"]');
-
-    /**
-     * 活期存款
-     * @param {number} cash 当前持有的KFB
-     */
-    var saveCurrentDeposit = function saveCurrentDeposit(cash) {
-        if (cash < Config.saveCurrentDepositAfterKfb) {
-            $(document).dequeue('AutoAction');
-            return;
-        }
-        var multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
-        if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb) multiple++;
-        var money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > cash) {
-            $(document).dequeue('AutoAction');
-            return;
-        }
-
-        console.log('自动活期存款Start');
-        $.ajax({
-            type: 'POST',
-            url: 'hack.php?H_name=bank',
-            data: { action: 'save', btype: 1, savemoney: money },
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            showFormatLog('自动存款', html);
-
-            var _Util$getResponseMsg3 = Util.getResponseMsg(html),
-                msg = _Util$getResponseMsg3.msg;
-
-            if (/完成存款/.test(msg)) {
-                Log.push('自动存款', '\u5171\u6709`' + money + '`KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
-                console.log('\u5171\u6709' + money + 'KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E');
-                Msg.show('<strong>\u5171\u6709<em>' + money.toLocaleString() + '</em>KFB\u5DF2\u81EA\u52A8\u5B58\u5165\u6D3B\u671F\u5B58\u6B3E</strong>');
-            }
-        }).always(function () {
-            $(document).dequeue('AutoAction');
-        });
-    };
-
-    if (isRead) {
-        console.log('获取当前持有KFB Start');
-        $.get('profile.php?action=show&uid=' + _Info2.default.uid + '&t=' + $.now(), function (html) {
-            var matches = /论坛货币：(\d+)\s*KFB/.exec(html);
-            if (matches) {
-                saveCurrentDeposit(parseInt(matches[1]));
-            }
-        });
-    } else {
-        var kfb = parseInt($kfb.data('kfb'));
-        if (kfb) {
-            saveCurrentDeposit(kfb);
-        }
-    }
-};
-
-/**
  * 更换ID颜色
  */
 var changeIdColor = exports.changeIdColor = function changeIdColor() {
@@ -12473,8 +12189,8 @@ var changeIdColor = exports.changeIdColor = function changeIdColor() {
                 setCookie();
                 showFormatLog('自动更换ID颜色', html);
 
-                var _Util$getResponseMsg4 = Util.getResponseMsg(html),
-                    msg = _Util$getResponseMsg4.msg;
+                var _Util$getResponseMsg3 = Util.getResponseMsg(html),
+                    msg = _Util$getResponseMsg3.msg;
 
                 if (/等级颜色修改完毕/.test(msg)) {
                     console.log('ID颜色更换为：' + nextId);
@@ -12721,7 +12437,6 @@ var showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDialo
         callback = _ref.callback,
         callbackAfterSubmit = _ref.callbackAfterSubmit;
 
-    console.debug({ name: name, read: read, write: write, merge: merge, callback: callback, callbackAfterSubmit: callbackAfterSubmit });
     var dialogName = 'pdCommonImOrExLogDialog';
     if ($('#' + dialogName).length > 0) return;
     var log = read();
@@ -12757,7 +12472,7 @@ var showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDialo
 };
 
 /**
- * 修改用户名旁有新的评分提醒的颜色
+ * 修改顶部导航栏的用户名旁有新的评分提醒的颜色
  */
 var changeNewRateTipsColor = exports.changeNewRateTipsColor = function changeNewRateTipsColor() {
     if (_Info2.default.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
@@ -13027,7 +12742,7 @@ var statFloor = function statFloor(tid, startPage, endPage, startFloor, endFloor
             url: 'read.php?tid=' + tid + '&page=' + page + '&sf=' + sf + '&t=' + $.now(),
             timeout: _Const2.default.defAjaxTimeout,
             success: function success(html) {
-                $('.readtext', html).each(function () {
+                $('.readtext', html.replace(/src="[^"]+"/g, '')).each(function () {
                     var data = {};
                     var $floor = $(this);
                     var $floorHeader = $floor.prev('div').prev('.readlou');

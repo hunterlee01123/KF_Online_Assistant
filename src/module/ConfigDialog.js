@@ -150,10 +150,6 @@ export const show = function () {
           <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
         </select>
         <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="fixedDepositDueAlertEnabled" type="checkbox"> 定期存款到期提醒
-        <span class="pd_cfg_tips" title="在定时存款到期时进行提醒，只在首页生效">[?]</span>
       </label><br>
       <label>
         <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
@@ -330,22 +326,6 @@ export const show = function () {
         <span class="pd_cfg_tips" title="开启屏蔽标题中包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
       </label>
       <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
-    </fieldset>
-    <fieldset>
-      <legend>
-        <label>
-          <input name="autoSaveCurrentDepositEnabled" type="checkbox"> 自动活期存款
-          <span class="pd_cfg_tips" title="在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发">[?]</span>
-        </label>
-      </legend>
-      <label>
-        在当前收入已满 <input name="saveCurrentDepositAfterKfb" type="number" min="1" style="width: 80px;"> KFB之后
-        <span class="pd_cfg_tips" title="在当前收入已满指定KFB额度之后自动进行活期存款，例：1000">[?]</span>
-      </label><br>
-      <label>
-        将 <input name="saveCurrentDepositKfb" type="number" min="1" style="width: 80px;"> KFB存入活期存款
-        <span class="pd_cfg_tips" title="将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800">[?]</span>
-      </label>
     </fieldset>
   </div>
 </div>
@@ -529,23 +509,6 @@ const verifyMainConfig = function ($dialog) {
         alert('自定义本人的神秘颜色格式不正确，例：#009cff');
         $txtCustomMySmColor.select().focus();
         return false;
-    }
-
-    let $txtSaveCurrentDepositAfterKfb = $dialog.find('[name="saveCurrentDepositAfterKfb"]');
-    let $txtSaveCurrentDepositKfb = $dialog.find('[name="saveCurrentDepositKfb"]');
-    let saveCurrentDepositAfterKfb = parseInt($txtSaveCurrentDepositAfterKfb.val());
-    let saveCurrentDepositKfb = parseInt($txtSaveCurrentDepositKfb.val());
-    if (saveCurrentDepositAfterKfb || saveCurrentDepositKfb) {
-        if (!saveCurrentDepositAfterKfb || saveCurrentDepositAfterKfb <= 0) {
-            alert('自动活期存款满足额度格式不正确');
-            $txtSaveCurrentDepositAfterKfb.select().focus();
-            return false;
-        }
-        if (!saveCurrentDepositKfb || saveCurrentDepositKfb <= 0 || saveCurrentDepositKfb > saveCurrentDepositAfterKfb) {
-            alert('想要存款的金额格式不正确');
-            $txtSaveCurrentDepositKfb.select().focus();
-            return false;
-        }
     }
 
     return true;

@@ -931,72 +931,6 @@ export const addFastNavMenu = function () {
 };
 
 /**
- * 自动活期存款
- * @param {boolean} isRead 是否读取个人信息页面以获得当前所持有KFB的信息
- */
-export const autoSaveCurrentDeposit = function (isRead = false) {
-    if (!(Config.saveCurrentDepositAfterKfb > 0 && Config.saveCurrentDepositKfb > 0 &&
-            Config.saveCurrentDepositKfb <= Config.saveCurrentDepositAfterKfb)) {
-        $(document).dequeue('AutoAction');
-        return;
-    }
-    let $kfb = $('a[href="kf_givemekfb.php"]');
-
-    /**
-     * 活期存款
-     * @param {number} cash 当前持有的KFB
-     */
-    const saveCurrentDeposit = function (cash) {
-        if (cash < Config.saveCurrentDepositAfterKfb) {
-            $(document).dequeue('AutoAction');
-            return;
-        }
-        let multiple = Math.floor((cash - Config.saveCurrentDepositAfterKfb) / Config.saveCurrentDepositKfb);
-        if (cash - Config.saveCurrentDepositKfb * multiple >= Config.saveCurrentDepositAfterKfb)
-            multiple++;
-        let money = Config.saveCurrentDepositKfb * multiple;
-        if (money <= 0 || money > cash) {
-            $(document).dequeue('AutoAction');
-            return;
-        }
-
-        console.log('自动活期存款Start');
-        $.ajax({
-            type: 'POST',
-            url: 'hack.php?H_name=bank',
-            data: {action: 'save', btype: 1, savemoney: money},
-            timeout: Const.defAjaxTimeout,
-        }).done(function (html) {
-            showFormatLog('自动存款', html);
-            let {msg} = Util.getResponseMsg(html);
-            if (/完成存款/.test(msg)) {
-                Log.push('自动存款', `共有\`${money}\`KFB已自动存入活期存款`);
-                console.log(`共有${money}KFB已自动存入活期存款`);
-                Msg.show(`<strong>共有<em>${money.toLocaleString()}</em>KFB已自动存入活期存款</strong>`);
-            }
-        }).always(function () {
-            $(document).dequeue('AutoAction');
-        });
-    };
-
-    if (isRead) {
-        console.log('获取当前持有KFB Start');
-        $.get(`profile.php?action=show&uid=${Info.uid}&t=${$.now()}`, function (html) {
-            let matches = /论坛货币：(\d+)\s*KFB/.exec(html);
-            if (matches) {
-                saveCurrentDeposit(parseInt(matches[1]));
-            }
-        });
-    }
-    else {
-        let kfb = parseInt($kfb.data('kfb'));
-        if (kfb) {
-            saveCurrentDeposit(kfb);
-        }
-    }
-};
-
-/**
  * 更换ID颜色
  */
 export const changeIdColor = function () {
@@ -1353,7 +1287,6 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
  * @param {function} [callbackAfterSubmit] 在提交之后的回调方法
  */
 export const showCommonImportOrExportLogDialog = function ({name, read, write, merge, callback, callbackAfterSubmit}) {
-    console.debug({name, read, write, merge, callback, callbackAfterSubmit});
     const dialogName = 'pdCommonImOrExLogDialog';
     if ($('#' + dialogName).length > 0) return;
     let log = read();
@@ -1402,7 +1335,7 @@ export const showCommonImportOrExportLogDialog = function ({name, read, write, m
 };
 
 /**
- * 修改用户名旁有新的评分提醒的颜色
+ * 修改顶部导航栏的用户名旁有新的评分提醒的颜色
  */
 export const changeNewRateTipsColor = function () {
     if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {

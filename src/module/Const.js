@@ -52,10 +52,6 @@ const Const = {
     smLevelUpAlertInterval: 3,
     // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
-    // 存储VIP剩余时间的Cookie有效期（分钟）
-    vipSurplusTimeExpires: 60,
-    // 定期存款到期期限（天）
-    fixedDepositDueTime: 90,
 
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
@@ -101,8 +97,6 @@ const Const = {
     smLevelUpTmpLogName: 'SmLevelUp',
     // 神秘系数排名变化提醒的临时日志名称
     smRankChangeTmpLogName: 'SmRankChange',
-    // 定期存款到期时间的临时日志名称
-    fixedDepositDueTmpLogName: 'FixedDepositDue',
     // 存储上一次自动更换ID颜色的临时日志名称
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
     // 存储战力光环信息的临时日志名称
@@ -128,8 +122,6 @@ const Const = {
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
     prevReadAtTipsCookieName: 'prevReadAtTips',
-    // 标记已进行定期存款到期提醒的Cookie名称
-    fixedDepositDueAlertCookieName: 'fixedDepositDueAlert',
     // 标记已自动更换ID颜色的Cookie名称
     autoChangeIdColorCookieName: 'autoChangeIdColor',
 };

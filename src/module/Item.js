@@ -298,7 +298,7 @@ const showOpenAllBoxesDialog = function () {
     };
 
     $dialog.find('[name="open"]').click(function () {
-        if (!Config.defOpenBoxTypeList.length) {
+        if (!$dialog.find('select[name="openBoxesTypes"]').val()) {
             alert('未选择盒子种类');
             return;
         }
@@ -693,6 +693,7 @@ export const handleArmArea = function ($armArea, type = 0) {
                 let prev = armsInfo['上次记录的时间'] && armsInfo['上次记录的最新装备'] ? new Date(armsInfo['上次记录的时间']) : new Date(0);
                 prev.setHours(0, 0, 0, 0);
                 if (Math.abs(today - prev) >= Const.newArmMarkDuration * 24 * 60 * 60 * 1000) {
+                    console.log('更新最新装备记录');
                     writeArmsInfoflag = true;
                     armsInfo['上次记录的最新装备'] = armId;
                     armsInfo['上次记录的时间'] = $.now();

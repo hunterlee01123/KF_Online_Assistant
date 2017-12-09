@@ -82,8 +82,6 @@ export const Config = {
     // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
     // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
     atTipsHandleType: 'no_highlight',
-    // 是否在定时存款到期时进行提醒，只在首页生效，true：开启；false：关闭
-    fixedDepositDueAlertEnabled: false,
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
@@ -182,13 +180,6 @@ export const Config = {
     // 关键字可使用普通字符串或正则表达式（正则表达式请使用'/abc/'的格式），includeUser、excludeUser、includeFid和excludeFid这三项为可选
     // 例：[{keyWord: '标题1'}, {keyWord: '标题2', includeUser:['用户名1', '用户名2'], includeFid: [5, 56]}, {keyWord: '/关键字A.*关键字B/i', excludeFid: [92, 127, 68]}]
     blockThreadList: [],
-
-    // 是否在当前收入满足指定额度之后自动将指定数额存入活期存款中，只会在首页触发，true：开启；false：关闭
-    autoSaveCurrentDepositEnabled: false,
-    // 在当前收入已满指定KFB额度之后自动进行活期存款，例：1000
-    saveCurrentDepositAfterKfb: 0,
-    // 将指定额度的KFB存入活期存款中，例：900；举例：设定已满1000存900，当前收入为2000，则自动存入金额为1800
-    saveCurrentDepositKfb: 0,
 
     // 日志保存天数
     logSaveDays: 30,

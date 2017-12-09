@@ -79,67 +79,16 @@ export const highlightUnReadAtTipsMsg = function () {
  * 在短消息页面中添加快速取款的链接
  */
 export const addFastDrawMoneyLink = function () {
-    if (!$('td:contains("SYSTEM")').length || !$('td:contains("收到了他人转账的KFB")').length) return;
+    if (!$('td:contains("SYSTEM")').length || !$('td:contains("收到了他人转账的贡献")').length) return;
     let $msg = $('.thread2 > tbody > tr:eq(-2) > td:last');
     let html = $msg.html();
-    let matches = /给你转帐(\d+)KFB/i.exec(html);
+    let matches = /给你转帐(\d+(?:\.\d+)?)贡献/.exec(html);
     if (matches) {
-        let money = parseInt(matches[1]);
+        let gongXian = parseFloat(matches[1]);
         $msg.html(
             html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
-                .replace(matches[0], `给你转帐<span class="pd_stat"><em>${money.toLocaleString()}</em></span>KFB`)
+                .replace(matches[0], `给你转帐<span class="pd_stat"><em>${gongXian.toLocaleString()}</em></span>贡献`)
         );
-
-        $('<br><a data-name="fastDraw" href="#" title="从活期存款中取出当前转账的金额">快速取款</a> | ' +
-            '<a data-name="fastDrawAll" href="#" title="取出银行账户中的所有活期存款">取出所有存款</a>')
-            .appendTo($msg)
-            .filter('[data-name="fastDraw"]')
-            .click(function (e) {
-                e.preventDefault();
-                Msg.destroy();
-                let $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
-                Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
-                    Msg.remove($wait);
-                    if (msg.includes('完成取款')) {
-                        console.log(`从活期存款中取出了${money}KFB`);
-                        Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
-                    }
-                    else {
-                        alert(msg);
-                    }
-                });
-            })
-            .end()
-            .filter('[data-name="fastDrawAll"]')
-            .click(function (e) {
-                e.preventDefault();
-                Msg.destroy();
-                Msg.wait('<strong>正在获取当前活期存款金额&hellip;</strong>');
-                $.get('hack.php?H_name=bank&t=' + $.now(), function (html) {
-                    Msg.destroy();
-                    let matches = /活期存款：(\d+)KFB/.exec(html);
-                    if (!matches) {
-                        alert('获取当前活期存款金额失败');
-                        return;
-                    }
-                    let money = parseInt(matches[1]);
-                    if (money <= 0) {
-                        alert('当前活期存款余额为零');
-                        return;
-                    }
-                    let $wait = Msg.wait('<strong>正在取款中&hellip;</strong>');
-                    Bank.saveOrDrawMoney('draw', 1, money, function (msg) {
-                        Msg.remove($wait);
-                        if (msg.includes('完成取款')) {
-                            console.log(`从活期存款中取出了${money}KFB`);
-                            Msg.show(`<strong>从活期存款中取出了<em>${money.toLocaleString()}</em>KFB</strong>`, -1);
-                        }
-                        else {
-                            alert(msg);
-                        }
-                    });
-                });
-            });
 
         $('a[href^="message.php?action=write&remid="]').attr('href', '#').addClass('pd_disabled_link').click(function (e) {
             e.preventDefault();
@@ -267,7 +216,7 @@ export const addMsgSelectButton = function () {
         .click(function (e) {
             e.preventDefault();
             let value = $.trim(
-                prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除')
+                prompt('请填写所要选择的包含指定字符串的短消息标题（可用|符号分隔多个标题）', '收到了他人转账的贡献|收到了他人转账的KFB|银行汇款通知|您的文章被评分|您的文章被删除')
             );
             if (value !== '') {
                 $checkeds.prop('checked', false);
@@ -291,16 +240,6 @@ export const addMsgSelectButton = function () {
         .insertAfter('[type="button"][value="全选"]')
         .click(() => Util.selectInverse($checkeds));
 };
-
-/**
- * 添加神秘等级计算公式
- */
-export const addSmLevelFormula = function () {
-    $('.gro_divlv, .gro_divhui').eq(0).closest('table').parent().prev().css('padding-bottom', '0').after(
-        '<div style="margin: 15px 0 20px; font-size: 14px; text-align: center; color: #f00;">神秘等级 = 神秘系数<sup>2</sup> + 贡献数值*10 + 发帖数量/100</div>'
-    );
-};
-
 /**
  * 添加自动更换ID颜色的按钮
  */
@@ -489,6 +428,7 @@ export const handleProfilePage = function () {
             .replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>')
             .replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
             .replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
+            .replace(/贡献数值：(-?\d+(?:\.\d+)?)/, (m, num) => `贡献数值：<span data-num="${num}">${parseFloat(num).toLocaleString()}</span>`)
             .replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
             .replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
                 let now = new Date();
