@@ -427,6 +427,7 @@ export const handleProfilePage = function () {
             .replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>')
             .replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>')
             .replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
+            .replace(/神秘等级：(-?\d+)/, (m, num) => `神秘等级：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
             .replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)
             .replace(/贡献数值：(-?\d+(?:\.\d+)?)/, (m, num) => `贡献数值：<span data-num="${num}">${parseFloat(num).toLocaleString()}</span>`)
             .replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`)

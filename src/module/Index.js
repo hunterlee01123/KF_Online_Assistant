@@ -29,7 +29,7 @@ export const handleIndexLink = function () {
     if (matches) {
         let smLevel = parseInt(matches[1]);
         let smRank = matches[2];
-        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`)
+        $smLevel.html(`神秘<b>${smLevel.toLocaleString()}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`)
             .attr('data-sm-level', smLevel)
             .attr('data-sm-rank', smRank);
     }

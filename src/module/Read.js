@@ -22,7 +22,7 @@ export const addFloorGotoLink = function () {
         if (!/^\d+楼$/.test(floorText)) return;
         let linkName = $this.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
-        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}&sf=${sf}`;
+        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html(`<a class="pd_goto_link" href="${url}" title="复制楼层链接">${floorText}</a>`);
         $this.find('a').click(function (e) {
             e.preventDefault();

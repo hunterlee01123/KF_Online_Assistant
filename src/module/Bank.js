@@ -35,16 +35,9 @@ export const handleBankPage = function () {
 
     $(document).on('change', 'input[name="to_money"]', function () {
         let $this = $(this);
-        let value = $.trim($this.val());
-        if (value) {
-            value = value.replace(/,/g, '');
-            $this.val(value);
-            if ($.isNumeric(value)) {
-                let num = parseFloat(value);
-                if (num < minTransferNum || num > maxTransferNum) {
-                    alert(`转账数额的最小值为[${minTransferNum}]，最大值为[${maxTransferNum}]，超过最大值请分多次转账`);
-                }
-            }
+        let num = parseFloat($this.val());
+        if (isNaN(num) || num < minTransferNum || num > maxTransferNum) {
+            alert(`转账数额的最小值为[${minTransferNum}]，最大值为[${maxTransferNum}]，超过最大值请分多次转账`);
         }
     });
 
@@ -220,6 +213,7 @@ const addBatchTransferButton = function () {
         e.preventDefault();
         Msg.destroy();
         if (!batchTransferVerify($area)) return;
+
         let commonMoney = parseFloat($area.find('[name="transfer_money"]').val());
         if (!commonMoney) commonMoney = 0;
         let msg = $area.find('[name="msg"]').val();
@@ -272,6 +266,7 @@ const addBatchTransferButton = function () {
             return;
         }
         if (!confirm(`共计[${realUsers.length}]名用户，总计[${totalMoney.toLocaleString()}]贡献，是否转账？`)) return;
+        if (totalMoney > maxTransferNum && !confirm(`你真的要转账[${totalMoney.toLocaleString()}]贡献？请注意你转给对方的是贡献，是否继续？`)) return;
 
         Msg.wait(
             `<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` +

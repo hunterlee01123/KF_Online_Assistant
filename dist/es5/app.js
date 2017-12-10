@@ -397,16 +397,9 @@ var handleBankPage = exports.handleBankPage = function handleBankPage() {
 
     $(document).on('change', 'input[name="to_money"]', function () {
         var $this = $(this);
-        var value = $.trim($this.val());
-        if (value) {
-            value = value.replace(/,/g, '');
-            $this.val(value);
-            if ($.isNumeric(value)) {
-                var num = parseFloat(value);
-                if (num < minTransferNum || num > maxTransferNum) {
-                    alert('\u8F6C\u8D26\u6570\u989D\u7684\u6700\u5C0F\u503C\u4E3A[' + minTransferNum + ']\uFF0C\u6700\u5927\u503C\u4E3A[' + maxTransferNum + ']\uFF0C\u8D85\u8FC7\u6700\u5927\u503C\u8BF7\u5206\u591A\u6B21\u8F6C\u8D26');
-                }
-            }
+        var num = parseFloat($this.val());
+        if (isNaN(num) || num < minTransferNum || num > maxTransferNum) {
+            alert('\u8F6C\u8D26\u6570\u989D\u7684\u6700\u5C0F\u503C\u4E3A[' + minTransferNum + ']\uFF0C\u6700\u5927\u503C\u4E3A[' + maxTransferNum + ']\uFF0C\u8D85\u8FC7\u6700\u5927\u503C\u8BF7\u5206\u591A\u6B21\u8F6C\u8D26');
         }
     });
 
@@ -546,6 +539,7 @@ var addBatchTransferButton = function addBatchTransferButton() {
         e.preventDefault();
         Msg.destroy();
         if (!batchTransferVerify($area)) return;
+
         var commonMoney = parseFloat($area.find('[name="transfer_money"]').val());
         if (!commonMoney) commonMoney = 0;
         var msg = $area.find('[name="msg"]').val();
@@ -647,6 +641,7 @@ var addBatchTransferButton = function addBatchTransferButton() {
             return;
         }
         if (!confirm('\u5171\u8BA1[' + realUsers.length + ']\u540D\u7528\u6237\uFF0C\u603B\u8BA1[' + totalMoney.toLocaleString() + ']\u8D21\u732E\uFF0C\u662F\u5426\u8F6C\u8D26\uFF1F')) return;
+        if (totalMoney > maxTransferNum && !confirm('\u4F60\u771F\u7684\u8981\u8F6C\u8D26[' + totalMoney.toLocaleString() + ']\u8D21\u732E\uFF1F\u8BF7\u6CE8\u610F\u4F60\u8F6C\u7ED9\u5BF9\u65B9\u7684\u662F\u8D21\u732E\uFF0C\u662F\u5426\u7EE7\u7EED\uFF1F')) return;
 
         Msg.wait('<strong>\u6B63\u5728\u6279\u91CF\u8F6C\u8D26\u4E2D\uFF0C\u8BF7\u8010\u5FC3\u7B49\u5F85&hellip;</strong><i>\u5269\u4F59\uFF1A<em class="pd_countdown">' + users.length + '</em></i>' + '<a class="pd_stop_action" href="#">\u505C\u6B62\u64CD\u4F5C</a>');
         $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
@@ -2688,7 +2683,7 @@ var handleIndexLink = exports.handleIndexLink = function handleIndexLink() {
     if (matches) {
         var smLevel = parseInt(matches[1]);
         var smRank = matches[2];
-        $smLevel.html('\u795E\u79D8<b>' + smLevel + '</b>\u7EA7 (\u7CFB\u6570\u6392\u540D\u7B2C<b style="color: #00f;">' + smRank + '</b>\u4F4D)').attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
+        $smLevel.html('\u795E\u79D8<b>' + smLevel.toLocaleString() + '</b>\u7EA7 (\u7CFB\u6570\u6392\u540D\u7B2C<b style="color: #00f;">' + smRank + '</b>\u4F4D)').attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
     }
 
     $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
@@ -10744,6 +10739,8 @@ var handleProfilePage = exports.handleProfilePage = function handleProfilePage()
     var $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
     $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, function (m, num) {
         return '\u53D1\u5E16\u6570\u91CF\uFF1A<span data-num="' + num + '">' + parseInt(num).toLocaleString() + '</span>';
+    }).replace(/神秘等级：(-?\d+)/, function (m, num) {
+        return '\u795E\u79D8\u7B49\u7EA7\uFF1A<span data-num="' + num + '">' + parseInt(num).toLocaleString() + '</span>';
     }).replace(/论坛货币：(-?\d+)/, function (m, num) {
         return '\u8BBA\u575B\u8D27\u5E01\uFF1A<span data-num="' + num + '">' + parseInt(num).toLocaleString() + '</span>';
     }).replace(/贡献数值：(-?\d+(?:\.\d+)?)/, function (m, num) {
@@ -12562,7 +12559,7 @@ var addFloorGotoLink = exports.addFloorGotoLink = function addFloorGotoLink() {
         if (!/^\d+楼$/.test(floorText)) return;
         var linkName = $this.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
-        var url = Util.getHostNameUrl() + 'read.php?tid=' + Util.getUrlParam('tid') + '&spid=' + linkName + '&sf=' + sf;
+        var url = Util.getHostNameUrl() + 'read.php?tid=' + Util.getUrlParam('tid') + '&spid=' + linkName + (sf ? '&sf=' + sf : '');
         $this.html('<a class="pd_goto_link" href="' + url + '" title="\u590D\u5236\u697C\u5C42\u94FE\u63A5">' + floorText + '</a>');
         $this.find('a').click(function (e) {
             e.preventDefault();

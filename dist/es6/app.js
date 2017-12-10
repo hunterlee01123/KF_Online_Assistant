@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.4';
+const version = '12.4.1';
 
 /**
  * 导出模块
@@ -377,16 +377,9 @@ const handleBankPage = exports.handleBankPage = function () {
 
     $(document).on('change', 'input[name="to_money"]', function () {
         let $this = $(this);
-        let value = $.trim($this.val());
-        if (value) {
-            value = value.replace(/,/g, '');
-            $this.val(value);
-            if ($.isNumeric(value)) {
-                let num = parseFloat(value);
-                if (num < minTransferNum || num > maxTransferNum) {
-                    alert(`转账数额的最小值为[${minTransferNum}]，最大值为[${maxTransferNum}]，超过最大值请分多次转账`);
-                }
-            }
+        let num = parseFloat($this.val());
+        if (isNaN(num) || num < minTransferNum || num > maxTransferNum) {
+            alert(`转账数额的最小值为[${minTransferNum}]，最大值为[${maxTransferNum}]，超过最大值请分多次转账`);
         }
     });
 
@@ -553,6 +546,7 @@ const addBatchTransferButton = function () {
         e.preventDefault();
         Msg.destroy();
         if (!batchTransferVerify($area)) return;
+
         let commonMoney = parseFloat($area.find('[name="transfer_money"]').val());
         if (!commonMoney) commonMoney = 0;
         let msg = $area.find('[name="msg"]').val();
@@ -603,6 +597,7 @@ const addBatchTransferButton = function () {
             return;
         }
         if (!confirm(`共计[${realUsers.length}]名用户，总计[${totalMoney.toLocaleString()}]贡献，是否转账？`)) return;
+        if (totalMoney > maxTransferNum && !confirm(`你真的要转账[${totalMoney.toLocaleString()}]贡献？请注意你转给对方的是贡献，是否继续？`)) return;
 
         Msg.wait(`<strong>正在批量转账中，请耐心等待&hellip;</strong><i>剩余：<em class="pd_countdown">${users.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
         $area.find('> td:last-child').append('<ul class="pd_result pd_stat"><li><strong>转账结果：</strong></li></ul>');
@@ -2741,7 +2736,7 @@ const handleIndexLink = exports.handleIndexLink = function () {
     if (matches) {
         let smLevel = parseInt(matches[1]);
         let smRank = matches[2];
-        $smLevel.html(`神秘<b>${smLevel}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
+        $smLevel.html(`神秘<b>${smLevel.toLocaleString()}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
     }
 
     $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
@@ -9169,7 +9164,7 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
  */
 const handleProfilePage = exports.handleProfilePage = function () {
     let $area = $('.log1 > tbody > tr:last-child > td:nth-child(2)');
-    $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/贡献数值：(-?\d+(?:\.\d+)?)/, (m, num) => `贡献数值：<span data-num="${num}">${parseFloat(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
+    $area.html($area.html().replace(/<b>在线<\/b>/, '<b style="color: #090;">在线</b>').replace(/<b>离线<\/b>/, '<b style="color: #999;">离线</b>').replace(/系统等级：(\S+)/, '系统等级：<span class="pd_highlight">$1</span>').replace(/发帖数量：(\d+)/, (m, num) => `发帖数量：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/神秘等级：(-?\d+)/, (m, num) => `神秘等级：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/论坛货币：(-?\d+)/, (m, num) => `论坛货币：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/贡献数值：(-?\d+(?:\.\d+)?)/, (m, num) => `贡献数值：<span data-num="${num}">${parseFloat(num).toLocaleString()}</span>`).replace(/在线时间：(\d+)/, (m, num) => `在线时间：<span data-num="${num}">${parseInt(num).toLocaleString()}</span>`).replace(/注册时间：((\d{4})-(\d{2})-(\d{2}))/, (m, date, year, month, day) => {
         let now = new Date();
         let html = date;
         if (parseInt(month) === now.getMonth() + 1 && parseInt(day) === now.getDate() && parseInt(year) <= now.getFullYear()) html = `<span class="pd_custom_tips pd_highlight" title="今天是该用户注册${now.getFullYear() - parseInt(year)}周年纪念日">${date}</span>`;
@@ -10972,7 +10967,7 @@ const addFloorGotoLink = exports.addFloorGotoLink = function () {
         if (!/^\d+楼$/.test(floorText)) return;
         let linkName = $this.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
-        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}&sf=${sf}`;
+        let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html(`<a class="pd_goto_link" href="${url}" title="复制楼层链接">${floorText}</a>`);
         $this.find('a').click(function (e) {
             e.preventDefault();
