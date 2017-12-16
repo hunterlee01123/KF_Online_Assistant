@@ -129,7 +129,13 @@ export const enhanceLootIndexPage = function () {
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
         && !Util.getCookie(Const.lootAttackingCookieName) && ![-1, -2].includes(parseInt(Util.getCookie(Const.lootCompleteCookieName)))
     ) {
-        $(document).queue('AutoAction', () => autoLoot());
+        let serverStatusAllow = !(
+            Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' ||
+            Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常'
+        );
+        if (serverStatusAllow) {
+            $(document).queue('AutoAction', () => autoLoot());
+        }
     }
     $(document).dequeue('AutoAction');
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
@@ -2385,7 +2391,7 @@ export const checkLoot = function () {
                 if (Util.getCookie(Const.lootCheckingCookieName)) return;
                 let $log = $('#pk_text', html);
                 if (!$log.length) {
-                    Util.setCookie(Const.lootCompleteCookieName, -1, Util.getDate(`+${Const.checkLootInterval}m`));
+                    Util.setCookie(Const.lootCompleteCookieName, -2, Util.getDate(`+${Const.checkLootInterval}m`));
                     return;
                 }
                 if (Config.attackTargetLevel > 0) {
@@ -2397,6 +2403,18 @@ export const checkLoot = function () {
                         return;
                     }
                 }
+
+                let serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
+                if (serverStatusMatches) {
+                    let serverStatus = serverStatusMatches[1];
+                    if (Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' ||
+                        Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常'
+                    ) {
+                        Util.setCookie(Const.lootCompleteCookieName, -2, Util.getDate(`+${Const.checkLootInterval}m`));
+                        return;
+                    }
+                }
+
                 Util.setCookie(Const.lootCheckingCookieName, 1, Util.getDate('+1m'));
                 Msg.destroy();
                 $(document).clearQueue('AutoAction');

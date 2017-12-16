@@ -43,6 +43,8 @@ export const Config = {
     autoLootEnabled: false,
     // 自动争夺的目标攻击层数（设为0表示攻击到被击败为止）
     attackTargetLevel: 0,
+    // 在服务器状态为指定状态时才进行自动争夺，Any：任意；IdleOrNormal：空闲或正常；Idle：空闲（选择“空闲”状态有错过争夺的可能，请慎重考虑）
+    autoLootServerStatusType: 'Any',
     // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
     autoSaveLootLogInSpecialCaseEnabled: false,
     // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）

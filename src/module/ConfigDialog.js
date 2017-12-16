@@ -96,12 +96,23 @@ export const show = function () {
     <fieldset>
       <legend>争夺相关</legend>
       <label>
-        <input name="autoLootEnabled" type="checkbox" data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> 自动争夺
+        <input name="autoLootEnabled" type="checkbox" data-disabled="[name=autoLootServerStatusType]"
+          data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> 自动争夺
         <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
         <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
+      </label><br>
+      <label>
+        在服务器状态为
+        <select name="autoLootServerStatusType" required>
+          <option value="Any">任意</option>
+          <option value="IdleOrNormal">空闲或正常</option>
+          <option value="Idle">空闲</option>
+        </select>
+        时才自动争夺
+        <span class="pd_cfg_tips" title="在服务器状态为指定状态时才进行自动争夺（选择“空闲”状态有可能错过争夺，请慎重考虑）">[?]</span>
       </label><br>
       <label>
         <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> 在不使用助手争夺的情况下自动保存争夺记录
