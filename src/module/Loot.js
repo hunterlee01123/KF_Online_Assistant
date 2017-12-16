@@ -47,6 +47,8 @@ let itemUsedNumList = new Map();
 let changePointsAvailableCount = 0;
 // 点数分配记录列表
 let pointsLogList = [];
+// 服务器状态
+let serverStatus = '';
 
 /**
  * 初始化
@@ -140,6 +142,12 @@ const handlePropertiesArea = function () {
     $properties.attr('id', 'pdPropertiesArea')
         .find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
 
+    let $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:first').attr('id', 'pdServerStatus');
+    if ($serverStatus.length > 0) {
+        serverStatus = $serverStatus.text().trim();
+        $serverStatus.attr('id', 'pdServerStatus').data('prev-status', serverStatus);
+    }
+
     $properties.on('change', '.pd_arm_level', function () {
         let type = $(this).data('type');
         let diffName = 'Weapon';
@@ -173,8 +181,8 @@ const handlePropertiesArea = function () {
             }
         });
 
-    return; // 临时禁用
-    let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
+    // 临时禁用
+    /*let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
     let html = $properties.html()
         .replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>')
         .replace(
@@ -225,7 +233,7 @@ const handlePropertiesArea = function () {
                 if (e.keyCode === 13) $this.blur();
                 else if (e.keyCode === 27) $this.val('').blur();
             });
-    }).find('[id^=pdPro_]').css('cursor', 'pointer');
+    }).find('[id^=pdPro_]').css('cursor', 'pointer');*/
 };
 
 /**
@@ -865,7 +873,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   <label>
     <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
     有剩余属性点时提醒
-    <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效）">[?]</span>
+    <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效，挂机玩家请勿勾选）">[?]</span>
   </label>
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
@@ -874,6 +882,10 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   <label>
     <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ${Config.alwaysOpenPointAreaEnabled ? 'checked' : ''}> 总是打开属性界面
     <span class="pd_cfg_tips" title="总是打开个人属性/装备界面">[?]</span>
+  </label>
+  <label>
+    <input class="pd_input" name="alertServerStatusChangeEnabled" type="checkbox" ${Config.alertServerStatusChangeEnabled ? 'checked' : ''}> 服务器状态变化提醒
+    <span class="pd_cfg_tips" title="在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒，挂机玩家请勿勾选）">[?]</span>
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
@@ -928,6 +940,24 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
         let autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled ||
             Config.customPointsScriptEnabled && typeof Const.getCustomPoints === 'function') && type === 'auto';
         if (!autoChangePointsEnabled && !checkPoints($points)) return;
+
+        let $serverStatus = $properties.find('#pdServerStatus');
+        let noAlert = $serverStatus.data('no-alert');
+        let prevServerStatus = $serverStatus.data('prev-status');
+        if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
+            if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' ||
+                prevServerStatus === '空闲' && serverStatus === '正常'
+            ) {
+                if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
+                    return;
+                }
+                else {
+                    $serverStatus.data('no-alert', true);
+                }
+            }
+            $serverStatus.data('prev-status', serverStatus);
+        }
+
         lootAttack({type, targetLevel, autoChangePointsEnabled, safeId});
     }).on('click', '.pd_cfg_tips', () => false)
         .on('click', 'input[type="checkbox"]', function () {
@@ -1236,7 +1266,9 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 after();
                 return;
             }
-            if (!/你\(\d+\)遭遇了/.test(html) || index % Const.lootAttackPerCheckLevel === 0) {
+
+            let lootAttackPerCheckLevel = typeof Const.lootAttackPerCheckLevel === 'function' ? Const.lootAttackPerCheckLevel() : Const.lootAttackPerCheckLevel;
+            if (!/你\(\d+\)遭遇了/.test(html) || index % lootAttackPerCheckLevel === 0) {
                 if (html === 'no' && /你被击败了/.test(log)) isFail = true;
                 setTimeout(function () {
                     updateLootInfo(function () {
@@ -1247,6 +1279,24 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 return;
             }
             log = html + log;
+
+            let $serverStatus = $properties.find('#pdServerStatus');
+            let noAlert = $serverStatus.data('no-alert');
+            let prevServerStatus = $serverStatus.data('prev-status');
+            if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
+                if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' ||
+                    prevServerStatus === '空闲' && serverStatus === '正常'
+                ) {
+                    if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
+                        isPause = true;
+                    }
+                    else {
+                        $serverStatus.data('no-alert', true);
+                    }
+                }
+                $serverStatus.data('prev-status', serverStatus);
+            }
+
             after(false);
             Script.runFunc('Loot.lootAttack_attack_after_', html);
         }).fail(function () {
@@ -1268,9 +1318,9 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
         console.log('【争夺攻击】当前层数：' + currentLevel);
         let $countdown = $('.pd_countdown:last');
         $countdown.text(currentLevel);
-        $points.find('.pd_point').each(function () {
-            //showNewLootProperty($(this)); // 临时禁用
-        });
+        /*$points.find('.pd_point').each(function () {
+            showNewLootProperty($(this));
+        });*/ // 临时禁用
 
         isStop = isFail || isStop || isPause || type !== 'auto' || (targetLevel && currentLevel >= targetLevel) || $countdown.closest('.pd_msg').data('stop');
         if (isStop) {
@@ -1305,7 +1355,9 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                     }, Const.defAjaxInterval);
                     return;
                 }
-                if (!isChecked) setTimeout(() => updateLootInfo, Const.minActionInterval);
+                if (!isChecked) {
+                    setTimeout(updateLootInfo, Const.minActionInterval);
+                }
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
                 Script.runFunc('Loot.lootAttack_after_');
@@ -1343,6 +1395,13 @@ export const updateLootInfo = function (callback = null) {
             if (!value) return;
             $properties.find(`input[type="text"]:eq(${index})`).val(value);
         });
+
+        let serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span style="color:(#[a-fA-F0-9]+);[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
+        if (serverStatusMatches) {
+            let serverStatusColor = serverStatusMatches[1];
+            serverStatus = serverStatusMatches[2];
+            $properties.find('#pdServerStatus').text(serverStatus).css('color', serverStatusColor);
+        }
 
         let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
         if (countDownMatches) {

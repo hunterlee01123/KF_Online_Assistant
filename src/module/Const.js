@@ -18,7 +18,9 @@ const Const = {
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 争夺攻击时每隔指定层数进行一次检查
-    lootAttackPerCheckLevel: 20,
+    lootAttackPerCheckLevel() {
+        return Config.alertServerStatusChangeEnabled ? 10 : 20; // 前者为开启“在服务器状态发生变化时进行提醒”时的间隔层数，后者为未开启时的间隔层数
+    },
     // 新装备标志的持续时间（天）
     newArmMarkDuration: 1,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
