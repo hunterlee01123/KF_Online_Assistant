@@ -131,7 +131,8 @@ export const appendCss = function () {
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
-  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
+  .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
+  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fcfcfc; }
   .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }
   
   /* 我的物品页面 */

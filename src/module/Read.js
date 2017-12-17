@@ -252,7 +252,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
                     data.userName = $user.find('a[href^="profile.php?action=show&uid="]').text();
                     data.smLevel = '';
                     if ($user.hasClass('readidms')) {
-                        let matches = /(\S+)级神秘/.exec($user.find('.readidmsbottom').text());
+                        let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom').text());
                         if (matches) data.smLevel = matches[1];
                     }
                     else {
@@ -384,7 +384,7 @@ export const showStatFloorDialog = function (floorList) {
   </td>
   <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
   <td><a href="profile.php?action=show&username=${data.userName}" target="_blank" style="color: #000;">${data.userName}</a></td>
-  <td style="color: #f39;">${data.smLevel}</td>
+  <td style="${data.smLevel.endsWith('W') || data.smLevel === 'MAX' ? 'color: #f39;' : ''}">${data.smLevel}</td>
   <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>
 </tr>`;
             copyContent += data.userName + '\n';

@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.4.1
+// @version     12.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -108,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.4.1';
+const version = '12.5';
 
 /**
  * 导出模块
@@ -917,6 +917,8 @@ const Config = exports.Config = {
     autoLootEnabled: false,
     // 自动争夺的目标攻击层数（设为0表示攻击到被击败为止）
     attackTargetLevel: 0,
+    // 在服务器状态为指定状态时才进行自动争夺，Any：任意；IdleOrNormal：空闲或正常；Idle：空闲（选择“空闲”状态有错过争夺的可能，请慎重考虑）
+    autoLootServerStatusType: 'Any',
     // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
     autoSaveLootLogInSpecialCaseEnabled: false,
     // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
@@ -941,6 +943,8 @@ const Config = exports.Config = {
     slowAttackEnabled: false,
     // 是否总是打开个人属性/装备界面，true：开启；false：关闭
     alwaysOpenPointAreaEnabled: false,
+    // 是否在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒），true：开启；false：关闭
+    alertServerStatusChangeEnabled: false,
     // 是否显示分层NPC统计，true：开启；false：关闭
     showLevelEnemyStatEnabled: false,
     // 是否显示精简争夺记录，true：开启；false：关闭
@@ -1330,12 +1334,23 @@ const show = exports.show = function () {
     <fieldset>
       <legend>争夺相关</legend>
       <label>
-        <input name="autoLootEnabled" type="checkbox" data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> 自动争夺
+        <input name="autoLootEnabled" type="checkbox" data-disabled="[name=autoLootServerStatusType]"
+          data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> 自动争夺
         <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
       </label>
       <label class="pd_cfg_ml">
         攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
         <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
+      </label><br>
+      <label>
+        在服务器状态为
+        <select name="autoLootServerStatusType" required>
+          <option value="Any">任意</option>
+          <option value="IdleOrNormal">空闲或正常</option>
+          <option value="Idle">空闲</option>
+        </select>
+        时才自动争夺
+        <span class="pd_cfg_tips" title="在服务器状态为指定状态时才进行自动争夺（选择“空闲”状态有可能错过争夺，请慎重考虑）">[?]</span>
       </label><br>
       <label>
         <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> 在不使用助手争夺的情况下自动保存争夺记录
@@ -2454,7 +2469,9 @@ const Const = {
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
     // 争夺攻击时每隔指定层数进行一次检查
-    lootAttackPerCheckLevel: 20,
+    lootAttackPerCheckLevel() {
+        return Config.alertServerStatusChangeEnabled ? 10 : 20; // 前者为开启“在服务器状态发生变化时进行提醒”时的间隔层数，后者为未开启时的间隔层数
+    },
     // 新装备标志的持续时间（天）
     newArmMarkDuration: 1,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
@@ -6010,6 +6027,8 @@ let itemUsedNumList = new Map();
 let changePointsAvailableCount = 0;
 // 点数分配记录列表
 let pointsLogList = [];
+// 服务器状态
+let serverStatus = '';
 
 /**
  * 初始化
@@ -6083,7 +6102,10 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     showLogStat(levelInfoList);
 
     if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName) && ![-1, -2].includes(parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)))) {
-        $(document).queue('AutoAction', () => autoLoot());
+        let serverStatusAllow = !(Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' || Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常');
+        if (serverStatusAllow) {
+            $(document).queue('AutoAction', () => autoLoot());
+        }
     }
     $(document).dequeue('AutoAction');
     Script.runFunc('Loot.enhanceLootIndexPage_after_');
@@ -6094,6 +6116,12 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
  */
 const handlePropertiesArea = function () {
     $properties.attr('id', 'pdPropertiesArea').find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+
+    let $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:first').attr('id', 'pdServerStatus');
+    if ($serverStatus.length > 0) {
+        serverStatus = $serverStatus.text().trim();
+        $serverStatus.attr('id', 'pdServerStatus').data('prev-status', serverStatus);
+    }
 
     $properties.on('change', '.pd_arm_level', function () {
         let type = $(this).data('type');
@@ -6120,30 +6148,58 @@ const handlePropertiesArea = function () {
         }
     });
 
-    return; // 临时禁用
-    let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    let html = $properties.html().replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>').replace(/(生命值：)(\d+)\s*\(最大(\d+)\)/, '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>').replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>').replace(/(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` + `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`).replace(/(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/, `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` + `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`).replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>').replace('技能伤害：攻击+(体质*5)+(智力*5)', '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>').replace(/(可分配属性点：)(\d+)/, '$1<span id="pdDistributablePoint">$2</span>');
+    // 临时禁用
+    /*let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
+    let html = $properties.html()
+        .replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>')
+        .replace(
+            /(生命值：)(\d+)\s*\(最大(\d+)\)/,
+            '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>'
+        )
+        .replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>')
+        .replace(
+            /(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/,
+            `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` +
+            `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`
+        )
+        .replace(
+            /(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/,
+            `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` +
+            `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`
+        )
+        .replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>')
+        .replace(
+            '技能伤害：攻击+(体质*5)+(智力*5)',
+            '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
+        )
+        .replace(/(可分配属性点：)(\d+)/, '$1<span id="pdDistributablePoint">$2</span>');
     $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
-
-    $properties.on('click', '[id^="pdPro_"]', function () {
+      $properties.on('click', '[id^="pdPro_"]', function () {
         let $this = $(this);
         $this.hide();
         let name = $this.attr('id').replace('pdPro_', '');
         let step = 1;
-        if (name === 's1') step = 5;else if (name === 's2') step = 20;else if (name === 'd1') step = 2;
-        $(`<input class="pd_input" data-name="${name}" type="number" value="${parseInt($this.text())}" min="1" step="${step}" ` + `style="width: 65px; margin-right: 5px;" title="${$this.attr('title')}">`).insertAfter($this).focus().select().blur(function () {
-            let $this = $(this);
-            let name = $this.data('name');
-            let num = parseInt($this.val());
-            if (num > 0) {
-                $points.find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
-            }
-            $this.prev().show().end().remove();
-        }).keydown(function (e) {
-            let $this = $(this);
-            if (e.keyCode === 13) $this.blur();else if (e.keyCode === 27) $this.val('').blur();
-        });
-    }).find('[id^=pdPro_]').css('cursor', 'pointer');
+        if (name === 's1') step = 5;
+        else if (name === 's2') step = 20;
+        else if (name === 'd1') step = 2;
+        $(`<input class="pd_input" data-name="${name}" type="number" value="${parseInt($this.text())}" min="1" step="${step}" ` +
+            `style="width: 65px; margin-right: 5px;" title="${$this.attr('title')}">`
+        ).insertAfter($this).focus().select()
+            .blur(function () {
+                let $this = $(this);
+                let name = $this.data('name');
+                let num = parseInt($this.val());
+                if (num > 0) {
+                    $points.find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+                }
+                $this.prev().show().end().remove();
+            })
+            .keydown(function (e) {
+                let $this = $(this);
+                if (e.keyCode === 13) $this.blur();
+                else if (e.keyCode === 27) $this.val('').blur();
+            });
+    }).find('[id^=pdPro_]').css('cursor', 'pointer');*/
 };
 
 /**
@@ -6752,7 +6808,7 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
   <label>
     <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
     有剩余属性点时提醒
-    <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效）">[?]</span>
+    <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效，挂机玩家请勿勾选）">[?]</span>
   </label>
   <label>
     <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
@@ -6761,6 +6817,10 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
   <label>
     <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ${Config.alwaysOpenPointAreaEnabled ? 'checked' : ''}> 总是打开属性界面
     <span class="pd_cfg_tips" title="总是打开个人属性/装备界面">[?]</span>
+  </label>
+  <label>
+    <input class="pd_input" name="alertServerStatusChangeEnabled" type="checkbox" ${Config.alertServerStatusChangeEnabled ? 'checked' : ''}> 服务器状态变化提醒
+    <span class="pd_cfg_tips" title="在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒，挂机玩家请勿勾选）">[?]</span>
   </label><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
@@ -6810,6 +6870,21 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
         $('#pdLootLogHeader').find('[data-name="end"]').click();
         let autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
         if (!autoChangePointsEnabled && !checkPoints($points)) return;
+
+        let $serverStatus = $properties.find('#pdServerStatus');
+        let noAlert = $serverStatus.data('no-alert');
+        let prevServerStatus = $serverStatus.data('prev-status');
+        if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
+            if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常') {
+                if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
+                    return;
+                } else {
+                    $serverStatus.data('no-alert', true);
+                }
+            }
+            $serverStatus.data('prev-status', serverStatus);
+        }
+
         lootAttack({ type, targetLevel, autoChangePointsEnabled, safeId });
     }).on('click', '.pd_cfg_tips', () => false).on('click', 'input[type="checkbox"]', function () {
         let $this = $(this);
@@ -7096,7 +7171,9 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 after();
                 return;
             }
-            if (!/你\(\d+\)遭遇了/.test(html) || index % _Const2.default.lootAttackPerCheckLevel === 0) {
+
+            let lootAttackPerCheckLevel = typeof _Const2.default.lootAttackPerCheckLevel === 'function' ? _Const2.default.lootAttackPerCheckLevel() : _Const2.default.lootAttackPerCheckLevel;
+            if (!/你\(\d+\)遭遇了/.test(html) || index % lootAttackPerCheckLevel === 0) {
                 if (html === 'no' && /你被击败了/.test(log)) isFail = true;
                 setTimeout(function () {
                     updateLootInfo(function () {
@@ -7107,6 +7184,21 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 return;
             }
             log = html + log;
+
+            let $serverStatus = $properties.find('#pdServerStatus');
+            let noAlert = $serverStatus.data('no-alert');
+            let prevServerStatus = $serverStatus.data('prev-status');
+            if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
+                if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常') {
+                    if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
+                        isPause = true;
+                    } else {
+                        $serverStatus.data('no-alert', true);
+                    }
+                }
+                $serverStatus.data('prev-status', serverStatus);
+            }
+
             after(false);
             Script.runFunc('Loot.lootAttack_attack_after_', html);
         }).fail(function () {
@@ -7128,9 +7220,9 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
         console.log('【争夺攻击】当前层数：' + currentLevel);
         let $countdown = $('.pd_countdown:last');
         $countdown.text(currentLevel);
-        $points.find('.pd_point').each(function () {
-            //showNewLootProperty($(this)); // 临时禁用
-        });
+        /*$points.find('.pd_point').each(function () {
+            showNewLootProperty($(this));
+        });*/ // 临时禁用
 
         isStop = isFail || isStop || isPause || type !== 'auto' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
         if (isStop) {
@@ -7162,7 +7254,9 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                     }, _Const2.default.defAjaxInterval);
                     return;
                 }
-                if (!isChecked) setTimeout(() => updateLootInfo, _Const2.default.minActionInterval);
+                if (!isChecked) {
+                    setTimeout(updateLootInfo, _Const2.default.minActionInterval);
+                }
                 Msg.remove($wait);
                 Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
                 Script.runFunc('Loot.lootAttack_after_');
@@ -7198,6 +7292,14 @@ const updateLootInfo = exports.updateLootInfo = function (callback = null) {
             if (!value) return;
             $properties.find(`input[type="text"]:eq(${index})`).val(value);
         });
+
+        let serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span style="color:(#[a-fA-F0-9]+);[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
+        if (serverStatusMatches) {
+            let serverStatusColor = serverStatusMatches[1];
+            serverStatus = serverStatusMatches[2];
+            if (_Const2.default.debug) console.log('当前服务器状态：' + serverStatus);
+            $properties.find('#pdServerStatus').text(serverStatus).css('color', serverStatusColor);
+        }
 
         let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
         if (countDownMatches) {
@@ -8141,7 +8243,7 @@ const checkLoot = exports.checkLoot = function () {
                 if (Util.getCookie(_Const2.default.lootCheckingCookieName)) return;
                 let $log = $('#pk_text', html);
                 if (!$log.length) {
-                    Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
+                    Util.setCookie(_Const2.default.lootCompleteCookieName, -2, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
                     return;
                 }
                 if (Config.attackTargetLevel > 0) {
@@ -8153,6 +8255,17 @@ const checkLoot = exports.checkLoot = function () {
                         return;
                     }
                 }
+
+                let serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
+                if (serverStatusMatches) {
+                    let serverStatus = serverStatusMatches[1];
+                    console.log('当前服务器状态：' + serverStatus);
+                    if (Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' || Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常') {
+                        Util.setCookie(_Const2.default.lootCompleteCookieName, -2, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
+                        return;
+                    }
+                }
+
                 Util.setCookie(_Const2.default.lootCheckingCookieName, 1, Util.getDate('+1m'));
                 Msg.destroy();
                 $(document).clearQueue('AutoAction');
@@ -9757,7 +9870,8 @@ const appendCss = exports.appendCss = function () {
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
-  .pd_code_area { max-height: 550px; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
+  .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
+  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fcfcfc; }
   .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }
   
   /* 我的物品页面 */
@@ -11203,7 +11317,7 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
                     data.userName = $user.find('a[href^="profile.php?action=show&uid="]').text();
                     data.smLevel = '';
                     if ($user.hasClass('readidms')) {
-                        let matches = /(\S+)级神秘/.exec($user.find('.readidmsbottom').text());
+                        let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom').text());
                         if (matches) data.smLevel = matches[1];
                     } else {
                         data.smLevel = $user.find('.readidmright').text().trim();
@@ -11333,7 +11447,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
   </td>
   <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
   <td><a href="profile.php?action=show&username=${data.userName}" target="_blank" style="color: #000;">${data.userName}</a></td>
-  <td style="color: #f39;">${data.smLevel}</td>
+  <td style="${data.smLevel.endsWith('W') || data.smLevel === 'MAX' ? 'color: #f39;' : ''}">${data.smLevel}</td>
   <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>
 </tr>`;
             copyContent += data.userName + '\n';

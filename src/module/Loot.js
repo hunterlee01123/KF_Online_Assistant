@@ -1406,6 +1406,7 @@ export const updateLootInfo = function (callback = null) {
         if (serverStatusMatches) {
             let serverStatusColor = serverStatusMatches[1];
             serverStatus = serverStatusMatches[2];
+            if (Const.debug) console.log('当前服务器状态：' + serverStatus);
             $properties.find('#pdServerStatus').text(serverStatus).css('color', serverStatusColor);
         }
 
@@ -2407,6 +2408,7 @@ export const checkLoot = function () {
                 let serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
                 if (serverStatusMatches) {
                     let serverStatus = serverStatusMatches[1];
+                    console.log('当前服务器状态：' + serverStatus);
                     if (Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' ||
                         Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常'
                     ) {
