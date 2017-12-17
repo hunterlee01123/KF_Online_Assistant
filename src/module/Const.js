@@ -17,7 +17,7 @@ const Const = {
     getDailyBonusAfterTime: '00:35:00',
     // 遭遇敌人统计的指定最近层数
     enemyStatLatestLevelNum: 10,
-    // 争夺攻击时每隔指定层数进行一次检查
+    // 争夺攻击时每隔指定层数进行一次检查，可设置为函数来返回值
     lootAttackPerCheckLevel() {
         return Config.alertServerStatusChangeEnabled ? 10 : 20; // 前者为开启“在服务器状态发生变化时进行提醒”时的间隔层数，后者为未开启时的间隔层数
     },
