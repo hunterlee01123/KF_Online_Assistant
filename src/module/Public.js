@@ -213,6 +213,19 @@ export const appendCss = function () {
 </style>
 `);
 
+    if (location.pathname === '/read.php' && (Config.threadContentFontSize > 0 || Config.adjustThreadContentWidthEnabled)) {
+        $('head').append(`
+<style>
+  .readtext > table > tbody > tr > td {
+    width: ${Config.adjustThreadContentWidthEnabled ? 643.2 : 823.2}px;
+    display: inline-block;
+    overflow-wrap: break-word;
+  }
+  .readtext > table > tbody > tr > td table { word-break: break-all; }
+</style>
+`);
+    }
+
     if (Config.customCssEnabled) {
         $('head').append(`<style>${Config.customCssContent}</style>`);
     }
@@ -672,8 +685,7 @@ export const followUsers = function () {
         $('.readidmsbottom > a, .readidmleft > a').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
-                $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child')
-                    .find('a').addBack().addClass('pd_highlight');
+                $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
             }
         });
     }

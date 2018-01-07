@@ -16,14 +16,14 @@ import * as Post from './Post';
  */
 export const addFloorGotoLink = function () {
     let sf = Util.getUrlParam('sf');
-    $('.readlou > div:nth-child(2) > span').each(function () {
+    $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span').each(function () {
         let $this = $(this);
         let floorText = $this.text();
-        if (!/^\d+楼$/.test(floorText)) return;
+        if (!/^\d+楼/.test(floorText)) return;
         let linkName = $this.closest('.readlou').prev().attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
-        $this.html(`<a class="pd_goto_link" href="${url}" title="复制楼层链接">${floorText}</a>`);
+        $this.html($this.html().replace(/(\d+)楼/, `<a class="pd_goto_link" href="${url}" title="复制楼层链接">$1楼</a>`));
         $this.find('a').click(function (e) {
             e.preventDefault();
             let $this = $(this);
@@ -102,8 +102,8 @@ export const modifyMySmColor = function () {
 export const adjustThreadContentWidth = function () {
     $('head').append(`
 <style>
-  .readtext > table > tbody > tr > td { padding-left: 192px; }
-  .readidms, .readidm { margin-left: -192px !important; }
+  .readtext > table > tbody > tr > td { padding-left: 180px; }
+  .readidms, .readidm { margin-left: -180px !important; }
 </style>
 `);
 };

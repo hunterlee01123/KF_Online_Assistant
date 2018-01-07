@@ -1202,6 +1202,13 @@ export const addCommonArmsButton = function ($area, $armArea) {
         }
         else if (name === 'selectNoMemo') {
             $checkboxes.prop('checked', false);
+            if (!$armArea.find('tr:has(td[data-memo])').length) {
+                if(!confirm('在当前页面上未发现包含备注的装备，建议检查一下你是否清空了装备备注，是否继续选择？')) return;
+            }
+            let $legendEquip = $armArea.find('tr[data-id] span:contains("传奇的")');
+            if ($legendEquip.length > 0) {
+                if(!confirm(`你一共选择了 ${$legendEquip.length} 件传奇装备，是否继续选择？`)) return;
+            }
             $armArea.find('tr:not(:has(td[data-memo])) input[name="armCheck"]').prop('checked', true);
         }
         else if (name === 'selectArmId') {
