@@ -891,8 +891,9 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
   </label>
   <label>
     <input class="pd_input" name="alertServerStatusChangeEnabled" type="checkbox" ${Config.alertServerStatusChangeEnabled ? 'checked' : ''}> 服务器状态变化提醒
-    <span class="pd_cfg_tips" title="在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒，挂机玩家请勿勾选）">[?]</span>
-  </label><br>
+    <span class="pd_cfg_tips" title="在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒，挂机玩家请勿勾选），可点击右侧的详情按钮进行更具体的设置">[?]</span>
+  </label>
+  <a class="pd_btn_link" data-name="setAlertServerStatusChangeType" href="#">详&raquo;</a><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
   <button name="nextKeyLevelAttack" type="button" title="攻击到下一关键层之前">到下一关键层前</button>
@@ -952,7 +953,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
         let prevServerStatus = $serverStatus.data('prev-status');
         if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
             if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' ||
-                prevServerStatus === '空闲' && serverStatus === '正常'
+                prevServerStatus === '空闲' && serverStatus === '正常' && Config.alertServerStatusChangeType !== 1
             ) {
                 if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
                     return;
@@ -975,7 +976,15 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
                 Config[name] = checked;
                 writeConfig();
             }
-        }).find('[name="customPointsScriptEnabled"]')
+        }).find('[data-name="setAlertServerStatusChangeType"]')
+        .click(function (e) {
+            e.preventDefault();
+            readConfig();
+            let type = parseInt(prompt('请输入提醒时机类型（0：总是提醒；1：仅当变为“繁忙”时提醒）：', Config.alertServerStatusChangeType));
+            if (isNaN(type)) return;
+            Config.alertServerStatusChangeType = type === 1 ? 1 : 0;
+            writeConfig();
+        }).end().find('[name="customPointsScriptEnabled"]')
         .click(function () {
             let $this = $(this);
             if ($this.prop('disabled')) return;
@@ -1291,7 +1300,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             let prevServerStatus = $serverStatus.data('prev-status');
             if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
                 if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' ||
-                    prevServerStatus === '空闲' && serverStatus === '正常'
+                    prevServerStatus === '空闲' && serverStatus === '正常' && Config.alertServerStatusChangeType !== 1
                 ) {
                     if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
                         isPause = true;

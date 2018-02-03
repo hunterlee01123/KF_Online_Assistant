@@ -70,6 +70,7 @@ export const getNextObjects = function (sequence = 1, callback = null) {
         type: 'GET',
         url: 'kf_fw_ig_mybp.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
+        async: !Config.autoSaveArmsInfoEnabled
     }).done(function (html) {
         for (let index = 1; index <= 2; index++) {
             let matches = null;
@@ -1203,11 +1204,11 @@ export const addCommonArmsButton = function ($area, $armArea) {
         else if (name === 'selectNoMemo') {
             $checkboxes.prop('checked', false);
             if (!$armArea.find('tr:has(td[data-memo])').length) {
-                if(!confirm('在当前页面上未发现包含备注的装备，建议检查一下你是否清空了装备备注，是否继续选择？')) return;
+                if (!confirm('在当前页面上未发现包含备注的装备，建议检查一下你是否清空了装备备注，是否继续选择？')) return;
             }
             let $legendEquip = $armArea.find('tr[data-id] span:contains("传奇的")');
             if ($legendEquip.length > 0) {
-                if(!confirm(`你一共选择了 ${$legendEquip.length} 件传奇装备，是否继续选择？`)) return;
+                if (!confirm(`你一共选择了 ${$legendEquip.length} 件传奇装备，是否继续选择？`)) return;
             }
             $armArea.find('tr:not(:has(td[data-memo])) input[name="armCheck"]').prop('checked', true);
         }
@@ -1250,8 +1251,23 @@ export const addCommonArmsButton = function ($area, $armArea) {
  * @param {Object[]} oriEquippedArmList 原先的装备列表
  * @param {string} safeId SafeID
  */
-const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
+export const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
     let index = 0;
+
+    /**
+     * 写入装备信息
+     * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
+     */
+    const writeArmInfo = function (armId, armClass) {
+        $armArea.find(`.pd_arm_equipped[data-class="${armClass}"]`).removeClass('pd_arm_equipped')
+            .end().find(`tr[data-id="${armId}"]`).addClass('pd_arm_equipped');
+        if (Config.autoSaveArmsInfoEnabled) {
+            let armsInfo = readArmsInfo();
+            armsInfo[`已装备${armClass}`] = armId;
+            writeArmsInfo(armsInfo);
+        }
+    };
 
     /**
      * 装备
@@ -1270,10 +1286,16 @@ const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
             let msg = Util.removeHtmlTag(html);
             console.log(`【装备ID[${armId}]，装备类别[${armClass}]】：${msg.replace('\n', ' ')}`);
             if (isComplete) {
-                if (typeof callback === 'function') callback();
+                if (/装备完毕/.test(msg)) {
+                    writeArmInfo(armId, armClass);
+                    if (typeof callback === 'function') callback();
+                }
+                else {
+                    setTimeout(() => equip({armId, armClass}, isComplete, callback), Const.minActionInterval);
+                }
                 return;
             }
-            if (!/装备完毕/.test(msg)) {
+            if (!/装备完毕|操作过快/.test(msg)) {
                 index++;
                 if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
                     removeSavedArmInfo(armId, $armArea);
@@ -1287,6 +1309,7 @@ const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
                 setTimeout(() => equip(armList[index]), Const.minActionInterval);
             }
             else {
+                writeArmInfo(armId, armClass);
                 setTimeout(() => getFinalAddition({armId, armClass}), Const.defAjaxInterval);
             }
         }).fail(() => setTimeout(() => equip({armId, armClass}, isComplete, callback), Const.minActionInterval));
@@ -1565,6 +1588,7 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
             console.log('没有装备被熔炼！');
             clearInfo();
             if (nextActionEnabled) nextAction();
+            Script.runFunc('Item.smeltArms_complete_', {nextActionEnabled, $armArea});
             return;
         }
 
@@ -1607,7 +1631,7 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
         clearInfo();
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
         if (nextActionEnabled) nextAction();
-        Script.runFunc('Item.smeltArms_complete_');
+        Script.runFunc('Item.smeltArms_complete_', {nextActionEnabled, $armArea});
     };
 
     if (!$.isEmptyObject(Config.armsMemo)) readConfig();
@@ -1967,6 +1991,7 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
         if ($.isEmptyObject(useInfo)) {
             console.log('没有道具被使用！');
             if (nextActionEnabled) nextAction();
+            Script.runFunc('Item.useItems_complete_', {nextActionEnabled, $armArea});
             return;
         }
 
@@ -2008,7 +2033,7 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
 
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
         if (nextActionEnabled) nextAction();
-        Script.runFunc('Item.useItems_complete_');
+        Script.runFunc('Item.useItems_complete_', {nextActionEnabled, $armArea});
     };
 
     $itemArea.parent().append('<ul class="pd_result" data-name="itemResult"><li><strong>使用结果：</strong></li></ul>');
@@ -2120,6 +2145,7 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
         Msg.remove($wait);
         if ($.isEmptyObject(sellInfo)) {
             console.log('没有道具被出售！');
+            Script.runFunc('Item.sellItems_complete_', {nextActionEnabled, $armArea});
             return;
         }
 
@@ -2148,7 +2174,7 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
             -1
         );
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
-        Script.runFunc('Item.sellItems_complete_');
+        Script.runFunc('Item.sellItems_complete_', {nextActionEnabled, $armArea});
     };
 
     $itemArea.parent().append(`<ul class="pd_result" data-name="itemResult"><li><strong>出售结果：</strong></li></ul>`);

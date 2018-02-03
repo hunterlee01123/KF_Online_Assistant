@@ -71,6 +71,8 @@ export const Config = {
     alwaysOpenPointAreaEnabled: false,
     // 是否在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒），true：开启；false：关闭
     alertServerStatusChangeEnabled: false,
+    // 在服务器状态发生变化时进行提醒的类型，0：总是提醒；1：仅当变为“繁忙”时提醒
+    alertServerStatusChangeType: 0,
     // 是否显示分层NPC统计，true：开启；false：关闭
     showLevelEnemyStatEnabled: false,
     // 是否显示精简争夺记录，true：开启；false：关闭
