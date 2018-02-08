@@ -229,6 +229,8 @@ export const Config = {
     defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defSellItemTypeList: [],
+	// 是否在一键开盒后显示装备最终加成，true：开启；false：关闭
+	showArmsFinalAdditionAfterOpenBoxesEnabled: false,
 };
 
 /**

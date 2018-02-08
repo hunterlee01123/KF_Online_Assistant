@@ -250,6 +250,12 @@ const showOpenAllBoxesDialog = function () {
     <div>请选择想批量出售的道具种类（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</div>
     <select name="sellItemTypes" size="6" style="width: 320px;" multiple>${itemTypesOptionHtml}</select>
   </fieldset>
+  <div style="margin-top: 5px;">
+    <label>
+      <input name="showArmsFinalAdditionAfterOpenBoxesEnabled" type="checkbox"> 在一键开盒后显示装备最终加成
+      <span class="pd_cfg_tips" title="在一键开盒（并执行后续操作）后显示当前页面上装备的最终加成信息">[?]</span>
+    </label>
+  </div>
 </div>
 <div class="pd_cfg_btns">
   <button name="open" type="button" style="color: #f00;">一键开盒</button>
@@ -268,7 +274,7 @@ const showOpenAllBoxesDialog = function () {
         if (!Array.isArray(tmpBoxTypeList)) tmpBoxTypeList = [];
         Config.defOpenBoxTypeList = tmpBoxTypeList;
 
-        $dialog.find('legend [type="checkbox"]').each(function () {
+        $dialog.find('[type="checkbox"]').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
             if (name in Config) {
@@ -332,7 +338,7 @@ const showOpenAllBoxesDialog = function () {
             e.preventDefault();
             $(this).children().prop('selected', true);
         }
-    })).find('legend [type="checkbox"]').each(function () {
+    })).find('[type="checkbox"]').each(function () {
         let $this = $(this);
         let name = $this.attr('name');
         if (name in Config) {
@@ -548,6 +554,9 @@ export const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled 
                     if (action) {
                         setTimeout(action, Const.minActionInterval);
                     }
+                    else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+						showArmsFinalAdditionAfterOpenBoxes();
+					}
                 }
             }
             else {
@@ -571,6 +580,34 @@ export const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled 
         $(document).queue('OpenBoxes', open);
     });
     $(document).dequeue('OpenBoxes');
+};
+
+/**
+ * 在一键开盒后自动显示装备最终加成信息
+ */
+const showArmsFinalAdditionAfterOpenBoxes = function () {
+    if(Info.w.isShowArmsFinalAddition) return;
+	Info.w.isShowArmsFinalAddition = true;
+
+	let oriEquippedArmList = [];
+	let armList = [];
+	$armArea.find('tr[data-id]').each(function () {
+		let $this = $(this);
+		let armId = parseInt($this.data('id'));
+		let armClass = $this.data('class');
+		if (armId && armClass) {
+			armList.push({armId, armClass});
+		}
+		if ($this.hasClass('pd_arm_equipped')) {
+			oriEquippedArmList.push({armId, armClass});
+		}
+	});
+	if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
+	if (armList.length > 0) {
+		console.log('在一键开盒后自动显示装备最终加成信息Start');
+		if(Const.debug) console.log(oriEquippedArmList);
+		showArmsFinalAddition(armList, oriEquippedArmList, safeId);
+	}
 };
 
 // 保存我的装备信息的键值名称
@@ -1110,25 +1147,33 @@ const addArmsButton = function () {
         })
         .end().find('[name="showArmsFinalAddition"]')
         .click(function () {
-            if (!confirm('是否显示当前页面上所有装备的最终加成信息？\n（警告：请不要在争夺攻击途中使用此功能！）')) return;
-            Msg.destroy();
-            let oriEquippedArmList = [];
-            let armList = [];
-            $armArea.find('tr[data-id]').each(function () {
-                let $this = $(this);
-                let armId = parseInt($this.data('id'));
-                let armClass = $this.data('class');
-                if (armId && armClass) {
-                    armList.push({armId, armClass});
-                }
-                if ($this.hasClass('pd_arm_equipped')) {
-                    oriEquippedArmList.push({armId, armClass});
-                }
-            });
-            if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
-            if (armList.length > 0) {
-                showArmsFinalAddition(armList, oriEquippedArmList, safeId);
-            }
+			let $arms = $armArea.find('tr[data-id]:has([name="armCheck"]:checked)');
+			if (!confirm(`是否显示当前页面上【${$arms.length > 0 ? '所选' : '全部'}】装备的最终加成信息？
+（警告：请不要在争夺攻击途中使用此功能！）`)) return;
+			if(!$arms.length) $arms = $armArea.find('tr[data-id]');
+			Msg.destroy();
+
+			let armList = [];
+			$arms.each(function () {
+				let $this = $(this);
+				let armId = parseInt($this.data('id'));
+				let armClass = $this.data('class');
+				if (armId && armClass) {
+					armList.push({armId, armClass});
+				}
+			});
+			if (!armList.length) return;
+
+			let oriEquippedArmList = [];
+			$armArea.find('.pd_arm_equipped').each(function () {
+				let $this = $(this);
+				let armId = parseInt($this.data('id'));
+				let armClass = $this.data('class');
+				oriEquippedArmList.push({armId, armClass});
+			});
+			if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
+
+			showArmsFinalAddition(armList, oriEquippedArmList, safeId);
         }).end().find('[name="smeltSelectArms"]')
         .click(function () {
             let idList = [];
@@ -1442,7 +1487,7 @@ const showBatchSmeltArmsDialog = function () {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabled = false}) {
+export const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabled = false}) {
     let successNum = 0, index = 0;
     let smeltInfo = {};
     let isStop = false, isDeleteMemo = false;
@@ -1562,6 +1607,9 @@ const smeltArms = function ({typeList = [], idList = [], safeId, nextActionEnabl
         if (action) {
             setTimeout(action, Const.minActionInterval);
         }
+		else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+			showArmsFinalAdditionAfterOpenBoxes();
+		}
     };
 
     /**
@@ -1854,7 +1902,7 @@ const showBatchUseAndSellItemsDialog = function (type) {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
+export const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
     let totalSuccessNum = 0, totalValidNum = 0, totalInvalidNum = 0, index = 0;
     let useInfo = {};
     let tmpItemTypeList = [...typeList];
@@ -1980,6 +2028,9 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
         if (action) {
             setTimeout(action, Const.minActionInterval);
         }
+		else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+			showArmsFinalAdditionAfterOpenBoxes();
+		}
     };
 
     /**
@@ -2049,7 +2100,7 @@ const useItems = function ({typeList, safeId, nextActionEnabled = false}) {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
+export const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
     let successNum = 0, index = 0;
     let sellInfo = {};
     let isStop = false;
@@ -2145,6 +2196,9 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
         Msg.remove($wait);
         if ($.isEmptyObject(sellInfo)) {
             console.log('没有道具被出售！');
+			if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+				showArmsFinalAdditionAfterOpenBoxes();
+			}
             Script.runFunc('Item.sellItems_complete_', {nextActionEnabled, $armArea});
             return;
         }
@@ -2174,6 +2228,9 @@ const sellItems = function ({typeList, safeId, nextActionEnabled = false}) {
             -1
         );
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
+        if(Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+			showArmsFinalAdditionAfterOpenBoxes();
+		}
         Script.runFunc('Item.sellItems_complete_', {nextActionEnabled, $armArea});
     };
 
