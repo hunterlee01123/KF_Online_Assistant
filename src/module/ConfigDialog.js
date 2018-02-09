@@ -318,7 +318,11 @@ export const show = function () {
         <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
         <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
       </label>
-      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
+      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="adminMemberEnabled" type="checkbox"> 我是管理成员
+        <span class="pd_cfg_tips" title="管理成员可开启此功能，助手会开启部分只有管理成员才能使用的功能，非管理成员开启此功能无效">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>关注和屏蔽</legend>

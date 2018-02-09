@@ -155,6 +155,8 @@ export const Config = {
     customScriptList: [],
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',
+	// 是否为管理成员，true：开启；false：关闭
+	adminMemberEnabled: false,
 
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,

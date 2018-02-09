@@ -222,7 +222,7 @@ export const addStatAndBuyThreadBtn = function () {
  * @param {number} endFloor 结束楼层号
  * @param {string} sf 防采集代码
  */
-const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
+export const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
     let isStop = false;
     let floorList = [];
 
@@ -248,8 +248,19 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
                         return false;
                     }
                     data.pid = parseInt($floorHeader.prev('a').attr('name'));
+
                     let $user = $floor.find('.readidms, .readidm');
-                    data.userName = $user.find('a[href^="profile.php?action=show&uid="]').text();
+                    let $userLink = $user.find('a[href^="profile.php?action=show&uid="]');
+                    data.userName = $userLink.text();
+
+                    data.uid = '';
+                    data.sf = '';
+                    let userMatches = /profile\.php\?action=show&uid=(\d+)(?:&sf=(\w+))/.exec($userLink.attr('href'));
+                    if (userMatches) {
+						data.uid = parseInt(userMatches[1]);
+						data.sf = userMatches[2];
+                    }
+
                     data.smLevel = '';
                     if ($user.hasClass('readidms')) {
                         let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom').text());
@@ -383,7 +394,7 @@ export const showStatFloorDialog = function (floorList) {
     </label>
   </td>
   <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
-  <td><a href="profile.php?action=show&username=${data.userName}" target="_blank" style="color: #000;">${data.userName}</a></td>
+  <td><a href="profile.php?action=show&uid=${data.uid}&sf=${data.sf}" target="_blank" style="color: #000;">${data.userName}</a></td>
   <td style="${data.smLevel.endsWith('W') || data.smLevel === 'MAX' ? 'color: #f39;' : ''}">${data.smLevel}</td>
   <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>
 </tr>`;
@@ -961,7 +972,7 @@ export const showBuyThreadLogDialog = function () {
 <p>
   <b>${Util.getTimeString(new Date(time))}：</b>[<a href="thread.php?fid=${fid}" target="_blank">${forumName}</a>]
   《<a href="read.php?tid=${tid}${pid === 'tpc' ? '' : '&spid=' + pid}" target="_blank">${threadTitle}</a>》
-  &nbsp;发帖者：<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>
+  &nbsp;发帖者：<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>
   &nbsp;售价：<em>${sell}</em>KFB
 </p>`;
         }

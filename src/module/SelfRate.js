@@ -118,7 +118,7 @@ export const addLinksInPage = function () {
         $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
             let $this = $(this);
             let uid = parseInt($this.text());
-            $this.wrapInner(`<a class="${uid === Info.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
+            $this.wrapInner(`<a class="${uid === Info.uid ? 'pd_highlight' : ''} ${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
         });
     }
     else if (/\/kf_fw_1wkfb\.php\?ping=6\b/.test(location.href)) {
@@ -126,7 +126,7 @@ export const addLinksInPage = function () {
             let $this = $(this);
             let userName = $this.text().trim();
             if (userName === '0') return;
-            $this.wrapInner(`<a class="${userName === Info.userName ? 'pd_highlight' : ''}" href="profile.php?action=show&username=${userName}" target="_blank"></a>`);
+            $this.wrapInner(`<a class="${userName === Info.userName ? 'pd_highlight' : ''} ${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank"></a>`);
         });
         $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
             let $this = $(this);
@@ -138,7 +138,7 @@ export const addLinksInPage = function () {
         $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
             let $this = $(this);
             $this.html(
-                $this.html().replace(/(管理|会员):([^\[\]]+)\]/g, '$1:<a href="profile.php?action=show&username=$2" target="_blank">$2</a>]')
+                $this.html().replace(/(管理|会员):([^\[\]]+)\]/g, `$1:<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=$2" target="_blank">$2</a>]`)
                     .replace(/\[帖子:(\d+)\]/, '[帖子:<a href="read.php?tid=$1" target="_blank">$1</a>]')
             );
         });
@@ -147,15 +147,15 @@ export const addLinksInPage = function () {
         $('.adp1:last > tbody > tr:gt(2) > td:first-child').each(function () {
             let $this = $(this);
             $this.html(
-                $this.html().replace(/UID:(\d+)/, 'UID:<a href="profile.php?action=show&uid=$1" target="_blank">$1</a>')
+                $this.html().replace(/UID:(\d+)/, `UID:<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&uid=$1" target="_blank">$1</a>`)
             );
         });
     }
     else if (/\/kf_fw_1wkfb\.php\?do=2\b/.test(location.href)) {
         let $node1 = $('.adp1 > tbody > tr:nth-of-type(4):contains("评分会员") > td:last-child');
-        $node1.wrapInner(`<a href="profile.php?action=show&username=${$node1.text().trim()}" target="_blank"></a>`);
+        $node1.wrapInner(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${$node1.text().trim()}" target="_blank"></a>`);
         let $node2 = $('.adp1 > tbody > tr:nth-of-type(10) > td:last-child:contains("异议提出人")');
-        $node2.html($node2.html().replace(/：(\S+)/, `：<a href="profile.php?action=show&username=$1" target="_blank">$1</a>`));
+        $node2.html($node2.html().replace(/：(\S+)/, `：<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=$1" target="_blank">$1</a>`));
     }
 };
 

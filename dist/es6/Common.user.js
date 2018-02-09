@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.5.1
+// @version     12.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.5.1';
+const version = '12.6';
 
 /**
  * 导出模块
@@ -942,6 +942,8 @@ const Config = exports.Config = {
     alwaysOpenPointAreaEnabled: false,
     // 是否在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒），true：开启；false：关闭
     alertServerStatusChangeEnabled: false,
+    // 在服务器状态发生变化时进行提醒的类型，0：总是提醒；1：仅当变为“繁忙”时提醒
+    alertServerStatusChangeType: 0,
     // 是否显示分层NPC统计，true：开启；false：关闭
     showLevelEnemyStatEnabled: false,
     // 是否显示精简争夺记录，true：开启；false：关闭
@@ -1024,6 +1026,8 @@ const Config = exports.Config = {
     customScriptList: [],
     // 浏览器类型，auto：自动检测；desktop：桌面版；mobile：移动版
     browseType: 'auto',
+    // 是否为管理成员，true：开启；false：关闭
+    adminMemberEnabled: false,
 
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
@@ -1097,7 +1101,9 @@ const Config = exports.Config = {
     // 默认的批量使用的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
     defUseItemTypeList: [],
     // 默认的批量出售的道具种类列表，例：['蕾米莉亚同人漫画', '整形优惠卷']
-    defSellItemTypeList: []
+    defSellItemTypeList: [],
+    // 是否在一键开盒后显示装备最终加成，true：开启；false：关闭
+    showArmsFinalAdditionAfterOpenBoxesEnabled: false
 };
 
 /**
@@ -1553,7 +1559,11 @@ const show = exports.show = function () {
         <input name="customScriptEnabled" type="checkbox" data-disabled="[data-name=openCustomScriptDialog]"> 执行自定义脚本
         <span class="pd_cfg_tips" title="执行自定义的javascript脚本，请点击详细设置填入自定义的脚本内容">[?]</span>
       </label>
-      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a>
+      <a class="pd_cfg_ml" data-name="openCustomScriptDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="adminMemberEnabled" type="checkbox"> 我是管理成员
+        <span class="pd_cfg_tips" title="管理成员可开启此功能，助手会开启部分只有管理成员才能使用的功能，非管理成员开启此功能无效">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>关注和屏蔽</legend>
@@ -3001,7 +3011,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showMyInfoInItemShop = exports.buyItems = exports.sellItems = exports.useItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.smeltArms = exports.showArmsFinalAddition = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -3100,7 +3110,8 @@ const getNextObjects = exports.getNextObjects = function (sequence = 1, callback
     $.ajax({
         type: 'GET',
         url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout
+        timeout: _Const2.default.defAjaxTimeout,
+        async: !Config.autoSaveArmsInfoEnabled
     }).done(function (html) {
         for (let index = 1; index <= 2; index++) {
             let matches = null;
@@ -3277,6 +3288,12 @@ const showOpenAllBoxesDialog = function () {
     <div>请选择想批量出售的道具种类（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</div>
     <select name="sellItemTypes" size="6" style="width: 320px;" multiple>${itemTypesOptionHtml}</select>
   </fieldset>
+  <div style="margin-top: 5px;">
+    <label>
+      <input name="showArmsFinalAdditionAfterOpenBoxesEnabled" type="checkbox"> 在一键开盒后显示装备最终加成
+      <span class="pd_cfg_tips" title="在一键开盒（并执行后续操作）后显示当前页面上装备的最终加成信息">[?]</span>
+    </label>
+  </div>
 </div>
 <div class="pd_cfg_btns">
   <button name="open" type="button" style="color: #f00;">一键开盒</button>
@@ -3295,7 +3312,7 @@ const showOpenAllBoxesDialog = function () {
         if (!Array.isArray(tmpBoxTypeList)) tmpBoxTypeList = [];
         Config.defOpenBoxTypeList = tmpBoxTypeList;
 
-        $dialog.find('legend [type="checkbox"]').each(function () {
+        $dialog.find('[type="checkbox"]').each(function () {
             let $this = $(this);
             let name = $this.attr('name');
             if (name in Config) {
@@ -3355,7 +3372,7 @@ const showOpenAllBoxesDialog = function () {
             e.preventDefault();
             $(this).children().prop('selected', true);
         }
-    }).find('legend [type="checkbox"]').each(function () {
+    }).find('[type="checkbox"]').each(function () {
         let $this = $(this);
         let name = $this.attr('name');
         if (name in Config) {
@@ -3553,6 +3570,8 @@ const openBoxes = exports.openBoxes = function ({ id, boxType, num, safeId, next
                     }
                     if (action) {
                         setTimeout(action, _Const2.default.minActionInterval);
+                    } else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+                        showArmsFinalAdditionAfterOpenBoxes();
                     }
                 }
             } else {
@@ -3571,6 +3590,34 @@ const openBoxes = exports.openBoxes = function ({ id, boxType, num, safeId, next
         $(document).queue('OpenBoxes', open);
     });
     $(document).dequeue('OpenBoxes');
+};
+
+/**
+ * 在一键开盒后自动显示装备最终加成信息
+ */
+const showArmsFinalAdditionAfterOpenBoxes = function () {
+    if (_Info2.default.w.isShowArmsFinalAddition) return;
+    _Info2.default.w.isShowArmsFinalAddition = true;
+
+    let oriEquippedArmList = [];
+    let armList = [];
+    $armArea.find('tr[data-id]').each(function () {
+        let $this = $(this);
+        let armId = parseInt($this.data('id'));
+        let armClass = $this.data('class');
+        if (armId && armClass) {
+            armList.push({ armId, armClass });
+        }
+        if ($this.hasClass('pd_arm_equipped')) {
+            oriEquippedArmList.push({ armId, armClass });
+        }
+    });
+    if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
+    if (armList.length > 0) {
+        console.log('在一键开盒后自动显示装备最终加成信息Start');
+        if (_Const2.default.debug) console.log(oriEquippedArmList);
+        showArmsFinalAddition(armList, oriEquippedArmList, safeId);
+    }
 };
 
 // 保存我的装备信息的键值名称
@@ -4081,25 +4128,33 @@ const addArmsButton = function () {
             }
         });
     }).end().find('[name="showArmsFinalAddition"]').click(function () {
-        if (!confirm('是否显示当前页面上所有装备的最终加成信息？\n（警告：请不要在争夺攻击途中使用此功能！）')) return;
+        let $arms = $armArea.find('tr[data-id]:has([name="armCheck"]:checked)');
+        if (!confirm(`是否显示当前页面上【${$arms.length > 0 ? '所选' : '全部'}】装备的最终加成信息？
+（警告：请不要在争夺攻击途中使用此功能！）`)) return;
+        if (!$arms.length) $arms = $armArea.find('tr[data-id]');
         Msg.destroy();
-        let oriEquippedArmList = [];
+
         let armList = [];
-        $armArea.find('tr[data-id]').each(function () {
+        $arms.each(function () {
             let $this = $(this);
             let armId = parseInt($this.data('id'));
             let armClass = $this.data('class');
             if (armId && armClass) {
                 armList.push({ armId, armClass });
             }
-            if ($this.hasClass('pd_arm_equipped')) {
-                oriEquippedArmList.push({ armId, armClass });
-            }
+        });
+        if (!armList.length) return;
+
+        let oriEquippedArmList = [];
+        $armArea.find('.pd_arm_equipped').each(function () {
+            let $this = $(this);
+            let armId = parseInt($this.data('id'));
+            let armClass = $this.data('class');
+            oriEquippedArmList.push({ armId, armClass });
         });
         if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
-        if (armList.length > 0) {
-            showArmsFinalAddition(armList, oriEquippedArmList, safeId);
-        }
+
+        showArmsFinalAddition(armList, oriEquippedArmList, safeId);
     }).end().find('[name="smeltSelectArms"]').click(function () {
         let idList = [];
         $armArea.find('input[name="armCheck"]:checked').each(function () {
@@ -4213,8 +4268,22 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
  * @param {Object[]} oriEquippedArmList 原先的装备列表
  * @param {string} safeId SafeID
  */
-const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
+const showArmsFinalAddition = exports.showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
     let index = 0;
+
+    /**
+     * 写入装备信息
+     * @param {number} armId 装备ID
+     * @param {string} armClass 装备类别
+     */
+    const writeArmInfo = function (armId, armClass) {
+        $armArea.find(`.pd_arm_equipped[data-class="${armClass}"]`).removeClass('pd_arm_equipped').end().find(`tr[data-id="${armId}"]`).addClass('pd_arm_equipped');
+        if (Config.autoSaveArmsInfoEnabled) {
+            let armsInfo = readArmsInfo();
+            armsInfo[`已装备${armClass}`] = armId;
+            writeArmsInfo(armsInfo);
+        }
+    };
 
     /**
      * 装备
@@ -4233,10 +4302,15 @@ const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
             let msg = Util.removeHtmlTag(html);
             console.log(`【装备ID[${armId}]，装备类别[${armClass}]】：${msg.replace('\n', ' ')}`);
             if (isComplete) {
-                if (typeof callback === 'function') callback();
+                if (/装备完毕/.test(msg)) {
+                    writeArmInfo(armId, armClass);
+                    if (typeof callback === 'function') callback();
+                } else {
+                    setTimeout(() => equip({ armId, armClass }, isComplete, callback), _Const2.default.minActionInterval);
+                }
                 return;
             }
-            if (!/装备完毕/.test(msg)) {
+            if (!/装备完毕|操作过快/.test(msg)) {
                 index++;
                 if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
                     removeSavedArmInfo(armId, $armArea);
@@ -4249,6 +4323,7 @@ const showArmsFinalAddition = function (armList, oriEquippedArmList, safeId) {
             if (!/装备完毕/.test(msg)) {
                 setTimeout(() => equip(armList[index]), _Const2.default.minActionInterval);
             } else {
+                writeArmInfo(armId, armClass);
                 setTimeout(() => getFinalAddition({ armId, armClass }), _Const2.default.defAjaxInterval);
             }
         }).fail(() => setTimeout(() => equip({ armId, armClass }, isComplete, callback), _Const2.default.minActionInterval));
@@ -4377,7 +4452,7 @@ const showBatchSmeltArmsDialog = function () {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnabled = false }) {
+const smeltArms = exports.smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnabled = false }) {
     let successNum = 0,
         index = 0;
     let smeltInfo = {};
@@ -4493,6 +4568,8 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
         }
         if (action) {
             setTimeout(action, _Const2.default.minActionInterval);
+        } else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+            showArmsFinalAdditionAfterOpenBoxes();
         }
     };
 
@@ -4520,6 +4597,7 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
             console.log('没有装备被熔炼！');
             clearInfo();
             if (nextActionEnabled) nextAction();
+            Script.runFunc('Item.smeltArms_complete_', { nextActionEnabled, $armArea });
             return;
         }
 
@@ -4558,7 +4636,7 @@ const smeltArms = function ({ typeList = [], idList = [], safeId, nextActionEnab
         clearInfo();
         setTimeout(() => getNextObjects(2), _Const2.default.defAjaxInterval);
         if (nextActionEnabled) nextAction();
-        Script.runFunc('Item.smeltArms_complete_');
+        Script.runFunc('Item.smeltArms_complete_', { nextActionEnabled, $armArea });
     };
 
     if (!$.isEmptyObject(Config.armsMemo)) (0, _Config.read)();
@@ -4765,7 +4843,7 @@ const showBatchUseAndSellItemsDialog = function (type) {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
+const useItems = exports.useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
     let totalSuccessNum = 0,
         totalValidNum = 0,
         totalInvalidNum = 0,
@@ -4878,6 +4956,8 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
         }
         if (action) {
             setTimeout(action, _Const2.default.minActionInterval);
+        } else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+            showArmsFinalAdditionAfterOpenBoxes();
         }
     };
 
@@ -4890,6 +4970,7 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
         if ($.isEmptyObject(useInfo)) {
             console.log('没有道具被使用！');
             if (nextActionEnabled) nextAction();
+            Script.runFunc('Item.useItems_complete_', { nextActionEnabled, $armArea });
             return;
         }
 
@@ -4923,7 +5004,7 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
 
         setTimeout(() => getNextObjects(2), _Const2.default.defAjaxInterval);
         if (nextActionEnabled) nextAction();
-        Script.runFunc('Item.useItems_complete_');
+        Script.runFunc('Item.useItems_complete_', { nextActionEnabled, $armArea });
     };
 
     $itemArea.parent().append('<ul class="pd_result" data-name="itemResult"><li><strong>使用结果：</strong></li></ul>');
@@ -4937,7 +5018,7 @@ const useItems = function ({ typeList, safeId, nextActionEnabled = false }) {
  * @param {string} safeId SafeID
  * @param {boolean} nextActionEnabled 是否执行后续操作
  */
-const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
+const sellItems = exports.sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
     let successNum = 0,
         index = 0;
     let sellInfo = {};
@@ -5029,6 +5110,10 @@ const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
         Msg.remove($wait);
         if ($.isEmptyObject(sellInfo)) {
             console.log('没有道具被出售！');
+            if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+                showArmsFinalAdditionAfterOpenBoxes();
+            }
+            Script.runFunc('Item.sellItems_complete_', { nextActionEnabled, $armArea });
             return;
         }
 
@@ -5051,7 +5136,10 @@ const sellItems = function ({ typeList, safeId, nextActionEnabled = false }) {
         console.log(`共有${itemTypeNum}个种类中的${successNum}个道具出售成功，KFB+${totalSell}`);
         Msg.show(`<strong>共有<em>${itemTypeNum}</em>个种类中的<em>${successNum}</em>个道具出售成功</strong><i>KFB<em>+${totalSell.toLocaleString()}</em></i>`, -1);
         setTimeout(() => getNextObjects(2), _Const2.default.defAjaxInterval);
-        Script.runFunc('Item.sellItems_complete_');
+        if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+            showArmsFinalAdditionAfterOpenBoxes();
+        }
+        Script.runFunc('Item.sellItems_complete_', { nextActionEnabled, $armArea });
     };
 
     $itemArea.parent().append(`<ul class="pd_result" data-name="itemResult"><li><strong>出售结果：</strong></li></ul>`);
@@ -6824,8 +6912,9 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
   </label>
   <label>
     <input class="pd_input" name="alertServerStatusChangeEnabled" type="checkbox" ${Config.alertServerStatusChangeEnabled ? 'checked' : ''}> 服务器状态变化提醒
-    <span class="pd_cfg_tips" title="在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒，挂机玩家请勿勾选）">[?]</span>
-  </label><br>
+    <span class="pd_cfg_tips" title="在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒，挂机玩家请勿勾选），可点击右侧的详情按钮进行更具体的设置">[?]</span>
+  </label>
+  <a class="pd_btn_link" data-name="setAlertServerStatusChangeType" href="#">详&raquo;</a><br>
   <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
   <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
   <button name="nextKeyLevelAttack" type="button" title="攻击到下一关键层之前">到下一关键层前</button>
@@ -6879,7 +6968,7 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
         let noAlert = $serverStatus.data('no-alert');
         let prevServerStatus = $serverStatus.data('prev-status');
         if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
-            if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常') {
+            if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常' && Config.alertServerStatusChangeType !== 1) {
                 if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
                     return;
                 } else {
@@ -6899,7 +6988,14 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
             Config[name] = checked;
             (0, _Config.write)();
         }
-    }).find('[name="customPointsScriptEnabled"]').click(function () {
+    }).find('[data-name="setAlertServerStatusChangeType"]').click(function (e) {
+        e.preventDefault();
+        (0, _Config.read)();
+        let type = parseInt(prompt('请输入提醒时机类型（0：总是提醒；1：仅当变为“繁忙”时提醒）：', Config.alertServerStatusChangeType));
+        if (isNaN(type)) return;
+        Config.alertServerStatusChangeType = type === 1 ? 1 : 0;
+        (0, _Config.write)();
+    }).end().find('[name="customPointsScriptEnabled"]').click(function () {
         let $this = $(this);
         if ($this.prop('disabled')) return;
         $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $this.prop('checked'));
@@ -7193,7 +7289,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
             let noAlert = $serverStatus.data('no-alert');
             let prevServerStatus = $serverStatus.data('prev-status');
             if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
-                if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常') {
+                if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常' && Config.alertServerStatusChangeType !== 1) {
                     if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
                         isPause = true;
                     } else {
@@ -8393,7 +8489,7 @@ const addUserLinkInPkListPage = exports.addUserLinkInPkListPage = function () {
     $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        $this.html(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
 };
@@ -8405,7 +8501,7 @@ const addUserLinkInHaloPage = exports.addUserLinkInHaloPage = function () {
     $('.kf_fw_ig1:eq(1) > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        $this.html(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
 };
@@ -8992,7 +9088,7 @@ const addFastDrawMoneyLink = exports.addFastDrawMoneyLink = function () {
     let matches = /给你转帐(\d+(?:\.\d+)?)贡献/.exec(html);
     if (matches) {
         let gongXian = parseFloat(matches[1]);
-        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行').replace(matches[0], `给你转帐<span class="pd_stat"><em>${gongXian.toLocaleString()}</em></span>贡献`));
+        $msg.html(html.replace(/会员\[(.+?)\]通过论坛银行/, `会员[<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行`).replace(matches[0], `给你转帐<span class="pd_stat"><em>${gongXian.toLocaleString()}</em></span>贡献`));
 
         $('a[href^="message.php?action=write&remid="]').attr('href', '#').addClass('pd_disabled_link').click(function (e) {
             e.preventDefault();
@@ -9291,7 +9387,7 @@ const addUserNameLinkInRankPage = exports.addUserNameLinkInRankPage = function (
     $('.kf_no11:eq(2) > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        $this.html(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
 };
@@ -9821,6 +9917,7 @@ const appendCss = exports.appendCss = function () {
   .pd_btn_link { margin-left: 4px; margin-right: 4px; }
   .pd_custom_tips { cursor: help; }
   .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
+  .pd_not_click_link, .pd_not_click_link:visited { color: #000; pointer-events: none; }
   hr {
     box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
     border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
@@ -10764,7 +10861,10 @@ const bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = fu
             return;
         }
         let type = $menu.data('type');
-        $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>作者</li><li>关键词</li><li>用户名</li></ul>').appendTo('body');
+        $searchTypeList = $(`
+<ul class="pd_search_type_list">
+  <li>标题</li><li>作者</li><li>关键词</li><li ${!Config.adminMemberEnabled ? 'hidden' : ''}>用户名</li>
+</ul>`).appendTo('body');
         let offset = $menu.offset();
         $searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
         if (type === 'dialog') {
@@ -11063,7 +11163,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -11304,7 +11404,7 @@ const addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function () {
  * @param {number} endFloor 结束楼层号
  * @param {string} sf 防采集代码
  */
-const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
+const statFloor = exports.statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
     let isStop = false;
     let floorList = [];
 
@@ -11330,8 +11430,19 @@ const statFloor = function (tid, startPage, endPage, startFloor, endFloor, sf) {
                         return false;
                     }
                     data.pid = parseInt($floorHeader.prev('a').attr('name'));
+
                     let $user = $floor.find('.readidms, .readidm');
-                    data.userName = $user.find('a[href^="profile.php?action=show&uid="]').text();
+                    let $userLink = $user.find('a[href^="profile.php?action=show&uid="]');
+                    data.userName = $userLink.text();
+
+                    data.uid = '';
+                    data.sf = '';
+                    let userMatches = /profile\.php\?action=show&uid=(\d+)(?:&sf=(\w+))/.exec($userLink.attr('href'));
+                    if (userMatches) {
+                        data.uid = parseInt(userMatches[1]);
+                        data.sf = userMatches[2];
+                    }
+
                     data.smLevel = '';
                     if ($user.hasClass('readidms')) {
                         let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom').text());
@@ -11463,7 +11574,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
     </label>
   </td>
   <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
-  <td><a href="profile.php?action=show&username=${data.userName}" target="_blank" style="color: #000;">${data.userName}</a></td>
+  <td><a href="profile.php?action=show&uid=${data.uid}&sf=${data.sf}" target="_blank" style="color: #000;">${data.userName}</a></td>
   <td style="${data.smLevel.endsWith('W') || data.smLevel === 'MAX' ? 'color: #f39;' : ''}">${data.smLevel}</td>
   <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>
 </tr>`;
@@ -11984,7 +12095,7 @@ const showBuyThreadLogDialog = exports.showBuyThreadLogDialog = function () {
 <p>
   <b>${Util.getTimeString(new Date(time))}：</b>[<a href="thread.php?fid=${fid}" target="_blank">${forumName}</a>]
   《<a href="read.php?tid=${tid}${pid === 'tpc' ? '' : '&spid=' + pid}" target="_blank">${threadTitle}</a>》
-  &nbsp;发帖者：<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>
+  &nbsp;发帖者：<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>
   &nbsp;售价：<em>${sell}</em>KFB
 </p>`;
         }
@@ -12478,14 +12589,14 @@ const addLinksInPage = exports.addLinksInPage = function () {
         $('.adp1:last > tbody > tr:gt(0) > td:last-child').each(function () {
             let $this = $(this);
             let uid = parseInt($this.text());
-            $this.wrapInner(`<a class="${uid === _Info2.default.uid ? 'pd_highlight' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
+            $this.wrapInner(`<a class="${uid === _Info2.default.uid ? 'pd_highlight' : ''} ${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&uid=${uid}" target="_blank"></a>`);
         });
     } else if (/\/kf_fw_1wkfb\.php\?ping=6\b/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(1) > td:nth-child(3)').each(function () {
             let $this = $(this);
             let userName = $this.text().trim();
             if (userName === '0') return;
-            $this.wrapInner(`<a class="${userName === _Info2.default.userName ? 'pd_highlight' : ''}" href="profile.php?action=show&username=${userName}" target="_blank"></a>`);
+            $this.wrapInner(`<a class="${userName === _Info2.default.userName ? 'pd_highlight' : ''} ${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank"></a>`);
         });
         $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
             let $this = $(this);
@@ -12495,18 +12606,18 @@ const addLinksInPage = exports.addLinksInPage = function () {
     } else if (/\/kf_fw_1wkfb\.php\?ping=8\b/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(1) > td:last-child').each(function () {
             let $this = $(this);
-            $this.html($this.html().replace(/(管理|会员):([^\[\]]+)\]/g, '$1:<a href="profile.php?action=show&username=$2" target="_blank">$2</a>]').replace(/\[帖子:(\d+)\]/, '[帖子:<a href="read.php?tid=$1" target="_blank">$1</a>]'));
+            $this.html($this.html().replace(/(管理|会员):([^\[\]]+)\]/g, `$1:<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=$2" target="_blank">$2</a>]`).replace(/\[帖子:(\d+)\]/, '[帖子:<a href="read.php?tid=$1" target="_blank">$1</a>]'));
         });
     } else if (/\/kf_fw_1wkfb\.php\?ping=9\b/.test(location.href)) {
         $('.adp1:last > tbody > tr:gt(2) > td:first-child').each(function () {
             let $this = $(this);
-            $this.html($this.html().replace(/UID:(\d+)/, 'UID:<a href="profile.php?action=show&uid=$1" target="_blank">$1</a>'));
+            $this.html($this.html().replace(/UID:(\d+)/, `UID:<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&uid=$1" target="_blank">$1</a>`));
         });
     } else if (/\/kf_fw_1wkfb\.php\?do=2\b/.test(location.href)) {
         let $node1 = $('.adp1 > tbody > tr:nth-of-type(4):contains("评分会员") > td:last-child');
-        $node1.wrapInner(`<a href="profile.php?action=show&username=${$node1.text().trim()}" target="_blank"></a>`);
+        $node1.wrapInner(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${$node1.text().trim()}" target="_blank"></a>`);
         let $node2 = $('.adp1 > tbody > tr:nth-of-type(10) > td:last-child:contains("异议提出人")');
-        $node2.html($node2.html().replace(/：(\S+)/, `：<a href="profile.php?action=show&username=$1" target="_blank">$1</a>`));
+        $node2.html($node2.html().replace(/：(\S+)/, `：<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=$1" target="_blank">$1</a>`));
     }
 };
 

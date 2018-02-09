@@ -2551,7 +2551,7 @@ export const addUserLinkInPkListPage = function () {
     $('.kf_fw_ig1 > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        $this.html(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === Info.userName) $this.find('a').addClass('pd_highlight');
     });
 };
@@ -2563,7 +2563,7 @@ export const addUserLinkInHaloPage = function () {
     $('.kf_fw_ig1:eq(1) > tbody > tr:gt(1) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        $this.html(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === Info.userName) $this.find('a').addClass('pd_highlight');
     });
 };

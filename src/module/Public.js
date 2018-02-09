@@ -78,6 +78,7 @@ export const appendCss = function () {
   .pd_btn_link { margin-left: 4px; margin-right: 4px; }
   .pd_custom_tips { cursor: help; }
   .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
+  .pd_not_click_link, .pd_not_click_link:visited { color: #000; pointer-events: none; }
   hr {
     box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
     border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
@@ -1073,7 +1074,10 @@ export const bindSearchTypeSelectMenuClick = function () {
             return;
         }
         let type = $menu.data('type');
-        $searchTypeList = $('<ul class="pd_search_type_list"><li>标题</li><li>作者</li><li>关键词</li><li>用户名</li></ul>').appendTo('body');
+        $searchTypeList = $(`
+<ul class="pd_search_type_list">
+  <li>标题</li><li>作者</li><li>关键词</li><li ${!Config.adminMemberEnabled ? 'hidden' : ''}>用户名</li>
+</ul>`).appendTo('body');
         let offset = $menu.offset();
         $searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
         if (type === 'dialog') {

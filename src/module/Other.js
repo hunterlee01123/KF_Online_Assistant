@@ -86,8 +86,10 @@ export const addFastDrawMoneyLink = function () {
     if (matches) {
         let gongXian = parseFloat(matches[1]);
         $msg.html(
-            html.replace(/会员\[(.+?)\]通过论坛银行/, '会员[<a target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行')
-                .replace(matches[0], `给你转帐<span class="pd_stat"><em>${gongXian.toLocaleString()}</em></span>贡献`)
+            html.replace(
+                /会员\[(.+?)\]通过论坛银行/,
+                `会员[<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" target="_blank" href="profile.php?action=show&username=$1">$1</a>]通过论坛银行`
+            ).replace(matches[0], `给你转帐<span class="pd_stat"><em>${gongXian.toLocaleString()}</em></span>贡献`)
         );
 
         $('a[href^="message.php?action=write&remid="]').attr('href', '#').addClass('pd_disabled_link').click(function (e) {
@@ -412,7 +414,7 @@ export const addUserNameLinkInRankPage = function () {
     $('.kf_no11:eq(2) > tbody > tr:gt(0) > td:nth-child(2)').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
-        $this.html(`<a href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
+        $this.html(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === Info.userName) $this.find('a').addClass('pd_highlight');
     });
 };
