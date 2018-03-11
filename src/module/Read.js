@@ -15,7 +15,7 @@ import * as Post from './Post';
  * 为帖子里的每个楼层添加跳转链接
  */
 export const addFloorGotoLink = function () {
-    let sf = Util.getUrlParam('sf');
+    let sf = Util.getThreadSfParam();
     $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span').each(function () {
         let $this = $(this);
         let floorText = $this.text();
@@ -52,8 +52,8 @@ export const addFastGotoFloorInput = function () {
             e.preventDefault();
             let floor = parseInt($(this).find('input').val());
             if (!floor || floor < 0) return;
-            let sf = Util.getUrlParam('sf');
-            location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}&sf=${sf ? sf : ''}`;
+            let sf = Util.getThreadSfParam();
+            location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}&sf=${sf}`;
         })
         .find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
@@ -180,7 +180,7 @@ export const addStatAndBuyThreadBtn = function () {
                 alert('统计楼层格式不正确');
                 return;
             }
-            let sf = Util.getUrlParam('sf');
+            let sf = Util.getThreadSfParam();
             let startFloor = 0, endFloor = 0;
             let valueArr = value.split('-');
             if (valueArr.length === 2) {
@@ -360,6 +360,7 @@ export const showStatFloorDialog = function (floorList) {
     let $statFloorList = $dialog.find('#pdStatFloorList');
     let $statFloorListContent = $dialog.find('[name="statFloorListContent"]');
     let tid = Util.getUrlParam('tid');
+    let sf = Util.getThreadSfParam();
 
     /**
      * 显示统计楼层列表
@@ -393,7 +394,7 @@ export const showStatFloorDialog = function (floorList) {
         type="checkbox" value="${data.userName}">
     </label>
   </td>
-  <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
+  <td><a href="read.php?tid=${tid}&spid=${data.pid}${sf ? '&sf=' + sf : ''}" target="_blank">${floor}楼</a></td>
   <td><a href="profile.php?action=show&uid=${data.uid}&sf=${data.sf}" target="_blank" style="color: #000;">${data.userName}</a></td>
   <td style="${data.smLevel.endsWith('W') || data.smLevel === 'MAX' ? 'color: #f39;' : ''}">${data.smLevel}</td>
   <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>

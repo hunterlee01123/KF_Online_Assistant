@@ -602,3 +602,19 @@ export const deleteData = (key, storageType = Info.storageType) => {
     if (storageType === 'ByUid' || storageType === 'Global') GM_deleteValue(key);
     else localStorage.removeItem(key);
 };
+
+/**
+ * 获取帖子sf参数
+ * @returns {string} sf参数
+ */
+export const getThreadSfParam = function () {
+    let sf = '';
+    let matches = /&sf=(\w+)/.exec($('.pages:first > li:first-child > a').attr('href'));
+    if (matches) {
+        sf = matches[1];
+    }
+    else {
+        sf = getUrlParam('sf');
+    }
+    return sf ? sf : '';
+};
