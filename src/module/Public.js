@@ -553,6 +553,13 @@ export const startTimingMode = function () {
             $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
         }
 
+        if (Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.autoOpenBoxesAfterLootCookieName) && !/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
+            $(document).clearQueue('AutoAction');
+            $(document).queue('AutoAction', function () {
+                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
+            });
+        }
+
         $(document).dequeue('AutoAction');
 
         let {action, interval} = getNextTimingIntervalInfo();

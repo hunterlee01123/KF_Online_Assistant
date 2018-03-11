@@ -252,8 +252,17 @@ const init = function () {
         $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
     }
 
-    if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.lootCompleteCookieName)) {
-        $(document).queue('AutoAction', () => Item.autoOpenBoxes());
+    if (Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.autoOpenBoxesAfterLootCookieName)) {
+        if(/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
+            Util.deleteCookie(Const.autoOpenBoxesAfterLootCookieName);
+            $(document).queue('AutoAction', () => Item.autoOpenBoxes());
+        }
+        else {
+            $(document).clearQueue('AutoAction');
+            $(document).queue('AutoAction', function () {
+                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
+            });
+        }
     }
 
     $(document).dequeue('AutoAction');

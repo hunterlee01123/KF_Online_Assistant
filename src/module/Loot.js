@@ -1379,8 +1379,12 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }
         }
         else {
-            if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), Const.minActionInterval);
-            else setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
+            if (autoChangePointsEnabled && !/你被击败了/.test(log)) {
+                setTimeout(() => ready(currentLevel), Const.minActionInterval);
+            }
+            else {
+                setTimeout(attack, typeof Const.lootAttackInterval === 'function' ? Const.lootAttackInterval() : Const.lootAttackInterval);
+            }
         }
     };
 
@@ -1545,8 +1549,9 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());
     }
     if (Config.autoOpenBoxesAfterLootEnabled) {
+        Util.setCookie(Const.autoOpenBoxesAfterLootCookieName, 1);
+        $(document).clearQueue('AutoAction');
         $(document).queue('AutoAction', function () {
-            $(document).clearQueue('AutoAction');
             setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
         });
     }

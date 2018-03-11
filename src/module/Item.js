@@ -524,11 +524,11 @@ export const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled 
 </li>
 `);
                 console.log(
-                    `共有${successNum}个【${boxType}】打开成功（平均随机值【${avgRandomNum}】）${failNum > 0 ? `，共有${failNum}个盒子打开失败` : ''}`
+                    `共有${successNum}个【${boxType}】打开成功（平均随机值【${avgRandomNum}】）${failNum > 0 ? `，共有${failNum}个盒子无法获取结果` : ''}`
                 );
                 Msg.show(
                     `<strong>共有<em>${successNum}</em>个【${boxType}】打开成功（平均随机值【<em>${avgRandomNum}</em>】）` +
-                    `${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>${msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml}`,
+                    `${failNum > 0 ? `，共有<em>${failNum}</em>个盒子无法获取结果` : ''}</strong>${msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml}`,
                     -1
                 );
 
