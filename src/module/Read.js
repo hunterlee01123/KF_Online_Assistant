@@ -989,3 +989,14 @@ export const showBuyThreadLogDialog = function () {
     }
     Script.runFunc('Read.showBuyThreadLogDialog_after_');
 };
+
+/**
+ * 屏蔽帖子页面无用的按钮
+ */
+export const blockUselessThreadButtons = function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
+        let $this = $(this);
+        if($this.text().trim() === Info.userName) return;
+        $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
+    });
+};

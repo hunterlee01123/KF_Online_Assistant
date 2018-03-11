@@ -263,6 +263,10 @@ export const show = function () {
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
+      <label class="pd_cfg_ml">
+        <input name="blockUselessThreadButtonsEnabled" type="checkbox"> 屏蔽无用按钮
+        <span class="pd_cfg_tips" title="屏蔽帖子页面上无用的按钮（如：非自己楼层上的编辑按钮）">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>其它设置</legend>

@@ -690,7 +690,7 @@ export const followUsers = function () {
         });
     }
     else if (location.pathname === '/read.php') {
-        $('.readidmsbottom > a, .readidmleft > a').each(function () {
+        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
                 $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
@@ -755,7 +755,7 @@ export const blockUsers = function () {
             else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         }
         let page = Util.getCurrentThreadPage();
-        $('.readidmsbottom > a, .readidmleft > a').each(function (i) {
+        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function (i) {
             let $this = $(this);
             let index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
             if (index > -1) {
@@ -880,7 +880,7 @@ export const blockThread = function () {
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
-        let $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
+        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').eq(0);
         if ($userName.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
