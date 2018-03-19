@@ -553,7 +553,7 @@ export const startTimingMode = function () {
             $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
         }
 
-        if (Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.autoOpenBoxesAfterLootCookieName) && !/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
+        if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(Const.autoOpenBoxesAfterLootTmpLogName) && !/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
             $(document).clearQueue('AutoAction');
             $(document).queue('AutoAction', function () {
                 setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
@@ -659,7 +659,7 @@ export const getDailyBonus = function () {
             setTimeout(getDailyBonus, Const.defAjaxInterval);
         });
     }).always(function () {
-        $(document).dequeue('AutoAction');
+        setTimeout(() => $(document).dequeue('AutoAction'), Const.minActionInterval);
     });
 };
 

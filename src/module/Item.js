@@ -43,8 +43,11 @@ export const init = function () {
     safeId = Public.getSafeId();
     if (!safeId) return;
     $boxArea = $('.kf_fw_ig1:eq(0)');
+    $boxArea.attr('id', 'pdBoxArea');
     $armArea = $('.kf_fw_ig4:eq(0)');
+    $armArea.attr('id', 'pdArmArea');
     $itemArea = $('.kf_fw_ig1:eq(1)');
+    $itemArea.attr('id', 'pdItemArea');
 
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
@@ -555,8 +558,8 @@ export const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled 
                         setTimeout(action, Const.minActionInterval);
                     }
                     else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
-						showArmsFinalAdditionAfterOpenBoxes();
-					}
+                        showArmsFinalAdditionAfterOpenBoxes();
+                    }
                 }
             }
             else {
@@ -586,28 +589,28 @@ export const openBoxes = function ({id, boxType, num, safeId, nextActionEnabled 
  * 在一键开盒后自动显示装备最终加成信息
  */
 const showArmsFinalAdditionAfterOpenBoxes = function () {
-    if(Info.w.isShowArmsFinalAddition) return;
-	Info.w.isShowArmsFinalAddition = true;
+    if (Info.w.isShowArmsFinalAddition) return;
+    Info.w.isShowArmsFinalAddition = true;
 
-	let oriEquippedArmList = [];
-	let armList = [];
-	$armArea.find('tr[data-id]').each(function () {
-		let $this = $(this);
-		let armId = parseInt($this.data('id'));
-		let armClass = $this.data('class');
-		if (armId && armClass) {
-			armList.push({armId, armClass});
-		}
-		if ($this.hasClass('pd_arm_equipped')) {
-			oriEquippedArmList.push({armId, armClass});
-		}
-	});
-	if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
-	if (armList.length > 0) {
-		console.log('在一键开盒后自动显示装备最终加成信息Start');
-		if(Const.debug) console.log(oriEquippedArmList);
-		showArmsFinalAddition(armList, oriEquippedArmList, safeId);
-	}
+    let oriEquippedArmList = [];
+    let armList = [];
+    $armArea.find('tr[data-id]').each(function () {
+        let $this = $(this);
+        let armId = parseInt($this.data('id'));
+        let armClass = $this.data('class');
+        if (armId && armClass) {
+            armList.push({armId, armClass});
+        }
+        if ($this.hasClass('pd_arm_equipped')) {
+            oriEquippedArmList.push({armId, armClass});
+        }
+    });
+    if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
+    if (armList.length > 0) {
+        console.log('在一键开盒后自动显示装备最终加成信息Start');
+        if (Const.debug) console.log(oriEquippedArmList);
+        showArmsFinalAddition(armList, oriEquippedArmList, safeId);
+    }
 };
 
 // 保存我的装备信息的键值名称
@@ -1147,33 +1150,33 @@ const addArmsButton = function () {
         })
         .end().find('[name="showArmsFinalAddition"]')
         .click(function () {
-			let $arms = $armArea.find('tr[data-id]:has([name="armCheck"]:checked)');
-			if (!confirm(`是否显示当前页面上【${$arms.length > 0 ? '所选' : '全部'}】装备的最终加成信息？
+            let $arms = $armArea.find('tr[data-id]:has([name="armCheck"]:checked)');
+            if (!confirm(`是否显示当前页面上【${$arms.length > 0 ? '所选' : '全部'}】装备的最终加成信息？
 （警告：请不要在争夺攻击途中使用此功能！）`)) return;
-			if(!$arms.length) $arms = $armArea.find('tr[data-id]');
-			Msg.destroy();
+            if (!$arms.length) $arms = $armArea.find('tr[data-id]');
+            Msg.destroy();
 
-			let armList = [];
-			$arms.each(function () {
-				let $this = $(this);
-				let armId = parseInt($this.data('id'));
-				let armClass = $this.data('class');
-				if (armId && armClass) {
-					armList.push({armId, armClass});
-				}
-			});
-			if (!armList.length) return;
+            let armList = [];
+            $arms.each(function () {
+                let $this = $(this);
+                let armId = parseInt($this.data('id'));
+                let armClass = $this.data('class');
+                if (armId && armClass) {
+                    armList.push({armId, armClass});
+                }
+            });
+            if (!armList.length) return;
 
-			let oriEquippedArmList = [];
-			$armArea.find('.pd_arm_equipped').each(function () {
-				let $this = $(this);
-				let armId = parseInt($this.data('id'));
-				let armClass = $this.data('class');
-				oriEquippedArmList.push({armId, armClass});
-			});
-			if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
+            let oriEquippedArmList = [];
+            $armArea.find('.pd_arm_equipped').each(function () {
+                let $this = $(this);
+                let armId = parseInt($this.data('id'));
+                let armClass = $this.data('class');
+                oriEquippedArmList.push({armId, armClass});
+            });
+            if (oriEquippedArmList.length < 2 && !confirm('未在当前页面上存在已装备的该类别装备，在操作后将装备为该页面上其类别的最后一件装备，是否继续？')) return;
 
-			showArmsFinalAddition(armList, oriEquippedArmList, safeId);
+            showArmsFinalAddition(armList, oriEquippedArmList, safeId);
         }).end().find('[name="smeltSelectArms"]')
         .click(function () {
             let idList = [];
@@ -1223,6 +1226,9 @@ export const addCommonArmsButton = function ($area, $armArea) {
             sortArmsById($armArea);
         }
     }).end().filter('[name="select"]').change(function () {
+        let $selectedArmsNum = $armArea.find('#pdSelectedArmsNum');
+        $selectedArmsNum.text(0).parent().hide();
+
         let name = $(this).val();
         let $checkboxes = $armArea.find('input[name="armCheck"]');
         if (name === 'selectAll') {
@@ -1264,6 +1270,12 @@ export const addCommonArmsButton = function ($area, $armArea) {
                 $armArea.find(text.split(' ').map(armId => `tr[data-id="${armId}"] input[name="armCheck"]`).join(',')).prop('checked', true);
             }
         }
+
+        let selectedNum = $checkboxes.filter(':checked').length;
+        if (selectedNum > 0) {
+            $selectedArmsNum.text(selectedNum).parent().show();
+        }
+
         Script.runFunc('Item.addCommonArmsButton_select_change_', {name, $armArea});
         this.selectedIndex = 0;
     }).end().filter('[name="copyArmParameterSetting"]').click(function () {
@@ -1282,11 +1294,15 @@ export const addCommonArmsButton = function ($area, $armArea) {
             copyData += getArmParameterSetting(id, info) + '\n\n';
         }
         $this.data('copy-text', copyData.trim());
-        console.log('所选装备的计算器装备参数设置：\n\n' + copyData.trim());
-        if (!Util.copyText($this, '所选装备的计算器装备参数设置已复制')) {
+        console.log(`所选的 ${armInfoList.length} 件装备的计算器装备参数设置：\n\n` + copyData.trim());
+        if (!Util.copyText($this, `所选的 ${armInfoList.length} 件装备的计算器装备参数设置已复制`)) {
             alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
     });
+
+    $armArea.find('> tbody > tr:last-child > td:first-child').append(
+        '<div class="pd_highlight" style="position: absolute; left: 7px; top: 0; display: none;">(已选 <span id="pdSelectedArmsNum">0</span> 件)</div>'
+    );
     Script.runFunc('Item.addCommonArmsButton_after_', {$area, $armArea});
 };
 
@@ -1607,9 +1623,9 @@ export const smeltArms = function ({typeList = [], idList = [], safeId, nextActi
         if (action) {
             setTimeout(action, Const.minActionInterval);
         }
-		else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
-			showArmsFinalAdditionAfterOpenBoxes();
-		}
+        else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+            showArmsFinalAdditionAfterOpenBoxes();
+        }
     };
 
     /**
@@ -2028,9 +2044,9 @@ export const useItems = function ({typeList, safeId, nextActionEnabled = false})
         if (action) {
             setTimeout(action, Const.minActionInterval);
         }
-		else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
-			showArmsFinalAdditionAfterOpenBoxes();
-		}
+        else if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+            showArmsFinalAdditionAfterOpenBoxes();
+        }
     };
 
     /**
@@ -2196,9 +2212,9 @@ export const sellItems = function ({typeList, safeId, nextActionEnabled = false}
         Msg.remove($wait);
         if ($.isEmptyObject(sellInfo)) {
             console.log('没有道具被出售！');
-			if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
-				showArmsFinalAdditionAfterOpenBoxes();
-			}
+            if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+                showArmsFinalAdditionAfterOpenBoxes();
+            }
             Script.runFunc('Item.sellItems_complete_', {nextActionEnabled, $armArea});
             return;
         }
@@ -2228,9 +2244,9 @@ export const sellItems = function ({typeList, safeId, nextActionEnabled = false}
             -1
         );
         setTimeout(() => getNextObjects(2), Const.defAjaxInterval);
-        if(Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
-			showArmsFinalAdditionAfterOpenBoxes();
-		}
+        if (Config.showArmsFinalAdditionAfterOpenBoxesEnabled) {
+            showArmsFinalAdditionAfterOpenBoxes();
+        }
         Script.runFunc('Item.sellItems_complete_', {nextActionEnabled, $armArea});
     };
 
@@ -2410,7 +2426,7 @@ export const buyItems = function (buyItemIdList) {
                 Msg.remove($wait);
                 Util.deleteCookie(Const.buyItemReadyCookieName);
                 Util.setCookie(Const.buyItemCookieName, 1, getCookieDate());
-                $(document).dequeue('AutoAction');
+                setTimeout(() => $(document).dequeue('AutoAction'), Const.minActionInterval);
                 Script.runFunc('Item.buyItems_complete_');
             }
             else {

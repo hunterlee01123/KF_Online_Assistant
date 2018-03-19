@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.6';
+const version = '12.7';
 
 /**
  * 导出模块
@@ -253,9 +253,9 @@ const init = function () {
         $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
     }
 
-    if (Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(Const.autoOpenBoxesAfterLootCookieName)) {
+    if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(Const.autoOpenBoxesAfterLootTmpLogName)) {
         if(/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
-            Util.deleteCookie(Const.autoOpenBoxesAfterLootCookieName);
+            TmpLog.deleteValue(Const.autoOpenBoxesAfterLootTmpLogName);
             $(document).queue('AutoAction', () => Item.autoOpenBoxes());
         }
         else {

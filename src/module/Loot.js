@@ -1549,13 +1549,13 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());
     }
     if (Config.autoOpenBoxesAfterLootEnabled) {
-        Util.setCookie(Const.autoOpenBoxesAfterLootCookieName, 1);
+        TmpLog.setValue(Const.autoOpenBoxesAfterLootTmpLogName, true);
         $(document).clearQueue('AutoAction');
         $(document).queue('AutoAction', function () {
             setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
         });
     }
-    $(document).dequeue('AutoAction');
+    setTimeout(() => $(document).dequeue('AutoAction'), Const.minActionInterval);
     Script.runFunc('Loot.recordLootLog_after_');
 };
 
@@ -2809,7 +2809,7 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId) {
                 Msg.remove($wait);
                 if (nextTime > 0 || isStop) {
                     Util.setCookie(Const.promoteHaloCookieName, nextTime, new Date(nextTime));
-                    $(document).dequeue('AutoAction');
+                    setTimeout(() => $(document).dequeue('AutoAction'), Const.minActionInterval);
                 }
                 else {
                     Util.deleteCookie(Const.promoteHaloCookieName);

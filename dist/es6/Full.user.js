@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.6
+// @version     12.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.6';
+const version = '12.7';
 
 /**
  * 导出模块
@@ -189,6 +189,7 @@ const init = function () {
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customMySmColor) Read.modifyMySmColor();
+        if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
         Read.addFloorGotoLink();
@@ -309,8 +310,16 @@ const init = function () {
         $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
     }
 
-    if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href) && Config.autoOpenBoxesAfterLootEnabled && Util.getCookie(_Const2.default.lootCompleteCookieName)) {
-        $(document).queue('AutoAction', () => Item.autoOpenBoxes());
+    if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName)) {
+        if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
+            TmpLog.deleteValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName);
+            $(document).queue('AutoAction', () => Item.autoOpenBoxes());
+        } else {
+            $(document).clearQueue('AutoAction');
+            $(document).queue('AutoAction', function () {
+                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', _Const2.default.minActionInterval);
+            });
+        }
     }
 
     $(document).dequeue('AutoAction');
@@ -1007,6 +1016,8 @@ const Config = exports.Config = {
     autoSavePostContentWhenSubmitEnabled: false,
     // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
+    // 是否屏蔽帖子页面上无用的按钮，true：开启；false：关闭
+    blockUselessThreadButtonsEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1505,6 +1516,10 @@ const show = exports.show = function () {
       <label>
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="blockUselessThreadButtonsEnabled" type="checkbox"> 屏蔽无用按钮
+        <span class="pd_cfg_tips" title="屏蔽帖子页面上无用的按钮（如：非自己楼层上的编辑按钮）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -2563,6 +2578,8 @@ const Const = {
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
     // 存储战力光环信息的临时日志名称
     haloInfoTmpLogName: 'HaloInfo',
+    // 标记在争夺完后自动一键开盒的临时日志名称
+    autoOpenBoxesAfterLootTmpLogName: 'AutoOpenBoxesAfterLoot',
 
     // 标记已领取每日奖励的Cookie名称
     getDailyBonusCookieName: 'getDailyBonus',
@@ -3086,8 +3103,11 @@ const init = exports.init = function () {
     safeId = Public.getSafeId();
     if (!safeId) return;
     $boxArea = $('.kf_fw_ig1:eq(0)');
+    $boxArea.attr('id', 'pdBoxArea');
     $armArea = $('.kf_fw_ig4:eq(0)');
+    $armArea.attr('id', 'pdArmArea');
     $itemArea = $('.kf_fw_ig1:eq(1)');
+    $itemArea.attr('id', 'pdItemArea');
 
     addBatchOpenBoxesLink();
     addOpenAllBoxesButton();
@@ -3554,8 +3574,8 @@ const openBoxes = exports.openBoxes = function ({ id, boxType, num, safeId, next
   ${resultStatHtml ? resultStatHtml : '无'}
 </li>
 `);
-                console.log(`共有${successNum}个【${boxType}】打开成功（平均随机值【${avgRandomNum}】）${failNum > 0 ? `，共有${failNum}个盒子打开失败` : ''}`);
-                Msg.show(`<strong>共有<em>${successNum}</em>个【${boxType}】打开成功（平均随机值【<em>${avgRandomNum}</em>】）` + `${failNum > 0 ? `，共有<em>${failNum}</em>个盒子打开失败` : ''}</strong>${msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml}`, -1);
+                console.log(`共有${successNum}个【${boxType}】打开成功（平均随机值【${avgRandomNum}】）${failNum > 0 ? `，共有${failNum}个盒子无法获取结果` : ''}`);
+                Msg.show(`<strong>共有<em>${successNum}</em>个【${boxType}】打开成功（平均随机值【<em>${avgRandomNum}</em>】）` + `${failNum > 0 ? `，共有<em>${failNum}</em>个盒子无法获取结果` : ''}</strong>${msgStatHtml.length > 25 ? '<br>' + msgStatHtml : msgStatHtml}`, -1);
 
                 Script.runFunc('Item.openBoxes_after_', stat);
                 setTimeout(() => getNextObjects(1), _Const2.default.defAjaxInterval);
@@ -4204,6 +4224,9 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
             sortArmsById($armArea);
         }
     }).end().filter('[name="select"]').change(function () {
+        let $selectedArmsNum = $armArea.find('#pdSelectedArmsNum');
+        $selectedArmsNum.text(0).parent().hide();
+
         let name = $(this).val();
         let $checkboxes = $armArea.find('input[name="armCheck"]');
         if (name === 'selectAll') {
@@ -4238,6 +4261,12 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
                 $armArea.find(text.split(' ').map(armId => `tr[data-id="${armId}"] input[name="armCheck"]`).join(',')).prop('checked', true);
             }
         }
+
+        let selectedNum = $checkboxes.filter(':checked').length;
+        if (selectedNum > 0) {
+            $selectedArmsNum.text(selectedNum).parent().show();
+        }
+
         Script.runFunc('Item.addCommonArmsButton_select_change_', { name, $armArea });
         this.selectedIndex = 0;
     }).end().filter('[name="copyArmParameterSetting"]').click(function () {
@@ -4256,11 +4285,13 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
             copyData += getArmParameterSetting(id, info) + '\n\n';
         }
         $this.data('copy-text', copyData.trim());
-        console.log('所选装备的计算器装备参数设置：\n\n' + copyData.trim());
-        if (!Util.copyText($this, '所选装备的计算器装备参数设置已复制')) {
+        console.log(`所选的 ${armInfoList.length} 件装备的计算器装备参数设置：\n\n` + copyData.trim());
+        if (!Util.copyText($this, `所选的 ${armInfoList.length} 件装备的计算器装备参数设置已复制`)) {
             alert('你的浏览器不支持复制，请打开Web控制台查看');
         }
     });
+
+    $armArea.find('> tbody > tr:last-child > td:first-child').append('<div class="pd_highlight" style="position: absolute; left: 7px; top: 0; display: none;">(已选 <span id="pdSelectedArmsNum">0</span> 件)</div>');
     Script.runFunc('Item.addCommonArmsButton_after_', { $area, $armArea });
 };
 
@@ -5317,7 +5348,7 @@ const buyItems = exports.buyItems = function (buyItemIdList) {
                 Msg.remove($wait);
                 Util.deleteCookie(_Const2.default.buyItemReadyCookieName);
                 Util.setCookie(_Const2.default.buyItemCookieName, 1, getCookieDate());
-                $(document).dequeue('AutoAction');
+                setTimeout(() => $(document).dequeue('AutoAction'), _Const2.default.minActionInterval);
                 Script.runFunc('Item.buyItems_complete_');
             } else {
                 setTimeout(() => buy(parseInt(itemIdList[index][subIndex]), safeId), _Const2.default.minActionInterval);
@@ -7364,7 +7395,11 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 Script.runFunc('Loot.lootAttack_after_');
             }
         } else {
-            if (autoChangePointsEnabled) setTimeout(() => ready(currentLevel), _Const2.default.minActionInterval);else setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+            if (autoChangePointsEnabled && !/你被击败了/.test(log)) {
+                setTimeout(() => ready(currentLevel), _Const2.default.minActionInterval);
+            } else {
+                setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
+            }
         }
     };
 
@@ -7523,12 +7558,13 @@ const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());
     }
     if (Config.autoOpenBoxesAfterLootEnabled) {
+        TmpLog.setValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName, true);
+        $(document).clearQueue('AutoAction');
         $(document).queue('AutoAction', function () {
-            $(document).clearQueue('AutoAction');
             setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', _Const2.default.minActionInterval);
         });
     }
-    $(document).dequeue('AutoAction');
+    setTimeout(() => $(document).dequeue('AutoAction'), _Const2.default.minActionInterval);
     Script.runFunc('Loot.recordLootLog_after_');
 };
 
@@ -8723,7 +8759,7 @@ const promoteHalo = exports.promoteHalo = function (totalCount, promoteHaloCostT
                 Msg.remove($wait);
                 if (nextTime > 0 || isStop) {
                     Util.setCookie(_Const2.default.promoteHaloCookieName, nextTime, new Date(nextTime));
-                    $(document).dequeue('AutoAction');
+                    setTimeout(() => $(document).dequeue('AutoAction'), _Const2.default.minActionInterval);
                 } else {
                     Util.deleteCookie(_Const2.default.promoteHaloCookieName);
                     getPromoteHaloInfo();
@@ -10372,6 +10408,13 @@ const startTimingMode = exports.startTimingMode = function () {
             $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
         }
 
+        if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName) && !/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
+            $(document).clearQueue('AutoAction');
+            $(document).queue('AutoAction', function () {
+                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', _Const2.default.minActionInterval);
+            });
+        }
+
         $(document).dequeue('AutoAction');
 
         let { action, interval } = getNextTimingIntervalInfo();
@@ -10468,7 +10511,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
             setTimeout(getDailyBonus, _Const2.default.defAjaxInterval);
         });
     }).always(function () {
-        $(document).dequeue('AutoAction');
+        setTimeout(() => $(document).dequeue('AutoAction'), _Const2.default.minActionInterval);
     });
 };
 
@@ -10497,7 +10540,7 @@ const followUsers = exports.followUsers = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
-        $('.readidmsbottom > a, .readidmleft > a').each(function () {
+        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
                 $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
@@ -10556,7 +10599,7 @@ const blockUsers = exports.blockUsers = function () {
             if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         }
         let page = Util.getCurrentThreadPage();
-        $('.readidmsbottom > a, .readidmleft > a').each(function (i) {
+        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function (i) {
             let $this = $(this);
             let index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
             if (index > -1) {
@@ -10671,7 +10714,7 @@ const blockThread = exports.blockThread = function () {
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
-        let $userName = $('.readidmsbottom > a, .readidmleft > a').eq(0);
+        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').eq(0);
         if ($userName.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
@@ -11165,7 +11208,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.blockUselessThreadButtons = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -11213,7 +11256,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * 为帖子里的每个楼层添加跳转链接
  */
 const addFloorGotoLink = exports.addFloorGotoLink = function () {
-    let sf = Util.getUrlParam('sf');
+    let sf = Util.getThreadSfParam();
     $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span').each(function () {
         let $this = $(this);
         let floorText = $this.text();
@@ -11249,8 +11292,8 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
         e.preventDefault();
         let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
-        let sf = Util.getUrlParam('sf');
-        location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}&sf=${sf ? sf : ''}`;
+        let sf = Util.getThreadSfParam();
+        location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}&sf=${sf}`;
     }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
     }).end().closest('div').next().css({ 'max-width': '385px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
@@ -11367,7 +11410,7 @@ const addStatAndBuyThreadBtn = exports.addStatAndBuyThreadBtn = function () {
             alert('统计楼层格式不正确');
             return;
         }
-        let sf = Util.getUrlParam('sf');
+        let sf = Util.getThreadSfParam();
         let startFloor = 0,
             endFloor = 0;
         let valueArr = value.split('-');
@@ -11542,6 +11585,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
     let $statFloorList = $dialog.find('#pdStatFloorList');
     let $statFloorListContent = $dialog.find('[name="statFloorListContent"]');
     let tid = Util.getUrlParam('tid');
+    let sf = Util.getThreadSfParam();
 
     /**
      * 显示统计楼层列表
@@ -11575,7 +11619,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
         type="checkbox" value="${data.userName}">
     </label>
   </td>
-  <td><a href="read.php?tid=${tid}&spid=${data.pid}" target="_blank">${floor}楼</a></td>
+  <td><a href="read.php?tid=${tid}&spid=${data.pid}${sf ? '&sf=' + sf : ''}" target="_blank">${floor}楼</a></td>
   <td><a href="profile.php?action=show&uid=${data.uid}&sf=${data.sf}" target="_blank" style="color: #000;">${data.userName}</a></td>
   <td style="${data.smLevel.endsWith('W') || data.smLevel === 'MAX' ? 'color: #f39;' : ''}">${data.smLevel}</td>
   <td class="pd_stat">${data.status === 1 ? `<em>${data.sell}</em>` : `<span class="pd_notice">${!data.status ? '无' : '已买'}</span>`}</td>
@@ -12112,6 +12156,17 @@ const showBuyThreadLogDialog = exports.showBuyThreadLogDialog = function () {
         $lastChild.get(0).scrollIntoView();
     }
     Script.runFunc('Read.showBuyThreadLogDialog_after_');
+};
+
+/**
+ * 屏蔽帖子页面无用的按钮
+ */
+const blockUselessThreadButtons = exports.blockUselessThreadButtons = function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
+        let $this = $(this);
+        if ($this.text().trim() === _Info2.default.userName) return;
+        $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
+    });
 };
 
 },{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){
@@ -12786,7 +12841,7 @@ const deleteValue = exports.deleteValue = function (key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -13367,6 +13422,21 @@ const writeData = exports.writeData = (key, value, storageType = _Info2.default.
  */
 const deleteData = exports.deleteData = (key, storageType = _Info2.default.storageType) => {
     if (storageType === 'ByUid' || storageType === 'Global') GM_deleteValue(key);else localStorage.removeItem(key);
+};
+
+/**
+ * 获取帖子sf参数
+ * @returns {string} sf参数
+ */
+const getThreadSfParam = exports.getThreadSfParam = function () {
+    let sf = '';
+    let matches = /&sf=(\w+)/.exec($('.pages:first > li:first-child > a').attr('href'));
+    if (matches) {
+        sf = matches[1];
+    } else {
+        sf = getUrlParam('sf');
+    }
+    return sf ? sf : '';
 };
 
 },{"./Const":6,"./Info":9}]},{},[1]);

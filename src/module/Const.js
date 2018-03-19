@@ -103,6 +103,8 @@ const Const = {
     prevAutoChangeIdColorTmpLogName: 'PrevAutoChangeIdColor',
     // 存储战力光环信息的临时日志名称
     haloInfoTmpLogName: 'HaloInfo',
+    // 标记在争夺完后自动一键开盒的临时日志名称
+    autoOpenBoxesAfterLootTmpLogName: 'AutoOpenBoxesAfterLoot',
 
     // 标记已领取每日奖励的Cookie名称
     getDailyBonusCookieName: 'getDailyBonus',
@@ -116,8 +118,6 @@ const Const = {
     changePointsInfoCookieName: 'changePointsInfo',
     // 标记已完成自动争夺的Cookie名称
     lootCompleteCookieName: 'lootComplete',
-    // 标记在争夺完后自动一键开盒的Cookie名称
-    autoOpenBoxesAfterLootCookieName: 'autoOpenBoxesAfterLoot',
     // 标记准备购买物品的Cookie名称
     buyItemReadyCookieName: 'buyItemReady',
     // 标记已购买物品的Cookie名称
