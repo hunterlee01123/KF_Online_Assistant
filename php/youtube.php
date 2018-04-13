@@ -52,6 +52,10 @@ function getVideoUrl($id, $token)
 function main()
 {
     $id = $_GET['id'];
+    if (!$id) {
+        echo 'No Param';
+        return;
+    }
 
     $token = getToken();
     //echo "Token: $token<br>";
