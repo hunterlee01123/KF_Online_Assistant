@@ -11,7 +11,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.7.1
+// @version     12.7.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -108,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.7.1';
+const version = '12.7.2';
 
 /**
  * 导出模块
@@ -10139,6 +10139,7 @@ const appendCss = exports.appendCss = function () {
   #pdPropertiesArea input[type="text"] { width: 211px; }
   .pd_property_diff { position: absolute; top: 0px; right: 5px; }
   .pd_property_diff em { font-style: normal; }
+  .indbox5, .indbox6 { overflow: hidden; }
 
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }

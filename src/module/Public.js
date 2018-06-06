@@ -174,6 +174,7 @@ export const appendCss = function () {
   #pdPropertiesArea input[type="text"] { width: 211px; }
   .pd_property_diff { position: absolute; top: 0px; right: 5px; }
   .pd_property_diff em { font-style: normal; }
+  .indbox5, .indbox6 { overflow: hidden; }
 
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }
