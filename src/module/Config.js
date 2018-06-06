@@ -77,6 +77,8 @@ export const Config = {
     showLevelEnemyStatEnabled: false,
     // 是否显示精简争夺记录，true：开启；false：关闭
     showLiteLootLogEnabled: false,
+    // 是否显示抽卡提醒，true：开启；false：关闭
+    showDrawCardTipsEnabled: false,
 
     // 是否自动购买物品，true：开启；false：关闭
     autoBuyItemEnabled: false,

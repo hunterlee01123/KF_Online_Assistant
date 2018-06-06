@@ -943,6 +943,7 @@ export const addFastNavMenu = function () {
   <li><a href="personal.php?action=post">我的回复</a></li>
   <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
+  <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
   <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
   <li><a href="hack.php?H_name=bank">银行</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>

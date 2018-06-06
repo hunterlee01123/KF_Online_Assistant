@@ -5,6 +5,7 @@ import Const from './Const';
 import * as Msg from './Msg';
 import * as Log from './Log';
 import * as Public from './Public';
+import * as Script from './Script';
 
 /**
  * 将指定的一系列卡片转换为VIP时间
@@ -20,7 +21,7 @@ const convertCardsToVipTime = function (cardList, safeId) {
                 type: 'GET',
                 url: `kf_fw_card_doit.php?do=recard&id=${cardId}&safeid=${safeId}&t=${$.now()}`,
                 timeout: Const.defAjaxTimeout,
-                success (html) {
+                success(html) {
                     Public.showFormatLog('将卡片转换为VIP时间', html);
                     let {msg} = Util.getResponseMsg(html);
                     let matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(msg);
@@ -31,10 +32,10 @@ const convertCardsToVipTime = function (cardList, safeId) {
                     }
                     else failNum++;
                 },
-                error () {
+                error() {
                     failNum++;
                 },
-                complete () {
+                complete() {
                     let $countdown = $('.pd_countdown:last');
                     $countdown.text(parseInt($countdown.text()) - 1);
                     let isStop = $countdown.closest('.pd_msg').data('stop');
@@ -170,4 +171,73 @@ export const addStartBatchModeButton = function () {
             $this.prevAll().remove();
         }
     });
+};
+
+/**
+ * 显示抽卡提醒
+ */
+export const showDrawCardTips = function () {
+    /**
+     * 显示剩余时间
+     * @param {Date} nextTime 下次抽卡时间
+     */
+    const showWaitTime = function (nextTime) {
+        let interval = nextTime - $.now();
+        let hours = 0, minutes = 0;
+        if (interval > 0) {
+            minutes = Math.ceil(interval / 60 / 1000);
+            hours = Math.floor(minutes / 60);
+            minutes -= hours * 60;
+        }
+        $(`<span id="pdDrawCardInterval" style="${interval <= 0 ? 'color: #ff0080;' : ''}"> (抽卡：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`)
+            .appendTo('#pdLoot')
+            .click(function () {
+                if (interval <= 0) {
+                    location.href = 'kf_fw_ig_mycard.php';
+                    return false;
+                }
+            });
+    };
+
+    let nextTime = parseInt(Util.getCookie(Const.drawCardCookieName));
+    if (nextTime > 0) {
+        if (Info.isInHomePage) {
+            showWaitTime(new Date(nextTime));
+        }
+    }
+    else {
+        console.log('获取抽卡剩余时间Start');
+        $.get('kf_fw_ig_mycard.php?t=' + $.now(), function (html) {
+            let matches = /点击抽卡\(请等待(\d+)分钟\)/.exec(html);
+            if (matches) {
+                let minutes = parseInt(matches[1]);
+                let nextTime = Util.getDate(`+${minutes}m`);
+                let expires = nextTime <= new Date() ? Util.getDate(`+${Const.drawCardRetryInterval}m`) : nextTime;
+                Util.setCookie(Const.drawCardCookieName, nextTime.getTime(), expires);
+                if (minutes === 0) {
+                    Msg.show('<strong>当前已可抽卡，是否抽卡？</strong><a href="/kf_fw_ig_mycard.php">点此抽卡</a>', -1);
+                }
+                if (Info.isInHomePage) {
+                    showWaitTime(new Date(nextTime));
+                }
+                Script.runFunc('Card.showDrawCardTips_complete_', {minutes});
+            }
+        });
+    }
+};
+
+/**
+ * 处理角色卡片页面
+ */
+export const handleMyCardPage = function () {
+    let $drawCardLink = $('a[href^="kf_fw_ig_mycard.php?card=new"]:first');
+
+    $drawCardLink.click(() => Util.deleteCookie(Const.drawCardCookieName));
+    let matches = /点击抽卡\(请等待(\d+)分钟\)/.exec($drawCardLink.text());
+    if (matches) {
+        let minutes = parseInt(matches[1]);
+        let nextTime = Util.getDate(`+${minutes}m`);
+        let expires = nextTime <= new Date() ? Util.getDate(`+${Const.drawCardRetryInterval}m`) : nextTime;
+        Util.setCookie(Const.drawCardCookieName, nextTime.getTime(), expires);
+    }
 };

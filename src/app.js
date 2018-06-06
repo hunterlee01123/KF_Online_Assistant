@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.7';
+const version = '12.7.1';
 
 /**
  * 导出模块
@@ -106,7 +106,7 @@ const init = function () {
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customMySmColor) Read.modifyMySmColor();
-        if(Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
+        if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
         Read.addFloorGotoLink();
@@ -209,6 +209,9 @@ const init = function () {
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
+    else if (location.pathname === '/kf_fw_ig_mycard.php') {
+        Card.handleMyCardPage();
+    }
 
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
@@ -254,7 +257,7 @@ const init = function () {
     }
 
     if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(Const.autoOpenBoxesAfterLootTmpLogName)) {
-        if(/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
+        if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
             TmpLog.deleteValue(Const.autoOpenBoxesAfterLootTmpLogName);
             $(document).queue('AutoAction', () => Item.autoOpenBoxes());
         }
@@ -270,6 +273,10 @@ const init = function () {
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) {
         Public.changeIdColor();
+    }
+
+    if (Config.showDrawCardTipsEnabled) {
+        Card.showDrawCardTips();
     }
 
     if (Config.timingModeEnabled && (Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href))) {

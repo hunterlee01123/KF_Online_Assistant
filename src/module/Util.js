@@ -33,7 +33,7 @@ export const getCookie = function (name, prefix = Info.uid + '_' + Const.storage
  * @param {string} prefix Cookie名称前缀
  */
 export const deleteCookie = function (name, prefix = Info.uid + '_' + Const.storagePrefix) {
-    document.cookie = `${prefix}${name}=;expires=${getDate('-1d').toUTCString()};path=/;`;
+    document.cookie = `${prefix}${name}=;expires=${getDate('-1y').toUTCString()};path=/;`;
 };
 
 /**

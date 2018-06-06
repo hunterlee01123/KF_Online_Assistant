@@ -10,7 +10,7 @@
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.7
+// @version     12.7.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.7';
+const version = '12.7.1';
 
 /**
  * 导出模块
@@ -270,6 +270,8 @@ const init = function () {
         SelfRate.addLinksInPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
+    } else if (location.pathname === '/kf_fw_ig_mycard.php') {
+        Card.handleMyCardPage();
     }
 
     if (Config.blockUserEnabled) Public.blockUsers();
@@ -326,6 +328,10 @@ const init = function () {
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) {
         Public.changeIdColor();
+    }
+
+    if (Config.showDrawCardTipsEnabled) {
+        Card.showDrawCardTips();
     }
 
     if (Config.timingModeEnabled && (_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href))) {
@@ -669,7 +675,7 @@ const addBatchTransferButton = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addStartBatchModeButton = undefined;
+exports.handleMyCardPage = exports.showDrawCardTips = exports.addStartBatchModeButton = undefined;
 
 var _Util = require('./Util');
 
@@ -690,6 +696,10 @@ var Log = _interopRequireWildcard(_Log);
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
+
+var _Script = require('./Script');
+
+var Script = _interopRequireWildcard(_Script);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -846,7 +856,74 @@ const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Util":23}],4:[function(require,module,exports){
+/**
+ * 显示抽卡提醒
+ */
+const showDrawCardTips = exports.showDrawCardTips = function () {
+    /**
+     * 显示剩余时间
+     * @param {Date} nextTime 下次抽卡时间
+     */
+    const showWaitTime = function (nextTime) {
+        let interval = nextTime - $.now();
+        let hours = 0,
+            minutes = 0;
+        if (interval > 0) {
+            minutes = Math.ceil(interval / 60 / 1000);
+            hours = Math.floor(minutes / 60);
+            minutes -= hours * 60;
+        }
+        $(`<span id="pdDrawCardInterval" style="${interval <= 0 ? 'color: #ff0080;' : ''}"> (抽卡：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`).appendTo('#pdLoot').click(function () {
+            if (interval <= 0) {
+                location.href = 'kf_fw_ig_mycard.php';
+                return false;
+            }
+        });
+    };
+
+    let nextTime = parseInt(Util.getCookie(_Const2.default.drawCardCookieName));
+    if (nextTime > 0) {
+        if (Info.isInHomePage) {
+            showWaitTime(new Date(nextTime));
+        }
+    } else {
+        console.log('获取抽卡剩余时间Start');
+        $.get('kf_fw_ig_mycard.php?t=' + $.now(), function (html) {
+            let matches = /点击抽卡\(请等待(\d+)分钟\)/.exec(html);
+            if (matches) {
+                let minutes = parseInt(matches[1]);
+                let nextTime = Util.getDate(`+${minutes}m`);
+                let expires = nextTime <= new Date() ? Util.getDate(`+${_Const2.default.drawCardRetryInterval}m`) : nextTime;
+                Util.setCookie(_Const2.default.drawCardCookieName, nextTime.getTime(), expires);
+                if (minutes === 0) {
+                    Msg.show('<strong>当前已可抽卡，是否抽卡？</strong><a href="/kf_fw_ig_mycard.php">点此抽卡</a>', -1);
+                }
+                if (Info.isInHomePage) {
+                    showWaitTime(new Date(nextTime));
+                }
+                Script.runFunc('Card.showDrawCardTips_complete_', { minutes });
+            }
+        });
+    }
+};
+
+/**
+ * 处理角色卡片页面
+ */
+const handleMyCardPage = exports.handleMyCardPage = function () {
+    let $drawCardLink = $('a[href^="kf_fw_ig_mycard.php?card=new"]:first');
+
+    $drawCardLink.click(() => Util.deleteCookie(_Const2.default.drawCardCookieName));
+    let matches = /点击抽卡\(请等待(\d+)分钟\)/.exec($drawCardLink.text());
+    if (matches) {
+        let minutes = parseInt(matches[1]);
+        let nextTime = Util.getDate(`+${minutes}m`);
+        let expires = nextTime <= new Date() ? Util.getDate(`+${_Const2.default.drawCardRetryInterval}m`) : nextTime;
+        Util.setCookie(_Const2.default.drawCardCookieName, nextTime.getTime(), expires);
+    }
+};
+
+},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Script":20,"./Util":23}],4:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -959,6 +1036,8 @@ const Config = exports.Config = {
     showLevelEnemyStatEnabled: false,
     // 是否显示精简争夺记录，true：开启；false：关闭
     showLiteLootLogEnabled: false,
+    // 是否显示抽卡提醒，true：开启；false：关闭
+    showDrawCardTipsEnabled: false,
 
     // 是否自动购买物品，true：开启；false：关闭
     autoBuyItemEnabled: false,
@@ -1387,6 +1466,10 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
         <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
+      </label><br>
+      <label>
+        <input name="showDrawCardTipsEnabled" type="checkbox"> 显示抽卡提醒
+        <span class="pd_cfg_tips" title="显示抽卡提醒">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -2529,6 +2612,8 @@ const Const = {
     smLevelUpAlertInterval: 3,
     // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
+    // 抽卡剩余时间为0时的重试间隔（分钟）
+    drawCardRetryInterval: 30,
 
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
@@ -2597,6 +2682,8 @@ const Const = {
     buyItemReadyCookieName: 'buyItemReady',
     // 标记已购买物品的Cookie名称
     buyItemCookieName: 'buyItem',
+    // 标记抽卡的Cookie名称
+    drawCardCookieName: 'drawCard',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
@@ -10777,6 +10864,7 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
   <li><a href="personal.php?action=post">我的回复</a></li>
   <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
+  <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
   <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
   <li><a href="hack.php?H_name=bank">银行</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>
@@ -12882,7 +12970,7 @@ const getCookie = exports.getCookie = function (name, prefix = _Info2.default.ui
  * @param {string} prefix Cookie名称前缀
  */
 const deleteCookie = exports.deleteCookie = function (name, prefix = _Info2.default.uid + '_' + _Const2.default.storagePrefix) {
-    document.cookie = `${prefix}${name}=;expires=${getDate('-1d').toUTCString()};path=/;`;
+    document.cookie = `${prefix}${name}=;expires=${getDate('-1y').toUTCString()};path=/;`;
 };
 
 /**

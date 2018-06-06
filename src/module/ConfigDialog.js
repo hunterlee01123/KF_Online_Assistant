@@ -133,6 +133,10 @@ export const show = function () {
       <label class="pd_cfg_ml">
         <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
         <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
+      </label><br>
+      <label>
+        <input name="showDrawCardTipsEnabled" type="checkbox"> 显示抽卡提醒
+        <span class="pd_cfg_tips" title="显示抽卡提醒">[?]</span>
       </label>
     </fieldset>
     <fieldset>

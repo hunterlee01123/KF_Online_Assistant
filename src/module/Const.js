@@ -54,6 +54,8 @@ const Const = {
     smLevelUpAlertInterval: 3,
     // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
+    // 抽卡剩余时间为0时的重试间隔（分钟）
+    drawCardRetryInterval: 30,
 
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
@@ -122,6 +124,8 @@ const Const = {
     buyItemReadyCookieName: 'buyItemReady',
     // 标记已购买物品的Cookie名称
     buyItemCookieName: 'buyItem',
+    // 标记抽卡的Cookie名称
+    drawCardCookieName: 'drawCard',
     // 标记已去除首页已读at高亮提示的Cookie名称
     hideReadAtTipsCookieName: 'hideReadAtTips',
     // 存储之前已读的at提醒信息的Cookie名称
