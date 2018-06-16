@@ -30,7 +30,7 @@ const metaExt = '.meta.js';
 // 匹配meta内容正则表达式
 const metaContentRegex = /(\/\/ ==UserScript==(?:.|\r|\n)+?\/\/ ==\/UserScript==)(?:.|\r|\n)+/;
 // babel-polyfill脚本的URL
-const polyfillUrl = 'https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.20.0';
+const polyfillUrl = 'https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.26.0';
 // jQuery脚本的URL
 const jQueryUrl = 'https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4';
 

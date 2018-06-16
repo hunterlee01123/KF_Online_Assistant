@@ -7,11 +7,11 @@
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.meta.js
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js
-// @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.20.0
+// @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.26.0
 // @include     http://*2dkf.com/*
 // @include     http://*9moe.com/*
 // @include     http://*kfgal.com/*
-// @version     12.7.3
+// @version     12.7.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
