@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 'use strict';
 
 var _Info = require('./module/Info');
@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.7.2';
+const version = '12.7.3';
 
 /**
  * 导出模块
@@ -3298,7 +3298,7 @@ const addOpenAllBoxesButton = function () {
     <input name="autoSaveArmsInfoEnabled" type="checkbox" ${Config.autoSaveArmsInfoEnabled ? 'checked' : ''}> 保存装备信息</input>
     <span class="pd_cfg_tips" title="在批量打开盒子时自动保存装备信息，可突破装备背包最多显示10件的限制">[?]</span>
   </label>
-  <button name="clearMsg" type="button" title="清除页面上所有的消息框">清除消息框</button>
+  <button name="clearMsg" type="button" title="清除页面上所有的消息和操作结果">清除消息</button>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
 `).insertAfter($boxArea).find('[name="autoSaveArmsInfoEnabled"]').click(function () {
@@ -3308,7 +3308,10 @@ const addOpenAllBoxesButton = function () {
             Config.autoSaveArmsInfoEnabled = checked;
             (0, _Config.write)();
         }
-    }).end().find('[name="clearMsg"]').click(Msg.destroy).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
+    }).end().find('[name="clearMsg"]').click(function () {
+        Msg.destroy();
+        $('.pd_result').remove();
+    }).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
     Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 

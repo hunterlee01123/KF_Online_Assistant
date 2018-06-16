@@ -172,7 +172,7 @@ const addOpenAllBoxesButton = function () {
     <input name="autoSaveArmsInfoEnabled" type="checkbox" ${Config.autoSaveArmsInfoEnabled ? 'checked' : ''}> 保存装备信息</input>
     <span class="pd_cfg_tips" title="在批量打开盒子时自动保存装备信息，可突破装备背包最多显示10件的限制">[?]</span>
   </label>
-  <button name="clearMsg" type="button" title="清除页面上所有的消息框">清除消息框</button>
+  <button name="clearMsg" type="button" title="清除页面上所有的消息和操作结果">清除消息</button>
   <button name="openAllBoxes" type="button" style="color: #f00;" title="打开全部盒子">一键开盒</button>
 </div>
 `).insertAfter($boxArea).find('[name="autoSaveArmsInfoEnabled"]').click(function () {
@@ -182,8 +182,10 @@ const addOpenAllBoxesButton = function () {
             Config.autoSaveArmsInfoEnabled = checked;
             writeConfig();
         }
-    }).end().find('[name="clearMsg"]').click(Msg.destroy)
-        .end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
+    }).end().find('[name="clearMsg"]').click(function () {
+		Msg.destroy();
+		$('.pd_result').remove();
+	}).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
     Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
