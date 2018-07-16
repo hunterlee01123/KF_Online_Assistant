@@ -9,10 +9,10 @@
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/ForFirefox.user.js
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.26.0
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
-// @include     http://*2dkf.com/*
-// @include     http://*9moe.com/*
-// @include     http://*kfgal.com/*
-// @version     12.7.4
+// @include     http*://*2dkf.com/*
+// @include     http*://*9moe.com/*
+// @include     http*://*kfgal.com/*
+// @version     12.7.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.7.4';
+var version = '12.7.5';
 
 /**
  * 导出模块
