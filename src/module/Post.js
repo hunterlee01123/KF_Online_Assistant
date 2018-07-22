@@ -146,17 +146,17 @@ export const addExtraPostEditorButton = function () {
             case 'audio': {
                 text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐的单曲地址，将自动转换为外链地址）', 'http://');
                 let matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
-                if (matches) text = `http://music.miaola.info/163/${matches[1]}.mp3`;
+                if (matches) text = `https://music.miaola.info/163/${matches[1]}.mp3`;
                 matches = /^https?:\/\/www\.xiami\.com\/song\/(\w+)/i.exec(text);
-                if (matches) text = `http://music.miaola.info/xiami/${matches[1]}.mp3`;
+                if (matches) text = `https://music.miaola.info/xiami/${matches[1]}.mp3`;
             }
                 break;
             case 'video': {
                 text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
                 let matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
-                if (matches) text = `http://video.miaola.info/youtube/${matches[1]}`;
+                if (matches) text = `https://video.miaola.info/youtube/${matches[1]}`;
                 matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
-                if (matches) text = `http://video.miaola.info/youtube/${matches[1]}`;
+                if (matches) text = `https://video.miaola.info/youtube/${matches[1]}`;
             }
                 break;
         }
@@ -371,7 +371,7 @@ export const replaceSiteLink = function () {
             $textArea.val(
                 $textArea.val().replace(
                     new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'),
-                    'http://bbs.2dkf.com/$1.php'
+                    'https://bbs.2dkf.com/$1.php'
                 )
             )
         }
