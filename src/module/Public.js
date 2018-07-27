@@ -80,8 +80,7 @@ export const appendCss = function () {
   .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
   .pd_not_click_link, .pd_not_click_link:visited { color: #000; pointer-events: none; }
   hr {
-    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
-    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
+    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0; border-top: 1px solid rgba(0, 0, 0, .2);
   }
   .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }
