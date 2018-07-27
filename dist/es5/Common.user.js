@@ -8,10 +8,10 @@
 // @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.meta.js
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.26.0
-// @include     http://*2dkf.com/*
-// @include     http://*9moe.com/*
-// @include     http://*kfgal.com/*
-// @version     12.7.4
+// @include     http*://*2dkf.com/*
+// @include     http*://*9moe.com/*
+// @include     http*://*kfgal.com/*
+// @version     12.7.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.7.4';
+var version = '12.7.6';
 
 /**
  * 导出模块
@@ -11294,18 +11294,18 @@ var addExtraPostEditorButton = exports.addExtraPostEditorButton = function addEx
                 {
                     text = prompt('请输入HTML5音频实际地址：\n（可直接输入网易云音乐的单曲地址，将自动转换为外链地址）', 'http://');
                     var matches = /^https?:\/\/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i.exec(text);
-                    if (matches) text = 'http://music.miaola.info/163/' + matches[1] + '.mp3';
+                    if (matches) text = 'https://music.miaola.info/163/' + matches[1] + '.mp3';
                     matches = /^https?:\/\/www\.xiami\.com\/song\/(\w+)/i.exec(text);
-                    if (matches) text = 'http://music.miaola.info/xiami/' + matches[1] + '.mp3';
+                    if (matches) text = 'https://music.miaola.info/xiami/' + matches[1] + '.mp3';
                 }
                 break;
             case 'video':
                 {
                     text = prompt('请输入HTML5视频实际地址：\n（可直接输入YouTube视频页面的地址，将自动转换为外链地址）', 'http://');
                     var _matches = /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w\-]+)/i.exec(text);
-                    if (_matches) text = 'http://video.miaola.info/youtube/' + _matches[1];
+                    if (_matches) text = 'https://video.miaola.info/youtube/' + _matches[1];
                     _matches = /^https?:\/\/youtu\.be\/([\w\-]+)$/i.exec(text);
-                    if (_matches) text = 'http://video.miaola.info/youtube/' + _matches[1];
+                    if (_matches) text = 'https://video.miaola.info/youtube/' + _matches[1];
                 }
                 break;
         }
@@ -11501,7 +11501,7 @@ var replaceSiteLink = exports.replaceSiteLink = function replaceSiteLink() {
     $('form[name="FORM"]').submit(function () {
         var $textArea = $(this).find('textarea[name="atc_content"]');
         if (!$textArea.length) return;
-        $textArea.val($textArea.val().replace(new RegExp(location.protocol + '//' + location.hostname.replace(/\./g, '\\.') + '/(\\w+)\\.php', 'g'), 'http://bbs.2dkf.com/$1.php'));
+        $textArea.val($textArea.val().replace(new RegExp(location.protocol + '//' + location.hostname.replace(/\./g, '\\.') + '/(\\w+)\\.php', 'g'), 'https://bbs.2dkf.com/$1.php'));
     });
 };
 

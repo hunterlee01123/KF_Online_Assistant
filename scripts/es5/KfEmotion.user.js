@@ -6,9 +6,9 @@
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
 // @homepage    https://github.com/liu599/KF-Emotion-UserScript
-// @include     http://*2dkf.com/*
-// @include     http://*9moe.com/*
-// @include     http://*kfgal.com/*
+// @include     http*://*2dkf.com/*
+// @include     http*://*9moe.com/*
+// @include     http*://*kfgal.com/*
 // @include     https://*miaola.info/*
 // @copyright   2014-2017, eddie32
 // @grant       none

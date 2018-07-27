@@ -7,10 +7,10 @@
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @pd-update-url-placeholder
 // @pd-require
-// @include     http://*2dkf.com/*
-// @include     http://*9moe.com/*
-// @include     http://*kfgal.com/*
-// @version     12.7.4
+// @include     http*://*2dkf.com/*
+// @include     http*://*9moe.com/*
+// @include     http*://*kfgal.com/*
+// @version     12.7.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
