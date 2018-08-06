@@ -20,8 +20,8 @@ import * as Item from './Item';
  * @returns {boolean} 是否获取成功
  */
 export const getUidAndUserName = function () {
-    let $userName = $('.topmenuo1 > .topmenuo3:last-child > a[href="javascript:;"]').eq(0);
-    let $uid = $('.topmenuo1 > .topmenuo3:last-child a[href^="profile.php?action=show&uid="]').eq(0);
+    let $userName = $('#kf_topuser > a[href="javascript:;"]').eq(0);
+    let $uid = Info.$userMenu.find('a[href^="profile.php?action=show&uid="]').eq(0);
     if (!$userName.length || !$uid.length) return false;
     $userName.attr('id', 'pdUserName');
     Info.userName = $.trim($userName.contents().get(0).textContent);
@@ -92,7 +92,8 @@ export const appendCss = function () {
     padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;
   }
   .pd_search_type {
-    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;
+    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center;
+    border: 1px solid #ccc; border-left: none; border-right: none; cursor: pointer;
   }
   .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }
   .pd_search_type_list {
@@ -239,7 +240,7 @@ export const addConfigAndLogDialogLink = function () {
     $(`
 <li><a data-name="openConfigDialog" href="#">助手设置</a></li>
 <li><a data-name="openLogDialog" href="#">助手日志</a></li>
-`).insertBefore(Info.$userMenu.find('> li:nth-last-child(1)'))
+`).appendTo(Info.$userMenu)
         .find('[data-name="openConfigDialog"]')
         .click(function (e) {
             e.preventDefault();
@@ -670,6 +671,7 @@ export const followUsers = function () {
     if (!Config.followUserList.length) return;
     if (Info.isInHomePage && Config.highlightFollowUserThreadInHPEnabled) {
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
+            return false;  // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -723,6 +725,7 @@ export const blockUsers = function () {
     let num = 0;
     if (Info.isInHomePage) {
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
+            return false;  // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -853,6 +856,7 @@ export const blockThread = function () {
     let num = 0;
     if (Info.isInHomePage) {
         $('.b_tit4 a, .b_tit4_1 a').each(function () {
+            return false;  // 临时
             let $this = $(this);
             let title = $this.attr('title');
             if (!title) return;
@@ -899,46 +903,15 @@ export const blockThread = function () {
 };
 
 /**
- * 将侧边栏修改为和手机相同的平铺样式
- */
-export const modifySideBar = function () {
-    $('#r_menu').replaceWith(`
-<div id="r_menu" style="width: 140px; color: #9999ff; font-size: 14px; line-height: 24px; text-align: center; border: 1px #ddddff solid; padding: 5px; overflow: hidden;">
-  <span style="color: #ff9999;">游戏</span><br>
-  <a href="thread.php?fid=102">游戏推荐</a> | <a href="thread.php?fid=106">新作动态</a><br>
-  <a href="thread.php?fid=52">游戏讨论</a> | <a href="thread.php?fid=24">疑难互助</a><br>
-  <a href="thread.php?fid=16">种子下载</a> | <a href="thread.php?fid=41">网盘下载</a><br>
-  <a href="thread.php?fid=67">图片共享</a> | <a href="thread.php?fid=57">同人漫本</a><br>
-  <span style="color: #ff9999;">动漫音乐</span><br>
-  <a href="thread.php?fid=84">动漫讨论</a> | <a href="thread.php?fid=92">动画共享</a><br>
-  <a href="thread.php?fid=127">漫画小说</a> | <a href="thread.php?fid=68">音乐共享</a><br>
-  <a href="thread.php?fid=163">LIVE共享</a>  | <a href="thread.php?fid=182">转载资源</a><br>
-  <span style="color: #ff9999;">综合</span><br>
-  <a href="thread.php?fid=94">原创美图</a> | <a href="thread.php?fid=87">宅物交流</a><br>
-  <a href="thread.php?fid=86">电子产品</a> | <a href="thread.php?fid=115">文字作品</a><br>
-  <a href="thread.php?fid=96">出处讨论</a>  | <a href="thread.php?fid=36">寻求资源</a><br>
-  <span style="color: #ff9999;">交流</span><br>
-  <a href="thread.php?fid=5">自由讨论</a> | <a href="thread.php?fid=56">个人日记</a><br>
-  <a href="thread.php?fid=98">日本语版</a>  | <a href="thread.php?fid=9">我的关注</a><br>
-  <a href="thread.php?fid=4">站务管理</a><br>
-  <span style="color: #ff9999;">专用</span><br>
-  <a href="thread.php?fid=93">管理组区</a> | <a href="thread.php?fid=59">原创组区</a><br>
-  <a href="/">论坛首页</a><br>
-</div>
-`);
-};
-
-/**
  * 为顶部导航栏添加快捷导航菜单
  */
 export const addFastNavMenu = function () {
-    let $menuBtn = $('.topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("本站主页")');
+    let $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a:contains("本站主页")');
     if (!$menuBtn.length) return;
     let hpUrl = $menuBtn.attr('href');
     $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after(`
 <ul class="topmenuo2">
   <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
-  <li><a href="guanjianci.php?gjc=${Info.userName}">@提醒</a></li>
   <li><a href="search.php?authorid=${Info.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
   <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
@@ -1149,7 +1122,7 @@ export const makeSearchByBelowTwoKeyWordAvailable = function () {
  */
 export const addSearchDialogLink = function () {
     $('<li><a data-name="search" href="#">搜索</a></li>')
-        .insertBefore(Info.$userMenu.find('a[href="profile.php?action=modify"]').parent())
+        .insertBefore(Info.$userMenu.find('a[data-name="openConfigDialog"]').parent())
         .find('[data-name="search"]')
         .click(function (e) {
             e.preventDefault();

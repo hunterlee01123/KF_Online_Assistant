@@ -312,10 +312,6 @@ export const show = function () {
       <label>
         <input name="addFastNavMenuEnabled" type="checkbox"> 添加快捷导航菜单
         <span class="pd_cfg_tips" title="为顶部导航栏添加快捷导航菜单">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
-        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
       </label><br>
       <label>
         <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS

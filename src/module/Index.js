@@ -196,7 +196,7 @@ export const addSearchTypeSelectBox = function () {
     let $form = $('form[action="search.php?"]');
     $form.attr('name', 'pdSearchForm');
     let $keyWord = $form.find('[type="text"][name="keyword"]');
-    $keyWord.css('width', '116px');
+    $keyWord.css('width', '174px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 

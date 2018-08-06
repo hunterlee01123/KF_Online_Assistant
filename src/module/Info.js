@@ -27,7 +27,7 @@ const Info = {
      */
     storageType: 'Default',
     // 用户菜单区域
-    $userMenu: $('.topmenuo1 > .topmenuo3:last-child > .topmenuo2'),
+    $userMenu: $('#kf_information > ul'),
 };
 
 export default Info;

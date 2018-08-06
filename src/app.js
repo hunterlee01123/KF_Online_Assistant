@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.7.6';
+const version = '12.8';
 
 /**
  * 导出模块
@@ -80,17 +80,16 @@ const init = function () {
     Public.bindSearchTypeSelectMenuClick();
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
-    if (Config.modifySideBarEnabled) Public.modifySideBar();
     Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
     Public.changeNewRateTipsColor();
 
     if (Info.isInHomePage) {
         Index.handleIndexLink();
-        Index.handleAtTips();
-        Index.addSearchTypeSelectBox();
+        //Index.handleAtTips(); // 临时
+        //Index.addSearchTypeSelectBox(); // 临时
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
-        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
+        //if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink(); // 临时
         if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
             $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
         }

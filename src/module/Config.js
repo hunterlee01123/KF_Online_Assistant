@@ -147,8 +147,6 @@ export const Config = {
     showSearchLinkEnabled: true,
     // 是否为顶部导航栏添加快捷导航菜单，true：开启；false：关闭
     addFastNavMenuEnabled: true,
-    // 是否将侧边栏修改为和手机相同的平铺样式，true：开启；false：关闭
-    modifySideBarEnabled: false,
     // 是否为页面添加自定义的CSS内容，true：开启；false：关闭
     customCssEnabled: false,
     // 自定义CSS的内容

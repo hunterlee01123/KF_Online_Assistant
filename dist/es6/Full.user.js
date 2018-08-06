@@ -10,7 +10,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.7.6
+// @version     12.8
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.7.6';
+const version = '12.8';
 
 /**
  * 导出模块
@@ -164,17 +164,16 @@ const init = function () {
     Public.bindSearchTypeSelectMenuClick();
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
-    if (Config.modifySideBarEnabled) Public.modifySideBar();
     _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
     Public.changeNewRateTipsColor();
 
     if (_Info2.default.isInHomePage) {
         Index.handleIndexLink();
-        Index.handleAtTips();
-        Index.addSearchTypeSelectBox();
+        //Index.handleAtTips(); // 临时
+        //Index.addSearchTypeSelectBox(); // 临时
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
-        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
+        //if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink(); // 临时
         if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
             $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
         }
@@ -1106,8 +1105,6 @@ const Config = exports.Config = {
     showSearchLinkEnabled: true,
     // 是否为顶部导航栏添加快捷导航菜单，true：开启；false：关闭
     addFastNavMenuEnabled: true,
-    // 是否将侧边栏修改为和手机相同的平铺样式，true：开启；false：关闭
-    modifySideBarEnabled: false,
     // 是否为页面添加自定义的CSS内容，true：开启；false：关闭
     customCssEnabled: false,
     // 自定义CSS的内容
@@ -1645,10 +1642,6 @@ const show = exports.show = function () {
       <label>
         <input name="addFastNavMenuEnabled" type="checkbox"> 添加快捷导航菜单
         <span class="pd_cfg_tips" title="为顶部导航栏添加快捷导航菜单">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="modifySideBarEnabled" type="checkbox"> 将侧边栏修改为平铺样式
-        <span class="pd_cfg_tips" title="将侧边栏修改为和手机相同的平铺样式">[?]</span>
       </label><br>
       <label>
         <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
@@ -3028,7 +3021,7 @@ const addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function () {
     let $form = $('form[action="search.php?"]');
     $form.attr('name', 'pdSearchForm');
     let $keyWord = $form.find('[type="text"][name="keyword"]');
-    $keyWord.css('width', '116px');
+    $keyWord.css('width', '174px');
     $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 
@@ -3105,7 +3098,7 @@ const Info = {
    */
   storageType: 'Default',
   // 用户菜单区域
-  $userMenu: $('.topmenuo1 > .topmenuo3:last-child > .topmenuo2')
+  $userMenu: $('#kf_information > ul')
 };
 
 exports.default = Info;
@@ -9927,7 +9920,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.modifySideBar = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -9988,8 +9981,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @returns {boolean} 是否获取成功
  */
 const getUidAndUserName = exports.getUidAndUserName = function () {
-    let $userName = $('.topmenuo1 > .topmenuo3:last-child > a[href="javascript:;"]').eq(0);
-    let $uid = $('.topmenuo1 > .topmenuo3:last-child a[href^="profile.php?action=show&uid="]').eq(0);
+    let $userName = $('#kf_topuser > a[href="javascript:;"]').eq(0);
+    let $uid = _Info2.default.$userMenu.find('a[href^="profile.php?action=show&uid="]').eq(0);
     if (!$userName.length || !$uid.length) return false;
     $userName.attr('id', 'pdUserName');
     _Info2.default.userName = $.trim($userName.contents().get(0).textContent);
@@ -10047,8 +10040,7 @@ const appendCss = exports.appendCss = function () {
   .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }
   .pd_not_click_link, .pd_not_click_link:visited { color: #000; pointer-events: none; }
   hr {
-    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0;
-    border-top: 1px solid rgba(0, 0, 0, .2); overflow: visible;
+    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0; border-top: 1px solid rgba(0, 0, 0, .2);
   }
   .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }
@@ -10060,7 +10052,8 @@ const appendCss = exports.appendCss = function () {
     padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;
   }
   .pd_search_type {
-    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center; border: 1px solid #ccc; border-left: none; cursor: pointer;
+    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center;
+    border: 1px solid #ccc; border-left: none; border-right: none; cursor: pointer;
   }
   .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }
   .pd_search_type_list {
@@ -10207,7 +10200,7 @@ const addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function (
     $(`
 <li><a data-name="openConfigDialog" href="#">助手设置</a></li>
 <li><a data-name="openLogDialog" href="#">助手日志</a></li>
-`).insertBefore(_Info2.default.$userMenu.find('> li:nth-last-child(1)')).find('[data-name="openConfigDialog"]').click(function (e) {
+`).appendTo(_Info2.default.$userMenu).find('[data-name="openConfigDialog"]').click(function (e) {
         e.preventDefault();
         (0, _ConfigDialog.show)();
     }).end().find('[data-name="openLogDialog"]').click(function (e) {
@@ -10613,6 +10606,7 @@ const followUsers = exports.followUsers = function () {
     if (!Config.followUserList.length) return;
     if (_Info2.default.isInHomePage && Config.highlightFollowUserThreadInHPEnabled) {
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
+            return false; // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -10662,6 +10656,7 @@ const blockUsers = exports.blockUsers = function () {
     let num = 0;
     if (_Info2.default.isInHomePage) {
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
+            return false; // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -10780,6 +10775,7 @@ const blockThread = exports.blockThread = function () {
     let num = 0;
     if (_Info2.default.isInHomePage) {
         $('.b_tit4 a, .b_tit4_1 a').each(function () {
+            return false; // 临时
             let $this = $(this);
             let title = $this.attr('title');
             if (!title) return;
@@ -10824,46 +10820,15 @@ const blockThread = exports.blockThread = function () {
 };
 
 /**
- * 将侧边栏修改为和手机相同的平铺样式
- */
-const modifySideBar = exports.modifySideBar = function () {
-    $('#r_menu').replaceWith(`
-<div id="r_menu" style="width: 140px; color: #9999ff; font-size: 14px; line-height: 24px; text-align: center; border: 1px #ddddff solid; padding: 5px; overflow: hidden;">
-  <span style="color: #ff9999;">游戏</span><br>
-  <a href="thread.php?fid=102">游戏推荐</a> | <a href="thread.php?fid=106">新作动态</a><br>
-  <a href="thread.php?fid=52">游戏讨论</a> | <a href="thread.php?fid=24">疑难互助</a><br>
-  <a href="thread.php?fid=16">种子下载</a> | <a href="thread.php?fid=41">网盘下载</a><br>
-  <a href="thread.php?fid=67">图片共享</a> | <a href="thread.php?fid=57">同人漫本</a><br>
-  <span style="color: #ff9999;">动漫音乐</span><br>
-  <a href="thread.php?fid=84">动漫讨论</a> | <a href="thread.php?fid=92">动画共享</a><br>
-  <a href="thread.php?fid=127">漫画小说</a> | <a href="thread.php?fid=68">音乐共享</a><br>
-  <a href="thread.php?fid=163">LIVE共享</a>  | <a href="thread.php?fid=182">转载资源</a><br>
-  <span style="color: #ff9999;">综合</span><br>
-  <a href="thread.php?fid=94">原创美图</a> | <a href="thread.php?fid=87">宅物交流</a><br>
-  <a href="thread.php?fid=86">电子产品</a> | <a href="thread.php?fid=115">文字作品</a><br>
-  <a href="thread.php?fid=96">出处讨论</a>  | <a href="thread.php?fid=36">寻求资源</a><br>
-  <span style="color: #ff9999;">交流</span><br>
-  <a href="thread.php?fid=5">自由讨论</a> | <a href="thread.php?fid=56">个人日记</a><br>
-  <a href="thread.php?fid=98">日本语版</a>  | <a href="thread.php?fid=9">我的关注</a><br>
-  <a href="thread.php?fid=4">站务管理</a><br>
-  <span style="color: #ff9999;">专用</span><br>
-  <a href="thread.php?fid=93">管理组区</a> | <a href="thread.php?fid=59">原创组区</a><br>
-  <a href="/">论坛首页</a><br>
-</div>
-`);
-};
-
-/**
  * 为顶部导航栏添加快捷导航菜单
  */
 const addFastNavMenu = exports.addFastNavMenu = function () {
-    let $menuBtn = $('.topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("本站主页")');
+    let $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a:contains("本站主页")');
     if (!$menuBtn.length) return;
     let hpUrl = $menuBtn.attr('href');
     $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after(`
 <ul class="topmenuo2">
   <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
-  <li><a href="guanjianci.php?gjc=${_Info2.default.userName}">@提醒</a></li>
   <li><a href="search.php?authorid=${_Info2.default.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
   <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
@@ -11062,7 +11027,7 @@ const makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWord
  * 添加搜索对话框链接
  */
 const addSearchDialogLink = exports.addSearchDialogLink = function () {
-    $('<li><a data-name="search" href="#">搜索</a></li>').insertBefore(_Info2.default.$userMenu.find('a[href="profile.php?action=modify"]').parent()).find('[data-name="search"]').click(function (e) {
+    $('<li><a data-name="search" href="#">搜索</a></li>').insertBefore(_Info2.default.$userMenu.find('a[data-name="openConfigDialog"]').parent()).find('[data-name="search"]').click(function (e) {
         e.preventDefault();
         const dialogName = 'pdSearchDialog';
         if ($('#' + dialogName).length > 0) return;
