@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.8';
+const version = '12.8.1';
 
 /**
  * 导出模块
@@ -81,7 +81,7 @@ const init = function () {
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
     Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
-    Public.changeNewRateTipsColor();
+    //Public.changeNewRateTipsColor(); // 临时
 
     if (Info.isInHomePage) {
         Index.handleIndexLink();
@@ -98,18 +98,17 @@ const init = function () {
     }
     else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-        Read.fastGotoFloor();
-        if (Config.adjustThreadContentWidthEnabled) Read.adjustThreadContentWidth();
+        //Read.fastGotoFloor(); // 临时
         Read.adjustThreadContentFontSize();
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
-        if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
-        Read.addFastGotoFloorInput();
-        Read.addFloorGotoLink();
-        Read.addStatAndBuyThreadBtn();
+        //if (Config.multiQuoteEnabled) Read.addMultiQuoteButton(); // 临时
+        //Read.addFastGotoFloorInput(); // 临时
+        //Read.addFloorGotoLink(); // 临时
+        //Read.addStatAndBuyThreadBtn(); // 临时
         Read.handleBuyThreadBtn();
         Read.addCopyBuyersListOption();
         if (Config.userMemoEnabled) Read.addUserMemo();

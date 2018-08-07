@@ -213,10 +213,6 @@ export const show = function () {
         <span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span>
       </label><br>
       <label>
-        <input name="adjustThreadContentWidthEnabled" type="checkbox"> 调整帖子内容宽度
-        <span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
         <input name="turnPageViaKeyboardEnabled" type="checkbox"> 通过左右键翻页
         <span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span>
       </label><br>

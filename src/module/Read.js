@@ -97,18 +97,6 @@ export const modifyMySmColor = function () {
 };
 
 /**
- * 调整帖子内容宽度，使其保持一致
- */
-export const adjustThreadContentWidth = function () {
-    $('head').append(`
-<style>
-  .readtext > table > tbody > tr > td { padding-left: 180px; }
-  .readidms, .readidm { margin-left: -180px !important; }
-</style>
-`);
-};
-
-/**
  * 调整帖子内容字体大小
  */
 export const adjustThreadContentFontSize = function () {

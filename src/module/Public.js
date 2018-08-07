@@ -101,10 +101,7 @@ export const appendCss = function () {
     text-indent: 13px; cursor: pointer; z-index: 1004;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
-  .topmenu { z-index: 1001; }
-  .r_cmenu { z-index: 1; }
-  ${Info.isMobile ? '.topmenu { position: static; }' : ''}
-  ${Info.isMobile ? '.r_cmenu { position: static !important; }' : ''}
+  .drow { z-index: 1001 !important; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
@@ -191,7 +188,6 @@ export const appendCss = function () {
   .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }
   .pd_cfg_main legend { font-weight: bold; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
-  pd_cfg_main button { vertical-align: middle; }
   .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
   .pd_cfg_tips:hover { color: #ff0000; }
   #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
@@ -670,6 +666,7 @@ export const getDailyBonus = function () {
 export const followUsers = function () {
     if (!Config.followUserList.length) return;
     if (Info.isInHomePage && Config.highlightFollowUserThreadInHPEnabled) {
+        return; // 临时
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
             return false;  // 临时
             let $this = $(this);
@@ -692,6 +689,7 @@ export const followUsers = function () {
         });
     }
     else if (location.pathname === '/read.php') {
+        return; // 临时
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
@@ -724,8 +722,8 @@ export const blockUsers = function () {
     if (!Config.blockUserList.length) return;
     let num = 0;
     if (Info.isInHomePage) {
+        return; // 临时
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
-            return false;  // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -751,6 +749,7 @@ export const blockUsers = function () {
         });
     }
     else if (location.pathname === '/read.php') {
+        return; // 临时
         if (Config.blockUserForumType > 0) {
             let fid = parseInt($('input[name="fid"]:first').val());
             if (!fid) return;
@@ -855,6 +854,7 @@ export const blockThread = function () {
 
     let num = 0;
     if (Info.isInHomePage) {
+        return; // 临时
         $('.b_tit4 a, .b_tit4_1 a').each(function () {
             return false;  // 临时
             let $this = $(this);
@@ -881,6 +881,7 @@ export const blockThread = function () {
         });
     }
     else if (location.pathname === '/read.php') {
+        return; // 临时
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
@@ -1122,7 +1123,7 @@ export const makeSearchByBelowTwoKeyWordAvailable = function () {
  */
 export const addSearchDialogLink = function () {
     $('<li><a data-name="search" href="#">搜索</a></li>')
-        .insertBefore(Info.$userMenu.find('a[data-name="openConfigDialog"]').parent())
+        .appendTo(Info.$userMenu)
         .find('[data-name="search"]')
         .click(function (e) {
             e.preventDefault();

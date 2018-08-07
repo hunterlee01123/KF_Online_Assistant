@@ -10,7 +10,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.8
+// @version     12.8.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.8';
+const version = '12.8.1';
 
 /**
  * 导出模块
@@ -163,7 +163,7 @@ const init = function () {
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
     _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
-    Public.changeNewRateTipsColor();
+    //Public.changeNewRateTipsColor(); // 临时
 
     if (_Info2.default.isInHomePage) {
         Index.handleIndexLink();
@@ -179,18 +179,17 @@ const init = function () {
         if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-        Read.fastGotoFloor();
-        if (Config.adjustThreadContentWidthEnabled) Read.adjustThreadContentWidth();
+        //Read.fastGotoFloor(); // 临时
         Read.adjustThreadContentFontSize();
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
-        if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
-        Read.addFastGotoFloorInput();
-        Read.addFloorGotoLink();
-        Read.addStatAndBuyThreadBtn();
+        //if (Config.multiQuoteEnabled) Read.addMultiQuoteButton(); // 临时
+        //Read.addFastGotoFloorInput(); // 临时
+        //Read.addFloorGotoLink(); // 临时
+        //Read.addStatAndBuyThreadBtn(); // 临时
         Read.handleBuyThreadBtn();
         Read.addCopyBuyersListOption();
         if (Config.userMemoEnabled) Read.addUserMemo();
@@ -1062,8 +1061,6 @@ const Config = exports.Config = {
     // 是否在版块页面中高亮今日新发表帖子的发表时间，true：开启；false：关闭
     highlightNewPostEnabled: true,
 
-    // 是否调整帖子内容宽度，使其保持一致，true：开启；false：关闭
-    adjustThreadContentWidthEnabled: false,
     // 帖子内容字体大小，设为0表示使用默认大小，推荐值：14
     threadContentFontSize: 0,
     // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空
@@ -1541,10 +1538,6 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="帖子内容字体大小，留空表示使用默认大小，推荐值：14">[?]</span>
       </label><br>
       <label>
-        <input name="adjustThreadContentWidthEnabled" type="checkbox"> 调整帖子内容宽度
-        <span class="pd_cfg_tips" title="调整帖子内容宽度，使其保持一致">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
         <input name="turnPageViaKeyboardEnabled" type="checkbox"> 通过左右键翻页
         <span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span>
       </label><br>
@@ -10059,10 +10052,7 @@ const appendCss = exports.appendCss = function () {
     text-indent: 13px; cursor: pointer; z-index: 1004;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
-  .topmenu { z-index: 1001; }
-  .r_cmenu { z-index: 1; }
-  ${_Info2.default.isMobile ? '.topmenu { position: static; }' : ''}
-  ${_Info2.default.isMobile ? '.r_cmenu { position: static !important; }' : ''}
+  .drow { z-index: 1001 !important; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
@@ -10149,7 +10139,6 @@ const appendCss = exports.appendCss = function () {
   .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }
   .pd_cfg_main legend { font-weight: bold; }
   .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }
-  pd_cfg_main button { vertical-align: middle; }
   .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }
   .pd_cfg_tips:hover { color: #ff0000; }
   #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }
@@ -10603,6 +10592,7 @@ const getDailyBonus = exports.getDailyBonus = function () {
 const followUsers = exports.followUsers = function () {
     if (!Config.followUserList.length) return;
     if (_Info2.default.isInHomePage && Config.highlightFollowUserThreadInHPEnabled) {
+        return; // 临时
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
             return false; // 临时
             let $this = $(this);
@@ -10623,6 +10613,7 @@ const followUsers = exports.followUsers = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
+        return; // 临时
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
@@ -10653,8 +10644,8 @@ const blockUsers = exports.blockUsers = function () {
     if (!Config.blockUserList.length) return;
     let num = 0;
     if (_Info2.default.isInHomePage) {
+        return; // 临时
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
-            return false; // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -10677,6 +10668,7 @@ const blockUsers = exports.blockUsers = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
+        return; // 临时
         if (Config.blockUserForumType > 0) {
             let fid = parseInt($('input[name="fid"]:first').val());
             if (!fid) return;
@@ -10772,6 +10764,7 @@ const blockThread = exports.blockThread = function () {
 
     let num = 0;
     if (_Info2.default.isInHomePage) {
+        return; // 临时
         $('.b_tit4 a, .b_tit4_1 a').each(function () {
             return false; // 临时
             let $this = $(this);
@@ -10796,6 +10789,7 @@ const blockThread = exports.blockThread = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
+        return; // 临时
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
@@ -11025,7 +11019,7 @@ const makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWord
  * 添加搜索对话框链接
  */
 const addSearchDialogLink = exports.addSearchDialogLink = function () {
-    $('<li><a data-name="search" href="#">搜索</a></li>').insertBefore(_Info2.default.$userMenu.find('a[data-name="openConfigDialog"]').parent()).find('[data-name="search"]').click(function (e) {
+    $('<li><a data-name="search" href="#">搜索</a></li>').appendTo(_Info2.default.$userMenu).find('[data-name="search"]').click(function (e) {
         e.preventDefault();
         const dialogName = 'pdSearchDialog';
         if ($('#' + dialogName).length > 0) return;
@@ -11263,7 +11257,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.blockUselessThreadButtons = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.adjustThreadContentWidth = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.blockUselessThreadButtons = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -11384,18 +11378,6 @@ const modifyMySmColor = exports.modifyMySmColor = function () {
     let $my = $(`.readidmsbottom > a[href="profile.php?action=show&uid=${_Info2.default.uid}"]`);
     if (!$my.length) $my = $(`.readidmleft > a[href="profile.php?action=show&uid=${_Info2.default.uid}"]`);
     if ($my.length > 0) modifyFloorSmColor($my, Config.customMySmColor);
-};
-
-/**
- * 调整帖子内容宽度，使其保持一致
- */
-const adjustThreadContentWidth = exports.adjustThreadContentWidth = function () {
-    $('head').append(`
-<style>
-  .readtext > table > tbody > tr > td { padding-left: 180px; }
-  .readidms, .readidm { margin-left: -180px !important; }
-</style>
-`);
 };
 
 /**

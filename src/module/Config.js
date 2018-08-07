@@ -106,8 +106,6 @@ export const Config = {
     // 是否在版块页面中高亮今日新发表帖子的发表时间，true：开启；false：关闭
     highlightNewPostEnabled: true,
 
-    // 是否调整帖子内容宽度，使其保持一致，true：开启；false：关闭
-    adjustThreadContentWidthEnabled: false,
     // 帖子内容字体大小，设为0表示使用默认大小，推荐值：14
     threadContentFontSize: 0,
     // 自定义本人的神秘颜色（包括帖子页面的ID显示颜色和楼层边框颜色，仅自己可见），例：#009cff，如无需求可留空
