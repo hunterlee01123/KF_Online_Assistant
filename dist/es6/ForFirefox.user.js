@@ -11,7 +11,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.8.2
+// @version     12.8.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -108,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.8.2';
+const version = '12.8.3';
 
 /**
  * 导出模块
@@ -168,18 +168,18 @@ const init = function () {
     _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
     //Public.changeNewRateTipsColor(); // 临时
 
+    Public.handleSideBarLink();
+    if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
+        $('#pdLoot').addClass('pd_rightbox1_gray');
+    }
+    if (Config.showChangePointsInfoEnabled) Public.addChangePointsInfoTips();
     if (_Info2.default.isInHomePage) {
-        Index.handleIndexLink();
         //Index.handleAtTips(); // 临时
         //Index.addSearchTypeSelectBox(); // 临时
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         //if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink(); // 临时
-        if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
-            $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
-        }
         Index.addPromoteHaloInterval();
-        if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         //Read.fastGotoFloor(); // 临时
@@ -882,9 +882,7 @@ const showDrawCardTips = exports.showDrawCardTips = function () {
 
     let nextTime = parseInt(Util.getCookie(_Const2.default.drawCardCookieName));
     if (nextTime > 0) {
-        if (Info.isInHomePage) {
-            showWaitTime(new Date(nextTime));
-        }
+        showWaitTime(new Date(nextTime));
     } else {
         console.log('获取抽卡剩余时间Start');
         $.get('kf_fw_ig_mycard.php?t=' + $.now(), function (html) {
@@ -2820,7 +2818,7 @@ const close = exports.close = function (id) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addChangePointsInfoTips = exports.addPromoteHaloInterval = exports.addSearchTypeSelectBox = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = exports.handleIndexLink = undefined;
+exports.addPromoteHaloInterval = exports.addSearchTypeSelectBox = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
 
 var _Info = require('./Info');
 
@@ -2853,31 +2851,6 @@ var Loot = _interopRequireWildcard(_Loot);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * 处理首页链接
- */
-const handleIndexLink = exports.handleIndexLink = function () {
-    let $kfb = $('a[href="javascript:;"][title="网站虚拟货币"]');
-    $kfb.attr('id', 'pdKfb');
-    let matches = /(-?\d+)KFB\s*\|\s*(-?\d+(?:\.\d+)?)贡献/.exec($kfb.text());
-    if (matches) {
-        let kfb = parseInt(matches[1]);
-        let gongXian = parseFloat(matches[2]);
-        $kfb.html(`<b>${kfb.toLocaleString()}</b>KFB | <b>${gongXian.toLocaleString()}</b>贡献`).attr('data-kfb', kfb).attr('data-gongxian', gongXian);
-    }
-
-    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
-    $smLevel.attr('id', 'pdSmLevel');
-    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
-    if (matches) {
-        let smLevel = parseInt(matches[1]);
-        let smRank = matches[2];
-        $smLevel.html(`神秘<b>${smLevel.toLocaleString()}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
-    }
-
-    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
-};
 
 /**
  * 处理首页有人@你的消息框
@@ -3032,30 +3005,6 @@ const addPromoteHaloInterval = exports.addPromoteHaloInterval = function () {
         minutes -= hours * 60;
         $('#pdLoot').append(`<span id="pdHaloInterval"> (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
     }
-};
-
-/**
- * 添加改点剩余次数信息提示
- */
-const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
-    let value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
-    if (!value) {
-        Loot.getChangePointsCountDown().done(addChangePointsInfoTips).fail(() => setTimeout(addChangePointsInfoTips, _Const2.default.defAjaxInterval));
-        return;
-    }
-
-    let tipsText = '';
-    if ($.isNumeric(value)) {
-        let nextTime = parseInt(value);
-        let interval = nextTime - $.now();
-        if (interval > 0) {
-            let minutes = Math.ceil(interval / 60 / 1000);
-            let hours = Math.floor(minutes / 60);
-            minutes -= hours * 60;
-            tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
-        }
-    } else tipsText = parseInt(value) + '次';
-    if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };
 
 },{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":22,"./Util":23}],9:[function(require,module,exports){
@@ -9914,7 +9863,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addChangePointsInfoTips = exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.handleSideBarLink = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -10125,7 +10074,8 @@ const appendCss = exports.appendCss = function () {
   #pdPropertiesArea input[type="text"] { width: 211px; }
   .pd_property_diff { position: absolute; top: 0px; right: 5px; }
   .pd_property_diff em { font-style: normal; }
-  .indbox5, .indbox6 { overflow: hidden; }
+  .rightbox1 { overflow: hidden; }
+  .pd_rightbox1_gray, .pd_rightbox1_gray:visited, .pd_rightbox1_gray:hover { color: #b0b0ff; border-color: #b0b0ff; }
 
   /* 设置对话框 */
   .pd_cfg_ml { margin-left: 10px; }
@@ -10197,6 +10147,31 @@ const addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function (
         e.preventDefault();
         (0, _LogDialog.show)();
     });
+};
+
+/**
+ * 处理首页链接
+ */
+const handleSideBarLink = exports.handleSideBarLink = function () {
+    let $kfb = $('a.rightbox1[title="网站虚拟货币"]');
+    $kfb.attr('id', 'pdKfb');
+    let matches = /(-?\d+)KFB\s*\|\s*(-?\d+(?:\.\d+)?)贡献/.exec($kfb.text());
+    if (matches) {
+        let kfb = parseInt(matches[1]);
+        let gongXian = parseFloat(matches[2]);
+        $kfb.html(`<b>${kfb.toLocaleString()}</b>KFB | <b>${gongXian.toLocaleString()}</b>贡献`).attr('data-kfb', kfb).attr('data-gongxian', gongXian);
+    }
+
+    let $smLevel = $('a.rightbox1[href="kf_growup.php"]');
+    $smLevel.attr('id', 'pdSmLevel');
+    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
+    if (matches) {
+        let smLevel = parseInt(matches[1]);
+        let smRank = matches[2];
+        $smLevel.html(`神秘<b>${smLevel.toLocaleString()}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`).attr('data-sm-level', smLevel).attr('data-sm-rank', smRank);
+    }
+
+    $('a.rightbox1[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
 };
 
 /**
@@ -11251,6 +11226,30 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
             (0, _Config.write)();
         }
     });
+};
+
+/**
+ * 添加改点剩余次数信息提示
+ */
+const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
+    let value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
+    if (!value) {
+        Loot.getChangePointsCountDown().done(addChangePointsInfoTips).fail(() => setTimeout(addChangePointsInfoTips, _Const2.default.defAjaxInterval));
+        return;
+    }
+
+    let tipsText = '';
+    if ($.isNumeric(value)) {
+        let nextTime = parseInt(value);
+        let interval = nextTime - $.now();
+        if (interval > 0) {
+            let minutes = Math.ceil(interval / 60 / 1000);
+            let hours = Math.floor(minutes / 60);
+            minutes -= hours * 60;
+            tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
+        }
+    } else tipsText = parseInt(value) + '次';
+    if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };
 
 },{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":22,"./Util":23}],19:[function(require,module,exports){

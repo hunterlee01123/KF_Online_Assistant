@@ -9,35 +9,6 @@ import * as TmpLog from './TmpLog';
 import * as Loot from './Loot';
 
 /**
- * 处理首页链接
- */
-export const handleIndexLink = function () {
-    let $kfb = $('a[href="javascript:;"][title="网站虚拟货币"]');
-    $kfb.attr('id', 'pdKfb');
-    let matches = /(-?\d+)KFB\s*\|\s*(-?\d+(?:\.\d+)?)贡献/.exec($kfb.text());
-    if (matches) {
-        let kfb = parseInt(matches[1]);
-        let gongXian = parseFloat(matches[2]);
-        $kfb.html(`<b>${kfb.toLocaleString()}</b>KFB | <b>${gongXian.toLocaleString()}</b>贡献`)
-            .attr('data-kfb', kfb)
-            .attr('data-gongxian', gongXian);
-    }
-
-    let $smLevel = $('a.indbox5[href="kf_growup.php"]');
-    $smLevel.attr('id', 'pdSmLevel');
-    matches = /神秘(-?\d+)级 \(系数排名第\s*(\d+\+?)\s*位/.exec($smLevel.text());
-    if (matches) {
-        let smLevel = parseInt(matches[1]);
-        let smRank = matches[2];
-        $smLevel.html(`神秘<b>${smLevel.toLocaleString()}</b>级 (系数排名第<b style="color: #00f;">${smRank}</b>位)`)
-            .attr('data-sm-level', smLevel)
-            .attr('data-sm-rank', smRank);
-    }
-
-    $('a.indbox5[href="kf_fw_ig_index.php"]').attr('id', 'pdLoot');
-};
-
-/**
  * 处理首页有人@你的消息框
  */
 export const handleAtTips = function () {
@@ -213,31 +184,4 @@ export const addPromoteHaloInterval = function () {
         minutes -= hours * 60;
         $('#pdLoot').append(`<span id="pdHaloInterval"> (光环：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`);
     }
-};
-
-/**
- * 添加改点剩余次数信息提示
- */
-export const addChangePointsInfoTips = function () {
-    let value = Util.getCookie(Const.changePointsInfoCookieName);
-    if (!value) {
-        Loot.getChangePointsCountDown()
-            .done(addChangePointsInfoTips)
-            .fail(() => setTimeout(addChangePointsInfoTips, Const.defAjaxInterval));
-        return;
-    }
-
-    let tipsText = '';
-    if ($.isNumeric(value)) {
-        let nextTime = parseInt(value);
-        let interval = nextTime - $.now();
-        if (interval > 0) {
-            let minutes = Math.ceil(interval / 60 / 1000);
-            let hours = Math.floor(minutes / 60);
-            minutes -= hours * 60;
-            tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
-        }
-    }
-    else tipsText = parseInt(value) + '次';
-    if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };

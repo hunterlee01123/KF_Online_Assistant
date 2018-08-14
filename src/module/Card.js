@@ -201,9 +201,7 @@ export const showDrawCardTips = function () {
 
     let nextTime = parseInt(Util.getCookie(Const.drawCardCookieName));
     if (nextTime > 0) {
-        if (Info.isInHomePage) {
-            showWaitTime(new Date(nextTime));
-        }
+        showWaitTime(new Date(nextTime));
     }
     else {
         console.log('获取抽卡剩余时间Start');

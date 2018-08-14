@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.8.2';
+const version = '12.8.3';
 
 /**
  * 导出模块
@@ -83,18 +83,18 @@ const init = function () {
     Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
     //Public.changeNewRateTipsColor(); // 临时
 
+    Public.handleSideBarLink();
+    if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
+        $('#pdLoot').addClass('pd_rightbox1_gray');
+    }
+    if (Config.showChangePointsInfoEnabled) Public.addChangePointsInfoTips();
     if (Info.isInHomePage) {
-        Index.handleIndexLink();
         //Index.handleAtTips(); // 临时
         //Index.addSearchTypeSelectBox(); // 临时
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         //if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink(); // 临时
-        if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
-            $('#pdLoot.indbox5').removeClass('indbox5').addClass('indbox6');
-        }
         Index.addPromoteHaloInterval();
-        if (Config.showChangePointsInfoEnabled) Index.addChangePointsInfoTips();
     }
     else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
