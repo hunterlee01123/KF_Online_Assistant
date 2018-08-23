@@ -12,7 +12,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.8.3
+// @version     12.8.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.8.3';
+var version = '12.8.4';
 
 /**
  * 导出模块
@@ -363,7 +363,7 @@ var init = function init() {
 };
 
 if (typeof jQuery !== 'undefined') {
-    $(document).ready(init);
+    init();
 }
 
 },{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/SelfRate":21,"./module/TmpLog":22,"./module/Util":23}],2:[function(require,module,exports){
