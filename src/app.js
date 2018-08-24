@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.8.4';
+const version = '12.8.5';
 
 /**
  * 导出模块
@@ -111,7 +111,7 @@ const init = function () {
         //Read.addStatAndBuyThreadBtn(); // 临时
         Read.handleBuyThreadBtn();
         Read.addCopyBuyersListOption();
-        if (Config.userMemoEnabled) Read.addUserMemo();
+        //if (Config.userMemoEnabled) Read.addUserMemo(); // 临时
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
         Post.addRedundantKeywordWarning();
@@ -288,5 +288,5 @@ const init = function () {
 };
 
 if (typeof jQuery !== 'undefined') {
-    init();
+    $(document).ready(init);
 }
