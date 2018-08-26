@@ -9,66 +9,6 @@ import * as TmpLog from './TmpLog';
 import * as Loot from './Loot';
 
 /**
- * 处理首页有人@你的消息框
- */
-export const handleAtTips = function () {
-    let type = Config.atTipsHandleType;
-    if (type === 'default') return;
-    let $atTips = $('a.indbox5[href^="guanjianci.php?gjc="]');
-    let noHighlight = () => $atTips.removeClass('indbox5').addClass('indbox6');
-    let hideBox = () => $atTips.parent().next('div.line').addBack().remove();
-    let handleBox = noHighlight;
-    if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
-    if (['no_highlight', 'no_highlight_extra', 'hide_box_1', 'at_change_to_cao'].includes(type)) {
-        if ($atTips.length > 0) {
-            let cookieText = Util.getCookie(Const.hideReadAtTipsCookieName);
-            let atTipsText = $.trim($atTips.text());
-            let matches = /\d+日\d+时\d+分/.exec(atTipsText);
-            if (matches) atTipsText = matches[0];
-            if (cookieText && cookieText === atTipsText) {
-                handleBox();
-            }
-            else {
-                $atTips.click(function () {
-                    let $this = $(this);
-                    if ($this.data('disabled')) return;
-                    let cookieText = Util.getCookie(Const.hideReadAtTipsCookieName);
-                    if (!cookieText) {
-                        let curDate = (new Date()).getDate().toString();
-                        Util.setCookie(Const.prevReadAtTipsCookieName, curDate.padStart(2, '0') + '日00时00分');
-                    }
-                    else if (cookieText !== atTipsText) {
-                        Util.setCookie(Const.prevReadAtTipsCookieName, cookieText);
-                    }
-                    Util.setCookie(Const.hideReadAtTipsCookieName,
-                        atTipsText,
-                        Util.getDate(`+${Const.hideMarkReadAtTipsExpires}d`)
-                    );
-                    $this.data('disabled', true);
-                    handleBox();
-                });
-            }
-            if (type === 'at_change_to_cao') {
-                $atTips.text($atTips.text().replace('@', '艹'));
-            }
-        }
-        else if (!$atTips.length && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
-            let html = `
-<div style="width: 300px;">
-  <a class="indbox6" href="guanjianci.php?gjc=${Info.userName}" target="_blank">最近无人${type === 'at_change_to_cao' ? '艹' : '@'}你</a><br>
-  <div class="line"></div>
-  <div class="c"></div>
-</div>
-<div class="line"></div>`;
-            $('#pdKfb').parent().before(html);
-        }
-    }
-    else if (type === 'hide_box_2') {
-        if ($atTips.length > 0) handleBox();
-    }
-};
-
-/**
  * 在神秘等级升级后进行提醒
  */
 export const smLevelUpAlert = function () {
@@ -151,24 +91,12 @@ export const smRankChangeAlert = function () {
  * 在首页帖子链接旁添加快速跳转至页末的链接
  */
 export const addThreadFastGotoLink = function () {
-    $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
+    $('#alldiv > .drow:last-child').on('mouseenter', 'li.indexlbtit2 > a, li.rightlbtit > a', function () {
         let $this = $(this);
-        $this.css('position', 'relative')
-            .prepend(`<a class="pd_thread_goto" href="${$this.find('a').attr('href')}&page=e#a">&raquo;</a>`);
-    }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
+        $this.css('position', 'relative').prepend(`<a class="pd_thread_goto" href="${$this.attr('href')}&page=e#a"></a>`);
+    }).on('mouseleave', 'li.indexlbtit2 > a, li.rightlbtit > a', function () {
         $(this).css('position', 'static').find('.pd_thread_goto').remove();
     });
-};
-
-/**
- * 在首页上添加搜索类型选择框
- */
-export const addSearchTypeSelectBox = function () {
-    let $form = $('form[action="search.php?"]');
-    $form.attr('name', 'pdSearchForm');
-    let $keyWord = $form.find('[type="text"][name="keyword"]');
-    $keyWord.css('width', '174px');
-    $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 
 /**

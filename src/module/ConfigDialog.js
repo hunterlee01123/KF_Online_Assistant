@@ -155,18 +155,6 @@ export const show = function () {
     <fieldset>
       <legend>首页相关</legend>
       <label>
-        @提醒
-        <select name="atTipsHandleType" style="width: 140px;">
-          <option value="no_highlight">取消已读提醒高亮</option>
-          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
-          <option value="hide_box_1">不显示已读提醒的消息框</option>
-          <option value="hide_box_2">永不显示消息框</option>
-          <option value="default">保持默认</option>
-          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
-        </select>
-        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
-      </label><br>
-      <label>
         <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
         <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
       </label>
@@ -175,8 +163,8 @@ export const show = function () {
         <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
       </label><br>
       <label>
-        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
-        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
+        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 为首页帖子加上跳转至页末链接
+        <span class="pd_cfg_tips" title="开启此功能后，点击首页帖子链接右侧的回复时间部分即可快速跳转至帖子页末">[?]</span>
       </label>
     </fieldset>
     <fieldset>

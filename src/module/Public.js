@@ -124,7 +124,7 @@ export const appendCss = function () {
   .readlou .pd_goto_link { color: #000; }
   .readlou .pd_goto_link:hover { color: #51d; }
   .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
+  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 5px; }
   .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
@@ -163,8 +163,10 @@ export const appendCss = function () {
   .pd_thread_page a { color: #444; padding: 0 3px; }
   .pd_thread_page a:hover { color: #51d; }
   .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }
-  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }
-  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }
+  .indexlbtit2 .pd_thread_goto, .rightlbtit .pd_thread_goto {
+    position: absolute; top: 0; right: 0; margin: 0; padding: 0; width: 65px; border: none;
+  }
+  .indexlbtit2 .pd_thread_goto:hover, .rightlbtit .pd_thread_goto:hover { border: none; }
   .pd_id_color_select > td { position: relative; cursor: pointer; }
   .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }
   #pdPropertiesArea td { position: relative; }
@@ -251,7 +253,7 @@ export const addConfigAndLogDialogLink = function () {
 };
 
 /**
- * 处理首页链接
+ * 处理侧边栏链接
  */
 export const handleSideBarLink = function () {
     let $kfb = $('a.rightbox1[title="网站虚拟货币"]');
@@ -698,7 +700,6 @@ export const followUsers = function () {
     if (Info.isInHomePage && Config.highlightFollowUserThreadInHPEnabled) {
         return; // 临时
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
-            return false;  // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -719,11 +720,10 @@ export const followUsers = function () {
         });
     }
     else if (location.pathname === '/read.php') {
-        return; // 临时
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
-                $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
+                $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
             }
         });
     }
@@ -779,7 +779,6 @@ export const blockUsers = function () {
         });
     }
     else if (location.pathname === '/read.php') {
-        return; // 临时
         if (Config.blockUserForumType > 0) {
             let fid = parseInt($('input[name="fid"]:first').val());
             if (!fid) return;
@@ -795,11 +794,12 @@ export const blockUsers = function () {
                 if (i === 0 && page === 1 && type > 1) return;
                 else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
-                let $lou = $this.closest('.readtext');
-                $lou.prev('div').prev('.readlou').remove();
-                $lou.prev('div').remove();
-                $lou.next('.readlou').remove();
-                $lou.remove();
+                let $floor = $this.closest('.readlou');
+                $floor.next('.readlou').remove();
+                $floor.next('div[id^="floor"]').remove();
+                $floor.next('.readtext').remove();
+                $floor.next('.readlou').remove();
+                $floor.remove();
             }
         });
         $('.readtext fieldset:has(legend:contains("Quote:"))').each(function () {
@@ -886,7 +886,6 @@ export const blockThread = function () {
     if (Info.isInHomePage) {
         return; // 临时
         $('.b_tit4 a, .b_tit4_1 a').each(function () {
-            return false;  // 临时
             let $this = $(this);
             let title = $this.attr('title');
             if (!title) return;
@@ -911,23 +910,23 @@ export const blockThread = function () {
         });
     }
     else if (location.pathname === '/read.php') {
-        return; // 临时
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').eq(0);
-        if ($userName.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        if ($userName.closest('.readlou').next('readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;
         if (isBlock(title, userName, fid)) {
             num++;
-            let $lou = $userName.closest('.readtext');
-            $lou.prev('div').prev('.readlou').remove();
-            $lou.prev('div').remove();
-            $lou.next('.readlou').remove();
-            $lou.remove();
+            let $floor = $userName.closest('.readlou');
+            $floor.next('.readlou').remove();
+            $floor.next('div[id^="floor"]').remove();
+            $floor.next('.readtext').remove();
+            $floor.next('.readlou').remove();
+            $floor.remove();
         }
     }
     if (num > 0) console.log(`【屏蔽帖子】共有${num}个帖子被屏蔽`);
@@ -949,8 +948,8 @@ export const addFastNavMenu = function () {
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
   <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
   <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
-  <li><a href="hack.php?H_name=bank">银行</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>
+  <li><a href="profile.php?action=friend">好友列表</a></li>
   ${Info.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
   ${Const.customFastNavMenuContent}
 </ul>`);
@@ -1135,15 +1134,12 @@ export const makeSearchByBelowTwoKeyWordAvailable = function () {
     $(document).on('submit', 'form[action="search.php?"]', function () {
         let $this = $(this);
         let $keyWord = $this.find('input[name="keyword"]');
-        let $method = $this.find('input[name="method"]');
-        if (!$keyWord.length || !$method.length) return;
+        if (!$keyWord.length) return;
         let keyWord = $.trim($keyWord.val());
         if (!keyWord || Util.getStrByteLen(keyWord) > 2) return;
-        $keyWord.val(keyWord + ' ' + Math.floor($.now() / 1000));
-        $method.val('OR');
+        $keyWord.val(keyWord + ' ' + keyWord);
         setTimeout(() => {
             $keyWord.val(keyWord);
-            $method.val('AND');
         }, 200);
     });
 };

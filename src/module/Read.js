@@ -16,11 +16,11 @@ import * as Post from './Post';
  */
 export const addFloorGotoLink = function () {
     let sf = Util.getThreadSfParam();
-    $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span').each(function () {
+    $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span:first-child').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼/.test(floorText)) return;
-        let linkName = $this.closest('.readlou').prev().attr('name');
+        let linkName = $this.closest('.readlou').prev('.readlou').prev('a').attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html($this.html().replace(/(\d+)楼/, `<a class="pd_goto_link" href="${url}" title="复制楼层链接">$1楼</a>`));
@@ -43,7 +43,7 @@ export const addFastGotoFloorInput = function () {
     $(`
 <form>
 <li class="pd_fast_goto_floor">
-  电梯直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
+  直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
   <span data-name="submit" style="cursor: pointer;">楼</span>
 </li>
 </form>
@@ -67,9 +67,9 @@ export const addFastGotoFloorInput = function () {
 export const fastGotoFloor = function () {
     let floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    let $floorNode = $(`.readlou > div:nth-child(2) > span:contains("${floor}楼")`);
+    let $floorNode = $(`.readlou > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
     if (!$floorNode.length) return;
-    let linkName = $floorNode.closest('.readlou').prev().attr('name');
+    let linkName = $floorNode.closest('.readlou').prev('.readlou').prev('a').attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
     location.hash = '#' + linkName;
 };
@@ -235,9 +235,9 @@ export const statFloor = function (tid, startPage, endPage, startFloor, endFloor
                         isStop = true;
                         return false;
                     }
-                    data.pid = parseInt($floorHeader.prev('a').attr('name'));
+                    data.pid = parseInt($floorHeader.prev('.readlou').prev('a').attr('name'));
 
-                    let $user = $floor.find('.readidms, .readidm');
+                    let $user = $floorHeader.prev('.readlou').find('.readidms, .readidm');
                     let $userLink = $user.find('a[href^="profile.php?action=show&uid="]');
                     data.userName = $userLink.text();
 
@@ -597,11 +597,11 @@ export const handleBuyThreadBtn = function () {
 export const getMultiQuoteData = function () {
     let quoteList = [];
     $('.pd_multi_quote_chk input:checked').each(function () {
-        let $readLou = $(this).closest('.readlou');
-        let matches = /(\d+)楼/.exec($readLou.find('.pd_goto_link').text());
+        let $floor = $(this).closest('.readlou');
+        let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
-        let pid = $readLou.prev('a').attr('name');
-        let userName = $readLou.next('div').next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
+        let pid = $floor.prev('.readlou').prev('a').attr('name');
+        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmleft > a').text();
         if (!userName) return;
         quoteList.push({floor: floor, pid: pid, userName: userName});
     });
@@ -686,7 +686,11 @@ export const addUserMemo = function () {
             let memoText = memo;
             let maxLength = 24;
             if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-            $this.after(`<br><span class="pd_user_memo" title="备注：${memo}">(${memoText})</span>`);
+            $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
+            $this.closest('.readidms').css({
+                'height': 'auto',
+                'min-height': '280px',
+            });
         }
     });
 };

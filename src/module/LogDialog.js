@@ -289,7 +289,6 @@ const getLogStat = function (log, date, logStatType) {
     let lootCount = 0, lootLevelStat = {total: 0, min: 0, max: 0}, lootBoxTotalNum = 0, lootBoxStat = {};
     let boxTotalNum = 0, boxStat = {}, boxGain = {'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {}},
         boxRandomTotalNum = 0, boxRandomTotalCount = 0;
-    let buyItemNum = 0, buyItemKfb = 0, buyItemStat = {};
     let validItemNum = 0, validItemStat = {}, invalidItemNum = 0, invalidItemStat = {};
     let invalidKeyList = [
         'item', 'arm', 'box', '夺取KFB', 'VIP小时', '神秘', '燃烧伤害', '命中', '闪避', '暴击比例', '暴击几率', '防御', '有效道具', '无效道具',
@@ -361,14 +360,6 @@ const getLogStat = function (log, date, logStatType) {
                     else {
                         boxGain[key] += value;
                     }
-                }
-            }
-            else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
-                buyItemNum += gain['道具'];
-                buyItemKfb += Math.abs(pay['KFB']);
-                for (let [itemName, num] of Util.entries(gain['item'])) {
-                    if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
-                    buyItemStat[itemName] += num;
                 }
             }
             else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
@@ -450,11 +441,6 @@ const getLogStat = function (log, date, logStatType) {
         }
     }
 
-    /*content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` +
-        `<i>KFB<ins>-${buyItemKfb.toLocaleString()}</ins></i> `;
-    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
-        content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
-    }*/ // 临时禁用
     content += `<br><strong>有效道具统计：</strong><i>有效道具<em>+${validItemNum.toLocaleString()}</em></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
         content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;

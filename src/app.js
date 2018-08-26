@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.8.5';
+const version = '12.8.6';
 
 /**
  * 导出模块
@@ -89,29 +89,27 @@ const init = function () {
     }
     if (Config.showChangePointsInfoEnabled) Public.addChangePointsInfoTips();
     if (Info.isInHomePage) {
-        //Index.handleAtTips(); // 临时
-        //Index.addSearchTypeSelectBox(); // 临时
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
-        //if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink(); // 临时
+        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         Index.addPromoteHaloInterval();
     }
     else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-        //Read.fastGotoFloor(); // 临时
+        Read.fastGotoFloor();
+        Read.addFloorGotoLink();
         Read.adjustThreadContentFontSize();
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
-        //if (Config.multiQuoteEnabled) Read.addMultiQuoteButton(); // 临时
-        //Read.addFastGotoFloorInput(); // 临时
-        //Read.addFloorGotoLink(); // 临时
-        //Read.addStatAndBuyThreadBtn(); // 临时
+        if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
+        Read.addFastGotoFloorInput();
+        Read.addStatAndBuyThreadBtn();
         Read.handleBuyThreadBtn();
         Read.addCopyBuyersListOption();
-        //if (Config.userMemoEnabled) Read.addUserMemo(); // 临时
+        if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
         Post.addRedundantKeywordWarning();

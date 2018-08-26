@@ -10,7 +10,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.8.5
+// @version     12.8.6
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.8.5';
+const version = '12.8.6';
 
 /**
  * 导出模块
@@ -171,28 +171,26 @@ const init = function () {
     }
     if (Config.showChangePointsInfoEnabled) Public.addChangePointsInfoTips();
     if (_Info2.default.isInHomePage) {
-        //Index.handleAtTips(); // 临时
-        //Index.addSearchTypeSelectBox(); // 临时
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
-        //if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink(); // 临时
+        if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         Index.addPromoteHaloInterval();
     } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-        //Read.fastGotoFloor(); // 临时
+        Read.fastGotoFloor();
+        Read.addFloorGotoLink();
         Read.adjustThreadContentFontSize();
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
-        //if (Config.multiQuoteEnabled) Read.addMultiQuoteButton(); // 临时
-        //Read.addFastGotoFloorInput(); // 临时
-        //Read.addFloorGotoLink(); // 临时
-        //Read.addStatAndBuyThreadBtn(); // 临时
+        if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
+        Read.addFastGotoFloorInput();
+        Read.addStatAndBuyThreadBtn();
         Read.handleBuyThreadBtn();
         Read.addCopyBuyersListOption();
-        //if (Config.userMemoEnabled) Read.addUserMemo(); // 临时
+        if (Config.userMemoEnabled) Read.addUserMemo();
         Read.addCopyCodeLink();
         Read.addMoreSmileLink();
         Post.addRedundantKeywordWarning();
@@ -1040,9 +1038,6 @@ const Config = exports.Config = {
     // 在当天的指定时间之后购买物品（本地时间），例：00:40:00
     buyItemAfterTime: '00:40:00',
 
-    // 对首页上的有人@你的消息框进行处理的方案，no_highlight：取消已读提醒高亮；no_highlight_extra：取消已读提醒高亮，并在无提醒时补上消息框；
-    // hide_box_1：不显示已读提醒的消息框；hide_box_2：永不显示消息框；default：保持默认；at_change_to_cao：将@改为艹(其他和方式2相同)
-    atTipsHandleType: 'no_highlight',
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
@@ -1478,18 +1473,6 @@ const show = exports.show = function () {
     <fieldset>
       <legend>首页相关</legend>
       <label>
-        @提醒
-        <select name="atTipsHandleType" style="width: 140px;">
-          <option value="no_highlight">取消已读提醒高亮</option>
-          <option value="no_highlight_extra">取消已读提醒高亮，并在无提醒时补上消息框</option>
-          <option value="hide_box_1">不显示已读提醒的消息框</option>
-          <option value="hide_box_2">永不显示消息框</option>
-          <option value="default">保持默认</option>
-          <option value="at_change_to_cao">将@改为艹(其他和方式2相同)</option>
-        </select>
-        <span class="pd_cfg_tips" title="对首页上的有人@你的消息框进行处理的方案">[?]</span>
-      </label><br>
-      <label>
         <input name="smLevelUpAlertEnabled" type="checkbox"> 神秘等级升级提醒
         <span class="pd_cfg_tips" title="在神秘等级升级后进行提醒，只在首页生效">[?]</span>
       </label>
@@ -1498,8 +1481,8 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在神秘系数排名发生变化时进行提醒，只在首页生效">[?]</span>
       </label><br>
       <label>
-        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 在首页帖子旁显示跳转链接
-        <span class="pd_cfg_tips" title="在首页帖子链接旁显示快速跳转至页末的链接">[?]</span>
+        <input name="homePageThreadFastGotoLinkEnabled" type="checkbox"> 为首页帖子加上跳转至页末链接
+        <span class="pd_cfg_tips" title="开启此功能后，点击首页帖子链接右侧的回复时间部分即可快速跳转至帖子页末">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -2815,7 +2798,7 @@ const close = exports.close = function (id) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addPromoteHaloInterval = exports.addSearchTypeSelectBox = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = exports.handleAtTips = undefined;
+exports.addPromoteHaloInterval = exports.addThreadFastGotoLink = exports.smRankChangeAlert = exports.smLevelUpAlert = undefined;
 
 var _Info = require('./Info');
 
@@ -2848,59 +2831,6 @@ var Loot = _interopRequireWildcard(_Loot);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * 处理首页有人@你的消息框
- */
-const handleAtTips = exports.handleAtTips = function () {
-    let type = Config.atTipsHandleType;
-    if (type === 'default') return;
-    let $atTips = $('a.indbox5[href^="guanjianci.php?gjc="]');
-    let noHighlight = () => $atTips.removeClass('indbox5').addClass('indbox6');
-    let hideBox = () => $atTips.parent().next('div.line').addBack().remove();
-    let handleBox = noHighlight;
-    if (type === 'hide_box_1' || type === 'hide_box_2') handleBox = hideBox;
-    if (['no_highlight', 'no_highlight_extra', 'hide_box_1', 'at_change_to_cao'].includes(type)) {
-        if ($atTips.length > 0) {
-            let cookieText = Util.getCookie(_Const2.default.hideReadAtTipsCookieName);
-            let atTipsText = $.trim($atTips.text());
-            let matches = /\d+日\d+时\d+分/.exec(atTipsText);
-            if (matches) atTipsText = matches[0];
-            if (cookieText && cookieText === atTipsText) {
-                handleBox();
-            } else {
-                $atTips.click(function () {
-                    let $this = $(this);
-                    if ($this.data('disabled')) return;
-                    let cookieText = Util.getCookie(_Const2.default.hideReadAtTipsCookieName);
-                    if (!cookieText) {
-                        let curDate = new Date().getDate().toString();
-                        Util.setCookie(_Const2.default.prevReadAtTipsCookieName, curDate.padStart(2, '0') + '日00时00分');
-                    } else if (cookieText !== atTipsText) {
-                        Util.setCookie(_Const2.default.prevReadAtTipsCookieName, cookieText);
-                    }
-                    Util.setCookie(_Const2.default.hideReadAtTipsCookieName, atTipsText, Util.getDate(`+${_Const2.default.hideMarkReadAtTipsExpires}d`));
-                    $this.data('disabled', true);
-                    handleBox();
-                });
-            }
-            if (type === 'at_change_to_cao') {
-                $atTips.text($atTips.text().replace('@', '艹'));
-            }
-        } else if (!$atTips.length && (type === 'no_highlight_extra' || type === 'at_change_to_cao')) {
-            let html = `
-<div style="width: 300px;">
-  <a class="indbox6" href="guanjianci.php?gjc=${_Info2.default.userName}" target="_blank">最近无人${type === 'at_change_to_cao' ? '艹' : '@'}你</a><br>
-  <div class="line"></div>
-  <div class="c"></div>
-</div>
-<div class="line"></div>`;
-            $('#pdKfb').parent().before(html);
-        }
-    } else if (type === 'hide_box_2') {
-        if ($atTips.length > 0) handleBox();
-    }
-};
 
 /**
  * 在神秘等级升级后进行提醒
@@ -2970,23 +2900,12 @@ const smRankChangeAlert = exports.smRankChangeAlert = function () {
  * 在首页帖子链接旁添加快速跳转至页末的链接
  */
 const addThreadFastGotoLink = exports.addThreadFastGotoLink = function () {
-    $('.index1').on('mouseenter', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
+    $('#alldiv > .drow:last-child').on('mouseenter', 'li.indexlbtit2 > a, li.rightlbtit > a', function () {
         let $this = $(this);
-        $this.css('position', 'relative').prepend(`<a class="pd_thread_goto" href="${$this.find('a').attr('href')}&page=e#a">&raquo;</a>`);
-    }).on('mouseleave', 'li.b_tit4:has("a"), li.b_tit4_1:has("a")', function () {
+        $this.css('position', 'relative').prepend(`<a class="pd_thread_goto" href="${$this.attr('href')}&page=e#a"></a>`);
+    }).on('mouseleave', 'li.indexlbtit2 > a, li.rightlbtit > a', function () {
         $(this).css('position', 'static').find('.pd_thread_goto').remove();
     });
-};
-
-/**
- * 在首页上添加搜索类型选择框
- */
-const addSearchTypeSelectBox = exports.addSearchTypeSelectBox = function () {
-    let $form = $('form[action="search.php?"]');
-    $form.attr('name', 'pdSearchForm');
-    let $keyWord = $form.find('[type="text"][name="keyword"]');
-    $keyWord.css('width', '174px');
-    $('<div class="pd_search_type"><span>标题</span><i>&#8744;</i></div>').insertAfter($keyWord);
 };
 
 /**
@@ -5819,9 +5738,6 @@ const getLogStat = function (log, date, logStatType) {
         boxGain = { 'KFB': 0, '经验值': 0, '道具': 0, '装备': 0, item: {}, arm: {} },
         boxRandomTotalNum = 0,
         boxRandomTotalCount = 0;
-    let buyItemNum = 0,
-        buyItemKfb = 0,
-        buyItemStat = {};
     let validItemNum = 0,
         validItemStat = {},
         invalidItemNum = 0,
@@ -5889,13 +5805,6 @@ const getLogStat = function (log, date, logStatType) {
                     } else {
                         boxGain[key] += value;
                     }
-                }
-            } else if (type === '购买道具' && $.type(gain) === 'object' && $.type(gain['item']) === 'object' && $.type(pay) === 'object') {
-                buyItemNum += gain['道具'];
-                buyItemKfb += Math.abs(pay['KFB']);
-                for (let [itemName, num] of Util.entries(gain['item'])) {
-                    if (!(itemName in buyItemStat)) buyItemStat[itemName] = 0;
-                    buyItemStat[itemName] += num;
                 }
             } else if ((type === '使用道具' || type === '循环使用道具') && $.type(gain) === 'object') {
                 let matches = /【`Lv.(\d+)：(.+?)`】/.exec(action);
@@ -5969,11 +5878,6 @@ const getLogStat = function (log, date, logStatType) {
         }
     }
 
-    /*content += `<br><strong>购买道具统计：</strong><i>道具<em>+${buyItemNum.toLocaleString()}</em></i> ` +
-        `<i>KFB<ins>-${buyItemKfb.toLocaleString()}</ins></i> `;
-    for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, buyItemStat)) {
-        content += `<i>${itemName}<em>+${buyItemStat[itemName].toLocaleString()}</em></i> `;
-    }*/ // 临时禁用
     content += `<br><strong>有效道具统计：</strong><i>有效道具<em>+${validItemNum.toLocaleString()}</em></i> `;
     for (let itemName of Util.getSortedObjectKeyList(Item.itemTypeList, validItemStat)) {
         content += `<i>${itemName}<em>+${validItemStat[itemName].toLocaleString()}</em></i> `;
@@ -10024,7 +9928,7 @@ const appendCss = exports.appendCss = function () {
   .readlou .pd_goto_link { color: #000; }
   .readlou .pd_goto_link:hover { color: #51d; }
   .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 14px; }
+  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 5px; }
   .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
@@ -10063,8 +9967,10 @@ const appendCss = exports.appendCss = function () {
   .pd_thread_page a { color: #444; padding: 0 3px; }
   .pd_thread_page a:hover { color: #51d; }
   .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }
-  .b_tit4 .pd_thread_goto, .b_tit4_1 .pd_thread_goto { position: absolute; top: 0; right: 0; padding: 0 15px; }
-  .b_tit4 .pd_thread_goto:hover, .b_tit4_1 .pd_thread_goto:hover { padding-left: 15px; }
+  .indexlbtit2 .pd_thread_goto, .rightlbtit .pd_thread_goto {
+    position: absolute; top: 0; right: 0; margin: 0; padding: 0; width: 65px; border: none;
+  }
+  .indexlbtit2 .pd_thread_goto:hover, .rightlbtit .pd_thread_goto:hover { border: none; }
   .pd_id_color_select > td { position: relative; cursor: pointer; }
   .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }
   #pdPropertiesArea td { position: relative; }
@@ -10147,7 +10053,7 @@ const addConfigAndLogDialogLink = exports.addConfigAndLogDialogLink = function (
 };
 
 /**
- * 处理首页链接
+ * 处理侧边栏链接
  */
 const handleSideBarLink = exports.handleSideBarLink = function () {
     let $kfb = $('a.rightbox1[title="网站虚拟货币"]');
@@ -10569,7 +10475,6 @@ const followUsers = exports.followUsers = function () {
     if (_Info2.default.isInHomePage && Config.highlightFollowUserThreadInHPEnabled) {
         return; // 临时
         $('.b_tit4 > a, .b_tit4_1 > a').each(function () {
-            return false; // 临时
             let $this = $(this);
             let matches = /》by：(.+)/.exec($this.attr('title'));
             if (!matches) return;
@@ -10588,11 +10493,10 @@ const followUsers = exports.followUsers = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
-        return; // 临时
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
-                $this.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
+                $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
             }
         });
     } else if (location.pathname === '/guanjianci.php' || location.pathname === '/kf_share.php') {
@@ -10643,7 +10547,6 @@ const blockUsers = exports.blockUsers = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
-        return; // 临时
         if (Config.blockUserForumType > 0) {
             let fid = parseInt($('input[name="fid"]:first').val());
             if (!fid) return;
@@ -10657,11 +10560,12 @@ const blockUsers = exports.blockUsers = function () {
                 let type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
-                let $lou = $this.closest('.readtext');
-                $lou.prev('div').prev('.readlou').remove();
-                $lou.prev('div').remove();
-                $lou.next('.readlou').remove();
-                $lou.remove();
+                let $floor = $this.closest('.readlou');
+                $floor.next('.readlou').remove();
+                $floor.next('div[id^="floor"]').remove();
+                $floor.next('.readtext').remove();
+                $floor.next('.readlou').remove();
+                $floor.remove();
             }
         });
         $('.readtext fieldset:has(legend:contains("Quote:"))').each(function () {
@@ -10741,7 +10645,6 @@ const blockThread = exports.blockThread = function () {
     if (_Info2.default.isInHomePage) {
         return; // 临时
         $('.b_tit4 a, .b_tit4_1 a').each(function () {
-            return false; // 临时
             let $this = $(this);
             let title = $this.attr('title');
             if (!title) return;
@@ -10764,23 +10667,23 @@ const blockThread = exports.blockThread = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
-        return; // 临时
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').eq(0);
-        if ($userName.closest('.readtext').prev('div').prev('.readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        if ($userName.closest('.readlou').next('readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;
         if (isBlock(title, userName, fid)) {
             num++;
-            let $lou = $userName.closest('.readtext');
-            $lou.prev('div').prev('.readlou').remove();
-            $lou.prev('div').remove();
-            $lou.next('.readlou').remove();
-            $lou.remove();
+            let $floor = $userName.closest('.readlou');
+            $floor.next('.readlou').remove();
+            $floor.next('div[id^="floor"]').remove();
+            $floor.next('.readtext').remove();
+            $floor.next('.readlou').remove();
+            $floor.remove();
         }
     }
     if (num > 0) console.log(`【屏蔽帖子】共有${num}个帖子被屏蔽`);
@@ -10802,8 +10705,8 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
   <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
   <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
-  <li><a href="hack.php?H_name=bank">银行</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>
+  <li><a href="profile.php?action=friend">好友列表</a></li>
   ${_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
   ${_Const2.default.customFastNavMenuContent}
 </ul>`);
@@ -10977,15 +10880,12 @@ const makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWord
     $(document).on('submit', 'form[action="search.php?"]', function () {
         let $this = $(this);
         let $keyWord = $this.find('input[name="keyword"]');
-        let $method = $this.find('input[name="method"]');
-        if (!$keyWord.length || !$method.length) return;
+        if (!$keyWord.length) return;
         let keyWord = $.trim($keyWord.val());
         if (!keyWord || Util.getStrByteLen(keyWord) > 2) return;
-        $keyWord.val(keyWord + ' ' + Math.floor($.now() / 1000));
-        $method.val('OR');
+        $keyWord.val(keyWord + ' ' + keyWord);
         setTimeout(() => {
             $keyWord.val(keyWord);
-            $method.val('AND');
         }, 200);
     });
 };
@@ -11305,11 +11205,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 const addFloorGotoLink = exports.addFloorGotoLink = function () {
     let sf = Util.getThreadSfParam();
-    $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span').each(function () {
+    $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span:first-child').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼/.test(floorText)) return;
-        let linkName = $this.closest('.readlou').prev().attr('name');
+        let linkName = $this.closest('.readlou').prev('.readlou').prev('a').attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html($this.html().replace(/(\d+)楼/, `<a class="pd_goto_link" href="${url}" title="复制楼层链接">$1楼</a>`));
@@ -11332,7 +11232,7 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
     $(`
 <form>
 <li class="pd_fast_goto_floor">
-  电梯直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
+  直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
   <span data-name="submit" style="cursor: pointer;">楼</span>
 </li>
 </form>
@@ -11353,9 +11253,9 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
 const fastGotoFloor = exports.fastGotoFloor = function () {
     let floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    let $floorNode = $(`.readlou > div:nth-child(2) > span:contains("${floor}楼")`);
+    let $floorNode = $(`.readlou > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
     if (!$floorNode.length) return;
-    let linkName = $floorNode.closest('.readlou').prev().attr('name');
+    let linkName = $floorNode.closest('.readlou').prev('.readlou').prev('a').attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
     location.hash = '#' + linkName;
 };
@@ -11510,9 +11410,9 @@ const statFloor = exports.statFloor = function (tid, startPage, endPage, startFl
                         isStop = true;
                         return false;
                     }
-                    data.pid = parseInt($floorHeader.prev('a').attr('name'));
+                    data.pid = parseInt($floorHeader.prev('.readlou').prev('a').attr('name'));
 
-                    let $user = $floor.find('.readidms, .readidm');
+                    let $user = $floorHeader.prev('.readlou').find('.readidms, .readidm');
                     let $userLink = $user.find('a[href^="profile.php?action=show&uid="]');
                     data.userName = $userLink.text();
 
@@ -11853,11 +11753,11 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
 const getMultiQuoteData = exports.getMultiQuoteData = function () {
     let quoteList = [];
     $('.pd_multi_quote_chk input:checked').each(function () {
-        let $readLou = $(this).closest('.readlou');
-        let matches = /(\d+)楼/.exec($readLou.find('.pd_goto_link').text());
+        let $floor = $(this).closest('.readlou');
+        let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
-        let pid = $readLou.prev('a').attr('name');
-        let userName = $readLou.next('div').next('.readtext').find('.readidmsbottom > a, .readidmleft > a').text();
+        let pid = $floor.prev('.readlou').prev('a').attr('name');
+        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmleft > a').text();
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -11928,7 +11828,11 @@ const addUserMemo = exports.addUserMemo = function () {
             let memoText = memo;
             let maxLength = 24;
             if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-            $this.after(`<br><span class="pd_user_memo" title="备注：${memo}">(${memoText})</span>`);
+            $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
+            $this.closest('.readidms').css({
+                'height': 'auto',
+                'min-height': '280px'
+            });
         }
     });
 };
