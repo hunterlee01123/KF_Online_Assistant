@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.8.6';
+const version = '12.8.7';
 
 /**
  * 导出模块
@@ -267,19 +267,21 @@ const init = function () {
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
         $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
     }
-    if (location.pathname === '/kf_fw_ig_index.php') {
+    /*if (location.pathname === '/kf_fw_ig_index.php') {
         $(document).queue('AutoAction', () => Loot.init());
     }
-
-    if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+      if (!Util.getCookie(Const.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) {
+            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootAttackingCookieName) &&
+                !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
+            ) {
                 $(document).queue('AutoAction', () => Loot.checkLoot());
             }
-        } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+        }
+        else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
             $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
         }
-    }
+    }*/ // 临时
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());
@@ -10164,28 +10166,29 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
     }
 
     let checkLootInterval = -1;
-    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
-        let value = parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName));
+    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
+        let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
         if (value < 0) {
-            checkLootInterval = _Const2.default.checkLootInterval * 60;
-        } else {
+            checkLootInterval = Const.checkLootInterval * 60;
+        }
+        else {
             let date = Util.getDateByTime(Config.checkLootAfterTime);
             let now = new Date();
             if (value > 0 && now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);
             if (checkLootInterval < 0) checkLootInterval = 0;
         }
-
-        if (Util.getCookie(_Const2.default.lootAttackingCookieName)) {
-            checkLootInterval = _Const2.default.lootAttackingExpires * 60;
-        } else {
-            let changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
+          if (Util.getCookie(Const.lootAttackingCookieName)) {
+            checkLootInterval = Const.lootAttackingExpires * 60;
+        }
+        else {
+            let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
             if (changePointsInfo > 0) {
                 checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
             }
         }
-    }
+    }*/ // 临时
 
     let getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
@@ -10327,13 +10330,15 @@ const startTimingMode = exports.startTimingMode = function () {
             $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
         }
 
-        if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
             if (Config.autoLootEnabled) {
-                if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) $(document).queue('AutoAction', () => Loot.checkLoot());
-            } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+                if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
+                    $(document).queue('AutoAction', () => Loot.checkLoot());
+            }
+            else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
             }
-        }
+        }*/ // 临时
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
             $(document).queue('AutoAction', () => getDailyBonus());
@@ -11933,9 +11938,9 @@ const showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = fu
     if (!$area.find('select[name="buyers"]').length) return;
     let html = $area.html();
     if (/\[attachment=\d+\]/.test(html)) {
-        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('.readlou').prev('a').attr('name');
         let tid = Util.getUrlParam('tid');
-        $area.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`));
+        $area.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width: 550px;" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`));
     }
 };
 

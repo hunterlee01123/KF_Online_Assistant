@@ -389,7 +389,7 @@ export const getNextTimingIntervalInfo = function () {
     }
 
     let checkLootInterval = -1;
-    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
+    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
         let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
         if (value < 0) {
             checkLootInterval = Const.checkLootInterval * 60;
@@ -412,7 +412,7 @@ export const getNextTimingIntervalInfo = function () {
                 checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
             }
         }
-    }
+    }*/ // 临时
 
     let getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
@@ -564,7 +564,7 @@ export const startTimingMode = function () {
             $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
         }
 
-        if (!Util.getCookie(Const.lootCompleteCookieName)) {
+        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
             if (Config.autoLootEnabled) {
                 if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
                     $(document).queue('AutoAction', () => Loot.checkLoot());
@@ -572,7 +572,7 @@ export const startTimingMode = function () {
             else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
                 $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
             }
-        }
+        }*/ // 临时
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) {
             $(document).queue('AutoAction', () => getDailyBonus());

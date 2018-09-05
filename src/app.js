@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.8.6';
+const version = '12.8.7';
 
 /**
  * 导出模块
@@ -225,7 +225,7 @@ const init = function () {
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
         $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
     }
-    if (location.pathname === '/kf_fw_ig_index.php') {
+    /*if (location.pathname === '/kf_fw_ig_index.php') {
         $(document).queue('AutoAction', () => Loot.init());
     }
 
@@ -240,7 +240,7 @@ const init = function () {
         else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
             $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
         }
-    }
+    }*/ // 临时
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());

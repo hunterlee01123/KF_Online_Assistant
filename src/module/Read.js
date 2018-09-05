@@ -827,12 +827,12 @@ export const showAttachImageOutsideSellBox = function () {
     if (!$area.find('select[name="buyers"]').length) return;
     let html = $area.html();
     if (/\[attachment=\d+\]/.test(html)) {
-        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('.readlou').prev('a').attr('name');
         let tid = Util.getUrlParam('tid');
         $area.html(
             html.replace(
                 /\[attachment=(\d+)\]/g,
-                `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width:550px" ` +
+                `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width: 550px;" ` +
                 `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`
             )
         );

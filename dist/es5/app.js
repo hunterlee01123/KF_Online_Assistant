@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.8.6';
+var version = '12.8.7';
 
 /**
  * 导出模块
@@ -271,25 +271,21 @@ var init = function init() {
             return Loot.getPromoteHaloInfo();
         });
     }
-    if (location.pathname === '/kf_fw_ig_index.php') {
-        $(document).queue('AutoAction', function () {
-            return Loot.init();
-        });
+    /*if (location.pathname === '/kf_fw_ig_index.php') {
+        $(document).queue('AutoAction', () => Loot.init());
     }
-
-    if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+      if (!Util.getCookie(Const.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) {
-                $(document).queue('AutoAction', function () {
-                    return Loot.checkLoot();
-                });
+            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootAttackingCookieName) &&
+                !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
+            ) {
+                $(document).queue('AutoAction', () => Loot.checkLoot());
             }
-        } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-            $(document).queue('AutoAction', function () {
-                return Loot.autoSaveLootLog();
-            });
         }
-    }
+        else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+            $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
+        }
+    }*/ // 临时
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
         $(document).queue('AutoAction', function () {
@@ -11593,39 +11589,40 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
     }
 
     var checkLootInterval = -1;
-    if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
-        var _value = parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName));
-        if (_value < 0) {
-            checkLootInterval = _Const2.default.checkLootInterval * 60;
-        } else {
-            var date = Util.getDateByTime(Config.checkLootAfterTime);
-            var now = new Date();
-            if (_value > 0 && now > date) date.setDate(date.getDate() + 1);
+    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
+        let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
+        if (value < 0) {
+            checkLootInterval = Const.checkLootInterval * 60;
+        }
+        else {
+            let date = Util.getDateByTime(Config.checkLootAfterTime);
+            let now = new Date();
+            if (value > 0 && now > date) date.setDate(date.getDate() + 1);
             checkLootInterval = Math.floor((date - now) / 1000);
             if (checkLootInterval < 0) checkLootInterval = 0;
         }
-
-        if (Util.getCookie(_Const2.default.lootAttackingCookieName)) {
-            checkLootInterval = _Const2.default.lootAttackingExpires * 60;
-        } else {
-            var changePointsInfo = Util.getCookie(_Const2.default.changePointsInfoCookieName);
+          if (Util.getCookie(Const.lootAttackingCookieName)) {
+            checkLootInterval = Const.lootAttackingExpires * 60;
+        }
+        else {
+            let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
             changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
             if (changePointsInfo > 0) {
                 checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
             }
         }
-    }
+    }*/ // 临时
 
     var getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
-        var _value2 = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
-        if (_value2 > 0) {
-            var _date = Util.getTimezoneDateByTime(_Const2.default.getDailyBonusAfterTime);
-            _date.setDate(_date.getDate() + 1);
-            var _now = new Date();
-            if (_now > _date) _date.setDate(_date.getDate() + 1);
-            getDailyBonusInterval = Math.floor((_date - _now) / 1000);
-        } else if (_value2 < 0) {
+        var _value = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
+        if (_value > 0) {
+            var date = Util.getTimezoneDateByTime(_Const2.default.getDailyBonusAfterTime);
+            date.setDate(date.getDate() + 1);
+            var now = new Date();
+            if (now > date) date.setDate(date.getDate() + 1);
+            getDailyBonusInterval = Math.floor((date - now) / 1000);
+        } else if (_value < 0) {
             getDailyBonusInterval = _Const2.default.getDailyBonusSpecialInterval * 60;
         } else {
             getDailyBonusInterval = 0;
@@ -11634,13 +11631,13 @@ var getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function get
 
     var buyItemInterval = -1;
     if (Config.autoBuyItemEnabled) {
-        var _date2 = Util.getDateByTime(Config.buyItemAfterTime);
-        var _now2 = new Date();
+        var _date = Util.getDateByTime(Config.buyItemAfterTime);
+        var _now = new Date();
         if (Util.getCookie(_Const2.default.buyItemReadyCookieName)) {
             buyItemInterval = 5 * 60;
-        } else if (Util.getCookie(_Const2.default.buyItemCookieName) || _now2 < _date2) {
-            if (_now2 > _date2) _date2.setDate(_date2.getDate() + 1);
-            buyItemInterval = Math.floor((_date2 - _now2) / 1000);
+        } else if (Util.getCookie(_Const2.default.buyItemCookieName) || _now < _date) {
+            if (_now > _date) _date.setDate(_date.getDate() + 1);
+            buyItemInterval = Math.floor((_date - _now) / 1000);
         } else {
             buyItemInterval = 0;
         }
@@ -11790,17 +11787,15 @@ var startTimingMode = exports.startTimingMode = function startTimingMode() {
             });
         }
 
-        if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
             if (Config.autoLootEnabled) {
-                if (!Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) $(document).queue('AutoAction', function () {
-                    return Loot.checkLoot();
-                });
-            } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-                $(document).queue('AutoAction', function () {
-                    return Loot.autoSaveLootLog();
-                });
+                if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
+                    $(document).queue('AutoAction', () => Loot.checkLoot());
             }
-        }
+            else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+                $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
+            }
+        }*/ // 临时
 
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
             $(document).queue('AutoAction', function () {
@@ -13487,9 +13482,9 @@ var showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = func
     if (!$area.find('select[name="buyers"]').length) return;
     var html = $area.html();
     if (/\[attachment=\d+\]/.test(html)) {
-        var pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        var pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('.readlou').prev('a').attr('name');
         var tid = Util.getUrlParam('tid');
-        $area.html(html.replace(/\[attachment=(\d+)\]/g, '<img src="job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1" alt="[\u9644\u4EF6\u56FE\u7247]" style="max-width:550px" ' + ('onclick="if(this.width>=550) window.open(\'job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1\');">')));
+        $area.html(html.replace(/\[attachment=(\d+)\]/g, '<img src="job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1" alt="[\u9644\u4EF6\u56FE\u7247]" style="max-width: 550px;" ' + ('onclick="if(this.width>=550) window.open(\'job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1\');">')));
     }
 };
 
