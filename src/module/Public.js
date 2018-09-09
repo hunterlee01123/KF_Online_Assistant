@@ -1360,11 +1360,20 @@ export const showCommonImportOrExportLogDialog = function ({name, read, write, m
 };
 
 /**
- * 修改顶部导航栏的用户名旁有新的评分提醒的颜色
+ * 修改顶部导航栏的用户名旁新提醒的颜色
  */
-export const changeNewRateTipsColor = function () {
-    if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
-        $('#pdUserName').find('span').attr('id', 'pdNewRateTips').css('color', '#5cb85c');
+export const changeNewTipsColor = function () {
+    let $msgTips = $('#pdUserName').find('span:first');
+    if(!$msgTips.length) return;
+    $msgTips.addClass('pd_new_tips');
+    if (Info.$userMenu.find('a[href="message.php"]:contains("有新消息")').length > 0) {
+        $msgTips.attr('id', 'pdNewMsgTips').css({'color': '#0099cc'});
+    }
+    else if (Info.$userMenu.find('a[href^="guanjianci.php?gjc="]:contains("有人@我")').length > 0) {
+        $msgTips.attr('id', 'pdNewReplyTips');
+    }
+    else if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新评分")').length > 0) {
+        $msgTips.attr('id', 'pdNewRateTips').css({'color': '#5cb85c'});
     }
 };
 

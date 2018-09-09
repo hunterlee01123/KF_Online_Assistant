@@ -142,6 +142,8 @@ export const Config = {
     showSearchLinkEnabled: true,
     // 是否为顶部导航栏添加快捷导航菜单，true：开启；false：关闭
     addFastNavMenuEnabled: true,
+    // 是否修改顶部用户菜单旁的新提醒的颜色，true：开启；false：关闭
+    changeNewTipsColorEnabled: true,
     // 是否为页面添加自定义的CSS内容，true：开启；false：关闭
     customCssEnabled: false,
     // 自定义CSS的内容

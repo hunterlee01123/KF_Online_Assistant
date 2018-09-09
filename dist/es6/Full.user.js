@@ -10,7 +10,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.8.7
+// @version     12.9
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.8.7';
+const version = '12.9';
 
 /**
  * 导出模块
@@ -165,7 +165,7 @@ const init = function () {
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
     _Info2.default.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
-    //Public.changeNewRateTipsColor(); // 临时
+    if (Config.changeNewTipsColorEnabled) Public.changeNewTipsColor();
 
     Public.handleSideBarLink();
     if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
@@ -286,21 +286,19 @@ const init = function () {
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
         $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
     }
-    /*if (location.pathname === '/kf_fw_ig_index.php') {
+    if (location.pathname === '/kf_fw_ig_index.php') {
         $(document).queue('AutoAction', () => Loot.init());
     }
-      if (!Util.getCookie(Const.lootCompleteCookieName)) {
+
+    if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         if (Config.autoLootEnabled) {
-            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootAttackingCookieName) &&
-                !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
-            ) {
+            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) {
                 $(document).queue('AutoAction', () => Loot.checkLoot());
             }
+        } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
+            //$(document).queue('AutoAction', () => Loot.autoSaveLootLog()); // 临时
         }
-        else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-            $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
-        }
-    }*/ // 临时
+    }
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());
@@ -1097,6 +1095,8 @@ const Config = exports.Config = {
     showSearchLinkEnabled: true,
     // 是否为顶部导航栏添加快捷导航菜单，true：开启；false：关闭
     addFastNavMenuEnabled: true,
+    // 是否修改顶部用户菜单旁的新提醒的颜色，true：开启；false：关闭
+    changeNewTipsColorEnabled: true,
     // 是否为页面添加自定义的CSS内容，true：开启；false：关闭
     customCssEnabled: false,
     // 自定义CSS的内容
@@ -1460,6 +1460,10 @@ const show = exports.show = function () {
         <input name="showDrawCardTipsEnabled" type="checkbox"> 显示抽卡提醒
         <span class="pd_cfg_tips" title="显示抽卡提醒">[?]</span>
       </label>
+      <label class="pd_cfg_ml">
+        <input name="alwaysOpenPointAreaEnabled" type="checkbox"> 总是打开属性界面
+        <span class="pd_cfg_tips" title="在争夺首页总是打开个人属性/装备界面">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>
@@ -1618,6 +1622,10 @@ const show = exports.show = function () {
       <label>
         <input name="addFastNavMenuEnabled" type="checkbox"> 添加快捷导航菜单
         <span class="pd_cfg_tips" title="为顶部导航栏添加快捷导航菜单">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="changeNewTipsColorEnabled" type="checkbox"> 修改新提醒颜色
+        <span class="pd_cfg_tips" title="修改顶部用户菜单的新提醒的颜色，可根据不同的消息提醒（新短信、新回复、新评分），分别设定不同的颜色">[?]</span>
       </label><br>
       <label>
         <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS
@@ -6135,7 +6143,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     log = $log.html();
     logList = getLogList(log);
     levelInfoList = getLevelInfoList(logList);
-    if (/你被击败了|开始争夺战斗/.test(log)) {
+    if (/你被击败了|今日战斗已完成|开始争夺战斗/.test(log)) {
         localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
     } else {
         pointsLogList = getTempPointsLogList(logList);
@@ -6149,15 +6157,21 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
         $('#wdsx').show();
     }
 
-    if (log.includes('开始争夺战斗')) {
-        $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
-    } else if (log.includes('你被击败了') && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+    /*if (/你被击败了|今日战斗已完成/.test(log) && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
+        Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+    }*/ // 临时
+    if (/你被击败了|今日战斗已完成/.test(log) && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
         Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
-    }
+    } // 临时
+
+    $(document).dequeue('AutoAction'); // 临时
+    Script.runFunc('Loot.enhanceLootIndexPage_after_'); // 临时
+    return; // 临时
+
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName) && ![-1, -2].includes(parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)))) {
+    if (Config.autoLootEnabled && !/你被击败了|今日战斗已完成/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName) && ![-1, -2].includes(parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)))) {
         let serverStatusAllow = !(Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' || Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常');
         if (serverStatusAllow) {
             $(document).queue('AutoAction', () => autoLoot());
@@ -6294,7 +6308,7 @@ const handlePointsArea = function () {
     });
 
     $(`
-<tr>
+<tr hidden> <!-- 临时 -->
   <td>
     关键层列表
     <span class="pd_cfg_tips" title="KFOL计算器的关键层列表（各关键层以空格分隔），用于“攻击到下一关键层前”按钮">[?]</span>
@@ -6314,7 +6328,9 @@ const handlePointsArea = function () {
     });
 
     $points.find('input[name="prosubmit"]').replaceWith('<button name="prosubmit" type="submit">修改点数分配</button>');
-    $('<button name="changePointsAndArms" type="button" title="按照当前页面上的点数设置和装备ID进行修改" style="margin-left: 3px;">修改点数和装备</button>').insertAfter($points.find('button[name="prosubmit"]')).css('display', /你被击败了/.test(log) ? 'inline-block' : 'none').click(function () {
+    $('<button name="changePointsAndArms" type="button" title="按照当前页面上的点数设置和装备ID进行修改" style="margin-left: 3px;">修改点数和装备</button>').insertAfter($points.find('button[name="prosubmit"]'))
+    //.css('display', /你被击败了|今日战斗已完成/.test(log) ? 'inline-block' : 'none') // 临时
+    .click(function () {
         let $wait = Msg.wait('<strong>正在修改点数和装备&hellip;</strong>');
         changePointsAndArms(-1, function (result) {
             if (result === 'success') {
@@ -6850,7 +6866,7 @@ const setLevelPointListSelect = function (levelPointList) {
  */
 const addAttackBtns = function () {
     $(`
-<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">
+<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;" hidden> <!-- 临时 -->
   <label>
     <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''}>
     自动修改点数分配方案
@@ -6889,7 +6905,7 @@ ${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使�
 在勾选上述两种选项的情况下，点击自动攻击相关按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。而手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
 </div>
 `).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
-        if (/你被击败了/.test(log)) {
+        if (/你被击败了|今日战斗已完成/.test(log)) {
             alert('你已经被击败了');
             return;
         }
@@ -7238,10 +7254,10 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
 
             let lootAttackPerCheckLevel = typeof _Const2.default.lootAttackPerCheckLevel === 'function' ? _Const2.default.lootAttackPerCheckLevel() : _Const2.default.lootAttackPerCheckLevel;
             if (!/你\(\d+\)遭遇了/.test(html) || index % lootAttackPerCheckLevel === 0) {
-                if (html === 'no' && /你被击败了/.test(log)) isFail = true;
+                if (html === 'no' && /你被击败了|今日战斗已完成/.test(log)) isFail = true;
                 setTimeout(function () {
                     updateLootInfo(function () {
-                        if (!/你被击败了/.test(log)) isFail = false;
+                        if (!/你被击败了|今日战斗已完成/.test(log)) isFail = false;
                         after();
                     });
                 }, _Const2.default.minActionInterval);
@@ -7309,10 +7325,10 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 }
                 Script.runFunc('Loot.lootAttack_complete_');
             } else {
-                if (/你被击败了/.test(log)) {
+                if (/你被击败了|今日战斗已完成/.test(log)) {
                     setTimeout(function () {
                         updateLootInfo(function () {
-                            if (/你被击败了/.test(log)) isFail = true;
+                            if (/你被击败了|今日战斗已完成/.test(log)) isFail = true;
                             after();
                         });
                     }, _Const2.default.defAjaxInterval);
@@ -7326,7 +7342,7 @@ const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChang
                 Script.runFunc('Loot.lootAttack_after_');
             }
         } else {
-            if (autoChangePointsEnabled && !/你被击败了/.test(log)) {
+            if (autoChangePointsEnabled && !/你被击败了|今日战斗已完成/.test(log)) {
                 setTimeout(() => ready(currentLevel), _Const2.default.minActionInterval);
             } else {
                 setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
@@ -7969,7 +7985,7 @@ const handleLootLogNav = function () {
     if (!$.isEmptyObject(historyLogs)) {
         keyList = Util.getObjectKeyList(historyLogs, 1);
         let latestKey = parseInt(keyList[keyList.length - 1]);
-        if (!/你被击败了/.test(log) || latestKey <= Util.getDate('-1d').getTime() || historyLogs[latestKey].log.join('').trim() !== logList.join('').trim()) keyList.push(0);
+        if (!/你被击败了|今日战斗已完成/.test(log) || latestKey <= Util.getDate('-1d').getTime() || historyLogs[latestKey].log.join('').trim() !== logList.join('').trim()) keyList.push(0);
     } else keyList.push(0);
     let curIndex = keyList.length - 1;
 
@@ -8019,7 +8035,7 @@ const handleLootLogNav = function () {
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
         showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
 
-        if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了/.test(log) && keyList[curIndex] === 0) {
+        if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了|今日战斗已完成/.test(log) && keyList[curIndex] === 0) {
             Util.deleteCookie(_Const2.default.lootCompleteCookieName);
         }
     }
@@ -8308,7 +8324,7 @@ const checkLoot = exports.checkLoot = function () {
         timeout: _Const2.default.defAjaxTimeout,
         success(html) {
             Msg.remove($wait);
-            if (!/你被击败了/.test(html)) {
+            if (!/你被击败了|今日战斗已完成/.test(html)) {
                 if (Util.getCookie(_Const2.default.lootCheckingCookieName)) return;
                 let $log = $('#pk_text', html);
                 if (!$log.length) {
@@ -8336,6 +8352,7 @@ const checkLoot = exports.checkLoot = function () {
                 }
 
                 Util.setCookie(_Const2.default.lootCheckingCookieName, 1, Util.getDate('+1m'));
+                Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate('+1h')); // 临时
                 Msg.destroy();
                 $(document).clearQueue('AutoAction');
                 location.href = 'kf_fw_ig_index.php';
@@ -8360,7 +8377,7 @@ const checkLoot = exports.checkLoot = function () {
  * 自动争夺
  */
 const autoLoot = function () {
-    if (/你被击败了/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
+    if (/你被击败了|今日战斗已完成/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
         $(document).dequeue('AutoAction');
         return;
     }
@@ -8396,7 +8413,7 @@ const autoSaveLootLog = exports.autoSaveLootLog = function () {
             if (Util.getCookie(_Const2.default.lootCompleteCookieName)) return;
             let $log = $('#pk_text', html);
             let log = $log.html();
-            if (/你被击败了/.test(log)) {
+            if (/你被击败了|今日战斗已完成/.test(log)) {
                 Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
                 let logList = getLogList(log);
                 let levelInfoList = getLevelInfoList(logList);
@@ -9768,7 +9785,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addChangePointsInfoTips = exports.addSlowActionChecked = exports.changeNewRateTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.handleSideBarLink = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addChangePointsInfoTips = exports.addSlowActionChecked = exports.changeNewTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.handleSideBarLink = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -11103,11 +11120,18 @@ const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDia
 };
 
 /**
- * 修改顶部导航栏的用户名旁有新的评分提醒的颜色
+ * 修改顶部导航栏的用户名旁新提醒的颜色
  */
-const changeNewRateTipsColor = exports.changeNewRateTipsColor = function () {
-    if (_Info2.default.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新的评分")').length > 0) {
-        $('#pdUserName').find('span').attr('id', 'pdNewRateTips').css('color', '#5cb85c');
+const changeNewTipsColor = exports.changeNewTipsColor = function () {
+    let $msgTips = $('#pdUserName').find('span:first');
+    if (!$msgTips.length) return;
+    $msgTips.addClass('pd_new_tips');
+    if (_Info2.default.$userMenu.find('a[href="message.php"]:contains("有新消息")').length > 0) {
+        $msgTips.attr('id', 'pdNewMsgTips').css({ 'color': '#0099cc' });
+    } else if (_Info2.default.$userMenu.find('a[href^="guanjianci.php?gjc="]:contains("有人@我")').length > 0) {
+        $msgTips.attr('id', 'pdNewReplyTips');
+    } else if (_Info2.default.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新评分")').length > 0) {
+        $msgTips.attr('id', 'pdNewRateTips').css({ 'color': '#5cb85c' });
     }
 };
 

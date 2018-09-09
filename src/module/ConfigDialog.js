@@ -300,6 +300,10 @@ export const show = function () {
       <label>
         <input name="addFastNavMenuEnabled" type="checkbox"> 添加快捷导航菜单
         <span class="pd_cfg_tips" title="为顶部导航栏添加快捷导航菜单">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="changeNewTipsColorEnabled" type="checkbox"> 修改新提醒颜色
+        <span class="pd_cfg_tips" title="修改顶部用户菜单的新提醒的颜色，可根据不同的消息提醒（新短信、新回复、新评分），分别设定不同的颜色">[?]</span>
       </label><br>
       <label>
         <input name="customCssEnabled" type="checkbox" data-disabled="[data-name=openCustomCssDialog]"> 添加自定义CSS

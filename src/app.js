@@ -22,7 +22,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '12.8.8';
+const version = '12.9';
 
 /**
  * 导出模块
@@ -81,7 +81,7 @@ const init = function () {
     Public.makeSearchByBelowTwoKeyWordAvailable();
     if (Config.addFastNavMenuEnabled) Public.addFastNavMenu();
     Info.$userMenu.find('a[href^="login.php?action=quit"]').click(() => confirm('是否退出账号？'));
-    //Public.changeNewRateTipsColor(); // 临时
+    if (Config.changeNewTipsColorEnabled) Public.changeNewTipsColor();
 
     Public.handleSideBarLink();
     if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
