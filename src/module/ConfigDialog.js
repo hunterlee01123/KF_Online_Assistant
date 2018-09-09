@@ -138,6 +138,10 @@ export const show = function () {
         <input name="showDrawCardTipsEnabled" type="checkbox"> 显示抽卡提醒
         <span class="pd_cfg_tips" title="显示抽卡提醒">[?]</span>
       </label>
+      <label class="pd_cfg_ml">
+        <input name="alwaysOpenPointAreaEnabled" type="checkbox"> 总是打开属性界面
+        <span class="pd_cfg_tips" title="在争夺首页总是打开个人属性/装备界面">[?]</span>
+      </label>
     </fieldset>
     <fieldset>
       <legend>

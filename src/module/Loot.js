@@ -102,7 +102,7 @@ export const enhanceLootIndexPage = function () {
     log = $log.html();
     logList = getLogList(log);
     levelInfoList = getLevelInfoList(logList);
-    if (/你被击败了|开始争夺战斗/.test(log)) {
+    if (/你被击败了|今日战斗已完成|开始争夺战斗/.test(log)) {
         localStorage.removeItem(Const.tempPointsLogListStorageName + '_' + Info.uid);
     }
     else {
@@ -117,16 +117,21 @@ export const enhanceLootIndexPage = function () {
         $('#wdsx').show();
     }
 
-    if (log.includes('开始争夺战斗')) {
-        $log.html(log.replace(/点击这里/g, '点击上方的攻击按钮').replace('战斗记录框内任意地方点击自动战斗下一层', '请点击上方的攻击按钮开始争夺战斗'));
-    }
-    else if (log.includes('你被击败了') && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
+    /*if (/你被击败了|今日战斗已完成/.test(log) && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
         Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
-    }
+    }*/ // 临时
+    if (/你被击败了|今日战斗已完成/.test(log) && !Util.getCookie(Const.lootCompleteCookieName)) {
+        Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+    } // 临时
+
+    $(document).dequeue('AutoAction'); // 临时
+    Script.runFunc('Loot.enhanceLootIndexPage_after_'); // 临时
+    return; // 临时
+
     addLootLogHeader();
     showLogStat(levelInfoList);
 
-    if (Config.autoLootEnabled && !/你被击败了/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
+    if (Config.autoLootEnabled && !/你被击败了|今日战斗已完成/.test(log) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
         && !Util.getCookie(Const.lootAttackingCookieName) && ![-1, -2].includes(parseInt(Util.getCookie(Const.lootCompleteCookieName)))
     ) {
         let serverStatusAllow = !(
@@ -280,7 +285,7 @@ const handlePointsArea = function () {
     });
 
     $(`
-<tr>
+<tr hidden> <!-- 临时 -->
   <td>
     关键层列表
     <span class="pd_cfg_tips" title="KFOL计算器的关键层列表（各关键层以空格分隔），用于“攻击到下一关键层前”按钮">[?]</span>
@@ -302,7 +307,7 @@ const handlePointsArea = function () {
     $points.find('input[name="prosubmit"]').replaceWith('<button name="prosubmit" type="submit">修改点数分配</button>');
     $('<button name="changePointsAndArms" type="button" title="按照当前页面上的点数设置和装备ID进行修改" style="margin-left: 3px;">修改点数和装备</button>')
         .insertAfter($points.find('button[name="prosubmit"]'))
-        .css('display', /你被击败了/.test(log) ? 'inline-block' : 'none')
+        //.css('display', /你被击败了|今日战斗已完成/.test(log) ? 'inline-block' : 'none') // 临时
         .click(function () {
             let $wait = Msg.wait('<strong>正在修改点数和装备&hellip;</strong>');
             changePointsAndArms(-1, function (result) {
@@ -865,7 +870,7 @@ const setLevelPointListSelect = function (levelPointList) {
  */
 const addAttackBtns = function () {
     $(`
-<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;">
+<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;" hidden> <!-- 临时 -->
   <label>
     <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''}>
     自动修改点数分配方案
@@ -904,7 +909,7 @@ ${typeof Const.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定�
 在勾选上述两种选项的情况下，点击自动攻击相关按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。而手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
 </div>
 `).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
-        if (/你被击败了/.test(log)) {
+        if (/你被击败了|今日战斗已完成/.test(log)) {
             alert('你已经被击败了');
             return;
         }
@@ -1284,10 +1289,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
 
             let lootAttackPerCheckLevel = typeof Const.lootAttackPerCheckLevel === 'function' ? Const.lootAttackPerCheckLevel() : Const.lootAttackPerCheckLevel;
             if (!/你\(\d+\)遭遇了/.test(html) || index % lootAttackPerCheckLevel === 0) {
-                if (html === 'no' && /你被击败了/.test(log)) isFail = true;
+                if (html === 'no' && /你被击败了|今日战斗已完成/.test(log)) isFail = true;
                 setTimeout(function () {
                     updateLootInfo(function () {
-                        if (!/你被击败了/.test(log)) isFail = false;
+                        if (!/你被击败了|今日战斗已完成/.test(log)) isFail = false;
                         after();
                     });
                 }, Const.minActionInterval);
@@ -1361,10 +1366,10 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
                 Script.runFunc('Loot.lootAttack_complete_');
             }
             else {
-                if (/你被击败了/.test(log)) {
+                if (/你被击败了|今日战斗已完成/.test(log)) {
                     setTimeout(function () {
                         updateLootInfo(function () {
-                            if (/你被击败了/.test(log)) isFail = true;
+                            if (/你被击败了|今日战斗已完成/.test(log)) isFail = true;
                             after();
                         });
                     }, Const.defAjaxInterval);
@@ -1379,7 +1384,7 @@ export const lootAttack = function ({type, targetLevel, autoChangePointsEnabled,
             }
         }
         else {
-            if (autoChangePointsEnabled && !/你被击败了/.test(log)) {
+            if (autoChangePointsEnabled && !/你被击败了|今日战斗已完成/.test(log)) {
                 setTimeout(() => ready(currentLevel), Const.minActionInterval);
             }
             else {
@@ -2051,7 +2056,7 @@ const handleLootLogNav = function () {
     if (!$.isEmptyObject(historyLogs)) {
         keyList = Util.getObjectKeyList(historyLogs, 1);
         let latestKey = parseInt(keyList[keyList.length - 1]);
-        if (!/你被击败了/.test(log) || latestKey <= Util.getDate('-1d').getTime() || historyLogs[latestKey].log.join('').trim() !== logList.join('').trim())
+        if (!/你被击败了|今日战斗已完成/.test(log) || latestKey <= Util.getDate('-1d').getTime() || historyLogs[latestKey].log.join('').trim() !== logList.join('').trim())
             keyList.push(0);
     }
     else keyList.push(0);
@@ -2110,7 +2115,7 @@ const handleLootLogNav = function () {
         let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
         showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
 
-        if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了/.test(log) && keyList[curIndex] === 0) {
+        if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了|今日战斗已完成/.test(log) && keyList[curIndex] === 0) {
             Util.deleteCookie(Const.lootCompleteCookieName);
         }
     }
@@ -2402,7 +2407,7 @@ export const checkLoot = function () {
         timeout: Const.defAjaxTimeout,
         success(html) {
             Msg.remove($wait);
-            if (!/你被击败了/.test(html)) {
+            if (!/你被击败了|今日战斗已完成/.test(html)) {
                 if (Util.getCookie(Const.lootCheckingCookieName)) return;
                 let $log = $('#pk_text', html);
                 if (!$log.length) {
@@ -2432,6 +2437,7 @@ export const checkLoot = function () {
                 }
 
                 Util.setCookie(Const.lootCheckingCookieName, 1, Util.getDate('+1m'));
+                Util.setCookie(Const.lootAttackingCookieName, 1, Util.getDate('+1h')); // 临时
                 Msg.destroy();
                 $(document).clearQueue('AutoAction');
                 location.href = 'kf_fw_ig_index.php';
@@ -2457,7 +2463,7 @@ export const checkLoot = function () {
  * 自动争夺
  */
 const autoLoot = function () {
-    if (/你被击败了/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
+    if (/你被击败了|今日战斗已完成/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
         $(document).dequeue('AutoAction');
         return;
     }
@@ -2493,7 +2499,7 @@ export const autoSaveLootLog = function () {
             if (Util.getCookie(Const.lootCompleteCookieName)) return;
             let $log = $('#pk_text', html);
             let log = $log.html();
-            if (/你被击败了/.test(log)) {
+            if (/你被击败了|今日战斗已完成/.test(log)) {
                 Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
                 let logList = getLogList(log);
                 let levelInfoList = getLevelInfoList(logList);
