@@ -944,6 +944,7 @@ export const addFastNavMenu = function () {
   <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
   <li><a href="search.php?authorid=${Info.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
+  <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
   <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
   <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
@@ -953,6 +954,12 @@ export const addFastNavMenu = function () {
   ${Info.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
   ${Const.customFastNavMenuContent}
 </ul>`);
+
+    if (Config.adminMemberEnabled) {
+        $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(3) > a:contains("聊天交流")').next('ul').append(
+            '<li><a href="thread.php?fid=93">内部管理专用</a></li>'
+        );
+    }
 };
 
 /**
@@ -1149,7 +1156,7 @@ export const makeSearchByBelowTwoKeyWordAvailable = function () {
  */
 export const addSearchDialogLink = function () {
     $('<li><a data-name="search" href="#">搜索</a></li>')
-        .appendTo(Info.$userMenu)
+        .insertBefore(Info.$userMenu.find('> li:nth-last-child(3)'))
         .find('[data-name="search"]')
         .click(function (e) {
             e.preventDefault();
@@ -1364,7 +1371,7 @@ export const showCommonImportOrExportLogDialog = function ({name, read, write, m
  */
 export const changeNewTipsColor = function () {
     let $msgTips = $('#pdUserName').find('span:first');
-    if(!$msgTips.length) return;
+    if (!$msgTips.length) return;
     $msgTips.addClass('pd_new_tips');
     if (Info.$userMenu.find('a[href="message.php"]:contains("有新消息")').length > 0) {
         $msgTips.attr('id', 'pdNewMsgTips').css({'color': '#0099cc'});

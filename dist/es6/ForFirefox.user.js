@@ -11,7 +11,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.9
+// @version     12.9.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -108,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.9';
+const version = '12.9.1';
 
 /**
  * 导出模块
@@ -2569,7 +2569,7 @@ const Const = {
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
     showRefreshModeTipsInterval: 1,
     // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
-    getDailyBonusSpecialInterval: 60,
+    getDailyBonusSpecialInterval: 30,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
     // 在检测到当前持有的KFB或贡献未高于指定值时的下一次自动提升战力光环的间隔时间（分钟）
@@ -6161,8 +6161,9 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
     /*if (/你被击败了|今日战斗已完成/.test(log) && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
         Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
     }*/ // 临时
-    if (/你被击败了|今日战斗已完成/.test(log) && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+    if (/你被击败了|今日战斗已完成/.test(log) && parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) !== 2) {
         Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
+        Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
     } // 临时
 
     $(document).dequeue('AutoAction'); // 临时
@@ -10726,6 +10727,7 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
   <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
   <li><a href="search.php?authorid=${_Info2.default.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
+  <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
   <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
   <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
@@ -10735,6 +10737,10 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
   ${_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
   ${_Const2.default.customFastNavMenuContent}
 </ul>`);
+
+    if (Config.adminMemberEnabled) {
+        $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(3) > a:contains("聊天交流")').next('ul').append('<li><a href="thread.php?fid=93">内部管理专用</a></li>');
+    }
 };
 
 /**
@@ -10919,7 +10925,7 @@ const makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWord
  * 添加搜索对话框链接
  */
 const addSearchDialogLink = exports.addSearchDialogLink = function () {
-    $('<li><a data-name="search" href="#">搜索</a></li>').appendTo(_Info2.default.$userMenu).find('[data-name="search"]').click(function (e) {
+    $('<li><a data-name="search" href="#">搜索</a></li>').insertBefore(_Info2.default.$userMenu.find('> li:nth-last-child(3)')).find('[data-name="search"]').click(function (e) {
         e.preventDefault();
         const dialogName = 'pdSearchDialog';
         if ($('#' + dialogName).length > 0) return;

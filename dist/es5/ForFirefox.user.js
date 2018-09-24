@@ -12,7 +12,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.9
+// @version     12.9.1
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.9';
+var version = '12.9.1';
 
 /**
  * 导出模块
@@ -2505,7 +2505,7 @@ var Const = {
     // 在网页标题上显示定时模式提示的更新间隔（分钟）
     showRefreshModeTipsInterval: 1,
     // 领取每日争夺奖励时，遇见所设定的任务未完成时的重试间隔（分钟）
-    getDailyBonusSpecialInterval: 60,
+    getDailyBonusSpecialInterval: 30,
     // 提升战力光环的最小间隔时间（分钟）
     minPromoteHaloInterval: 480,
     // 在检测到当前持有的KFB或贡献未高于指定值时的下一次自动提升战力光环的间隔时间（分钟）
@@ -7348,8 +7348,9 @@ var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIn
     /*if (/你被击败了|今日战斗已完成/.test(log) && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
         Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
     }*/ // 临时
-    if (/你被击败了|今日战斗已完成/.test(log) && !Util.getCookie(_Const2.default.lootCompleteCookieName)) {
+    if (/你被击败了|今日战斗已完成/.test(log) && parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) !== 2) {
         Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
+        Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
     } // 临时
 
     $(document).dequeue('AutoAction'); // 临时
@@ -12264,7 +12265,11 @@ var addFastNavMenu = exports.addFastNavMenu = function addFastNavMenu() {
     var $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a:contains("本站主页")');
     if (!$menuBtn.length) return;
     var hpUrl = $menuBtn.attr('href');
-    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after('\n<ul class="topmenuo2">\n  <li><a href="' + hpUrl + '" target="_blank">\u672C\u7AD9\u4E3B\u9875</a></li>\n  <li><a href="search.php?authorid=' + _Info2.default.uid + '">\u6211\u7684\u4E3B\u9898</a></li>\n  <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n  <li><a href="kf_fw_ig_mybp.php">\u6211\u7684\u7269\u54C1</a></li>\n  <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n  <li><a href="kf_fw_ig_mycard.php">\u89D2\u8272\u5361\u7247</a></li>\n  <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n  <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n  <li><a href="profile.php?action=friend">\u597D\u53CB\u5217\u8868</a></li>\n  ' + (_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : '') + '\n  ' + _Const2.default.customFastNavMenuContent + '\n</ul>');
+    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after('\n<ul class="topmenuo2">\n  <li><a href="' + hpUrl + '" target="_blank">\u672C\u7AD9\u4E3B\u9875</a></li>\n  <li><a href="search.php?authorid=' + _Info2.default.uid + '">\u6211\u7684\u4E3B\u9898</a></li>\n  <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n  <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n  <li><a href="kf_fw_ig_mybp.php">\u6211\u7684\u7269\u54C1</a></li>\n  <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n  <li><a href="kf_fw_ig_mycard.php">\u89D2\u8272\u5361\u7247</a></li>\n  <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n  <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n  <li><a href="profile.php?action=friend">\u597D\u53CB\u5217\u8868</a></li>\n  ' + (_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : '') + '\n  ' + _Const2.default.customFastNavMenuContent + '\n</ul>');
+
+    if (Config.adminMemberEnabled) {
+        $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(3) > a:contains("聊天交流")').next('ul').append('<li><a href="thread.php?fid=93">内部管理专用</a></li>');
+    }
 };
 
 /**
@@ -12518,7 +12523,7 @@ var makeSearchByBelowTwoKeyWordAvailable = exports.makeSearchByBelowTwoKeyWordAv
  * 添加搜索对话框链接
  */
 var addSearchDialogLink = exports.addSearchDialogLink = function addSearchDialogLink() {
-    $('<li><a data-name="search" href="#">搜索</a></li>').appendTo(_Info2.default.$userMenu).find('[data-name="search"]').click(function (e) {
+    $('<li><a data-name="search" href="#">搜索</a></li>').insertBefore(_Info2.default.$userMenu.find('> li:nth-last-child(3)')).find('[data-name="search"]').click(function (e) {
         e.preventDefault();
         var dialogName = 'pdSearchDialog';
         if ($('#' + dialogName).length > 0) return;

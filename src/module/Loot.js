@@ -120,8 +120,9 @@ export const enhanceLootIndexPage = function () {
     /*if (/你被击败了|今日战斗已完成/.test(log) && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
         Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
     }*/ // 临时
-    if (/你被击败了|今日战斗已完成/.test(log) && !Util.getCookie(Const.lootCompleteCookieName)) {
+    if (/你被击败了|今日战斗已完成/.test(log) && parseInt(Util.getCookie(Const.lootCompleteCookieName)) !== 2) {
         Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
+        Util.deleteCookie(Const.getDailyBonusCookieName);
     } // 临时
 
     $(document).dequeue('AutoAction'); // 临时
