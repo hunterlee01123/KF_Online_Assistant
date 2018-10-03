@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.5.0.1
+// @version     5.1.3.1
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -19,7 +19,7 @@
 // ==/UserScript==
 'use strict';
 // 版本号
-const version = '4.5.0.1';
+const version = '5.1.3.1';
 // 网站是否为KfMobile
 const isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
@@ -81,6 +81,18 @@ for (let i = 1; i < 41; i++) {
     LoveliveSmallSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/lovelive/Lovelive${i}.png`);
 }
 
+// 少女歌剧
+const ShaoNvGeJuSmileList = [];
+for (let i = 1; i < 41; i++) {
+    ShaoNvGeJuSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/sticker (${i}).png`);
+}
+
+// バンドリ
+const BandoriSmileList = [];
+for (let i = 1; i < 41; i++) {
+    BandoriSmileList.push(`http://o6smnd6uw.bkt.clouddn.com/BGD/sticker (${i}).png`);
+}
+
 /**
  * 表情菜单
  */
@@ -117,6 +129,8 @@ const MenuList = {
     Akari: {datatype: 'image', title: 'Akari', addr: AkarinSmileList},
     BiliBili: {datatype: 'image', title: 'BiliBili', addr: BiliBiliSmileList},
     LoveLive: {datatype: 'image', title: 'LoveLive', addr: LoveliveSmallSmileList},
+    ShaoNvGeJu: {datatype: 'image', title: '少女歌剧', addr: ShaoNvGeJuSmileList},
+    Bandori: {datatype: 'image', title: 'バンドリ', addr: BandoriSmileList},
 };
 
 /**

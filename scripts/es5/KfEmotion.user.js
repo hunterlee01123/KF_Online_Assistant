@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        绯月表情增强插件
 // @namespace   https://greasyfork.org/users/5415
-// @version     4.5.0.1
+// @version     5.1.3.1
 // @author      eddie32
 // @description KF论坛专用的回复表情，插图扩展插件，在发帖时快速输入自定义表情和论坛BBCODE
 // @icon        https://blog.nekohand.moe/favicon.ico
@@ -20,7 +20,7 @@
 'use strict';
 // 版本号
 
-var version = '4.5.0.1';
+var version = '5.1.3.1';
 // 网站是否为KfMobile
 var isKfMobile = typeof Info !== 'undefined' && typeof Info.imgPath !== 'undefined';
 
@@ -82,6 +82,18 @@ for (var _i11 = 1; _i11 < 41; _i11++) {
     LoveliveSmallSmileList.push('http://o6smnd6uw.bkt.clouddn.com/lovelive/Lovelive' + _i11 + '.png');
 }
 
+// 少女歌剧
+var ShaoNvGeJuSmileList = [];
+for (var _i12 = 1; _i12 < 41; _i12++) {
+    ShaoNvGeJuSmileList.push('http://o6smnd6uw.bkt.clouddn.com/sticker (' + _i12 + ').png');
+}
+
+// バンドリ
+var BandoriSmileList = [];
+for (var _i13 = 1; _i13 < 41; _i13++) {
+    BandoriSmileList.push('http://o6smnd6uw.bkt.clouddn.com/BGD/sticker (' + _i13 + ').png');
+}
+
 /**
  * 表情菜单
  */
@@ -102,7 +114,9 @@ var MenuList = {
     Common: { datatype: 'image', title: '常用', addr: CommonSmileList },
     Akari: { datatype: 'image', title: 'Akari', addr: AkarinSmileList },
     BiliBili: { datatype: 'image', title: 'BiliBili', addr: BiliBiliSmileList },
-    LoveLive: { datatype: 'image', title: 'LoveLive', addr: LoveliveSmallSmileList }
+    LoveLive: { datatype: 'image', title: 'LoveLive', addr: LoveliveSmallSmileList },
+    ShaoNvGeJu: { datatype: 'image', title: '少女歌剧', addr: ShaoNvGeJuSmileList },
+    Bandori: { datatype: 'image', title: 'バンドリ', addr: BandoriSmileList }
 };
 
 /**
@@ -150,15 +164,15 @@ var getSmilePanelHtml = function getSmilePanelHtml(key) {
     var data = MenuList[key];
     if (!data) return '';
     var html = '';
-    for (var _i12 = 0; _i12 < data.addr.length; _i12++) {
+    for (var _i14 = 0; _i14 < data.addr.length; _i14++) {
         if (data.datatype === 'image') {
-            html += '<img class="kfe-smile" src="' + data.addr[_i12] + '" alt="[\u8868\u60C5]">';
+            html += '<img class="kfe-smile" src="' + data.addr[_i14] + '" alt="[\u8868\u60C5]">';
         } else if (data.datatype === 'imageLink') {
-            var ref = typeof data.ref !== 'undefined' && typeof data.ref[_i12] !== 'undefined' ? data.ref[_i12] : '';
-            html += '<img class="kfe-smile" data-code="' + ref + '" src="' + data.addr[_i12] + '" alt="[\u8868\u60C5]">';
+            var ref = typeof data.ref !== 'undefined' && typeof data.ref[_i14] !== 'undefined' ? data.ref[_i14] : '';
+            html += '<img class="kfe-smile" data-code="' + ref + '" src="' + data.addr[_i14] + '" alt="[\u8868\u60C5]">';
         } else if (data.datatype === 'plain') {
-            var _ref = typeof data.ref !== 'undefined' && typeof data.ref[_i12] !== 'undefined' ? data.ref[_i12] : data.addr[_i12];
-            html += '<a class="kfe-smile-text" data-code="' + data.addr[_i12] + '" href="#">' + _ref + '</a>';
+            var _ref = typeof data.ref !== 'undefined' && typeof data.ref[_i14] !== 'undefined' ? data.ref[_i14] : data.addr[_i14];
+            html += '<a class="kfe-smile-text" data-code="' + data.addr[_i14] + '" href="#">' + _ref + '</a>';
         }
     }
     return '<div class="kfe-smile-panel" data-key="' + key + '">' + html + '</div>';
