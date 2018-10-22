@@ -261,7 +261,7 @@ const addBatchTransferButton = function () {
         }
 
         let $gongXian = $('#pdGongXian');
-        if ($gongXian.length > 0 && totalMoney > parseFloat($gongXian.data('num'))) {
+        if ($gongXian.length > 0 && Math.floor(totalMoney * 10) > Math.floor(parseFloat($gongXian.data('num')) * 10)) {
             alert(`你当前没有[${totalMoney.toLocaleString()}]贡献可供转账`);
             return;
         }

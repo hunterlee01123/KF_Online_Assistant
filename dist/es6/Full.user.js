@@ -10,7 +10,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.9.1
+// @version     12.9.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.9.1';
+const version = '12.9.2';
 
 /**
  * 导出模块
@@ -220,6 +220,7 @@ const init = function () {
         Item.init();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.showMyInfoInItemShop();
+        Item.showBuyItemTips();
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
@@ -622,7 +623,7 @@ const addBatchTransferButton = function () {
         }
 
         let $gongXian = $('#pdGongXian');
-        if ($gongXian.length > 0 && totalMoney > parseFloat($gongXian.data('num'))) {
+        if ($gongXian.length > 0 && Math.floor(totalMoney * 10) > Math.floor(parseFloat($gongXian.data('num')) * 10)) {
             alert(`你当前没有[${totalMoney.toLocaleString()}]贡献可供转账`);
             return;
         }
@@ -2981,7 +2982,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.sellItems = exports.useItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.smeltArms = exports.showArmsFinalAddition = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showBuyItemTips = exports.showMyInfoInItemShop = exports.buyItems = exports.sellItems = exports.useItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.smeltArms = exports.showArmsFinalAddition = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _Info = require('./Info');
 
@@ -4050,12 +4051,12 @@ const handleUselessSubProperties = exports.handleUselessSubProperties = function
         }
     }
 
-    let matches = /从属性：(.+?)(<br(?: \/)?>|$)/.exec(html);
+    let matches = /从属性：(.+?)(<br(?:\s*\/)?>|$)/.exec(html);
     if (matches) {
         let subPropertiesHtml = '';
         for (let value of matches[1].split('。')) {
             if (!value) continue;
-            let subMatches = /([^<>]+?)\(/.exec(value);
+            let subMatches = /(?:^|>)([^<>]+?)\(/.exec(value);
             if (subMatches) {
                 let property = subMatches[1];
                 if (!keyList.includes(armPropertyKeyList.get(property))) {
@@ -5339,6 +5340,20 @@ const showMyInfoInItemShop = exports.showMyInfoInItemShop = function () {
         $('.kf_fw_ig_title1:eq(1)').append(`
 <span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${kfb.toLocaleString()}</b> KFB 和 <b style="font-size: 14px;">${gx}</b> 贡献)</span>
 `);
+    });
+};
+
+/**
+ * 在物品商店显示购买物品提示
+ */
+const showBuyItemTips = exports.showBuyItemTips = function () {
+    $('.kf_fw_ig1:first > tbody > tr:gt(0)').each(function (index) {
+        if (index <= 1) {
+            let $this = $(this);
+            $this.find('td:last-child').append(`<span class="pd_cfg_tips pd_highlight" title="特别提示：
+神秘系数非神秘等级，购买【等级经验药丸${index === 1 ? '（蛋）' : ''}】可能导致神秘等级下降，请知悉！
+神秘等级公式：神秘系数*((神秘系数*0.5)+(贡献*5)+(KFB*0.001)+(发帖*0.01))">[?]</span>`);
+        }
     });
 };
 

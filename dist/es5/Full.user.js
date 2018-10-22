@@ -11,7 +11,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.9.1
+// @version     12.9.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -108,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.9.1';
+var version = '12.9.2';
 
 /**
  * 导出模块
@@ -223,6 +223,7 @@ var init = function init() {
         Item.init();
     } else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.showMyInfoInItemShop();
+        Item.showBuyItemTips();
     } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
     } else if (location.pathname === '/kf_fw_ig_halo.php') {
@@ -667,7 +668,7 @@ var addBatchTransferButton = function addBatchTransferButton() {
         }
 
         var $gongXian = $('#pdGongXian');
-        if ($gongXian.length > 0 && totalMoney > parseFloat($gongXian.data('num'))) {
+        if ($gongXian.length > 0 && Math.floor(totalMoney * 10) > Math.floor(parseFloat($gongXian.data('num')) * 10)) {
             alert('\u4F60\u5F53\u524D\u6CA1\u6709[' + totalMoney.toLocaleString() + ']\u8D21\u732E\u53EF\u4F9B\u8F6C\u8D26');
             return;
         }
@@ -2923,7 +2924,7 @@ exports.default = Info;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.showMyInfoInItemShop = exports.buyItems = exports.sellItems = exports.useItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.smeltArms = exports.showArmsFinalAddition = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
+exports.showBuyItemTips = exports.showMyInfoInItemShop = exports.buyItems = exports.sellItems = exports.useItems = exports.getItemsUsedNumInfo = exports.getLevelByName = exports.getArmsLevelInfo = exports.getArmInfo = exports.getArmClassNameByGroupName = exports.smeltArms = exports.showArmsFinalAddition = exports.addCommonArmsButton = exports.handleUselessSubProperties = exports.getArmParameterSetting = exports.bindArmLinkClickEvent = exports.sortArmsById = exports.sortArmsByGroup = exports.handleArmArea = exports.addSavedArmsInfo = exports.getMergeArmsInfo = exports.clearArmsInfo = exports.writeArmsInfo = exports.readArmsInfo = exports.openBoxes = exports.autoOpenBoxes = exports.getNextObjects = exports.init = exports.itemTypeList = exports.armTypeList = exports.armGroupList = exports.armClassList = exports.boxTypeList = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -4288,7 +4289,7 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
         }
     }
 
-    var matches = /从属性：(.+?)(<br(?: \/)?>|$)/.exec(html);
+    var matches = /从属性：(.+?)(<br(?:\s*\/)?>|$)/.exec(html);
     if (matches) {
         var subPropertiesHtml = '';
         var _iteratorNormalCompletion16 = true;
@@ -4300,7 +4301,7 @@ var handleUselessSubProperties = exports.handleUselessSubProperties = function h
                 var value = _step16.value;
 
                 if (!value) continue;
-                var subMatches = /([^<>]+?)\(/.exec(value);
+                var subMatches = /(?:^|>)([^<>]+?)\(/.exec(value);
                 if (subMatches) {
                     var property = subMatches[1];
                     if (!keyList.includes(armPropertyKeyList.get(property))) {
@@ -5955,6 +5956,18 @@ var showMyInfoInItemShop = exports.showMyInfoInItemShop = function showMyInfoInI
         var kfb = parseInt(kfbMatches[1]);
         var gx = parseFloat(gxMatches[1]);
         $('.kf_fw_ig_title1:eq(1)').append('\n<span style="margin-left: 7px;">(\u5F53\u524D\u6301\u6709 <b style="font-size: 14px;">' + kfb.toLocaleString() + '</b> KFB \u548C <b style="font-size: 14px;">' + gx + '</b> \u8D21\u732E)</span>\n');
+    });
+};
+
+/**
+ * 在物品商店显示购买物品提示
+ */
+var showBuyItemTips = exports.showBuyItemTips = function showBuyItemTips() {
+    $('.kf_fw_ig1:first > tbody > tr:gt(0)').each(function (index) {
+        if (index <= 1) {
+            var $this = $(this);
+            $this.find('td:last-child').append('<span class="pd_cfg_tips pd_highlight" title="\u7279\u522B\u63D0\u793A\uFF1A\n\u795E\u79D8\u7CFB\u6570\u975E\u795E\u79D8\u7B49\u7EA7\uFF0C\u8D2D\u4E70\u3010\u7B49\u7EA7\u7ECF\u9A8C\u836F\u4E38' + (index === 1 ? '（蛋）' : '') + '\u3011\u53EF\u80FD\u5BFC\u81F4\u795E\u79D8\u7B49\u7EA7\u4E0B\u964D\uFF0C\u8BF7\u77E5\u6089\uFF01\n\u795E\u79D8\u7B49\u7EA7\u516C\u5F0F\uFF1A\u795E\u79D8\u7CFB\u6570*((\u795E\u79D8\u7CFB\u6570*0.5)+(\u8D21\u732E*5)+(KFB*0.001)+(\u53D1\u5E16*0.01))">[?]</span>');
+        }
     });
 };
 

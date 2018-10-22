@@ -183,9 +183,9 @@ const addOpenAllBoxesButton = function () {
             writeConfig();
         }
     }).end().find('[name="clearMsg"]').click(function () {
-		Msg.destroy();
-		$('.pd_result').remove();
-	}).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
+        Msg.destroy();
+        $('.pd_result').remove();
+    }).end().find('[name="openAllBoxes"]').click(showOpenAllBoxesDialog);
     Public.addSlowActionChecked($('.pd_item_btns[data-name="openBoxesBtns"]'));
 };
 
@@ -1090,12 +1090,12 @@ export const handleUselessSubProperties = function (html) {
         }
     }
 
-    let matches = /从属性：(.+?)(<br(?: \/)?>|$)/.exec(html);
+    let matches = /从属性：(.+?)(<br(?:\s*\/)?>|$)/.exec(html);
     if (matches) {
         let subPropertiesHtml = '';
         for (let value of matches[1].split('。')) {
             if (!value) continue;
-            let subMatches = /([^<>]+?)\(/.exec(value);
+            let subMatches = /(?:^|>)([^<>]+?)\(/.exec(value);
             if (subMatches) {
                 let property = subMatches[1];
                 if (!keyList.includes(armPropertyKeyList.get(property))) {
@@ -2469,5 +2469,19 @@ export const showMyInfoInItemShop = function () {
         $('.kf_fw_ig_title1:eq(1)').append(`
 <span style="margin-left: 7px;">(当前持有 <b style="font-size: 14px;">${kfb.toLocaleString()}</b> KFB 和 <b style="font-size: 14px;">${gx}</b> 贡献)</span>
 `);
+    });
+};
+
+/**
+ * 在物品商店显示购买物品提示
+ */
+export const showBuyItemTips = function () {
+    $('.kf_fw_ig1:first > tbody > tr:gt(0)').each(function (index) {
+        if (index <= 1) {
+            let $this = $(this);
+            $this.find('td:last-child').append(`<span class="pd_cfg_tips pd_highlight" title="特别提示：
+神秘系数非神秘等级，购买【等级经验药丸${index === 1 ? '（蛋）' : ''}】可能导致神秘等级下降，请知悉！
+神秘等级公式：神秘系数*((神秘系数*0.5)+(贡献*5)+(KFB*0.001)+(发帖*0.01))">[?]</span>`);
+        }
     });
 };
