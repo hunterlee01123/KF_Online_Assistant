@@ -10,7 +10,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.9.2
+// @version     12.9.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -105,7 +105,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.9.2';
+const version = '12.9.3';
 
 /**
  * 导出模块
@@ -2594,7 +2594,7 @@ const Const = {
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
-    defAjaxInterval: 200,
+    defAjaxInterval: 300,
     // 特殊情况下的ajax请求（如使用道具、打开盒子等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval() {
         if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 慢速情况
@@ -2968,7 +2968,9 @@ const Info = {
    */
   storageType: 'Default',
   // 用户菜单区域
-  $userMenu: $('#kf_information > ul')
+  $userMenu: $('#kf_information > ul'),
+  // AJAX请求统计
+  ajaxStat: {}
 };
 
 exports.default = Info;
@@ -3831,7 +3833,7 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
                     });
                 }
             } else {
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
@@ -3864,7 +3866,7 @@ const bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function ($armArea
                     removeSavedArmInfo(armId, $armArea);
                 }
             } else {
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
@@ -4298,7 +4300,7 @@ const showArmsFinalAddition = exports.showArmsFinalAddition = function (armList,
             }
             if (!/装备完毕|操作过快/.test(msg)) {
                 index++;
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
             }
@@ -4348,7 +4350,7 @@ const showArmsFinalAddition = exports.showArmsFinalAddition = function (armList,
             }
             setTimeout(() => equip(armList[index]), _Const2.default.minActionInterval);
             Script.runFunc('Item.showArmsFinalAddition_show_', { armId, armClass });
-        }).fail(() => setTimeout(() => getFinalAddition({ armId, armClass }), _Const2.default.defAjaxInterval));
+        }).fail(() => setTimeout(() => getFinalAddition({ armId, armClass }), _Const2.default.minActionInterval));
     };
 
     /**
@@ -4470,7 +4472,7 @@ const smeltArms = exports.smeltArms = function ({ typeList = [], idList = [], sa
             $armArea.find(`td[id="wp_${armId}"]`).parent('tr').fadeOut('normal', function () {
                 $(this).remove();
             });
-            if (Config.autoSaveArmsInfoEnabled && /装备消失|错误的编号/.test(msg)) {
+            if (Config.autoSaveArmsInfoEnabled && /装备消失|错误的编号|不是你的东西/.test(msg)) {
                 smeltedArmIdList.push(armId);
             }
 
@@ -7437,7 +7439,7 @@ const updateLootInfo = exports.updateLootInfo = function (callback = null) {
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);
     }).fail(function () {
-        setTimeout(() => updateLootInfo(callback), _Const2.default.defAjaxInterval);
+        setTimeout(() => updateLootInfo(callback), _Const2.default.minActionInterval);
     });
 };
 
@@ -8332,7 +8334,7 @@ const checkLoot = exports.checkLoot = function () {
 
     console.log('检查争夺情况Start');
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
-    $.ajax({
+    Util.ajax({
         type: 'GET',
         url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout,
@@ -8378,7 +8380,7 @@ const checkLoot = exports.checkLoot = function () {
             Msg.remove($wait);
             $(document).clearQueue('AutoAction');
             $(document).queue('AutoAction', function () {
-                setTimeout(checkLoot, _Const2.default.defAjaxInterval);
+                setTimeout(checkLoot, _Const2.default.minActionInterval);
             });
         },
         complete: function () {
@@ -8445,7 +8447,7 @@ const autoSaveLootLog = exports.autoSaveLootLog = function () {
         error() {
             Msg.remove($wait);
             $(document).queue('AutoAction', function () {
-                setTimeout(autoSaveLootLog, _Const2.default.defAjaxInterval);
+                setTimeout(autoSaveLootLog, _Const2.default.minActionInterval);
             });
         },
         complete() {
@@ -8478,6 +8480,9 @@ const getChangePointsCountDown = exports.getChangePointsCountDown = function () 
             Util.setCookie(_Const2.default.changePointsInfoCookieName, count + 'c', Util.getDate(`+${_Const2.default.changePointsInfoExpires}m`));
             return count;
         }
+
+        let errorNextTime = Util.getDate('+1h');
+        Util.setCookie(_Const2.default.changePointsInfoCookieName, errorNextTime.getTime(), errorNextTime);
         return 'error';
     }, () => 'timeout');
 };
@@ -11181,7 +11186,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
     let value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
     if (!value) {
-        Loot.getChangePointsCountDown().done(addChangePointsInfoTips).fail(() => setTimeout(addChangePointsInfoTips, _Const2.default.defAjaxInterval));
+        Loot.getChangePointsCountDown().done(addChangePointsInfoTips).fail(() => setTimeout(addChangePointsInfoTips, _Const2.default.minActionInterval));
         return;
     }
 
@@ -12831,7 +12836,7 @@ const deleteValue = exports.deleteValue = function (key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.ajax = exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -13427,6 +13432,32 @@ const getThreadSfParam = exports.getThreadSfParam = function () {
         sf = getUrlParam('sf');
     }
     return sf ? sf : '';
+};
+
+/**
+ * 发起AJAX请求
+ * @param {{}} param 请求参数
+ */
+const ajax = exports.ajax = function (param) {
+    if (!param.timeout) {
+        param.timeout = _Const2.default.defAjaxTimeout;
+    }
+
+    if (param.url.startsWith('kf_fw_ig_index.php')) {
+        let num = _Info2.default.ajaxStat['kf_fw_ig_index.php'];
+        num = num ? num : 0;
+        _Info2.default.ajaxStat['kf_fw_ig_index.php'] = ++num;
+
+        if (num > 20) {
+            _Info2.default.ajaxStat['kf_fw_ig_index.php'] = 0;
+            setTimeout(function () {
+                $.ajax(param);
+            }, 60 * 1000);
+            return;
+        }
+    }
+
+    $.ajax(param);
 };
 
 },{"./Const":6,"./Info":9}]},{},[1]);

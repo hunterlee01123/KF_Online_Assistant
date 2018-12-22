@@ -28,6 +28,8 @@ const Info = {
     storageType: 'Default',
     // 用户菜单区域
     $userMenu: $('#kf_information > ul'),
+    // AJAX请求统计
+    ajaxStat: {},
 };
 
 export default Info;

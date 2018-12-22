@@ -1413,7 +1413,7 @@ export const addChangePointsInfoTips = function () {
     if (!value) {
         Loot.getChangePointsCountDown()
             .done(addChangePointsInfoTips)
-            .fail(() => setTimeout(addChangePointsInfoTips, Const.defAjaxInterval));
+            .fail(() => setTimeout(addChangePointsInfoTips, Const.minActionInterval));
         return;
     }
 

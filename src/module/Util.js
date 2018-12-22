@@ -618,3 +618,29 @@ export const getThreadSfParam = function () {
     }
     return sf ? sf : '';
 };
+
+/**
+ * 发起AJAX请求
+ * @param {{}} param 请求参数
+ */
+export const ajax = function (param) {
+    if (!param.timeout) {
+        param.timeout = Const.defAjaxTimeout;
+    }
+
+    if (param.url.startsWith('kf_fw_ig_index.php')) {
+        let num = Info.ajaxStat['kf_fw_ig_index.php'];
+        num = num ? num : 0;
+        Info.ajaxStat['kf_fw_ig_index.php'] = ++num;
+
+        if (num > 20) {
+            Info.ajaxStat['kf_fw_ig_index.php'] = 0;
+            setTimeout(function() {
+                $.ajax(param);
+            }, 60 * 1000);
+            return;
+        }
+    }
+
+    $.ajax(param);
+};

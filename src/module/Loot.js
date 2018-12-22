@@ -1467,7 +1467,7 @@ export const updateLootInfo = function (callback = null) {
         if (typeof callback === 'function') callback();
         Script.runFunc('Loot.updateLootInfo_after_', html);
     }).fail(function () {
-        setTimeout(() => updateLootInfo(callback), Const.defAjaxInterval);
+        setTimeout(() => updateLootInfo(callback), Const.minActionInterval);
     });
 };
 
@@ -2402,7 +2402,7 @@ export const checkLoot = function () {
 
     console.log('检查争夺情况Start');
     let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
-    $.ajax({
+    Util.ajax({
         type: 'GET',
         url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: Const.defAjaxTimeout,
@@ -2451,7 +2451,7 @@ export const checkLoot = function () {
             Msg.remove($wait);
             $(document).clearQueue('AutoAction');
             $(document).queue('AutoAction', function () {
-                setTimeout(checkLoot, Const.defAjaxInterval);
+                setTimeout(checkLoot, Const.minActionInterval);
             });
         },
         complete: function () {
@@ -2519,7 +2519,7 @@ export const autoSaveLootLog = function () {
         error() {
             Msg.remove($wait);
             $(document).queue('AutoAction', function () {
-                setTimeout(autoSaveLootLog, Const.defAjaxInterval);
+                setTimeout(autoSaveLootLog, Const.minActionInterval);
             });
         },
         complete() {
@@ -2552,6 +2552,9 @@ export const getChangePointsCountDown = function () {
             Util.setCookie(Const.changePointsInfoCookieName, count + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
             return count;
         }
+
+        let errorNextTime = Util.getDate('+1h');
+        Util.setCookie(Const.changePointsInfoCookieName, errorNextTime.getTime(), errorNextTime);
         return 'error';
     }, () => 'timeout');
 };

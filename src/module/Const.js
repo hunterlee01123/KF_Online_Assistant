@@ -60,7 +60,7 @@ const Const = {
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
-    defAjaxInterval: 200,
+    defAjaxInterval: 300,
     // 特殊情况下的ajax请求（如使用道具、打开盒子等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval() {
         if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 慢速情况

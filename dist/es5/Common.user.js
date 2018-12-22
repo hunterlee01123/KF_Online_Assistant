@@ -11,7 +11,7 @@
 // @include     http*://*2dkf.com/*
 // @include     http*://*9moe.com/*
 // @include     http*://*kfgal.com/*
-// @version     12.9.2
+// @version     12.9.3
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -106,7 +106,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.9.2';
+var version = '12.9.3';
 
 /**
  * 导出模块
@@ -2530,7 +2530,7 @@ var Const = {
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
     // ajax请求的默认时间间隔（毫秒）
-    defAjaxInterval: 200,
+    defAjaxInterval: 300,
     // 特殊情况下的ajax请求（如使用道具、打开盒子等）的时间间隔（毫秒），可设置为函数来返回值
     specialAjaxInterval: function specialAjaxInterval() {
         if (Config.slowActionEnabled) return Math.floor(Math.random() * 4000) + 3000; // 慢速情况
@@ -2910,7 +2910,9 @@ var Info = {
    */
   storageType: 'Default',
   // 用户菜单区域
-  $userMenu: $('#kf_information > ul')
+  $userMenu: $('#kf_information > ul'),
+  // AJAX请求统计
+  ajaxStat: {}
 };
 
 exports.default = Info;
@@ -3979,7 +3981,7 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
                     });
                 }
             } else {
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
@@ -4012,7 +4014,7 @@ var bindArmLinkClickEvent = exports.bindArmLinkClickEvent = function bindArmLink
                     removeSavedArmInfo(armId, $armArea);
                 }
             } else {
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
@@ -4568,7 +4570,7 @@ var showArmsFinalAddition = exports.showArmsFinalAddition = function showArmsFin
             }
             if (!/装备完毕|操作过快/.test(msg)) {
                 index++;
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
             }
@@ -4634,7 +4636,7 @@ var showArmsFinalAddition = exports.showArmsFinalAddition = function showArmsFin
         }).fail(function () {
             return setTimeout(function () {
                 return getFinalAddition({ armId: armId, armClass: armClass });
-            }, _Const2.default.defAjaxInterval);
+            }, _Const2.default.minActionInterval);
         });
     };
 
@@ -4803,7 +4805,7 @@ var smeltArms = exports.smeltArms = function smeltArms(_ref4) {
             $armArea.find('td[id="wp_' + armId + '"]').parent('tr').fadeOut('normal', function () {
                 $(this).remove();
             });
-            if (Config.autoSaveArmsInfoEnabled && /装备消失|错误的编号/.test(msg)) {
+            if (Config.autoSaveArmsInfoEnabled && /装备消失|错误的编号|不是你的东西/.test(msg)) {
                 smeltedArmIdList.push(armId);
             }
 
@@ -8731,7 +8733,7 @@ var updateLootInfo = exports.updateLootInfo = function updateLootInfo() {
     }).fail(function () {
         setTimeout(function () {
             return updateLootInfo(callback);
-        }, _Const2.default.defAjaxInterval);
+        }, _Const2.default.minActionInterval);
     });
 };
 
@@ -9791,7 +9793,7 @@ var checkLoot = exports.checkLoot = function checkLoot() {
 
     console.log('检查争夺情况Start');
     var $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
-    $.ajax({
+    Util.ajax({
         type: 'GET',
         url: 'kf_fw_ig_index.php?t=' + $.now(),
         timeout: _Const2.default.defAjaxTimeout,
@@ -9837,7 +9839,7 @@ var checkLoot = exports.checkLoot = function checkLoot() {
             Msg.remove($wait);
             $(document).clearQueue('AutoAction');
             $(document).queue('AutoAction', function () {
-                setTimeout(checkLoot, _Const2.default.defAjaxInterval);
+                setTimeout(checkLoot, _Const2.default.minActionInterval);
             });
         },
 
@@ -9905,7 +9907,7 @@ var autoSaveLootLog = exports.autoSaveLootLog = function autoSaveLootLog() {
         error: function error() {
             Msg.remove($wait);
             $(document).queue('AutoAction', function () {
-                setTimeout(autoSaveLootLog, _Const2.default.defAjaxInterval);
+                setTimeout(autoSaveLootLog, _Const2.default.minActionInterval);
             });
         },
         complete: function complete() {
@@ -9938,6 +9940,9 @@ var getChangePointsCountDown = exports.getChangePointsCountDown = function getCh
             Util.setCookie(_Const2.default.changePointsInfoCookieName, count + 'c', Util.getDate('+' + _Const2.default.changePointsInfoExpires + 'm'));
             return count;
         }
+
+        var errorNextTime = Util.getDate('+1h');
+        Util.setCookie(_Const2.default.changePointsInfoCookieName, errorNextTime.getTime(), errorNextTime);
         return 'error';
     }, function () {
         return 'timeout';
@@ -12740,7 +12745,7 @@ var addChangePointsInfoTips = exports.addChangePointsInfoTips = function addChan
     var value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
     if (!value) {
         Loot.getChangePointsCountDown().done(addChangePointsInfoTips).fail(function () {
-            return setTimeout(addChangePointsInfoTips, _Const2.default.defAjaxInterval);
+            return setTimeout(addChangePointsInfoTips, _Const2.default.minActionInterval);
         });
         return;
     }
@@ -14525,7 +14530,7 @@ var deleteValue = exports.deleteValue = function deleteValue(key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.ajax = exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -15255,6 +15260,32 @@ var getThreadSfParam = exports.getThreadSfParam = function getThreadSfParam() {
         sf = getUrlParam('sf');
     }
     return sf ? sf : '';
+};
+
+/**
+ * 发起AJAX请求
+ * @param {{}} param 请求参数
+ */
+var ajax = exports.ajax = function ajax(param) {
+    if (!param.timeout) {
+        param.timeout = _Const2.default.defAjaxTimeout;
+    }
+
+    if (param.url.startsWith('kf_fw_ig_index.php')) {
+        var num = _Info2.default.ajaxStat['kf_fw_ig_index.php'];
+        num = num ? num : 0;
+        _Info2.default.ajaxStat['kf_fw_ig_index.php'] = ++num;
+
+        if (num > 20) {
+            _Info2.default.ajaxStat['kf_fw_ig_index.php'] = 0;
+            setTimeout(function () {
+                $.ajax(param);
+            }, 60 * 1000);
+            return;
+        }
+    }
+
+    $.ajax(param);
 };
 
 },{"./Const":6,"./Info":9}]},{},[1]);

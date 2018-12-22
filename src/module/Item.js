@@ -856,7 +856,7 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                 }
             }
             else {
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
@@ -894,7 +894,7 @@ export const bindArmLinkClickEvent = function ($armArea, safeId, type = 0) {
                 }
             }
             else {
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
                 alert(msg);
@@ -1360,7 +1360,7 @@ export const showArmsFinalAddition = function (armList, oriEquippedArmList, safe
             }
             if (!/装备完毕|操作过快/.test(msg)) {
                 index++;
-                if (Config.autoSaveArmsInfoEnabled && msg === '错误的编号') {
+                if (Config.autoSaveArmsInfoEnabled && (msg === '错误的编号' || msg === '不是你的东西')) {
                     removeSavedArmInfo(armId, $armArea);
                 }
             }
@@ -1411,7 +1411,7 @@ export const showArmsFinalAddition = function (armList, oriEquippedArmList, safe
             }
             setTimeout(() => equip(armList[index]), Const.minActionInterval);
             Script.runFunc('Item.showArmsFinalAddition_show_', {armId, armClass});
-        }).fail(() => setTimeout(() => getFinalAddition({armId, armClass}), Const.defAjaxInterval));
+        }).fail(() => setTimeout(() => getFinalAddition({armId, armClass}), Const.minActionInterval));
     };
 
     /**
@@ -1535,7 +1535,7 @@ export const smeltArms = function ({typeList = [], idList = [], safeId, nextActi
             $armArea.find(`td[id="wp_${armId}"]`).parent('tr').fadeOut('normal', function () {
                 $(this).remove();
             });
-            if (Config.autoSaveArmsInfoEnabled && /装备消失|错误的编号/.test(msg)) {
+            if (Config.autoSaveArmsInfoEnabled && /装备消失|错误的编号|不是你的东西/.test(msg)) {
                 smeltedArmIdList.push(armId);
             }
 
