@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.9.3';
+const version = '12.9.4';
 
 /**
  * 导出模块
@@ -9952,7 +9952,7 @@ const appendCss = exports.appendCss = function () {
   .readlou .pd_goto_link:hover { color: #51d; }
   .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
   .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 5px; }
-  .pd_user_memo_tips { font-size: 12px; color: #fff; margin-left: 3px; cursor: help; }
+  .pd_user_memo_tips { font-size: 12px; color: #999; margin-left: 5px; cursor: help; }
   .pd_user_memo_tips:hover { color: #ddd; }
   .readtext img[onclick] { max-width: 550px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
@@ -10519,7 +10519,7 @@ const followUsers = exports.followUsers = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
-        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
+        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
                 $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
@@ -10579,7 +10579,7 @@ const blockUsers = exports.blockUsers = function () {
             if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         }
         let page = Util.getCurrentThreadPage();
-        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function (i) {
+        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function (i) {
             let $this = $(this);
             let index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
             if (index > -1) {
@@ -10696,7 +10696,7 @@ const blockThread = exports.blockThread = function () {
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
-        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').eq(0);
+        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').eq(0);
         if ($userName.closest('.readlou').next('readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
         let userName = $userName.text();
         if (!userName) return;
@@ -11304,16 +11304,15 @@ const fastGotoFloor = exports.fastGotoFloor = function () {
  * @param {string} color 神秘颜色
  */
 const modifyFloorSmColor = exports.modifyFloorSmColor = function ($elem, color) {
-    if ($elem.is('.readidmsbottom > a')) $elem.css('color', color);
-    $elem.closest('.readtext').css('border-color', color).prev('div').css('border-color', color).prev('.readlou').css('border-color', color).next().next().next('.readlou').css('border-color', color);
+    $elem.css('color', color).parent('.readidmsbottom, .readidmbottom').parent('.readidms, .readidm').css('border-color', color).parent('.readlou').css('border-color', color).next('.readlou').css('border-color', color).next().next('.readtext').css('border-color', color).next('.readlou').css('border-color', color);
 };
 
 /**
  * 修改本人的神秘颜色
  */
 const modifyMySmColor = exports.modifyMySmColor = function () {
-    let $my = $(`.readidmsbottom > a[href="profile.php?action=show&uid=${_Info2.default.uid}"]`);
-    if (!$my.length) $my = $(`.readidmleft > a[href="profile.php?action=show&uid=${_Info2.default.uid}"]`);
+    let $my = $(`.readidmsbottom > a[href^="profile.php?action=show&uid=${_Info2.default.uid}"]`);
+    if (!$my.length) $my = $(`.readidmbottom > a[href^="profile.php?action=show&uid=${_Info2.default.uid}"]`);
     if ($my.length > 0) modifyFloorSmColor($my, Config.customMySmColor);
 };
 
@@ -11463,12 +11462,8 @@ const statFloor = exports.statFloor = function (tid, startPage, endPage, startFl
                     }
 
                     data.smLevel = '';
-                    if ($user.hasClass('readidms')) {
-                        let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom').text());
-                        if (matches) data.smLevel = matches[1];
-                    } else {
-                        data.smLevel = $user.find('.readidmright').text().trim();
-                    }
+                    let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom, .readidmbottom').text());
+                    if (matches) data.smLevel = matches[1];
 
                     let $buyer = $floor.find('[name="buyers"]:first');
                     data.status = 0;
@@ -11576,7 +11571,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
         if (isRemoveTopFloor) {
             let $topFloor = $('.readtext:first');
             if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
-                let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
+                let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
             }
         }
@@ -11768,7 +11763,7 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
                             let pid = urlMatches[2];
                             let forumName = $('a[href^="kf_tidfavor.php?action=favor"]').parent().find('a[href^="thread.php?fid="]:last').text().trim();
                             let threadTitle = getThreadTitle();
-                            let userName = $this.closest('.readtext').find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').text().trim();
+                            let userName = $this.closest('.readtext').find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show"]').text().trim();
                             recordBuyThreadLog({ fid, tid, pid, forumName, threadTitle, userName, sell });
                         }
                         location.reload();
@@ -11795,7 +11790,7 @@ const getMultiQuoteData = exports.getMultiQuoteData = function () {
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
         let pid = $floor.prev('.readlou').prev('a').attr('name');
-        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmleft > a').text();
+        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text();
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -11854,13 +11849,13 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
  */
 const addUserMemo = exports.addUserMemo = function () {
     if ($.isEmptyObject(Config.userMemoList)) return;
-    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmbottom > a[href^="profile.php?action=show&uid="]').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
         let key = Object.keys(Config.userMemoList).find(name => name === userName);
         if (!key) return;
         let memo = Config.userMemoList[key];
-        if ($this.is('.readidmleft > a')) {
+        if ($this.is('.readidmbottom > a')) {
             $this.after(`<span class="pd_user_memo_tips" title="备注：${memo}">[?]</span>`);
         } else {
             let memoText = memo;
@@ -12140,7 +12135,7 @@ const showBuyThreadLogDialog = exports.showBuyThreadLogDialog = function () {
  * 屏蔽帖子页面无用的按钮
  */
 const blockUselessThreadButtons = exports.blockUselessThreadButtons = function () {
-    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
         let $this = $(this);
         if ($this.text().trim() === _Info2.default.userName) return;
         $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
@@ -12678,9 +12673,9 @@ const handleGoodPostSubmit = exports.handleGoodPostSubmit = function () {
         let $this = $(this);
         if ($this.data('wait')) return;
         let $floor = $this.closest('div[id^="floor"]').next('.readtext');
-        let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
+        let url = $floor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show"]').attr('href');
         let flag = false;
-        $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
+        $('.readidmsbottom, .readidmbottom').find(`a[href="${url}"]`).each(function () {
             let $currentFloor = $(this).closest('.readtext');
             if ($currentFloor.is($floor)) return;
             if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {

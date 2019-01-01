@@ -80,19 +80,19 @@ export const fastGotoFloor = function () {
  * @param {string} color 神秘颜色
  */
 export const modifyFloorSmColor = function ($elem, color) {
-    if ($elem.is('.readidmsbottom > a')) $elem.css('color', color);
-    $elem.closest('.readtext').css('border-color', color)
-        .prev('div').css('border-color', color)
-        .prev('.readlou').css('border-color', color)
-        .next().next().next('.readlou').css('border-color', color);
+    $elem.css('color', color).parent('.readidmsbottom, .readidmbottom').parent('.readidms, .readidm').css('border-color', color)
+        .parent('.readlou').css('border-color', color)
+        .next('.readlou').css('border-color', color)
+        .next().next('.readtext').css('border-color', color)
+        .next('.readlou').css('border-color', color);
 };
 
 /**
  * 修改本人的神秘颜色
  */
 export const modifyMySmColor = function () {
-    let $my = $(`.readidmsbottom > a[href="profile.php?action=show&uid=${Info.uid}"]`);
-    if (!$my.length) $my = $(`.readidmleft > a[href="profile.php?action=show&uid=${Info.uid}"]`);
+    let $my = $(`.readidmsbottom > a[href^="profile.php?action=show&uid=${Info.uid}"]`);
+    if (!$my.length) $my = $(`.readidmbottom > a[href^="profile.php?action=show&uid=${Info.uid}"]`);
     if ($my.length > 0) modifyFloorSmColor($my, Config.customMySmColor);
 };
 
@@ -250,13 +250,8 @@ export const statFloor = function (tid, startPage, endPage, startFloor, endFloor
                     }
 
                     data.smLevel = '';
-                    if ($user.hasClass('readidms')) {
-                        let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom').text());
-                        if (matches) data.smLevel = matches[1];
-                    }
-                    else {
-                        data.smLevel = $user.find('.readidmright').text().trim();
-                    }
+                    let matches = /(\S+) 级神秘/.exec($user.find('.readidmsbottom, .readidmbottom').text());
+                    if (matches) data.smLevel = matches[1];
 
                     let $buyer = $floor.find('[name="buyers"]:first');
                     data.status = 0;
@@ -366,7 +361,7 @@ export const showStatFloorDialog = function (floorList) {
         if (isRemoveTopFloor) {
             let $topFloor = $('.readtext:first');
             if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
-                let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show&uid="]').text();
+                let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
             }
         }
@@ -571,7 +566,7 @@ export const handleBuyThreadBtn = function () {
                             let pid = urlMatches[2];
                             let forumName = $('a[href^="kf_tidfavor.php?action=favor"]').parent().find('a[href^="thread.php?fid="]:last').text().trim();
                             let threadTitle = getThreadTitle();
-                            let userName = $this.closest('.readtext').find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').text().trim();
+                            let userName = $this.closest('.readtext').find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show"]').text().trim();
                             recordBuyThreadLog({fid, tid, pid, forumName, threadTitle, userName, sell});
                         }
                         location.reload();
@@ -601,7 +596,7 @@ export const getMultiQuoteData = function () {
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
         let pid = $floor.prev('.readlou').prev('a').attr('name');
-        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmleft > a').text();
+        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text();
         if (!userName) return;
         quoteList.push({floor: floor, pid: pid, userName: userName});
     });
@@ -673,13 +668,13 @@ export const modifyKFOtherDomainLink = function () {
  */
 export const addUserMemo = function () {
     if ($.isEmptyObject(Config.userMemoList)) return;
-    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmleft > a').each(function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmbottom > a[href^="profile.php?action=show&uid="]').each(function () {
         let $this = $(this);
         let userName = $this.text().trim();
         let key = Object.keys(Config.userMemoList).find(name => name === userName);
         if (!key) return;
         let memo = Config.userMemoList[key];
-        if ($this.is('.readidmleft > a')) {
+        if ($this.is('.readidmbottom > a')) {
             $this.after(`<span class="pd_user_memo_tips" title="备注：${memo}">[?]</span>`);
         }
         else {
@@ -986,7 +981,7 @@ export const showBuyThreadLogDialog = function () {
  * 屏蔽帖子页面无用的按钮
  */
 export const blockUselessThreadButtons = function () {
-    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmleft > a[href^="profile.php?action=show"]').each(function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
         let $this = $(this);
         if($this.text().trim() === Info.userName) return;
         $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();

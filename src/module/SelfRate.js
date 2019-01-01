@@ -182,9 +182,9 @@ export const handleGoodPostSubmit = function () {
         let $this = $(this);
         if ($this.data('wait')) return;
         let $floor = $this.closest('div[id^="floor"]').next('.readtext');
-        let url = $floor.find('.readidmsbottom, .readidmleft').find('a[href^="profile.php?action=show"]').attr('href');
+        let url = $floor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show"]').attr('href');
         let flag = false;
-        $('.readidmsbottom, .readidmleft').find(`a[href="${url}"]`).each(function () {
+        $('.readidmsbottom, .readidmbottom').find(`a[href="${url}"]`).each(function () {
             let $currentFloor = $(this).closest('.readtext');
             if ($currentFloor.is($floor)) return;
             if ($currentFloor.find('.read_fds:contains("本帖为优秀帖")').length > 0) {
