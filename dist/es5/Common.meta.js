@@ -8,10 +8,11 @@
 // @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.meta.js
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Common.user.js
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.26.0
-// @include     http*://*2dkf.com/*
-// @include     http*://*9moe.com/*
-// @include     http*://*kfgal.com/*
-// @version     12.9.4
+// @include     https://*kfacg.com/*
+// @include     https://*2dkf.com/*
+// @include     https://*9moe.com/*
+// @include     https://*kfgal.com/*
+// @version     12.9.5
 // @grant       none
 // @run-at      document-end
 // @license     MIT

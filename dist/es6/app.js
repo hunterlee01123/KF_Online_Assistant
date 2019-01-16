@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.9.4';
+const version = '12.9.5';
 
 /**
  * 导出模块
@@ -4187,7 +4187,7 @@ const addCommonArmsButton = exports.addCommonArmsButton = function ($area, $armA
             if (!$armArea.find('tr:has(td[data-memo])').length) {
                 if (!confirm('在当前页面上未发现包含备注的装备，建议检查一下你是否清空了装备备注，是否继续选择？')) return;
             }
-            let $legendEquip = $armArea.find('tr[data-id] span:contains("传奇的")');
+            let $legendEquip = $armArea.find('tr[data-id]:has(span:contains("传奇的"))').not(':has(td[data-memo])');
             if ($legendEquip.length > 0) {
                 if (!confirm(`你一共选择了 ${$legendEquip.length} 件传奇装备，是否继续选择？`)) return;
             }
@@ -6186,7 +6186,7 @@ const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
 const handlePropertiesArea = function () {
     $properties.attr('id', 'pdPropertiesArea').find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
 
-    let $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:first').attr('id', 'pdServerStatus');
+    let $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:last').attr('id', 'pdServerStatus');
     if ($serverStatus.length > 0) {
         serverStatus = $serverStatus.text().trim();
         $serverStatus.attr('id', 'pdServerStatus').data('prev-status', serverStatus);
@@ -9776,7 +9776,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
     $('form[name="FORM"]').submit(function () {
         let $textArea = $(this).find('textarea[name="atc_content"]');
         if (!$textArea.length) return;
-        $textArea.val($textArea.val().replace(new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'), 'https://bbs.2dkf.com/$1.php'));
+        $textArea.val($textArea.val().replace(new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'), 'https://bbs.kfacg.com/$1.php'));
     });
 };
 
@@ -11839,7 +11839,7 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
         let $this = $(this);
         let url = $this.attr('href');
         if (/m\.miaola\.info\//i.test(url)) return;
-        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
+        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|kfacg|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
 };

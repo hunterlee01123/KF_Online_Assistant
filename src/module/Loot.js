@@ -154,7 +154,7 @@ const handlePropertiesArea = function () {
     $properties.attr('id', 'pdPropertiesArea')
         .find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
 
-    let $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:first').attr('id', 'pdServerStatus');
+    let $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:last').attr('id', 'pdServerStatus');
     if ($serverStatus.length > 0) {
         serverStatus = $serverStatus.text().trim();
         $serverStatus.attr('id', 'pdServerStatus').data('prev-status', serverStatus);
