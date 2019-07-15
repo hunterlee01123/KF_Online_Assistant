@@ -110,7 +110,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.9.5';
+var version = '12.9.6';
 
 /**
  * 导出模块
