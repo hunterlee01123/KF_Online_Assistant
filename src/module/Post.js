@@ -371,7 +371,7 @@ export const replaceSiteLink = function () {
             $textArea.val(
                 $textArea.val().replace(
                     new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'),
-                    'https://bbs.kfacg.com/$1.php'
+                    'https://bbs.ikfol.com/$1.php'
                 )
             )
         }

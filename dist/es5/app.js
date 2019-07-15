@@ -11347,7 +11347,7 @@ var replaceSiteLink = exports.replaceSiteLink = function replaceSiteLink() {
     $('form[name="FORM"]').submit(function () {
         var $textArea = $(this).find('textarea[name="atc_content"]');
         if (!$textArea.length) return;
-        $textArea.val($textArea.val().replace(new RegExp(location.protocol + '//' + location.hostname.replace(/\./g, '\\.') + '/(\\w+)\\.php', 'g'), 'https://bbs.kfacg.com/$1.php'));
+        $textArea.val($textArea.val().replace(new RegExp(location.protocol + '//' + location.hostname.replace(/\./g, '\\.') + '/(\\w+)\\.php', 'g'), 'https://bbs.ikfol.com/$1.php'));
     });
 };
 
