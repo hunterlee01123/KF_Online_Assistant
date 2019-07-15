@@ -13377,7 +13377,7 @@ var modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function modifyK
         var $this = $(this);
         var url = $this.attr('href');
         if (/m\.miaola\.info\//i.test(url)) return;
-        var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|kfacg|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
+        var matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|ikfol|kfacg|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
 };
