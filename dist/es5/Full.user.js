@@ -9,11 +9,9 @@
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es5/Full.user.js
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.26.0
 // @include     https://*ikfol.com/*
-// @include     https://*kfacg.com/*
-// @include     https://*2dkf.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     12.9.6
+// @version     12.9.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.9.6';
+var version = '12.9.7';
 
 /**
  * 导出模块
@@ -12281,10 +12279,9 @@ var blockThread = exports.blockThread = function blockThread() {
  * 为顶部导航栏添加快捷导航菜单
  */
 var addFastNavMenu = exports.addFastNavMenu = function addFastNavMenu() {
-    var $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a:contains("本站主页")');
+    var $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("最新共享")');
     if (!$menuBtn.length) return;
-    var hpUrl = $menuBtn.attr('href');
-    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after('\n<ul class="topmenuo2">\n  <li><a href="' + hpUrl + '" target="_blank">\u672C\u7AD9\u4E3B\u9875</a></li>\n  <li><a href="search.php?authorid=' + _Info2.default.uid + '">\u6211\u7684\u4E3B\u9898</a></li>\n  <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n  <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n  <li><a href="kf_fw_ig_mybp.php">\u6211\u7684\u7269\u54C1</a></li>\n  <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n  <li><a href="kf_fw_ig_mycard.php">\u89D2\u8272\u5361\u7247</a></li>\n  <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n  <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n  <li><a href="profile.php?action=friend">\u597D\u53CB\u5217\u8868</a></li>\n  ' + (_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : '') + '\n  ' + _Const2.default.customFastNavMenuContent + '\n</ul>');
+    $menuBtn.text('快捷导航').attr('href', 'javascript:;').after('\n<ul class="topmenuo2">\n  <li><a href="kf_share.php">\u6700\u65B0\u5171\u4EAB</a></li>\n  <li><a href="search.php?authorid=' + _Info2.default.uid + '">\u6211\u7684\u4E3B\u9898</a></li>\n  <li><a href="personal.php?action=post">\u6211\u7684\u56DE\u590D</a></li>\n  <li><a href="kf_fw_ig_index.php">\u4E89\u593A\u5956\u52B1</a></li>\n  <li><a href="kf_fw_ig_mybp.php">\u6211\u7684\u7269\u54C1</a></li>\n  <li><a href="kf_fw_ig_shop.php">\u7269\u54C1\u5546\u5E97</a></li>\n  <li><a href="kf_fw_ig_mycard.php">\u89D2\u8272\u5361\u7247</a></li>\n  <li><a href="kf_fw_ig_halo.php">\u6218\u529B\u5149\u73AF</a></li>\n  <li><a href="profile.php?action=favor">\u6536\u85CF</a></li>\n  <li><a href="profile.php?action=friend">\u597D\u53CB\u5217\u8868</a></li>\n  ' + (_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : '') + '\n  ' + _Const2.default.customFastNavMenuContent + '\n</ul>');
 
     if (Config.adminMemberEnabled) {
         $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(3) > a:contains("聊天交流")').next('ul').append('<li><a href="thread.php?fid=93">内部管理专用</a></li>');

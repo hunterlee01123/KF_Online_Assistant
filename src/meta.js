@@ -8,11 +8,9 @@
 // @pd-update-url-placeholder
 // @pd-require
 // @include     https://*ikfol.com/*
-// @include     https://*kfacg.com/*
-// @include     https://*2dkf.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     12.9.6
+// @version     12.9.7
 // @grant       none
 // @run-at      document-end
 // @license     MIT

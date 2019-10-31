@@ -10,11 +10,9 @@
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/polyfill.min.js?V6.26.0
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
 // @include     https://*ikfol.com/*
-// @include     https://*kfacg.com/*
-// @include     https://*2dkf.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     12.9.6
+// @version     12.9.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue

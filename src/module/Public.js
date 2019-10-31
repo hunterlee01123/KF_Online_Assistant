@@ -936,12 +936,11 @@ export const blockThread = function () {
  * 为顶部导航栏添加快捷导航菜单
  */
 export const addFastNavMenu = function () {
-    let $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a:contains("本站主页")');
+    let $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("最新共享")');
     if (!$menuBtn.length) return;
-    let hpUrl = $menuBtn.attr('href');
-    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after(`
+    $menuBtn.text('快捷导航').attr('href', 'javascript:;').after(`
 <ul class="topmenuo2">
-  <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
+  <li><a href="kf_share.php">最新共享</a></li>
   <li><a href="search.php?authorid=${Info.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
   <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>

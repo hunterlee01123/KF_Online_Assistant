@@ -9,11 +9,9 @@
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
 // @include     https://*ikfol.com/*
-// @include     https://*kfacg.com/*
-// @include     https://*2dkf.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     12.9.6
+// @version     12.9.7
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -110,7 +108,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.9.6';
+const version = '12.9.7';
 
 /**
  * 导出模块
@@ -10741,12 +10739,11 @@ const blockThread = exports.blockThread = function () {
  * 为顶部导航栏添加快捷导航菜单
  */
 const addFastNavMenu = exports.addFastNavMenu = function () {
-    let $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a:contains("本站主页")');
+    let $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("最新共享")');
     if (!$menuBtn.length) return;
-    let hpUrl = $menuBtn.attr('href');
-    $menuBtn.text('快捷导航').attr('href', 'javascript:;').removeAttr('target').after(`
+    $menuBtn.text('快捷导航').attr('href', 'javascript:;').after(`
 <ul class="topmenuo2">
-  <li><a href="${hpUrl}" target="_blank">本站主页</a></li>
+  <li><a href="kf_share.php">最新共享</a></li>
   <li><a href="search.php?authorid=${_Info2.default.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
   <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
