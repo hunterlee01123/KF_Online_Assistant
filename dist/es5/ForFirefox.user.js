@@ -12,7 +12,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     12.9.7
+// @version     12.9.8
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -109,7 +109,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.9.7';
+var version = '12.9.8';
 
 /**
  * 导出模块
@@ -13476,8 +13476,8 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
         if (_Info2.default.isMobile) textArea.blur();else textArea.focus();
     };
 
-    var $parent = $('input[name="diy_guanjianci"]').parent();
-    $parent.on('click', 'a[href="javascript:;"]', function (e) {
+    var $area = $('form[action="post.php?"] > div:first > table > tbody > tr:nth-child(2) > td:first-child');
+    $area.on('click', 'a[href="javascript:;"]', function (e) {
         e.preventDefault();
         var id = $(this).data('id');
         if (id) addSmileCode(id);
@@ -13489,7 +13489,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
         }
     });
 
-    $('<a class="pd_highlight" href="#">[更多]</a>').appendTo($parent).click(function (e) {
+    $('<a class="pd_highlight" href="#">[更多]</a>').appendTo($area).click(function (e) {
         e.preventDefault();
         var $this = $(this);
         var $panel = $('#pdSmilePanel');
@@ -13508,9 +13508,9 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
         }
         html = '<div class="pd_panel" id="pdSmilePanel" style="width: 308px; height: 185px;">' + html + '</div>';
 
-        var offset = $parent.offset();
+        var offset = $area.offset();
         $panel = $(html).appendTo('body');
-        $panel.css('top', offset.top + $parent.height() + 4).css('left', offset.left + $parent.width() - $panel.width() + 9).on('click', 'img', function () {
+        $panel.css('top', offset.top - $panel.height() + 10).css('left', offset.left + $area.width() - $panel.width() - 10).on('click', 'img', function () {
             var id = $(this).data('id');
             if (id) addSmileCode(id);
         });
