@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '12.9.8';
+var version = '13.0.0';
 
 /**
  * 导出模块
@@ -10981,7 +10981,12 @@ var handleMultiQuote = exports.handleMultiQuote = function handleMultiQuote() {
 
     Script.runFunc('Post.handleMultiQuote_before_', type);
     if (!$('#pdClearMultiQuoteData').length) {
-        $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
+        if (location.pathname === '/read.php') {
+            $('<a id="pdClearMultiQuoteData" style="margin-right: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').prependTo($('input[name="diy_guanjianci"]').parent());
+        } else {
+            $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]');
+        }
+        $('#pdClearMultiQuoteData').click(function (e) {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
@@ -12012,7 +12017,7 @@ var followUsers = exports.followUsers = function followUsers() {
     } else if (location.pathname === '/read.php') {
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
             var $this = $(this);
-            if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
+            if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
                 $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
             }
         });
@@ -12072,7 +12077,7 @@ var blockUsers = exports.blockUsers = function blockUsers() {
         var page = Util.getCurrentThreadPage();
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function (i) {
             var $this = $(this);
-            var index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
+            var index = Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.blockUserList);
             if (index > -1) {
                 var type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
@@ -12237,8 +12242,8 @@ var blockThread = exports.blockThread = function blockThread() {
         var title = Read.getThreadTitle();
         if (!title) return;
         var $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').eq(0);
-        if ($userName.closest('.readlou').next('readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
-        var userName = $userName.text();
+        if ($userName.closest('.readlou').next('.readlou').find('> div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        var userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         var _fid2 = parseInt($('input[name="fid"]:first').val());
         if (!_fid2) return;
@@ -13327,7 +13332,7 @@ var getMultiQuoteData = exports.getMultiQuoteData = function getMultiQuoteData()
         var matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         var floor = matches ? parseInt(matches[1]) : 0;
         var pid = $floor.prev('.readlou').prev('a').attr('name');
-        var userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text();
+        var userName = Util.getFloorUserName($floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text());
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -13388,7 +13393,7 @@ var addUserMemo = exports.addUserMemo = function addUserMemo() {
     if ($.isEmptyObject(Config.userMemoList)) return;
     $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmbottom > a[href^="profile.php?action=show&uid="]').each(function () {
         var $this = $(this);
-        var userName = $this.text().trim();
+        var userName = Util.getFloorUserName($this.text().trim());
         var key = Object.keys(Config.userMemoList).find(function (name) {
             return name === userName;
         });
@@ -14506,7 +14511,7 @@ var deleteValue = exports.deleteValue = function deleteValue(key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.ajax = exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.getFloorUserName = exports.ajax = exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -15262,6 +15267,21 @@ var ajax = exports.ajax = function ajax(param) {
     }
 
     $.ajax(param);
+};
+
+/**
+ * 获取发帖人
+ * @param {string} name 处理前的发帖人
+ * @returns {string} 真实发帖人
+ */
+var getFloorUserName = exports.getFloorUserName = function getFloorUserName(name) {
+    name = $.trim(name);
+    if (name.includes(' ')) {
+        var arr = name.split(' ');
+        return arr.length === 2 ? arr[1] : name;
+    } else {
+        return name;
+    }
 };
 
 },{"./Const":6,"./Info":9}]},{},[1]);

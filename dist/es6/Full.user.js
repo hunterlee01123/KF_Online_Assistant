@@ -10,7 +10,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     12.9.8
+// @version     13.0.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -107,7 +107,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '12.9.8';
+const version = '13.0.0';
 
 /**
  * 导出模块
@@ -9452,7 +9452,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const handleMultiQuote = exports.handleMultiQuote = function (type = 1) {
     Script.runFunc('Post.handleMultiQuote_before_', type);
     if (!$('#pdClearMultiQuoteData').length) {
-        $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]').click(function (e) {
+        if (location.pathname === '/read.php') {
+            $('<a id="pdClearMultiQuoteData" style="margin-right: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').prependTo($('input[name="diy_guanjianci"]').parent());
+        } else {
+            $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>').insertAfter('input[name="diy_guanjianci"]');
+        }
+        $('#pdClearMultiQuoteData').click(function (e) {
             e.preventDefault();
             localStorage.removeItem(_Const2.default.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');
@@ -10540,7 +10545,7 @@ const followUsers = exports.followUsers = function () {
     } else if (location.pathname === '/read.php') {
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
-            if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
+            if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
                 $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
             }
         });
@@ -10600,7 +10605,7 @@ const blockUsers = exports.blockUsers = function () {
         let page = Util.getCurrentThreadPage();
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function (i) {
             let $this = $(this);
-            let index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
+            let index = Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.blockUserList);
             if (index > -1) {
                 let type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
@@ -10716,8 +10721,8 @@ const blockThread = exports.blockThread = function () {
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').eq(0);
-        if ($userName.closest('.readlou').next('readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
-        let userName = $userName.text();
+        if ($userName.closest('.readlou').next('.readlou').find('> div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        let userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;
@@ -11808,7 +11813,7 @@ const getMultiQuoteData = exports.getMultiQuoteData = function () {
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
         let pid = $floor.prev('.readlou').prev('a').attr('name');
-        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text();
+        let userName = Util.getFloorUserName($floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text());
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -11869,7 +11874,7 @@ const addUserMemo = exports.addUserMemo = function () {
     if ($.isEmptyObject(Config.userMemoList)) return;
     $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmbottom > a[href^="profile.php?action=show&uid="]').each(function () {
         let $this = $(this);
-        let userName = $this.text().trim();
+        let userName = Util.getFloorUserName($this.text().trim());
         let key = Object.keys(Config.userMemoList).find(name => name === userName);
         if (!key) return;
         let memo = Config.userMemoList[key];
@@ -12832,7 +12837,7 @@ const deleteValue = exports.deleteValue = function (key) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.ajax = exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
+exports.getFloorUserName = exports.ajax = exports.getThreadSfParam = exports.deleteData = exports.writeData = exports.readData = exports.selectInverse = exports.selectAll = exports.inFollowOrBlockUserList = exports.entries = exports.getResponseMsg = exports.copyText = exports.getSelText = exports.addCode = exports.getStrByteLen = exports.removeUnpairedBBCodeContent = exports.getFixedNumLocStr = exports.getCurrentThreadPage = exports.compareSmLevel = exports.isEdge = exports.isIE = exports.isOpera = exports.getStatFormatNumber = exports.getSortedObjectKeyList = exports.getObjectKeyList = exports.removeHtmlTag = exports.htmlDecode = exports.htmlEncode = exports.getGBKEncodeString = exports.getUrlParam = exports.deepEqual = exports.getDifferenceSetOfObject = exports.getHostNameUrl = exports.isBetweenInTimeRange = exports.getTimeDiffInfo = exports.getTimeString = exports.getDateString = exports.getDate = exports.getMidnightHourDate = exports.getTimezoneDateByTime = exports.getDateByTime = exports.deleteCookie = exports.getCookie = exports.setCookie = undefined;
 
 var _Info = require('./Info');
 
@@ -13454,6 +13459,21 @@ const ajax = exports.ajax = function (param) {
     }
 
     $.ajax(param);
+};
+
+/**
+ * 获取发帖人
+ * @param {string} name 处理前的发帖人
+ * @returns {string} 真实发帖人
+ */
+const getFloorUserName = exports.getFloorUserName = function (name) {
+    name = $.trim(name);
+    if (name.includes(' ')) {
+        let arr = name.split(' ');
+        return arr.length === 2 ? arr[1] : name;
+    } else {
+        return name;
+    }
 };
 
 },{"./Const":6,"./Info":9}]},{},[1]);

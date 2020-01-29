@@ -596,7 +596,7 @@ export const getMultiQuoteData = function () {
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
         let pid = $floor.prev('.readlou').prev('a').attr('name');
-        let userName = $floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text();
+        let userName = Util.getFloorUserName($floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text());
         if (!userName) return;
         quoteList.push({floor: floor, pid: pid, userName: userName});
     });
@@ -670,7 +670,7 @@ export const addUserMemo = function () {
     if ($.isEmptyObject(Config.userMemoList)) return;
     $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmbottom > a[href^="profile.php?action=show&uid="]').each(function () {
         let $this = $(this);
-        let userName = $this.text().trim();
+        let userName = Util.getFloorUserName($this.text().trim());
         let key = Object.keys(Config.userMemoList).find(name => name === userName);
         if (!key) return;
         let memo = Config.userMemoList[key];

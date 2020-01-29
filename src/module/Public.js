@@ -722,7 +722,7 @@ export const followUsers = function () {
     else if (location.pathname === '/read.php') {
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
-            if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
+            if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
                 $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
             }
         });
@@ -788,7 +788,7 @@ export const blockUsers = function () {
         let page = Util.getCurrentThreadPage();
         $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function (i) {
             let $this = $(this);
-            let index = Util.inFollowOrBlockUserList($this.text(), Config.blockUserList);
+            let index = Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.blockUserList);
             if (index > -1) {
                 let type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;
@@ -914,8 +914,8 @@ export const blockThread = function () {
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').eq(0);
-        if ($userName.closest('.readlou').next('readlou').find('div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
-        let userName = $userName.text();
+        if ($userName.closest('.readlou').next('.readlou').find('> div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        let userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;

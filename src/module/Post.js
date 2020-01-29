@@ -13,8 +13,15 @@ import * as Script from './Script';
 export const handleMultiQuote = function (type = 1) {
     Script.runFunc('Post.handleMultiQuote_before_', type);
     if (!$('#pdClearMultiQuoteData').length) {
-        $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
-            .insertAfter('input[name="diy_guanjianci"]').click(function (e) {
+        if(location.pathname === '/read.php') {
+            $('<a id="pdClearMultiQuoteData" style="margin-right: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
+                .prependTo($('input[name="diy_guanjianci"]').parent());
+        }
+        else {
+            $('<a id="pdClearMultiQuoteData" style="margin-left: 7px;" title="清除在浏览器中保存的多重引用数据" href="#">清除引用数据</a>')
+                .insertAfter('input[name="diy_guanjianci"]');
+        }
+        $('#pdClearMultiQuoteData').click(function (e) {
             e.preventDefault();
             localStorage.removeItem(Const.multiQuoteStorageName);
             $('input[name="diy_guanjianci"]').val('');

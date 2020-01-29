@@ -454,8 +454,7 @@ export const addCode = function (textArea, code, selText = '') {
         textArea.value = textArea.value.substring(0, prePos) + code + textArea.value.substring(textArea.selectionEnd);
         textArea.selectionStart = prePos + startPos;
         textArea.selectionEnd = prePos + startPos + selText.length;
-    }
-    else {
+    } else {
         textArea.value += code;
     }
 };
@@ -487,8 +486,7 @@ export const copyText = function ($target, msg = '', $excludeElem = null) {
     if ($target.is('input, textarea')) {
         $target.select();
         result = document.execCommand('copy');
-    }
-    else {
+    } else {
         let s = window.getSelection();
         s.selectAllChildren($target.get(0));
         result = document.execCommand('copy');
@@ -515,8 +513,7 @@ export const getResponseMsg = function (html) {
         type = 1;
         msg = matches[1];
         url = matches[2];
-    }
-    else {
+    } else {
         let matches = /操作提示<br\s*\/?>\r\n(.+?)<br\s*\/?>\r\n<a href="javascript:history\.go\(-1\);">返回上一步操作<\/a>/i.exec(html);
         if (matches) {
             type = -1;
@@ -586,8 +583,7 @@ export const writeData = (key, value, storageType = Info.storageType) => {
     try {
         if (storageType === 'ByUid' || storageType === 'Global') GM_setValue(key, value);
         else localStorage.setItem(key, value);
-    }
-    catch (ex) {
+    } catch (ex) {
         console.log(ex);
         alert('写入数据失败，可能是浏览器不支持所设定的存储类型或localStorage超出限额');
     }
@@ -612,8 +608,7 @@ export const getThreadSfParam = function () {
     let matches = /&sf=(\w+)/.exec($('.pages:first > li:first-child > a').attr('href'));
     if (matches) {
         sf = matches[1];
-    }
-    else {
+    } else {
         sf = getUrlParam('sf');
     }
     return sf ? sf : '';
@@ -635,7 +630,7 @@ export const ajax = function (param) {
 
         if (num > 20) {
             Info.ajaxStat['kf_fw_ig_index.php'] = 0;
-            setTimeout(function() {
+            setTimeout(function () {
                 $.ajax(param);
             }, 60 * 1000);
             return;
@@ -643,4 +638,19 @@ export const ajax = function (param) {
     }
 
     $.ajax(param);
+};
+
+/**
+ * 获取发帖人
+ * @param {string} name 处理前的发帖人
+ * @returns {string} 真实发帖人
+ */
+export const getFloorUserName = function (name) {
+    name = $.trim(name);
+    if (name.includes(' ')) {
+        let arr = name.split(' ');
+        return arr.length === 2 ? arr[1] : name;
+    } else {
+        return name;
+    }
 };
