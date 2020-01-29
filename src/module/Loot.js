@@ -1578,7 +1578,7 @@ const showLevelPointListConfigDialog = function (callback) {
     请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
     （例：11-19层点数相同的话，则只保留第11层）<br>
     武器、护甲ID和备注为可选项，只在需要更换装备时填写<br>
-    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
+    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735&sf=b09" target="_blank">此贴53楼</a>
   </div>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">

@@ -88,7 +88,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '13.0.0';
+const version = '13.0.1';
 
 /**
  * 导出模块
@@ -1647,7 +1647,7 @@ const show = exports.show = function () {
 
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about">
-    <a target="_blank" href="read.php?tid=508450">By 喵拉布丁</a>
+    <a target="_blank" href="read.php?tid=508450&sf=140">By 喵拉布丁</a>
     <i style="color: #666; font-style: normal;">(V${_Info2.default.version})</i>
     <a target="_blank" href="https://gitee.com/miaolapd/KF_Online_Assistant/wikis/pages?title=%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">[常见问题]</a>
   </span>
@@ -1967,7 +1967,7 @@ const showCustomCssDialog = function () {
   <textarea name="customCssContent" wrap="off" style="width: 750px; height: 400px; white-space: pre;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969">CSS规则收集贴</a></span>
+  <span class="pd_cfg_about"><a target="_blank" href="read.php?tid=500969&sf=206">CSS规则收集贴</a></span>
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>
 </div>`;
@@ -2540,7 +2540,7 @@ const Const = {
     },
     // 新装备标志的持续时间（天）
     newArmMarkDuration: 1,
-    // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
+    // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735&sf=b09
     getCustomPoints: null,
 
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
@@ -7527,7 +7527,7 @@ const showLevelPointListConfigDialog = function (callback) {
     请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
     （例：11-19层点数相同的话，则只保留第11层）<br>
     武器、护甲ID和备注为可选项，只在需要更换装备时填写<br>
-    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735" target="_blank">此贴53楼</a>
+    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735&sf=b09" target="_blank">此贴53楼</a>
   </div>
   <div style="overflow-y: auto; max-height: 400px;">
     <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
@@ -12348,7 +12348,7 @@ const showDialog = exports.showDialog = function (showIndex = null) {
 </div>
 <div class="pd_cfg_btns">
   <span class="pd_cfg_about">
-    <a class="pd_btn_link pd_highlight" href="read.php?tid=500968" target="_blank">自定义脚本收集贴</a>
+    <a class="pd_btn_link pd_highlight" href="read.php?tid=500968&sf=b09" target="_blank">自定义脚本收集贴</a>
     <a class="pd_btn_link" data-name="openImOrExCustomScriptDialog" href="#">导入/导出所有脚本</a>
   </span>
   <button type="submit">保存</button>

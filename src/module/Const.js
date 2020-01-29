@@ -23,7 +23,7 @@ const Const = {
     },
     // 新装备标志的持续时间（天）
     newArmMarkDuration: 1,
-    // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735
+    // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735&sf=b09
     getCustomPoints: null,
 
     // 定时操作结束后的再判断间隔（秒），用于在定时模式中进行下一次定时时间的再判断
