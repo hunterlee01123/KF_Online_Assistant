@@ -10,7 +10,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     13.0.1
+// @version     14.0.0
 // @grant       none
 // @run-at      document-end
 // @license     MIT

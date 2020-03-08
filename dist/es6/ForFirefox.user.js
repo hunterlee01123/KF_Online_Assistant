@@ -11,7 +11,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     13.0.1
+// @version     14.0.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -51,10 +51,6 @@ var _TmpLog = require('./module/TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
 
-var _LootLog = require('./module/LootLog');
-
-var LootLog = _interopRequireWildcard(_LootLog);
-
 var _Script = require('./module/Script');
 
 var Script = _interopRequireWildcard(_Script);
@@ -83,10 +79,6 @@ var _Bank = require('./module/Bank');
 
 var Bank = _interopRequireWildcard(_Bank);
 
-var _Card = require('./module/Card');
-
-var Card = _interopRequireWildcard(_Card);
-
 var _Item = require('./module/Item');
 
 var Item = _interopRequireWildcard(_Item);
@@ -108,7 +100,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '13.0.1';
+const version = '14.0.0';
 
 /**
  * 导出模块
@@ -122,14 +114,12 @@ const exportModule = function () {
         _Info2.default.w.Dialog = require('./module/Dialog');
         _Info2.default.w.Log = require('./module/Log');
         _Info2.default.w.TmpLog = require('./module/TmpLog');
-        _Info2.default.w.LootLog = require('./module/LootLog');
         _Info2.default.w.Public = require('./module/Public');
         _Info2.default.w.Index = require('./module/Index');
         _Info2.default.w.Read = require('./module/Read');
         _Info2.default.w.Post = require('./module/Post');
         _Info2.default.w.Other = require('./module/Other');
         _Info2.default.w.Bank = require('./module/Bank');
-        _Info2.default.w.Card = require('./module/Card');
         _Info2.default.w.Item = require('./module/Item');
         _Info2.default.w.Loot = require('./module/Loot');
         _Info2.default.w.SelfRate = require('./module/SelfRate');
@@ -172,7 +162,6 @@ const init = function () {
     if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
         $('#pdLoot').addClass('pd_rightbox1_gray');
     }
-    if (Config.showChangePointsInfoEnabled) Public.addChangePointsInfoTips();
     if (_Info2.default.isInHomePage) {
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
@@ -186,11 +175,11 @@ const init = function () {
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        Read.addSignTips();
         if (Config.customMySmColor) Read.modifyMySmColor();
-        if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
-        Read.addStatAndBuyThreadBtn();
+        //Read.addStatAndBuyThreadBtn(); //临时屏蔽
         Read.handleBuyThreadBtn();
         Read.addCopyBuyersListOption();
         if (Config.userMemoEnabled) Read.addUserMemo();
@@ -232,8 +221,6 @@ const init = function () {
         Loot.addUserLinkInHaloPage();
     } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
-    } else if (/\/kf_fw_card_my\.php$/.test(location.href)) {
-        Card.addStartBatchModeButton();
     } else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
@@ -268,8 +255,8 @@ const init = function () {
         SelfRate.addLinksInPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
-    } else if (location.pathname === '/kf_fw_ig_mycard.php') {
-        Card.handleMyCardPage();
+    } else if (location.pathname === '/kf_fygnew_3214.php') {
+        Loot.addGuGuZhenSelectAllBtn();
     }
 
     if (Config.blockUserEnabled) Public.blockUsers();
@@ -288,19 +275,6 @@ const init = function () {
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(_Const2.default.promoteHaloCookieName)) {
         $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
     }
-    if (location.pathname === '/kf_fw_ig_index.php') {
-        $(document).queue('AutoAction', () => Loot.init());
-    }
-
-    if (!Util.getCookie(_Const2.default.lootCompleteCookieName)) {
-        if (Config.autoLootEnabled) {
-            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(_Const2.default.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName))) {
-                $(document).queue('AutoAction', () => Loot.checkLoot());
-            }
-        } else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-            //$(document).queue('AutoAction', () => Loot.autoSaveLootLog()); // 临时
-        }
-    }
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());
@@ -310,26 +284,10 @@ const init = function () {
         $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
     }
 
-    if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName)) {
-        if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
-            TmpLog.deleteValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName);
-            $(document).queue('AutoAction', () => Item.autoOpenBoxes());
-        } else {
-            $(document).clearQueue('AutoAction');
-            $(document).queue('AutoAction', function () {
-                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', _Const2.default.minActionInterval);
-            });
-        }
-    }
-
     $(document).dequeue('AutoAction');
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(_Const2.default.autoChangeIdColorCookieName)) {
         Public.changeIdColor();
-    }
-
-    if (Config.showDrawCardTipsEnabled) {
-        Card.showDrawCardTips();
     }
 
     if (Config.timingModeEnabled && (_Info2.default.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href))) {
@@ -346,7 +304,7 @@ if (typeof jQuery !== 'undefined') {
     $(document).ready(init);
 }
 
-},{"./module/Bank":2,"./module/Card":3,"./module/Config":4,"./module/ConfigDialog":5,"./module/Const":6,"./module/Dialog":7,"./module/Index":8,"./module/Info":9,"./module/Item":10,"./module/Log":11,"./module/Loot":13,"./module/LootLog":14,"./module/Msg":15,"./module/Other":16,"./module/Post":17,"./module/Public":18,"./module/Read":19,"./module/Script":20,"./module/SelfRate":21,"./module/TmpLog":22,"./module/Util":23}],2:[function(require,module,exports){
+},{"./module/Bank":2,"./module/Config":3,"./module/ConfigDialog":4,"./module/Const":5,"./module/Dialog":6,"./module/Index":7,"./module/Info":8,"./module/Item":9,"./module/Log":10,"./module/Loot":12,"./module/Msg":13,"./module/Other":14,"./module/Post":15,"./module/Public":16,"./module/Read":17,"./module/Script":18,"./module/SelfRate":19,"./module/TmpLog":20,"./module/Util":21}],2:[function(require,module,exports){
 /* 银行模块 */
 'use strict';
 
@@ -666,260 +624,7 @@ const addBatchTransferButton = function () {
     });
 };
 
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":22,"./Util":23}],3:[function(require,module,exports){
-/* 卡片模块 */
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.handleMyCardPage = exports.showDrawCardTips = exports.addStartBatchModeButton = undefined;
-
-var _Util = require('./Util');
-
-var Util = _interopRequireWildcard(_Util);
-
-var _Const = require('./Const');
-
-var _Const2 = _interopRequireDefault(_Const);
-
-var _Msg = require('./Msg');
-
-var Msg = _interopRequireWildcard(_Msg);
-
-var _Log = require('./Log');
-
-var Log = _interopRequireWildcard(_Log);
-
-var _Public = require('./Public');
-
-var Public = _interopRequireWildcard(_Public);
-
-var _Script = require('./Script');
-
-var Script = _interopRequireWildcard(_Script);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-/**
- * 将指定的一系列卡片转换为VIP时间
- * @param {number[]} cardList 卡片ID列表
- * @param {string} safeId 用户的SafeID
- */
-const convertCardsToVipTime = function (cardList, safeId) {
-    let successNum = 0,
-        failNum = 0,
-        totalVipTime = 0,
-        totalEnergy = 0;
-    $(document).clearQueue('ConvertCardsToVipTime');
-    $.each(cardList, function (index, cardId) {
-        $(document).queue('ConvertCardsToVipTime', function () {
-            $.ajax({
-                type: 'GET',
-                url: `kf_fw_card_doit.php?do=recard&id=${cardId}&safeid=${safeId}&t=${$.now()}`,
-                timeout: _Const2.default.defAjaxTimeout,
-                success(html) {
-                    Public.showFormatLog('将卡片转换为VIP时间', html);
-                    let { msg } = Util.getResponseMsg(html);
-                    let matches = /增加(\d+)小时VIP时间(?:.*?获得(\d+)点恢复能量)?/.exec(msg);
-                    if (matches) {
-                        successNum++;
-                        totalVipTime += parseInt(matches[1]);
-                        if (typeof matches[2] !== 'undefined') totalEnergy += parseInt(matches[2]);
-                    } else failNum++;
-                },
-                error() {
-                    failNum++;
-                },
-                complete() {
-                    let $countdown = $('.pd_countdown:last');
-                    $countdown.text(parseInt($countdown.text()) - 1);
-                    let isStop = $countdown.closest('.pd_msg').data('stop');
-                    if (isStop) $(document).clearQueue('ConvertCardsToVipTime');
-
-                    if (isStop || index === cardList.length - 1) {
-                        if (successNum > 0) {
-                            Log.push('将卡片转换为VIP时间', `共有\`${successNum}\`张卡片成功为VIP时间`, {
-                                gain: { 'VIP小时': totalVipTime, '能量': totalEnergy },
-                                pay: { '卡片': -successNum }
-                            });
-                        }
-                        Msg.destroy();
-                        console.log(`共有${successNum}张卡片转换成功，共有${failNum}张卡片转换失败，VIP小时+${totalVipTime}，能量+${totalEnergy}`);
-                        Msg.show(`<strong>共有<em>${successNum}</em>张卡片转换成功${failNum > 0 ? `，共有<em>${failNum}</em>张卡片转换失败` : ''}</strong>` + `<i>VIP小时<em>+${totalVipTime}</em></i><i>能量<em>+${totalEnergy}</em></i>`, -1);
-                        $('.kf_fw_ig2 .pd_card_chk:checked').closest('td').fadeOut('normal', function () {
-                            let $parent = $(this).parent();
-                            $(this).remove();
-                            if (!$parent.children().length) $parent.remove();
-                        });
-                    } else {
-                        setTimeout(function () {
-                            $(document).dequeue('ConvertCardsToVipTime');
-                        }, _Const2.default.defAjaxInterval);
-                    }
-                }
-            });
-        });
-    });
-    $(document).dequeue('ConvertCardsToVipTime');
-};
-
-/**
- * 添加开启批量模式的按钮
- */
-const addStartBatchModeButton = exports.addStartBatchModeButton = function () {
-    let safeId = Public.getSafeId();
-    if (!safeId) return;
-    if (!$('.kf_fw_ig2 a[href^="kf_fw_card_my.php?id="]').length) return;
-    $('<div class="pd_item_btns"><button>开启批量模式</button></div>').insertAfter('.kf_fw_ig2').find('button').click(function () {
-        let $this = $(this);
-        let $cardLines = $('.kf_fw_ig2 > tbody > tr:gt(2)');
-        if ($this.text() === '开启批量模式') {
-            $this.text('关闭批量模式');
-            $cardLines.on('click', 'a', function (e) {
-                e.preventDefault();
-                $(this).next('.pd_card_chk').click();
-            }).find('td').has('a').each(function () {
-                let matches = /kf_fw_card_my\.php\?id=(\d+)/.exec($(this).find('a').attr('href'));
-                if (matches) {
-                    $(this).css('position', 'relative').append(`<input class="pd_card_chk" type="checkbox" value="${matches[1]}">`);
-                }
-            });
-            let playedCardList = [];
-            $('.kf_fw_ig2 > tbody > tr:nth-child(2) > td').each(function () {
-                let matches = /kf_fw_card_my\.php\?id=(\d+)/.exec($(this).find('a').attr('href'));
-                if (!matches) return;
-                playedCardList.push(parseInt(matches[1]));
-            });
-
-            /**
-             * 不选择已出战的卡片
-             */
-            const uncheckPlayedCard = function () {
-                for (let id of playedCardList) {
-                    $cardLines.find('td').has(`a[href="kf_fw_card_my.php?id=${id}"]`).find('[type="checkbox"]').prop('checked', false);
-                }
-            };
-
-            let $btns = $(`
-<label><input name="uncheckPlayedCard" type="checkbox" checked> 不选已出战的卡片</label>
-<button name="selectOnlyOne" type="button">每类只保留一张</button>
-<button name="selectAll" type="button">全选</button>
-<button name="selectInverse" type="button">反选</button><br>
-<button name="convertCardsToVipTime" type="button">转换为VIP时间</button>
-`).insertBefore($this);
-            $btns.filter('[name="selectOnlyOne"]').click(function () {
-                Util.selectAll($cardLines.find('[type="checkbox"]'));
-                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
-                let cardTypeList = new Set();
-                $cardLines.find('a > img').each(function () {
-                    cardTypeList.add($(this).attr('src'));
-                });
-                for (let src of cardTypeList) {
-                    let $cardElems = $cardLines.find('td').has(`img[src="${src}"]`);
-                    let totalNum = $cardElems.length;
-                    let checkedNum = $cardElems.has('[type="checkbox"]:checked').length;
-                    if (totalNum > 1) {
-                        if (totalNum === checkedNum) {
-                            $cardElems.eq(0).find('[type="checkbox"]:checked').prop('checked', false);
-                        }
-                    } else {
-                        $cardElems.find('[type="checkbox"]:checked').prop('checked', false);
-                    }
-                }
-            }).end().filter('[name="selectAll"]').click(function () {
-                Util.selectAll($cardLines.find('[type="checkbox"]'));
-                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
-            }).end().filter('[name="selectInverse"]').click(function () {
-                Util.selectInverse($cardLines.find('[type="checkbox"]'));
-                if ($btns.find('[name="uncheckPlayedCard"]').prop('checked')) uncheckPlayedCard();
-            }).end().filter('[name="convertCardsToVipTime"]').click(function () {
-                Msg.destroy();
-                let cardList = [];
-                $cardLines.find('[type="checkbox"]:checked').each(function () {
-                    cardList.push(parseInt($(this).val()));
-                });
-                if (!cardList.length) return;
-                if (!confirm(`共选择了${cardList.length}张卡片，是否将卡片批量转换为VIP时间？`)) return;
-                Msg.wait(`<strong>正在批量转换中&hellip;</strong><i>剩余：<em class="pd_countdown">${cardList.length}</em></i>` + `<a class="pd_stop_action" href="#">停止操作</a>`);
-                convertCardsToVipTime(cardList, safeId);
-            });
-        } else {
-            $this.text('开启批量模式');
-            $cardLines.off('click').find('.pd_card_chk').remove();
-            $this.prevAll().remove();
-        }
-    });
-};
-
-/**
- * 显示抽卡提醒
- */
-const showDrawCardTips = exports.showDrawCardTips = function () {
-    /**
-     * 显示剩余时间
-     * @param {Date} nextTime 下次抽卡时间
-     */
-    const showWaitTime = function (nextTime) {
-        let interval = nextTime - $.now();
-        let hours = 0,
-            minutes = 0;
-        if (interval > 0) {
-            minutes = Math.ceil(interval / 60 / 1000);
-            hours = Math.floor(minutes / 60);
-            minutes -= hours * 60;
-        }
-        $(`<span id="pdDrawCardInterval" style="${interval <= 0 ? 'color: #ff0080;' : ''}"> (抽卡：${hours > 0 ? hours + '时' : ''}${minutes}分)</span>`).appendTo('#pdLoot').click(function () {
-            if (interval <= 0) {
-                location.href = 'kf_fw_ig_mycard.php';
-                return false;
-            }
-        });
-    };
-
-    let nextTime = parseInt(Util.getCookie(_Const2.default.drawCardCookieName));
-    if (nextTime > 0) {
-        showWaitTime(new Date(nextTime));
-    } else {
-        console.log('获取抽卡剩余时间Start');
-        $.get('kf_fw_ig_mycard.php?t=' + $.now(), function (html) {
-            let matches = /点击抽卡\(请等待(\d+)分钟\)/.exec(html);
-            if (matches) {
-                let minutes = parseInt(matches[1]);
-                let nextTime = Util.getDate(`+${minutes}m`);
-                let expires = nextTime <= new Date() ? Util.getDate(`+${_Const2.default.drawCardRetryInterval}m`) : nextTime;
-                Util.setCookie(_Const2.default.drawCardCookieName, nextTime.getTime(), expires);
-                if (minutes === 0) {
-                    Msg.show('<strong>当前已可抽卡，是否抽卡？</strong><a href="/kf_fw_ig_mycard.php">点此抽卡</a>', -1);
-                }
-                if (Info.isInHomePage) {
-                    showWaitTime(new Date(nextTime));
-                }
-                Script.runFunc('Card.showDrawCardTips_complete_', { minutes });
-            }
-        });
-    }
-};
-
-/**
- * 处理角色卡片页面
- */
-const handleMyCardPage = exports.handleMyCardPage = function () {
-    let $drawCardLink = $('a[href^="kf_fw_ig_mycard.php?card=new"]:first');
-
-    $drawCardLink.click(() => Util.deleteCookie(_Const2.default.drawCardCookieName));
-    let matches = /点击抽卡\(请等待(\d+)分钟\)/.exec($drawCardLink.text());
-    if (matches) {
-        let minutes = parseInt(matches[1]);
-        let nextTime = Util.getDate(`+${minutes}m`);
-        let expires = nextTime <= new Date() ? Util.getDate(`+${_Const2.default.drawCardRetryInterval}m`) : nextTime;
-        Util.setCookie(_Const2.default.drawCardCookieName, nextTime.getTime(), expires);
-    }
-};
-
-},{"./Const":6,"./Log":11,"./Msg":15,"./Public":18,"./Script":20,"./Util":23}],4:[function(require,module,exports){
+},{"./Const":5,"./Log":10,"./Msg":13,"./Public":16,"./Script":18,"./TmpLog":20,"./Util":21}],3:[function(require,module,exports){
 /* 配置模块 */
 'use strict';
 
@@ -947,10 +652,6 @@ var Log = _interopRequireWildcard(_Log);
 var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
-
-var _LootLog = require('./LootLog');
-
-var LootLog = _interopRequireWildcard(_LootLog);
 
 var _Item = require('./Item');
 
@@ -994,53 +695,17 @@ const Config = exports.Config = {
     // 在操作后所剩余的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
     promoteHaloLimit: 0,
 
-    // 是否自动争夺，true：开启；false：关闭
-    autoLootEnabled: false,
-    // 自动争夺的目标攻击层数（设为0表示攻击到被击败为止）
-    attackTargetLevel: 0,
-    // 在服务器状态为指定状态时才进行自动争夺，Any：任意；IdleOrNormal：空闲或正常；Idle：空闲（选择“空闲”状态有错过争夺的可能，请慎重考虑）
-    autoLootServerStatusType: 'Any',
-    // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
-    autoSaveLootLogInSpecialCaseEnabled: false,
-    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
-    checkLootAfterTime: '00:05:00',
-    // 历史争夺记录的最大保存次数
-    lootLogSaveMaxNum: 7,
-    // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭
-    autoOpenBoxesAfterLootEnabled: false,
-    // 是否在首页显示改点剩余次数信息（冷却时则显示倒计时），true：开启；false：关闭
-    showChangePointsInfoEnabled: false,
-    // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
-    levelPointList: {},
-    // 关键层列表，用于“攻击到下一关键层前”按钮，例：[1,11,15,20]
-    keyLevelList: [],
-    // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
-    autoChangeLevelPointsEnabled: false,
-    // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
-    customPointsScriptEnabled: false,
-    // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
-    unusedPointNumAlertEnabled: true,
-    // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
-    slowAttackEnabled: false,
-    // 是否总是打开个人属性/装备界面，true：开启；false：关闭
-    alwaysOpenPointAreaEnabled: false,
-    // 是否在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒），true：开启；false：关闭
-    alertServerStatusChangeEnabled: false,
-    // 在服务器状态发生变化时进行提醒的类型，0：总是提醒；1：仅当变为“繁忙”时提醒
-    alertServerStatusChangeType: 0,
-    // 是否显示分层NPC统计，true：开启；false：关闭
-    showLevelEnemyStatEnabled: false,
-    // 是否显示精简争夺记录，true：开启；false：关闭
-    showLiteLootLogEnabled: false,
-    // 是否显示抽卡提醒，true：开启；false：关闭
-    showDrawCardTipsEnabled: false,
-
     // 是否自动购买物品，true：开启；false：关闭
     autoBuyItemEnabled: false,
     // 购买物品ID列表，例：['101','103|102']
     buyItemIdList: [],
     // 在当天的指定时间之后购买物品（本地时间），例：00:40:00
     buyItemAfterTime: '00:40:00',
+
+    // 是否已开启咕咕镇，true：开启；false：关闭
+    guGuZhenEnabled: false,
+    // 是否全选咕咕镇协议，true：开启；false：关闭
+    guGuZhenSelectAllEnabled: false,
 
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
@@ -1086,8 +751,6 @@ const Config = exports.Config = {
     autoSavePostContentWhenSubmitEnabled: false,
     // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
-    // 是否屏蔽帖子页面上无用的按钮，true：开启；false：关闭
-    blockUselessThreadButtonsEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -1120,6 +783,8 @@ const Config = exports.Config = {
     highlightFollowUserThreadInHPEnabled: true,
     // 是否高亮所关注用户在帖子列表页面下的帖子链接，true：开启；false：关闭
     highlightFollowUserThreadLinkEnabled: true,
+    // 是否高亮所关注用户在帖子页面下的楼层的边框，true：开启；false：关闭
+    highlightFollowUserFloorEnabled: true,
     // 是否开启屏蔽用户的功能，true：开启；false：关闭
     blockUserEnabled: false,
     // 屏蔽用户的默认屏蔽类型，0：屏蔽主题和回贴；1：仅屏蔽主题；2：仅屏蔽回贴
@@ -1237,7 +902,6 @@ const clear = exports.clear = () => Util.deleteData(_Info2.default.storageType =
 const changeStorageType = exports.changeStorageType = function (storageType) {
     let log = Log.read();
     let tmpLog = TmpLog.read();
-    let lootLog = LootLog.read();
     let armsInfo = Item.readArmsInfo();
     let buyThreadLog = Read.readBuyThreadLog();
     _Info2.default.storageType = storageType;
@@ -1247,7 +911,6 @@ const changeStorageType = exports.changeStorageType = function (storageType) {
             write();
             Log.write(log);
             TmpLog.write(tmpLog);
-            LootLog.write(lootLog);
             Item.writeArmsInfo(armsInfo);
             Read.writeBuyThreadLog(buyThreadLog);
         }
@@ -1289,8 +952,6 @@ const clearData = exports.clearData = function (name) {
         clear();
     } else if (name === 'log') {
         Log.clear();
-    } else if (name === 'lootLog') {
-        LootLog.clear();
     } else if (name === 'armsInfo') {
         Item.clearArmsInfo();
     } else if (name === 'buyThreadLog') {
@@ -1298,7 +959,7 @@ const clearData = exports.clearData = function (name) {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Read":19,"./TmpLog":22,"./Util":23}],5:[function(require,module,exports){
+},{"./Const":5,"./Info":8,"./Item":9,"./Log":10,"./Read":17,"./TmpLog":20,"./Util":21}],4:[function(require,module,exports){
 /* 设置对话框模块 */
 'use strict';
 
@@ -1418,56 +1079,6 @@ const show = exports.show = function () {
       </label>
     </fieldset>
     <fieldset>
-      <legend>争夺相关</legend>
-      <label>
-        <input name="autoLootEnabled" type="checkbox" data-disabled="[name=autoLootServerStatusType]"
-          data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> 自动争夺
-        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
-        <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
-      </label><br>
-      <label>
-        在服务器状态为
-        <select name="autoLootServerStatusType" required>
-          <option value="Any">任意</option>
-          <option value="IdleOrNormal">空闲或正常</option>
-          <option value="Idle">空闲</option>
-        </select>
-        时才自动争夺
-        <span class="pd_cfg_tips" title="在服务器状态为指定状态时才进行自动争夺（选择“空闲”状态有可能错过争夺，请慎重考虑）">[?]</span>
-      </label><br>
-      <label>
-        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> 在不使用助手争夺的情况下自动保存争夺记录
-        <span class="pd_cfg_tips" title="在不使用助手争夺的情况下自动检查并保存争夺记录（使用助手进行争夺的用户请勿勾选此选项）">[?]</span>
-      </label><br>
-      <label>
-        在 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后争夺
-        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
-        <span class="pd_cfg_tips" title="争夺记录最大保存次数，默认值：${_Config.Config.lootLogSaveMaxNum}，最大值：20">[?]</span>
-      </label><br>
-      <label>
-        <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> 在争夺后自动一键开盒
-        <span class="pd_cfg_tips" title="在争夺完后自动一键开盒（并执行后续操作），要打开的盒子种类和要执行的后续操作请在我的物品页面进行设定">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
-        <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
-      </label><br>
-      <label>
-        <input name="showDrawCardTipsEnabled" type="checkbox"> 显示抽卡提醒
-        <span class="pd_cfg_tips" title="显示抽卡提醒">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="alwaysOpenPointAreaEnabled" type="checkbox"> 总是打开属性界面
-        <span class="pd_cfg_tips" title="在争夺首页总是打开个人属性/装备界面">[?]</span>
-      </label>
-    </fieldset>
-    <fieldset>
       <legend>
         <label><input name="autoBuyItemEnabled" type="checkbox"> 自动购买物品</label>
       </legend>
@@ -1510,6 +1121,24 @@ const show = exports.show = function () {
         <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
       </label>
     </fieldset>
+    <fieldset>
+      <legend>关注和屏蔽</legend>
+      <label>
+        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> 关注用户
+        <span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> 屏蔽用户
+        <span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> 屏蔽帖子
+        <span class="pd_cfg_tips" title="开启屏蔽标题中包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
+    </fieldset>
   </div>
 
   <div class="pd_cfg_panel">
@@ -1531,6 +1160,10 @@ const show = exports.show = function () {
       <label>
         <input name="turnPageViaKeyboardEnabled" type="checkbox"> 通过左右键翻页
         <span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label><br>
       <label>
         <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> 自动更换ID颜色
@@ -1574,14 +1207,6 @@ const show = exports.show = function () {
       <label class="pd_cfg_ml">
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
-      </label><br>
-      <label>
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${_Info2.default.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
-        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="blockUselessThreadButtonsEnabled" type="checkbox"> 屏蔽无用按钮
-        <span class="pd_cfg_tips" title="屏蔽帖子页面上无用的按钮（如：非自己楼层上的编辑按钮）">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -1643,24 +1268,6 @@ const show = exports.show = function () {
         <input name="adminMemberEnabled" type="checkbox"> 我是管理成员
         <span class="pd_cfg_tips" title="管理成员可开启此功能，助手会开启部分只有管理成员才能使用的功能，非管理成员开启此功能无效">[?]</span>
       </label>
-    </fieldset>
-    <fieldset>
-      <legend>关注和屏蔽</legend>
-      <label>
-        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> 关注用户
-        <span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">详细设置&raquo;</a><br>
-      <label>
-        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> 屏蔽用户
-        <span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">详细设置&raquo;</a><br>
-      <label>
-        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> 屏蔽帖子
-        <span class="pd_cfg_tips" title="开启屏蔽标题中包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
     </fieldset>
   </div>
 </div>
@@ -1782,18 +1389,6 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
-    let $txtCheckLootAfterTime = $dialog.find('[name="checkLootAfterTime"]');
-    let checkLootAfterTime = $.trim($txtCheckLootAfterTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(checkLootAfterTime)) {
-        alert('在指定时间之后争夺格式不正确');
-        $txtCheckLootAfterTime.select().focus();
-        return false;
-    } else if (checkLootAfterTime < '00:01:00') {
-        alert('在指定时间之后争夺不得小于00:01:00');
-        $txtCheckLootAfterTime.select().focus();
-        return false;
-    }
-
     let $txtBuyItemIdList = $dialog.find('[name="buyItemIdList"]');
     let buyItemIdList = $.trim($txtBuyItemIdList.val());
     if ($dialog.find('[name="autoBuyItemEnabled"]').prop('checked')) {
@@ -1849,7 +1444,7 @@ const showClearDataDialog = function () {
   <fieldset style="margin-top: 5px;">
     <legend>请选择想清除的设置或日志（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
     <select name="settingsAndLogs" size="5" style="width: 340px;" multiple>
-      <option value="config">助手设置</option><option value="log">助手日志</option><option value="lootLog">争夺记录</option>
+      <option value="config">助手设置</option><option value="log">助手日志</option>
       <option value="armsInfo">装备信息</option><option value="buyThreadLog">购买帖子记录</option>
     </select>
   </fieldset>
@@ -2067,6 +1662,10 @@ const showFollowUserDialog = function () {
       <input name="highlightFollowUserThreadLinkEnabled" type="checkbox"> 高亮所关注用户的帖子链接
       <span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span>
     </label><br>
+    <label>
+      <input name="highlightFollowUserFloorEnabled" type="checkbox"> 高亮所关注用户的楼层
+      <span class="pd_cfg_tips" title="高亮所关注用户在帖子页面下的楼层的边框">[?]</span>
+    </label><br>
   </div>
   <ul id="pdFollowUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>
   <div style="margin-top: 5px;">
@@ -2109,6 +1708,7 @@ const showFollowUserDialog = function () {
         e.preventDefault();
         Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
         Config.highlightFollowUserThreadLinkEnabled = $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked');
+        Config.highlightFollowUserFloorEnabled = $dialog.find('[name="highlightFollowUserFloorEnabled"]').prop('checked');
         Config.followUserList = [];
         $followUserList.find('li').each(function () {
             let $this = $(this);
@@ -2159,6 +1759,7 @@ const showFollowUserDialog = function () {
 
     $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
     $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
+    $dialog.find('[name="highlightFollowUserFloorEnabled"]').prop('checked', Config.highlightFollowUserFloorEnabled);
     for (let user of Config.followUserList) {
         addFollowUser(user.name);
     }
@@ -2530,7 +2131,7 @@ const showBuyItemTipsDialog = function () {
     Dialog.show(dialogName);
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Public":18,"./Script":20,"./TmpLog":22,"./Util":23}],6:[function(require,module,exports){
+},{"./Config":3,"./Const":5,"./Dialog":6,"./Info":8,"./Public":16,"./Script":18,"./TmpLog":20,"./Util":21}],5:[function(require,module,exports){
 /* 常量模块 */
 'use strict';
 
@@ -2550,14 +2151,8 @@ const Const = {
 
     // UTC时间与论坛时间之间的时差（小时）
     forumTimezoneOffset: -8,
-    // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
-    getDailyBonusAfterTime: '00:35:00',
-    // 遭遇敌人统计的指定最近层数
-    enemyStatLatestLevelNum: 10,
-    // 争夺攻击时每隔指定层数进行一次检查，可设置为函数来返回值
-    lootAttackPerCheckLevel() {
-        return Config.alertServerStatusChangeEnabled ? 10 : 20; // 前者为开启“在服务器状态发生变化时进行提醒”时的间隔层数，后者为未开启时的间隔层数
-    },
+    // 在当天的指定时间之后领取每日奖励（北京时间），例：00:20:00
+    getDailyBonusAfterTime: '00:20:00',
     // 新装备标志的持续时间（天）
     newArmMarkDuration: 1,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735&sf=b09
@@ -2577,22 +2172,12 @@ const Const = {
     promoteHaloLimitNextActionInterval: 480,
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
-    // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 420,
-    // 争夺攻击进行中的有效期（分钟）
-    lootAttackingExpires: 10,
-    // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
-    changePointsInfoExpires: 30,
-    // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
-    checkLootInterval: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
     smLevelUpAlertInterval: 3,
     // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
-    // 抽卡剩余时间为0时的重试间隔（分钟）
-    drawCardRetryInterval: 30,
 
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
@@ -2605,11 +2190,6 @@ const Const = {
     },
     // 部分操作的最小时间间隔（毫秒）
     minActionInterval: 1000,
-    // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
-    lootAttackInterval() {
-        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 3000) + 4000; // 慢速情况
-        else return Math.floor(Math.random() * 200) + 1000; // 正常情况
-    },
     // 银行相关操作的时间间隔（毫秒）
     bankActionInterval: 5000,
 
@@ -2673,7 +2253,7 @@ const Const = {
 
 exports.default = Const;
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /* 对话框模块 */
 'use strict';
 
@@ -2805,7 +2385,7 @@ const close = exports.close = function (id) {
     return false;
 };
 
-},{"./Info":9,"./Public":18,"./Util":23}],8:[function(require,module,exports){
+},{"./Info":8,"./Public":16,"./Util":21}],7:[function(require,module,exports){
 /* 首页模块 */
 'use strict';
 
@@ -2937,7 +2517,7 @@ const addPromoteHaloInterval = exports.addPromoteHaloInterval = function () {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./TmpLog":22,"./Util":23}],9:[function(require,module,exports){
+},{"./Const":5,"./Info":8,"./Log":10,"./Loot":12,"./Msg":13,"./TmpLog":20,"./Util":21}],8:[function(require,module,exports){
 /* 信息模块 */
 'use strict';
 
@@ -2978,7 +2558,7 @@ const Info = {
 
 exports.default = Info;
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /* 物品模块 */
 'use strict';
 
@@ -5360,7 +4940,7 @@ const showBuyItemTips = exports.showBuyItemTips = function () {
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Loot":13,"./Msg":15,"./Public":18,"./Script":20,"./Util":23}],11:[function(require,module,exports){
+},{"./Config":3,"./Const":5,"./Dialog":6,"./Info":8,"./Log":10,"./Loot":12,"./Msg":13,"./Public":16,"./Script":18,"./Util":21}],10:[function(require,module,exports){
 /* 日志模块 */
 'use strict';
 
@@ -5464,7 +5044,7 @@ const getMergeLog = exports.getMergeLog = function (log, newLog) {
     return log;
 };
 
-},{"./Const":6,"./Info":9,"./Util":23}],12:[function(require,module,exports){
+},{"./Const":5,"./Info":8,"./Util":21}],11:[function(require,module,exports){
 /* 日志对话框模块 */
 'use strict';
 
@@ -6016,14 +5596,14 @@ const showLogText = function (log, $dialog) {
     $dialog.find('[name="text"]').val(content);
 };
 
-},{"./Config":4,"./Dialog":7,"./Item":10,"./Log":11,"./Read":19,"./Script":20,"./Util":23}],13:[function(require,module,exports){
+},{"./Config":3,"./Dialog":6,"./Item":9,"./Log":10,"./Read":17,"./Script":18,"./Util":21}],12:[function(require,module,exports){
 /* 争夺模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getChangePointsCountDown = exports.autoSaveLootLog = exports.checkLoot = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLog = exports.getLootInfo = exports.updateLootInfo = exports.lootAttack = exports.recordPointsLog = exports.changePointsAndArms = exports.getRealProperty = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
+exports.addGuGuZhenSelectAllBtn = exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = undefined;
 
 var _Info = require('./Info');
 
@@ -6036,10 +5616,6 @@ var Util = _interopRequireWildcard(_Util);
 var _Msg = require('./Msg');
 
 var Msg = _interopRequireWildcard(_Msg);
-
-var _Dialog = require('./Dialog');
-
-var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Const = require('./Const');
 
@@ -6055,10 +5631,6 @@ var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
 
-var _LootLog = require('./LootLog');
-
-var LootLog = _interopRequireWildcard(_LootLog);
-
 var _Script = require('./Script');
 
 var Script = _interopRequireWildcard(_Script);
@@ -6067,2428 +5639,9 @@ var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
 
-var _Item = require('./Item');
-
-var Item = _interopRequireWildcard(_Item);
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// SafeID
-let safeId;
-// 争夺属性区域
-let $properties;
-// 点数区域
-let $points;
-// 装备区域
-let $armArea;
-// 争夺记录区域容器
-let $logBox;
-// 争夺记录区域
-let $log;
-// 争夺记录
-let log = '';
-// 各层争夺记录列表
-let logList = [];
-// 各层战斗信息列表
-let levelInfoList = [];
-// 当前争夺属性
-let propertyList = {};
-// 额外点数列表
-let extraPointsList = {};
-// 光环信息
-let haloInfo = {};
-// 当前装备情况
-let currentArmInfo = new Map();
-// 装备等级情况列表
-let armsLevelList = new Map();
-// 道具使用情况列表
-let itemUsedNumList = new Map();
-// 修改点数可用次数
-let changePointsAvailableCount = 0;
-// 点数分配记录列表
-let pointsLogList = [];
-// 服务器状态
-let serverStatus = '';
-
-/**
- * 初始化
- */
-const init = exports.init = function () {
-    safeId = Public.getSafeId();
-    if (!safeId) return;
-
-    $properties = $('.kf_fw_ig3:first');
-    $points = $('#wdsx .kf_fw_ig1:first');
-    $points.find('> tbody > tr:first-child > td').attr('id', 'pdArmArea');
-    $armArea = $points.find('#pdArmArea');
-
-    let tmpHaloInfo = TmpLog.getValue(_Const2.default.haloInfoTmpLogName);
-    if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
-        let diff = $.now() - tmpHaloInfo.time;
-        if (diff >= 0 && diff < _Const2.default.tmpHaloInfoExpires * 60 * 1000) {
-            delete tmpHaloInfo.time;
-            setHaloInfo(tmpHaloInfo);
-            enhanceLootIndexPage();
-        } else readHaloInfo(true);
-    } else readHaloInfo(true);
-};
-
-/**
- * 增强争夺首页
- */
-const enhanceLootIndexPage = exports.enhanceLootIndexPage = function () {
-    Script.runFunc('Loot.enhanceLootIndexPage_before_');
-    let propertiesHtml = $properties.html();
-    propertyList = getLootPropertyList(propertiesHtml);
-    itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
-    armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-
-    let armHtml = $armArea.html();
-    if (armHtml.includes('（装备中）')) {
-        let [armInfoHtml] = armHtml.split('<br><br>');
-        let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
-        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
-    } else {
-        console.log('需要至少使用一件装备才能在此页面正常使用KFOL助手的功能');
-        return;
-    }
-
-    $logBox = $('#pk_text_div');
-    $log = $('#pk_text');
-    log = $log.html();
-    logList = getLogList(log);
-    levelInfoList = getLevelInfoList(logList);
-    if (/你被击败了|今日战斗已完成|开始争夺战斗/.test(log)) {
-        localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
-    } else {
-        pointsLogList = getTempPointsLogList(logList);
-    }
-
-    handlePropertiesArea();
-    handlePointsArea();
-    addLevelPointListSelect();
-    addAttackBtns();
-    if (Config.alwaysOpenPointAreaEnabled) {
-        $('#wdsx').show();
-    }
-
-    /*if (/你被击败了|今日战斗已完成/.test(log) && !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled && !Util.getCookie(Const.lootCompleteCookieName)) {
-        Util.setCookie(Const.lootCompleteCookieName, 2, getAutoLootCookieDate());
-    }*/ // 临时
-    if (/你被击败了|今日战斗已完成/.test(log) && parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) !== 2) {
-        Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
-        Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
-    } // 临时
-
-    $(document).dequeue('AutoAction'); // 临时
-    Script.runFunc('Loot.enhanceLootIndexPage_after_'); // 临时
-    return; // 临时
-
-    addLootLogHeader();
-    showLogStat(levelInfoList);
-
-    if (Config.autoLootEnabled && !/你被击败了|今日战斗已完成/.test(log) && !$.isNumeric(Util.getCookie(_Const2.default.changePointsInfoCookieName)) && !Util.getCookie(_Const2.default.lootAttackingCookieName) && ![-1, -2].includes(parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)))) {
-        let serverStatusAllow = !(Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' || Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常');
-        if (serverStatusAllow) {
-            $(document).queue('AutoAction', () => autoLoot());
-        }
-    }
-    $(document).dequeue('AutoAction');
-    Script.runFunc('Loot.enhanceLootIndexPage_after_');
-};
-
-/**
- * 处理争夺属性区域
- */
-const handlePropertiesArea = function () {
-    $properties.attr('id', 'pdPropertiesArea').find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
-
-    let $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:last').attr('id', 'pdServerStatus');
-    if ($serverStatus.length > 0) {
-        serverStatus = $serverStatus.text().trim();
-        $serverStatus.attr('id', 'pdServerStatus').data('prev-status', serverStatus);
-    }
-
-    $properties.on('change', '.pd_arm_level', function () {
-        let type = $(this).data('type');
-        let diffName = 'Weapon';
-        if (type === '护甲') diffName = 'Armor';else if (type === '项链') diffName = 'Necklace';
-        $(`#pd${diffName}ExpDiff em`).text(armsLevelList.get(type)['经验'] - Math.pow(armsLevelList.get(type)['等级'] + 1, 2) * 2);
-    });
-    $properties.find('input[value^="武器等级"]').addClass('pd_arm_level').attr('data-type', '武器').after(`<span id="pdWeaponExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`).trigger('change');
-    $properties.find('input[value^="护甲等级"]').addClass('pd_arm_level').attr('data-type', '护甲').after(`<span id="pdArmorExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`).trigger('change');
-    $properties.find('input[value^="项链等级"]').addClass('pd_arm_level').attr('data-type', '项链').after(`<span id="pdNecklaceExpDiff" class="pd_property_diff" title="下一级经验差值" style="color: #393;">(<em></em>)</span>`).trigger('change');
-
-    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
-        e.preventDefault();
-        let $this = $(this);
-        let coefficient = Math.floor((propertyList['可分配属性点'] - 50 - (itemUsedNumList.get('档案室钥匙') === 30 ? 30 : 0) - (itemUsedNumList.get('消逝之药') === 10 ? 120 : 0)) / 5);
-        let copyText = coefficient + ' ' + Math.floor(haloInfo['全属性'] * 1000) + '\n';
-        for (let value of itemUsedNumList.values()) {
-            copyText += value + ' ';
-        }
-        $this.data('copy-text', copyText.trim());
-        console.log('KFOL计算器的部分参数设置：\n' + copyText.trim());
-        if (!Util.copyText($this, 'KFOL计算器的部分参数设置已复制')) {
-            alert('你的浏览器不支持复制，请打开Web控制台查看');
-        }
-    });
-
-    // 临时禁用
-    /*let tipsIntro = '灵活和智力的抵消机制：\n战斗开始前，会重新计算战斗双方的灵活和智力；灵活=(自己的灵活值-(双方灵活值之和 x 33%))；智力=(自己的智力值-(双方智力值之和 x 33%))';
-    let html = $properties.html()
-        .replace(/(攻击力：)(\d+)/, '$1<span id="pdPro_s1" title="原值：$2">$2</span> <span id="pdNew_s1"></span>')
-        .replace(
-            /(生命值：)(\d+)\s*\(最大(\d+)\)/,
-            '$1<span id="pdCurrentLife">$2</span> (最大<span id="pdPro_s2" title="原值：$3">$3</span>) <span id="pdNew_s2"></span>'
-        )
-        .replace(/(攻击速度：)(\d+)/, '$1<span id="pdPro_d1" title="原值：$2">$2</span> <span id="pdNew_d1"></span>')
-        .replace(
-            /(暴击几率：)(\d+)%\s*\(抵消机制见说明\)/,
-            `$1<span id="pdPro_d2" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_d2" style="color: #666;"></span> ` +
-            `<span id="pdNew_d2"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`
-        )
-        .replace(
-            /(技能释放概率：)(\d+)%\s*\(抵消机制见说明\)/,
-            `$1<span id="pdPro_i1" title="原值：$2">$2</span>% <span class="pd_cfg_tips" id="pdReal_i1" style="color: #666;"></span> ` +
-            `<span id="pdNew_i1"></span> <span class="pd_cfg_tips" title="${tipsIntro}">[?]</span>`
-        )
-        .replace(/(防御：)(\d+)%减伤/, '$1<span id="pdPro_i2" title="原值：$2">$2</span>%减伤 <span id="pdNew_i2"></span>')
-        .replace(
-            '技能伤害：攻击+(体质*5)+(智力*5)',
-            '技能伤害：<span class="pd_custom_tips" id="pdSkillAttack" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5"></span>'
-        )
-        .replace(/(可分配属性点：)(\d+)/, '$1<span id="pdDistributablePoint">$2</span>');
-    $properties.html(html).find('br:first').after('<span>剩余属性点：<span id="pdSurplusPoint"></span></span><br>');
-      $properties.on('click', '[id^="pdPro_"]', function () {
-        let $this = $(this);
-        $this.hide();
-        let name = $this.attr('id').replace('pdPro_', '');
-        let step = 1;
-        if (name === 's1') step = 5;
-        else if (name === 's2') step = 20;
-        else if (name === 'd1') step = 2;
-        $(`<input class="pd_input" data-name="${name}" type="number" value="${parseInt($this.text())}" min="1" step="${step}" ` +
-            `style="width: 65px; margin-right: 5px;" title="${$this.attr('title')}">`
-        ).insertAfter($this).focus().select()
-            .blur(function () {
-                let $this = $(this);
-                let name = $this.data('name');
-                let num = parseInt($this.val());
-                if (num > 0) {
-                    $points.find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
-                }
-                $this.prev().show().end().remove();
-            })
-            .keydown(function (e) {
-                let $this = $(this);
-                if (e.keyCode === 13) $this.blur();
-                else if (e.keyCode === 27) $this.val('').blur();
-            });
-    }).find('[id^=pdPro_]').css('cursor', 'pointer');*/
-};
-
-/**
- * 处理点数区域
- */
-const handlePointsArea = function () {
-    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
-    $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
-
-    let [armInfoHtml, finalAddAdditionHtml = ''] = $armArea.html().split('<br><br>', 2);
-    let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
-    let newArmHtml = '';
-    if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
-    if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
-    if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
-    $armArea.html(newArmHtml);
-
-    $(`
-<tr>
-  <td>
-    装备ID和备注
-    <span class="pd_cfg_tips" title="可点击右边的“更换装备”按钮，也可手动填写装备ID。留空表示不更换装备。
-当文本框内的装备ID发生变化时，点击攻击按钮将会自动更换装备（点击“修改点数分配”按钮只会修改点数而不会更换装备）。">[?]</span>
-  </td>
-  <td>
-    <input class="pd_arm_input" name="weaponId" type="text" value="" maxlength="15" title="武器ID" placeholder="武器ID" style="width: 70px;">
-    <input class="pd_arm_input" name="weaponMemo" type="text" value="" maxlength="20" title="武器备注" placeholder="武器备注" style="width: 80px;">
-    <input class="pd_arm_input" name="armorId" type="text" value="" maxlength="15" title="护甲ID" placeholder="护甲ID" style="width: 70px;">
-    <input class="pd_arm_input" name="armorMemo" type="text" value="" maxlength="20" title="护甲备注" placeholder="护甲备注" style="width: 80px;">
-    <a class="pd_btn_link" data-name="changeArm" href="#" title="更换当前装备">更换装备</a>
-  </td>
-</tr>
-`).insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
-        e.preventDefault();
-        addOrChangeArm(0);
-    });
-
-    $(`
-<tr hidden> <!-- 临时 -->
-  <td>
-    关键层列表
-    <span class="pd_cfg_tips" title="KFOL计算器的关键层列表（各关键层以空格分隔），用于“攻击到下一关键层前”按钮">[?]</span>
-  </td>
-  <td>
-    <input name="keyLevelList" type="text" value="${Config.keyLevelList.join(' ')}" maxlength="100" placeholder="关键层列表" style="width: 200px;">
-    <a class="pd_btn_link" data-name="saveKeyLevelList" href="#" title="保存关键层设置">保存</a>
-  </td>
-</tr>
-`).insertBefore($points.find('> tbody > tr:last-child')).find('[data-name="saveKeyLevelList"]').click(function (e) {
-        e.preventDefault();
-        (0, _Config.read)();
-        let value = $.trim($points.find('input[name="keyLevelList"]').val());
-        Config.keyLevelList = value.split(' ').map(level => parseInt(level)).filter(level => level > 0);
-        (0, _Config.write)();
-        alert('设置已保存');
-    });
-
-    $points.find('input[name="prosubmit"]').replaceWith('<button name="prosubmit" type="submit">修改点数分配</button>');
-    $('<button name="changePointsAndArms" type="button" title="按照当前页面上的点数设置和装备ID进行修改" style="margin-left: 3px;">修改点数和装备</button>').insertAfter($points.find('button[name="prosubmit"]'))
-    //.css('display', /你被击败了|今日战斗已完成/.test(log) ? 'inline-block' : 'none') // 临时
-    .click(function () {
-        let $wait = Msg.wait('<strong>正在修改点数和装备&hellip;</strong>');
-        changePointsAndArms(-1, function (result) {
-            if (result === 'success') {
-                updateLootInfo(function () {
-                    Msg.remove($wait);
-                    Msg.show('<strong>已成功修改为指定的点数设置和装备ID</strong>', 3);
-                });
-            } else {
-                Msg.remove($wait);
-                if (result === 'ignore') {
-                    alert('当前页面的点数设置和装备ID没有发生变化');
-                } else if (result === 'timeout') {
-                    alert('连接超时，请重试');
-                }
-            }
-        });
-    });
-
-    let $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
-    $changeCount.wrapInner('<span id="pdChangeCount"></span>');
-    let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.text());
-    if (changeCountMatches) {
-        changePointsAvailableCount = parseInt(changeCountMatches[1]);
-    }
-    let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($changeCount.text());
-    if (countDownMatches) {
-        let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
-        Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
-    } else {
-        let count = parseInt(Util.getCookie(_Const2.default.changePointsInfoCookieName));
-        if (count !== changePointsAvailableCount) {
-            Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${_Const2.default.changePointsInfoExpires}m`));
-        }
-    }
-
-    extraPointsList = {
-        '耐力': parseInt($points.find('[name="p"]').next('span').text()),
-        '幸运': parseInt($points.find('[name="l"]').next('span').text())
-    };
-
-    /**
-     * 显示剩余属性点
-     */
-    const showSurplusPoint = function () {
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        $('#pdSurplusPoint').prop('hidden', surplusPoint === 0).css('color', surplusPoint !== 0 ? surplusPoint > 0 ? '#f03' : '#393' : '#000').find('em').text((surplusPoint > 0 ? '+' : '') + surplusPoint);
-    };
-
-    /**
-     * 显示各项点数的额外加成
-     * @param {jQuery} $point 点数字段对象
-     */
-    const showExtraPoint = function ($point) {
-        let num = parseInt($point.val());
-        if (!num || num < 0) num = 1;
-        let extraNum = getExtraPoint(getPointNameByFieldName($point.attr('name')), num);
-        $point.next('.pd_extra_point').text('+' + extraNum);
-    };
-
-    /**
-     * 显示各项点数的和值
-     * @param {jQuery} $point 点数字段对象
-     */
-    const showSumOfPoint = function ($point) {
-        let num = parseInt($point.val());
-        if (!num || num < 0) num = 1;
-        let extraNum = parseInt($point.next('.pd_extra_point').text());
-        $point.next('.pd_extra_point').next('.pd_sum_point').text('=' + (num + extraNum));
-    };
-
-    /**
-     * 显示技能伤害数值
-     */
-    const showSkillAttack = function () {
-        $('#pdSkillAttack').text(getSkillAttack(parseInt($points.find('[name="s1"]').val()) + parseInt($points.find('[name="s1"]').next('.pd_extra_point').text()), parseInt($points.find('[name="s2"]').val()) + parseInt($points.find('[name="s2"]').next('.pd_extra_point').text()), parseInt($points.find('[name="i1"]').val()) + parseInt($points.find('[name="i1"]').next('.pd_extra_point').text())));
-    };
-
-    $points.on('change', '.pd_point', function () {
-        let $this = $(this);
-        showSurplusPoint();
-        // showNewLootProperty($this); // 临时禁用
-        showExtraPoint($this);
-        showSumOfPoint($this);
-        // showSkillAttack(); // 临时禁用
-    }).on('click', '.pd_sum_point', function () {
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        if (!surplusPoint) return;
-        let $point = $(this).prev('span').prev('.pd_point');
-        if (!$point.length) return;
-        let num = parseInt($point.val());
-        if (isNaN(num) || num < 0) num = 0;
-        num = num + surplusPoint;
-        $point.val(num < 1 ? 1 : num).trigger('change');
-    }).closest('form').submit(() => {
-        Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
-        return checkPoints($points);
-    }).find('.pd_point').trigger('change');
-};
-
-/**
- * 检查点数设置
- * @param {jQuery} $points 点数字段对象
- * @returns {boolean} 检查结果
- */
-const checkPoints = function ($points) {
-    let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-    if (surplusPoint < 0) {
-        alert('剩余属性点为负，请重新填写');
-        return false;
-    } else if (surplusPoint > 0) {
-        if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
-    }
-    return true;
-};
-
-/**
- * 获取争夺属性列表
- * @param {string} html 争夺属性区域的HTML代码
- * @returns {{}} 争夺属性
- */
-const getLootPropertyList = function (html) {
-    let propertyList = {
-        '攻击力': 0,
-        '生命值': 0,
-        '最大生命值': 0,
-        '攻击速度': 0,
-        '暴击几率': 0,
-        '技能伤害': 0,
-        '技能释放概率': 0,
-        '防御': 0,
-        '可分配属性点': 0
-    };
-    let matches = /"(\d+)攻击力"/.exec(html);
-    if (matches) propertyList['攻击力'] = parseInt(matches[1]);
-    matches = /"(\d+)\/(\d+)生命值"/.exec(html);
-    if (matches) {
-        propertyList['生命值'] = parseInt(matches[1]);
-        propertyList['最大生命值'] = parseInt(matches[2]);
-    }
-    matches = /"(\d+)攻击速度"/.exec(html);
-    if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
-    /*matches = /暴击几率：(\d+)%/.exec(html);
-     if (matches) propertyList['暴击几率'] = parseInt(matches[1]);
-     matches = /技能伤害：(\d+)/.exec(html);
-     if (matches) propertyList['技能伤害'] = parseInt(matches[1]);
-     matches = /技能释放概率：(\d+)%/.exec(html);
-     if (matches) propertyList['技能释放概率'] = parseInt(matches[1]);*/ // 临时禁用
-    matches = /"(\d+(?:\.\d+)?)%减伤"/.exec(html);
-    if (matches) propertyList['防御'] = parseFloat(matches[1]);
-    matches = /"(\d+)\s*可分配属性"/.exec(html);
-    if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
-    return propertyList;
-};
-
-/**
- * 显示新的争夺属性
- * @param {jQuery} $point 点数字段对象
- */
-const showNewLootProperty = function ($point) {
-    let name = $point.attr('name');
-    let pointName = getPointNameByFieldName(name);
-    let point = parseInt($point.val());
-    if (isNaN(point) || point < 0) point = 0;
-    let oriPoint = parseInt($point.get(0).defaultValue);
-    let newValue = getPropertyByPoint(pointName, point),
-        diffValue = 0;
-    switch (pointName) {
-        case '力量':
-            diffValue = newValue - propertyList['攻击力'];
-            break;
-        case '体质':
-            diffValue = newValue - propertyList['最大生命值'];
-            break;
-        case '敏捷':
-            diffValue = newValue - propertyList['攻击速度'];
-            break;
-        case '灵活':
-            diffValue = newValue - propertyList['暴击几率'];
-            break;
-        case '智力':
-            diffValue = newValue - propertyList['技能释放概率'];
-            break;
-        case '意志':
-            diffValue = newValue - propertyList['防御'];
-            break;
-    }
-    $properties.find('#pdPro_' + name).text(newValue).css('color', diffValue !== 0 || oriPoint !== point ? '#00f' : '#000');
-    if (pointName === '灵活' || pointName === '智力') {
-        let nextLevel = getCurrentLevel(logList) + 1;
-        let text = '';
-        let extraPoint = getExtraPoint(pointName, point);
-        if (nextLevel % 10 === 0) {
-            text = getRealProperty(pointName, point + extraPoint, nextLevel, 'BOSS') + '%';
-        } else {
-            text = getRealProperty(pointName, point + extraPoint, nextLevel, '普通') + '%';
-            text += '|' + getRealProperty(pointName, point + extraPoint, nextLevel, '快速') + '%';
-        }
-        $properties.find('#pdReal_' + name).text(`(${text})`).attr('title', `第${nextLevel}层的实际${pointName === '灵活' ? '暴击几率' : '技能释放概率'} (${nextLevel % 10 === 0 ? 'BOSS' : '普通|快速'})`);
-    }
-
-    if (diffValue !== 0 || oriPoint !== point) $properties.find('#pdNew_' + name).text(`(${(diffValue >= 0 ? '+' : '') + diffValue})`).css('color', diffValue >= 0 ? '#f03' : '#393');else $properties.find('#pdNew_' + name).text('');
-};
-
-/**
- * 获取当前已分配的点数
- * @param {jQuery} $points 点数字段对象
- * @returns {number} 当前已分配的点数
- */
-const getCurrentAssignedPoint = exports.getCurrentAssignedPoint = function ($points) {
-    let usedPoint = 0;
-    $points.each(function () {
-        let $this = $(this);
-        let name = $this.attr('name');
-        let point = parseInt($this.val());
-        if (point && point > 0) usedPoint += point;
-    });
-    return usedPoint;
-};
-
-/**
- * 获取技能伤害的值
- * @param {number} power 力量总和
- * @param {number} life 体质总和
- * @param {number} intelligence 智力总和
- * @returns {number} 技能伤害的值
- */
-const getSkillAttack = exports.getSkillAttack = (power, life, intelligence) => power * 5 + life * 5 + intelligence * 5;
-
-/**
- * 根据字段名称获取点数名称
- * @param {string} fieldName 字段名称
- * @returns {string} 点数名称
- */
-const getPointNameByFieldName = exports.getPointNameByFieldName = function (fieldName) {
-    switch (fieldName) {
-        case 's1':
-            return '力量';
-        case 's2':
-            return '体质';
-        case 'd1':
-            return '敏捷';
-        case 'd2':
-            return '灵活';
-        case 'i1':
-            return '智力';
-        case 'i2':
-            return '意志';
-        case 'p':
-            return '耐力';
-        case 'l':
-            return '幸运';
-        case 'weaponId':
-            return '武器ID';
-        case 'weaponMemo':
-            return '武器备注';
-        case 'armorId':
-            return '护甲ID';
-        case 'armorMemo':
-            return '护甲备注';
-        default:
-            return '';
-    }
-};
-
-/**
- * 根据点数名称获取字段名称
- * @param {string} pointName 点数名称
- * @returns {string} 字段名称
- */
-const getFieldNameByPointName = exports.getFieldNameByPointName = function (pointName) {
-    switch (pointName) {
-        case '力量':
-            return 's1';
-        case '体质':
-            return 's2';
-        case '敏捷':
-            return 'd1';
-        case '灵活':
-            return 'd2';
-        case '智力':
-            return 'i1';
-        case '意志':
-            return 'i2';
-        case '耐力':
-            return 'p';
-        case '幸运':
-            return 'l';
-        case '武器ID':
-            return 'weaponId';
-        case '武器备注':
-            return 'weaponMemo';
-        case '护甲ID':
-            return 'armorId';
-        case '护甲备注':
-            return 'armorMemo';
-        default:
-            return '';
-    }
-};
-
-/**
- * 根据指定的点数获得相应额外加成点数
- * @param {string} pointName 点数名称
- * @param {number} point 点数的值
- * @returns {number} 额外加成点数
- */
-const getExtraPoint = exports.getExtraPoint = function (pointName, point) {
-    let elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
-    let haloPercent = haloInfo['全属性'];
-    switch (pointName) {
-        case '力量':
-            return Math.floor(point * haloPercent) + itemUsedNumList.get('蕾米莉亚同人漫画') + elapsedMedicine;
-        case '体质':
-            return Math.floor(point * haloPercent) + itemUsedNumList.get('蕾米莉亚同人漫画') + elapsedMedicine;
-        case '敏捷':
-            return Math.floor(point * haloPercent) + itemUsedNumList.get('十六夜同人漫画') + elapsedMedicine;
-        case '灵活':
-            return Math.floor(point * haloPercent) + itemUsedNumList.get('十六夜同人漫画') + elapsedMedicine;
-        case '智力':
-            return Math.floor(point * haloPercent) + elapsedMedicine;
-        case '意志':
-            return Math.floor((Math.floor(point * haloPercent) + elapsedMedicine + point) * (currentArmInfo.get('护甲')['组别'] === '铠甲' ? 1.1 : 1)) - point;
-        default:
-            return 0;
-    }
-};
-
-/**
- * 根据指定的点数获得相应争夺属性的值
- * @param {string} pointName 点数名称
- * @param {number} point 点数的值
- * @returns {number} 争夺属性的值
- */
-const getPropertyByPoint = exports.getPropertyByPoint = function (pointName, point) {
-    let pointValue = point + getExtraPoint(pointName, point);
-    switch (pointName) {
-        case '力量':
-            return pointValue * 5 + haloInfo['攻击力'];
-        case '体质':
-            return pointValue * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0) + haloInfo['生命值'];
-        case '敏捷':
-            return pointValue * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
-        case '灵活':
-            return Math.round(pointValue / (pointValue + 100) * 100);
-        case '智力':
-            return Math.round(pointValue / (pointValue + 90) * 100);
-        case '意志':
-            return Math.round(pointValue / (pointValue + 150) * 100);
-        default:
-            return 0;
-    }
-};
-
-/**
- * 根据指定的争夺属性获得相应点数的值
- * @param {string} pointName 点数名称
- * @param {number} num 争夺属性的值
- * @returns {number} 点数的值
- */
-const getPointByProperty = exports.getPointByProperty = function (pointName, num) {
-    let elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
-    let haloPercent = 1 + haloInfo['全属性'];
-    let value = 0;
-    switch (pointName) {
-        case '力量':
-            value = Math.ceil((Math.ceil((num - haloInfo['攻击力']) / 5) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
-            break;
-        case '体质':
-            value = Math.ceil((Math.ceil((num - haloInfo['生命值'] - (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0)) / 20) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
-            break;
-        case '敏捷':
-            value = Math.ceil((Math.ceil((num - (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0)) / 2) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
-            break;
-        case '灵活':
-            value = Math.floor((Math.round(100 * num / (100 - num)) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
-            break;
-        case '智力':
-            value = Math.floor((Math.round(90 * num / (100 - num)) - elapsedMedicine) / haloPercent);
-            break;
-        case '意志':
-            value = Math.floor((Math.round(150 * num / (100 - num)) - elapsedMedicine) / haloPercent);
-            break;
-    }
-    if (!isFinite(value) || value < 1) value = 1;
-    return value;
-};
-
-/**
- * 获取实际的争夺属性（暴击几率或技能释放概率）
- * @param {string} pointName 点数名称
- * @param {number} totalPoint 合计点数
- * @param {number} level 指定层数
- * @param {string} enemy 遭遇敌人名称
- * @returns {number} 实际的争夺属性
- */
-const getRealProperty = exports.getRealProperty = function (pointName, totalPoint, level, enemy) {
-    const npcStepNum = 2; // NPC递增数值
-    const antiCoefficient = 3; // 抵消系数
-    const coefficient = { '普通': 1, '强壮': 1, '快速': 1.5, '睿智': 1, '坚强': 1, 'BOSS': 1.2 }; // NPC强化系数列表
-    const cardinalNum = pointName === '灵活' ? 100 : 90; // 基数
-
-    let npcPoint = Math.round(level * npcStepNum * coefficient[enemy]);
-    let realPoint = Math.max(totalPoint - Math.round((npcPoint + totalPoint) / antiCoefficient), 0);
-    return Math.round(realPoint / (realPoint + cardinalNum) * 100);
-};
-
-/**
- * 添加各层点数分配方案选择框
- */
-const addLevelPointListSelect = function () {
-    $(`
-<tr>
-  <td colspan="2">
-    <select id="pdLevelPointListSelect" style="margin: 5px 0;">
-      <option>点数分配方案</option>
-      <option value="0">默认</option>
-    </select>
-    <a class="pd_btn_link" data-name="save" href="#" title="将当前点数设置保存为新的方案">保存</a>
-    <a class="pd_btn_link" data-name="edit" href="#" title="编辑各层点数分配方案">编辑</a>
-    <a class="pd_btn_link" data-name="fill" href="#" title="输入一串数字按顺序填充到各个点数字段中">填充</a>
-  </td>
-</tr>`).prependTo($points.find('> tbody')).find('#pdLevelPointListSelect').change(function () {
-        let level = parseInt($(this).val());
-        if (level > 0) {
-            let points = Config.levelPointList[parseInt(level)];
-            if (typeof points !== 'object') return;
-            $points.find('.pd_point, .pd_arm_input').each(function () {
-                let $this = $(this);
-                let pointName = getPointNameByFieldName($this.attr('name'));
-                $this.val(points[pointName]);
-            }).trigger('change');
-        } else if (level === 0) {
-            $points.find('.pd_point, .pd_arm_input').each(function () {
-                $(this).val(this.defaultValue);
-            }).trigger('change');
-        }
-    }).end().find('[data-name="save"]').click(function (e) {
-        e.preventDefault();
-        if (!checkPoints($points)) return;
-        let $levelPointListSelect = $('#pdLevelPointListSelect');
-        let level = parseInt($levelPointListSelect.val());
-        level = parseInt(prompt('请输入层数：', level ? level : ''));
-        if (!level || level < 0) return;
-
-        (0, _Config.read)();
-        if (level in Config.levelPointList) {
-            if (!confirm('该层数已存在，是否覆盖？')) return;
-        }
-        let points = {};
-        for (let elem of Array.from($points.find('.pd_point, .pd_arm_input'))) {
-            let $elem = $(elem);
-            let name = $elem.attr('name');
-            let value = $.trim($elem.val());
-            if ($elem.is('.pd_point')) {
-                value = parseInt(value);
-                if (!value || value < 0) return;
-            } else {
-                if (!value) continue;
-                if (name === 'weaponId' || name === 'armorId') {
-                    value = parseInt(value);
-                    if (!value || value < 0) return;
-                }
-            }
-            points[getPointNameByFieldName(name)] = value;
-        }
-        Config.levelPointList[level] = points;
-        (0, _Config.write)();
-        setLevelPointListSelect(Config.levelPointList);
-        $levelPointListSelect.val(level);
-    }).end().find('[data-name="edit"]').click(function (e) {
-        e.preventDefault();
-        showLevelPointListConfigDialog();
-    }).end().find('[data-name="fill"]').click(function (e) {
-        e.preventDefault();
-        fillPoints($points);
-    });
-    setLevelPointListSelect(Config.levelPointList);
-};
-
-/**
- * 填充点数设置
- * @param $points
- */
-const fillPoints = function ($points) {
-    let value = $.trim(prompt(`请输入以任意字符分隔的一串数字，按顺序填充到各个点数字段中（注：5位数以上的数字将被当作装备ID）：
-可直接输入计算器输出的点数设置，例：1 100 50 5 25 1  0 3 Bow #1234567 Cloth #7654321`));
-    if (!value) return;
-    let pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+(\S+)\s+#(\d+)\s+(\S+)\s+#(\d+)/.exec(value);
-    if (!pointsMatches) {
-        pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d+)/.exec(value);
-    }
-    if (pointsMatches) {
-        $points.find('.pd_point').each(function (index) {
-            if (index + 1 < pointsMatches.length) {
-                $(this).val(pointsMatches[index + 1]).trigger('change');
-            }
-        });
-        $points.find('input[name="weaponMemo"]').val(pointsMatches[7]);
-        $points.find('input[name="weaponId"]').val(pointsMatches[8]);
-        if (pointsMatches[9] && pointsMatches[10]) {
-            $points.find('input[name="armorMemo"]').val(pointsMatches[9]);
-            $points.find('input[name="armorId"]').val(pointsMatches[10]);
-        }
-    } else {
-        let numMatches = value.match(/\b\d{1,4}\b/g);
-        if (!numMatches) return;
-        $points.find('.pd_point').each(function (index) {
-            if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');else return false;
-        });
-        let armIdMatches = value.match(/\b(\d{5,})\b/g);
-        for (let i in armIdMatches) {
-            let name = parseInt(i) === 0 ? 'weaponId' : 'armorId';
-            $points.find(`input[name="${name}"]`).val(armIdMatches[i]);
-        }
-    }
-};
-
-/**
- * 设置各层点数分配方案选择框
- * @param {{}} levelPointList 各层点数分配列表
- */
-const setLevelPointListSelect = function (levelPointList) {
-    let pointListHtml = '';
-    for (let [level, points] of Util.entries(levelPointList)) {
-        if (!$.isNumeric(level)) continue;
-        pointListHtml += `<option value="${level}">第${level}层 ${points['武器ID'] || points['护甲ID'] ? '(装)' : ''}</option>`;
-    }
-    $('#pdLevelPointListSelect').find('option:gt(1)').remove().end().append(pointListHtml);
-};
-
-/**
- * 添加攻击相关按钮
- */
-const addAttackBtns = function () {
-    $(`
-<div id="pdAttackBtns" class="pd_result" style="margin-top: 5px;" hidden> <!-- 临时 -->
-  <label>
-    <input class="pd_input" name="autoChangeLevelPointsEnabled" type="checkbox" ${Config.autoChangeLevelPointsEnabled ? 'checked' : ''}>
-    自动修改点数分配方案
-    <span class="pd_cfg_tips" title="在攻击时可自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效）">[?]</span>
-  </label>
-  <label>
-    <input class="pd_input" name="customPointsScriptEnabled" type="checkbox" ${Config.customPointsScriptEnabled ? 'checked' : ''} 
-${typeof _Const2.default.getCustomPoints !== 'function' ? 'disabled' : ''}> 使用自定义脚本
-    <span class="pd_cfg_tips" title="使用自定义点数分配脚本（仅限自动攻击相关按钮有效，需正确安装自定义脚本后此项才可勾选）">[?]</span>
-  </label>
-  <label>
-    <input class="pd_input" name="unusedPointNumAlertEnabled" type="checkbox" ${Config.unusedPointNumAlertEnabled ? 'checked' : ''}>
-    有剩余属性点时提醒
-    <span class="pd_cfg_tips" title="在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效，挂机玩家请勿勾选）">[?]</span>
-  </label>
-  <label>
-    <input class="pd_input" name="slowAttackEnabled" type="checkbox" ${Config.slowAttackEnabled ? 'checked' : ''}> 慢速
-    <span class="pd_cfg_tips" title="延长每次攻击的时间间隔（在4~7秒之间）">[?]</span>
-  </label>
-  <label>
-    <input class="pd_input" name="alwaysOpenPointAreaEnabled" type="checkbox" ${Config.alwaysOpenPointAreaEnabled ? 'checked' : ''}> 总是打开属性界面
-    <span class="pd_cfg_tips" title="总是打开个人属性/装备界面">[?]</span>
-  </label>
-  <label>
-    <input class="pd_input" name="alertServerStatusChangeEnabled" type="checkbox" ${Config.alertServerStatusChangeEnabled ? 'checked' : ''}> 服务器状态变化提醒
-    <span class="pd_cfg_tips" title="在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒，挂机玩家请勿勾选），可点击右侧的详情按钮进行更具体的设置">[?]</span>
-  </label>
-  <a class="pd_btn_link" data-name="setAlertServerStatusChangeType" href="#">详&raquo;</a><br>
-  <button name="autoAttack" type="button" title="自动攻击到指定层数">自动攻击</button>
-  <button name="onceAttack" type="button" title="自动攻击一层">一层</button>
-  <button name="nextKeyLevelAttack" type="button" title="攻击到下一关键层之前">到下一关键层前</button>
-  <span style="color: #888;">|</span>
-  <button name="manualAttack" type="button" title="手动攻击一层，会按照当前页面上发生变化了的点数设置和装备ID自动修改点数以及更换装备">手动攻击</button>
-  <span class="pd_cfg_tips" title="在不勾选“自动修改点数分配方案”或“使用自定义脚本”的情况下，点击所有的攻击按钮均会按照当前页面上的点数设置和装备ID自动修改点数以及更换装备。
-（注：只有在当前页面上点数设置或装备ID发生变化的情况下才会自动提交相应设置）。
-在勾选上述两种选项的情况下，点击自动攻击相关按钮会自动按照预设的点数分配方案或脚本返回的值修改点数及更换装备。而手动攻击按钮则无视这俩选项，依然按照前一种情况进行操作。">[?]</span>
-</div>
-`).insertAfter('#wdsx').on('click', 'button[name$="Attack"]', function () {
-        if (/你被击败了|今日战斗已完成/.test(log)) {
-            alert('你已经被击败了');
-            return;
-        }
-        if ($('.pd_mask').length > 0) return;
-        let $this = $(this);
-        let name = $this.attr('name');
-        let targetLevel = 0;
-
-        let type = name === 'manualAttack' ? 'manual' : 'auto';
-        if (name === 'nextKeyLevelAttack') {
-            let value = $.trim($points.find('input[name="keyLevelList"]').val());
-            let keyLevelList = value.split(' ').map(level => parseInt(level)).filter(level => level > 0);
-            if (!keyLevelList.length) {
-                alert('没有设置关键层');
-                return;
-            }
-            let currentLevel = getCurrentLevel(logList);
-            targetLevel = Math.min(...keyLevelList.filter(level => level > currentLevel + 1)) - 1;
-        } else if (type === 'auto') {
-            let value = '+1';
-            if (name === 'autoAttack') {
-                let prevTargetLevel = $this.data('prevTargetLevel');
-                value = $.trim(prompt('攻击到第几层？（0表示攻击到被击败为止，+n表示攻击到当前层数+n层）', prevTargetLevel ? prevTargetLevel : Config.attackTargetLevel));
-            }
-            if (!/\+?\d+/.test(value)) return;
-            if (value.startsWith('+')) {
-                let currentLevel = getCurrentLevel(logList);
-                targetLevel = currentLevel + parseInt(value);
-            } else targetLevel = parseInt(value);
-            if (isNaN(targetLevel) || targetLevel < 0) return;
-            if (name === 'autoAttack') $this.data('prevTargetLevel', value);
-        }
-
-        Msg.destroy();
-        $('#pdLootLogHeader').find('[data-name="end"]').click();
-        let autoChangePointsEnabled = (Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') && type === 'auto';
-        if (!autoChangePointsEnabled && !checkPoints($points)) return;
-
-        let $serverStatus = $properties.find('#pdServerStatus');
-        let noAlert = $serverStatus.data('no-alert');
-        let prevServerStatus = $serverStatus.data('prev-status');
-        if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
-            if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常' && Config.alertServerStatusChangeType !== 1) {
-                if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
-                    return;
-                } else {
-                    $serverStatus.data('no-alert', true);
-                }
-            }
-            $serverStatus.data('prev-status', serverStatus);
-        }
-
-        lootAttack({ type, targetLevel, autoChangePointsEnabled, safeId });
-    }).on('click', '.pd_cfg_tips', () => false).on('click', 'input[type="checkbox"]', function () {
-        let $this = $(this);
-        let name = $this.attr('name');
-        let checked = $this.prop('checked');
-        if (name in Config && Config[name] !== checked) {
-            (0, _Config.read)();
-            Config[name] = checked;
-            (0, _Config.write)();
-        }
-    }).find('[data-name="setAlertServerStatusChangeType"]').click(function (e) {
-        e.preventDefault();
-        (0, _Config.read)();
-        let type = parseInt(prompt('请输入提醒时机类型（0：总是提醒；1：仅当变为“繁忙”时提醒）：', Config.alertServerStatusChangeType));
-        if (isNaN(type)) return;
-        Config.alertServerStatusChangeType = type === 1 ? 1 : 0;
-        (0, _Config.write)();
-    }).end().find('[name="customPointsScriptEnabled"]').click(function () {
-        let $this = $(this);
-        if ($this.prop('disabled')) return;
-        $('[name="autoChangeLevelPointsEnabled"]').prop('disabled', $this.prop('checked'));
-    }).triggerHandler('click');
-
-    let $attackBtnTips = $('.kf_fw_ig1:eq(1) > tbody > tr:first-child > td');
-    $attackBtnTips.html($attackBtnTips.html().replace('（不再点击战斗记录开始）', '（不再点击战斗记录开始）（↑ ↑ ↑ 助手的攻击按钮在上方）'));
-};
-
-/**
- * 修改点数分配方案和装备
- * @param {number} nextLevel 下一层（设为-1表示采用当前点数分配方案）
- * @param {function} callback 回调函数
- */
-const changePointsAndArms = exports.changePointsAndArms = function (nextLevel, callback) {
-    if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') {
-        let points = null;
-        try {
-            points = _Const2.default.getCustomPoints($.extend(getLootInfo(), { getExtraPoint, getPointByProperty, getPropertyByPoint }));
-        } catch (ex) {
-            console.log(ex);
-        }
-        if ($.type(points) === 'object') {
-            for (let [key, value] of Util.entries(points)) {
-                $points.find(`input[name="${getFieldNameByPointName(key)}"]`).val(value).trigger('change');
-            }
-            nextLevel = -1;
-        } else if (typeof points === 'number') {
-            nextLevel = parseInt(points);
-            nextLevel = nextLevel > 1 ? nextLevel : 1;
-        } else if (points === false) {
-            return callback('ignore');
-        } else {
-            return callback('error');
-        }
-    }
-
-    let nextLevelText = getCurrentLevel(logList) + 1;
-    let changeLevel = nextLevel > 0 ? Math.max(...Object.keys(Config.levelPointList).filter(level => level <= nextLevel)) : -1;
-    let $levelPointListSelect = $('#pdLevelPointListSelect');
-    if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
-    let isChangeWeapon = false,
-        isChangeArmor = false,
-        isChangePoints = false;
-    $points.find('.pd_point, input[name="weaponId"], input[name="armorId"]').each(function () {
-        let $this = $(this);
-        let name = $this.attr('name');
-        let value = $.trim($this.val());
-        if (parseInt(value) > 0 && this.defaultValue !== value) {
-            if (name === 'weaponId') isChangeWeapon = true;else if (name === 'armorId') isChangeArmor = true;else isChangePoints = true;
-        }
-    });
-
-    if (isChangeWeapon || isChangeArmor || isChangePoints) {
-        if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
-            if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return callback('error');
-        }
-
-        let weaponId = parseInt($points.find('input[name="weaponId"]').val());
-        let armorId = parseInt($points.find('input[name="armorId"]').val());
-        let ajaxList = ['ignore', 'ignore', 'ignore'];
-        if (isChangeWeapon) {
-            ajaxList[0] = {
-                type: 'POST',
-                url: 'kf_fw_ig_mybpdt.php',
-                timeout: _Const2.default.defAjaxTimeout,
-                data: `do=4&id=${weaponId}&safeid=${safeId}`
-            };
-        }
-        if (isChangeArmor) {
-            ajaxList[1] = {
-                type: 'POST',
-                url: 'kf_fw_ig_mybpdt.php',
-                timeout: _Const2.default.defAjaxTimeout,
-                data: `do=4&id=${armorId}&safeid=${safeId}`
-            };
-        }
-        if (isChangePoints) {
-            ajaxList[2] = {
-                type: 'POST',
-                url: 'kf_fw_ig_enter.php',
-                timeout: _Const2.default.defAjaxTimeout,
-                data: $points.closest('form').serialize()
-            };
-        }
-
-        let result = 'success';
-        $(document).clearQueue('ChangePointsAndArms');
-        $.each(ajaxList, function (index, ajax) {
-            if (ajax === 'ignore') return;
-            $(document).queue('ChangePointsAndArms', function () {
-                $.ajax(ajax).done(function (html) {
-                    if (index === 0) {
-                        let msg = Util.removeHtmlTag(html);
-                        if (/装备完毕/.test(msg)) {
-                            $points.find('input[name="weaponId"], input[name="weaponMemo"]').each(function () {
-                                this.defaultValue = $(this).val();
-                            });
-                            if (Config.autoSaveArmsInfoEnabled) {
-                                let armsInfo = Item.readArmsInfo();
-                                armsInfo['已装备武器'] = weaponId;
-                                Item.writeArmsInfo(armsInfo);
-                            }
-                        } else {
-                            Msg.show(`<strong>更换武器：${msg}</strong>`, -1);
-                            Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', msg);
-                            result = 'error';
-                        }
-                    } else if (index === 1) {
-                        let msg = Util.removeHtmlTag(html);
-                        if (/装备完毕/.test(msg)) {
-                            $points.find('input[name="armorId"], input[name="armorMemo"]').each(function () {
-                                this.defaultValue = $(this).val();
-                            });
-                            if (Config.autoSaveArmsInfoEnabled) {
-                                let armsInfo = Item.readArmsInfo();
-                                armsInfo['已装备护甲'] = armorId;
-                                Item.writeArmsInfo(armsInfo);
-                            }
-                        } else {
-                            Msg.show(`<strong>更换护甲：${msg}</strong>`, -1);
-                            Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', msg);
-                            result = 'error';
-                        }
-                    } else if (index === 2) {
-                        let { msg } = Util.getResponseMsg(html);
-                        if (/已经重新配置加点！/.test(msg)) {
-                            Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
-                            $points.find('.pd_point').each(function () {
-                                this.defaultValue = $(this).val();
-                            });
-                        } else {
-                            let matches = /你还需要等待(\d+)分钟/.exec(msg);
-                            if (matches) {
-                                let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
-                                Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
-                            }
-                            Msg.show(`<strong>第<em>${nextLevelText}</em>层方案：${msg}</strong>`, -1);
-                            Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', msg);
-                            result = 'error';
-                        }
-                    }
-                }).fail(function () {
-                    result = 'timeout';
-                }).always(function () {
-                    if (result === 'error' || result === 'timeout') {
-                        $(document).clearQueue('ChangePointsAndArms');
-                        callback(result);
-                    } else if (!$(document).queue('ChangePointsAndArms').length) {
-                        recordPointsLog(true);
-                        Script.runFunc('Loot.changePointsAndArms_success_');
-                        callback(result);
-                    } else {
-                        setTimeout(() => $(document).dequeue('ChangePointsAndArms'), _Const2.default.minActionInterval);
-                    }
-                });
-            });
-        });
-        $(document).dequeue('ChangePointsAndArms');
-    } else {
-        if (nextLevelText === 1) recordPointsLog();
-        callback('ignore');
-    }
-};
-
-/**
- * 记录点数分配记录
- * @param {boolean} isSubmit 是否提交分配点数
- */
-const recordPointsLog = exports.recordPointsLog = function (isSubmit = false) {
-    propertyList = getLootPropertyList($properties.html());
-    let armsText = '',
-        pointsText = '',
-        propertiesText = '';
-
-    let weaponId = parseInt($points.find('input[name="weaponId"]').val());
-    let weaponMemo = $.trim($points.find('input[name="weaponMemo"]').val());
-    if (weaponId > 0) {
-        armsText += `武器ID：${weaponId}${weaponMemo ? '，武器备注：' + weaponMemo : ''}`;
-    }
-    let armorId = parseInt($points.find('input[name="armorId"]').val());
-    let armorMemo = $.trim($points.find('input[name="armorMemo"]').val());
-    if (armorId > 0) {
-        armsText += `${armsText ? '；' : ''}护甲ID：${armorId}${armorMemo ? '，护甲备注：' + armorMemo : ''}`;
-    }
-
-    $points.find('.pd_point').each(function () {
-        let $this = $(this);
-        let pointName = getPointNameByFieldName($this.attr('name'));
-        let point = parseInt($this.val());
-        let extraPoint = getExtraPoint(pointName, point);
-        pointsText += `${pointName}：${point}+${extraPoint}=${point + extraPoint}，`;
-    });
-
-    pointsText = pointsText.replace(/，$/, '');
-    for (let [key, value] of Util.entries(propertyList)) {
-        if (key === '可分配属性点' || key === '生命值') continue;
-        let unit = '';
-        if (key.endsWith('率') || key === '防御') unit = '%';
-        propertiesText += `${key}：${value}${unit}，`;
-    }
-    propertiesText = propertiesText.replace(/，$/, '');
-    //pointsLogList[getCurrentLevel(logList) + 1] = `点数方案（${pointsText}）\n争夺属性（${propertiesText}）`;
-    pointsLogList[getCurrentLevel(logList) + 1] = `${armsText ? `装备信息（${armsText}）\n` : ''}点数方案（${pointsText}）`; // 临时修改
-    localStorage.setItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid, JSON.stringify({ time: $.now(), pointsLogList }));
-    //if (isSubmit) console.log(`【分配点数】点数方案（${pointsText}）；争夺属性（${propertiesText}）`);
-    if (isSubmit) {
-        if (armsText) {
-            console.log(`【更换武器】装备信息（${armsText}）`);
-        }
-        console.log(`【分配点数】点数方案（${pointsText}）`);
-    } // 临时修改
-};
-
-/**
- * 争夺攻击
- * @param {string} type 攻击类型，auto：自动攻击；manual：手动攻击
- * @param {number} targetLevel 目标层数（设为0表示攻击到被击败为止，仅限自动攻击有效）
- * @param {boolean} autoChangePointsEnabled 是否自动修改点数分配方案
- * @param {string} safeId SafeID
- */
-const lootAttack = exports.lootAttack = function ({ type, targetLevel, autoChangePointsEnabled, safeId }) {
-    let initCurrentLevel = getCurrentLevel(logList);
-    if (targetLevel > 0 && targetLevel <= initCurrentLevel) return;
-    let $wait = Msg.wait(`<strong>正在攻击中，请稍等&hellip;</strong><i>当前层数：<em class="pd_countdown">${initCurrentLevel}</em></i>` + '<a class="pd_stop_action pd_highlight" href="#">停止操作</a><a href="/" target="_blank">浏览其它页面</a>');
-    let index = 0;
-    let isStop = false,
-        isPause = false,
-        isFail = false;
-
-    /**
-     * 准备攻击（用于自动修改点数分配方案）
-     * @param {number} currentLevel 当前层数（设为-1表示采用当前点数分配方案）
-     * @param {number} interval 下次攻击的间隔时间
-     */
-    const ready = function (currentLevel, interval = _Const2.default.lootAttackInterval) {
-        changePointsAndArms(currentLevel >= 0 ? currentLevel + 1 : -1, function (result) {
-            if (result === 'ignore') {
-                setTimeout(attack, typeof interval === 'function' ? interval() : interval);
-            } else if (result === 'timeout') {
-                setTimeout(() => ready(currentLevel, interval), _Const2.default.minActionInterval);
-            } else if (result === 'success') {
-                setTimeout(function () {
-                    updateLootInfo(function () {
-                        setTimeout(attack, typeof interval === 'function' ? interval() : interval);
-                    });
-                }, _Const2.default.minActionInterval);
-            }
-            if (result === 'error') {
-                Msg.remove($wait);
-            }
-        });
-    };
-
-    /**
-     * 攻击
-     */
-    const attack = function () {
-        $.ajax({
-            type: 'POST',
-            url: 'kf_fw_ig_intel.php',
-            data: { 'safeid': safeId },
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            index++;
-            if (Config.autoLootEnabled) {
-                Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
-            }
-            if (_Const2.default.debug) console.log(html);
-            let { type } = Util.getResponseMsg(html);
-            if (/请稍后重试/.test(html) || type === -1) {
-                isPause = true;
-                after();
-                return;
-            }
-
-            let lootAttackPerCheckLevel = typeof _Const2.default.lootAttackPerCheckLevel === 'function' ? _Const2.default.lootAttackPerCheckLevel() : _Const2.default.lootAttackPerCheckLevel;
-            if (!/你\(\d+\)遭遇了/.test(html) || index % lootAttackPerCheckLevel === 0) {
-                if (html === 'no' && /你被击败了|今日战斗已完成/.test(log)) isFail = true;
-                setTimeout(function () {
-                    updateLootInfo(function () {
-                        if (!/你被击败了|今日战斗已完成/.test(log)) isFail = false;
-                        after();
-                    });
-                }, _Const2.default.minActionInterval);
-                return;
-            }
-            log = html + log;
-
-            let $serverStatus = $properties.find('#pdServerStatus');
-            let noAlert = $serverStatus.data('no-alert');
-            let prevServerStatus = $serverStatus.data('prev-status');
-            if (Config.alertServerStatusChangeEnabled && !noAlert && prevServerStatus) {
-                if ((prevServerStatus === '空闲' || prevServerStatus === '正常') && serverStatus === '繁忙' || prevServerStatus === '空闲' && serverStatus === '正常' && Config.alertServerStatusChangeType !== 1) {
-                    if (!confirm(`当前服务器状态由[${prevServerStatus}]变为[${serverStatus}]，是否继续攻击？`)) {
-                        isPause = true;
-                    } else {
-                        $serverStatus.data('no-alert', true);
-                    }
-                }
-                $serverStatus.data('prev-status', serverStatus);
-            }
-
-            after(false);
-            Script.runFunc('Loot.lootAttack_attack_after_', html);
-        }).fail(function () {
-            console.log('【争夺攻击】超时重试...');
-            setTimeout(() => updateLootInfo(after), typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
-        });
-    };
-
-    /**
-     * 攻击之后
-     * @param {boolean} isChecked 是否已检查过争夺记录
-     */
-    const after = function (isChecked = true) {
-        logList = getLogList(log);
-        levelInfoList = getLevelInfoList(logList);
-        showEnhanceLog(logList, levelInfoList, pointsLogList);
-        showLogStat(levelInfoList);
-        let currentLevel = getCurrentLevel(logList);
-        console.log('【争夺攻击】当前层数：' + currentLevel);
-        let $countdown = $('.pd_countdown:last');
-        $countdown.text(currentLevel);
-        /*$points.find('.pd_point').each(function () {
-            showNewLootProperty($(this));
-        });*/ // 临时禁用
-
-        isStop = isFail || isStop || isPause || type !== 'auto' || targetLevel && currentLevel >= targetLevel || $countdown.closest('.pd_msg').data('stop');
-        if (isStop) {
-            if (Config.autoLootEnabled) {
-                Util.deleteCookie(_Const2.default.lootCheckingCookieName);
-                Util.deleteCookie(_Const2.default.lootAttackingCookieName);
-                if (isPause) {
-                    Util.setCookie(_Const2.default.lootCompleteCookieName, -2, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
-                } else {
-                    Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
-                }
-            }
-            if (isFail) {
-                if (isChecked) {
-                    Msg.remove($wait);
-                    recordLootInfo(logList, levelInfoList, pointsLogList);
-                    $points.find('button[name="changePointsAndArms"]').css('display', 'inline-block');
-                } else {
-                    setTimeout(() => updateLootInfo(after), _Const2.default.minActionInterval);
-                }
-                Script.runFunc('Loot.lootAttack_complete_');
-            } else {
-                if (/你被击败了|今日战斗已完成/.test(log)) {
-                    setTimeout(function () {
-                        updateLootInfo(function () {
-                            if (/你被击败了|今日战斗已完成/.test(log)) isFail = true;
-                            after();
-                        });
-                    }, _Const2.default.defAjaxInterval);
-                    return;
-                }
-                if (!isChecked) {
-                    setTimeout(updateLootInfo, _Const2.default.minActionInterval);
-                }
-                Msg.remove($wait);
-                Msg.show(`<strong>你成功击败了第<em>${currentLevel}</em>层的NPC</strong>`, -1);
-                Script.runFunc('Loot.lootAttack_after_');
-            }
-        } else {
-            if (autoChangePointsEnabled && !/你被击败了|今日战斗已完成/.test(log)) {
-                setTimeout(() => ready(currentLevel), _Const2.default.minActionInterval);
-            } else {
-                setTimeout(attack, typeof _Const2.default.lootAttackInterval === 'function' ? _Const2.default.lootAttackInterval() : _Const2.default.lootAttackInterval);
-            }
-        }
-    };
-
-    ready(autoChangePointsEnabled ? initCurrentLevel : -1, 0);
-};
-
-/**
- * 更新争夺信息
- * @param {function} callback 回调函数
- */
-const updateLootInfo = exports.updateLootInfo = function (callback = null) {
-    console.log('更新争夺信息Start');
-    $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout
-    }).done(function (html) {
-        let $area = $('#wdsx', html).parent();
-        log = $area.find('#pk_text').html();
-        if (!log) {
-            Msg.remove($('.pd_countdown').closest('.pd_msg'));
-            return;
-        }
-
-        $area.find('.kf_fw_ig3:first input[type="text"]').each(function (index) {
-            let value = $.trim($(this).val());
-            if (!value) return;
-            $properties.find(`input[type="text"]:eq(${index})`).val(value);
-        });
-
-        let serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span style="color:(#[a-fA-F0-9]+);[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
-        if (serverStatusMatches) {
-            let serverStatusColor = serverStatusMatches[1];
-            serverStatus = serverStatusMatches[2];
-            if (_Const2.default.debug) console.log('当前服务器状态：' + serverStatus);
-            $properties.find('#pdServerStatus').text(serverStatus).css('color', serverStatusColor);
-        }
-
-        let countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
-        if (countDownMatches) {
-            changePointsAvailableCount = 0;
-            let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
-            Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
-            $points.find('#pdChangeCount').text(`(下次修改配点还需[${countDownMatches[1]}]分钟)`);
-        }
-        let changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
-        if (changeCountMatches) {
-            changePointsAvailableCount = parseInt(changeCountMatches[1]);
-            Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${_Const2.default.changePointsInfoExpires}m`));
-            $points.find('#pdChangeCount').text(`(当前修改配点可用[${changePointsAvailableCount}]次)`);
-        }
-
-        let armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
-        if (armHtml.includes('（装备中）')) {
-            let [armInfoHtml, finalAddAdditionHtml = ''] = armHtml.split('<br><br>', 2);
-            let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
-            let newArmHtml = '';
-            if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
-            if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
-            if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
-            $armArea.html(newArmHtml);
-
-            currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
-            currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
-        }
-
-        let propertiesHtml = $properties.html();
-        propertyList = getLootPropertyList(propertiesHtml);
-        itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
-        armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
-        $properties.find('.pd_arm_level').trigger('change');
-        $points.find('.pd_point').trigger('change');
-
-        if (typeof callback === 'function') callback();
-        Script.runFunc('Loot.updateLootInfo_after_', html);
-    }).fail(function () {
-        setTimeout(() => updateLootInfo(callback), _Const2.default.minActionInterval);
-    });
-};
-
-/**
- * 获取当前争夺信息
- * @returns {{}} 当前争夺信息
- */
-const getLootInfo = exports.getLootInfo = function () {
-    let currentLevel = getCurrentLevel(logList);
-    let info = levelInfoList[currentLevel];
-    let currentLife = 0,
-        currentInitLife = 0;
-    if (info) {
-        currentLife = info.life;
-        currentInitLife = info.initLife;
-    }
-    let enemyList = getEnemyList(levelInfoList);
-    return {
-        currentLevel,
-        currentLife,
-        currentInitLife,
-        levelPointList: Config.levelPointList,
-        availablePoint: propertyList['可分配属性点'],
-        haloInfo,
-        extraPointsList,
-        propertyList,
-        itemUsedNumList,
-        armsLevelList,
-        currentArmInfo,
-        changePointsAvailableCount,
-        log,
-        logList,
-        enemyList
-    };
-};
-
-/**
- * 记录争夺信息
- * @param {string[]} logList 各层争夺记录列表
- * @param {{}[]} levelInfoList 各层战斗信息列表
- * @param {string[]} pointsLogList 点数分配记录列表
- */
-const recordLootInfo = function (logList, levelInfoList, pointsLogList) {
-    Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
-    localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
-
-    let allEnemyList = {};
-    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
-        allEnemyList[enemy] = num;
-    }
-    let allEnemyStat = '';
-    for (let [enemy, num] of Util.entries(allEnemyList)) {
-        allEnemyStat += enemy + '`+' + num + '` ';
-    }
-
-    let latestEnemyList = {};
-    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= logList.length - _Const2.default.enemyStatLatestLevelNum)))) {
-        latestEnemyList[enemy] = num;
-    }
-    let latestEnemyStat = '';
-    for (let [enemy, num] of Util.entries(latestEnemyList)) {
-        latestEnemyStat += enemy + '`+' + num + '` ';
-    }
-
-    let currentLevel = getCurrentLevel(logList);
-    let { boxNum, boxes } = getTotalGain(levelInfoList);
-    if (!$.isEmptyObject(boxes)) {
-        Log.push('争夺攻击', `你成功击败了第\`${currentLevel - 1}\`层的NPC (${allEnemyStat.trim()})`, { gain: { '盒子': boxNum, 'box': boxes } });
-        LootLog.record(logList, pointsLogList);
-    }
-    let boxesStat = '';
-    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
-        boxesStat += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i>`;
-    }
-    Msg.show(`<strong>你被第<em>${currentLevel}</em>层的NPC击败了</strong>${boxesStat.length > 75 ? '<br>' : ''}${boxesStat}`, Config.autoSaveLootLogInSpecialCaseEnabled ? Config.defShowMsgDuration : -1);
-
-    if (Config.autoGetDailyBonusEnabled && Config.getBonusAfterLootCompleteEnabled) {
-        Util.deleteCookie(_Const2.default.getDailyBonusCookieName);
-        $(document).queue('AutoAction', () => Public.getDailyBonus());
-    }
-    if (Config.autoOpenBoxesAfterLootEnabled) {
-        TmpLog.setValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName, true);
-        $(document).clearQueue('AutoAction');
-        $(document).queue('AutoAction', function () {
-            setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', _Const2.default.minActionInterval);
-        });
-    }
-    setTimeout(() => $(document).dequeue('AutoAction'), _Const2.default.minActionInterval);
-    Script.runFunc('Loot.recordLootLog_after_');
-};
-
-/**
- * 显示各层点数分配方案对话框
- */
-const showLevelPointListConfigDialog = function (callback) {
-    const dialogName = 'pdLevelPointListConfigDialog';
-    if ($('#' + dialogName).length > 0) return;
-    (0, _Config.read)();
-    let html = `
-<div class="pd_cfg_main">
-  <div style="margin: 5px 0; line-height: 1.6em;">
-    请填写各层对应的点数分配方案，相邻层数如数值完全相同的话，则只保留最前面的一层<br>
-    （例：11-19层点数相同的话，则只保留第11层）<br>
-    武器、护甲ID和备注为可选项，只在需要更换装备时填写<br>
-    自定义点数分配方案脚本的参考范例请参见<a href="read.php?tid=500968&spid=13270735&sf=b09" target="_blank">此贴53楼</a>
-  </div>
-  <div style="overflow-y: auto; max-height: 400px;">
-    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">
-      <tbody>
-        <tr>
-          <th></th><th>层数</th><th>力量</th><th>体质</th><th>敏捷</th><th>灵活</th><th>智力</th><th>意志</th>
-<th>武器ID</th><th>武器备注</th><th>护甲ID</th><th>护甲备注</th><th></th>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <hr>
-  <div style="float: left; line-height: 27px;">
-    <a class="pd_btn_link" data-name="selectAll" href="#">全选</a>
-    <a class="pd_btn_link" data-name="selectInverse" href="#">反选</a>
-    <a class="pd_btn_link pd_highlight" data-name="add" href="#">增加</a>
-    <a class="pd_btn_link" data-name="deleteSelect" href="#">删除</a>
-  </div>
-  <div data-id="modifyArea" style="float: right;">
-    <input name="s1" type="text" maxlength="5" title="力量" placeholder="力量" style="width: 35px;">
-    <input name="s2" type="text" maxlength="5" title="体质" placeholder="体质" style="width: 35px;">
-    <input name="d1" type="text" maxlength="5" title="敏捷" placeholder="敏捷" style="width: 35px;">
-    <input name="d2" type="text" maxlength="5" title="灵活" placeholder="灵活" style="width: 35px;">
-    <input name="i1" type="text" maxlength="5" title="智力" placeholder="智力" style="width: 35px;">
-    <input name="i2" type="text" maxlength="5" title="意志" placeholder="意志" style="width: 35px;">
-    <a class="pd_btn_link" data-name="clear" href="#" title="清空各修改字段">清空</a>
-    <button type="button" name="modify">修改</button>
-    <span class="pd_cfg_tips" title="可将所选择的层数的相应属性修改为指定的数值；数字前可设+/-号，表示增加/减少相应数量；例：100、+5或-2">[?]</span>
-  </div>
-</div>
-<div class="pd_cfg_btns">
-  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">导入/导出分配方案</a></span>
-  <button type="submit">保存</button>
-  <button data-action="close" type="button">取消</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 840px;');
-    let $levelPointList = $dialog.find('#pdLevelPointList > tbody');
-
-    /**
-     * 添加各层点数分配的HTML
-     * @param {number} level 层数
-     * @param {{}} points 点数对象
-     */
-    const addLevelPointHtml = function (level, points) {
-        $(`
-<tr>
-  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>
-  <td style="text-align: left;">
-    <label style="margin-right: 8px;">
-      第 <input name="level" type="text" value="${level ? level : ''}" style="width: 30px;"> 层
-    </label>
-  </td>
-  <td><input class="pd_point" name="s1" type="number" value="${points['力量']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="s2" type="number" value="${points['体质']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d1" type="number" value="${points['敏捷']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="d2" type="number" value="${points['灵活']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i1" type="number" value="${points['智力']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_point" name="i2" type="number" value="${points['意志']}" min="1" style="width: 50px;" required></td>
-  <td><input class="pd_arm_input" name="weaponId" type="text" value="${points['武器ID'] ? points['武器ID'] : ''}" maxlength="15" style="width: 65px;"></td>
-  <td><input class="pd_arm_input" name="weaponMemo" type="text" value="${points['武器备注'] ? points['武器备注'] : ''}" maxlength="20" style="width: 70px;"></td>
-  <td><input class="pd_arm_input" name="armorId" type="text" value="${points['护甲ID'] ? points['护甲ID'] : ''}" maxlength="15" style="width: 65px;"></td>
-  <td><input class="pd_arm_input" name="armorMemo" type="text" value="${points['护甲备注'] ? points['护甲备注'] : ''}" maxlength="20" style="width: 70px;"></td>
-  <td style="text-align: left;">
-    <a class="pd_btn_link" data-name="fill" href="#">填充</a>
-    <a class="pd_btn_link" data-name="addArm" href="#">装备</a>
-    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">删除</a>
-  </td>
-</tr>
-<tr>
-  <td></td>
-  <td class="pd_custom_tips" title="剩余属性点">剩余：<span data-id="surplusPoint">0</span></td>
-  <td title="攻击力" hidden> <!-- 临时禁用 -->
-    攻：<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="最大生命值" hidden>
-    命：<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="攻击速度" hidden>
-    速：<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="暴击几率" hidden>
-    暴：<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="技能释放概率" hidden>
-    技：<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td title="防御减伤" hidden>
-    防：<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="点击：给该项加上或减去剩余属性点">&#177;</a>
-  </td>
-  <td class="pd_custom_tips" title="[飞身劈斩]伤害：攻击+体质值*5+智力值*5" hidden>技伤：<span data-id="skillAttack">0</span></td>
-  <td hidden></td>
-  <td hidden></td>
-</tr>
-`).appendTo($levelPointList).find('.pd_point').trigger('change');
-    };
-
-    $dialog.submit(function (e) {
-        e.preventDefault();
-        (0, _Config.read)();
-        let levelPointList = {};
-        let prevPoints = {};
-        let isError = false,
-            isSurplus = false;
-        $levelPointList.find('tr:gt(0)').each(function () {
-            let $this = $(this);
-            if (!$this.find('.pd_point').length) return;
-            let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
-            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) {
-                isError = true;
-                return false;
-            }
-
-            let level = parseInt($this.find('[name="level"]').val());
-            if (!level || level < 0) return;
-            let points = {};
-            for (let elem of Array.from($this.find('.pd_point, .pd_arm_input'))) {
-                let $elem = $(elem);
-                let name = $elem.attr('name');
-                let value = null;
-                value = $.trim($elem.val());
-                if ($elem.is('.pd_point')) {
-                    value = parseInt(value);
-                    if (!value || value < 0) return;
-                } else {
-                    if (!value) continue;
-                    if (name === 'weaponId' || name === 'armorId') {
-                        value = parseInt(value);
-                        if (!value || value < 0) return;
-                    }
-                }
-                points[getPointNameByFieldName(name)] = value;
-            }
-            if (Util.deepEqual(prevPoints, points)) return;
-
-            levelPointList[level] = points;
-            prevPoints = points;
-        });
-        if (isSurplus) {
-            if (!confirm('部分层数的可分配属性点尚未用完，是否提交？')) return;
-        }
-        if (isError) {
-            alert('部分层数的剩余属性点为负，请重新填写');
-            return;
-        }
-        Config.levelPointList = levelPointList;
-        (0, _Config.write)();
-        Dialog.close(dialogName);
-        setLevelPointListSelect(Config.levelPointList);
-    }).find('[data-name="add"]').click(function (e) {
-        e.preventDefault();
-        let points = { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 };
-        addLevelPointHtml(0, points);
-        $levelPointList.find('[name="level"]:last').focus();
-        Dialog.resize(dialogName);
-    }).end().find('[data-name="deleteSelect"]').click(function (e) {
-        e.preventDefault();
-        let $checked = $levelPointList.find('[type="checkbox"]:checked');
-        if (!$checked.length || !confirm('是否删除所选层数？')) return;
-        let $line = $checked.closest('tr');
-        $line.next('tr').addBack().remove();
-        Dialog.resize(dialogName);
-    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
-        e.preventDefault();
-        Public.showCommonImportOrExportConfigDialog('各层点数分配方案', 'levelPointList', null, function () {
-            $('#pdLevelPointListConfigDialog').remove();
-            showLevelPointListConfigDialog($dialog => $dialog.submit());
-        });
-    }).end().find('[data-name="selectAll"]').click(() => Util.selectAll($levelPointList.find('[type="checkbox"]'))).end().find('[data-name="selectInverse"]').click(() => Util.selectInverse($levelPointList.find('[type="checkbox"]')));
-
-    $levelPointList.on('click', '[data-name="fill"]', function (e) {
-        e.preventDefault();
-        fillPoints($(this).closest('tr'));
-    }).on('click', '[data-name="delete"]', function (e) {
-        e.preventDefault();
-        let $line = $(this).closest('tr');
-        $line.next('tr').addBack().remove();
-        Dialog.resize(dialogName);
-    }).on('click', '[data-name="addArm"]', function (e) {
-        e.preventDefault();
-        $levelPointList.find('#pdAddWeaponId, #pdAddWeaponMemo, #pdAddArmorId, #pdAddArmorMemo').removeAttr('id');
-        let $tr = $(this).closest('tr');
-        $tr.find('[name="weaponId"]').attr('id', 'pdAddWeaponId').end().find('[name="weaponMemo"]').attr('id', 'pdAddWeaponMemo').end().find('[name="armorId"]').attr('id', 'pdAddArmorId').end().find('[name="armorMemo"]').attr('id', 'pdAddArmorMemo');
-        addOrChangeArm(1);
-    }).on('change', '.pd_point', function () {
-        let $this = $(this);
-        let name = $this.attr('name');
-        let point = parseInt($this.val());
-        if (!point || point < 0) return;
-
-        let $points = $this.closest('tr');
-        let $properties = $points.next('tr');
-        $properties.find(`[data-id="pro_${name}"]`).text(getPropertyByPoint(getPointNameByFieldName(name), point));
-        let power = parseInt($points.find('[name="s1"]').val());
-        let life = parseInt($points.find('[name="s2"]').val());
-        let intelligence = parseInt($points.find('[name="i1"]').val());
-        $properties.find('[data-id="skillAttack"]').text(getSkillAttack(power + getExtraPoint('力量', power), life + getExtraPoint('体质', life), intelligence + getExtraPoint('智力', intelligence)));
-
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
-    }).on('click', '[data-id^="pro_"]', function () {
-        let $this = $(this);
-        let name = $this.data('id').replace('pro_', '');
-        let num = parseInt(prompt('请输入数值：', $this.text()));
-        if (!num || num < 0) return;
-        $this.closest('tr').prev('tr').find(`[name="${name}"]`).val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
-    }).on('click', '[data-id^="opt_"]', function (e) {
-        e.preventDefault();
-        let $this = $(this);
-        let name = $this.data('id').replace('opt_', '');
-        let $points = $this.closest('tr').prev('tr');
-        let surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
-        if (!surplusPoint) return;
-        let $point = $points.find(`[name="${name}"]`);
-        if (!$point.length) return;
-        let num = parseInt($point.val());
-        if (isNaN(num) || num < 0) num = 0;
-        num = num + surplusPoint;
-        let min = parseInt($point.attr('min'));
-        $point.val(num < min ? min : num).trigger('change');
-    });
-
-    $dialog.find('[name="modify"]').click(function () {
-        let $checked = $levelPointList.find('[type="checkbox"]:checked');
-        if (!$checked.length) return;
-        let data = {};
-        $dialog.find('[data-id="modifyArea"] [type="text"]').each(function () {
-            let $this = $(this);
-            let name = $this.attr('name');
-            let value = $.trim($this.val());
-            if (!value) return;
-            let matches = /^(-|\+)?(\d+)$/.exec(value);
-            if (!matches) {
-                alert('格式不正确');
-                $this.select().focus();
-            }
-            data[name] = {};
-            if (typeof matches[1] !== 'undefined') data[name].action = matches[1] === '+' ? 'add' : 'minus';else data[name].action = 'equal';
-            data[name].value = parseInt(matches[2]);
-        });
-        $checked.each(function () {
-            let $points = $(this).closest('tr');
-            $points.find('.pd_point').each(function () {
-                let $this = $(this);
-                let name = $this.attr('name');
-                if (!(name in data)) return;
-                if (data[name].action !== 'equal') {
-                    let point = parseInt($this.val());
-                    if (!point || point < 0) point = 0;
-                    point += data[name].action === 'add' ? data[name].value : -data[name].value;
-                    $this.val(point > 1 ? point : 1);
-                } else $this.val(data[name].value);
-            }).trigger('change');
-        });
-        alert('点数已修改');
-    }).end().find('[data-name="clear"]').click(function (e) {
-        e.preventDefault();
-        $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
-    });
-
-    for (let [level, points] of Util.entries(Config.levelPointList)) {
-        if (!$.isNumeric(level)) continue;
-        addLevelPointHtml(level, points);
-    }
-
-    Dialog.show(dialogName);
-    if (typeof callback === 'function') callback($dialog);
-};
-
-/**
- * 加入或更换装备
- * @param {number} type 类型，0：更换装备；1：加入装备
- */
-const addOrChangeArm = function (type) {
-    (0, _Config.read)();
-    const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
-    let $dialog = $('#' + dialogName).parent();
-    if ($dialog.length > 0 && type === 1) {
-        $dialog.fadeIn('fast');
-        Dialog.resize(dialogName);
-    } else {
-        let $wait = Msg.wait('<strong>正在获取装备信息&hellip;</strong>');
-        $.ajax({
-            type: 'GET',
-            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
-            timeout: _Const2.default.defAjaxTimeout
-        }).done(function (html) {
-            Msg.remove($wait);
-            let matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
-            if (matches) {
-                showAddOrChangeArmDialog(type, matches[1]);
-            }
-        }).fail(() => Msg.remove($wait));
-    }
-};
-
-/**
- * 显示加入或更换装备对话框
- * @param {number} type 类型，0：更换装备；1：加入装备
- * @param {string} armHtml 装备的HTML代码
- */
-const showAddOrChangeArmDialog = function (type, armHtml) {
-    const dialogName = `pd${type === 1 ? 'Add' : 'Change'}ArmDialog`;
-    if ($('#' + dialogName).length > 0) return;
-
-    let html = `
-<div class="pd_cfg_main" style="padding: 0;">
-  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">
-    <tbody>
-      <tr hidden><td colspan="3" class="kf_fw_ig_title1">我的装备背包</td></tr>
-      <tr><td width="10%">装备</td><td width="10%">熔炼</td><td width="80%">名称</td></tr>
-      ${armHtml}
-      <tr><td colspan="3"><span style="color:#00f;">不显示超过10件以上的物品，如物品超过10件，请熔炼掉多余的即可全部显示。</span></td></tr>
-    </tbody>
-  </table>
-</div>
-<div class="pd_cfg_btns">
-  ${type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : ''}
-  <button data-action="close" type="button">关闭</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, `${type === 1 ? '加入' : '更换'}装备`, html, 'min-width: 820px; z-index: 1003;');
-    let $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
-
-    Item.addCommonArmsButton($dialog.find('.pd_cfg_btns'), $armArea);
-    if (type === 1) {
-        $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
-            $dialog.fadeOut('fast');
-        });
-    } else {
-        $dialog.find('[name="manualInputArmId"]').click(function () {
-            let value = $.trim(prompt('请输入装备ID（多个ID用空格分隔）：'));
-            if (!value) return;
-            let armIdList = value.split(' ');
-            let $wait = Msg.wait('<strong>正在装备中&hellip;</strong>');
-            $(document).clearQueue('ChangeArms');
-            $.each(armIdList, function (i, armId) {
-                if (!armId) return;
-                $(document).queue('ChangeArms', function () {
-                    $.post('kf_fw_ig_mybpdt.php', `do=4&id=${armId}&safeid=${safeId}`, function (html) {
-                        let msg = Util.removeHtmlTag(html);
-                        if (/装备完毕/.test(msg)) {
-                            if (Config.autoSaveArmsInfoEnabled) {
-                                let armsInfo = Item.readArmsInfo();
-                                armsInfo['已装备武器'] = armsInfo['已装备护甲'] = 0;
-                                Item.writeArmsInfo(armsInfo);
-                            }
-                        } else {
-                            Msg.remove($wait);
-                            alert(msg);
-                        }
-                    }).fail(function () {
-                        $(document).clearQueue('ChangeArms');
-                        Msg.remove($wait);
-                        alert('连接超时');
-                    }).always(function () {
-                        if (!$(document).queue('ChangeArms').length) {
-                            updateLootInfo(function () {
-                                Msg.remove($wait);
-                                Dialog.close(dialogName);
-                                $('.pd_arm_input').val('');
-                            });
-                        } else {
-                            setTimeout(() => $(document).dequeue('ChangeArms'), _Const2.default.minActionInterval);
-                        }
-                    });
-                });
-            });
-            $(document).dequeue('ChangeArms');
-        });
-    }
-
-    if (Config.autoSaveArmsInfoEnabled) {
-        Item.addSavedArmsInfo($armArea);
-    }
-    Item.handleArmArea($armArea, type);
-    Item.bindArmLinkClickEvent($armArea, safeId, 1);
-
-    Dialog.show(dialogName);
-    Script.runFunc(`Item.show${type === 1 ? 'Add' : 'Change'}ArmDialog_after_`);
-};
-
-/**
- * 添加争夺记录头部区域
- */
-const addLootLogHeader = function () {
-    $(`
-<div id="pdLootLogHeader" style="padding: 0 5px 5px; line-height: 2em;">
-  <div class="pd_log_nav">
-    <a class="pd_disabled_link" data-name="start" href="#">&lt;&lt;</a>
-    <a class="pd_disabled_link" data-name="prev" href="#" style="padding: 0 7px;">&lt;</a>
-    <h2 class="pd_history_logs_key pd_custom_tips" title="共有0天的争夺记录">现在</h2>
-    <a class="pd_disabled_link" data-name="next" href="#" style="padding: 0 7px;">&gt;</a>
-    <a class="pd_disabled_link" data-name="end" href="#">&gt;&gt;</a>
-  </div>
-  <div style="text-align: right;">
-    <label>
-      <input class="pd_input" name="showLiteLootLogEnabled" type="checkbox" ${Config.showLiteLootLogEnabled ? 'checked' : ''}> 显示精简记录
-    </label>
-    <label>
-      <input class="pd_input" name="showLevelEnemyStatEnabled" type="checkbox" ${Config.showLevelEnemyStatEnabled ? 'checked' : ''}> 显示分层统计
-    </label>
-    <a class="pd_btn_link" data-name="openImOrExLootLogDialog" href="#">导入/导出争夺记录</a>
-    <a class="pd_btn_link pd_highlight" data-name="clearLootLog" href="#">清除记录</a>
-  </div>
-  <ul class="pd_stat" id="pdLogStat"></ul>
-</div>
-`).insertBefore($logBox).find('[type="checkbox"]').click(function () {
-        let $this = $(this);
-        let name = $this.attr('name');
-        let checked = $this.prop('checked');
-        if (name in Config && Config[name] !== checked) {
-            (0, _Config.read)();
-            Config[name] = $this.prop('checked');
-            (0, _Config.write)();
-            if (name === 'showLiteLootLogEnabled') showEnhanceLog(logList, levelInfoList, pointsLogList);else if (name === 'showLevelEnemyStatEnabled') showLogStat(levelInfoList);
-        }
-    }).end().find('[data-name="openImOrExLootLogDialog"]').click(function (e) {
-        e.preventDefault();
-        Public.showCommonImportOrExportLogDialog({
-            name: '争夺记录',
-            read: LootLog.read,
-            write: LootLog.write,
-            merge: LootLog.getMergeLog
-        });
-    }).end().find('[data-name="clearLootLog"]').click(function (e) {
-        e.preventDefault();
-        if (!confirm('是否清除所有争夺记录？')) return;
-        LootLog.clear();
-        alert('争夺记录已清除');
-        location.reload();
-    });
-
-    handleLootLogNav();
-};
-
-/**
- * 处理争夺记录导航
- */
-const handleLootLogNav = function () {
-    let $logNav = $('#pdLootLogHeader').find('.pd_log_nav');
-
-    /**
-     * 获取历史争夺记录的标题字符串
-     * @param {number} timestamp 争夺记录的时间戳（0表示现在）
-     * @returns {string} 标题字符串
-     */
-    const getKeyTitleStr = timestamp => {
-        if (parseInt(timestamp) === 0) return '现在';
-        let date = new Date(parseInt(timestamp));
-        return Util.getDateString(date) + ' ' + Util.getTimeString(date, ':', false);
-    };
-
-    let historyLogs = LootLog.read();
-    let keyList = [];
-    if (!$.isEmptyObject(historyLogs)) {
-        keyList = Util.getObjectKeyList(historyLogs, 1);
-        let latestKey = parseInt(keyList[keyList.length - 1]);
-        if (!/你被击败了|今日战斗已完成/.test(log) || latestKey <= Util.getDate('-1d').getTime() || historyLogs[latestKey].log.join('').trim() !== logList.join('').trim()) keyList.push(0);
-    } else keyList.push(0);
-    let curIndex = keyList.length - 1;
-
-    let totalDays = keyList[curIndex] === 0 ? keyList.length - 1 : keyList.length;
-    $logNav.find('.pd_history_logs_key').attr('title', `共有${totalDays}天的争夺记录`).text(getKeyTitleStr(keyList[curIndex]));
-    if (keyList.length > 1) {
-        $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
-        $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
-    }
-    $logNav.on('click', 'a[data-name]', function (e) {
-        e.preventDefault();
-        let $this = $(this);
-        if ($this.hasClass('pd_disabled_link')) return;
-        let name = $this.data('name');
-        if (name === 'start') {
-            curIndex = 0;
-        } else if (name === 'prev') {
-            if (curIndex > 0) curIndex--;else return;
-        } else if (name === 'next') {
-            if (curIndex < keyList.length - 1) curIndex++;else return;
-        } else if (name === 'end') {
-            curIndex = keyList.length - 1;
-        }
-        $logNav.find('.pd_history_logs_key').text(getKeyTitleStr(keyList[curIndex]));
-        let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
-        let curLevelInfoList = getLevelInfoList(curLogList);
-        let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
-        showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
-        showLogStat(curLevelInfoList);
-        if (curIndex > 0) {
-            $logNav.find('[data-name="start"]').attr('title', getKeyTitleStr(keyList[0])).removeClass('pd_disabled_link');
-            $logNav.find('[data-name="prev"]').attr('title', getKeyTitleStr(keyList[curIndex - 1])).removeClass('pd_disabled_link');
-        } else {
-            $logNav.find('[data-name="start"], [data-name="prev"]').removeAttr('title').addClass('pd_disabled_link');
-        }
-        if (curIndex < keyList.length - 1) {
-            $logNav.find('[data-name="next"]').attr('title', getKeyTitleStr(keyList[curIndex + 1])).removeClass('pd_disabled_link');
-            $logNav.find('[data-name="end"]').attr('title', getKeyTitleStr(keyList[keyList.length - 1])).removeClass('pd_disabled_link');
-        } else {
-            $logNav.find('[data-name="next"], [data-name="end"]').removeAttr('title').addClass('pd_disabled_link');
-        }
-    });
-
-    if (log.includes('遭遇了')) {
-        let curLogList = keyList[curIndex] === 0 ? logList : historyLogs[keyList[curIndex]].log;
-        let curLevelInfoList = getLevelInfoList(curLogList);
-        let curPointsLogList = keyList[curIndex] === 0 ? pointsLogList : historyLogs[keyList[curIndex]].points;
-        showEnhanceLog(curLogList, curLevelInfoList, curPointsLogList);
-
-        if (Config.autoSaveLootLogInSpecialCaseEnabled && /你被击败了|今日战斗已完成/.test(log) && keyList[curIndex] === 0) {
-            Util.deleteCookie(_Const2.default.lootCompleteCookieName);
-        }
-    }
-};
-
-/**
- * 显示争夺记录统计
- * @param {{}[]} levelInfoList 各层战斗信息列表
- */
-const showLogStat = function (levelInfoList) {
-    let { boxNum, boxes } = getTotalGain(levelInfoList);
-    let boxesStatHtml = '';
-    for (let key of Util.getSortedObjectKeyList(Item.boxTypeList, boxes)) {
-        boxesStatHtml += `<i>${key}<em>+${boxes[key].toLocaleString()}</em></i> `;
-    }
-    let allEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList))) {
-        allEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
-    }
-    let latestEnemyStatHtml = '';
-    for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= levelInfoList.length - _Const2.default.enemyStatLatestLevelNum)))) {
-        latestEnemyStatHtml += `<i>${enemy}<em>+${num}</em></i> `;
-    }
-    let $logStat = $('#pdLogStat');
-    $logStat.html(`
-<li><b>收获统计：</b><i>盒子<em>+${boxNum}</em></i> ${boxesStatHtml ? boxesStatHtml : '无'}</li>
-<li><b>全部层数：</b>${allEnemyStatHtml}<br><b>最近${_Const2.default.enemyStatLatestLevelNum}层：</b>${latestEnemyStatHtml}</li>
-`);
-
-    if (Config.showLevelEnemyStatEnabled) {
-        let levelEnemyStatHtml = '';
-        for (let i = 1; i < levelInfoList.length; i += 10) {
-            levelEnemyStatHtml += `&nbsp;&nbsp;<b>${i}-${i + 9 < levelInfoList.length ? i + 9 : levelInfoList.length - 1}：</b>`;
-            let html = '';
-            for (let [enemy, num] of Util.entries(getEnemyStatList(levelInfoList.filter((elem, level) => level >= i && level < i + 10)))) {
-                html += `<i>${enemy}<em>+${num}</em></i> `;
-            }
-            levelEnemyStatHtml += (html ? html : '无') + '<br>';
-        }
-        $logStat.append(`<li><b>分层统计：</b>${levelEnemyStatHtml ? '<br>' + levelEnemyStatHtml : '无'}</li>`);
-    }
-};
-
-/**
- * 显示经过增强的争夺记录
- * @param {string[]} logList 各层争夺记录列表
- * @param {{}[]} levelInfoList 各层战斗信息列表
- * @param {string[]} pointsLogList 点数分配记录列表
- */
-const showEnhanceLog = function (logList, levelInfoList, pointsLogList) {
-    let list = [];
-    $.each(logList, function (level, levelLog) {
-        if (!levelLog) return;
-        let matches = /\[([^\]]+)的]NPC/.exec(levelLog);
-        if (!matches) return;
-        let enemy = matches[1];
-        let color = '';
-        switch (enemy) {
-            case '普通':
-                color = '#09c';
-                break;
-            case '特别睿智':
-                color = '#c96';
-                break;
-            case '特别坚强':
-                color = '#cc587c';
-                break;
-            case '特别强壮':
-                color = '#f93';
-                break;
-            case '特别快速':
-                color = '#f3c';
-                break;
-            case 'BOSS':
-                color = '#f00';
-                break;
-            default:
-                color = '#0075ea';
-        }
-        list[level] = levelLog.replace(matches[0], `<span style="background-color: ${color};">[${enemy}的]</span>NPC`);
-
-        if (pointsLogList[level]) {
-            let levelPointsLog = pointsLogList[level];
-            /*enemy = enemy.replace('特别', '');
-            let pointMatches = /灵活：\d+\+\d+=(\d+)/.exec(levelPointsLog);
-            if (pointMatches) {
-                let realCriticalStrikePercent = getRealProperty('灵活', parseInt(pointMatches[1]), level, enemy);
-                levelPointsLog = levelPointsLog.replace(
-                    /(暴击几率：\d+%)/, `$1<span class="pd_custom_tips" title="实际暴击几率">(${realCriticalStrikePercent}%)</span>`
-                );
-            }
-            pointMatches = /智力：\d+\+\d+=(\d+)/.exec(levelPointsLog);
-            if (pointMatches) {
-                let realSkillPercent = getRealProperty('智力', parseInt(pointMatches[1]), level, enemy);
-                levelPointsLog = levelPointsLog.replace(
-                    /(技能释放概率：\d+%)/, `$1<span class="pd_custom_tips" title="实际技能释放概率">(${realSkillPercent}%)</span>`
-                );
-            }*/ // 临时禁用
-            list[level] = list[level].replace('</li>', `</li><li class="pk_log_g" style="color: #666;">${levelPointsLog}</li>`.replace(/\n/g, '<br>'));
-        }
-    });
-    $log.html(list.reverse().join(''));
-
-    if (Config.showLiteLootLogEnabled) {
-        if (!$('#pdLiteLootLogStyle').length) {
-            $('head').append('<style id="pdLiteLootLogStyle">.pk_log_g, .pk_log_i, .pk_log_u, .pk_log_v { display: none; }</style>');
-        }
-    } else $('#pdLiteLootLogStyle').remove();
-    Script.runFunc('Loot.showEnhanceLog_after_');
-};
-
-/**
- * 获取争夺记录
- * @returns {string} 争夺记录
- */
-const getLog = exports.getLog = () => log;
-
-/**
- * 获取各层争夺记录列表
- * @param log 争夺记录
- * @returns {string[]} 各层争夺记录列表
- */
-const getLogList = exports.getLogList = function (log) {
-    let logList = [];
-    let matches = log.match(/<li class="pk_log_j">.+?(?=\s*<li class="pk_log_j">|\s*$)/g);
-    for (let i in matches) {
-        let levelMatches = /在\[\s*(\d+)\s*层]/.exec(Util.removeHtmlTag(matches[i]));
-        if (levelMatches) logList[parseInt(levelMatches[1])] = matches[i];
-    }
-    return logList;
-};
-
-/**
- * 获取该层的战斗信息
- * @param {string} levelLog 该层的争夺记录
- * @returns {{enemy: string, life: number, initLife: number, box: string}} enemy：遭遇敌人名称；life：该层剩余生命值；initLife：该层初始生命值；box：盒子名称
- */
-const getLevelInfo = exports.getLevelInfo = function (levelLog) {
-    let info = { enemy: '', life: 0, initLife: 0, box: '' };
-    if (!levelLog) return info;
-    levelLog = Util.removeHtmlTag(levelLog.replace(/<\/li>/g, '</li>\n'));
-
-    let matches = /你\((\d+)\)遭遇了\[([^\]]+)的]NPC/.exec(levelLog);
-    if (matches) {
-        info.initLife = parseInt(matches[1]);
-        info.enemy = matches[2];
-        info.enemy = info.enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
-    }
-
-    matches = /生命值\[(\d+)\s*\/\s*\d+]/.exec(levelLog);
-    if (matches) info.life = parseInt(matches[1]);
-
-    matches = /敌人掉落了一个\s*\[\s*(\S+?盒子)\s*]/.exec(levelLog);
-    if (matches) info.box = matches[1];
-
-    return info;
-};
-
-/**
- * 获取各层战斗信息列表
- * @param {string[]} logList 各层争夺记录列表
- * @returns {{}[]} 各层战斗信息列表
- */
-const getLevelInfoList = exports.getLevelInfoList = function (logList) {
-    let levelInfoList = [];
-    $.each(logList, function (level, levelLog) {
-        if (!levelLog) return;
-        levelInfoList[level] = getLevelInfo(levelLog);
-    });
-    return levelInfoList;
-};
-
-/**
- * 获取当前的争夺总收获
- * @param {{}[]} levelInfoList 各层战斗信息列表
- * @returns {{boxes: {}}} boxes：盒子信息统计
- */
-const getTotalGain = function (levelInfoList) {
-    let boxNum = 0,
-        boxes = {};
-    $.each(levelInfoList, function (level, info) {
-        if (!info || !info.box) return;
-        if (!(info.box in boxes)) boxes[info.box] = 0;
-        boxes[info.box]++;
-        boxNum++;
-    });
-    return { boxNum, boxes };
-};
-
-/**
- * 获取遭遇敌人统计列表
- * @param {{}[]} levelInfoList 各层战斗信息列表
- * @returns {{}} 遭遇敌人列表
- */
-const getEnemyStatList = function (levelInfoList) {
-    let enemyStatList = {
-        '普通': 0,
-        '强壮': 0,
-        '快速': 0,
-        '睿智': 0,
-        '坚强': 0,
-        'BOSS': 0,
-        '大魔王': 0
-    };
-    $.each(getEnemyList(levelInfoList), function (level, enemy) {
-        if (!enemy || !(enemy in enemyStatList)) return;
-        enemyStatList[enemy]++;
-    });
-    if (!enemyStatList['BOSS']) delete enemyStatList['BOSS'];
-    if (!enemyStatList['大魔王']) delete enemyStatList['大魔王'];
-    return enemyStatList;
-};
-
-/**
- * 获取各层敌人列表
- * @param {{}[]} levelInfoList 各层战斗信息列表
- * @returns {[]} 各层敌人列表
- */
-const getEnemyList = function (levelInfoList) {
-    let enemyList = [];
-    $.each(levelInfoList, function (level, info) {
-        if (!info) return;
-        if (info.enemy) enemyList[level] = info.enemy;
-    });
-    return enemyList;
-};
-
-/**
- * 获取当前层数
- * @param {string[]} logList 各层争夺记录列表
- * @returns {number} 当前层数
- */
-const getCurrentLevel = logList => logList.length - 1 >= 1 ? logList.length - 1 : 0;
-
-/**
- * 获取临时点数分配记录列表
- * @param {string[]} logList 各层争夺记录列表
- * @returns {string[]} 点数分配记录列表
- */
-const getTempPointsLogList = function (logList) {
-    let options = localStorage.getItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
-    if (!options) return [];
-    try {
-        options = JSON.parse(options);
-    } catch (ex) {
-        return [];
-    }
-    if (!options || $.type(options) !== 'object' || $.type(options.time) !== 'number' || !Array.isArray(options.pointsLogList)) return [];
-    let diff = $.now() - options.time;
-    if (options.pointsLogList.length > logList.length || diff >= 24 * 60 * 60 * 1000 || diff < 0) {
-        localStorage.removeItem(_Const2.default.tempPointsLogListStorageName + '_' + _Info2.default.uid);
-        return [];
-    }
-    return options.pointsLogList;
-};
-
-/**
- * 获取自动争夺Cookies有效期
- * @returns {Date} Cookies有效期的Date对象
- */
-const getAutoLootCookieDate = function () {
-    let now = new Date();
-    let date = Util.getTimezoneDateByTime('02:30:00');
-    if (now > date || !Config.autoLootEnabled && !Config.autoSaveLootLogInSpecialCaseEnabled) {
-        date = Util.getTimezoneDateByTime('00:00:30');
-        date.setDate(date.getDate() + 1);
-    }
-    if (now > date) date.setDate(date.getDate() + 1);
-    return date;
-};
-
-/**
- * 检查争夺情况
- */
-const checkLoot = exports.checkLoot = function () {
-    if (new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
-        $(document).dequeue('AutoAction');
-        return;
-    }
-
-    console.log('检查争夺情况Start');
-    let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
-    Util.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout,
-        success(html) {
-            Msg.remove($wait);
-            if (!/你被击败了|今日战斗已完成/.test(html)) {
-                if (Util.getCookie(_Const2.default.lootCheckingCookieName)) return;
-                let $log = $('#pk_text', html);
-                if (!$log.length) {
-                    Util.setCookie(_Const2.default.lootCompleteCookieName, -2, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
-                    return;
-                }
-                if (Config.attackTargetLevel > 0) {
-                    let log = $log.html();
-                    let logList = getLogList(log);
-                    let currentLevel = getCurrentLevel(logList);
-                    if (Config.attackTargetLevel <= currentLevel) {
-                        Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
-                        return;
-                    }
-                }
-
-                let serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
-                if (serverStatusMatches) {
-                    let serverStatus = serverStatusMatches[1];
-                    console.log('当前服务器状态：' + serverStatus);
-                    if (Config.autoLootServerStatusType === 'Idle' && serverStatus !== '空闲' || Config.autoLootServerStatusType === 'IdleOrNormal' && serverStatus !== '空闲' && serverStatus !== '正常') {
-                        Util.setCookie(_Const2.default.lootCompleteCookieName, -2, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
-                        return;
-                    }
-                }
-
-                Util.setCookie(_Const2.default.lootCheckingCookieName, 1, Util.getDate('+1m'));
-                Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate('+1h')); // 临时
-                Msg.destroy();
-                $(document).clearQueue('AutoAction');
-                location.href = 'kf_fw_ig_index.php';
-            } else {
-                Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
-            }
-        },
-        error() {
-            Msg.remove($wait);
-            $(document).clearQueue('AutoAction');
-            $(document).queue('AutoAction', function () {
-                setTimeout(checkLoot, _Const2.default.minActionInterval);
-            });
-        },
-        complete: function () {
-            $(document).dequeue('AutoAction');
-        }
-    });
-};
-
-/**
- * 自动争夺
- */
-const autoLoot = function () {
-    if (/你被击败了|今日战斗已完成/.test(log) || new Date() < Util.getDateByTime(Config.checkLootAfterTime)) {
-        $(document).dequeue('AutoAction');
-        return;
-    }
-    let safeId = Public.getSafeId();
-    let currentLevel = getCurrentLevel(logList);
-    if (!safeId || Config.attackTargetLevel > 0 && Config.attackTargetLevel <= currentLevel) {
-        Util.setCookie(_Const2.default.lootCompleteCookieName, 1, getAutoLootCookieDate());
-        $(document).dequeue('AutoAction');
-        return;
-    }
-    Util.setCookie(_Const2.default.lootAttackingCookieName, 1, Util.getDate(`+${_Const2.default.lootAttackingExpires}m`));
-    Util.deleteCookie(_Const2.default.lootCompleteCookieName);
-    let autoChangePointsEnabled = Config.autoChangeLevelPointsEnabled || Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function';
-    if (Config.unusedPointNumAlertEnabled && !autoChangePointsEnabled && !checkPoints($points)) {
-        $(document).dequeue('AutoAction');
-        return;
-    }
-    lootAttack({ type: 'auto', targetLevel: Config.attackTargetLevel, autoChangePointsEnabled, safeId });
-};
-
-/**
- * 自动保存争夺记录
- */
-const autoSaveLootLog = exports.autoSaveLootLog = function () {
-    console.log('检查争夺情况Start');
-    let $wait = Msg.wait('<strong>正在检查争夺情况中&hellip;</strong>');
-    $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout,
-        success(html) {
-            Msg.remove($wait);
-            if (Util.getCookie(_Const2.default.lootCompleteCookieName)) return;
-            let $log = $('#pk_text', html);
-            let log = $log.html();
-            if (/你被击败了|今日战斗已完成/.test(log)) {
-                Util.setCookie(_Const2.default.lootCompleteCookieName, 2, getAutoLootCookieDate());
-                let logList = getLogList(log);
-                let levelInfoList = getLevelInfoList(logList);
-                let historyLogs = LootLog.read();
-                if (!$.isEmptyObject(historyLogs)) {
-                    let keyList = Util.getObjectKeyList(historyLogs, 1);
-                    let latestKey = parseInt(keyList[keyList.length - 1]);
-                    if (latestKey > Util.getDate('-1d').getTime() && historyLogs[latestKey].log.join('').trim() === logList.join('').trim()) return;
-                }
-                recordLootInfo(logList, levelInfoList, []);
-            } else {
-                Util.setCookie(_Const2.default.lootCompleteCookieName, -1, Util.getDate(`+${_Const2.default.checkLootInterval}m`));
-            }
-        },
-        error() {
-            Msg.remove($wait);
-            $(document).queue('AutoAction', function () {
-                setTimeout(autoSaveLootLog, _Const2.default.minActionInterval);
-            });
-        },
-        complete() {
-            $(document).dequeue('AutoAction');
-        }
-    });
-};
-
-/**
- * 获取改点倒计时
- * @returns {Deferred} Deferred对象
- */
-const getChangePointsCountDown = exports.getChangePointsCountDown = function () {
-    console.log('获取改点倒计时Start');
-    return $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_index.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout
-    }).then(function (html) {
-        let matches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
-        if (matches) {
-            let nextTime = Util.getDate(`+${matches[1]}m`);
-            Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
-            return nextTime.getTime();
-        }
-
-        matches = /当前修改配点可用\[(\d+)]次/.exec(html);
-        if (matches) {
-            let count = parseInt(matches[1]);
-            Util.setCookie(_Const2.default.changePointsInfoCookieName, count + 'c', Util.getDate(`+${_Const2.default.changePointsInfoExpires}m`));
-            return count;
-        }
-
-        let errorNextTime = Util.getDate('+1h');
-        Util.setCookie(_Const2.default.changePointsInfoCookieName, errorNextTime.getTime(), errorNextTime);
-        return 'error';
-    }, () => 'timeout');
-};
 
 /**
  * 在争夺排行页面添加用户链接
@@ -8512,74 +5665,6 @@ const addUserLinkInHaloPage = exports.addUserLinkInHaloPage = function () {
         $this.html(`<a class="${!Config.adminMemberEnabled ? 'pd_not_click_link' : ''}" href="profile.php?action=show&username=${userName}" target="_blank">${userName}</a>`);
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
-};
-
-/**
- * 读取战力光环页面信息
- * @param {boolean} isInitLootPage 是否初始化争夺首页
- */
-const readHaloInfo = function (isInitLootPage = false) {
-    console.log('获取战力光环信息Start');
-    let $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
-    getHaloInfo().done(function (result) {
-        if ($.type(result) === 'object') {
-            setHaloInfo(result);
-            if (isInitLootPage) enhanceLootIndexPage();else $points.find('.pd_point').trigger('change');
-        }
-    }).always(function (result) {
-        Msg.remove($wait);
-        if (result === 'timeout') {
-            setTimeout(() => readHaloInfo(isInitLootPage), _Const2.default.defAjaxInterval);
-        } else if (result === 'error') {
-            Msg.show('<strong>战力光环信息获取失败！</strong>', -1);
-        }
-    });
-};
-
-/**
- * 获取战力光环信息
- * @returns {Deferred} Deferred对象
- */
-const getHaloInfo = exports.getHaloInfo = function () {
-    return $.ajax({
-        type: 'GET',
-        url: 'kf_fw_ig_halo.php?t=' + $.now(),
-        timeout: _Const2.default.defAjaxTimeout
-    }).then(function (html) {
-        let haloInfo = { '全属性': 0, '攻击力': 0, '生命值': 0 };
-        let matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
-        if (matches) {
-            haloInfo['全属性'] = Math.round(parseFloat(matches[1]) * 10) / 1000;
-            let extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
-            if (extraMatches) {
-                haloInfo['攻击力'] = parseInt(extraMatches[1]);
-                haloInfo['生命值'] = parseInt(extraMatches[2]);
-            }
-            TmpLog.setValue(_Const2.default.haloInfoTmpLogName, $.extend(haloInfo, { time: $.now() }));
-            return haloInfo;
-        } else return 'error';
-    }, () => 'timeout');
-};
-
-/**
- * 设置战力光环信息
- * @param {{}} newHaloInfo 光环信息对象
- */
-const setHaloInfo = exports.setHaloInfo = function (newHaloInfo) {
-    haloInfo = newHaloInfo;
-    if (!$('#pdHaloInfo').length) {
-        let $node = $properties.find('input[type="text"]:eq(13)');
-        if (!$node.length || $.trim($node.val())) return;
-        $node.attr('id', 'pdHaloInfo');
-        $('<a data-name="reloadHaloInfo" href="#" style="margin-left: -20px;" title="如战力光环信息不正确时，请点此重新读取">读</a>').insertAfter($node).click(function (e) {
-            e.preventDefault();
-            if (confirm('是否重新读取战力光环信息？')) {
-                TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
-                readHaloInfo();
-            }
-        });
-    }
-    $('#pdHaloInfo').val(`全属性+${Math.round(haloInfo['全属性'] * 1000) / 10}% (+${haloInfo['攻击力']}|+${haloInfo['生命值']})`);
 };
 
 /**
@@ -8764,95 +5849,43 @@ const getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function
     }
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LootLog":14,"./Msg":15,"./Public":18,"./Script":20,"./TmpLog":22,"./Util":23}],14:[function(require,module,exports){
-/* 争夺记录模块 */
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.getMergeLog = exports.record = exports.clear = exports.write = exports.read = undefined;
-
-var _Info = require('./Info');
-
-var _Info2 = _interopRequireDefault(_Info);
-
-var _Const = require('./Const');
-
-var _Const2 = _interopRequireDefault(_Const);
-
-var _Util = require('./Util');
-
-var Util = _interopRequireWildcard(_Util);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// 保存争夺记录的键值名称
-const name = _Const2.default.storagePrefix + 'loot_log';
-
 /**
- * 读取争夺记录
- * @returns {{}} 争夺记录对象
+ * 添加咕咕镇协议全选按钮
  */
-const read = exports.read = function () {
-    let log = {};
-    let options = Util.readData(name + '_' + _Info2.default.uid);
-    if (!options) return log;
-    try {
-        options = JSON.parse(options);
-    } catch (ex) {
-        return log;
-    }
-    if (!options || $.type(options) !== 'object') return log;
-    log = options;
-    return log;
-};
-
-/**
- * 写入争夺记录
- * @param {{}} log 争夺记录对象
- */
-const write = exports.write = log => Util.writeData(name + '_' + _Info2.default.uid, JSON.stringify(log));
-
-/**
- * 清除争夺记录
- */
-const clear = exports.clear = () => Util.deleteData(name + '_' + _Info2.default.uid);
-
-/**
- * 记录新的争夺记录
- * @param {string[]} logList 各层争夺记录列表
- * @param {string[]} pointsLogList 点数分配记录列表
- */
-const record = exports.record = function (logList, pointsLogList) {
-    let log = read();
-    log[$.now()] = { log: logList, points: pointsLogList };
-    let newLog = {};
-    $.each(Util.getObjectKeyList(log, 1).slice(-Config.lootLogSaveMaxNum), function (i, key) {
-        key = parseInt(key);
-        newLog[key] = log[key];
+const addGuGuZhenSelectAllBtn = exports.addGuGuZhenSelectAllBtn = function () {
+    $(`
+<label class="pd_highlight" style="margin-bottom: 15px; display: block; font-weight: bold;">
+  <input id="guGuZhenSelectAllEnabled" type="checkbox"> 全选
+</label>
+`).appendTo($('input[name="submit"]').parent().prev()).find('input').click(function () {
+        let $this = $(this);
+        Config.guGuZhenSelectAllEnabled = $this.prop('checked');
+        $('input[name^="tongyi"]').prop('checked', Config.guGuZhenSelectAllEnabled);
+        (0, _Config.write)();
     });
-    write(newLog);
-};
 
-/**
- * 获取合并后的争夺记录
- * @param {{}} log 当前争夺记录
- * @param {{}} newLog 新争夺记录
- * @returns {{}} 合并后的争夺记录
- */
-const getMergeLog = exports.getMergeLog = function (log, newLog) {
-    for (let key in newLog) {
-        if (!$.isNumeric(key) || parseInt(key) <= 0) continue;
-        if ($.type(newLog[key]) !== 'object' || !Array.isArray(newLog[key].log) || !Array.isArray(newLog[key].points)) continue;
-        log[key] = newLog[key];
+    if (Config.guGuZhenSelectAllEnabled) {
+        $('#guGuZhenSelectAllEnabled').click();
     }
-    return log;
+
+    $('input[name="submit"]').click(function () {
+        let isAllow = true;
+        $('input[name^="tongyi"]').each(function () {
+            let flag = $(this).prop('checked');
+            if (!flag) {
+                isAllow = false;
+                return false;
+            }
+        });
+
+        if (isAllow && !Config.guGuZhenEnabled) {
+            Config.guGuZhenEnabled = true;
+            (0, _Config.write)();
+        }
+    });
 };
 
-},{"./Const":6,"./Info":9,"./Util":23}],15:[function(require,module,exports){
+},{"./Config":3,"./Const":5,"./Info":8,"./Log":10,"./Msg":13,"./Public":16,"./Script":18,"./TmpLog":20,"./Util":21}],13:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 
@@ -8981,7 +6014,7 @@ const destroy = exports.destroy = function () {
     $('.pd_mask').remove();
 };
 
-},{}],16:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /* 其它模块 */
 'use strict';
 
@@ -9413,7 +6446,7 @@ const handleProfilePage = exports.handleProfilePage = function () {
     })).css('vertical-align', 'top');
 };
 
-},{"./Bank":2,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Info":9,"./Msg":15,"./Public":18,"./TmpLog":22,"./Util":23}],17:[function(require,module,exports){
+},{"./Bank":2,"./Config":3,"./ConfigDialog":4,"./Const":5,"./Info":8,"./Msg":13,"./Public":16,"./TmpLog":20,"./Util":21}],15:[function(require,module,exports){
 /* 发帖模块 */
 'use strict';
 
@@ -9805,14 +6838,14 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
     });
 };
 
-},{"./Const":6,"./Info":9,"./Msg":15,"./Script":20,"./Util":23}],18:[function(require,module,exports){
+},{"./Const":5,"./Info":8,"./Msg":13,"./Script":18,"./Util":21}],16:[function(require,module,exports){
 /* 公共模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addChangePointsInfoTips = exports.addSlowActionChecked = exports.changeNewTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.handleSideBarLink = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.addSlowActionChecked = exports.changeNewTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.handleSideBarLink = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -9973,17 +7006,17 @@ const appendCss = exports.appendCss = function () {
   .pd_msg a { font-weight: bold; margin-left: 15px; }
   
   /* 帖子页面 */
-  .readlou .pd_goto_link { color: #000; }
-  .readlou .pd_goto_link:hover { color: #51d; }
-  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 5px; }
-  .pd_user_memo_tips { font-size: 12px; color: #999; margin-left: 5px; cursor: help; }
-  .pd_user_memo_tips:hover { color: #ddd; }
-  .readtext img[onclick] { max-width: 550px; }
+  .readtext .pd_goto_link { color: #000; }
+  .readtext .pd_goto_link:hover { color: #51d; }
+  .pd_multi_quote_chk { margin-right: 2px; float: right; }
+  .pd_fast_goto_floor { margin-right: 10px !important; line-height: 32px; }
+  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 10px; }
+  .readtext img[onclick] { width: auto; max-width: 850px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
-  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fcfcfc; }
+  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fffbf4; height: 20px; }
   .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }
+  .pd_follow_highlight { box-shadow: 0 0 3px 1px #ff9933 !important; }
   
   /* 我的物品页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
@@ -10228,31 +7261,6 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
         }
     }
 
-    let checkLootInterval = -1;
-    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
-        let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
-        if (value < 0) {
-            checkLootInterval = Const.checkLootInterval * 60;
-        }
-        else {
-            let date = Util.getDateByTime(Config.checkLootAfterTime);
-            let now = new Date();
-            if (value > 0 && now > date) date.setDate(date.getDate() + 1);
-            checkLootInterval = Math.floor((date - now) / 1000);
-            if (checkLootInterval < 0) checkLootInterval = 0;
-        }
-          if (Util.getCookie(Const.lootAttackingCookieName)) {
-            checkLootInterval = Const.lootAttackingExpires * 60;
-        }
-        else {
-            let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
-            changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
-            if (changePointsInfo > 0) {
-                checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
-            }
-        }
-    }*/ // 临时
-
     let getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
         let value = parseInt(Util.getCookie(_Const2.default.getDailyBonusCookieName));
@@ -10283,7 +7291,7 @@ const getNextTimingIntervalInfo = exports.getNextTimingIntervalInfo = function (
         }
     }
 
-    let intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '检查争夺情况', interval: checkLootInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }, { action: '自动购买物品', interval: buyItemInterval }];
+    let intervalList = [{ action: '提升战力光环', interval: promoteHaloInterval }, { action: '自动获取每日奖励', interval: getDailyBonusInterval }, { action: '自动购买物品', interval: buyItemInterval }];
     let minAction = '',
         minInterval = -1;
     for (let { action, interval } of intervalList.filter(data => data.interval > -1)) {
@@ -10393,29 +7401,12 @@ const startTimingMode = exports.startTimingMode = function () {
             $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
         }
 
-        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
-            if (Config.autoLootEnabled) {
-                if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
-                    $(document).queue('AutoAction', () => Loot.checkLoot());
-            }
-            else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-                $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
-            }
-        }*/ // 临时
-
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(_Const2.default.getDailyBonusCookieName)) {
             $(document).queue('AutoAction', () => getDailyBonus());
         }
 
         if (Config.autoBuyItemEnabled && !Util.getCookie(_Const2.default.buyItemCookieName) && !Util.getCookie(_Const2.default.buyItemReadyCookieName)) {
             $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
-        }
-
-        if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(_Const2.default.autoOpenBoxesAfterLootTmpLogName) && !/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
-            $(document).clearQueue('AutoAction');
-            $(document).queue('AutoAction', function () {
-                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', _Const2.default.minActionInterval);
-            });
         }
 
         $(document).dequeue('AutoAction');
@@ -10544,10 +7535,14 @@ const followUsers = exports.followUsers = function () {
             }
         });
     } else if (location.pathname === '/read.php') {
-        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
+        $('.readidmsbottom > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
-                $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
+                if (Config.highlightFollowUserFloorEnabled) {
+                    $this.closest('.readidms').parent().next('.readtext').addClass('pd_follow_highlight');
+                } else {
+                    $this.closest('.readidms').parent().next('.readtext').find('.pd_goto_link').addClass('pd_highlight');
+                }
             }
         });
     } else if (location.pathname === '/guanjianci.php' || location.pathname === '/kf_share.php') {
@@ -10604,18 +7599,16 @@ const blockUsers = exports.blockUsers = function () {
             if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         }
         let page = Util.getCurrentThreadPage();
-        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function (i) {
+        $('.readidmsbottom > a[href^="profile.php?action=show"]').each(function (i) {
             let $this = $(this);
             let index = Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.blockUserList);
             if (index > -1) {
                 let type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
-                let $floor = $this.closest('.readlou');
-                $floor.next('.readlou').remove();
-                $floor.next('div[id^="floor"]').remove();
+                let $floor = $this.closest('.readidms').parent();
                 $floor.next('.readtext').remove();
-                $floor.next('.readlou').remove();
+                $floor.prev('.readlou').remove();
                 $floor.remove();
             }
         });
@@ -10721,19 +7714,17 @@ const blockThread = exports.blockThread = function () {
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
-        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').eq(0);
-        if ($userName.closest('.readlou').next('.readlou').find('> div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"]').eq(0);
+        if (!$userName.closest('.readidms').parent().next('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
         let userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;
         if (isBlock(title, userName, fid)) {
             num++;
-            let $floor = $userName.closest('.readlou');
-            $floor.next('.readlou').remove();
-            $floor.next('div[id^="floor"]').remove();
+            let $floor = $userName.closest('.readidms').parent();
             $floor.next('.readtext').remove();
-            $floor.next('.readlou').remove();
+            $floor.prev('.readlou').remove();
             $floor.remove();
         }
     }
@@ -10751,11 +7742,12 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
   <li><a href="kf_share.php">最新共享</a></li>
   <li><a href="search.php?authorid=${_Info2.default.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
-  <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-  <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
+  <li><a href="kf_fygnew_3214.php">咕咕镇</a></li>
+  ${!Config.guGuZhenEnabled ? `
+    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
+    <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
+    <li><a href="kf_fw_ig_halo.php">战力光环</a></li>` : ''}
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
-  <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
-  <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>
   <li><a href="profile.php?action=friend">好友列表</a></li>
   ${_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
@@ -10889,9 +7881,15 @@ const bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = fu
         }
         let type = $menu.data('type');
         $searchTypeList = $(`
+
 <ul class="pd_search_type_list">
-  <li>标题</li><li>作者</li><li>关键词</li><li ${!Config.adminMemberEnabled ? 'hidden' : ''}>用户名</li>
-</ul>`).appendTo('body');
+  <li>标题</li><li>作者</li><li>关键词</li><li $
+{
+    !Config.adminMemberEnabled ? 'hidden' : ''
+}
+>用户名</li>
+</ul>
+`).appendTo('body');
         let offset = $menu.offset();
         $searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
         if (type === 'dialog') {
@@ -10954,6 +7952,7 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
         const dialogName = 'pdSearchDialog';
         if ($('#' + dialogName).length > 0) return;
         let html = `
+
 <div class="pd_cfg_main">
   <input name="step" value="2" type="hidden">
   <input name="method" value="AND" type="hidden">
@@ -10971,7 +7970,8 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
     <label><input name="searchRange" type="radio" value="all" checked> 全站 </label>
     <label><input name="searchRange" type="radio" value="current" disabled> 本版</label>
   </div>
-</div>`;
+</div>
+`;
         let $dialog = Dialog.create(dialogName, '搜索', html);
 
         $dialog.closest('form').attr({
@@ -11050,6 +8050,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     let html = `
+
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
@@ -11061,8 +8062,14 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
   <span class="pd_cfg_about"></span>
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>
-</div>`;
-    let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
+</div>
+`;
+    let $dialog = Dialog.create(dialogName, `
+导入或导出$
+{
+    title
+}
+`, html);
     let settings = $.type(configName) === 'object' ? configName.read() : Config[configName];
 
     $dialog.submit(function (e) {
@@ -11110,37 +8117,88 @@ const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDia
     if ($('#' + dialogName).length > 0) return;
     let log = read();
     let html = `
+
 <div class="pd_cfg_main">
-  <strong>导入${name}：</strong>将${name}内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-  <strong>导出${name}：</strong>复制文本框里的内容并粘贴到别处即可<br>
+  <strong>导入$
+{
+    name
+}
+：</strong>将$
+{
+    name
+}
+内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
+  <strong>导出$
+{
+    name
+}
+：</strong>复制文本框里的内容并粘贴到别处即可<br>
   <textarea name="log" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button name="merge" type="button" ${typeof merge !== 'function' ? 'hidden' : ''}>合并记录</button>
+  <button name="merge" type="button" $
+{
+    typeof merge !== 'function' ? 'hidden' : ''
+}
+>合并记录</button>
   <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
   <button data-action="close" type="button">关闭</button>
-</div>`;
+</div>
+`;
 
-    let $dialog = Dialog.create(dialogName, `导入或导出${name}`, html);
+    let $dialog = Dialog.create(dialogName, `
+导入或导出$
+{
+    name
+}
+`, html);
     $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
         e.preventDefault();
         let action = $(this).attr('name');
-        if (!confirm(`是否将文本框中的${name}${action === 'overwrite' ? '覆盖' : '合并'}到本地？`)) return;
+        if (!confirm(`
+是否将文本框中的$
+{
+    name
+}
+$
+{
+    action === 'overwrite' ? '覆盖' : '合并'
+}
+到本地？
+`)) return;
         let newLog = $.trim($dialog.find('[name="log"]').val());
         if (!newLog) return;
         try {
             newLog = JSON.parse(newLog);
         } catch (ex) {
-            alert(`${name}有错误`);
+            alert(`
+$
+{
+    name
+}
+有错误
+`);
             return;
         }
         if (!newLog || $.type(newLog) !== 'object') {
-            alert(`${name}有错误`);
+            alert(`
+$
+{
+    name
+}
+有错误
+`);
             return;
         }
         if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);else log = newLog;
         write(log);
-        alert(`${name}已导入`);
+        alert(`
+$
+{
+    name
+}
+已导入
+`);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
     });
 
@@ -11172,8 +8230,13 @@ const changeNewTipsColor = exports.changeNewTipsColor = function () {
  */
 const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
     $(`
+
 <label style="margin-right: 5px;">
-  <input name="slowActionEnabled" type="checkbox" ${Config.slowActionEnabled ? 'checked' : ''}> 慢速操作
+  <input name="slowActionEnabled" type="checkbox" $
+{
+    Config.slowActionEnabled ? 'checked' : ''
+}
+> 慢速操作
   <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），如使用道具、打开盒子等">[?]</span>
 </label>
 `).prependTo($area).find('input[name="slowActionEnabled"]').click(function () {
@@ -11187,38 +8250,14 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
     });
 };
 
-/**
- * 添加改点剩余次数信息提示
- */
-const addChangePointsInfoTips = exports.addChangePointsInfoTips = function () {
-    let value = Util.getCookie(_Const2.default.changePointsInfoCookieName);
-    if (!value) {
-        Loot.getChangePointsCountDown().done(addChangePointsInfoTips).fail(() => setTimeout(addChangePointsInfoTips, _Const2.default.minActionInterval));
-        return;
-    }
-
-    let tipsText = '';
-    if ($.isNumeric(value)) {
-        let nextTime = parseInt(value);
-        let interval = nextTime - $.now();
-        if (interval > 0) {
-            let minutes = Math.ceil(interval / 60 / 1000);
-            let hours = Math.floor(minutes / 60);
-            minutes -= hours * 60;
-            tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
-        }
-    } else tipsText = parseInt(value) + '次';
-    if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
-};
-
-},{"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Info":9,"./Item":10,"./Log":11,"./LogDialog":12,"./Loot":13,"./Msg":15,"./Read":19,"./Script":20,"./TmpLog":22,"./Util":23}],19:[function(require,module,exports){
+},{"./Config":3,"./ConfigDialog":4,"./Const":5,"./Dialog":6,"./Info":8,"./Item":9,"./Log":10,"./LogDialog":11,"./Loot":12,"./Msg":13,"./Read":17,"./Script":18,"./TmpLog":20,"./Util":21}],17:[function(require,module,exports){
 /* 帖子模块 */
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.blockUselessThreadButtons = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.addSignTips = exports.blockUselessThreadButtons = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -11267,11 +8306,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 const addFloorGotoLink = exports.addFloorGotoLink = function () {
     let sf = Util.getThreadSfParam();
-    $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span:first-child').each(function () {
+    $('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼/.test(floorText)) return;
-        let linkName = $this.closest('.readlou').prev('.readlou').prev('a').attr('name');
+        let linkName = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html($this.html().replace(/(\d+)楼/, `<a class="pd_goto_link" href="${url}" title="复制楼层链接">$1楼</a>`));
@@ -11292,13 +8331,13 @@ const addFloorGotoLink = exports.addFloorGotoLink = function () {
  */
 const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
     $(`
-<form>
 <li class="pd_fast_goto_floor">
-  直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
-  <span data-name="submit" style="cursor: pointer;">楼</span>
+    <form>
+        直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
+        <span data-name="submit" style="cursor: pointer;">楼</span>
+    </form>
 </li>
-</form>
-`).prependTo($('.readtext:first').prev('div').prev('.readlou').find('> div:first-child > ul')).submit(function (e) {
+`).appendTo($('#read_tui').parent('li').parent('.b_tit2')).submit(function (e) {
         e.preventDefault();
         let floor = parseInt($(this).find('input').val());
         if (!floor || floor < 0) return;
@@ -11306,7 +8345,7 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
         location.href = `read.php?tid=${Util.getUrlParam('tid')}&page=${parseInt(floor / Config.perPageFloorNum) + 1}&floor=${floor}&sf=${sf}`;
     }).find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
-    }).end().closest('div').next().css({ 'max-width': '385px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis' });
+    });
 };
 
 /**
@@ -11315,9 +8354,9 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
 const fastGotoFloor = exports.fastGotoFloor = function () {
     let floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    let $floorNode = $(`.readlou > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
+    let $floorNode = $(`.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
     if (!$floorNode.length) return;
-    let linkName = $floorNode.closest('.readlou').prev('.readlou').prev('a').attr('name');
+    let linkName = $floorNode.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
     location.hash = '#' + linkName;
 };
@@ -11328,7 +8367,11 @@ const fastGotoFloor = exports.fastGotoFloor = function () {
  * @param {string} color 神秘颜色
  */
 const modifyFloorSmColor = exports.modifyFloorSmColor = function ($elem, color) {
-    $elem.css('color', color).parent('.readidmsbottom, .readidmbottom').parent('.readidms, .readidm').css('border-color', color).parent('.readlou').css('border-color', color).next('.readlou').css('border-color', color).next().next('.readtext').css('border-color', color).next('.readlou').css('border-color', color);
+    $elem.css('color', color).prev('.readidmsbottom_j').css('background', color).prev('.readidmsbottom_s').css({
+        'color': color,
+        'border-color': color
+    });
+    $elem.closest('.readidms').css('box-shadow', `1px 1px 2px 2px ${color}`);
 };
 
 /**
@@ -11336,8 +8379,9 @@ const modifyFloorSmColor = exports.modifyFloorSmColor = function ($elem, color) 
  */
 const modifyMySmColor = exports.modifyMySmColor = function () {
     let $my = $(`.readidmsbottom > a[href^="profile.php?action=show&uid=${_Info2.default.uid}"]`);
-    if (!$my.length) $my = $(`.readidmbottom > a[href^="profile.php?action=show&uid=${_Info2.default.uid}"]`);
-    if ($my.length > 0) modifyFloorSmColor($my, Config.customMySmColor);
+    if ($my.length > 0) {
+        modifyFloorSmColor($my, Config.customMySmColor);
+    }
 };
 
 /**
@@ -11347,8 +8391,13 @@ const adjustThreadContentFontSize = exports.adjustThreadContentFontSize = functi
     if (Config.threadContentFontSize > 0 && Config.threadContentFontSize !== 12) {
         $('head').append(`
 <style>
-  .readtext td { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; }
-  .readtext td > div, .readtext td > .read_fds { font-size: 12px; }
+  .readtext > table > tbody > tr > td { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; width: 100%; }
+  .readtext > table > tbody > tr > td > div > div:first-child,
+  .readtext > table > tbody > tr > td > div > div:nth-child(2),
+  .readtext .read_fds {
+    font-size: 14px;
+    line-height: 22px;
+  }
 </style>
 `);
     }
@@ -11810,11 +8859,11 @@ const handleBuyThreadBtn = exports.handleBuyThreadBtn = function () {
 const getMultiQuoteData = exports.getMultiQuoteData = function () {
     let quoteList = [];
     $('.pd_multi_quote_chk input:checked').each(function () {
-        let $floor = $(this).closest('.readlou');
+        let $floor = $(this).closest('.readtext');
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
-        let pid = $floor.prev('.readlou').prev('a').attr('name');
-        let userName = Util.getFloorUserName($floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text());
+        let pid = $floor.prev('div').prev('.readlou').prev('a').attr('name');
+        let userName = Util.getFloorUserName($floor.prev('div').find('.readidmsbottom > a').text());
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -11827,7 +8876,7 @@ const getMultiQuoteData = exports.getMultiQuoteData = function () {
 const addMultiQuoteButton = exports.addMultiQuoteButton = function () {
     let replyUrl = $('a[href^="post.php?action=reply"].b_tit2').attr('href');
     if (!replyUrl) return;
-    $('<li class="pd_multi_quote_chk"><label title="多重引用"><input type="checkbox"> 引</label></li>').prependTo($('.readlou > div:first-child > ul').has('a[title="引用回复这个帖子"]')).find('input').click(function () {
+    $('<label title="多重引用" class="pd_multi_quote_chk"><input type="checkbox"> 引</label>').appendTo('.readtext > table > tbody > tr > td > div > div:nth-child(2)').find('input').click(function () {
         let tid = parseInt(Util.getUrlParam('tid'));
         let data = localStorage[_Const2.default.multiQuoteStorageName];
         if (data) {
@@ -11849,7 +8898,7 @@ const addMultiQuoteButton = exports.addMultiQuoteButton = function () {
         if (quoteList.length > 0) data.quoteList[page] = quoteList;else delete data.quoteList[page];
         localStorage[_Const2.default.multiQuoteStorageName] = JSON.stringify(data);
     });
-    $('.readlou:last').next('div').find('table > tbody > tr > td:last-child').css({ 'text-align': 'right', 'width': '320px' }).append(`<span class="b_tit2" style="margin-left: 5px;"><a style="display: inline-block;" href="#" title="多重回复">回复</a> ` + `<a style="display: inline-block;" href="${replyUrl}&multiquote=1" title="多重引用">引用</a></span>`).find('.b_tit2 > a:eq(0)').click(function (e) {
+    $('.readtext:last').next('.c').next('div').find('> table > tbody > tr > td:last-child').css({ 'text-align': 'right', 'width': '320px' }).append(`<span class="b_tit2" style="margin-left: 5px;"><a style="display: inline-block;" href="#" title="多重回复">回复</a> ` + `<a style="display: inline-block;" href="${replyUrl}&multiquote=1" title="多重引用">引用</a></span>`).find('.b_tit2 > a:eq(0)').click(function (e) {
         e.preventDefault();
         Post.handleMultiQuote(1);
     });
@@ -11873,24 +8922,17 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
  */
 const addUserMemo = exports.addUserMemo = function () {
     if ($.isEmptyObject(Config.userMemoList)) return;
-    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmbottom > a[href^="profile.php?action=show&uid="]').each(function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show&uid="]').each(function () {
         let $this = $(this);
         let userName = Util.getFloorUserName($this.text().trim());
         let key = Object.keys(Config.userMemoList).find(name => name === userName);
         if (!key) return;
+
         let memo = Config.userMemoList[key];
-        if ($this.is('.readidmbottom > a')) {
-            $this.after(`<span class="pd_user_memo_tips" title="备注：${memo}">[?]</span>`);
-        } else {
-            let memoText = memo;
-            let maxLength = 24;
-            if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-            $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
-            $this.closest('.readidms').css({
-                'height': 'auto',
-                'min-height': '280px'
-            });
-        }
+        let memoText = memo;
+        let maxLength = 24;
+        if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
+        $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
     });
 };
 
@@ -12166,7 +9208,17 @@ const blockUselessThreadButtons = exports.blockUselessThreadButtons = function (
     });
 };
 
-},{"./Config":4,"./Const":6,"./Dialog":7,"./Info":9,"./Log":11,"./Msg":15,"./Post":17,"./Public":18,"./Script":20,"./Util":23}],20:[function(require,module,exports){
+/**
+ * 鼠标移到到签名可显示提示
+ */
+const addSignTips = exports.addSignTips = function () {
+    $('.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:nth-child(3)').each(function () {
+        let $this = $(this);
+        $this.attr('title', $this.text()).addClass('pd_custom_tips');
+    });
+};
+
+},{"./Config":3,"./Const":5,"./Dialog":6,"./Info":8,"./Log":10,"./Msg":13,"./Post":15,"./Public":16,"./Script":18,"./Util":21}],18:[function(require,module,exports){
 /* 自定义脚本模块 */
 'use strict';
 
@@ -12205,10 +9257,6 @@ var _TmpLog = require('./TmpLog');
 
 var TmpLog = _interopRequireWildcard(_TmpLog);
 
-var _LootLog = require('./LootLog');
-
-var LootLog = _interopRequireWildcard(_LootLog);
-
 var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
@@ -12232,10 +9280,6 @@ var Other = _interopRequireWildcard(_Other);
 var _Bank = require('./Bank');
 
 var Bank = _interopRequireWildcard(_Bank);
-
-var _Card = require('./Card');
-
-var Card = _interopRequireWildcard(_Card);
 
 var _Item = require('./Item');
 
@@ -12510,7 +9554,7 @@ const handleInstallScriptLink = exports.handleInstallScriptLink = function () {
     });
 };
 
-},{"./Bank":2,"./Card":3,"./Config":4,"./ConfigDialog":5,"./Const":6,"./Dialog":7,"./Index":8,"./Info":9,"./Item":10,"./Log":11,"./Loot":13,"./LootLog":14,"./Msg":15,"./Other":16,"./Post":17,"./Public":18,"./Read":19,"./TmpLog":22,"./Util":23}],21:[function(require,module,exports){
+},{"./Bank":2,"./Config":3,"./ConfigDialog":4,"./Const":5,"./Dialog":6,"./Index":7,"./Info":8,"./Item":9,"./Log":10,"./Loot":12,"./Msg":13,"./Other":14,"./Post":15,"./Public":16,"./Read":17,"./TmpLog":20,"./Util":21}],19:[function(require,module,exports){
 /* 自助评分模块 */
 'use strict';
 
@@ -12734,7 +9778,7 @@ const handleGoodPostSubmit = exports.handleGoodPostSubmit = function () {
     });
 };
 
-},{"./Const":6,"./Info":9,"./Public":18}],22:[function(require,module,exports){
+},{"./Const":5,"./Info":8,"./Public":16}],20:[function(require,module,exports){
 /* 临时日志模块 */
 'use strict';
 
@@ -12831,7 +9875,7 @@ const deleteValue = exports.deleteValue = function (key) {
     }
 };
 
-},{"./Const":6,"./Info":9,"./Util":23}],23:[function(require,module,exports){
+},{"./Const":5,"./Info":8,"./Util":21}],21:[function(require,module,exports){
 /* 工具模块 */
 'use strict';
 
@@ -13477,4 +10521,4 @@ const getFloorUserName = exports.getFloorUserName = function (name) {
     }
 };
 
-},{"./Const":6,"./Info":9}]},{},[1]);
+},{"./Const":5,"./Info":8}]},{},[1]);
