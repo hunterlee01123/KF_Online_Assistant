@@ -94,56 +94,6 @@ export const show = function () {
       </label>
     </fieldset>
     <fieldset>
-      <legend>争夺相关</legend>
-      <label>
-        <input name="autoLootEnabled" type="checkbox" data-disabled="[name=autoLootServerStatusType]"
-          data-mutex="[name=autoSaveLootLogInSpecialCaseEnabled]"> 自动争夺
-        <span class="pd_cfg_tips" title="当发现可以进行争夺时，会跳转到争夺首页进行自动攻击（点数分配等相关功能请在争夺首页上设置）">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        攻击到第 <input name="attackTargetLevel" type="number" min="0" style="width: 40px;" required> 层
-        <span class="pd_cfg_tips" title="自动争夺的目标攻击层数（设为0表示攻击到被击败为止）">[?]</span>
-      </label><br>
-      <label>
-        在服务器状态为
-        <select name="autoLootServerStatusType" required>
-          <option value="Any">任意</option>
-          <option value="IdleOrNormal">空闲或正常</option>
-          <option value="Idle">空闲</option>
-        </select>
-        时才自动争夺
-        <span class="pd_cfg_tips" title="在服务器状态为指定状态时才进行自动争夺（选择“空闲”状态有可能错过争夺，请慎重考虑）">[?]</span>
-      </label><br>
-      <label>
-        <input name="autoSaveLootLogInSpecialCaseEnabled" type="checkbox"> 在不使用助手争夺的情况下自动保存争夺记录
-        <span class="pd_cfg_tips" title="在不使用助手争夺的情况下自动检查并保存争夺记录（使用助手进行争夺的用户请勿勾选此选项）">[?]</span>
-      </label><br>
-      <label>
-        在 <input name="checkLootAfterTime" type="text" maxlength="8" style="width: 55px;" required> 之后争夺
-        <span class="pd_cfg_tips" title="在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        保存最近的 <input name="lootLogSaveMaxNum" type="number" min="1" max="20" style="width: 40px;" required> 次记录
-        <span class="pd_cfg_tips" title="争夺记录最大保存次数，默认值：${defConfig.lootLogSaveMaxNum}，最大值：20">[?]</span>
-      </label><br>
-      <label>
-        <input name="autoOpenBoxesAfterLootEnabled" type="checkbox"> 在争夺后自动一键开盒
-        <span class="pd_cfg_tips" title="在争夺完后自动一键开盒（并执行后续操作），要打开的盒子种类和要执行的后续操作请在我的物品页面进行设定">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="showChangePointsInfoEnabled" type="checkbox"> 在首页显示改点剩余次数
-        <span class="pd_cfg_tips" title="在首页显示改点剩余次数，冷却时则显示倒计时">[?]</span>
-      </label><br>
-      <label>
-        <input name="showDrawCardTipsEnabled" type="checkbox"> 显示抽卡提醒
-        <span class="pd_cfg_tips" title="显示抽卡提醒">[?]</span>
-      </label>
-      <label class="pd_cfg_ml">
-        <input name="alwaysOpenPointAreaEnabled" type="checkbox"> 总是打开属性界面
-        <span class="pd_cfg_tips" title="在争夺首页总是打开个人属性/装备界面">[?]</span>
-      </label>
-    </fieldset>
-    <fieldset>
       <legend>
         <label><input name="autoBuyItemEnabled" type="checkbox"> 自动购买物品</label>
       </legend>
@@ -185,6 +135,24 @@ export const show = function () {
         <input name="highlightNewPostEnabled" type="checkbox"> 高亮今日的新帖
         <span class="pd_cfg_tips" title="在版块页面中高亮今日新发表帖子的发表时间">[?]</span>
       </label>
+    </fieldset>
+    <fieldset>
+      <legend>关注和屏蔽</legend>
+      <label>
+        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> 关注用户
+        <span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> 屏蔽用户
+        <span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">详细设置&raquo;</a><br>
+      <label>
+        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> 屏蔽帖子
+        <span class="pd_cfg_tips" title="开启屏蔽标题中包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
+      </label>
+      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
     </fieldset>
   </div>
 
@@ -255,10 +223,6 @@ export const show = function () {
         <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
         <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
-      <label class="pd_cfg_ml">
-        <input name="blockUselessThreadButtonsEnabled" type="checkbox"> 屏蔽无用按钮
-        <span class="pd_cfg_tips" title="屏蔽帖子页面上无用的按钮（如：非自己楼层上的编辑按钮）">[?]</span>
-      </label>
     </fieldset>
     <fieldset>
       <legend>其它设置</legend>
@@ -319,24 +283,6 @@ export const show = function () {
         <input name="adminMemberEnabled" type="checkbox"> 我是管理成员
         <span class="pd_cfg_tips" title="管理成员可开启此功能，助手会开启部分只有管理成员才能使用的功能，非管理成员开启此功能无效">[?]</span>
       </label>
-    </fieldset>
-    <fieldset>
-      <legend>关注和屏蔽</legend>
-      <label>
-        <input name="followUserEnabled" type="checkbox" data-disabled="[data-name=openFollowUserDialog]"> 关注用户
-        <span class="pd_cfg_tips" title="开启关注用户的功能，所关注的用户将被加注记号，请点击详细设置管理关注用户">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openFollowUserDialog" href="#">详细设置&raquo;</a><br>
-      <label>
-        <input name="blockUserEnabled" type="checkbox" data-disabled="[data-name=openBlockUserDialog]"> 屏蔽用户
-        <span class="pd_cfg_tips" title="开启屏蔽用户的功能，你将看不见所屏蔽用户的发言，请点击详细设置管理屏蔽用户">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openBlockUserDialog" href="#">详细设置&raquo;</a><br>
-      <label>
-        <input name="blockThreadEnabled" type="checkbox" data-disabled="[data-name=openBlockThreadDialog]"> 屏蔽帖子
-        <span class="pd_cfg_tips" title="开启屏蔽标题中包含指定关键字的帖子的功能，请点击详细设置管理屏蔽关键字">[?]</span>
-      </label>
-      <a class="pd_cfg_ml" data-name="openBlockThreadDialog" href="#">详细设置&raquo;</a><br>
     </fieldset>
   </div>
 </div>
@@ -473,19 +419,6 @@ const getMainConfigValue = function ($dialog) {
  * @returns {boolean} 是否验证通过
  */
 const verifyMainConfig = function ($dialog) {
-    let $txtCheckLootAfterTime = $dialog.find('[name="checkLootAfterTime"]');
-    let checkLootAfterTime = $.trim($txtCheckLootAfterTime.val());
-    if (!/^(2[0-3]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]$/.test(checkLootAfterTime)) {
-        alert('在指定时间之后争夺格式不正确');
-        $txtCheckLootAfterTime.select().focus();
-        return false;
-    }
-    else if (checkLootAfterTime < '00:01:00') {
-        alert('在指定时间之后争夺不得小于00:01:00');
-        $txtCheckLootAfterTime.select().focus();
-        return false;
-    }
-
     let $txtBuyItemIdList = $dialog.find('[name="buyItemIdList"]');
     let buyItemIdList = $.trim($txtBuyItemIdList.val());
     if ($dialog.find('[name="autoBuyItemEnabled"]').prop('checked')) {
@@ -543,7 +476,7 @@ const showClearDataDialog = function () {
   <fieldset style="margin-top: 5px;">
     <legend>请选择想清除的设置或日志（按<b>Ctrl键</b>或<b>Shift键</b>可多选）：</legend>
     <select name="settingsAndLogs" size="5" style="width: 340px;" multiple>
-      <option value="config">助手设置</option><option value="log">助手日志</option><option value="lootLog">争夺记录</option>
+      <option value="config">助手设置</option><option value="log">助手日志</option>
       <option value="armsInfo">装备信息</option><option value="buyThreadLog">购买帖子记录</option>
     </select>
   </fieldset>

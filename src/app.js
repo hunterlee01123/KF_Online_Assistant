@@ -7,7 +7,6 @@ import * as Msg from './module/Msg';
 import * as Dialog from './module/Dialog';
 import * as Log from './module/Log';
 import * as TmpLog from './module/TmpLog';
-import * as LootLog from './module/LootLog';
 import * as Script from './module/Script';
 import * as Public from './module/Public';
 import * as Index from './module/Index';
@@ -15,7 +14,6 @@ import * as Read from './module/Read';
 import * as Post from './module/Post';
 import * as Other from './module/Other';
 import * as Bank from './module/Bank';
-import * as Card from './module/Card';
 import * as Item from './module/Item';
 import * as Loot from './module/Loot';
 import * as SelfRate from './module/SelfRate';
@@ -36,14 +34,12 @@ const exportModule = function () {
         Info.w.Dialog = require('./module/Dialog');
         Info.w.Log = require('./module/Log');
         Info.w.TmpLog = require('./module/TmpLog');
-        Info.w.LootLog = require('./module/LootLog');
         Info.w.Public = require('./module/Public');
         Info.w.Index = require('./module/Index');
         Info.w.Read = require('./module/Read');
         Info.w.Post = require('./module/Post');
         Info.w.Other = require('./module/Other');
         Info.w.Bank = require('./module/Bank');
-        Info.w.Card = require('./module/Card');
         Info.w.Item = require('./module/Item');
         Info.w.Loot = require('./module/Loot');
         Info.w.SelfRate = require('./module/SelfRate');
@@ -87,7 +83,6 @@ const init = function () {
     if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
         $('#pdLoot').addClass('pd_rightbox1_gray');
     }
-    if (Config.showChangePointsInfoEnabled) Public.addChangePointsInfoTips();
     if (Info.isInHomePage) {
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
@@ -103,10 +98,9 @@ const init = function () {
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
         if (Config.customMySmColor) Read.modifyMySmColor();
-        if (Config.blockUselessThreadButtonsEnabled) Read.blockUselessThreadButtons();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
-        Read.addStatAndBuyThreadBtn();
+        //Read.addStatAndBuyThreadBtn(); //临时屏蔽
         Read.handleBuyThreadBtn();
         Read.addCopyBuyersListOption();
         if (Config.userMemoEnabled) Read.addUserMemo();
@@ -157,9 +151,6 @@ const init = function () {
     else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
     }
-    else if (/\/kf_fw_card_my\.php$/.test(location.href)) {
-        Card.addStartBatchModeButton();
-    }
     else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
@@ -206,9 +197,6 @@ const init = function () {
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
-    else if (location.pathname === '/kf_fw_ig_mycard.php') {
-        Card.handleMyCardPage();
-    }
 
     if (Config.blockUserEnabled) Public.blockUsers();
     if (Config.blockThreadEnabled) Public.blockThread();
@@ -226,22 +214,6 @@ const init = function () {
     if (Config.autoPromoteHaloEnabled && !Util.getCookie(Const.promoteHaloCookieName)) {
         $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
     }
-    if (location.pathname === '/kf_fw_ig_index.php') {
-        $(document).queue('AutoAction', () => Loot.init());
-    }
-
-    if (!Util.getCookie(Const.lootCompleteCookieName)) {
-        if (Config.autoLootEnabled) {
-            if (location.pathname !== '/kf_fw_ig_index.php' && !Util.getCookie(Const.lootAttackingCookieName) &&
-                !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName))
-            ) {
-                $(document).queue('AutoAction', () => Loot.checkLoot());
-            }
-        }
-        else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-            //$(document).queue('AutoAction', () => Loot.autoSaveLootLog()); // 临时
-        }
-    }
 
     if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) {
         $(document).queue('AutoAction', () => Public.getDailyBonus());
@@ -253,27 +225,10 @@ const init = function () {
         $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
     }
 
-    if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(Const.autoOpenBoxesAfterLootTmpLogName)) {
-        if (/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
-            TmpLog.deleteValue(Const.autoOpenBoxesAfterLootTmpLogName);
-            $(document).queue('AutoAction', () => Item.autoOpenBoxes());
-        }
-        else {
-            $(document).clearQueue('AutoAction');
-            $(document).queue('AutoAction', function () {
-                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
-            });
-        }
-    }
-
     $(document).dequeue('AutoAction');
 
     if (Config.autoChangeIdColorEnabled && !Util.getCookie(Const.autoChangeIdColorCookieName)) {
         Public.changeIdColor();
-    }
-
-    if (Config.showDrawCardTipsEnabled) {
-        Card.showDrawCardTips();
     }
 
     if (Config.timingModeEnabled && (Info.isInHomePage || location.pathname === '/kf_fw_ig_index.php' || /kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href))) {

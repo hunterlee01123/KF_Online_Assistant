@@ -5,7 +5,6 @@ import * as Util from './Util';
 import Const from './Const';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
-import * as LootLog from './LootLog';
 import * as Item from './Item';
 import * as Read from './Read';
 
@@ -38,47 +37,6 @@ export const Config = {
     promoteHaloAutoIntervalEnabled: true,
     // 在操作后所剩余的KFB或贡献高于指定值时才自动提升战力光环，设为0表示不限制
     promoteHaloLimit: 0,
-
-    // 是否自动争夺，true：开启；false：关闭
-    autoLootEnabled: false,
-    // 自动争夺的目标攻击层数（设为0表示攻击到被击败为止）
-    attackTargetLevel: 0,
-    // 在服务器状态为指定状态时才进行自动争夺，Any：任意；IdleOrNormal：空闲或正常；Idle：空闲（选择“空闲”状态有错过争夺的可能，请慎重考虑）
-    autoLootServerStatusType: 'Any',
-    // 是否在不使用助手争夺的情况下自动保存争夺记录（使用助手进行争夺的用户请勿开启此功能），true：开启；false：关闭
-    autoSaveLootLogInSpecialCaseEnabled: false,
-    // 在当天的指定时间之后检查争夺情况（本地时间），例：00:05:00（注：请不要设置得太接近零点，以免因本地时间与服务器时间有差异导致失效）
-    checkLootAfterTime: '00:05:00',
-    // 历史争夺记录的最大保存次数
-    lootLogSaveMaxNum: 7,
-    // 是否在争夺完后自动一键开盒（并执行后续操作），true：开启；false：关闭
-    autoOpenBoxesAfterLootEnabled: false,
-    // 是否在首页显示改点剩余次数信息（冷却时则显示倒计时），true：开启；false：关闭
-    showChangePointsInfoEnabled: false,
-    // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
-    levelPointList: {},
-    // 关键层列表，用于“攻击到下一关键层前”按钮，例：[1,11,15,20]
-    keyLevelList: [],
-    // 是否在攻击时自动修改为相应层数的点数分配方案（仅限自动攻击相关按钮有效），true：开启；false：关闭
-    autoChangeLevelPointsEnabled: false,
-    // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
-    customPointsScriptEnabled: false,
-    // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
-    unusedPointNumAlertEnabled: true,
-    // 是否延长每次争夺攻击的时间间隔，true：开启；false：关闭
-    slowAttackEnabled: false,
-    // 是否总是打开个人属性/装备界面，true：开启；false：关闭
-    alwaysOpenPointAreaEnabled: false,
-    // 是否在服务器状态发生变化时进行提醒（在状态变为“繁忙”、或由“空闲”变为“正常”状态时进行提醒），true：开启；false：关闭
-    alertServerStatusChangeEnabled: false,
-    // 在服务器状态发生变化时进行提醒的类型，0：总是提醒；1：仅当变为“繁忙”时提醒
-    alertServerStatusChangeType: 0,
-    // 是否显示分层NPC统计，true：开启；false：关闭
-    showLevelEnemyStatEnabled: false,
-    // 是否显示精简争夺记录，true：开启；false：关闭
-    showLiteLootLogEnabled: false,
-    // 是否显示抽卡提醒，true：开启；false：关闭
-    showDrawCardTipsEnabled: false,
 
     // 是否自动购买物品，true：开启；false：关闭
     autoBuyItemEnabled: false,
@@ -131,8 +89,6 @@ export const Config = {
     autoSavePostContentWhenSubmitEnabled: false,
     // 是否在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），true：开启；false：关闭
     kfSmileEnhanceExtensionEnabled: false,
-    // 是否屏蔽帖子页面上无用的按钮，true：开启；false：关闭
-    blockUselessThreadButtonsEnabled: false,
 
     // 默认的消息显示时间（秒），设置为-1表示永久显示
     defShowMsgDuration: -1,
@@ -283,7 +239,6 @@ export const clear = () => Util.deleteData(Info.storageType === 'ByUid' ? name +
 export const changeStorageType = function (storageType) {
     let log = Log.read();
     let tmpLog = TmpLog.read();
-    let lootLog = LootLog.read();
     let armsInfo = Item.readArmsInfo();
     let buyThreadLog = Read.readBuyThreadLog();
     Info.storageType = storageType;
@@ -293,7 +248,6 @@ export const changeStorageType = function (storageType) {
             write();
             Log.write(log);
             TmpLog.write(tmpLog);
-            LootLog.write(lootLog);
             Item.writeArmsInfo(armsInfo);
             Read.writeBuyThreadLog(buyThreadLog);
         }
@@ -338,9 +292,6 @@ export const clearData = function (name) {
     }
     else if (name === 'log') {
         Log.clear();
-    }
-    else if (name === 'lootLog') {
-        LootLog.clear();
     }
     else if (name === 'armsInfo') {
         Item.clearArmsInfo();

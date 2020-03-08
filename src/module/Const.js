@@ -13,14 +13,8 @@ const Const = {
 
     // UTC时间与论坛时间之间的时差（小时）
     forumTimezoneOffset: -8,
-    // 在当天的指定时间之后领取每日奖励（北京时间），例：00:35:00
-    getDailyBonusAfterTime: '00:35:00',
-    // 遭遇敌人统计的指定最近层数
-    enemyStatLatestLevelNum: 10,
-    // 争夺攻击时每隔指定层数进行一次检查，可设置为函数来返回值
-    lootAttackPerCheckLevel() {
-        return Config.alertServerStatusChangeEnabled ? 10 : 20; // 前者为开启“在服务器状态发生变化时进行提醒”时的间隔层数，后者为未开启时的间隔层数
-    },
+    // 在当天的指定时间之后领取每日奖励（北京时间），例：00:20:00
+    getDailyBonusAfterTime: '00:20:00',
     // 新装备标志的持续时间（天）
     newArmMarkDuration: 1,
     // 获取自定义的争夺点数分配方案（函数），参考范例见：read.php?tid=500968&spid=13270735&sf=b09
@@ -40,22 +34,12 @@ const Const = {
     promoteHaloLimitNextActionInterval: 480,
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
-    // 临时存储的战力光环信息的有效期（分钟）
-    tmpHaloInfoExpires: 420,
-    // 争夺攻击进行中的有效期（分钟）
-    lootAttackingExpires: 10,
-    // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
-    changePointsInfoExpires: 30,
-    // 检查争夺情况时，遇见争夺未结束时的重试间隔（分钟）
-    checkLootInterval: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
     smLevelUpAlertInterval: 3,
     // 神秘系数排名变化的提醒间隔（小时），设为0表示当排名变化时随时进行提醒
     smRankChangeAlertInterval: 22,
-    // 抽卡剩余时间为0时的重试间隔（分钟）
-    drawCardRetryInterval: 30,
 
     // ajax请求的默认超时时间（毫秒）
     defAjaxTimeout: 30000,
@@ -68,11 +52,6 @@ const Const = {
     },
     // 部分操作的最小时间间隔（毫秒）
     minActionInterval: 1000,
-    // 每次争夺攻击的时间间隔（毫秒），可设置为函数来返回值
-    lootAttackInterval() {
-        if (Config.slowAttackEnabled) return Math.floor(Math.random() * 3000) + 4000; // 慢速情况
-        else return Math.floor(Math.random() * 200) + 1000; // 正常情况
-    },
     // 银行相关操作的时间间隔（毫秒）
     bankActionInterval: 5000,
 

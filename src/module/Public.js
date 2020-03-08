@@ -388,31 +388,6 @@ export const getNextTimingIntervalInfo = function () {
         }
     }
 
-    let checkLootInterval = -1;
-    /*if (Config.autoLootEnabled || Config.autoSaveLootLogInSpecialCaseEnabled) {
-        let value = parseInt(Util.getCookie(Const.lootCompleteCookieName));
-        if (value < 0) {
-            checkLootInterval = Const.checkLootInterval * 60;
-        }
-        else {
-            let date = Util.getDateByTime(Config.checkLootAfterTime);
-            let now = new Date();
-            if (value > 0 && now > date) date.setDate(date.getDate() + 1);
-            checkLootInterval = Math.floor((date - now) / 1000);
-            if (checkLootInterval < 0) checkLootInterval = 0;
-        }
-
-        if (Util.getCookie(Const.lootAttackingCookieName)) {
-            checkLootInterval = Const.lootAttackingExpires * 60;
-        }
-        else {
-            let changePointsInfo = Util.getCookie(Const.changePointsInfoCookieName);
-            changePointsInfo = $.isNumeric(changePointsInfo) ? parseInt(changePointsInfo) : 0;
-            if (changePointsInfo > 0) {
-                checkLootInterval = Math.floor((changePointsInfo - $.now()) / 1000);
-            }
-        }
-    }*/ // 临时
 
     let getDailyBonusInterval = -1;
     if (Config.autoGetDailyBonusEnabled) {
@@ -450,7 +425,6 @@ export const getNextTimingIntervalInfo = function () {
 
     let intervalList = [
         {action: '提升战力光环', interval: promoteHaloInterval},
-        {action: '检查争夺情况', interval: checkLootInterval},
         {action: '自动获取每日奖励', interval: getDailyBonusInterval},
         {action: '自动购买物品', interval: buyItemInterval},
     ];
@@ -564,29 +538,12 @@ export const startTimingMode = function () {
             $(document).queue('AutoAction', () => Loot.getPromoteHaloInfo());
         }
 
-        /*if (!Util.getCookie(Const.lootCompleteCookieName)) {
-            if (Config.autoLootEnabled) {
-                if (!Util.getCookie(Const.lootAttackingCookieName) && !$.isNumeric(Util.getCookie(Const.changePointsInfoCookieName)))
-                    $(document).queue('AutoAction', () => Loot.checkLoot());
-            }
-            else if (Config.autoSaveLootLogInSpecialCaseEnabled) {
-                $(document).queue('AutoAction', () => Loot.autoSaveLootLog());
-            }
-        }*/ // 临时
-
         if (Config.autoGetDailyBonusEnabled && !Util.getCookie(Const.getDailyBonusCookieName)) {
             $(document).queue('AutoAction', () => getDailyBonus());
         }
 
         if (Config.autoBuyItemEnabled && !Util.getCookie(Const.buyItemCookieName) && !Util.getCookie(Const.buyItemReadyCookieName)) {
             $(document).queue('AutoAction', () => Item.buyItems(Config.buyItemIdList));
-        }
-
-        if (Config.autoOpenBoxesAfterLootEnabled && TmpLog.getValue(Const.autoOpenBoxesAfterLootTmpLogName) && !/kf_fw_ig_mybp\.php\?openboxes=true/.test(location.href)) {
-            $(document).clearQueue('AutoAction');
-            $(document).queue('AutoAction', function () {
-                setTimeout(() => location.href = 'kf_fw_ig_mybp.php?openboxes=true', Const.minActionInterval);
-            });
         }
 
         $(document).dequeue('AutoAction');
@@ -946,7 +903,6 @@ export const addFastNavMenu = function () {
   <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
   <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
   <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
-  <li><a href="kf_fw_ig_mycard.php">角色卡片</a></li>
   <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>
   <li><a href="profile.php?action=friend">好友列表</a></li>
@@ -1402,31 +1358,4 @@ export const addSlowActionChecked = function ($area) {
             writeConfig();
         }
     });
-};
-
-/**
- * 添加改点剩余次数信息提示
- */
-export const addChangePointsInfoTips = function () {
-    let value = Util.getCookie(Const.changePointsInfoCookieName);
-    if (!value) {
-        Loot.getChangePointsCountDown()
-            .done(addChangePointsInfoTips)
-            .fail(() => setTimeout(addChangePointsInfoTips, Const.minActionInterval));
-        return;
-    }
-
-    let tipsText = '';
-    if ($.isNumeric(value)) {
-        let nextTime = parseInt(value);
-        let interval = nextTime - $.now();
-        if (interval > 0) {
-            let minutes = Math.ceil(interval / 60 / 1000);
-            let hours = Math.floor(minutes / 60);
-            minutes -= hours * 60;
-            tipsText = `${hours > 0 ? hours + '时' : ''}${minutes}分`;
-        }
-    }
-    else tipsText = parseInt(value) + '次';
-    if (tipsText) $('#pdLoot').append(`<span id="pdChangePointsTips"> (改点：${tipsText})</span>`);
 };
