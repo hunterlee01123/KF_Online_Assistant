@@ -121,6 +121,8 @@ export const Config = {
     highlightFollowUserThreadInHPEnabled: true,
     // 是否高亮所关注用户在帖子列表页面下的帖子链接，true：开启；false：关闭
     highlightFollowUserThreadLinkEnabled: true,
+    // 是否高亮所关注用户在帖子页面下的楼层的边框，true：开启；false：关闭
+    highlightFollowUserFloorEnabled: true,
     // 是否开启屏蔽用户的功能，true：开启；false：关闭
     blockUserEnabled: false,
     // 屏蔽用户的默认屏蔽类型，0：屏蔽主题和回贴；1：仅屏蔽主题；2：仅屏蔽回贴

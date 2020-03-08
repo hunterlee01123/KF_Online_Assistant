@@ -51,8 +51,7 @@ export const getSafeId = function () {
 export const checkBrowserType = function () {
     if (Config.browseType === 'auto') {
         Info.isMobile = /(Mobile|MIDP)/i.test(navigator.userAgent);
-    }
-    else {
+    } else {
         Info.isMobile = Config.browseType === 'mobile';
     }
 };
@@ -121,17 +120,17 @@ export const appendCss = function () {
   .pd_msg a { font-weight: bold; margin-left: 15px; }
   
   /* 帖子页面 */
-  .readlou .pd_goto_link { color: #000; }
-  .readlou .pd_goto_link:hover { color: #51d; }
-  .pd_fast_goto_floor, .pd_multi_quote_chk { margin-right: 2px; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 5px; }
-  .pd_user_memo_tips { font-size: 12px; color: #999; margin-left: 5px; cursor: help; }
-  .pd_user_memo_tips:hover { color: #ddd; }
-  .readtext img[onclick] { max-width: 550px; }
+  .readtext .pd_goto_link { color: #000; }
+  .readtext .pd_goto_link:hover { color: #51d; }
+  .pd_multi_quote_chk { margin-right: 2px; float: right; }
+  .pd_fast_goto_floor { margin-right: 10px !important; line-height: 32px; }
+  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 10px; }
+  .readtext img[onclick] { width: auto; max-width: 850px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
-  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fcfcfc; }
+  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fffbf4; height: 20px; }
   .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }
+  .pd_follow_highlight { box-shadow: 0 0 3px 1px #ff9933 !important; }
   
   /* 我的物品页面 */
   .pd_item_btns { text-align: right; margin-top: 5px;  }
@@ -382,8 +381,7 @@ export const getNextTimingIntervalInfo = function () {
         let value = parseInt(Util.getCookie(Const.promoteHaloCookieName));
         if (value > 0) {
             promoteHaloInterval = Math.floor((value - $.now()) / 1000);
-        }
-        else {
+        } else {
             promoteHaloInterval = 0;
         }
     }
@@ -398,11 +396,9 @@ export const getNextTimingIntervalInfo = function () {
             let now = new Date();
             if (now > date) date.setDate(date.getDate() + 1);
             getDailyBonusInterval = Math.floor((date - now) / 1000);
-        }
-        else if (value < 0) {
+        } else if (value < 0) {
             getDailyBonusInterval = Const.getDailyBonusSpecialInterval * 60;
-        }
-        else {
+        } else {
             getDailyBonusInterval = 0;
         }
     }
@@ -413,12 +409,10 @@ export const getNextTimingIntervalInfo = function () {
         let now = new Date();
         if (Util.getCookie(Const.buyItemReadyCookieName)) {
             buyItemInterval = 5 * 60;
-        }
-        else if (Util.getCookie(Const.buyItemCookieName) || now < date) {
+        } else if (Util.getCookie(Const.buyItemCookieName) || now < date) {
             if (now > date) date.setDate(date.getDate() + 1);
             buyItemInterval = Math.floor((date - now) / 1000);
-        }
-        else {
+        } else {
             buyItemInterval = 0;
         }
     }
@@ -509,15 +503,13 @@ export const startTimingMode = function () {
                     Msg.show(`<strong class="pd_refresh_notice">定时操作失败（原因：${errorText}），将在<em>${interval}</em>分钟后重试&hellip;</strong>`, -1);
                     setTimeout(handleError, interval * 60 * 1000);
                     showRefreshModeTips(interval * 60, '', true);
-                }
-                else {
+                } else {
                     if (errorNum > 6) {
                         errorNum = 0;
                         interval = 15;
                         setTimeout(checkRefreshInterval, interval * 60 * 1000);
                         showRefreshModeTips(interval * 60, '', true);
-                    }
-                    else {
+                    } else {
                         errorNum++;
                         checkRefreshInterval();
                     }
@@ -554,13 +546,11 @@ export const startTimingMode = function () {
             prevInterval = -1;
             handleError();
             return;
-        }
-        else prevInterval = interval;
+        } else prevInterval = interval;
         if (interval === -1) {
             if (titleItvFunc) clearInterval(titleItvFunc);
             return;
-        }
-        else if (interval === 0) interval = Const.actionFinishRetryInterval;
+        } else if (interval === 0) interval = Const.actionFinishRetryInterval;
         setTimeout(checkRefreshInterval, interval * 1000);
         showRefreshModeTips(interval, action, true);
     };
@@ -628,14 +618,12 @@ export const getDailyBonus = function () {
                     Msg.show('<strong>领取每日奖励</strong>' + msgStatText);
                     if (!$.isEmptyObject(gain)) Log.push('领取每日奖励', '领取每日奖励', {gain});
                     if (Config.promoteHaloLimit > 0) Util.deleteCookie(Const.promoteHaloCookieName);
-                }
-                else {
+                } else {
                     Util.setCookie(Const.getDailyBonusCookieName, -1, Util.getDate('+5m'));
                 }
                 Script.runFunc('Public.getDailyBonus_after_', msg);
             }).fail(() => Msg.remove($wait));
-        }
-        else {
+        } else {
             Msg.remove($wait);
             Util.setCookie(Const.getDailyBonusCookieName, 1, getCookieDate());
         }
@@ -664,8 +652,7 @@ export const followUsers = function () {
                 $this.addClass('pd_highlight');
             }
         });
-    }
-    else if (location.pathname === '/thread.php') {
+    } else if (location.pathname === '/thread.php') {
         $('a.bl[href^="profile.php?action=show&uid="]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
@@ -675,24 +662,25 @@ export const followUsers = function () {
                 }
             }
         });
-    }
-    else if (location.pathname === '/read.php') {
-        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
+    } else if (location.pathname === '/read.php') {
+        $('.readidmsbottom > a[href^="profile.php?action=show"]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
-                $this.closest('.readlou').next('.readlou').find('div:nth-child(2) > span:first-child > a').addClass('pd_highlight');
+                if (Config.highlightFollowUserFloorEnabled) {
+                    $this.closest('.readidms').parent().next('.readtext').addClass('pd_follow_highlight');
+                } else {
+                    $this.closest('.readidms').parent().next('.readtext').find('.pd_goto_link').addClass('pd_highlight');
+                }
             }
         });
-    }
-    else if (location.pathname === '/guanjianci.php' || location.pathname === '/kf_share.php') {
+    } else if (location.pathname === '/guanjianci.php' || location.pathname === '/kf_share.php') {
         $('.kf_share1 > tbody > tr > td:last-child').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
                 $this.addClass('pd_highlight');
             }
         });
-    }
-    else if (location.pathname === '/search.php') {
+    } else if (location.pathname === '/search.php') {
         $('.thread1 a[href^="profile.php?action=show&uid="]').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.followUserList) > -1) {
@@ -720,8 +708,7 @@ export const blockUsers = function () {
                 $this.parent('li').remove();
             }
         });
-    }
-    else if (location.pathname === '/thread.php') {
+    } else if (location.pathname === '/thread.php') {
         let fid = parseInt($('input[name="f_fid"]:first').val());
         if (!fid) return;
         if (Config.blockUserForumType === 1 && !Config.blockUserFidList.includes(fid)) return;
@@ -734,8 +721,7 @@ export const blockUsers = function () {
                 $this.closest('tr').remove();
             }
         });
-    }
-    else if (location.pathname === '/read.php') {
+    } else if (location.pathname === '/read.php') {
         if (Config.blockUserForumType > 0) {
             let fid = parseInt($('input[name="fid"]:first').val());
             if (!fid) return;
@@ -743,7 +729,7 @@ export const blockUsers = function () {
             else if (Config.blockUserForumType === 2 && Config.blockUserFidList.includes(fid)) return;
         }
         let page = Util.getCurrentThreadPage();
-        $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function (i) {
+        $('.readidmsbottom > a[href^="profile.php?action=show"]').each(function (i) {
             let $this = $(this);
             let index = Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.blockUserList);
             if (index > -1) {
@@ -751,11 +737,9 @@ export const blockUsers = function () {
                 if (i === 0 && page === 1 && type > 1) return;
                 else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
-                let $floor = $this.closest('.readlou');
-                $floor.next('.readlou').remove();
-                $floor.next('div[id^="floor"]').remove();
+                let $floor = $this.closest('.readidms').parent();
                 $floor.next('.readtext').remove();
-                $floor.next('.readlou').remove();
+                $floor.prev('.readlou').remove();
                 $floor.remove();
             }
         });
@@ -770,13 +754,11 @@ export const blockUsers = function () {
                     if (regex1.test(text) || regex2.test(text)) {
                         $this.html(`<legend>Quote:</legend><mark class="pd_custom_tips" title="被屏蔽用户：${data.name}">该用户已被屏蔽</mark>`);
                     }
-                }
-                catch (ex) {
+                } catch (ex) {
                 }
             }
         });
-    }
-    else if (location.pathname === '/guanjianci.php' && Config.blockUserAtTipsEnabled) {
+    } else if (location.pathname === '/guanjianci.php' && Config.blockUserAtTipsEnabled) {
         $('.kf_share1 > tbody > tr > td:last-child').each(function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList($this.text(), Config.blockUserList) > -1) {
@@ -807,8 +789,7 @@ export const blockThread = function () {
             if (/^\/.+\/[gimuy]*$/.test(keyWord)) {
                 try {
                     regex = eval(keyWord);
-                }
-                catch (ex) {
+                } catch (ex) {
                     console.log(ex);
                     continue;
                 }
@@ -816,23 +797,20 @@ export const blockThread = function () {
             if (userName) {
                 if (includeUser) {
                     if (!includeUser.includes(userName)) continue;
-                }
-                else if (excludeUser) {
+                } else if (excludeUser) {
                     if (excludeUser.includes(userName)) continue;
                 }
             }
             if (fid) {
                 if (includeFid) {
                     if (!includeFid.includes(fid)) continue;
-                }
-                else if (excludeFid) {
+                } else if (excludeFid) {
                     if (excludeFid.includes(fid)) continue;
                 }
             }
             if (regex) {
                 if (regex.test(title)) return true;
-            }
-            else {
+            } else {
                 if (title.toLowerCase().includes(keyWord.toLowerCase())) return true;
             }
         }
@@ -854,8 +832,7 @@ export const blockThread = function () {
                 }
             }
         });
-    }
-    else if (location.pathname === '/thread.php') {
+    } else if (location.pathname === '/thread.php') {
         let fid = parseInt($('input[name="f_fid"]:first').val());
         if (!fid) return;
         $('.threadtit1 a[href^="read.php"]').each(function () {
@@ -865,24 +842,21 @@ export const blockThread = function () {
                 $this.closest('tr').remove();
             }
         });
-    }
-    else if (location.pathname === '/read.php') {
+    } else if (location.pathname === '/read.php') {
         if (Util.getCurrentThreadPage() !== 1) return;
         let title = Read.getThreadTitle();
         if (!title) return;
-        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').eq(0);
-        if ($userName.closest('.readlou').next('.readlou').find('> div:nth-child(2) > span:first-child').text().trim() !== '楼主') return;
+        let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"]').eq(0);
+        if (!$userName.closest('.readidms').parent().next('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
         let userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;
         if (isBlock(title, userName, fid)) {
             num++;
-            let $floor = $userName.closest('.readlou');
-            $floor.next('.readlou').remove();
-            $floor.next('div[id^="floor"]').remove();
+            let $floor = $userName.closest('.readidms').parent();
             $floor.next('.readtext').remove();
-            $floor.next('.readlou').remove();
+            $floor.prev('.readlou').remove();
             $floor.remove();
         }
     }
@@ -974,8 +948,7 @@ export const changeIdColor = function () {
                     }
                 }
                 if (nextId === 0) nextId = idList[0];
-            }
-            else {
+            } else {
                 for (let [i, id] of idList.entries()) {
                     if (id === prevId) {
                         idList.splice(i, 1);
@@ -994,8 +967,7 @@ export const changeIdColor = function () {
                     TmpLog.setValue(Const.prevAutoChangeIdColorTmpLogName, nextId);
                 }
             });
-        }
-        else {
+        } else {
             setCookie();
         }
     });
@@ -1028,8 +1000,7 @@ export const bindElementTitleClick = function () {
             (!target.id || !target.id.startsWith('wy_')) && !$(target).is('.pd_editor_btn')
         ) {
             showElementTitleTips(e, target.title);
-        }
-        else {
+        } else {
             $('.pd_title_tips').remove();
         }
     });
@@ -1082,8 +1053,7 @@ export const bindSearchTypeSelectMenuClick = function () {
         let type = $.trim($this.find('.pd_search_type > span').text());
         if (type === '关键词') {
             $this.attr('action', 'guanjianci.php?gjc=' + $this.find('input[name="keyword"]').val());
-        }
-        else if (type === '用户名') {
+        } else if (type === '用户名') {
             $this.attr('action', 'profile.php?action=show&username=' + $this.find('input[name="keyword"]').val());
         }
     });
@@ -1190,8 +1160,7 @@ export const turnPageViaKeyboard = function () {
         if (e.keyCode === 37) {
             if (curPage <= 1) return;
             url = $page.find('li > a:contains("上一页")').attr('href');
-        }
-        else {
+        } else {
             let matches = /&page=(\d+)/.exec($page.find('li:last-child > a').attr('href'));
             if (!matches) return;
             if (curPage >= parseInt(matches[1])) return;
@@ -1237,8 +1206,7 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
         if (!options) return;
         try {
             options = JSON.parse(options);
-        }
-        catch (ex) {
+        } catch (ex) {
             alert('设置有错误');
             return;
         }
@@ -1248,8 +1216,7 @@ export const showCommonImportOrExportConfigDialog = function (title, configName,
         }
         if ($.type(configName) === 'object') {
             configName.write(options);
-        }
-        else {
+        } else {
             Config[configName] = options;
             writeConfig();
         }
@@ -1298,8 +1265,7 @@ export const showCommonImportOrExportLogDialog = function ({name, read, write, m
         if (!newLog) return;
         try {
             newLog = JSON.parse(newLog);
-        }
-        catch (ex) {
+        } catch (ex) {
             alert(`${name}有错误`);
             return;
         }
@@ -1330,11 +1296,9 @@ export const changeNewTipsColor = function () {
     $msgTips.addClass('pd_new_tips');
     if (Info.$userMenu.find('a[href="message.php"]:contains("有新消息")').length > 0) {
         $msgTips.attr('id', 'pdNewMsgTips').css({'color': '#0099cc'});
-    }
-    else if (Info.$userMenu.find('a[href^="guanjianci.php?gjc="]:contains("有人@我")').length > 0) {
+    } else if (Info.$userMenu.find('a[href^="guanjianci.php?gjc="]:contains("有人@我")').length > 0) {
         $msgTips.attr('id', 'pdNewReplyTips');
-    }
-    else if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新评分")').length > 0) {
+    } else if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新评分")').length > 0) {
         $msgTips.attr('id', 'pdNewRateTips').css({'color': '#5cb85c'});
     }
 };

@@ -175,6 +175,10 @@ export const show = function () {
       <label>
         <input name="turnPageViaKeyboardEnabled" type="checkbox"> 通过左右键翻页
         <span class="pd_cfg_tips" title="在帖子和搜索页面通过左右键进行翻页">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
+        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label><br>
       <label>
         <input name="autoChangeIdColorEnabled" type="checkbox" data-disabled="[data-name=openAutoChangeSmColorPage]"> 自动更换ID颜色
@@ -218,10 +222,6 @@ export const show = function () {
       <label class="pd_cfg_ml">
         <input name="autoSavePostContentWhenSubmitEnabled" type="checkbox"> 提交时保存发帖内容
         <span class="pd_cfg_tips" title="在提交时自动保存发帖内容，以便在出现意外情况时能够恢复发帖内容（需在不关闭当前标签页的情况下才能起效）">[?]</span>
-      </label><br>
-      <label>
-        <input name="kfSmileEnhanceExtensionEnabled" type="checkbox" ${Info.isInSpecialDomain ? '' : 'disabled'}> 开启绯月表情增强插件
-        <span class="pd_cfg_tips" title="在发帖框上显示绯月表情增强插件（仅在miaola.info域名下生效），该插件由eddie32开发">[?]</span>
       </label>
     </fieldset>
     <fieldset>
@@ -696,6 +696,10 @@ const showFollowUserDialog = function () {
       <input name="highlightFollowUserThreadLinkEnabled" type="checkbox"> 高亮所关注用户的帖子链接
       <span class="pd_cfg_tips" title="高亮所关注用户在版块页面下的帖子链接">[?]</span>
     </label><br>
+    <label>
+      <input name="highlightFollowUserFloorEnabled" type="checkbox"> 高亮所关注用户的楼层
+      <span class="pd_cfg_tips" title="高亮所关注用户在帖子页面下的楼层的边框">[?]</span>
+    </label><br>
   </div>
   <ul id="pdFollowUserList" style="margin-top: 5px; min-width: 274px; line-height: 24px;"></ul>
   <div style="margin-top: 5px;">
@@ -738,6 +742,7 @@ const showFollowUserDialog = function () {
         e.preventDefault();
         Config.highlightFollowUserThreadInHPEnabled = $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked');
         Config.highlightFollowUserThreadLinkEnabled = $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked');
+        Config.highlightFollowUserFloorEnabled = $dialog.find('[name="highlightFollowUserFloorEnabled"]').prop('checked');
         Config.followUserList = [];
         $followUserList.find('li').each(function () {
             let $this = $(this);
@@ -791,6 +796,7 @@ const showFollowUserDialog = function () {
 
     $dialog.find('[name="highlightFollowUserThreadInHpEnabled"]').prop('checked', Config.highlightFollowUserThreadInHPEnabled);
     $dialog.find('[name="highlightFollowUserThreadLinkEnabled"]').prop('checked', Config.highlightFollowUserThreadLinkEnabled);
+    $dialog.find('[name="highlightFollowUserFloorEnabled"]').prop('checked', Config.highlightFollowUserFloorEnabled);
     for (let user of Config.followUserList) {
         addFollowUser(user.name);
     }

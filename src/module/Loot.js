@@ -3,14 +3,11 @@
 import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
-import * as Dialog from './Dialog';
 import Const from './Const';
-import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 import * as Script from './Script';
 import * as Public from './Public';
-import * as Item from './Item';
 
 /**
  * 在争夺排行页面添加用户链接

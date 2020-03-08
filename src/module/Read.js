@@ -16,11 +16,11 @@ import * as Post from './Post';
  */
 export const addFloorGotoLink = function () {
     let sf = Util.getThreadSfParam();
-    $('.readtext').prev('div').prev('.readlou').find('> div:nth-child(2) > span:first-child').each(function () {
+    $('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼/.test(floorText)) return;
-        let linkName = $this.closest('.readlou').prev('.readlou').prev('a').attr('name');
+        let linkName = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html($this.html().replace(/(\d+)楼/, `<a class="pd_goto_link" href="${url}" title="复制楼层链接">$1楼</a>`));
@@ -41,13 +41,13 @@ export const addFloorGotoLink = function () {
  */
 export const addFastGotoFloorInput = function () {
     $(`
-<form>
 <li class="pd_fast_goto_floor">
-  直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
-  <span data-name="submit" style="cursor: pointer;">楼</span>
+    <form>
+        直达 <input class="pd_input" style="width: 30px;" type="text" maxlength="8">
+        <span data-name="submit" style="cursor: pointer;">楼</span>
+    </form>
 </li>
-</form>
-`).prependTo($('.readtext:first').prev('div').prev('.readlou').find('> div:first-child > ul'))
+`).appendTo($('#read_tui').parent('li').parent('.b_tit2'))
         .submit(function (e) {
             e.preventDefault();
             let floor = parseInt($(this).find('input').val());
@@ -57,8 +57,7 @@ export const addFastGotoFloorInput = function () {
         })
         .find('[data-name="submit"]').click(function () {
         $(this).closest('form').submit();
-    }).end().closest('div').next()
-        .css({'max-width': '385px', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'});
+    });
 };
 
 /**
@@ -67,9 +66,9 @@ export const addFastGotoFloorInput = function () {
 export const fastGotoFloor = function () {
     let floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    let $floorNode = $(`.readlou > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
+    let $floorNode = $(`.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
     if (!$floorNode.length) return;
-    let linkName = $floorNode.closest('.readlou').prev('.readlou').prev('a').attr('name');
+    let linkName = $floorNode.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
     location.hash = '#' + linkName;
 };
@@ -80,11 +79,12 @@ export const fastGotoFloor = function () {
  * @param {string} color 神秘颜色
  */
 export const modifyFloorSmColor = function ($elem, color) {
-    $elem.css('color', color).parent('.readidmsbottom, .readidmbottom').parent('.readidms, .readidm').css('border-color', color)
-        .parent('.readlou').css('border-color', color)
-        .next('.readlou').css('border-color', color)
-        .next().next('.readtext').css('border-color', color)
-        .next('.readlou').css('border-color', color);
+    $elem.css('color', color).prev('.readidmsbottom_j').css('background', color)
+        .prev('.readidmsbottom_s').css({
+        'color': color,
+        'border-color': color,
+    });
+    $elem.closest('.readidms').css('box-shadow', `1px 1px 2px 2px ${color}`);
 };
 
 /**
@@ -92,8 +92,9 @@ export const modifyFloorSmColor = function ($elem, color) {
  */
 export const modifyMySmColor = function () {
     let $my = $(`.readidmsbottom > a[href^="profile.php?action=show&uid=${Info.uid}"]`);
-    if (!$my.length) $my = $(`.readidmbottom > a[href^="profile.php?action=show&uid=${Info.uid}"]`);
-    if ($my.length > 0) modifyFloorSmColor($my, Config.customMySmColor);
+    if ($my.length > 0) {
+        modifyFloorSmColor($my, Config.customMySmColor);
+    }
 };
 
 /**
@@ -103,8 +104,13 @@ export const adjustThreadContentFontSize = function () {
     if (Config.threadContentFontSize > 0 && Config.threadContentFontSize !== 12) {
         $('head').append(`
 <style>
-  .readtext td { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; }
-  .readtext td > div, .readtext td > .read_fds { font-size: 12px; }
+  .readtext > table > tbody > tr > td { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; width: 100%; }
+  .readtext > table > tbody > tr > td > div > div:first-child,
+  .readtext > table > tbody > tr > td > div > div:nth-child(2),
+  .readtext .read_fds {
+    font-size: 14px;
+    line-height: 22px;
+  }
 </style>
 `);
     }
@@ -141,8 +147,7 @@ export const addCopyBuyersListOption = function () {
             let $dialog = Dialog.create(dialogName, '购买人名单', html);
             Dialog.show(dialogName);
             $dialog.find('[name="buyerList"]').select().focus();
-        }
-        else if (name === 'openBuyThreadLogDialog') {
+        } else if (name === 'openBuyThreadLogDialog') {
             $this.get(0).selectedIndex = 0;
             showBuyThreadLogDialog();
         }
@@ -174,8 +179,7 @@ export const addStatAndBuyThreadBtn = function () {
             if (valueArr.length === 2) {
                 startFloor = parseInt(valueArr[0]);
                 endFloor = parseInt(valueArr[1]);
-            }
-            else endFloor = parseInt(valueArr[0]);
+            } else endFloor = parseInt(valueArr[0]);
             if (endFloor < startFloor) {
                 alert('统计楼层格式不正确');
                 return;
@@ -245,8 +249,8 @@ export const statFloor = function (tid, startPage, endPage, startFloor, endFloor
                     data.sf = '';
                     let userMatches = /profile\.php\?action=show&uid=(\d+)(?:&sf=(\w+))/.exec($userLink.attr('href'));
                     if (userMatches) {
-						data.uid = parseInt(userMatches[1]);
-						data.sf = userMatches[2];
+                        data.uid = parseInt(userMatches[1]);
+                        data.sf = userMatches[2];
                     }
 
                     data.smLevel = '';
@@ -279,8 +283,7 @@ export const statFloor = function (tid, startPage, endPage, startFloor, endFloor
                 if (isStop || page >= endPage) {
                     Msg.destroy();
                     showStatFloorDialog(floorList);
-                }
-                else {
+                } else {
                     setTimeout(() => stat(page + 1), Const.defAjaxInterval);
                 }
             }
@@ -459,9 +462,9 @@ export const showStatFloorDialog = function (floorList) {
         });
         if (!threadList.length) return;
         if (!confirm(
-                `你共选择了 ${threadList.length} 个可购买项，总售价 ${totalSell.toLocaleString()} KFB，` +
-                `均价 ${Util.getFixedNumLocStr(totalSell / threadList.length, 2)} KFB，是否批量购买？`
-            )
+            `你共选择了 ${threadList.length} 个可购买项，总售价 ${totalSell.toLocaleString()} KFB，` +
+            `均价 ${Util.getFixedNumLocStr(totalSell / threadList.length, 2)} KFB，是否批量购买？`
+        )
         ) return;
         Msg.destroy();
         Msg.wait(
@@ -498,8 +501,7 @@ export const buyThreads = function (threadList) {
                     if (/操作完成/.test(msg)) {
                         successNum++;
                         totalSell += sell;
-                    }
-                    else failNum++;
+                    } else failNum++;
                 },
                 error() {
                     failNum++;
@@ -522,8 +524,7 @@ export const buyThreads = function (threadList) {
                             , -1
                         );
                         Script.runFunc('Read.buyThreads_after_', threadList);
-                    }
-                    else {
+                    } else {
                         setTimeout(() => $(document).dequeue('BuyThread'), Const.defAjaxInterval);
                     }
                 }
@@ -570,17 +571,14 @@ export const handleBuyThreadBtn = function () {
                             recordBuyThreadLog({fid, tid, pid, forumName, threadTitle, userName, sell});
                         }
                         location.reload();
-                    }
-                    else if (/您已经购买此帖/.test(msg)) {
+                    } else if (/您已经购买此帖/.test(msg)) {
                         alert('你已经购买过此帖');
                         location.reload();
-                    }
-                    else {
+                    } else {
                         alert('帖子购买失败');
                     }
                 });
-            }
-            else location.href = url;
+            } else location.href = url;
         });
     });
 };
@@ -592,11 +590,11 @@ export const handleBuyThreadBtn = function () {
 export const getMultiQuoteData = function () {
     let quoteList = [];
     $('.pd_multi_quote_chk input:checked').each(function () {
-        let $floor = $(this).closest('.readlou');
+        let $floor = $(this).closest('.readtext');
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
-        let pid = $floor.prev('.readlou').prev('a').attr('name');
-        let userName = Util.getFloorUserName($floor.prev('.readlou').find('.readidmsbottom > a, .readidmbottom > a').text());
+        let pid = $floor.prev('div').prev('.readlou').prev('a').attr('name');
+        let userName = Util.getFloorUserName($floor.prev('div').find('.readidmsbottom > a').text());
         if (!userName) return;
         quoteList.push({floor: floor, pid: pid, userName: userName});
     });
@@ -609,8 +607,8 @@ export const getMultiQuoteData = function () {
 export const addMultiQuoteButton = function () {
     let replyUrl = $('a[href^="post.php?action=reply"].b_tit2').attr('href');
     if (!replyUrl) return;
-    $('<li class="pd_multi_quote_chk"><label title="多重引用"><input type="checkbox"> 引</label></li>')
-        .prependTo($('.readlou > div:first-child > ul').has('a[title="引用回复这个帖子"]'))
+    $('<label title="多重引用" class="pd_multi_quote_chk"><input type="checkbox"> 引</label>')
+        .appendTo('.readtext > table > tbody > tr > td > div > div:nth-child(2)')
         .find('input')
         .click(function () {
             let tid = parseInt(Util.getUrlParam('tid'));
@@ -620,12 +618,10 @@ export const addMultiQuoteButton = function () {
                     data = JSON.parse(data);
                     if (!data || $.type(data) !== 'object' || $.isEmptyObject(data)) data = null;
                     else if (typeof data.tid === 'undefined' || data.tid !== tid || !Array.isArray(data.quoteList)) data = null;
-                }
-                catch (ex) {
+                } catch (ex) {
                     data = null;
                 }
-            }
-            else {
+            } else {
                 data = null;
             }
             let quoteList = getMultiQuoteData();
@@ -638,8 +634,8 @@ export const addMultiQuoteButton = function () {
             else delete data.quoteList[page];
             localStorage[Const.multiQuoteStorageName] = JSON.stringify(data);
         });
-    $('.readlou:last').next('div')
-        .find('table > tbody > tr > td:last-child')
+    $('.readtext:last').next('.c').next('div')
+        .find('> table > tbody > tr > td:last-child')
         .css({'text-align': 'right', 'width': '320px'})
         .append(`<span class="b_tit2" style="margin-left: 5px;"><a style="display: inline-block;" href="#" title="多重回复">回复</a> ` +
             `<a style="display: inline-block;" href="${replyUrl}&multiquote=1" title="多重引用">引用</a></span>`)
@@ -668,25 +664,17 @@ export const modifyKFOtherDomainLink = function () {
  */
 export const addUserMemo = function () {
     if ($.isEmptyObject(Config.userMemoList)) return;
-    $('.readidmsbottom > a[href^="profile.php?action=show&uid="], .readidmbottom > a[href^="profile.php?action=show&uid="]').each(function () {
+    $('.readidmsbottom > a[href^="profile.php?action=show&uid="]').each(function () {
         let $this = $(this);
         let userName = Util.getFloorUserName($this.text().trim());
         let key = Object.keys(Config.userMemoList).find(name => name === userName);
         if (!key) return;
+
         let memo = Config.userMemoList[key];
-        if ($this.is('.readidmbottom > a')) {
-            $this.after(`<span class="pd_user_memo_tips" title="备注：${memo}">[?]</span>`);
-        }
-        else {
-            let memoText = memo;
-            let maxLength = 24;
-            if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-            $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
-            $this.closest('.readidms').css({
-                'height': 'auto',
-                'min-height': '280px',
-            });
-        }
+        let memoText = memo;
+        let maxLength = 24;
+        if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
+        $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
     });
 };
 
@@ -706,8 +694,7 @@ export const addCopyCodeLink = function () {
         let content = $fieldset.data('content');
         if (content) {
             $fieldset.html('<legend><a class="pd_copy_code" href="#">复制代码</a></legend>' + content).removeData('content');
-        }
-        else {
+        } else {
             let html = $fieldset.html();
             html = html.replace(/<legend>.+?<\/legend>/i, '');
             $fieldset.data('content', html);
@@ -855,8 +842,7 @@ export const readBuyThreadLog = function () {
     if (!options) return log;
     try {
         options = JSON.parse(options);
-    }
-    catch (ex) {
+    } catch (ex) {
         return log;
     }
     if (!options || !Array.isArray(options)) return log;
@@ -983,7 +969,7 @@ export const showBuyThreadLogDialog = function () {
 export const blockUselessThreadButtons = function () {
     $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
         let $this = $(this);
-        if($this.text().trim() === Info.userName) return;
+        if ($this.text().trim() === Info.userName) return;
         $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
     });
 };
