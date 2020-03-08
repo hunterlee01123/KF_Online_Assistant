@@ -97,6 +97,7 @@ const init = function () {
         Read.showAttachImageOutsideSellBox();
         if (Config.parseMediaTagEnabled) Read.parseMediaTag();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
+        Read.addSignTips();
         if (Config.customMySmColor) Read.modifyMySmColor();
         if (Config.multiQuoteEnabled) Read.addMultiQuoteButton();
         Read.addFastGotoFloorInput();
@@ -196,6 +197,9 @@ const init = function () {
     }
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
+    }
+    else if (location.pathname === '/kf_fygnew_3214.php') {
+        Loot.addGuGuZhenSelectAllBtn();
     }
 
     if (Config.blockUserEnabled) Public.blockUsers();

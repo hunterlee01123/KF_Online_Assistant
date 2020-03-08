@@ -45,6 +45,11 @@ export const Config = {
     // 在当天的指定时间之后购买物品（本地时间），例：00:40:00
     buyItemAfterTime: '00:40:00',
 
+    // 是否已开启咕咕镇，true：开启；false：关闭
+    guGuZhenEnabled: false,
+    // 是否全选咕咕镇协议，true：开启；false：关闭
+    guGuZhenSelectAllEnabled: false,
+
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭

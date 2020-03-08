@@ -973,3 +973,13 @@ export const blockUselessThreadButtons = function () {
         $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
     });
 };
+
+/**
+ * 鼠标移到到签名可显示提示
+ */
+export const addSignTips = function () {
+    $('.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:nth-child(3)').each(function () {
+        let $this = $(this);
+        $this.attr('title', $this.text()).addClass('pd_custom_tips');
+    });
+};

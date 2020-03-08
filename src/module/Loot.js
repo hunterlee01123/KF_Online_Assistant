@@ -4,6 +4,7 @@ import Info from './Info';
 import * as Util from './Util';
 import * as Msg from './Msg';
 import Const from './Const';
+import {read as readConfig, write as writeConfig} from './Config';
 import * as Log from './Log';
 import * as TmpLog from './TmpLog';
 import * as Script from './Script';
@@ -73,10 +74,8 @@ export const getPromoteHaloInfo = function () {
                 if (maxCount > 0) {
                     $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
                     getHaloInfo(maxCount);
-                }
-                else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
-            }
-            else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
+                } else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
+            } else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
         }).fail(() => setTimeout(getPersonalInfo, Const.defAjaxInterval));
     };
 
@@ -171,8 +170,7 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId) {
                     {pay}
                 );
                 index++;
-            }
-            else {
+            } else {
                 if (/两次操作间隔过短/.test(msg)) nextTime = Util.getDate('+10s').getTime();
                 else isStop = true;
 
@@ -197,14 +195,12 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId) {
                 if (nextTime > 0 || isStop) {
                     Util.setCookie(Const.promoteHaloCookieName, nextTime, new Date(nextTime));
                     setTimeout(() => $(document).dequeue('AutoAction'), Const.minActionInterval);
-                }
-                else {
+                } else {
                     Util.deleteCookie(Const.promoteHaloCookieName);
                     getPromoteHaloInfo();
                 }
                 Script.runFunc('Loot.promoteHalo_after_');
-            }
-            else {
+            } else {
                 setTimeout(promote, Const.promoteHaloActionInterval);
             }
         });
@@ -231,4 +227,41 @@ export const getPromoteHaloCostByTypeId = function (id) {
         default:
             return {type: 'KFB', num: 0};
     }
+};
+
+/**
+ * 添加咕咕镇协议全选按钮
+ */
+export const addGuGuZhenSelectAllBtn = function () {
+    $(`
+<label class="pd_highlight" style="margin-bottom: 15px; display: block; font-weight: bold;">
+  <input id="guGuZhenSelectAllEnabled" type="checkbox"> 全选
+</label>
+`).appendTo($('input[name="submit"]').parent().prev())
+        .find('input').click(function () {
+        let $this = $(this);
+        Config.guGuZhenSelectAllEnabled = $this.prop('checked');
+        $('input[name^="tongyi"]').prop('checked', Config.guGuZhenSelectAllEnabled);
+        writeConfig();
+    });
+
+    if (Config.guGuZhenSelectAllEnabled) {
+        $('#guGuZhenSelectAllEnabled').click();
+    }
+
+    $('input[name="submit"]').click(function () {
+        let isAllow = true;
+        $('input[name^="tongyi"]').each(function () {
+            let flag = $(this).prop('checked');
+            if (!flag) {
+                isAllow = false
+                return false;
+            }
+        });
+
+        if (isAllow && !Config.guGuZhenEnabled) {
+            Config.guGuZhenEnabled = true;
+            writeConfig();
+        }
+    });
 };
