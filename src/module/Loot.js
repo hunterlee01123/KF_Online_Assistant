@@ -66,10 +66,8 @@ export const init = function () {
             delete tmpHaloInfo.time;
             setHaloInfo(tmpHaloInfo);
             enhanceLootIndexPage();
-        }
-        else readHaloInfo(true);
-    }
-    else readHaloInfo(true);
+        } else readHaloInfo(true);
+    } else readHaloInfo(true);
 };
 
 /**
@@ -88,8 +86,7 @@ export const enhanceLootIndexPage = function () {
         let [, weaponInfoHtml = '', armorInfoHtml = ''] = armInfoHtml.split('（装备中）');
         currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
         currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
-    }
-    else {
+    } else {
         console.log('需要至少使用一件装备才能在此页面正常使用KFOL助手的功能');
         return;
     }
@@ -205,13 +202,11 @@ const handlePointsArea = function () {
                         Msg.remove($wait);
                         Msg.show('<strong>已成功修改为指定的点数设置和装备ID</strong>', 3);
                     });
-                }
-                else {
+                } else {
                     Msg.remove($wait);
                     if (result === 'ignore') {
                         alert('当前页面的点数设置和装备ID没有发生变化');
-                    }
-                    else if (result === 'timeout') {
+                    } else if (result === 'timeout') {
                         alert('连接超时，请重试');
                     }
                 }
@@ -228,8 +223,7 @@ const handlePointsArea = function () {
     if (countDownMatches) {
         let nextTime = Util.getDate(`+${countDownMatches[1]}m`);
         Util.setCookie(Const.changePointsInfoCookieName, nextTime.getTime(), nextTime);
-    }
-    else {
+    } else {
         let count = parseInt(Util.getCookie(Const.changePointsInfoCookieName));
         if (count !== changePointsAvailableCount) {
             Util.setCookie(Const.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate(`+${Const.changePointsInfoExpires}m`));
@@ -302,8 +296,7 @@ const checkPoints = function ($points) {
     if (surplusPoint < 0) {
         alert('剩余属性点为负，请重新填写');
         return false;
-    }
-    else if (surplusPoint > 0) {
+    } else if (surplusPoint > 0) {
         if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
     }
     return true;
@@ -559,8 +552,7 @@ const addLevelPointListSelect = function () {
                 let pointName = getPointNameByFieldName($this.attr('name'));
                 $this.val(points[pointName]);
             }).trigger('change');
-        }
-        else if (level === 0) {
+        } else if (level === 0) {
             $points.find('.pd_point, .pd_arm_input').each(function () {
                 $(this).val(this.defaultValue);
             }).trigger('change');
@@ -585,8 +577,7 @@ const addLevelPointListSelect = function () {
             if ($elem.is('.pd_point')) {
                 value = parseInt(value);
                 if (!value || value < 0) return;
-            }
-            else {
+            } else {
                 if (!value) continue;
                 if (name === 'weaponId' || name === 'armorId') {
                     value = parseInt(value);
@@ -633,8 +624,7 @@ const fillPoints = function ($points) {
             $points.find('input[name="armorMemo"]').val(pointsMatches[9]);
             $points.find('input[name="armorId"]').val(pointsMatches[10]);
         }
-    }
-    else {
+    } else {
         let numMatches = value.match(/\b\d{1,4}\b/g);
         if (!numMatches) return;
         $points.find('.pd_point').each(function (index) {
@@ -674,8 +664,7 @@ export const changePointsAndArms = function (nextLevel, callback) {
             points = Const.getCustomPoints(
                 $.extend(getLootInfo(), {getExtraPoint, getPointByProperty, getPropertyByPoint})
             );
-        }
-        catch (ex) {
+        } catch (ex) {
             console.log(ex);
         }
         if ($.type(points) === 'object') {
@@ -683,15 +672,12 @@ export const changePointsAndArms = function (nextLevel, callback) {
                 $points.find(`input[name="${getFieldNameByPointName(key)}"]`).val(value).trigger('change');
             }
             nextLevel = -1;
-        }
-        else if (typeof points === 'number') {
+        } else if (typeof points === 'number') {
             nextLevel = parseInt(points);
             nextLevel = nextLevel > 1 ? nextLevel : 1;
-        }
-        else if (points === false) {
+        } else if (points === false) {
             return callback('ignore');
-        }
-        else {
+        } else {
             return callback('error');
         }
     }
@@ -764,14 +750,12 @@ export const changePointsAndArms = function (nextLevel, callback) {
                                 armsInfo['已装备武器'] = weaponId;
                                 Item.writeArmsInfo(armsInfo);
                             }
-                        }
-                        else {
+                        } else {
                             Msg.show((`<strong>更换武器：${msg}</strong>`), -1);
                             Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', msg);
                             result = 'error';
                         }
-                    }
-                    else if (index === 1) {
+                    } else if (index === 1) {
                         let msg = Util.removeHtmlTag(html);
                         if (/装备完毕/.test(msg)) {
                             $points.find('input[name="armorId"], input[name="armorMemo"]').each(function () {
@@ -782,22 +766,19 @@ export const changePointsAndArms = function (nextLevel, callback) {
                                 armsInfo['已装备护甲'] = armorId;
                                 Item.writeArmsInfo(armsInfo);
                             }
-                        }
-                        else {
+                        } else {
                             Msg.show((`<strong>更换护甲：${msg}</strong>`), -1);
                             Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', msg);
                             result = 'error';
                         }
-                    }
-                    else if (index === 2) {
+                    } else if (index === 2) {
                         let {msg} = Util.getResponseMsg(html);
                         if (/已经重新配置加点！/.test(msg)) {
                             Util.deleteCookie(Const.changePointsInfoCookieName);
                             $points.find('.pd_point').each(function () {
                                 this.defaultValue = $(this).val();
                             });
-                        }
-                        else {
+                        } else {
                             let matches = /你还需要等待(\d+)分钟/.exec(msg);
                             if (matches) {
                                 let nextTime = Util.getDate(`+${parseInt(matches[1])}m`);
@@ -814,20 +795,17 @@ export const changePointsAndArms = function (nextLevel, callback) {
                     if (result === 'error' || result === 'timeout') {
                         $(document).clearQueue('ChangePointsAndArms');
                         callback(result);
-                    }
-                    else if (!$(document).queue('ChangePointsAndArms').length) {
+                    } else if (!$(document).queue('ChangePointsAndArms').length) {
                         Script.runFunc('Loot.changePointsAndArms_success_');
                         callback(result);
-                    }
-                    else {
+                    } else {
                         setTimeout(() => $(document).dequeue('ChangePointsAndArms'), Const.minActionInterval);
                     }
                 });
             });
         });
         $(document).dequeue('ChangePointsAndArms');
-    }
-    else {
+    } else {
         callback('ignore');
     }
 };
@@ -1075,8 +1053,7 @@ const showLevelPointListConfigDialog = function (callback) {
                 if ($elem.is('.pd_point')) {
                     value = parseInt(value);
                     if (!value || value < 0) return;
-                }
-                else {
+                } else {
                     if (!value) continue;
                     if (name === 'weaponId' || name === 'armorId') {
                         value = parseInt(value);
@@ -1218,8 +1195,7 @@ const showLevelPointListConfigDialog = function (callback) {
                     if (!point || point < 0) point = 0;
                     point += (data[name].action === 'add' ? data[name].value : -data[name].value);
                     $this.val(point > 1 ? point : 1);
-                }
-                else $this.val(data[name].value);
+                } else $this.val(data[name].value);
             }).trigger('change');
         });
         alert('点数已修改');
@@ -1248,8 +1224,7 @@ const addOrChangeArm = function (type) {
     if ($dialog.length > 0 && type === 1) {
         $dialog.fadeIn('fast');
         Dialog.resize(dialogName);
-    }
-    else {
+    } else {
         let $wait = Msg.wait('<strong>正在获取装备信息&hellip;</strong>');
         $.ajax({
             type: 'GET',
@@ -1297,8 +1272,7 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
         $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
             $dialog.fadeOut('fast');
         });
-    }
-    else {
+    } else {
         $dialog.find('[name="manualInputArmId"]').click(function () {
             let value = $.trim(prompt('请输入装备ID（多个ID用空格分隔）：'));
             if (!value) return;
@@ -1316,8 +1290,7 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
                                 armsInfo['已装备武器'] = armsInfo['已装备护甲'] = 0;
                                 Item.writeArmsInfo(armsInfo);
                             }
-                        }
-                        else {
+                        } else {
                             Msg.remove($wait);
                             alert(msg);
                         }
@@ -1332,8 +1305,7 @@ const showAddOrChangeArmDialog = function (type, armHtml) {
                                 Dialog.close(dialogName);
                                 $('.pd_arm_input').val('');
                             });
-                        }
-                        else {
+                        } else {
                             setTimeout(() => $(document).dequeue('ChangeArms'), Const.minActionInterval);
                         }
                     });
@@ -1456,8 +1428,7 @@ const readHaloInfo = function (isInitLootPage = false) {
         Msg.remove($wait);
         if (result === 'timeout') {
             setTimeout(() => readHaloInfo(isInitLootPage), Const.defAjaxInterval);
-        }
-        else if (result === 'error') {
+        } else if (result === 'error') {
             Msg.show('<strong>战力光环信息获取失败！</strong>', -1);
         }
     });
@@ -1484,8 +1455,7 @@ export const getHaloInfo = function () {
             }
             TmpLog.setValue(Const.haloInfoTmpLogName, $.extend(haloInfo, {time: $.now()}));
             return haloInfo;
-        }
-        else return 'error';
+        } else return 'error';
     }, () => 'timeout');
 };
 
@@ -1552,10 +1522,8 @@ export const getPromoteHaloInfo = function () {
                 if (maxCount > 0) {
                     $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
                     getHaloInfo(maxCount);
-                }
-                else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
-            }
-            else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
+                } else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
+            } else return setCookie(`+${Const.promoteHaloLimitNextActionInterval}m`);
         }).fail(() => setTimeout(getPersonalInfo, Const.defAjaxInterval));
     };
 
@@ -1650,8 +1618,7 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId) {
                     {pay}
                 );
                 index++;
-            }
-            else {
+            } else {
                 if (/两次操作间隔过短/.test(msg)) nextTime = Util.getDate('+10s').getTime();
                 else isStop = true;
 
@@ -1676,14 +1643,12 @@ export const promoteHalo = function (totalCount, promoteHaloCostType, safeId) {
                 if (nextTime > 0 || isStop) {
                     Util.setCookie(Const.promoteHaloCookieName, nextTime, new Date(nextTime));
                     setTimeout(() => $(document).dequeue('AutoAction'), Const.minActionInterval);
-                }
-                else {
+                } else {
                     Util.deleteCookie(Const.promoteHaloCookieName);
                     getPromoteHaloInfo();
                 }
                 Script.runFunc('Loot.promoteHalo_after_');
-            }
-            else {
+            } else {
                 setTimeout(promote, Const.promoteHaloActionInterval);
             }
         });
@@ -1713,18 +1678,50 @@ export const getPromoteHaloCostByTypeId = function (id) {
 };
 
 /**
- * 添加咕咕镇协议全选按钮
+ * 添加咕咕镇协议相关按钮
  */
-export const addGuGuZhenSelectAllBtn = function () {
+export const addGuGuZhenBtns = function () {
+    /**
+     * 获取是否全部同意
+     * @returns {boolean} 是否全部同意
+     */
+    const checkIsAllow = function () {
+        let isAllow = true;
+        $('input[name^="tongyi"]').each(function () {
+            let flag = $(this).prop('checked');
+            if (!flag) {
+                isAllow = false;
+                return false;
+            }
+        });
+        return isAllow;
+    };
+
     $(`
-<label class="pd_highlight" style="margin-bottom: 15px; display: block; font-weight: bold;">
-  <input id="guGuZhenSelectAllEnabled" type="checkbox"> 全选
-</label>
-`).appendTo($('input[name="submit"]').parent().prev())
-        .find('input').click(function () {
+<div style="margin-bottom: 15px;">
+    <label style="color: #00f; font-weight: bold;">
+      <input id="guGuZhenSelectAllEnabled" type="checkbox"> 全选
+    </label>
+    <label class="pd_highlight" style="font-weight: bold; margin-left: 20px;">
+      <input id="guGuZhenAutoJumpEnabled" type="checkbox" ${Config.guGuZhenAutoJumpEnabled ? 'checked' : ''}> 以后自动跳转到咕咕镇
+    </label>
+</div>
+`).appendTo($('input[name="submit"]').parent().prev());
+    $('#guGuZhenSelectAllEnabled').click(function () {
         let $this = $(this);
         Config.guGuZhenSelectAllEnabled = $this.prop('checked');
         $('input[name^="tongyi"]').prop('checked', Config.guGuZhenSelectAllEnabled);
+        writeConfig();
+    });
+    $('#guGuZhenAutoJumpEnabled').click(function () {
+        let $this = $(this);
+        let flag = $this.prop('checked');
+        if (flag && !checkIsAllow()) {
+            alert('请先同意协议');
+            return false;
+        }
+
+        Config.guGuZhenAutoJumpEnabled = flag;
         writeConfig();
     });
 
@@ -1733,18 +1730,24 @@ export const addGuGuZhenSelectAllBtn = function () {
     }
 
     $('input[name="submit"]').click(function () {
-        let isAllow = true;
-        $('input[name^="tongyi"]').each(function () {
-            let flag = $(this).prop('checked');
-            if (!flag) {
-                isAllow = false
-                return false;
+        if (checkIsAllow()) {
+            if (!Config.guGuZhenEnabled) {
+                Config.guGuZhenEnabled = true;
+                writeConfig();
             }
-        });
-
-        if (isAllow && !Config.guGuZhenEnabled) {
-            Config.guGuZhenEnabled = true;
+        } else {
+            Config.guGuZhenAutoJumpEnabled = false;
             writeConfig();
         }
     });
+};
+
+/**
+ * 自动跳转咕咕镇
+ */
+export const autoJumpGuGuZhen = function () {
+    if ($('[name^="tongyi"]').length === 5) {
+        Msg.show('<strong>正在跳转中，请稍候...</strong>', 30);
+        location.href = 'fyg_sjcdwj.php?go=play&j=0a0a0a0a0';
+    }
 };

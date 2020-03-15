@@ -58,6 +58,8 @@ export const Config = {
     guGuZhenEnabled: false,
     // 是否全选咕咕镇协议，true：开启；false：关闭
     guGuZhenSelectAllEnabled: false,
+    // 是否自动跳转咕咕镇，true：开启；false：关闭
+    guGuZhenAutoJumpEnabled: false,
 
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,

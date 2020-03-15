@@ -11,7 +11,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.0.0
+// @version     14.0.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -98,7 +98,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '14.0.0';
+var version = '14.0.1';
 
 /**
  * 导出模块
@@ -255,8 +255,13 @@ var init = function init() {
         SelfRate.addLinksInPage();
     } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
+    } else if (location.pathname === '/kf_fw_ig_index.php') {
+        Loot.init();
     } else if (location.pathname === '/kf_fygnew_3214.php') {
-        Loot.addGuGuZhenSelectAllBtn();
+        Loot.addGuGuZhenBtns();
+        if (Config.guGuZhenAutoJumpEnabled) {
+            Loot.autoJumpGuGuZhen();
+        }
     }
 
     if (Config.blockUserEnabled) Public.blockUsers();
@@ -764,6 +769,15 @@ var Config = exports.Config = {
     // 是否在完成发言奖励后才领取每日奖励，true：开启；false：关闭
     getBonusAfterSpeakCompleteEnabled: false,
 
+    // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
+    levelPointList: {},
+    // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
+    customPointsScriptEnabled: false,
+    // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
+    unusedPointNumAlertEnabled: true,
+    // 是否总是打开个人属性/装备界面，true：开启；false：关闭
+    alwaysOpenPointAreaEnabled: false,
+
     // 是否自动提升战力光环，true：开启；false：关闭
     autoPromoteHaloEnabled: false,
     // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；11：花费0.2贡献；12：花费2贡献
@@ -786,6 +800,8 @@ var Config = exports.Config = {
     guGuZhenEnabled: false,
     // 是否全选咕咕镇协议，true：开启；false：关闭
     guGuZhenSelectAllEnabled: false,
+    // 是否自动跳转咕咕镇，true：开启；false：关闭
+    guGuZhenAutoJumpEnabled: false,
 
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
@@ -2105,6 +2121,10 @@ var Const = {
     promoteHaloLimitNextActionInterval: 480,
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
+    // 临时存储的战力光环信息的有效期（分钟）
+    tmpHaloInfoExpires: 420,
+    // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
+    changePointsInfoExpires: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
@@ -6769,7 +6789,11 @@ var showLogText = function showLogText(log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addGuGuZhenSelectAllBtn = exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = undefined;
+exports.autoJumpGuGuZhen = exports.addGuGuZhenBtns = exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLootInfo = exports.updateLootInfo = exports.changePointsAndArms = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _Info = require('./Info');
 
@@ -6782,6 +6806,10 @@ var Util = _interopRequireWildcard(_Util);
 var _Msg = require('./Msg');
 
 var Msg = _interopRequireWildcard(_Msg);
+
+var _Dialog = require('./Dialog');
+
+var Dialog = _interopRequireWildcard(_Dialog);
 
 var _Const = require('./Const');
 
@@ -6805,9 +6833,1410 @@ var _Public = require('./Public');
 
 var Public = _interopRequireWildcard(_Public);
 
+var _Item = require('./Item');
+
+var Item = _interopRequireWildcard(_Item);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+// SafeID
+var safeId = void 0;
+// 争夺属性区域
+var $properties = void 0;
+// 点数区域
+var $points = void 0;
+// 装备区域
+var $armArea = void 0;
+// 争夺记录区域容器
+var $logBox = void 0;
+// 争夺记录区域
+var $log = void 0;
+// 争夺记录
+var log = '';
+// 各层争夺记录列表
+var logList = [];
+// 各层战斗信息列表
+var levelInfoList = [];
+// 当前争夺属性
+var propertyList = {};
+// 额外点数列表
+var extraPointsList = {};
+// 光环信息
+var haloInfo = {};
+// 当前装备情况
+var currentArmInfo = new Map();
+// 装备等级情况列表
+var armsLevelList = new Map();
+// 道具使用情况列表
+var itemUsedNumList = new Map();
+// 修改点数可用次数
+var changePointsAvailableCount = 0;
+// 服务器状态
+var serverStatus = '';
+
+/**
+ * 初始化
+ */
+var init = exports.init = function init() {
+    safeId = Public.getSafeId();
+    if (!safeId) return;
+
+    $properties = $('.kf_fw_ig3:first');
+    $points = $('#wdsx .kf_fw_ig1:first');
+    $points.find('> tbody > tr:first-child > td').attr('id', 'pdArmArea');
+    $armArea = $points.find('#pdArmArea');
+
+    var tmpHaloInfo = TmpLog.getValue(_Const2.default.haloInfoTmpLogName);
+    if (tmpHaloInfo && $.type(tmpHaloInfo) === 'object') {
+        var diff = $.now() - tmpHaloInfo.time;
+        if (diff >= 0 && diff < _Const2.default.tmpHaloInfoExpires * 60 * 1000) {
+            delete tmpHaloInfo.time;
+            setHaloInfo(tmpHaloInfo);
+            enhanceLootIndexPage();
+        } else readHaloInfo(true);
+    } else readHaloInfo(true);
+};
+
+/**
+ * 增强争夺首页
+ */
+var enhanceLootIndexPage = exports.enhanceLootIndexPage = function enhanceLootIndexPage() {
+    Script.runFunc('Loot.enhanceLootIndexPage_before_');
+    var propertiesHtml = $properties.html();
+    propertyList = getLootPropertyList(propertiesHtml);
+    itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
+    armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
+
+    var armHtml = $armArea.html();
+    if (armHtml.includes('（装备中）')) {
+        var _armHtml$split = armHtml.split('<br><br>'),
+            _armHtml$split2 = _slicedToArray(_armHtml$split, 1),
+            armInfoHtml = _armHtml$split2[0];
+
+        var _armInfoHtml$split = armInfoHtml.split('（装备中）'),
+            _armInfoHtml$split2 = _slicedToArray(_armInfoHtml$split, 3),
+            _armInfoHtml$split2$ = _armInfoHtml$split2[1],
+            weaponInfoHtml = _armInfoHtml$split2$ === undefined ? '' : _armInfoHtml$split2$,
+            _armInfoHtml$split2$2 = _armInfoHtml$split2[2],
+            armorInfoHtml = _armInfoHtml$split2$2 === undefined ? '' : _armInfoHtml$split2$2;
+
+        currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+        currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+    } else {
+        console.log('需要至少使用一件装备才能在此页面正常使用KFOL助手的功能');
+        return;
+    }
+
+    $logBox = $('#pk_text_div');
+    $log = $('#pk_text');
+    log = $log.html();
+    logList = getLogList(log);
+    levelInfoList = getLevelInfoList(logList);
+
+    handlePropertiesArea();
+    handlePointsArea();
+    addLevelPointListSelect();
+    if (Config.alwaysOpenPointAreaEnabled) {
+        $('#wdsx').show();
+    }
+
+    Script.runFunc('Loot.enhanceLootIndexPage_after_');
+};
+
+/**
+ * 处理争夺属性区域
+ */
+var handlePropertiesArea = function handlePropertiesArea() {
+    $properties.attr('id', 'pdPropertiesArea').find('input[value$="可分配属性"]').after('<span id="pdSurplusPoint" class="pd_property_diff" hidden>(<em></em>)</span>');
+
+    var $serverStatus = $properties.find('> tbody > tr:first-child td:contains("错高峰福利") > span:last').attr('id', 'pdServerStatus');
+    if ($serverStatus.length > 0) {
+        serverStatus = $serverStatus.text().trim();
+        $serverStatus.attr('id', 'pdServerStatus').data('prev-status', serverStatus);
+    }
+
+    $properties.on('change', '.pd_arm_level', function () {
+        var type = $(this).data('type');
+        var diffName = 'Weapon';
+        if (type === '护甲') diffName = 'Armor';else if (type === '项链') diffName = 'Necklace';
+        $('#pd' + diffName + 'ExpDiff em').text(armsLevelList.get(type)['经验'] - Math.pow(armsLevelList.get(type)['等级'] + 1, 2) * 2);
+    });
+    $properties.find('input[value^="武器等级"]').addClass('pd_arm_level').attr('data-type', '武器').after('<span id="pdWeaponExpDiff" class="pd_property_diff" title="\u4E0B\u4E00\u7EA7\u7ECF\u9A8C\u5DEE\u503C" style="color: #393;">(<em></em>)</span>').trigger('change');
+    $properties.find('input[value^="护甲等级"]').addClass('pd_arm_level').attr('data-type', '护甲').after('<span id="pdArmorExpDiff" class="pd_property_diff" title="\u4E0B\u4E00\u7EA7\u7ECF\u9A8C\u5DEE\u503C" style="color: #393;">(<em></em>)</span>').trigger('change');
+    $properties.find('input[value^="项链等级"]').addClass('pd_arm_level').attr('data-type', '项链').after('<span id="pdNecklaceExpDiff" class="pd_property_diff" title="\u4E0B\u4E00\u7EA7\u7ECF\u9A8C\u5DEE\u503C" style="color: #393;">(<em></em>)</span>').trigger('change');
+
+    $('<a data-name="copyParameterSetting" href="#" style="margin-left: -20px;" title="复制计算器的部分参数设置（包括神秘系数、光环和道具数量）">复</a>').insertAfter($properties.find('input[value$="蕾米莉亚同人漫画"]')).click(function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var coefficient = Math.floor((propertyList['可分配属性点'] - 50 - (itemUsedNumList.get('档案室钥匙') === 30 ? 30 : 0) - (itemUsedNumList.get('消逝之药') === 10 ? 120 : 0)) / 5);
+        var copyText = coefficient + ' ' + Math.floor(haloInfo['全属性'] * 1000) + '\n';
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+            for (var _iterator = itemUsedNumList.values()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var value = _step.value;
+
+                copyText += value + ' ';
+            }
+        } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                    _iterator.return();
+                }
+            } finally {
+                if (_didIteratorError) {
+                    throw _iteratorError;
+                }
+            }
+        }
+
+        $this.data('copy-text', copyText.trim());
+        console.log('KFOL计算器的部分参数设置：\n' + copyText.trim());
+        if (!Util.copyText($this, 'KFOL计算器的部分参数设置已复制')) {
+            alert('你的浏览器不支持复制，请打开Web控制台查看');
+        }
+    });
+};
+
+/**
+ * 处理点数区域
+ */
+var handlePointsArea = function handlePointsArea() {
+    $points.find('[type="text"]:not([readonly])').attr('type', 'number').attr('min', 1).attr('max', 9999).prop('required', true).css('width', '60px').addClass('pd_point').next('span').addClass('pd_extra_point').after('<span class="pd_sum_point" style="color: #f03; cursor: pointer;" title="点击：给该项加上或减去剩余属性点"></span>');
+    $points.find('input[readonly]').attr('type', 'number').prop('disabled', true).css('width', '60px');
+
+    var _$armArea$html$split = $armArea.html().split('<br><br>', 2),
+        _$armArea$html$split2 = _slicedToArray(_$armArea$html$split, 2),
+        armInfoHtml = _$armArea$html$split2[0],
+        _$armArea$html$split3 = _$armArea$html$split2[1],
+        finalAddAdditionHtml = _$armArea$html$split3 === undefined ? '' : _$armArea$html$split3;
+
+    var _armInfoHtml$split3 = armInfoHtml.split('（装备中）'),
+        _armInfoHtml$split4 = _slicedToArray(_armInfoHtml$split3, 3),
+        _armInfoHtml$split4$ = _armInfoHtml$split4[1],
+        weaponInfoHtml = _armInfoHtml$split4$ === undefined ? '' : _armInfoHtml$split4$,
+        _armInfoHtml$split4$2 = _armInfoHtml$split4[2],
+        armorInfoHtml = _armInfoHtml$split4$2 === undefined ? '' : _armInfoHtml$split4$2;
+
+    var newArmHtml = '';
+    if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+    if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+    if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+    $armArea.html(newArmHtml);
+
+    $('\n<tr>\n  <td>\n    \u88C5\u5907ID\u548C\u5907\u6CE8\n    <span class="pd_cfg_tips" title="\u53EF\u70B9\u51FB\u53F3\u8FB9\u7684\u201C\u66F4\u6362\u88C5\u5907\u201D\u6309\u94AE\uFF0C\u4E5F\u53EF\u624B\u52A8\u586B\u5199\u88C5\u5907ID\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u66F4\u6362\u88C5\u5907\u3002\n\u5F53\u6587\u672C\u6846\u5185\u7684\u88C5\u5907ID\u53D1\u751F\u53D8\u5316\u65F6\uFF0C\u70B9\u51FB\u653B\u51FB\u6309\u94AE\u5C06\u4F1A\u81EA\u52A8\u66F4\u6362\u88C5\u5907\uFF08\u70B9\u51FB\u201C\u4FEE\u6539\u70B9\u6570\u5206\u914D\u201D\u6309\u94AE\u53EA\u4F1A\u4FEE\u6539\u70B9\u6570\u800C\u4E0D\u4F1A\u66F4\u6362\u88C5\u5907\uFF09\u3002">[?]</span>\n  </td>\n  <td>\n    <input class="pd_arm_input" name="weaponId" type="text" value="" maxlength="15" title="\u6B66\u5668ID" placeholder="\u6B66\u5668ID" style="width: 70px;">\n    <input class="pd_arm_input" name="weaponMemo" type="text" value="" maxlength="20" title="\u6B66\u5668\u5907\u6CE8" placeholder="\u6B66\u5668\u5907\u6CE8" style="width: 80px;">\n    <input class="pd_arm_input" name="armorId" type="text" value="" maxlength="15" title="\u62A4\u7532ID" placeholder="\u62A4\u7532ID" style="width: 70px;">\n    <input class="pd_arm_input" name="armorMemo" type="text" value="" maxlength="20" title="\u62A4\u7532\u5907\u6CE8" placeholder="\u62A4\u7532\u5907\u6CE8" style="width: 80px;">\n    <a class="pd_btn_link" data-name="changeArm" href="#" title="\u66F4\u6362\u5F53\u524D\u88C5\u5907">\u66F4\u6362\u88C5\u5907</a>\n  </td>\n</tr>\n').insertAfter($armArea.parent()).find('[data-name="changeArm"]').click(function (e) {
+        e.preventDefault();
+        addOrChangeArm(0);
+    });
+
+    $points.find('input[name="prosubmit"]').replaceWith('<button name="prosubmit" type="submit">修改点数分配</button>');
+    $('<button name="changePointsAndArms" type="button" title="按照当前页面上的点数设置和装备ID进行修改" style="margin-left: 3px;">修改点数和装备</button>').insertAfter($points.find('button[name="prosubmit"]')).click(function () {
+        var $wait = Msg.wait('<strong>正在修改点数和装备&hellip;</strong>');
+        changePointsAndArms(-1, function (result) {
+            if (result === 'success') {
+                updateLootInfo(function () {
+                    Msg.remove($wait);
+                    Msg.show('<strong>已成功修改为指定的点数设置和装备ID</strong>', 3);
+                });
+            } else {
+                Msg.remove($wait);
+                if (result === 'ignore') {
+                    alert('当前页面的点数设置和装备ID没有发生变化');
+                } else if (result === 'timeout') {
+                    alert('连接超时，请重试');
+                }
+            }
+        });
+    });
+
+    var $changeCount = $points.find('> tbody > tr:last-child > td:last-child');
+    $changeCount.wrapInner('<span id="pdChangeCount"></span>');
+    var changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec($changeCount.text());
+    if (changeCountMatches) {
+        changePointsAvailableCount = parseInt(changeCountMatches[1]);
+    }
+    var countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec($changeCount.text());
+    if (countDownMatches) {
+        var nextTime = Util.getDate('+' + countDownMatches[1] + 'm');
+        Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+    } else {
+        var count = parseInt(Util.getCookie(_Const2.default.changePointsInfoCookieName));
+        if (count !== changePointsAvailableCount) {
+            Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate('+' + _Const2.default.changePointsInfoExpires + 'm'));
+        }
+    }
+
+    extraPointsList = {
+        '耐力': parseInt($points.find('[name="p"]').next('span').text()),
+        '幸运': parseInt($points.find('[name="l"]').next('span').text())
+    };
+
+    /**
+     * 显示剩余属性点
+     */
+    var showSurplusPoint = function showSurplusPoint() {
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        $('#pdSurplusPoint').prop('hidden', surplusPoint === 0).css('color', surplusPoint !== 0 ? surplusPoint > 0 ? '#f03' : '#393' : '#000').find('em').text((surplusPoint > 0 ? '+' : '') + surplusPoint);
+    };
+
+    /**
+     * 显示各项点数的额外加成
+     * @param {jQuery} $point 点数字段对象
+     */
+    var showExtraPoint = function showExtraPoint($point) {
+        var num = parseInt($point.val());
+        if (!num || num < 0) num = 1;
+        var extraNum = getExtraPoint(getPointNameByFieldName($point.attr('name')), num);
+        $point.next('.pd_extra_point').text('+' + extraNum);
+    };
+
+    /**
+     * 显示各项点数的和值
+     * @param {jQuery} $point 点数字段对象
+     */
+    var showSumOfPoint = function showSumOfPoint($point) {
+        var num = parseInt($point.val());
+        if (!num || num < 0) num = 1;
+        var extraNum = parseInt($point.next('.pd_extra_point').text());
+        $point.next('.pd_extra_point').next('.pd_sum_point').text('=' + (num + extraNum));
+    };
+
+    $points.on('change', '.pd_point', function () {
+        var $this = $(this);
+        showSurplusPoint();
+        showExtraPoint($this);
+        showSumOfPoint($this);
+    }).on('click', '.pd_sum_point', function () {
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        if (!surplusPoint) return;
+        var $point = $(this).prev('span').prev('.pd_point');
+        if (!$point.length) return;
+        var num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        num = num + surplusPoint;
+        $point.val(num < 1 ? 1 : num).trigger('change');
+    }).closest('form').submit(function () {
+        Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
+        return checkPoints($points);
+    }).find('.pd_point').trigger('change');
+};
+
+/**
+ * 检查点数设置
+ * @param {jQuery} $points 点数字段对象
+ * @returns {boolean} 检查结果
+ */
+var checkPoints = function checkPoints($points) {
+    var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+    if (surplusPoint < 0) {
+        alert('剩余属性点为负，请重新填写');
+        return false;
+    } else if (surplusPoint > 0) {
+        if (!confirm('可分配属性点尚未用完，是否继续？')) return false;
+    }
+    return true;
+};
+
+/**
+ * 获取争夺属性列表
+ * @param {string} html 争夺属性区域的HTML代码
+ * @returns {{}} 争夺属性
+ */
+var getLootPropertyList = function getLootPropertyList(html) {
+    var propertyList = {
+        '攻击力': 0,
+        '生命值': 0,
+        '最大生命值': 0,
+        '攻击速度': 0,
+        '暴击几率': 0,
+        '技能伤害': 0,
+        '技能释放概率': 0,
+        '防御': 0,
+        '可分配属性点': 0
+    };
+    var matches = /"(\d+)攻击力"/.exec(html);
+    if (matches) propertyList['攻击力'] = parseInt(matches[1]);
+    matches = /"(\d+)\/(\d+)生命值"/.exec(html);
+    if (matches) {
+        propertyList['生命值'] = parseInt(matches[1]);
+        propertyList['最大生命值'] = parseInt(matches[2]);
+    }
+    matches = /"(\d+)攻击速度"/.exec(html);
+    if (matches) propertyList['攻击速度'] = parseInt(matches[1]);
+    matches = /"(\d+(?:\.\d+)?)%减伤"/.exec(html);
+    if (matches) propertyList['防御'] = parseFloat(matches[1]);
+    matches = /"(\d+)\s*可分配属性"/.exec(html);
+    if (matches) propertyList['可分配属性点'] = parseInt(matches[1]);
+    return propertyList;
+};
+
+/**
+ * 获取当前已分配的点数
+ * @param {jQuery} $points 点数字段对象
+ * @returns {number} 当前已分配的点数
+ */
+var getCurrentAssignedPoint = exports.getCurrentAssignedPoint = function getCurrentAssignedPoint($points) {
+    var usedPoint = 0;
+    $points.each(function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        var point = parseInt($this.val());
+        if (point && point > 0) usedPoint += point;
+    });
+    return usedPoint;
+};
+
+/**
+ * 获取技能伤害的值
+ * @param {number} power 力量总和
+ * @param {number} life 体质总和
+ * @param {number} intelligence 智力总和
+ * @returns {number} 技能伤害的值
+ */
+var getSkillAttack = exports.getSkillAttack = function getSkillAttack(power, life, intelligence) {
+    return power * 5 + life * 5 + intelligence * 5;
+};
+
+/**
+ * 根据字段名称获取点数名称
+ * @param {string} fieldName 字段名称
+ * @returns {string} 点数名称
+ */
+var getPointNameByFieldName = exports.getPointNameByFieldName = function getPointNameByFieldName(fieldName) {
+    switch (fieldName) {
+        case 's1':
+            return '力量';
+        case 's2':
+            return '体质';
+        case 'd1':
+            return '敏捷';
+        case 'd2':
+            return '灵活';
+        case 'i1':
+            return '智力';
+        case 'i2':
+            return '意志';
+        case 'p':
+            return '耐力';
+        case 'l':
+            return '幸运';
+        case 'weaponId':
+            return '武器ID';
+        case 'weaponMemo':
+            return '武器备注';
+        case 'armorId':
+            return '护甲ID';
+        case 'armorMemo':
+            return '护甲备注';
+        default:
+            return '';
+    }
+};
+
+/**
+ * 根据点数名称获取字段名称
+ * @param {string} pointName 点数名称
+ * @returns {string} 字段名称
+ */
+var getFieldNameByPointName = exports.getFieldNameByPointName = function getFieldNameByPointName(pointName) {
+    switch (pointName) {
+        case '力量':
+            return 's1';
+        case '体质':
+            return 's2';
+        case '敏捷':
+            return 'd1';
+        case '灵活':
+            return 'd2';
+        case '智力':
+            return 'i1';
+        case '意志':
+            return 'i2';
+        case '耐力':
+            return 'p';
+        case '幸运':
+            return 'l';
+        case '武器ID':
+            return 'weaponId';
+        case '武器备注':
+            return 'weaponMemo';
+        case '护甲ID':
+            return 'armorId';
+        case '护甲备注':
+            return 'armorMemo';
+        default:
+            return '';
+    }
+};
+
+/**
+ * 根据指定的点数获得相应额外加成点数
+ * @param {string} pointName 点数名称
+ * @param {number} point 点数的值
+ * @returns {number} 额外加成点数
+ */
+var getExtraPoint = exports.getExtraPoint = function getExtraPoint(pointName, point) {
+    var elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
+    var haloPercent = haloInfo['全属性'];
+    switch (pointName) {
+        case '力量':
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('蕾米莉亚同人漫画') + elapsedMedicine;
+        case '体质':
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('蕾米莉亚同人漫画') + elapsedMedicine;
+        case '敏捷':
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('十六夜同人漫画') + elapsedMedicine;
+        case '灵活':
+            return Math.floor(point * haloPercent) + itemUsedNumList.get('十六夜同人漫画') + elapsedMedicine;
+        case '智力':
+            return Math.floor(point * haloPercent) + elapsedMedicine;
+        case '意志':
+            return Math.floor((Math.floor(point * haloPercent) + elapsedMedicine + point) * (currentArmInfo.get('护甲')['组别'] === '铠甲' ? 1.1 : 1)) - point;
+        default:
+            return 0;
+    }
+};
+
+/**
+ * 根据指定的点数获得相应争夺属性的值
+ * @param {string} pointName 点数名称
+ * @param {number} point 点数的值
+ * @returns {number} 争夺属性的值
+ */
+var getPropertyByPoint = exports.getPropertyByPoint = function getPropertyByPoint(pointName, point) {
+    var pointValue = point + getExtraPoint(pointName, point);
+    switch (pointName) {
+        case '力量':
+            return pointValue * 5 + haloInfo['攻击力'];
+        case '体质':
+            return pointValue * 20 + (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0) + haloInfo['生命值'];
+        case '敏捷':
+            return pointValue * 2 + (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0);
+        case '灵活':
+            return Math.round(pointValue / (pointValue + 100) * 100);
+        case '智力':
+            return Math.round(pointValue / (pointValue + 90) * 100);
+        case '意志':
+            return Math.round(pointValue / (pointValue + 150) * 100);
+        default:
+            return 0;
+    }
+};
+
+/**
+ * 根据指定的争夺属性获得相应点数的值
+ * @param {string} pointName 点数名称
+ * @param {number} num 争夺属性的值
+ * @returns {number} 点数的值
+ */
+var getPointByProperty = exports.getPointByProperty = function getPointByProperty(pointName, num) {
+    var elapsedMedicine = itemUsedNumList.get('消逝之药') * 5;
+    var haloPercent = 1 + haloInfo['全属性'];
+    var value = 0;
+    switch (pointName) {
+        case '力量':
+            value = Math.ceil((Math.ceil((num - haloInfo['攻击力']) / 5) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
+            break;
+        case '体质':
+            value = Math.ceil((Math.ceil((num - haloInfo['生命值'] - (itemUsedNumList.get('蕾米莉亚同人漫画') === 50 ? 700 : 0)) / 20) - itemUsedNumList.get('蕾米莉亚同人漫画') - elapsedMedicine) / haloPercent);
+            break;
+        case '敏捷':
+            value = Math.ceil((Math.ceil((num - (itemUsedNumList.get('十六夜同人漫画') === 50 ? 100 : 0)) / 2) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
+            break;
+        case '灵活':
+            value = Math.floor((Math.round(100 * num / (100 - num)) - itemUsedNumList.get('十六夜同人漫画') - elapsedMedicine) / haloPercent);
+            break;
+        case '智力':
+            value = Math.floor((Math.round(90 * num / (100 - num)) - elapsedMedicine) / haloPercent);
+            break;
+        case '意志':
+            value = Math.floor((Math.round(150 * num / (100 - num)) - elapsedMedicine) / haloPercent);
+            break;
+    }
+    if (!isFinite(value) || value < 1) value = 1;
+    return value;
+};
+
+/**
+ * 添加各层点数分配方案选择框
+ */
+var addLevelPointListSelect = function addLevelPointListSelect() {
+    $('\n<tr>\n  <td colspan="2">\n    <select id="pdLevelPointListSelect" style="margin: 5px 0;">\n      <option>\u70B9\u6570\u5206\u914D\u65B9\u6848</option>\n      <option value="0">\u9ED8\u8BA4</option>\n    </select>\n    <a class="pd_btn_link" data-name="save" href="#" title="\u5C06\u5F53\u524D\u70B9\u6570\u8BBE\u7F6E\u4FDD\u5B58\u4E3A\u65B0\u7684\u65B9\u6848">\u4FDD\u5B58</a>\n    <a class="pd_btn_link" data-name="edit" href="#" title="\u7F16\u8F91\u5404\u5C42\u70B9\u6570\u5206\u914D\u65B9\u6848">\u7F16\u8F91</a>\n    <a class="pd_btn_link" data-name="fill" href="#" title="\u8F93\u5165\u4E00\u4E32\u6570\u5B57\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D">\u586B\u5145</a>\n  </td>\n</tr>').prependTo($points.find('> tbody')).find('#pdLevelPointListSelect').change(function () {
+        var level = parseInt($(this).val());
+        if (level > 0) {
+            var points = Config.levelPointList[parseInt(level)];
+            if ((typeof points === 'undefined' ? 'undefined' : _typeof(points)) !== 'object') return;
+            $points.find('.pd_point, .pd_arm_input').each(function () {
+                var $this = $(this);
+                var pointName = getPointNameByFieldName($this.attr('name'));
+                $this.val(points[pointName]);
+            }).trigger('change');
+        } else if (level === 0) {
+            $points.find('.pd_point, .pd_arm_input').each(function () {
+                $(this).val(this.defaultValue);
+            }).trigger('change');
+        }
+    }).end().find('[data-name="save"]').click(function (e) {
+        e.preventDefault();
+        if (!checkPoints($points)) return;
+        var $levelPointListSelect = $('#pdLevelPointListSelect');
+        var level = parseInt($levelPointListSelect.val());
+        level = parseInt(prompt('请输入层数：', level ? level : ''));
+        if (!level || level < 0) return;
+
+        (0, _Config.read)();
+        if (level in Config.levelPointList) {
+            if (!confirm('该层数已存在，是否覆盖？')) return;
+        }
+        var points = {};
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
+        try {
+            for (var _iterator2 = Array.from($points.find('.pd_point, .pd_arm_input'))[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var elem = _step2.value;
+
+                var $elem = $(elem);
+                var name = $elem.attr('name');
+                var value = $.trim($elem.val());
+                if ($elem.is('.pd_point')) {
+                    value = parseInt(value);
+                    if (!value || value < 0) return;
+                } else {
+                    if (!value) continue;
+                    if (name === 'weaponId' || name === 'armorId') {
+                        value = parseInt(value);
+                        if (!value || value < 0) return;
+                    }
+                }
+                points[getPointNameByFieldName(name)] = value;
+            }
+        } catch (err) {
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                    _iterator2.return();
+                }
+            } finally {
+                if (_didIteratorError2) {
+                    throw _iteratorError2;
+                }
+            }
+        }
+
+        Config.levelPointList[level] = points;
+        (0, _Config.write)();
+        setLevelPointListSelect(Config.levelPointList);
+        $levelPointListSelect.val(level);
+    }).end().find('[data-name="edit"]').click(function (e) {
+        e.preventDefault();
+        showLevelPointListConfigDialog();
+    }).end().find('[data-name="fill"]').click(function (e) {
+        e.preventDefault();
+        fillPoints($points);
+    });
+    setLevelPointListSelect(Config.levelPointList);
+};
+
+/**
+ * 填充点数设置
+ * @param $points
+ */
+var fillPoints = function fillPoints($points) {
+    var value = $.trim(prompt('\u8BF7\u8F93\u5165\u4EE5\u4EFB\u610F\u5B57\u7B26\u5206\u9694\u7684\u4E00\u4E32\u6570\u5B57\uFF0C\u6309\u987A\u5E8F\u586B\u5145\u5230\u5404\u4E2A\u70B9\u6570\u5B57\u6BB5\u4E2D\uFF08\u6CE8\uFF1A5\u4F4D\u6570\u4EE5\u4E0A\u7684\u6570\u5B57\u5C06\u88AB\u5F53\u4F5C\u88C5\u5907ID\uFF09\uFF1A\n\u53EF\u76F4\u63A5\u8F93\u5165\u8BA1\u7B97\u5668\u8F93\u51FA\u7684\u70B9\u6570\u8BBE\u7F6E\uFF0C\u4F8B\uFF1A1 100 50 5 25 1  0 3 Bow #1234567 Cloth #7654321'));
+    if (!value) return;
+    var pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+(\S+)\s+#(\d+)\s+(\S+)\s+#(\d+)/.exec(value);
+    if (!pointsMatches) {
+        pointsMatches = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+#(\d+)/.exec(value);
+    }
+    if (pointsMatches) {
+        $points.find('.pd_point').each(function (index) {
+            if (index + 1 < pointsMatches.length) {
+                $(this).val(pointsMatches[index + 1]).trigger('change');
+            }
+        });
+        $points.find('input[name="weaponMemo"]').val(pointsMatches[7]);
+        $points.find('input[name="weaponId"]').val(pointsMatches[8]);
+        if (pointsMatches[9] && pointsMatches[10]) {
+            $points.find('input[name="armorMemo"]').val(pointsMatches[9]);
+            $points.find('input[name="armorId"]').val(pointsMatches[10]);
+        }
+    } else {
+        var numMatches = value.match(/\b\d{1,4}\b/g);
+        if (!numMatches) return;
+        $points.find('.pd_point').each(function (index) {
+            if (index < numMatches.length) $(this).val(parseInt(numMatches[index])).trigger('change');else return false;
+        });
+        var armIdMatches = value.match(/\b(\d{5,})\b/g);
+        for (var i in armIdMatches) {
+            var name = parseInt(i) === 0 ? 'weaponId' : 'armorId';
+            $points.find('input[name="' + name + '"]').val(armIdMatches[i]);
+        }
+    }
+};
+
+/**
+ * 设置各层点数分配方案选择框
+ * @param {{}} levelPointList 各层点数分配列表
+ */
+var setLevelPointListSelect = function setLevelPointListSelect(levelPointList) {
+    var pointListHtml = '';
+    var _iteratorNormalCompletion3 = true;
+    var _didIteratorError3 = false;
+    var _iteratorError3 = undefined;
+
+    try {
+        for (var _iterator3 = Util.entries(levelPointList)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var _step3$value = _slicedToArray(_step3.value, 2),
+                level = _step3$value[0],
+                points = _step3$value[1];
+
+            if (!$.isNumeric(level)) continue;
+            pointListHtml += '<option value="' + level + '">\u7B2C' + level + '\u5C42 ' + (points['武器ID'] || points['护甲ID'] ? '(装)' : '') + '</option>';
+        }
+    } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                _iterator3.return();
+            }
+        } finally {
+            if (_didIteratorError3) {
+                throw _iteratorError3;
+            }
+        }
+    }
+
+    $('#pdLevelPointListSelect').find('option:gt(1)').remove().end().append(pointListHtml);
+};
+
+/**
+ * 修改点数分配方案和装备
+ * @param {number} nextLevel 下一层（设为-1表示采用当前点数分配方案）
+ * @param {function} callback 回调函数
+ */
+var changePointsAndArms = exports.changePointsAndArms = function changePointsAndArms(nextLevel, callback) {
+    if (nextLevel > 0 && Config.customPointsScriptEnabled && typeof _Const2.default.getCustomPoints === 'function') {
+        var points = null;
+        try {
+            points = _Const2.default.getCustomPoints($.extend(getLootInfo(), { getExtraPoint: getExtraPoint, getPointByProperty: getPointByProperty, getPropertyByPoint: getPropertyByPoint }));
+        } catch (ex) {
+            console.log(ex);
+        }
+        if ($.type(points) === 'object') {
+            var _iteratorNormalCompletion4 = true;
+            var _didIteratorError4 = false;
+            var _iteratorError4 = undefined;
+
+            try {
+                for (var _iterator4 = Util.entries(points)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    var _step4$value = _slicedToArray(_step4.value, 2),
+                        key = _step4$value[0],
+                        value = _step4$value[1];
+
+                    $points.find('input[name="' + getFieldNameByPointName(key) + '"]').val(value).trigger('change');
+                }
+            } catch (err) {
+                _didIteratorError4 = true;
+                _iteratorError4 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                        _iterator4.return();
+                    }
+                } finally {
+                    if (_didIteratorError4) {
+                        throw _iteratorError4;
+                    }
+                }
+            }
+
+            nextLevel = -1;
+        } else if (typeof points === 'number') {
+            nextLevel = parseInt(points);
+            nextLevel = nextLevel > 1 ? nextLevel : 1;
+        } else if (points === false) {
+            return callback('ignore');
+        } else {
+            return callback('error');
+        }
+    }
+
+    var nextLevelText = getCurrentLevel(logList) + 1;
+    var changeLevel = nextLevel > 0 ? Math.max.apply(Math, _toConsumableArray(Object.keys(Config.levelPointList).filter(function (level) {
+        return level <= nextLevel;
+    }))) : -1;
+    var $levelPointListSelect = $('#pdLevelPointListSelect');
+    if (changeLevel > 0) $levelPointListSelect.val(changeLevel).trigger('change');else $levelPointListSelect.get(0).selectedIndex = 0;
+    var isChangeWeapon = false,
+        isChangeArmor = false,
+        isChangePoints = false;
+    $points.find('.pd_point, input[name="weaponId"], input[name="armorId"]').each(function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        var value = $.trim($this.val());
+        if (parseInt(value) > 0 && this.defaultValue !== value) {
+            if (name === 'weaponId') isChangeWeapon = true;else if (name === 'armorId') isChangeArmor = true;else isChangePoints = true;
+        }
+    });
+
+    if (isChangeWeapon || isChangeArmor || isChangePoints) {
+        if (Config.unusedPointNumAlertEnabled && !_Info2.default.w.unusedPointNumAlert && parseInt($('#pdSurplusPoint > em').text()) > 0) {
+            if (confirm('可分配属性点尚未用完，是否继续？')) _Info2.default.w.unusedPointNumAlert = true;else return callback('error');
+        }
+
+        var weaponId = parseInt($points.find('input[name="weaponId"]').val());
+        var armorId = parseInt($points.find('input[name="armorId"]').val());
+        var ajaxList = ['ignore', 'ignore', 'ignore'];
+        if (isChangeWeapon) {
+            ajaxList[0] = {
+                type: 'POST',
+                url: 'kf_fw_ig_mybpdt.php',
+                timeout: _Const2.default.defAjaxTimeout,
+                data: 'do=4&id=' + weaponId + '&safeid=' + safeId
+            };
+        }
+        if (isChangeArmor) {
+            ajaxList[1] = {
+                type: 'POST',
+                url: 'kf_fw_ig_mybpdt.php',
+                timeout: _Const2.default.defAjaxTimeout,
+                data: 'do=4&id=' + armorId + '&safeid=' + safeId
+            };
+        }
+        if (isChangePoints) {
+            ajaxList[2] = {
+                type: 'POST',
+                url: 'kf_fw_ig_enter.php',
+                timeout: _Const2.default.defAjaxTimeout,
+                data: $points.closest('form').serialize()
+            };
+        }
+
+        var result = 'success';
+        $(document).clearQueue('ChangePointsAndArms');
+        $.each(ajaxList, function (index, ajax) {
+            if (ajax === 'ignore') return;
+            $(document).queue('ChangePointsAndArms', function () {
+                $.ajax(ajax).done(function (html) {
+                    if (index === 0) {
+                        var msg = Util.removeHtmlTag(html);
+                        if (/装备完毕/.test(msg)) {
+                            $points.find('input[name="weaponId"], input[name="weaponMemo"]').each(function () {
+                                this.defaultValue = $(this).val();
+                            });
+                            if (Config.autoSaveArmsInfoEnabled) {
+                                var armsInfo = Item.readArmsInfo();
+                                armsInfo['已装备武器'] = weaponId;
+                                Item.writeArmsInfo(armsInfo);
+                            }
+                        } else {
+                            Msg.show('<strong>\u66F4\u6362\u6B66\u5668\uFF1A' + msg + '</strong>', -1);
+                            Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', msg);
+                            result = 'error';
+                        }
+                    } else if (index === 1) {
+                        var _msg = Util.removeHtmlTag(html);
+                        if (/装备完毕/.test(_msg)) {
+                            $points.find('input[name="armorId"], input[name="armorMemo"]').each(function () {
+                                this.defaultValue = $(this).val();
+                            });
+                            if (Config.autoSaveArmsInfoEnabled) {
+                                var _armsInfo = Item.readArmsInfo();
+                                _armsInfo['已装备护甲'] = armorId;
+                                Item.writeArmsInfo(_armsInfo);
+                            }
+                        } else {
+                            Msg.show('<strong>\u66F4\u6362\u62A4\u7532\uFF1A' + _msg + '</strong>', -1);
+                            Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', _msg);
+                            result = 'error';
+                        }
+                    } else if (index === 2) {
+                        var _Util$getResponseMsg = Util.getResponseMsg(html),
+                            _msg2 = _Util$getResponseMsg.msg;
+
+                        if (/已经重新配置加点！/.test(_msg2)) {
+                            Util.deleteCookie(_Const2.default.changePointsInfoCookieName);
+                            $points.find('.pd_point').each(function () {
+                                this.defaultValue = $(this).val();
+                            });
+                        } else {
+                            var matches = /你还需要等待(\d+)分钟/.exec(_msg2);
+                            if (matches) {
+                                var nextTime = Util.getDate('+' + parseInt(matches[1]) + 'm');
+                                Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+                            }
+                            Msg.show('<strong>\u7B2C<em>' + nextLevelText + '</em>\u5C42\u65B9\u6848\uFF1A' + _msg2 + '</strong>', -1);
+                            Script.runFunc('Loot.lootAttack_changePointsAndArms_error_', _msg2);
+                            result = 'error';
+                        }
+                    }
+                }).fail(function () {
+                    result = 'timeout';
+                }).always(function () {
+                    if (result === 'error' || result === 'timeout') {
+                        $(document).clearQueue('ChangePointsAndArms');
+                        callback(result);
+                    } else if (!$(document).queue('ChangePointsAndArms').length) {
+                        Script.runFunc('Loot.changePointsAndArms_success_');
+                        callback(result);
+                    } else {
+                        setTimeout(function () {
+                            return $(document).dequeue('ChangePointsAndArms');
+                        }, _Const2.default.minActionInterval);
+                    }
+                });
+            });
+        });
+        $(document).dequeue('ChangePointsAndArms');
+    } else {
+        callback('ignore');
+    }
+};
+
+/**
+ * 更新争夺信息
+ * @param {function} callback 回调函数
+ */
+var updateLootInfo = exports.updateLootInfo = function updateLootInfo() {
+    var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+    console.log('更新争夺信息Start');
+    $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_index.php?t=' + $.now(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).done(function (html) {
+        var $area = $('#wdsx', html).parent();
+        log = $area.find('#pk_text').html();
+        if (!log) {
+            Msg.remove($('.pd_countdown').closest('.pd_msg'));
+            return;
+        }
+
+        $area.find('.kf_fw_ig3:first input[type="text"]').each(function (index) {
+            var value = $.trim($(this).val());
+            if (!value) return;
+            $properties.find('input[type="text"]:eq(' + index + ')').val(value);
+        });
+
+        var serverStatusMatches = /错高峰福利：当前服务器状态\[\s*<span style="color:(#[a-fA-F0-9]+);[^<>]+>(\S+?)<\/span>\s*\]/.exec(html);
+        if (serverStatusMatches) {
+            var serverStatusColor = serverStatusMatches[1];
+            serverStatus = serverStatusMatches[2];
+            if (_Const2.default.debug) console.log('当前服务器状态：' + serverStatus);
+            $properties.find('#pdServerStatus').text(serverStatus).css('color', serverStatusColor);
+        }
+
+        var countDownMatches = /\(下次修改配点还需\[(\d+)]分钟\)/.exec(html);
+        if (countDownMatches) {
+            changePointsAvailableCount = 0;
+            var nextTime = Util.getDate('+' + countDownMatches[1] + 'm');
+            Util.setCookie(_Const2.default.changePointsInfoCookieName, nextTime.getTime(), nextTime);
+            $points.find('#pdChangeCount').text('(\u4E0B\u6B21\u4FEE\u6539\u914D\u70B9\u8FD8\u9700[' + countDownMatches[1] + ']\u5206\u949F)');
+        }
+        var changeCountMatches = /当前修改配点可用\[(\d+)]次/.exec(html);
+        if (changeCountMatches) {
+            changePointsAvailableCount = parseInt(changeCountMatches[1]);
+            Util.setCookie(_Const2.default.changePointsInfoCookieName, changePointsAvailableCount + 'c', Util.getDate('+' + _Const2.default.changePointsInfoExpires + 'm'));
+            $points.find('#pdChangeCount').text('(\u5F53\u524D\u4FEE\u6539\u914D\u70B9\u53EF\u7528[' + changePointsAvailableCount + ']\u6B21)');
+        }
+
+        var armHtml = $area.find('.kf_fw_ig1:first > tbody > tr:first-child > td').html();
+        if (armHtml.includes('（装备中）')) {
+            var _armHtml$split3 = armHtml.split('<br><br>', 2),
+                _armHtml$split4 = _slicedToArray(_armHtml$split3, 2),
+                armInfoHtml = _armHtml$split4[0],
+                _armHtml$split4$ = _armHtml$split4[1],
+                finalAddAdditionHtml = _armHtml$split4$ === undefined ? '' : _armHtml$split4$;
+
+            var _armInfoHtml$split5 = armInfoHtml.split('（装备中）'),
+                _armInfoHtml$split6 = _slicedToArray(_armInfoHtml$split5, 3),
+                _armInfoHtml$split6$ = _armInfoHtml$split6[1],
+                weaponInfoHtml = _armInfoHtml$split6$ === undefined ? '' : _armInfoHtml$split6$,
+                _armInfoHtml$split6$2 = _armInfoHtml$split6[2],
+                armorInfoHtml = _armInfoHtml$split6$2 === undefined ? '' : _armInfoHtml$split6$2;
+
+            var newArmHtml = '';
+            if (weaponInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(weaponInfoHtml);
+            if (armorInfoHtml) newArmHtml += '（装备中）' + Item.handleUselessSubProperties(armorInfoHtml);
+            if (finalAddAdditionHtml) newArmHtml += '<br><br>' + finalAddAdditionHtml;
+            $armArea.html(newArmHtml);
+
+            currentArmInfo.set('武器', Item.getArmInfo(weaponInfoHtml));
+            currentArmInfo.set('护甲', Item.getArmInfo(armorInfoHtml));
+        }
+
+        var propertiesHtml = $properties.html();
+        propertyList = getLootPropertyList(propertiesHtml);
+        itemUsedNumList = Item.getItemsUsedNumInfo(propertiesHtml);
+        armsLevelList = Item.getArmsLevelInfo(propertiesHtml);
+        $properties.find('.pd_arm_level').trigger('change');
+        $points.find('.pd_point').trigger('change');
+
+        if (typeof callback === 'function') callback();
+        Script.runFunc('Loot.updateLootInfo_after_', html);
+    }).fail(function () {
+        setTimeout(function () {
+            return updateLootInfo(callback);
+        }, _Const2.default.minActionInterval);
+    });
+};
+
+/**
+ * 获取当前争夺信息
+ * @returns {{}} 当前争夺信息
+ */
+var getLootInfo = exports.getLootInfo = function getLootInfo() {
+    var currentLevel = getCurrentLevel(logList);
+    var info = levelInfoList[currentLevel];
+    var currentLife = 0,
+        currentInitLife = 0;
+    if (info) {
+        currentLife = info.life;
+        currentInitLife = info.initLife;
+    }
+    var enemyList = getEnemyList(levelInfoList);
+    return {
+        currentLevel: currentLevel,
+        currentLife: currentLife,
+        currentInitLife: currentInitLife,
+        levelPointList: Config.levelPointList,
+        availablePoint: propertyList['可分配属性点'],
+        haloInfo: haloInfo,
+        extraPointsList: extraPointsList,
+        propertyList: propertyList,
+        itemUsedNumList: itemUsedNumList,
+        armsLevelList: armsLevelList,
+        currentArmInfo: currentArmInfo,
+        changePointsAvailableCount: changePointsAvailableCount,
+        log: log,
+        logList: logList,
+        enemyList: enemyList
+    };
+};
+
+/**
+ * 显示各层点数分配方案对话框
+ */
+var showLevelPointListConfigDialog = function showLevelPointListConfigDialog(callback) {
+    var dialogName = 'pdLevelPointListConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
+    (0, _Config.read)();
+    var html = '\n<div class="pd_cfg_main">\n  <div style="margin: 5px 0; line-height: 1.6em;">\n    \u8BF7\u586B\u5199\u5404\u5C42\u5BF9\u5E94\u7684\u70B9\u6570\u5206\u914D\u65B9\u6848\uFF0C\u76F8\u90BB\u5C42\u6570\u5982\u6570\u503C\u5B8C\u5168\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u6700\u524D\u9762\u7684\u4E00\u5C42<br>\n    \uFF08\u4F8B\uFF1A11-19\u5C42\u70B9\u6570\u76F8\u540C\u7684\u8BDD\uFF0C\u5219\u53EA\u4FDD\u7559\u7B2C11\u5C42\uFF09<br>\n    \u6B66\u5668\u3001\u62A4\u7532ID\u548C\u5907\u6CE8\u4E3A\u53EF\u9009\u9879\uFF0C\u53EA\u5728\u9700\u8981\u66F4\u6362\u88C5\u5907\u65F6\u586B\u5199<br>\n    \u81EA\u5B9A\u4E49\u70B9\u6570\u5206\u914D\u65B9\u6848\u811A\u672C\u7684\u53C2\u8003\u8303\u4F8B\u8BF7\u53C2\u89C1<a href="read.php?tid=500968&spid=13270735&sf=b09" target="_blank">\u6B64\u8D3453\u697C</a>\n  </div>\n  <div style="overflow-y: auto; max-height: 400px;">\n    <table id="pdLevelPointList" style="text-align: center; white-space: nowrap;">\n      <tbody>\n        <tr>\n          <th></th><th>\u5C42\u6570</th><th>\u529B\u91CF</th><th>\u4F53\u8D28</th><th>\u654F\u6377</th><th>\u7075\u6D3B</th><th>\u667A\u529B</th><th>\u610F\u5FD7</th>\n<th>\u6B66\u5668ID</th><th>\u6B66\u5668\u5907\u6CE8</th><th>\u62A4\u7532ID</th><th>\u62A4\u7532\u5907\u6CE8</th><th></th>\n        </tr>\n      </tbody>\n    </table>\n  </div>\n  <hr>\n  <div style="float: left; line-height: 27px;">\n    <a class="pd_btn_link" data-name="selectAll" href="#">\u5168\u9009</a>\n    <a class="pd_btn_link" data-name="selectInverse" href="#">\u53CD\u9009</a>\n    <a class="pd_btn_link pd_highlight" data-name="add" href="#">\u589E\u52A0</a>\n    <a class="pd_btn_link" data-name="deleteSelect" href="#">\u5220\u9664</a>\n  </div>\n  <div data-id="modifyArea" style="float: right;">\n    <input name="s1" type="text" maxlength="5" title="\u529B\u91CF" placeholder="\u529B\u91CF" style="width: 35px;">\n    <input name="s2" type="text" maxlength="5" title="\u4F53\u8D28" placeholder="\u4F53\u8D28" style="width: 35px;">\n    <input name="d1" type="text" maxlength="5" title="\u654F\u6377" placeholder="\u654F\u6377" style="width: 35px;">\n    <input name="d2" type="text" maxlength="5" title="\u7075\u6D3B" placeholder="\u7075\u6D3B" style="width: 35px;">\n    <input name="i1" type="text" maxlength="5" title="\u667A\u529B" placeholder="\u667A\u529B" style="width: 35px;">\n    <input name="i2" type="text" maxlength="5" title="\u610F\u5FD7" placeholder="\u610F\u5FD7" style="width: 35px;">\n    <a class="pd_btn_link" data-name="clear" href="#" title="\u6E05\u7A7A\u5404\u4FEE\u6539\u5B57\u6BB5">\u6E05\u7A7A</a>\n    <button type="button" name="modify">\u4FEE\u6539</button>\n    <span class="pd_cfg_tips" title="\u53EF\u5C06\u6240\u9009\u62E9\u7684\u5C42\u6570\u7684\u76F8\u5E94\u5C5E\u6027\u4FEE\u6539\u4E3A\u6307\u5B9A\u7684\u6570\u503C\uFF1B\u6570\u5B57\u524D\u53EF\u8BBE+/-\u53F7\uFF0C\u8868\u793A\u589E\u52A0/\u51CF\u5C11\u76F8\u5E94\u6570\u91CF\uFF1B\u4F8B\uFF1A100\u3001+5\u6216-2">[?]</span>\n  </div>\n</div>\n<div class="pd_cfg_btns">\n  <span class="pd_cfg_about"><a data-name="openImOrExLevelPointListConfigDialog" href="#">\u5BFC\u5165/\u5BFC\u51FA\u5206\u914D\u65B9\u6848</a></span>\n  <button type="submit">\u4FDD\u5B58</button>\n  <button data-action="close" type="button">\u53D6\u6D88</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, '各层点数分配方案', html, 'min-width: 840px;');
+    var $levelPointList = $dialog.find('#pdLevelPointList > tbody');
+
+    /**
+     * 添加各层点数分配的HTML
+     * @param {number} level 层数
+     * @param {{}} points 点数对象
+     */
+    var addLevelPointHtml = function addLevelPointHtml(level, points) {
+        $('\n<tr>\n  <td style="width: 25px; text-align: left;"><input type="checkbox"></td>\n  <td style="text-align: left;">\n    <label style="margin-right: 8px;">\n      \u7B2C <input name="level" type="text" value="' + (level ? level : '') + '" style="width: 30px;"> \u5C42\n    </label>\n  </td>\n  <td><input class="pd_point" name="s1" type="number" value="' + points['力量'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="s2" type="number" value="' + points['体质'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d1" type="number" value="' + points['敏捷'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="d2" type="number" value="' + points['灵活'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i1" type="number" value="' + points['智力'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_point" name="i2" type="number" value="' + points['意志'] + '" min="1" style="width: 50px;" required></td>\n  <td><input class="pd_arm_input" name="weaponId" type="text" value="' + (points['武器ID'] ? points['武器ID'] : '') + '" maxlength="15" style="width: 65px;"></td>\n  <td><input class="pd_arm_input" name="weaponMemo" type="text" value="' + (points['武器备注'] ? points['武器备注'] : '') + '" maxlength="20" style="width: 70px;"></td>\n  <td><input class="pd_arm_input" name="armorId" type="text" value="' + (points['护甲ID'] ? points['护甲ID'] : '') + '" maxlength="15" style="width: 65px;"></td>\n  <td><input class="pd_arm_input" name="armorMemo" type="text" value="' + (points['护甲备注'] ? points['护甲备注'] : '') + '" maxlength="20" style="width: 70px;"></td>\n  <td style="text-align: left;">\n    <a class="pd_btn_link" data-name="fill" href="#">\u586B\u5145</a>\n    <a class="pd_btn_link" data-name="addArm" href="#">\u88C5\u5907</a>\n    <a class="pd_btn_link pd_highlight" data-name="delete" href="#">\u5220\u9664</a>\n  </td>\n</tr>\n<tr>\n  <td></td>\n  <td class="pd_custom_tips" title="\u5269\u4F59\u5C5E\u6027\u70B9">\u5269\u4F59\uFF1A<span data-id="surplusPoint">0</span></td>\n  <td title="\u653B\u51FB\u529B" hidden> <!-- \u4E34\u65F6\u7981\u7528 -->\n    \u653B\uFF1A<span data-id="pro_s1" style="cursor: pointer;">0</span> <a data-id="opt_s1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6700\u5927\u751F\u547D\u503C" hidden>\n    \u547D\uFF1A<span data-id="pro_s2" style="cursor: pointer;">0</span> <a data-id="opt_s2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u653B\u51FB\u901F\u5EA6" hidden>\n    \u901F\uFF1A<span data-id="pro_d1" style="cursor: pointer;">0</span> <a data-id="opt_d1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u66B4\u51FB\u51E0\u7387" hidden>\n    \u66B4\uFF1A<span data-id="pro_d2" style="cursor: pointer;">0</span>% <a data-id="opt_d2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u6280\u80FD\u91CA\u653E\u6982\u7387" hidden>\n    \u6280\uFF1A<span data-id="pro_i1" style="cursor: pointer;">0</span>% <a data-id="opt_i1" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td title="\u9632\u5FA1\u51CF\u4F24" hidden>\n    \u9632\uFF1A<span data-id="pro_i2" style="cursor: pointer;">0</span>% <a data-id="opt_i2" href="#" title="\u70B9\u51FB\uFF1A\u7ED9\u8BE5\u9879\u52A0\u4E0A\u6216\u51CF\u53BB\u5269\u4F59\u5C5E\u6027\u70B9">&#177;</a>\n  </td>\n  <td class="pd_custom_tips" title="[\u98DE\u8EAB\u5288\u65A9]\u4F24\u5BB3\uFF1A\u653B\u51FB+\u4F53\u8D28\u503C*5+\u667A\u529B\u503C*5" hidden>\u6280\u4F24\uFF1A<span data-id="skillAttack">0</span></td>\n  <td hidden></td>\n  <td hidden></td>\n</tr>\n').appendTo($levelPointList).find('.pd_point').trigger('change');
+    };
+
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        (0, _Config.read)();
+        var levelPointList = {};
+        var prevPoints = {};
+        var isError = false,
+            isSurplus = false;
+        $levelPointList.find('tr:gt(0)').each(function () {
+            var $this = $(this);
+            if (!$this.find('.pd_point').length) return;
+            var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($this.find('.pd_point'));
+            if (surplusPoint > 0) isSurplus = true;else if (surplusPoint < 0) {
+                isError = true;
+                return false;
+            }
+
+            var level = parseInt($this.find('[name="level"]').val());
+            if (!level || level < 0) return;
+            var points = {};
+            var _iteratorNormalCompletion5 = true;
+            var _didIteratorError5 = false;
+            var _iteratorError5 = undefined;
+
+            try {
+                for (var _iterator5 = Array.from($this.find('.pd_point, .pd_arm_input'))[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                    var elem = _step5.value;
+
+                    var $elem = $(elem);
+                    var name = $elem.attr('name');
+                    var value = null;
+                    value = $.trim($elem.val());
+                    if ($elem.is('.pd_point')) {
+                        value = parseInt(value);
+                        if (!value || value < 0) return;
+                    } else {
+                        if (!value) continue;
+                        if (name === 'weaponId' || name === 'armorId') {
+                            value = parseInt(value);
+                            if (!value || value < 0) return;
+                        }
+                    }
+                    points[getPointNameByFieldName(name)] = value;
+                }
+            } catch (err) {
+                _didIteratorError5 = true;
+                _iteratorError5 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                        _iterator5.return();
+                    }
+                } finally {
+                    if (_didIteratorError5) {
+                        throw _iteratorError5;
+                    }
+                }
+            }
+
+            if (Util.deepEqual(prevPoints, points)) return;
+
+            levelPointList[level] = points;
+            prevPoints = points;
+        });
+        if (isSurplus) {
+            if (!confirm('部分层数的可分配属性点尚未用完，是否提交？')) return;
+        }
+        if (isError) {
+            alert('部分层数的剩余属性点为负，请重新填写');
+            return;
+        }
+        Config.levelPointList = levelPointList;
+        (0, _Config.write)();
+        Dialog.close(dialogName);
+        setLevelPointListSelect(Config.levelPointList);
+    }).find('[data-name="add"]').click(function (e) {
+        e.preventDefault();
+        var points = { '力量': 1, '体质': 1, '敏捷': 1, '灵活': 1, '智力': 1, '意志': 1 };
+        addLevelPointHtml(0, points);
+        $levelPointList.find('[name="level"]:last').focus();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="deleteSelect"]').click(function (e) {
+        e.preventDefault();
+        var $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length || !confirm('是否删除所选层数？')) return;
+        var $line = $checked.closest('tr');
+        $line.next('tr').addBack().remove();
+        Dialog.resize(dialogName);
+    }).end().find('[data-name="openImOrExLevelPointListConfigDialog"]').click(function (e) {
+        e.preventDefault();
+        Public.showCommonImportOrExportConfigDialog('各层点数分配方案', 'levelPointList', null, function () {
+            $('#pdLevelPointListConfigDialog').remove();
+            showLevelPointListConfigDialog(function ($dialog) {
+                return $dialog.submit();
+            });
+        });
+    }).end().find('[data-name="selectAll"]').click(function () {
+        return Util.selectAll($levelPointList.find('[type="checkbox"]'));
+    }).end().find('[data-name="selectInverse"]').click(function () {
+        return Util.selectInverse($levelPointList.find('[type="checkbox"]'));
+    });
+
+    $levelPointList.on('click', '[data-name="fill"]', function (e) {
+        e.preventDefault();
+        fillPoints($(this).closest('tr'));
+    }).on('click', '[data-name="delete"]', function (e) {
+        e.preventDefault();
+        var $line = $(this).closest('tr');
+        $line.next('tr').addBack().remove();
+        Dialog.resize(dialogName);
+    }).on('click', '[data-name="addArm"]', function (e) {
+        e.preventDefault();
+        $levelPointList.find('#pdAddWeaponId, #pdAddWeaponMemo, #pdAddArmorId, #pdAddArmorMemo').removeAttr('id');
+        var $tr = $(this).closest('tr');
+        $tr.find('[name="weaponId"]').attr('id', 'pdAddWeaponId').end().find('[name="weaponMemo"]').attr('id', 'pdAddWeaponMemo').end().find('[name="armorId"]').attr('id', 'pdAddArmorId').end().find('[name="armorMemo"]').attr('id', 'pdAddArmorMemo');
+        addOrChangeArm(1);
+    }).on('change', '.pd_point', function () {
+        var $this = $(this);
+        var name = $this.attr('name');
+        var point = parseInt($this.val());
+        if (!point || point < 0) return;
+
+        var $points = $this.closest('tr');
+        var $properties = $points.next('tr');
+        $properties.find('[data-id="pro_' + name + '"]').text(getPropertyByPoint(getPointNameByFieldName(name), point));
+        var power = parseInt($points.find('[name="s1"]').val());
+        var life = parseInt($points.find('[name="s2"]').val());
+        var intelligence = parseInt($points.find('[name="i1"]').val());
+        $properties.find('[data-id="skillAttack"]').text(getSkillAttack(power + getExtraPoint('力量', power), life + getExtraPoint('体质', life), intelligence + getExtraPoint('智力', intelligence)));
+
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        $properties.find('[data-id="surplusPoint"]').text(surplusPoint).css('color', surplusPoint !== 0 ? '#f00' : '#000');
+    }).on('click', '[data-id^="pro_"]', function () {
+        var $this = $(this);
+        var name = $this.data('id').replace('pro_', '');
+        var num = parseInt(prompt('请输入数值：', $this.text()));
+        if (!num || num < 0) return;
+        $this.closest('tr').prev('tr').find('[name="' + name + '"]').val(getPointByProperty(getPointNameByFieldName(name), num)).trigger('change');
+    }).on('click', '[data-id^="opt_"]', function (e) {
+        e.preventDefault();
+        var $this = $(this);
+        var name = $this.data('id').replace('opt_', '');
+        var $points = $this.closest('tr').prev('tr');
+        var surplusPoint = propertyList['可分配属性点'] - getCurrentAssignedPoint($points.find('.pd_point'));
+        if (!surplusPoint) return;
+        var $point = $points.find('[name="' + name + '"]');
+        if (!$point.length) return;
+        var num = parseInt($point.val());
+        if (isNaN(num) || num < 0) num = 0;
+        num = num + surplusPoint;
+        var min = parseInt($point.attr('min'));
+        $point.val(num < min ? min : num).trigger('change');
+    });
+
+    $dialog.find('[name="modify"]').click(function () {
+        var $checked = $levelPointList.find('[type="checkbox"]:checked');
+        if (!$checked.length) return;
+        var data = {};
+        $dialog.find('[data-id="modifyArea"] [type="text"]').each(function () {
+            var $this = $(this);
+            var name = $this.attr('name');
+            var value = $.trim($this.val());
+            if (!value) return;
+            var matches = /^(-|\+)?(\d+)$/.exec(value);
+            if (!matches) {
+                alert('格式不正确');
+                $this.select().focus();
+            }
+            data[name] = {};
+            if (typeof matches[1] !== 'undefined') data[name].action = matches[1] === '+' ? 'add' : 'minus';else data[name].action = 'equal';
+            data[name].value = parseInt(matches[2]);
+        });
+        $checked.each(function () {
+            var $points = $(this).closest('tr');
+            $points.find('.pd_point').each(function () {
+                var $this = $(this);
+                var name = $this.attr('name');
+                if (!(name in data)) return;
+                if (data[name].action !== 'equal') {
+                    var point = parseInt($this.val());
+                    if (!point || point < 0) point = 0;
+                    point += data[name].action === 'add' ? data[name].value : -data[name].value;
+                    $this.val(point > 1 ? point : 1);
+                } else $this.val(data[name].value);
+            }).trigger('change');
+        });
+        alert('点数已修改');
+    }).end().find('[data-name="clear"]').click(function (e) {
+        e.preventDefault();
+        $(this).closest('[data-id="modifyArea"]').find('[type="text"]').val('');
+    });
+
+    var _iteratorNormalCompletion6 = true;
+    var _didIteratorError6 = false;
+    var _iteratorError6 = undefined;
+
+    try {
+        for (var _iterator6 = Util.entries(Config.levelPointList)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            var _step6$value = _slicedToArray(_step6.value, 2),
+                level = _step6$value[0],
+                points = _step6$value[1];
+
+            if (!$.isNumeric(level)) continue;
+            addLevelPointHtml(level, points);
+        }
+    } catch (err) {
+        _didIteratorError6 = true;
+        _iteratorError6 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
+            }
+        } finally {
+            if (_didIteratorError6) {
+                throw _iteratorError6;
+            }
+        }
+    }
+
+    Dialog.show(dialogName);
+    if (typeof callback === 'function') callback($dialog);
+};
+
+/**
+ * 加入或更换装备
+ * @param {number} type 类型，0：更换装备；1：加入装备
+ */
+var addOrChangeArm = function addOrChangeArm(type) {
+    (0, _Config.read)();
+    var dialogName = 'pd' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog';
+    var $dialog = $('#' + dialogName).parent();
+    if ($dialog.length > 0 && type === 1) {
+        $dialog.fadeIn('fast');
+        Dialog.resize(dialogName);
+    } else {
+        var $wait = Msg.wait('<strong>正在获取装备信息&hellip;</strong>');
+        $.ajax({
+            type: 'GET',
+            url: 'kf_fw_ig_mybp.php?t=' + $.now(),
+            timeout: _Const2.default.defAjaxTimeout
+        }).done(function (html) {
+            Msg.remove($wait);
+            var matches = /<tr><td width="\d+%">装备.+?\r\n(<tr.+?<\/tr>)<tr><td colspan="4">/.exec(html);
+            if (matches) {
+                showAddOrChangeArmDialog(type, matches[1]);
+            }
+        }).fail(function () {
+            return Msg.remove($wait);
+        });
+    }
+};
+
+/**
+ * 显示加入或更换装备对话框
+ * @param {number} type 类型，0：更换装备；1：加入装备
+ * @param {string} armHtml 装备的HTML代码
+ */
+var showAddOrChangeArmDialog = function showAddOrChangeArmDialog(type, armHtml) {
+    var dialogName = 'pd' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog';
+    if ($('#' + dialogName).length > 0) return;
+
+    var html = '\n<div class="pd_cfg_main" style="padding: 0;">\n  <table class="kf_fw_ig4" data-name="armList" cellspacing="0" cellpadding="0" align="center" style="width: 800px;">\n    <tbody>\n      <tr hidden><td colspan="3" class="kf_fw_ig_title1">\u6211\u7684\u88C5\u5907\u80CC\u5305</td></tr>\n      <tr><td width="10%">\u88C5\u5907</td><td width="10%">\u7194\u70BC</td><td width="80%">\u540D\u79F0</td></tr>\n      ' + armHtml + '\n      <tr><td colspan="3"><span style="color:#00f;">\u4E0D\u663E\u793A\u8D85\u8FC710\u4EF6\u4EE5\u4E0A\u7684\u7269\u54C1\uFF0C\u5982\u7269\u54C1\u8D85\u8FC710\u4EF6\uFF0C\u8BF7\u7194\u70BC\u6389\u591A\u4F59\u7684\u5373\u53EF\u5168\u90E8\u663E\u793A\u3002</span></td></tr>\n    </tbody>\n  </table>\n</div>\n<div class="pd_cfg_btns">\n  ' + (type === 0 ? '<button name="manualInputArmId" type="button" title="手动输入装备ID">手动输入ID</button>' : '') + '\n  <button data-action="close" type="button">\u5173\u95ED</button>\n</div>';
+    var $dialog = Dialog.create(dialogName, (type === 1 ? '加入' : '更换') + '\u88C5\u5907', html, 'min-width: 820px; z-index: 1003;');
+    var $armArea = $dialog.find('.kf_fw_ig4[data-name="armList"]');
+
+    Item.addCommonArmsButton($dialog.find('.pd_cfg_btns'), $armArea);
+    if (type === 1) {
+        $dialog.off('click', '[data-action="close"]').on('click', '[data-action="close"]', function () {
+            $dialog.fadeOut('fast');
+        });
+    } else {
+        $dialog.find('[name="manualInputArmId"]').click(function () {
+            var value = $.trim(prompt('请输入装备ID（多个ID用空格分隔）：'));
+            if (!value) return;
+            var armIdList = value.split(' ');
+            var $wait = Msg.wait('<strong>正在装备中&hellip;</strong>');
+            $(document).clearQueue('ChangeArms');
+            $.each(armIdList, function (i, armId) {
+                if (!armId) return;
+                $(document).queue('ChangeArms', function () {
+                    $.post('kf_fw_ig_mybpdt.php', 'do=4&id=' + armId + '&safeid=' + safeId, function (html) {
+                        var msg = Util.removeHtmlTag(html);
+                        if (/装备完毕/.test(msg)) {
+                            if (Config.autoSaveArmsInfoEnabled) {
+                                var armsInfo = Item.readArmsInfo();
+                                armsInfo['已装备武器'] = armsInfo['已装备护甲'] = 0;
+                                Item.writeArmsInfo(armsInfo);
+                            }
+                        } else {
+                            Msg.remove($wait);
+                            alert(msg);
+                        }
+                    }).fail(function () {
+                        $(document).clearQueue('ChangeArms');
+                        Msg.remove($wait);
+                        alert('连接超时');
+                    }).always(function () {
+                        if (!$(document).queue('ChangeArms').length) {
+                            updateLootInfo(function () {
+                                Msg.remove($wait);
+                                Dialog.close(dialogName);
+                                $('.pd_arm_input').val('');
+                            });
+                        } else {
+                            setTimeout(function () {
+                                return $(document).dequeue('ChangeArms');
+                            }, _Const2.default.minActionInterval);
+                        }
+                    });
+                });
+            });
+            $(document).dequeue('ChangeArms');
+        });
+    }
+
+    if (Config.autoSaveArmsInfoEnabled) {
+        Item.addSavedArmsInfo($armArea);
+    }
+    Item.handleArmArea($armArea, type);
+    Item.bindArmLinkClickEvent($armArea, safeId, 1);
+
+    Dialog.show(dialogName);
+    Script.runFunc('Item.show' + (type === 1 ? 'Add' : 'Change') + 'ArmDialog_after_');
+};
+
+/**
+ * 获取各层争夺记录列表
+ * @param log 争夺记录
+ * @returns {string[]} 各层争夺记录列表
+ */
+var getLogList = exports.getLogList = function getLogList(log) {
+    var logList = [];
+    var matches = log.match(/<li class="pk_log_j">.+?(?=\s*<li class="pk_log_j">|\s*$)/g);
+    for (var i in matches) {
+        var levelMatches = /在\[\s*(\d+)\s*层]/.exec(Util.removeHtmlTag(matches[i]));
+        if (levelMatches) logList[parseInt(levelMatches[1])] = matches[i];
+    }
+    return logList;
+};
+
+/**
+ * 获取该层的战斗信息
+ * @param {string} levelLog 该层的争夺记录
+ * @returns {{enemy: string, life: number, initLife: number, box: string}} enemy：遭遇敌人名称；life：该层剩余生命值；initLife：该层初始生命值；box：盒子名称
+ */
+var getLevelInfo = exports.getLevelInfo = function getLevelInfo(levelLog) {
+    var info = { enemy: '', life: 0, initLife: 0, box: '' };
+    if (!levelLog) return info;
+    levelLog = Util.removeHtmlTag(levelLog.replace(/<\/li>/g, '</li>\n'));
+
+    var matches = /你\((\d+)\)遭遇了\[([^\]]+)的]NPC/.exec(levelLog);
+    if (matches) {
+        info.initLife = parseInt(matches[1]);
+        info.enemy = matches[2];
+        info.enemy = info.enemy.replace('特别', '').replace('(后续更新前此路不通)', '');
+    }
+
+    matches = /生命值\[(\d+)\s*\/\s*\d+]/.exec(levelLog);
+    if (matches) info.life = parseInt(matches[1]);
+
+    matches = /敌人掉落了一个\s*\[\s*(\S+?盒子)\s*]/.exec(levelLog);
+    if (matches) info.box = matches[1];
+
+    return info;
+};
+
+/**
+ * 获取各层战斗信息列表
+ * @param {string[]} logList 各层争夺记录列表
+ * @returns {{}[]} 各层战斗信息列表
+ */
+var getLevelInfoList = exports.getLevelInfoList = function getLevelInfoList(logList) {
+    var levelInfoList = [];
+    $.each(logList, function (level, levelLog) {
+        if (!levelLog) return;
+        levelInfoList[level] = getLevelInfo(levelLog);
+    });
+    return levelInfoList;
+};
+
+/**
+ * 获取当前层数
+ * @param {string[]} logList 各层争夺记录列表
+ * @returns {number} 当前层数
+ */
+var getCurrentLevel = function getCurrentLevel(logList) {
+    return logList.length - 1 >= 1 ? logList.length - 1 : 0;
+};
 
 /**
  * 在争夺排行页面添加用户链接
@@ -6831,6 +8260,80 @@ var addUserLinkInHaloPage = exports.addUserLinkInHaloPage = function addUserLink
         $this.html('<a class="' + (!Config.adminMemberEnabled ? 'pd_not_click_link' : '') + '" href="profile.php?action=show&username=' + userName + '" target="_blank">' + userName + '</a>');
         if (userName === _Info2.default.userName) $this.find('a').addClass('pd_highlight');
     });
+};
+
+/**
+ * 读取战力光环页面信息
+ * @param {boolean} isInitLootPage 是否初始化争夺首页
+ */
+var readHaloInfo = function readHaloInfo() {
+    var isInitLootPage = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+    console.log('获取战力光环信息Start');
+    var $wait = Msg.wait('<strong>正在获取战力光环信息，请稍候&hellip;</strong>');
+    getHaloInfo().done(function (result) {
+        if ($.type(result) === 'object') {
+            setHaloInfo(result);
+            if (isInitLootPage) enhanceLootIndexPage();else $points.find('.pd_point').trigger('change');
+        }
+    }).always(function (result) {
+        Msg.remove($wait);
+        if (result === 'timeout') {
+            setTimeout(function () {
+                return readHaloInfo(isInitLootPage);
+            }, _Const2.default.defAjaxInterval);
+        } else if (result === 'error') {
+            Msg.show('<strong>战力光环信息获取失败！</strong>', -1);
+        }
+    });
+};
+
+/**
+ * 获取战力光环信息
+ * @returns {Deferred} Deferred对象
+ */
+var getHaloInfo = exports.getHaloInfo = function getHaloInfo() {
+    return $.ajax({
+        type: 'GET',
+        url: 'kf_fw_ig_halo.php?t=' + $.now(),
+        timeout: _Const2.default.defAjaxTimeout
+    }).then(function (html) {
+        var haloInfo = { '全属性': 0, '攻击力': 0, '生命值': 0 };
+        var matches = /全属性\s*\+\s*(\d+(?:\.\d+)?)%/.exec(html);
+        if (matches) {
+            haloInfo['全属性'] = Math.round(parseFloat(matches[1]) * 10) / 1000;
+            var extraMatches = /福利加成\s*\+\s*(\d+)攻击力\s*&\s*\+\s*(\d+)生命值/.exec(html);
+            if (extraMatches) {
+                haloInfo['攻击力'] = parseInt(extraMatches[1]);
+                haloInfo['生命值'] = parseInt(extraMatches[2]);
+            }
+            TmpLog.setValue(_Const2.default.haloInfoTmpLogName, $.extend(haloInfo, { time: $.now() }));
+            return haloInfo;
+        } else return 'error';
+    }, function () {
+        return 'timeout';
+    });
+};
+
+/**
+ * 设置战力光环信息
+ * @param {{}} newHaloInfo 光环信息对象
+ */
+var setHaloInfo = exports.setHaloInfo = function setHaloInfo(newHaloInfo) {
+    haloInfo = newHaloInfo;
+    if (!$('#pdHaloInfo').length) {
+        var $node = $properties.find('input[type="text"]:eq(13)');
+        if (!$node.length || $.trim($node.val())) return;
+        $node.attr('id', 'pdHaloInfo');
+        $('<a data-name="reloadHaloInfo" href="#" style="margin-left: -20px;" title="如战力光环信息不正确时，请点此重新读取">读</a>').insertAfter($node).click(function (e) {
+            e.preventDefault();
+            if (confirm('是否重新读取战力光环信息？')) {
+                TmpLog.deleteValue(_Const2.default.haloInfoTmpLogName);
+                readHaloInfo();
+            }
+        });
+    }
+    $('#pdHaloInfo').val('\u5168\u5C5E\u6027+' + Math.round(haloInfo['全属性'] * 1000) / 10 + '% (+' + haloInfo['攻击力'] + '|+' + haloInfo['生命值'] + ')');
 };
 
 /**
@@ -6949,8 +8452,8 @@ var promoteHalo = exports.promoteHalo = function promoteHalo(totalCount, promote
         }).done(function (html) {
             Public.showFormatLog('提升战力光环', html);
 
-            var _Util$getResponseMsg = Util.getResponseMsg(html),
-                msg = _Util$getResponseMsg.msg;
+            var _Util$getResponseMsg2 = Util.getResponseMsg(html),
+                msg = _Util$getResponseMsg2.msg;
 
             var matches = /(新数值为|随机值为)\[(\d+(?:\.\d+)?)%]/.exec(msg);
             if (matches) {
@@ -7026,21 +8529,14 @@ var getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function g
 };
 
 /**
- * 添加咕咕镇协议全选按钮
+ * 添加咕咕镇协议相关按钮
  */
-var addGuGuZhenSelectAllBtn = exports.addGuGuZhenSelectAllBtn = function addGuGuZhenSelectAllBtn() {
-    $('\n<label class="pd_highlight" style="margin-bottom: 15px; display: block; font-weight: bold;">\n  <input id="guGuZhenSelectAllEnabled" type="checkbox"> \u5168\u9009\n</label>\n').appendTo($('input[name="submit"]').parent().prev()).find('input').click(function () {
-        var $this = $(this);
-        Config.guGuZhenSelectAllEnabled = $this.prop('checked');
-        $('input[name^="tongyi"]').prop('checked', Config.guGuZhenSelectAllEnabled);
-        (0, _Config.write)();
-    });
-
-    if (Config.guGuZhenSelectAllEnabled) {
-        $('#guGuZhenSelectAllEnabled').click();
-    }
-
-    $('input[name="submit"]').click(function () {
+var addGuGuZhenBtns = exports.addGuGuZhenBtns = function addGuGuZhenBtns() {
+    /**
+     * 获取是否全部同意
+     * @returns {boolean} 是否全部同意
+     */
+    var checkIsAllow = function checkIsAllow() {
         var isAllow = true;
         $('input[name^="tongyi"]').each(function () {
             var flag = $(this).prop('checked');
@@ -7049,15 +8545,56 @@ var addGuGuZhenSelectAllBtn = exports.addGuGuZhenSelectAllBtn = function addGuGu
                 return false;
             }
         });
+        return isAllow;
+    };
 
-        if (isAllow && !Config.guGuZhenEnabled) {
-            Config.guGuZhenEnabled = true;
+    $('\n<div style="margin-bottom: 15px;">\n    <label style="color: #00f; font-weight: bold;">\n      <input id="guGuZhenSelectAllEnabled" type="checkbox"> \u5168\u9009\n    </label>\n    <label class="pd_highlight" style="font-weight: bold; margin-left: 20px;">\n      <input id="guGuZhenAutoJumpEnabled" type="checkbox" ' + (Config.guGuZhenAutoJumpEnabled ? 'checked' : '') + '> \u4EE5\u540E\u81EA\u52A8\u8DF3\u8F6C\u5230\u5495\u5495\u9547\n    </label>\n</div>\n').appendTo($('input[name="submit"]').parent().prev());
+    $('#guGuZhenSelectAllEnabled').click(function () {
+        var $this = $(this);
+        Config.guGuZhenSelectAllEnabled = $this.prop('checked');
+        $('input[name^="tongyi"]').prop('checked', Config.guGuZhenSelectAllEnabled);
+        (0, _Config.write)();
+    });
+    $('#guGuZhenAutoJumpEnabled').click(function () {
+        var $this = $(this);
+        var flag = $this.prop('checked');
+        if (flag && !checkIsAllow()) {
+            alert('请先同意协议');
+            return false;
+        }
+
+        Config.guGuZhenAutoJumpEnabled = flag;
+        (0, _Config.write)();
+    });
+
+    if (Config.guGuZhenSelectAllEnabled) {
+        $('#guGuZhenSelectAllEnabled').click();
+    }
+
+    $('input[name="submit"]').click(function () {
+        if (checkIsAllow()) {
+            if (!Config.guGuZhenEnabled) {
+                Config.guGuZhenEnabled = true;
+                (0, _Config.write)();
+            }
+        } else {
+            Config.guGuZhenAutoJumpEnabled = false;
             (0, _Config.write)();
         }
     });
 };
 
-},{"./Config":3,"./Const":5,"./Info":8,"./Log":10,"./Msg":13,"./Public":16,"./Script":18,"./TmpLog":20,"./Util":21}],13:[function(require,module,exports){
+/**
+ * 自动跳转咕咕镇
+ */
+var autoJumpGuGuZhen = exports.autoJumpGuGuZhen = function autoJumpGuGuZhen() {
+    if ($('[name^="tongyi"]').length === 5) {
+        Msg.show('<strong>正在跳转中，请稍候...</strong>', 30);
+        location.href = 'fyg_sjcdwj.php?go=play&j=0a0a0a0a0';
+    }
+};
+
+},{"./Config":3,"./Const":5,"./Dialog":6,"./Info":8,"./Item":9,"./Log":10,"./Msg":13,"./Public":16,"./Script":18,"./TmpLog":20,"./Util":21}],13:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
 

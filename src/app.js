@@ -20,7 +20,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '14.0.0';
+const version = '14.0.1';
 
 /**
  * 导出模块
@@ -47,8 +47,7 @@ const exportModule = function () {
         const Conf = require('./module/Config');
         Info.w.readConfig = Conf.read;
         Info.w.writeConfig = Conf.write;
-    }
-    catch (ex) {
+    } catch (ex) {
         console.log(ex);
     }
 };
@@ -88,8 +87,7 @@ const init = function () {
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
         if (Config.homePageThreadFastGotoLinkEnabled) Index.addThreadFastGotoLink();
         Index.addPromoteHaloInterval();
-    }
-    else if (location.pathname === '/read.php') {
+    } else if (location.pathname === '/read.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
         Read.fastGotoFloor();
         Read.addFloorGotoLink();
@@ -112,17 +110,14 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         //SelfRate.handleGoodPostSubmit(); // 临时
-    }
-    else if (location.pathname === '/thread.php') {
+    } else if (location.pathname === '/thread.php') {
         if (Config.highlightNewPostEnabled) Other.highlightNewPost();
         if (Config.showFastGotoThreadPageEnabled) Other.addFastGotoThreadPageLink();
-    }
-    else if (location.pathname === '/post.php') {
+    } else if (location.pathname === '/post.php') {
         Post.addRedundantKeywordWarning();
         if (/\bmultiquote=1/i.test(location.href)) {
             if (Config.multiQuoteEnabled) Post.handleMultiQuote(2);
-        }
-        else if (/\baction=quote/i.test(location.href)) {
+        } else if (/\baction=quote/i.test(location.href)) {
             Post.removeUnpairedBBCodeInQuoteContent();
         }
         Post.addFillTitleBtn();
@@ -131,78 +126,62 @@ const init = function () {
         if (Config.preventCloseWindowWhenEditPostEnabled) Post.preventCloseWindowWhenEditPost();
         if (Config.autoSavePostContentWhenSubmitEnabled) Post.savePostContentWhenSubmit();
         if (Info.isInSpecialDomain) Post.addAttachChangeAlert();
-    }
-    else if (location.pathname === '/kf_fw_ig_mybp.php') {
+    } else if (location.pathname === '/kf_fw_ig_mybp.php') {
         Item.init();
-    }
-    else if (location.pathname === '/kf_fw_ig_shop.php') {
+    } else if (location.pathname === '/kf_fw_ig_shop.php') {
         Item.showMyInfoInItemShop();
         Item.showBuyItemTips();
-    }
-    else if (location.pathname === '/kf_fw_ig_pklist.php') {
+    } else if (location.pathname === '/kf_fw_ig_pklist.php') {
         Loot.addUserLinkInPkListPage();
-    }
-    else if (location.pathname === '/kf_fw_ig_halo.php') {
+    } else if (location.pathname === '/kf_fw_ig_halo.php') {
         $('.kf_fw_ig1:first').on('click', 'a[href^="kf_fw_ig_halo.php?do=buy&id="]', () => {
             if (!confirm('是否提升战力光环？')) return false;
             TmpLog.deleteValue(Const.haloInfoTmpLogName);
         });
         Loot.addUserLinkInHaloPage();
-    }
-    else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
+    } else if (/\/hack\.php\?H_name=bank$/i.test(location.href)) {
         Bank.handleBankPage();
-    }
-    else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
+    } else if (/\/message\.php\?action=read&mid=\d+/i.test(location.href)) {
         Other.addFastDrawMoneyLink();
         if (Config.modifyKfOtherDomainEnabled) Read.modifyKFOtherDomainLink();
-    }
-    else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
+    } else if (/\/message\.php($|\?action=receivebox)/i.test(location.href)) {
         Other.addMsgSelectButton();
-    }
-    else if (/\/profile\.php\?action=show/i.test(location.href)) {
+    } else if (/\/profile\.php\?action=show/i.test(location.href)) {
         Other.handleProfilePage();
         Other.addFollowAndBlockAndMemoUserLink();
-    }
-    else if (/\/personal\.php\?action=post/i.test(location.href)) {
+    } else if (/\/personal\.php\?action=post/i.test(location.href)) {
         if (Config.perPageFloorNum === 10) Other.modifyMyPostLink();
-    }
-    else if (location.pathname === '/kf_growup.php') {
+    } else if (location.pathname === '/kf_growup.php') {
         Other.addAutoChangeIdColorButton();
-    }
-    else if (location.pathname === '/guanjianci.php') {
+    } else if (location.pathname === '/guanjianci.php') {
         Other.highlightUnReadAtTipsMsg();
-    }
-    else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
+    } else if (/\/profile\.php\?action=modify$/i.test(location.href)) {
         Other.syncModifyPerPageFloorNum();
         if (Info.isInSpecialDomain) Other.addAvatarChangeAlert();
-    }
-    else if (/\/job\.php\?action=preview$/i.test(location.href)) {
+    } else if (/\/job\.php\?action=preview$/i.test(location.href)) {
         Post.modifyPostPreviewPage();
-    }
-    else if (location.pathname === '/search.php') {
+    } else if (location.pathname === '/search.php') {
         if (Config.turnPageViaKeyboardEnabled) Public.turnPageViaKeyboard();
-    }
-    else if (location.pathname === '/kf_fw_1wkfb.php') {
+    } else if (location.pathname === '/kf_fw_1wkfb.php') {
         if (/\/kf_fw_1wkfb\.php\?ping=(2|4|7)\b/.test(location.href)) {
             SelfRate.highlightRateErrorSize();
             if (/\/kf_fw_1wkfb\.php\?ping=2\b/.test(location.href)) {
                 SelfRate.refreshWaitCheckRatePage();
             }
-        }
-        else if (/\/kf_fw_1wkfb\.php\?do=1\b/.test(location.href)) {
+        } else if (/\/kf_fw_1wkfb\.php\?do=1\b/.test(location.href)) {
             SelfRate.addUnrecognizedSizeWarning();
             SelfRate.showErrorSizeSubmitWarning();
         }
         SelfRate.addLinksInPage();
-    }
-    else if (location.pathname === '/kf_no1.php') {
+    } else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
-    }
-    else if (location.pathname === '/kf_fw_ig_index.php') {
+    } else if (location.pathname === '/kf_fw_ig_index.php') {
         Loot.init();
-    }
-    else if (location.pathname === '/kf_fygnew_3214.php') {
-        Loot.addGuGuZhenSelectAllBtn();
+    } else if (location.pathname === '/kf_fygnew_3214.php') {
+        Loot.addGuGuZhenBtns();
+        if (Config.guGuZhenAutoJumpEnabled) {
+            Loot.autoJumpGuGuZhen();
+        }
     }
 
     if (Config.blockUserEnabled) Public.blockUsers();
