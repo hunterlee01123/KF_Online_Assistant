@@ -198,6 +198,9 @@ const init = function () {
     else if (location.pathname === '/kf_no1.php') {
         Other.addUserNameLinkInRankPage();
     }
+    else if (location.pathname === '/kf_fw_ig_index.php') {
+        Loot.init();
+    }
     else if (location.pathname === '/kf_fygnew_3214.php') {
         Loot.addGuGuZhenSelectAllBtn();
     }

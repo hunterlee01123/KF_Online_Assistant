@@ -27,6 +27,15 @@ export const Config = {
     // 是否在完成发言奖励后才领取每日奖励，true：开启；false：关闭
     getBonusAfterSpeakCompleteEnabled: false,
 
+    // 争夺各层分配点数列表，例：{1:{"力量":1,"体质":2,"敏捷":3,"灵活":4,"智力":5,"意志":6}, 10:{"力量":6,"体质":5,"敏捷":4,"灵活":3,"智力":2,"意志":1}}
+    levelPointList: {},
+    // 是否使用自定义点数分配脚本（在设置了相应的自定义脚本的情况下，仅限自动攻击相关按钮有效），true：开启；false：关闭
+    customPointsScriptEnabled: false,
+    // 是否在攻击时如有剩余属性点则进行提醒（仅限自动攻击相关按钮有效），true：开启；false：关闭
+    unusedPointNumAlertEnabled: true,
+    // 是否总是打开个人属性/装备界面，true：开启；false：关闭
+    alwaysOpenPointAreaEnabled: false,
+
     // 是否自动提升战力光环，true：开启；false：关闭
     autoPromoteHaloEnabled: false,
     // 自动提升战力光环的花费类型，1：花费100KFB；2：花费1000KFB；11：花费0.2贡献；12：花费2贡献

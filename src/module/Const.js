@@ -34,6 +34,10 @@ const Const = {
     promoteHaloLimitNextActionInterval: 480,
     // 进行批量提升战力光环操作的间隔时间（毫秒）
     promoteHaloActionInterval: 1000,
+    // 临时存储的战力光环信息的有效期（分钟）
+    tmpHaloInfoExpires: 420,
+    // 在尚有剩余次数情况下的存储改点剩余次数信息的Cookie有效期（分钟）
+    changePointsInfoExpires: 30,
     // 标记已去除首页已读at高亮提示的Cookie有效期（天）
     hideMarkReadAtTipsExpires: 3,
     // 神秘等级升级的提醒间隔（小时），设为0表示当升级时随时进行提醒
